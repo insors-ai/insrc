@@ -23,6 +23,7 @@ const RecordSchema = progressObject({
   retention: Type.Union([Type.Literal('active'), Type.Literal('terminal'), Type.Literal('expired')]),
   updatedAt: ProgressTime,
   lastOwnerActivityAt: Type.Union([ProgressTime, Type.Null()]),
+  activityReleased: Type.Optional(Type.Boolean()),
   recoveryDeadline: Type.Union([ProgressTime, Type.Null()]),
   measurement: Type.Union([MeasurementSchema, Type.Null()]),
   measurementStale: Type.Optional(Type.Boolean()),

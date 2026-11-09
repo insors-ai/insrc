@@ -516,6 +516,7 @@ async function main(): Promise<void> {
 		void progressRuntime?.then(runtime => runtime.access.disconnect(context)).catch(() => {});
 	});
 	connectionOwners.push({ close: () => connectionSessionRuntime.close() });
+	connectionOwners.push({ close: async () => { await (await progressRuntime)?.close(); } });
 	startupServer = server;
 	if (threadServices !== undefined && router !== undefined) {
 		server.onRegistryChange(clients => threadServices.board.publishClients(clients));
@@ -544,6 +545,7 @@ async function main(): Promise<void> {
 	if (hostsSharedState) initChatHandlers();
 
 	await server.listen();
+	void getProgressRuntime().catch(() => { log.warn('could not initialize task progress storage'); });
 	startupRunFiles.release(); startupRunFiles = undefined;
 	startupServer = undefined;
 	// The shared-state worker starts now, after the socket listens (its understanding service is a client

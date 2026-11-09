@@ -151,6 +151,25 @@ export class ProgressStore<D> {
     });
   }
 
+  remove(task: TaskRef, revision: number): Promise<void> {
+    return this.serialize(async () => {
+      await this.reconcile();
+      if (this.get(task)?.revision !== revision) throw new ProgressStorageError('stale');
+      await this.deleteKey(progressTaskKey(task));
+    });
+  }
+
+  private async deleteKey(key: string): Promise<void> {
+    try {
+      await unlinkIfPresent(this.path(key));
+      await this.flushDirectory();
+    } catch (error) {
+      this.unsettled.add(key);
+      throw new ProgressStorageError('unavailable', error);
+    }
+    this.records.delete(key);
+  }
+
   private serialize<T>(work: () => Promise<T>): Promise<T> {
     const next = this.tail.then(work);
     this.tail = next.then(() => undefined, () => undefined);
@@ -187,16 +206,7 @@ export class ProgressStore<D> {
       if (evictions.size >= neededGlobally) break;
       evictions.add(victim);
     }
-    for (const victim of evictions) {
-      try {
-        await unlinkIfPresent(this.path(victim));
-        await this.flushDirectory();
-      } catch (error) {
-        this.unsettled.add(victim);
-        throw new ProgressStorageError('unavailable', error);
-      }
-      this.records.delete(victim);
-    }
+    for (const victim of evictions) await this.deleteKey(victim);
   }
 
   private async recover(): Promise<void> {

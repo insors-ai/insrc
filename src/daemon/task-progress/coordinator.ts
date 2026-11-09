@@ -13,6 +13,9 @@ import type { ProgressStore } from './store.js';
 type Details = { readonly kind: ProgressKind };
 type RunningState = 'queued' | 'running' | 'waiting' | 'paused';
 type TerminalState = 'completed' | 'failed' | 'cancelled' | 'interrupted';
+export const OWNER_RENEWAL_MS = 30_000;
+const OWNER_LEASE_MS = 120_000;
+const INACTIVE_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 export type OwnerEvidence =
   | { readonly sequence: number; readonly state: RunningState }
   | { readonly sequence: number; readonly state: TerminalState; readonly resultRef?: string | undefined };
@@ -44,6 +47,7 @@ interface Runtime<D extends Details> {
   refresh?: Promise<void> | undefined;
   requestedSequence?: number | undefined;
   lastRefreshAt?: number | undefined;
+  activityDeadline: number;
   stopped: boolean;
 }
 
@@ -111,8 +115,8 @@ export class ProgressCoordinator<D extends Details> {
     this.producers.add(kind);
     return {
       register: (authorization, key, delegate) => this.admit(kind, authorization, key, {
-        async progress(task) {
-          const measured = await delegate.progress(task);
+        async progress(task, signal) {
+          const measured = await delegate.progress(task, signal);
           return measured === null ? null : { ...measured, details: projectDetails(measured.details) };
         },
       }),
@@ -126,10 +130,11 @@ export class ProgressCoordinator<D extends Details> {
     const record = this.store.get(task);
     if (record === undefined) return undefined;
     const runtime = this.active.get(progressTaskKey(task));
-    const live = runtime !== undefined && runtime.epoch === record.owner?.ownerEpoch;
+    const live = runtime !== undefined && this.live(runtime) && runtime.epoch === record.owner?.ownerEpoch;
     const sample = record.measurement;
     return {
-      task: record.task, cursor: this.cursor(record.task, record.revision), state: record.state,
+      task: record.task, cursor: this.cursor(record.task, record.revision),
+      state: record.retention === 'active' && !live ? 'interrupted' : record.state,
       freshness: sample === null ? 'unavailable' : record.measurementStale || (record.retention === 'active' && !live) ? 'stale' : 'live',
       measurement: sample === null ? null : {
         ...sample, task: record.task,
@@ -171,6 +176,75 @@ export class ProgressCoordinator<D extends Details> {
     return this.store.get(task)?.retention === 'terminal';
   }
 
+  hasLiveOwner(task: TaskRef): boolean {
+    const runtime = this.active.get(progressTaskKey(task));
+    return runtime !== undefined && runtime.task.attempt === task.attempt && this.current(runtime) !== undefined;
+  }
+
+  activityFor(projectId: string, originId: string): readonly { task: TaskRef; expiresAt: string }[] {
+    return this.store.list().flatMap(record => {
+      if (record.task.projectId !== projectId || record.origin.extensionChatId !== originId ||
+          record.activityReleased === true || !this.hasLiveOwner(record.task)) return [];
+      const runtime = this.active.get(progressTaskKey(record.task))!;
+      return [{ task: record.task, expiresAt: new Date(this.clock.now() + runtime.activityDeadline - this.clock.monotonic()).toISOString() }];
+    });
+  }
+
+  async sweep(): Promise<void> {
+    await this.store.settle();
+    for (const { task } of this.store.list()) {
+      await this.run(progressTaskKey(task), async () => {
+        const record = this.store.get(task);
+        if (record === undefined) return;
+        if (record.retention === 'active') await this.recover(record);
+        else if (this.clock.now() - record.updatedAt >= INACTIVE_RETENTION_MS) {
+          await this.store.remove(task, record.revision);
+          this.notify(task);
+        }
+      });
+    }
+  }
+
+  private live(runtime: Runtime<D>): boolean {
+    return !runtime.stopped && this.clock.monotonic() < runtime.activityDeadline;
+  }
+
+  private async recover(record: ProgressRecord<D>): Promise<ProgressRecord<D> | undefined> {
+    const key = progressTaskKey(record.task);
+    const runtime = this.active.get(key);
+    if (runtime !== undefined && this.live(runtime)) return record;
+    if (runtime !== undefined) runtime.stopped = true;
+    const now = this.clock.now();
+    const overdue = runtime === undefined ? 0 : Math.max(0, this.clock.monotonic() - runtime.activityDeadline);
+    const recoveryDeadline = record.recoveryDeadline ?? Math.max(0, now - overdue) + OWNER_LEASE_MS;
+    if (now >= recoveryDeadline) {
+      const { grants, originDigest, ...base } = record;
+      try {
+        await this.store.commit({
+          ...base, revision: record.revision + 1, retention: 'expired', state: 'unknown', updatedAt: now,
+          owner: null, activityReleased: true, measurement: null, priorAttempts: [],
+          ...(grants?.history === undefined ? {} : { grants: { history: grants.history } }),
+        }, record.revision);
+      } catch (error) {
+        if (!(error instanceof ProgressStorageError) || error.reason !== 'capacity') throw error;
+        await this.store.remove(record.task, record.revision);
+      }
+      this.active.delete(key);
+      this.notify(record.task);
+      return undefined;
+    }
+    if (record.recoveryDeadline !== null) {
+      this.active.delete(key);
+      return record;
+    }
+    const next = { ...record, revision: record.revision + 1, recoveryDeadline, updatedAt: now,
+      measurementStale: true };
+    await this.store.commit(next, record.revision);
+    this.active.delete(key);
+    this.notify(record.task);
+    return next;
+  }
+
   notify(task: TaskRef): void {
     for (const listener of this.listeners.get(progressTaskKey(task)) ?? []) {
       try { listener(); } catch { /* Observer failure cannot affect the executor. */ }
@@ -196,8 +270,12 @@ export class ProgressCoordinator<D extends Details> {
     return this.run(key, async () => {
       try {
         await this.store.settle();
+        let prior = this.store.get(task);
+        if (prior?.retention === 'active' && !this.hasLiveOwner(task)) {
+          await this.recover(prior);
+          prior = this.store.get(task);
+        }
         const existing = this.active.get(key);
-        const prior = this.store.get(task);
         if (decision.action === 'launch' && existing !== undefined && existing.ownerId === decision.ownerId &&
             prior?.owner != null && isDeepStrictEqual(prior.origin, decision.origin)) {
           return { kind: 'admitted', task: { ...existing.task }, owner: existing.owner, fence: { ...prior.owner } };
@@ -210,6 +288,7 @@ export class ProgressCoordinator<D extends Details> {
         const fence = { ownerId: decision.ownerId, ownerEpoch: epoch, ownerSequence: 0 };
         let record: ProgressRecord<D>;
         if (decision.action === 'revalidate') {
+          if (prior?.retention === 'expired') return { kind: 'refused', reason: 'expired' };
           if (existing !== undefined || prior?.owner?.ownerId !== decision.ownerId) return { kind: 'refused', reason: 'conflict' };
           record = await this.store.revalidateOwner(task, prior.owner, epoch, now);
         } else {
@@ -231,7 +310,7 @@ export class ProgressCoordinator<D extends Details> {
         const owner = Object.freeze({ [ownerBrand]: true } as const);
         const runtime: Runtime<D> = {
           owner, task: record.task, key, ownerId: decision.ownerId, epoch, kind,
-          delegate, sequence: 0, stopped: false,
+          delegate, sequence: 0, stopped: false, activityDeadline: this.clock.monotonic() + OWNER_LEASE_MS,
         };
         this.active.set(key, runtime);
         this.owners.set(owner, runtime);
@@ -251,7 +330,7 @@ export class ProgressCoordinator<D extends Details> {
   }
 
   private current(runtime: Runtime<D>): ProgressRecord<D> | undefined {
-    if (runtime.stopped || this.active.get(runtime.key) !== runtime) return undefined;
+    if (!this.live(runtime) || this.active.get(runtime.key) !== runtime) return undefined;
     const record = this.store.get(runtime.task);
     return record?.owner?.ownerEpoch === runtime.epoch ? record : undefined;
   }
@@ -292,11 +371,13 @@ export class ProgressCoordinator<D extends Details> {
       const record = this.current(runtime);
       if (record === undefined || !Value.Check(ProgressSequence, sequence) || sequence <= runtime.sequence) return 'rejected';
       const now = this.clock.now();
+      const deadline = this.clock.monotonic() + OWNER_LEASE_MS;
       await this.store.commit({
         ...record, revision: record.revision + 1, updatedAt: now, lastOwnerActivityAt: now,
         owner: { ownerId: runtime.ownerId, ownerEpoch: runtime.epoch, ownerSequence: sequence },
       }, record.revision);
       runtime.sequence = sequence;
+      runtime.activityDeadline = deadline;
       this.notify(runtime.task);
       return 'renewed';
     });
@@ -322,25 +403,50 @@ export class ProgressCoordinator<D extends Details> {
       const requested = runtime.requestedSequence;
       runtime.requestedSequence = undefined;
       if (runtime.stopped) return;
-      runtime.lastRefreshAt = this.clock.monotonic();
-      let sample: DelegateMeasurement<D> | null;
-      try { sample = await runtime.delegate.progress({ ...runtime.task }); } catch { sample = null; }
-      await this.run(runtime.key, async () => {
-        const record = this.current(runtime);
-        if (record === undefined) return;
-        const normalized = this.normalize(runtime, record, sample, requested);
-        const stale = normalized === undefined;
-        if (stale !== (record.measurementStale === true) || (normalized !== undefined && normalized !== record.measurement)) {
-          await this.store.commit({
-            ...record, revision: record.revision + 1, updatedAt: this.clock.now(),
-            measurement: normalized ?? record.measurement, measurementStale: stale,
-            owner: { ownerId: runtime.ownerId, ownerEpoch: runtime.epoch, ownerSequence: runtime.sequence },
-          }, record.revision);
-          this.notify(runtime.task);
-        }
-        if (!stale && sample !== null) runtime.sourceRevision = sample.meaningfulRevision;
-      });
+      await this.sample(runtime, requested);
     }
+  }
+
+  async refreshForFallback(task: TaskRef, signal: AbortSignal): Promise<void> {
+    const runtime = this.active.get(progressTaskKey(task));
+    if (runtime === undefined || runtime.task.attempt !== task.attempt || !this.live(runtime) || signal.aborted) return;
+    if (runtime.refresh !== undefined) {
+      await runtime.refresh;
+      return;
+    }
+    if (this.clock.monotonic() - (runtime.lastRefreshAt ?? -Infinity) < 1000) return;
+    let abort!: () => void;
+    const cancelled = new Promise<void>(resolve => { abort = resolve; });
+    signal.addEventListener('abort', abort, { once: true });
+    const observation = this.sample(runtime, runtime.sequence, signal);
+    runtime.refresh = Promise.race([observation, cancelled])
+      .finally(() => this.refresh(runtime))
+      .finally(() => { runtime.refresh = undefined; });
+    void runtime.refresh.catch(() => { /* A producer waiting for the refresh receives the error. */ });
+    try { await observation; } finally { signal.removeEventListener('abort', abort); }
+  }
+
+  private async sample(runtime: Runtime<D>, requested: number, signal?: AbortSignal): Promise<void> {
+    runtime.lastRefreshAt = this.clock.monotonic();
+    let sample: DelegateMeasurement<D> | null;
+    try { sample = await runtime.delegate.progress({ ...runtime.task }, signal); } catch { sample = null; }
+    if (signal?.aborted) return;
+    await this.run(runtime.key, async () => {
+      await this.store.settle();
+      const record = this.current(runtime);
+      if (record === undefined || signal?.aborted) return;
+      const normalized = this.normalize(runtime, record, sample, requested);
+      const stale = normalized === undefined;
+      if (stale !== (record.measurementStale === true) || (normalized !== undefined && normalized !== record.measurement)) {
+        await this.store.commit({
+          ...record, revision: record.revision + 1, updatedAt: this.clock.now(),
+          measurement: normalized ?? record.measurement, measurementStale: stale,
+          owner: { ownerId: runtime.ownerId, ownerEpoch: runtime.epoch, ownerSequence: runtime.sequence },
+        }, record.revision);
+        this.notify(runtime.task);
+      }
+      if (!stale && sample !== null) runtime.sourceRevision = sample.meaningfulRevision;
+    });
   }
 
   private normalize(runtime: Runtime<D>, record: ProgressRecord<D>, source: DelegateMeasurement<D> | null, requested: number): Measurement<D> | undefined {

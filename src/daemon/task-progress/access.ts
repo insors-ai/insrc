@@ -4,6 +4,7 @@ import type { TrustedRpcContext } from '../request-context.js';
 import { createProgressAuthority } from './coordinator.js';
 import type { ProgressCoordinator, ProducerAuthorization } from './coordinator.js';
 import type { ProgressRecord } from './record.js';
+import type { FallbackLease, FallbackScheduler } from './fallback.js';
 import type { ProgressStore } from './store.js';
 import { ProgressStorageError } from './store.js';
 
@@ -66,6 +67,7 @@ export class ProgressAccess<D extends Details> {
     private readonly coordinator: ProgressCoordinator<D>,
     private readonly mint: ReturnType<typeof createProgressAuthority>['mint'],
     private readonly projects: () => Promise<ReadonlySet<string>>,
+    private readonly fallback: FallbackScheduler<D>,
     private readonly now: () => number = Date.now,
   ) {}
 
@@ -207,10 +209,37 @@ export class ProgressAccess<D extends Details> {
     return snapshot;
   }
 
+  async activityFor(id: string, context: TrustedRpcContext) {
+    const origin = this.origins.get(id);
+    if (origin === undefined || origin.revoked || origin.expiresAt <= this.now() ||
+        this.boundOrigins.get(connection(context))?.has(id) !== true || !(await this.registered(origin.projectId))) {
+      throw unavailable();
+    }
+    connection(context);
+    if (origin.revoked) throw unavailable();
+    return this.coordinator.activityFor(origin.projectId, id);
+  }
+
+  /** Daemon adapter entry after independently verifying explicit fallback opt-in. */
+  async acceptVerifiedFallbackOptIn(id: string, context: TrustedRpcContext) {
+    const check = () => this.authorize(id, 'fallback', context);
+    const task = await check();
+    return {
+      claim: async () => { await check(); return this.fallback.claim(task, id); },
+      renew: async (lease: FallbackLease) => { await check(); return this.fallback.renew(task, id, lease); },
+      poll: async (lease: FallbackLease, cursor?: string) => {
+        await check();
+        return this.fallback.poll(task, id, lease, cursor, async () => { await check(); });
+      },
+      release: async (lease: FallbackLease) => { await check(); this.fallback.release(task, id, lease); },
+    };
+  }
+
   detach(id: string, context: TrustedRpcContext | undefined): void {
     const binding = this.observers.get(id);
     if (binding === undefined || binding.connection !== connection(context)) throw unavailable();
     this.observers.delete(id);
+    this.fallback.detach(id);
     this.coordinator.notify(binding.task);
   }
 
@@ -219,6 +248,7 @@ export class ProgressAccess<D extends Details> {
     for (const [id, binding] of this.observers) {
       if (binding.connection !== context.connectionIdentity) continue;
       this.observers.delete(id);
+      this.fallback.detach(id);
       this.coordinator.notify(binding.task);
     }
   }
@@ -227,10 +257,15 @@ export class ProgressAccess<D extends Details> {
     const origin = this.origins.get(id);
     if (origin === undefined || this.boundOrigins.get(connection(context))?.has(id) !== true) throw unavailable();
     origin.revoked = true;
+    for (const [observerId, binding] of this.observers) {
+      if (binding.purpose === 'conversation' && this.store.get(binding.task)?.origin.extensionChatId === id) {
+        this.fallback.detach(observerId);
+      }
+    }
     await serializeOrigin(origin, async () => {
       await this.store.settle();
       for (const record of this.store.list()) {
-        if (record.task.projectId !== origin.projectId || record.origin.extensionChatId !== id || record.grants?.conversation === undefined) continue;
+        if (record.task.projectId !== origin.projectId || record.origin.extensionChatId !== id || record.activityReleased === true) continue;
         await this.revoke(record);
       }
       this.origins.delete(id);
@@ -246,7 +281,7 @@ export class ProgressAccess<D extends Details> {
     for (;;) {
       const { originDigest, grants, ...base } = record;
       try {
-        await this.store.commit({ ...base, revision: record.revision + 1,
+        await this.store.commit({ ...base, revision: record.revision + 1, activityReleased: true,
           ...(grants?.history === undefined ? {} : { grants: { history: grants.history } }),
         }, record.revision);
         this.coordinator.notify(record.task);
@@ -254,7 +289,7 @@ export class ProgressAccess<D extends Details> {
       } catch (error) {
         if (!(error instanceof ProgressStorageError) || error.reason !== 'stale') throw error;
         const current = this.store.get(record.task);
-        if (current === undefined || current.grants?.conversation === undefined) return;
+        if (current === undefined || current.activityReleased === true) return;
         record = current;
       }
     }

@@ -303,7 +303,7 @@ function storyValidation(
 		const taskOrdinal = firstOrdinal(child.sourceIds, taskOrdinalOf);
 		const slot = taskOrdinal === null ? undefined : byTask.get(taskOrdinal);
 		const isPlanned = taskOrdinal !== null && planned.has(taskOrdinal);
-		tasks.push({ taskItemId: child.id, result: resultOf(slot?.passes ?? []), planned: isPlanned });
+		tasks.push({ taskItemId: child.id, result: resultOf(slot?.passes ?? []), planned: isPlanned, taskOrder: child.taskOrder });
 		if (!isPlanned) {
 			notices.push(makeNotice('unplanned-task',
 				hasPlan
@@ -312,7 +312,7 @@ function storyValidation(
 				{ itemIds: [child.id, story.id], artifactIds: [...(slot?.buildIds ?? [])] }));
 		}
 	}
-	tasks.sort((a, b) => a.taskItemId.localeCompare(b.taskItemId));
+	tasks.sort((a, b) => (a.taskOrder ?? Infinity) - (b.taskOrder ?? Infinity) || a.taskItemId.localeCompare(b.taskItemId));
 
 	const storyLevelResult = storyLevel.length === 0 ? null : resultOf(storyLevel);
 	const failedTaskItemIds = tasks.filter(t => t.result === 'failed').map(t => t.taskItemId);
@@ -394,7 +394,7 @@ function needsMigration(item: WorkItemNode, counted: readonly ArtifactRecord[], 
 			// A Task item with no head and no plan row behind it is a BUILD result that matches no Task: it is not an active Task, so by the
 			// design (LLD 2.12) it keeps its item and its validation result and raises no needs-migration.
 			if (child.unit?.status === 'unmigrated') out.push(`${child.unit.artifactId} has no lifecycle`);
-			else if (child.unit === null && planApproved && child.sourceIds.some(s => item.plannedTaskIds.includes(s))) out.push(`task ${childId} has no head`);
+			else if (child.unit === null && planApproved && child.planRowId !== null) out.push(`task ${childId} has no head`);
 		}
 	}
 	return out;

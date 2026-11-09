@@ -27,6 +27,7 @@ import { H } from '../../tasks/__tests__/task-set-kit.js';
 import { unitKey } from '../../tracker/unit-issue.js';
 import { runRepair } from '../repair.js';
 import type { RepairReport, RepairResult } from '../types.js';
+import { verifyConversion } from '../verify.js';
 import { legacyRepo } from './legacy-repo.js';
 
 const LLD = `LLD-${H}-s1`;
@@ -174,6 +175,18 @@ test('a Task record moved from the plan onto its Task head is reported, though i
 		assert.equal(r.stoppedAt, undefined, JSON.stringify(r.stoppedAt));
 		assert.equal(head(l.repo, task).meta['envelope'].binding.reference.entityId, 'o/r#9', 'control: the record moved');
 		assert.equal(r.written.filter(w => w.step === 'tasks' && w.artifactId === task && w.action === 'binding').length, 2, 'the binding and its pending link are each listed');
+	} finally { l.done(); }
+});
+
+test('verifyConversion keeps passing on a converted fixture with the changed loader, graph and gates', async () => {
+	const l = legacyRepo();
+	try {
+		const before = (await runRepair(l.repo, 'repair-preview')).plan.snapshot;
+		assert.ok(before.length > 0, 'control: there is something to compare');
+		const out = result(await runRepair(l.repo, 'repair'));
+		assert.equal(out.stoppedAt, undefined, JSON.stringify(out.stoppedAt));
+		assert.ok(existsSync(artifactJsonPath(l.repo, EPIC)), 'the unit heads the board now loads are in the store');
+		assert.deepEqual(verifyConversion(l.repo, before).differences, []);
 	} finally { l.done(); }
 });
 

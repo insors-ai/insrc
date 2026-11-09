@@ -60,6 +60,8 @@
       "storyLevelResult": null,
       "conflict": null,
       "unit": null,
+      "planRowId": null,
+      "taskOrder": null,
       "correctsRef": null,
       "amendments": [
         {
@@ -201,7 +203,8 @@
         {
           "taskItemId": "E20261007aaaaaaaa:S001:T001",
           "result": "passed",
-          "planned": true
+          "planned": true,
+          "taskOrder": 1
         }
       ],
       "validation": {
@@ -213,6 +216,8 @@
       "storyLevelResult": null,
       "conflict": null,
       "unit": null,
+      "planRowId": null,
+      "taskOrder": null,
       "correctsRef": null,
       "amendments": [],
       "notices": [
@@ -296,6 +301,8 @@
       "storyLevelResult": null,
       "conflict": null,
       "unit": null,
+      "planRowId": "t1",
+      "taskOrder": 1,
       "correctsRef": null,
       "amendments": [],
       "notices": [],
@@ -350,6 +357,8 @@
       "storyLevelResult": null,
       "conflict": null,
       "unit": null,
+      "planRowId": null,
+      "taskOrder": null,
       "correctsRef": null,
       "amendments": [],
       "notices": [
@@ -415,6 +424,8 @@
       "storyLevelResult": null,
       "conflict": null,
       "unit": null,
+      "planRowId": null,
+      "taskOrder": null,
       "correctsRef": {
         "slug": "fix-it",
         "resolvedItemId": null

@@ -17,7 +17,7 @@
  */
 
 import { ArtifactIds } from '../artifact-ids.js';
-import { workItemBoardId, type WorkItemKey } from '../path-scheme.js';
+import { workItemBoardId, workItemRowBoardId, type WorkItemKey } from '../path-scheme.js';
 import { makeNotice, sortNotices } from './notice.js';
 import { asObject, asString, storyOrdinalOf, taskOrdinalOf } from './read.js';
 import type {
@@ -95,6 +95,10 @@ function safeBoardId(key: WorkItemKey, task?: string): string | undefined {
 	try { return workItemBoardId(key, task); } catch { return undefined; }
 }
 
+function safeRowBoardId(key: WorkItemKey, row: string): string | undefined {
+	try { return workItemRowBoardId(key, row); } catch { return undefined; }
+}
+
 function pad(n: number): string {
 	return String(n).padStart(3, '0');
 }
@@ -157,6 +161,8 @@ interface Draft {
 	correctsRef: CorrectsRef | null;
 	seededFromSpecId: string | null;
 	unit: WorkItemUnit;
+	planRowId: string | null;
+	taskOrder: number | null;
 }
 
 function freeze(d: Draft): WorkItemNode {
@@ -174,13 +180,15 @@ function freeze(d: Draft): WorkItemNode {
 		correctsRef:         d.correctsRef,
 		seededFromSpecId:    d.seededFromSpecId,
 		unit:                d.unit,
+		planRowId:           d.planRowId,
+		taskOrder:           d.taskOrder,
 	};
 }
 
 function draftOf(fields: Pick<Draft, 'id' | 'kind' | 'title' | 'workItemHash' | 'standalone'> & Partial<Draft>): Draft {
 	return {
 		sourceIds: [], parentId: null, childIds: [], evidenceArtifactIds: [], plannedTaskIds: [],
-		correctsRef: null, seededFromSpecId: null, unit: null,
+		correctsRef: null, seededFromSpecId: null, unit: null, planRowId: null, taskOrder: null,
 		...fields,
 	};
 }
@@ -384,56 +392,113 @@ export function buildWorkItemGraph(recordSet: ArtifactRecordSet): WorkItemGraph 
 // Tasks
 // ---------------------------------------------------------------------------
 
+/** One task item before its board id is settled. */
+interface TaskSlot {
+	/** The real Task this item is: the head and its number; both null for a row or result with no Task. */
+	readonly head:      ArtifactRecord | null;
+	readonly number:    string | null;
+	/** The plan row or BUILD result id the item is joined on: what the gate pass reads. */
+	readonly rowId:     string;
+	readonly planRowId: string | null;
+	readonly order:     number | null;
+	readonly title:     string | null;
+}
+
+const GONE: readonly unknown[] = ['withdrawn', 'superseded'];
+const isGone = (head: ArtifactRecord): boolean => GONE.includes(asString(obj(head.meta['lifecycle'])['status']));
+const orderOf = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+
+/** The active Tasks of a story: its TASKS head made from the current plan revision, else its plan's rows matched to Task heads, else its Task heads. */
+function activeTasks(story: StoryInfo, byId: ReadonlyMap<string, ArtifactRecord>, rows: readonly { id: string; title: string | null; order: number | null }[]): { slots: TaskSlot[]; goneRows: Set<string> } {
+	const heads = story.records.filter(r => r.kind === 'TASK');
+	const gone = new Set<ArtifactRecord>(heads.filter(isGone));
+	const rowOf = (head: ArtifactRecord): string | null => str(obj(head.body)['planTaskId']);
+	const numberOf = (head: ArtifactRecord): string | null => ArtifactIds.parse(head.artifactId)?.task ?? null;
+	const goneRows = new Set([...gone].flatMap(h => { const row = rowOf(h); return row === null ? [] : [row]; }));
+	const live = heads.filter(h => !gone.has(h));
+	const titleOf = (head: ArtifactRecord): string | null => str(obj(head.body)['title']) ?? str(obj(head.meta['envelope'])['description']);
+	const slotOf = (head: ArtifactRecord): TaskSlot => {
+		const number = numberOf(head) ?? head.artifactId;
+		const row = rowOf(head) ?? number;
+		return { head, number, rowId: row, planRowId: row, order: orderOf(obj(head.body)['order']), title: titleOf(head) };
+	};
+
+	const plan = story.records.find(r => r.kind === 'PLAN');
+	const listingHead = story.ordinal === null ? undefined : byId.get(`TASKS-${story.hash}-s${story.ordinal}`);
+	const listing = arr(obj(listingHead?.body)['taskIds']).filter((t): t is string => typeof t === 'string');
+	const planRevision = plan === undefined ? null : Math.max(1, Number(obj(obj(plan.meta['lifecycle'])['revision'])['number'] ?? 0));
+	if (listing.length > 0 && (planRevision === null || obj(listingHead?.body)['planRevision'] === planRevision)) {
+		const slots = listing.flatMap((task): TaskSlot[] => {
+			const head = byId.get(`TASK-${story.hash}-s${story.ordinal}-${task}`);
+			if (head === undefined) return [{ head: null, number: null, rowId: task, planRowId: task, order: null, title: null }];
+			return isGone(head) ? [] : [slotOf(head)];
+		});
+		return { slots, goneRows };
+	}
+	if (plan !== undefined) {
+		const byRow = new Map(live.flatMap(h => { const row = rowOf(h); return row === null ? [] : [[row, h] as const]; }));
+		const slots = rows.map((row): TaskSlot => {
+			const head = byRow.get(row.id);
+			// an interrupted re-plan: the order is the plan's, even when the Task head still carries an older one
+			return head === undefined
+				? { head: null, number: null, rowId: row.id, planRowId: row.id, order: row.order, title: row.title }
+				: { ...slotOf(head), order: row.order, title: row.title ?? titleOf(head) };
+		});
+		return { slots, goneRows };
+	}
+	return { slots: live.map(slotOf), goneRows };
+}
+
 /**
- * Task items from the story's PLAN tasks and BUILD task ids of the form t<n>.
- * A BUILD id equal to the story's own id (the story-level result of a small
- * or trivial build) is not a task but the story-level result the gate pass
- * reads; any other non-t<n> id is ignored there too.
+ * Task items of a story: its active Tasks, then every BUILD result of the form t<n> that matches none of them (a BUILD id equal to the story's
+ * own id is the story-level result the gate pass reads, and any other id is ignored). A real Task takes the board id of its own number; a
+ * row or a result with no Task keeps the id of its row number unless a real Task holds it, and then takes the :R form, so no two items share an id.
  */
 function addTasks(story: StoryInfo, drafts: Map<string, Draft>, byId: ReadonlyMap<string, ArtifactRecord>): void {
-	const tasks = new Map<string, { title: string | null; evidence: string[] }>();
-	const planned: string[] = [];
-	const note = (taskId: string, title: string | null, artifactId: string): void => {
-		const t = tasks.get(taskId) ?? { title: null, evidence: [] };
-		if (t.title === null && title !== null) t.title = title;
-		t.evidence.push(artifactId);
-		tasks.set(taskId, t);
-	};
-	for (const r of story.records) {
-		if (r.kind !== 'PLAN' && r.kind !== 'BUILD') continue;
-		for (const entry of arr(obj(r.body)['tasks'])) {
-			const taskId = str(obj(entry)['id']);
-			if (taskId === null || taskOrdinalOf(taskId) === null) continue;
-			if (r.kind === 'PLAN') planned.push(taskId);
-			note(taskId, r.kind === 'PLAN' ? str(obj(entry)['title']) : null, r.artifactId);
+	const plan = story.records.find(r => r.kind === 'PLAN');
+	const rows = arr(obj(plan?.body)['tasks']).flatMap((entry, index) => {
+		const id = str(obj(entry)['id']);
+		return id === null || taskOrdinalOf(id) === null ? [] : [{ id, title: str(obj(entry)['title']), order: orderOf(obj(entry)['order']) ?? index + 1 }];
+	});
+	story.draft.plannedTaskIds.push(...rows.map(r => r.id));
+	const results = new Map<string, string[]>();
+	for (const build of story.records.filter(r => r.kind === 'BUILD')) {
+		for (const entry of arr(obj(build.body)['tasks'])) {
+			const id = str(obj(entry)['id']);
+			if (id === null || taskOrdinalOf(id) === null) continue;
+			results.set(id, [...(results.get(id) ?? []), build.artifactId]);
 		}
 	}
-	story.draft.plannedTaskIds.push(...planned);
 
-	for (const taskId of [...tasks.keys()].sort(byTaskOrdinal)) {
-		const t = tasks.get(taskId);
-		const taskOrdinal = taskOrdinalOf(taskId);
-		if (t === undefined || taskOrdinal === null) continue;
-		const { ordinal, anchor } = story;
-		const minted = ordinal === null || anchor === null ? undefined
-			: safeBoardId({ epicHash: story.hash, epicCreatedAt: anchor, story: `s${ordinal}` }, taskId);
-		const id = minted ?? `${story.draft.id}:T${pad(taskOrdinal)}`;
-		const existing = drafts.get(id);
-		if (existing !== undefined) {
-			existing.sourceIds.push(taskId);
-			existing.evidenceArtifactIds.push(...t.evidence);
-			continue;
-		}
+	const { slots, goneRows } = activeTasks(story, byId, rows);
+	const matched = new Set(slots.map(s => s.rowId));
+	const unmatched = [...results.keys()].sort(byTaskOrdinal).filter(id => !matched.has(id) && !goneRows.has(id));
+	const all: TaskSlot[] = [...slots, ...unmatched.map((id): TaskSlot => ({ head: null, number: null, rowId: id, planRowId: null, order: null, title: null }))];
+
+	const held = new Set(all.flatMap(s => (s.number !== null ? [s.number] : [])));
+	const key = story.ordinal === null || story.anchor === null ? undefined : { epicHash: story.hash, epicCreatedAt: story.anchor, story: `s${story.ordinal}` };
+	const planEvidence = plan === undefined ? [] : [plan.artifactId];
+	for (const slot of all) {
+		const number = slot.number ?? slot.rowId;
+		const ordinal = taskOrdinalOf(number);
+		if (ordinal === null) continue;
+		const asRow = slot.head === null && held.has(number);
+		const minted = key === undefined ? undefined : asRow ? safeRowBoardId(key, number) : safeBoardId(key, number);
+		const id = minted ?? `${story.draft.id}:${asRow ? 'R' : 'T'}${pad(ordinal)}`;
+		const evidence = [...(rows.some(r => r.id === slot.rowId) ? planEvidence : []), ...(results.get(slot.rowId) ?? [])];
+		const title = slot.title ?? rows.find(r => r.id === slot.rowId)?.title ?? null;
 		drafts.set(id, draftOf({
 			id,
 			kind:                'task',
-			title:               t.title,
+			title,
 			workItemHash:        story.hash,
 			standalone:          story.draft.standalone,
-			sourceIds:           [taskId],
+			sourceIds:           [slot.rowId],
 			parentId:            story.draft.id,
-			evidenceArtifactIds: t.evidence,
-			unit:                ordinal === null ? null : unitOf(byId, `TASK-${story.hash}-s${ordinal}-${taskId}`),
+			evidenceArtifactIds: evidence,
+			unit:                slot.head === null ? null : unitOf(byId, slot.head.artifactId),
+			planRowId:           slot.planRowId,
+			taskOrder:           slot.order,
 		}));
 		story.draft.childIds.push(id);
 	}

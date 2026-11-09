@@ -113,6 +113,10 @@ export interface WorkItemNode {
 	readonly plannedTaskIds:      readonly string[];
 	/** Set for epics, stories and tasks; null only when there is no head. */
 	readonly unit:                WorkItemUnit;
+	/** Tasks only: the plan row the item stands for; null for a BUILD result that matches no Task. */
+	readonly planRowId:           string | null;
+	/** Tasks only: its position in the Story; null when no record gives one. */
+	readonly taskOrder:           number | null;
 	/** Issues only, from meta.parentRef; null otherwise or when the issue names only itself. */
 	readonly correctsRef:         CorrectsRef | null;
 	/** 'SPEC-' + meta.seededFromSpec when the item was seeded from a spec. */
@@ -222,6 +226,8 @@ export interface TaskValidation {
 	readonly result:     TaskResult;
 	/** False for a build-only task. */
 	readonly planned:    boolean;
+	/** Its position in the Story; null when no record gives one. */
+	readonly taskOrder:  number | null;
 }
 
 /** 'validation-failed' is raised by a failed task result or a failed storyLevelResult alike. */
@@ -229,7 +235,7 @@ export type AttentionReason = 'pending-decision' | 'rejected' | 'review-blocked'
 
 export interface ItemGates {
 	readonly itemId:           string;
-	/** Sorted by taskItemId. */
+	/** Sorted by taskOrder, null last, then taskItemId. */
 	readonly tasks:            readonly TaskValidation[];
 	readonly validation:       { readonly passed: number; readonly failed: number; readonly unrecorded: number; readonly unplanned: number };
 	/** A build result recorded against the story itself; not a task, never unplanned. */
@@ -358,6 +364,10 @@ export interface DeliveryItem {
 	readonly attentionReasons: readonly (AttentionReason | NoticeCode)[];
 	/** The item's own head and its status; null when it has none (and always on an issue). */
 	readonly unit:             WorkItemUnit;
+	/** Tasks only: the plan row the item stands for. */
+	readonly planRowId:        string | null;
+	/** Tasks only: its position in the Story. */
+	readonly taskOrder:        number | null;
 	/** What the item is about, from its own records; see DeliveryItemDescription. */
 	readonly description:      DeliveryItemDescription;
 	/** The feedback recorded on the item's own design records (an epic's DEF and HLD, a story's LLD and PLAN); never inherited. */

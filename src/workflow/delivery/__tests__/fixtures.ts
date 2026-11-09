@@ -424,9 +424,9 @@ function fabricate(kind: DeliveryArtifactKind, hash: string, storyId: string | u
 const unitLifecycle = (status: string) => ({ status, revision: { number: 1, contentHash: '', at: CREATED, by: { id: 'insrc:system', kind: 'system', properties: {} } }, signoffs: [] });
 
 /** An EPIC, STORY or TASK head with the given status (a TASK's `storyId` is its story and task, 's1-t1'). */
-export function unitHead(kind: 'EPIC' | 'STORY' | 'TASK', hash: string, storyId: string | undefined, status: string): ArtifactRecord {
+export function unitHead(kind: 'EPIC' | 'STORY' | 'TASK', hash: string, storyId: string | undefined, status: string, body: Body = {}): ArtifactRecord {
 	const story = storyId?.split('-')[0];
-	return recordFromFile(fileFor(kind, hash, storyId), { meta: { createdAt: CREATED, epicCreatedAt: CREATED, epicHash: hash, ...(story !== undefined ? { storyId: story } : {}), lifecycle: unitLifecycle(status) }, body: {} });
+	return recordFromFile(fileFor(kind, hash, storyId), { meta: { createdAt: CREATED, epicCreatedAt: CREATED, epicHash: hash, ...(story !== undefined ? { storyId: story } : {}), lifecycle: unitLifecycle(status) }, body: kind === 'TASK' ? { planTaskId: storyId?.split('-')[1], ...body } : body });
 }
 
 /** A head exactly as stored with no lifecycle: lifted directly, because `recordFromFile` gives a fixture the lifecycle the conversion would. */

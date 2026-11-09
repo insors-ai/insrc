@@ -6,7 +6,7 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 3,
         "contentHash": "5cbddf35c2c09295d9f0a974c6b0a289ba231b18a28faaa2fa575bd6debc4b2c",
@@ -17,7 +17,16 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T09:36:07.493Z"
+      }
     },
     "workflow": "build",
     "runId": "store-065cc768-3728-4395-b26e-818108cb13b7",

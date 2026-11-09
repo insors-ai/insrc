@@ -25,6 +25,9 @@ export async function openProgressRuntime<D extends { readonly kind: ProgressKin
     refresh: (task, signal) => coordinator.refreshForFallback(task, signal),
   });
   await coordinator.sweep();
+  // Check the per-owner 30-second deadlines independently of the slower disk sweep.
+  const ownerHeartbeat = setInterval(() => { void coordinator.probeOwnerActivity(); }, 1000);
+  ownerHeartbeat.unref();
   let sweeping: Promise<void> | undefined;
   const timer = setInterval(() => {
     sweeping ??= coordinator.sweep().then(() => fallback.sweep())
@@ -36,8 +39,11 @@ export async function openProgressRuntime<D extends { readonly kind: ProgressKin
     access: new ProgressAccess(store, coordinator, authority.mint, projects, fallback),
     coordinator,
     async close() {
+      clearInterval(ownerHeartbeat);
       clearInterval(timer);
       await sweeping;
+      coordinator.stopOwnerProbes();
+      await store.settle();
     },
   };
 }

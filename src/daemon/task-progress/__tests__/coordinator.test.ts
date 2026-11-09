@@ -169,14 +169,30 @@ test('Progress coordinator requires trusted revalidation to bind a recovered att
 test('Verify 30-second owner renewal and 120-second expiry with no observers, separate tasks in one chat, removal, and stale callbacks', async t => {
   const f = await fixture(t);
   const a = await admitted(f, 'a', { progress: async () => null });
-  const b = await admitted(f, 'b', { progress: async () => null });
-  await f.clock.wait(30_000);
+  let verified = 0;
+  const b = await admitted(f, 'b', {
+    progress: async () => null,
+    ownerActivity: async task => {
+      assert.deepEqual(task, b.task);
+      return ++verified;
+    },
+  });
+  await f.clock.wait(29_999);
+  await f.coordinator.probeOwnerActivity();
+  assert.equal(verified, 0);
+  await f.clock.wait(1);
   f.setTime(31_000);
-  assert.equal(await f.producer.renewActivity(b.owner, 1), 'renewed');
+  await f.coordinator.probeOwnerActivity();
+  assert.equal(verified, 1);
+  await f.clock.wait(30_000);
+  f.setTime(61_000);
+  await f.coordinator.probeOwnerActivity();
+  assert.equal(verified, 2);
+  assert.equal(f.store.get(b.task)?.lastOwnerActivityAt, 61_000);
   assert.equal(await f.producer.renewActivity(b.owner, 1), 'rejected');
   assert.equal(f.coordinator.activityFor('project', 'chat').length, 2);
   f.coordinator.read(a.task);
-  await f.clock.wait(90_000);
+  await f.clock.wait(60_000);
   f.setTime(121_000);
   await f.coordinator.sweep();
   assert.deepEqual(f.coordinator.activityFor('project', 'chat').map(lease => lease.task), [b.task]);
@@ -192,7 +208,7 @@ test('Verify 30-second owner renewal and 120-second expiry with no observers, se
   await f.store.commit({ ...record, revision: record.revision + 1, activityReleased: true }, record.revision);
   assert.deepEqual(f.coordinator.activityFor('project', 'chat'), []);
   assert.equal(f.coordinator.activityFor('project', 'other-chat').length, 1);
-  assert.equal(await f.producer.recordLifecycle(b.owner, { sequence: 2, state: 'completed' }), 'recorded');
+  assert.equal(await f.producer.recordLifecycle(b.owner, { sequence: 3, state: 'completed' }), 'recorded');
 });
 
 test('Restart repeatedly without owners, preserve the recovery deadline, release expired reservations and refuse stale revalidation without inventing termination', async t => {

@@ -84,6 +84,8 @@ export type DeliveredMeasurement<D> = TimedMeasurement<D> & Readonly<{ task: Tas
 
 export interface TaskProgressDelegate<D extends { readonly kind: ProgressKind }> {
   progress(task: TaskRef, signal?: AbortSignal): Promise<DelegateMeasurement<D> | null>;
+  /** Local executor liveness check. Returns its next owner sequence or null. */
+  ownerActivity?(task: TaskRef, signal: AbortSignal): Promise<number | null>;
 }
 
 export interface ProgressSnapshot<D> {

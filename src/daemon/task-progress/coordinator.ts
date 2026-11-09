@@ -48,6 +48,8 @@ interface Runtime<D extends Details> {
   requestedSequence?: number | undefined;
   lastRefreshAt?: number | undefined;
   activityDeadline: number;
+  nextOwnerProbe: number;
+  probingOwner?: AbortController | undefined;
   stopped: boolean;
 }
 
@@ -119,6 +121,9 @@ export class ProgressCoordinator<D extends Details> {
           const measured = await delegate.progress(task, signal);
           return measured === null ? null : { ...measured, details: projectDetails(measured.details) };
         },
+        ...(delegate.ownerActivity === undefined ? {} : {
+          ownerActivity: (task: TaskRef, signal: AbortSignal) => delegate.ownerActivity!(task, signal),
+        }),
       }),
       signalMeasurement: (owner, sequence) => this.signal(kind, owner, sequence),
       recordLifecycle: (owner, evidence) => this.lifecycle(kind, owner, evidence),
@@ -205,6 +210,42 @@ export class ProgressCoordinator<D extends Details> {
     }
   }
 
+  /** The daemon calls this independently of connected readers. Probes never hold task or store locks. */
+  async probeOwnerActivity(): Promise<void> {
+    const now = this.clock.monotonic();
+    const probes: Promise<void>[] = [];
+    for (const runtime of this.active.values()) {
+      if (!this.live(runtime) || runtime.delegate.ownerActivity === undefined ||
+          runtime.probingOwner !== undefined || runtime.nextOwnerProbe > now) continue;
+      const controller = new AbortController();
+      runtime.probingOwner = controller;
+      runtime.nextOwnerProbe = now + OWNER_RENEWAL_MS;
+      probes.push(this.probe(runtime, runtime.delegate.ownerActivity, controller));
+    }
+    await Promise.all(probes);
+  }
+
+  stopOwnerProbes(): void {
+    for (const runtime of this.active.values()) {
+      runtime.stopped = true;
+      runtime.probingOwner?.abort();
+    }
+  }
+
+  private async probe(runtime: Runtime<D>, verify: NonNullable<TaskProgressDelegate<D>['ownerActivity']>,
+    controller: AbortController): Promise<void> {
+    try {
+      const sequence = await verify({ ...runtime.task }, controller.signal);
+      if (sequence !== null && !controller.signal.aborted) {
+        await this.activity(runtime.kind, runtime.owner, sequence);
+      }
+    } catch {
+      // No new activity was verified. The existing lease expires on its original deadline.
+    } finally {
+      if (runtime.probingOwner === controller) runtime.probingOwner = undefined;
+    }
+  }
+
   private live(runtime: Runtime<D>): boolean {
     return !runtime.stopped && this.clock.monotonic() < runtime.activityDeadline;
   }
@@ -213,7 +254,10 @@ export class ProgressCoordinator<D extends Details> {
     const key = progressTaskKey(record.task);
     const runtime = this.active.get(key);
     if (runtime !== undefined && this.live(runtime)) return record;
-    if (runtime !== undefined) runtime.stopped = true;
+    if (runtime !== undefined) {
+      runtime.stopped = true;
+      runtime.probingOwner?.abort();
+    }
     const now = this.clock.now();
     const overdue = runtime === undefined ? 0 : Math.max(0, this.clock.monotonic() - runtime.activityDeadline);
     const recoveryDeadline = record.recoveryDeadline ?? Math.max(0, now - overdue) + OWNER_LEASE_MS;
@@ -311,6 +355,7 @@ export class ProgressCoordinator<D extends Details> {
         const runtime: Runtime<D> = {
           owner, task: record.task, key, ownerId: decision.ownerId, epoch, kind,
           delegate, sequence: 0, stopped: false, activityDeadline: this.clock.monotonic() + OWNER_LEASE_MS,
+          nextOwnerProbe: this.clock.monotonic() + OWNER_RENEWAL_MS,
         };
         this.active.set(key, runtime);
         this.owners.set(owner, runtime);
@@ -356,6 +401,7 @@ export class ProgressCoordinator<D extends Details> {
       runtime.lifecycle = structuredClone(evidence);
       if (ended) {
         runtime.stopped = true;
+        runtime.probingOwner?.abort();
         this.active.delete(runtime.key);
       }
       this.notify(runtime.task);

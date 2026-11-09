@@ -78,11 +78,6 @@ function plannedRollUp(repo: string, heads: readonly RawHead[], unit: string, st
 	};
 	const evidence: CompletionEvidence = {
 		...real,
-		// the migration before this step gives a legacy approval its lifecycle
-		storyBuildApproved: async (epicHash, story) => heads.some(h => {
-			const m = BUILD_ID.exec(h.artifactId);
-			return m !== null && m[1] === epicHash && storyOf(m[2]!) === story && buildApproval(h).approved;
-		}),
 		storyTasks: async (epicHash, story): Promise<StoryTasks> => {
 			if (find(ArtifactIds.make({ kind: 'TASKS', epicHash, story })) !== undefined) return real.storyTasks(epicHash, story);
 			const plan = planOf(epicHash, story);
@@ -100,6 +95,14 @@ function plannedRollUp(repo: string, heads: readonly RawHead[], unit: string, st
 		},
 	};
 	return rollUp(unit, reader, evidence);
+}
+
+/** Whether a Story's BUILD or code review still has an uppercase id or no lifecycle, so the evidence the live rule reads is not there yet. */
+function awaitsMigration(heads: readonly RawHead[], epicHash: string, story: string): boolean {
+	return heads.some(h => {
+		const m = /^(BUILD|CR)-([0-9a-f]{16})-([sS]\d+)$/.exec(h.artifactId);
+		return m !== null && m[2] === epicHash && storyOf(m[3]!) === story && (m[3] !== story || !isObj(metaOf(h)['lifecycle']));
+	});
 }
 
 /** Whether the live rule would complete a Story; one whose records the rule cannot read is not proposed, and the run reports it. */
@@ -129,9 +132,11 @@ export const repairSettleRule: PlanRule = async (ctx): Promise<RulePlan> => {
 		if (statusMap.get(story) === 'completed' && !unusable.has(story)) walked.add(story);
 		if (SETTLED.includes(statusMap.get(story)) || unusable.has(story) || (await holds(story))) continue;
 		const old = isOldApproval(approval.at);
-		if (!old && !(await liveRuleCompletes(ctx.repo, ctx.heads, story, statusMap))) continue;
+		// records the earlier steps have yet to rename or migrate cannot be judged now: propose the Story, and the run settles it if the live rule then holds
+		const pending = awaitsMigration(ctx.heads, m[1]!, storyOf(m[2]!));
+		if (!old && !pending && !(await liveRuleCompletes(ctx.repo, ctx.heads, story, statusMap))) continue;
 		settled.add(story);
-		changes.push({ rule: 'settle-unit', artifactId: story, detail: old ? `the BUILD was approved before the completion rule (${approval.at})` : 'by the live rule' });
+		changes.push({ rule: 'settle-unit', artifactId: story, detail: old ? `the BUILD was approved before the completion rule (${approval.at})` : pending ? 'by the live rule, if it holds once these records are migrated' : 'by the live rule' });
 	}
 	for (const epic of knownEpicsOf(ctx.heads)) {
 		const id = ArtifactIds.make({ kind: 'EPIC', epicHash: epic.hash });

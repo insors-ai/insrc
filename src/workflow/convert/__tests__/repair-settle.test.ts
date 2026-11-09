@@ -11,7 +11,7 @@
  */
 
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync, rmSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { test } from 'node:test';
 
@@ -256,6 +256,36 @@ test('the preview proposes a later legacy approval the live rule will settle onc
 		assert.equal(out.stoppedAt, undefined, JSON.stringify(out.stoppedAt));
 		assert.equal(statusOf(r.repo, STORY), 'completed');
 	} finally { r.done(); }
+});
+
+test('the preview proposes a later approval whose override or review the migration has yet to bring in', async () => {
+	// a legacy override on a BUILD whose latest round failed: migration moves it onto the approval, and only then can the live rule read it
+	const overridden = repository();
+	try {
+		epicHead(overridden, H);
+		await ready(overridden, 's1', LATER, ['t2']);
+		const stored = head(overridden.repo, `BUILD-${H}-s1`);
+		const { lifecycle: _gone, ...legacy } = stored.meta;
+		overridden.put(`BUILD-${H}-s1`, { ...legacy, approvedAt: LATER, reviewOverride: { reason: 'accepted', at: LATER } }, stored.body);
+		buildAndReviewLegacyBinding(overridden);
+		const preview = await runRepair(overridden.repo, 'repair-preview');
+		assert.ok(preview.plan.changes.some(c => c.rule === 'settle-unit' && c.artifactId === STORY), 'proposed');
+		const out = result(await runRepair(overridden.repo, 'repair'));
+		assert.equal(statusOf(overridden.repo, STORY), 'completed', JSON.stringify(out.held));
+		assert.deepEqual((await runRepair(overridden.repo, 'repair-preview')).plan.changes.filter(c => c.rule === 'settle-unit'), [], 'nothing is left to propose');
+	} finally { overridden.done(); }
+
+	// a code review stored under the uppercase id the rename step has yet to fix
+	const renamed = repository();
+	try {
+		epicHead(renamed, H);
+		await ready(renamed, 's1', LATER);
+		const cr = head(renamed.repo, `CR-${H}-s1`);
+		renamed.put(`CR-${H}-S001`, { ...cr.meta, storyId: 'S001' }, cr.body);
+		rmSync(artifactJsonPath(renamed.repo, `CR-${H}-s1`));
+		const preview = await runRepair(renamed.repo, 'repair-preview');
+		assert.ok(preview.plan.changes.some(c => c.rule === 'settle-unit' && c.artifactId === STORY), JSON.stringify(preview.plan.changes.slice(0, 4)));
+	} finally { renamed.done(); }
 });
 
 test('an open Epic whose Stories are all completed is in the preview and is settled', async () => {

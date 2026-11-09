@@ -8,6 +8,7 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { setTimeout as delay } from 'node:timers/promises';
 
 import { openVerifiedVibeSession, runVerifiedVibeTurn, VibeSelectionError, VibeTurnError } from '../vibe-session.js';
 import type { VibeSessionOptions } from '../vibe-session.js';
@@ -17,6 +18,11 @@ const assert = require('node:assert/strict');
 const { writeFileSync } = require('node:fs');
 const { createInterface } = require('node:readline');
 const mode = process.argv[1];
+if (process.argv[3]) {
+	writeFileSync(process.argv[3], String(process.pid));
+	// Closing stdin alone is not enough to stop this process.
+	setInterval(() => {}, 1000);
+}
 const choices = [
 	{ name: 'model-a', alias: 'default-local', thinking: 'low', thinkingLevels: ['low', 'high'] },
 	{ name: 'model-b', alias: 'selected-local', thinking: 'low', thinkingLevels: ['low', 'high'] },
@@ -144,11 +150,43 @@ test('Vibe preflight rejects unavailable aliases, effort, mutation and mismatche
 });
 
 test('Vibe preflight releases the child on cancellation and timeout', async () => {
+	const dir = await mkdtemp(join(tmpdir(), 'insrc-vibe-preflight-'));
 	const controller = new AbortController();
-	const canceled = openVerifiedVibeSession(setup('hang', { signal: controller.signal }));
-	controller.abort();
-	await assert.rejects(canceled, /aborted/);
-	await assert.rejects(openVerifiedVibeSession(setup('hang', { timeoutMs: 80 })), /timed out/);
+	const childPid = async (file: string): Promise<number> => {
+		for (let attempt = 0; attempt < 200; attempt += 1) {
+			try {
+				const pid = Number(await readFile(file, 'utf8'));
+				if (Number.isSafeInteger(pid) && pid > 0) return pid;
+			} catch (error) {
+				if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+			}
+			await delay(5);
+		}
+		throw new Error('The preflight fixture did not report its PID');
+	};
+	try {
+		const canceledPid = join(dir, 'canceled');
+		const canceled = assert.rejects(openVerifiedVibeSession(setup('hang', {
+			args: ['-e', fixture, 'hang', '', canceledPid], signal: controller.signal,
+		})), /aborted/);
+		const pid = await childPid(canceledPid);
+		assert.doesNotThrow(() => process.kill(pid, 0));
+		controller.abort();
+		await canceled;
+		assert.throws(() => process.kill(pid, 0), { code: 'ESRCH' });
+
+		for (const [mode, expected] of [['hang', /timed out/], ['reject', /session rejected/]] as const) {
+			const pidFile = join(dir, mode);
+			await assert.rejects(openVerifiedVibeSession(setup(mode, {
+				args: ['-e', fixture, mode, '', pidFile], timeoutMs: mode === 'hang' ? 1_000 : 4_000,
+			})), expected);
+			const stoppedPid = await childPid(pidFile);
+			assert.throws(() => process.kill(stoppedPid, 0), { code: 'ESRCH' });
+		}
+	} finally {
+		controller.abort();
+		await rm(dir, { recursive: true, force: true });
+	}
 });
 
 test('Vibe dispatch sends one verified turn and forwards matching bounded events', async () => {

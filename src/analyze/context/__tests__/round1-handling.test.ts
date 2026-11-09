@@ -245,10 +245,10 @@ test('a tool result cut into blocks is cut at line breaks: no entry loses its so
 });
 
 test('a candidate module is excluded by its whole path: a longer path that begins with it stays listed', () => {
-	const text = '## Related modules (concept.resolve)\n- src/a\n- src/a b\n- src/a (score 0.4)\n- src/free';
+	const text = '## Related modules (concept.resolve)\n- src/a\n- src/a b\n- src/a (score 0.4)\n- src/a - helpers\n- src/a (legacy)\n- src/free';
 	const out = dedupeLayer(text, 'structure', 'capability', new Set(['src/a'])).split('\n');
-	assert.ok(!out.includes('- src/a') && !out.includes('- src/a (score 0.4)'), 'the candidate is excluded, with or without an annotation');
-	assert.ok(out.includes('- src/a b'), 'a distinct path sharing the prefix is kept');
+	assert.ok(!out.includes('- src/a'), 'the candidate is excluded');
+	for (const other of ['- src/a b', '- src/a (score 0.4)', '- src/a - helpers', '- src/a (legacy)']) assert.ok(out.includes(other), `a distinct path sharing the prefix is kept: ${other}`);
 	assert.ok(out.includes('- src/free'));
 });
 
@@ -260,4 +260,28 @@ test('result chunks never exceed their byte size and a long entry is split with 
 	for (const chunk of chunks) assert.ok(Buffer.byteLength(chunk, 'utf8') <= 3_000, `a chunk fits its size: ${Buffer.byteLength(chunk, 'utf8')}`);
 	for (const chunk of chunks) for (const line of chunk.split('\n')) assert.match(line, /^src\/[a-z]\.ts:\d+: /, `every line keeps its source: ${line.slice(0, 40)}`);
 	assert.equal(chunks.join('\n').replace(/src\/[wl]\.ts:\d+: \(continued\) /g, '').replace(/\n(?=[漢x])/g, ''), text.replace(/\n(?=src\/[wl])/g, '\n'), 'nothing is lost');
+});
+
+test('an adherence answer with no retrieved rules states the count of zero, whatever the replies said', async () => {
+	const executed = {
+		plan: { answerType: 'adherence-check', synthesisHint: 'h', explorations: [] },
+		results: [
+			ruleResult('e1', []),
+			{ exploration: { id: 'e2', type: 'search.text', purpose: 'p', params: {} }, cached: false, elapsedMs: 1,
+				output: { type: 'search.text', hits: [{ file: 'src/a.ts', line: 1, snippet: 'console.log(1)' }], completeness: { complete: true, incomplete: [], failed: [] } } },
+		],
+		totalMs: 1, totalCached: 0,
+	} as unknown as Parameters<typeof synthesize>[0]['executed'];
+	const provider = { inputBudgetChars: 76_000, completeStructured: async () => ({ system: 'sys', focus: 'Checked 4 rules.', summary: 'four rules', structure: 's', surface: 'u', artefacts: 'a', upstream: '' }) } as unknown as LLMProvider;
+	const intent = { target: 'code', scope: 'M', focused: true, focus: 'f', scopeRef: { kind: 'repo', value: '/tmp/r' }, reasoning: 'r' } as const;
+	const out = await synthesizeHandled({ intent, executed, runId: 'r', target: 'adherence', provider });
+	assert.equal(out.handling.method, 'partitioned');
+	assert.match(out.layers.focus, /Rule sources checked \(counted from every lookup\): 0/);
+});
+
+test('a long entry whose source path holds spaces keeps its whole citation on every piece', () => {
+	const entry = `src/long name.ts:7: ${'y'.repeat(7_000)}`;
+	const chunks = chunkAtLines(entry);
+	assert.ok(chunks.length >= 3);
+	for (const chunk of chunks) assert.ok(chunk.startsWith('src/long name.ts:7: '), `a piece starts with the whole citation: ${chunk.slice(0, 40)}`);
 });

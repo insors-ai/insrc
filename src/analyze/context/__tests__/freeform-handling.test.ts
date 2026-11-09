@@ -330,3 +330,34 @@ test('a tool loop that ends without a tool result is answered in one call at siz
 	await assert.rejects(emit(p, huge, 3, 20_480, undefined, execution(), undefined, 'M'), HandlingBudgetError);
 	assert.equal(calls, 1, 'no call is made for an input that cannot fit');
 });
+
+test('a successful free-form answer delivers its handling in the report through the executor and the driver, at S and in parts', async () => {
+	registerBuiltinTools();
+	const part = (prompt: string): unknown => ({ ...LAYERS, summary: `covers ${[...prompt.matchAll(/result(\d)/g)].map(m => m[1]).join(',')}` });
+	const respond = (prompt: string, combine: boolean): unknown => (combine ? { system: 'S', focus: 'F', summary: 'combined' } : part(prompt));
+	if (!originals.has('freeform.probe')) originals.set('freeform.probe', _getRunnersForTest()['freeform.probe']);
+	for (const [size, method] of [['S', 'single-pass'], ['M', 'partitioned']] as const) {
+		const loop = ((a: Parameters<typeof runShaperToolLoop>[0]) => runShaperToolLoop({ ...a, provider: loopProvider(respond, { input: { q: 'charge' } }) })) as unknown as Parameters<typeof runFreeformProbe>[2];
+		_overrideRunnerForTest('freeform.probe', (e, c) => runFreeformProbe(e, c, loop));
+		const plan: ExplorationPlan = { answerType: 'how-does-it-work', synthesisHint: 'h', explorations: [freeform] } as unknown as ExplorationPlan;
+		let synthesized = 0;
+		const steps: PipelineSteps = {
+			decompose: async () => plan,
+			executePlan: a => executePlan({ ...a, requestSize: size }),
+			synthesize: async () => { synthesized++; return LAYERS; },
+			synthesizeHandled: async () => { synthesized++; return { layers: LAYERS, handling: HANDLING }; },
+			fallbackFreeformPlan: _fallbackFreeformPlanForTest,
+			lastIndexedAt: async () => 1_700_000_000_000,
+			measureArea: async () => ({ source: 'named-area', items: 600, files: 100, characters: null, size, determined: true }) as RequestMeasure,
+		};
+		const out = await pipeline({
+			connectionExecution: execution(), invocationMode: 'run', shaperId: 'code', runId: `r-${size}`, scope: SCOPE(),
+			inputs: { intent: { target: 'code', scope: size, focused: true, focus: 'f', scopeRef: { kind: 'repo', value: REPO }, reasoning: 'r' } } as never,
+		}, steps);
+		assert.equal(out.kind, 'bundle');
+		assert.equal(synthesized, 0, 'the free-form answer is delivered as it is, with no second synthesis');
+		const delivered = (out as { found: { report: { handling?: HandlingReport; completeness: { complete: boolean } } } }).found.report;
+		assert.equal(delivered.handling?.method, method, `size ${size}`);
+		assert.equal(delivered.completeness.complete, false, 'a free-form lookup is never a complete record');
+	}
+});

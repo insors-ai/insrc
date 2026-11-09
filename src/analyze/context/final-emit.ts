@@ -37,7 +37,8 @@ const bytesOf = (text: string): number => Buffer.byteLength(text, 'utf8');
 
 /** The pieces of one over-long line, each at most `size` bytes at a code-point boundary, each carrying the line's `path:line:` prefix. */
 function splitLongLine(line: string, size: number): readonly string[] {
-	const prefix = /^(\S+?:\d+:)\s/.exec(line)?.[1];
+	// A source path may hold spaces: the prefix is everything up to the first `:<line>:`.
+	const prefix = /^(.+?:\d+:)\s/.exec(line)?.[1];
 	const lead = prefix === undefined ? '' : `${prefix} (continued) `;
 	const room = Math.max(1, size - bytesOf(lead));
 	const pieces: string[] = [];

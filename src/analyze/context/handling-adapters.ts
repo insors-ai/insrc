@@ -78,13 +78,11 @@ export function dedupeLayer(text: string, layer: string, target: SynthesizerProm
 }
 
 /**
- * True when the entry names a candidate module: its whole path, or the whole path followed by an annotation in
- * brackets or after a dash. A longer path that merely begins with a candidate's (`src/a b` for `src/a`) is another module.
+ * True when the entry names a candidate module by its whole path. The prompt lists a related module by its path alone,
+ * so a longer path that merely begins with a candidate's (`src/a b`, `src/a (legacy)`) is another module.
  */
 function isExcluded(key: string, excluded: ReadonlySet<string>): boolean {
-	if (excluded.has(key)) return true;
-	for (const p of excluded) if (key.startsWith(`${p} (`) || key.startsWith(`${p} — `) || key.startsWith(`${p} - `) || key.startsWith(`${p}: `)) return true;
-	return false;
+	return excluded.has(key);
 }
 
 /** The bundle layers of a divided answer. */
@@ -109,7 +107,7 @@ export function assembleBundle(
 	})) as Record<(typeof EVIDENCE_LAYERS)[number], string>;
 	// The rule count and the rules themselves are counted from every lookup in code: a reply saw one round of the
 	// reference at most, so what it states of them may be partial.
-	const focus = target === 'adherence' && facts !== undefined && facts.count > 0
+	const focus = target === 'adherence' && facts !== undefined
 		? `${narrative.focus}\n\n${renderRuleFacts(facts)}`
 		: narrative.focus;
 	return { ...narrative, focus, ...layers };

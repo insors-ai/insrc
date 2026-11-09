@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1794203291825-5y2ryj",
+    "runId": "wf-1794204515305-6q9wbt",
     "repoPath": "/home/subho/work/dev/insors/insrc",
-    "createdAt": "2026-11-09T05:50:09.375Z",
+    "createdAt": "2026-11-09T06:10:04.034Z",
     "epicCreatedAt": "2026-11-09T04:29:20.389Z",
     "attribution": {
       "outputs": [
@@ -15,14 +15,14 @@
         }
       ]
     },
-    "elapsedMs": 112598,
+    "elapsedMs": 85295,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "e4af63128c7cbec2",
     "epicSlug": "isolate-each-code-design-review-its",
     "storyId": "s1",
-    "hldBaseRunId": "wf-1794203291825-5y2ryj",
-    "hldEffectiveHash": "3c0299debca05565cf08a5b586f21efa9264e4188664d59ab006e12285efc7cf",
+    "hldBaseRunId": "wf-1794204515305-6q9wbt",
+    "hldEffectiveHash": "ccc8515f61bdf184ac15cf0d074be009ad2cff98692ec56305988be1104b55cc",
     "hldAmendmentsApplied": [],
     "storyTitle": "Isolate each code and design review in its own worker thread",
     "standalone": true,
@@ -31,7 +31,7 @@
     "envelope": {
       "attachments": []
     },
-    "revision": 4
+    "revision": 5
   },
   "body": {
     "summary": {
@@ -847,8 +847,9 @@
     },
     {
       "id": "c11",
-      "kind": "stakeholder",
-      "ref": "User chose simplify: use the existing local-operator authorization model instead of adding human-only clearance authentication."
+      "kind": "doc",
+      "ref": ".insrc/artifacts/LLD-e4af63128c7cbec2-s1.feedback.jsonl",
+      "quotedText": "Entry user-decision-resource-clearance-local-trust-20261109, recorded by the daemon feedback service at 2026-11-09T06:07:48.212Z on revision 4, quotes the user's exact reply 'simplify' and records the chosen existing local-client/operator trust model. This is the governing scope decision, not artifact approval or a claim of independent human-only authentication."
     }
   ]
 }

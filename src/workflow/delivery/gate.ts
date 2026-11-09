@@ -391,6 +391,8 @@ function needsMigration(item: WorkItemNode, counted: readonly ArtifactRecord[], 
 		for (const childId of item.childIds) {
 			const child = graph.items.get(childId);
 			if (child?.kind !== 'task') continue;
+			// A Task item with no head and no plan row behind it is a BUILD result that matches no Task: it is not an active Task, so by the
+			// design (LLD 2.12) it keeps its item and its validation result and raises no needs-migration.
 			if (child.unit?.status === 'unmigrated') out.push(`${child.unit.artifactId} has no lifecycle`);
 			else if (child.unit === null && planApproved && child.sourceIds.some(s => item.plannedTaskIds.includes(s))) out.push(`task ${childId} has no head`);
 		}

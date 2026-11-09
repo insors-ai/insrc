@@ -118,7 +118,7 @@ test('a missing or unmigrated unit raises needs-migration and not pending-decisi
 	// an unmigrated Task head counts whatever the plan says: here it comes from a BUILD result with no plan at all
 	const fromBuild = [...units, buildRecord(H, 's1', [{ id: 't1', passed: true }]), unmigratedRecord(`TASK-${H}-s1-t1.json`, { epicHash: H, storyId: 's1' })];
 	assert.ok(reasons(fromBuild, 'story').includes('needs-migration'), JSON.stringify(reasons(fromBuild, 'story')));
-	assert.ok(!reasons([...units, buildRecord(H, 's1', [{ id: 't1', passed: true }])], 'story').includes('needs-migration'), 'control: a BUILD result with no Task head and no plan needs nothing');
+	assert.ok(!reasons([...units, buildRecord(H, 's1', [{ id: 't1', passed: true }])], 'story').includes('needs-migration'), 'an unmatched BUILD result is not an active Task, so by the design it raises no needs-migration');
 	// the attention is a notice too, naming the record
 	const set = recordSet([...decided, plain(`LLD-${H}-s1.json`, 's1')]);
 	const notices = deriveGates(buildWorkItemGraph(set), set).notices.filter(n => n.code === 'needs-migration');

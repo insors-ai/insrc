@@ -134,6 +134,12 @@ export interface ChatSession {
    * back-compat.
    */
   liveTurn?: LiveTurn;
+  /** Latest active phase, persisted in the session head rather than the transcript. */
+  progress?: TurnProgress | undefined;
+  /** The latest turn epoch remains in the head after its progress is cleared. */
+  progressTurnEpoch?: number | undefined;
+  /** Monotonic checkpoint revision. Kept after completion so old writes cannot revive progress. */
+  progressRevision?: number | undefined;
   /**
    * E202611031bd72813:S001: active-chat lifecycle status shown in the chat panel's active
    * dropdown (red/yellow/green). Optional for back-compat: old rows without it are not-active
@@ -160,6 +166,36 @@ export interface ChatSession {
 
 /** E202611031bd72813:S001 — active-chat lifecycle status: working | waiting-input | done. */
 export type ChatStatus = 'working' | 'waiting-input' | 'done';
+
+export interface SessionProgress {
+  readonly turnId: string;
+  readonly startedAt?: number | undefined;
+  readonly phase: 'starting' | 'working' | 'waiting-approval' | 'waiting-choice';
+  readonly label?: string | undefined;
+}
+
+export interface TurnProgress extends SessionProgress {
+  readonly turnEpoch: number;
+}
+
+export function setTurnProgress(session: ChatSession, next: TurnProgress | undefined): boolean {
+  const prior = session.progress;
+  if (prior?.turnId === next?.turnId && prior?.turnEpoch === next?.turnEpoch &&
+      prior?.phase === next?.phase && prior?.label === next?.label && prior?.startedAt === next?.startedAt) return false;
+  session.progress = next;
+  if (next !== undefined) session.progressTurnEpoch = next.turnEpoch;
+  session.progressRevision = (session.progressRevision ?? 0) + 1;
+  return true;
+}
+
+/** Older heads can identify a live turn without having a wall-clock start time. */
+export function readTurnProgress(session: ChatSession): SessionProgress | undefined {
+  if (session.progress !== undefined) return session.progress;
+  const turnId = session.liveTurn?.cursor.turnId;
+  if (turnId === undefined) return undefined;
+  const waiting = session.pendingRequests?.find((request) => request.turnId === turnId && !request.resolved);
+  return { turnId, phase: waiting === undefined ? 'working' : waiting.kind === 'approval' ? 'waiting-approval' : 'waiting-choice' };
+}
 
 /** E202611031bd72813:S001 t3: a done chat leaves the active list after this much inactivity. */
 export const ACTIVE_PURGE_MS = 30 * 60 * 1000;
@@ -340,6 +376,16 @@ export function isSession(v: unknown): v is ChatSession {
  */
 export function mergeActiveChatFields(incoming: ChatSession, existing: ChatSession | undefined): ChatSession {
   if (existing === undefined) return incoming;
+  const persistedEpoch = existing.progressTurnEpoch ?? 0;
+  const incomingEpoch = incoming.progressTurnEpoch ?? 0;
+  if (persistedEpoch > incomingEpoch ||
+      (persistedEpoch === incomingEpoch && (existing.progressRevision ?? 0) > (incoming.progressRevision ?? 0))) {
+    incoming.progress = existing.progress;
+    incoming.progressTurnEpoch = existing.progressTurnEpoch;
+    incoming.progressRevision = existing.progressRevision;
+    if (existing.liveTurn === undefined) delete incoming.liveTurn;
+    else incoming.liveTurn = existing.liveTurn;
+  }
   const incAt = incoming.lastActivityAt ?? 0;
   const exAt = existing.lastActivityAt ?? 0;
   const staleWrite = exAt > incAt;

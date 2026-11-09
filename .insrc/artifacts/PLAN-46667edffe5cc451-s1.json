@@ -1,0 +1,412 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1794198539250-edhel3",
+    "repoPath": "/private/tmp/insrc-dependabot-build.VhhDqJ",
+    "createdAt": "2026-11-09T04:29:58.004Z",
+    "epicCreatedAt": "2026-11-08T16:46:43.683Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 58157,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "46667edffe5cc451",
+    "epicSlug": "remediate-critical-high-moderate-dependabot-alerts",
+    "storyId": "s1",
+    "lldRunId": "wf-1794158892326-31wwbi",
+    "lldEffectiveHash": "7cca28aa1022bf998ab35918e0b0b7692a6b02f4466286eec275e61b20552646",
+    "authoredBy": "controller",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "revision": 3,
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 3,
+        "contentHash": "9e16af8a1825550fb849b0f743a40804d49bee704af22e31db03b7e841daa097",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T04:36:03.621Z"
+      }
+    },
+    "rangeBase": "166764991427e8238ca6a803711bbecd571e731c"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Apply the approved dependency changes in three ordered batches with targeted verification. Qualify the native daemon and the exact standalone memory tarball on the Node 22 baseline. Run one full sweep after all implementation tasks and record live GitHub reconciliation as a post-deployment check."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "order": 1,
+        "size": "M",
+        "dependsOn": [],
+        "title": "Patch daemon transport, parsers, and shared tooling",
+        "summary": "Select an isolated build baseline and verify its dependency inputs against the reviewed snapshot. Apply batch 1 direct and parent-scoped dependency updates to the root manifest and lockfile. Remove PDF.js and csv-parse after the caller and packed entry-point checks.",
+        "acceptanceChecks": [
+          "Verify the selected baseline with no unrelated edits and identify any dependency drift before applying reviewed changes.",
+          "Confirm every batch 1 dependency path falls outside affected ranges, including MCP SDK to Express to proxy-addr 2.0.8. Review overrides and lock churn.",
+          "Verify MCP stdio, HTTP/TLS and WebSockets, Ollama streaming, YAML, and the saved DuckDB CSV path. Confirm removed packages are absent."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "MCP structural-schema, YAML merge and CSV reader regression suites"
+          },
+          {
+            "level": "integration",
+            "name": "MCP stdio list and call plus HTTP TLS, redirect, abort, WebSocket and Ollama stream checks"
+          },
+          {
+            "level": "smoke",
+            "name": "Build and inspect packed backend entry points and resolved packages after unused dependency removal"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "order": 2,
+        "size": "M",
+        "dependsOn": [
+          "t1"
+        ],
+        "title": "Patch SMTP and database driver dependencies",
+        "summary": "Apply batch 2 Nodemailer, Cassandra and ZIP, MySQL, etcd and gRPC, and SQL Server Azure Identity changes. Preserve saved configuration loading and driver contracts.",
+        "acceptanceChecks": [
+          "Confirm every batch 2 resolved dependency is outside the mapped affected ranges.",
+          "Verify authenticated STARTTLS, recipient handling and attachments. Run live saved-configuration connection, schema and bounded-read checks for Cassandra, etcd and MySQL. Verify SQL Server saved configuration, schema and bounded reads at the Tedious SDK boundary with the existing fixture. Record live SQL Server qualification as deferred at the user's direction, outside this build gate.",
+          "Prove the overwrite-enabled destination symlink fixture detects baseline behavior and passes on the selected adm-zip release for synchronous, asynchronous and single-entry extraction."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Overwrite-enabled ZIP outside-sentinel regression for extractAllTo, extractAllToAsync and extractEntryTo"
+          },
+          {
+            "level": "integration",
+            "name": "Authenticated SMTP STARTTLS with attachments, authentication failure, required-TLS failure and partial recipient rejection"
+          },
+          {
+            "level": "live",
+            "name": "Load saved Cassandra, etcd and MySQL settings through the daemon registry, then connect, read schema and perform a bounded read"
+          },
+          {
+            "level": "integration",
+            "name": "Verify saved SQL Server configuration, schema and bounded reads at the Tedious SDK boundary using the fixture"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "order": 3,
+        "size": "M",
+        "dependsOn": [
+          "t2"
+        ],
+        "title": "Patch and qualify daemon native dependency resolution",
+        "summary": "Apply batch 3 daemon Sharp and ONNX tar constraints. Qualify clean macOS and Linux installations with Node 22.22.1 and exercise local ONNX startup and embedding.",
+        "acceptanceChecks": [
+          "Confirm every root Sharp and tar instance is outside mapped affected ranges.",
+          "Verify real macOS and Linux clean installation, native loading and local embedding on Node 22.22.1. Capture platform, binary versions and outputs."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "Clean macOS and Linux Node 22.22.1 daemon installs with native dependency version checks"
+          },
+          {
+            "level": "integration",
+            "name": "Load local ONNX and run a representative embedding without a cloud dependency"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "order": 4,
+        "size": "M",
+        "dependsOn": [
+          "t3"
+        ],
+        "title": "Build the standalone storage-only memory artifact",
+        "summary": "Implement shared staging for the normal @insrc/project-memory tarball. Verify upstream LanceDB 0.40.0 integrity, narrow only the optional provider entries, retain licenses and native binding versions, and have packed consumer tests use this same artifact.",
+        "acceptanceChecks": [
+          "Verify the staged SDK's upstream SHA-512, unchanged code and types, retained license and notices, and removal of only the approved optional provider entries.",
+          "Check actual tarball contents and a clean default consumer graph. The SDK is bundled, native bindings resolve from their pinned optional packages, and staging files, affected embedding paths and host overrides are absent."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "LanceDB staged tarball manifest-diff, integrity and license assertions"
+          },
+          {
+            "level": "integration",
+            "name": "Build and pack the release artifact and inspect the default clean consumer dependency graph without host overrides"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "order": 5,
+        "size": "M",
+        "dependsOn": [
+          "t4"
+        ],
+        "title": "Qualify packed consumers and store compatibility",
+        "summary": "Run the exact tarball from t4 on macOS and Linux under Node 22.22.1. Extend independent qualification to exercise a populated store from the preceding release and verify the approved backup restoration procedure.",
+        "acceptanceChecks": [
+          "Capture actual native loading and package export smoke evidence for both platforms, with ordinary npm optional dependency behavior.",
+          "Verify records, vectors, pending queue and completed receipts from the preceding release in the upgraded package. Restore a verified consistent backup into scratch and open it with the previous artifact."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Run packed project-memory API and native binding smoke on macOS and Linux Node 22.22.1"
+          },
+          {
+            "level": "integration",
+            "name": "Open populated pre-upgrade fixture and verify records, vectors, queue and receipts, then rehearse the approved restore in scratch"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "order": 6,
+        "size": "M",
+        "dependsOn": [
+          "t5"
+        ],
+        "title": "Run the full sweep and record release verification",
+        "summary": "Once all implementation tasks pass targeted checks, perform the combined build and single full sweep. Reconcile all in-scope root ranges, archived evidence and live-service coverage. Define the authenticated GitHub reconciliation procedure for after the default-branch scan. Record the failed sweep and reconcile its signatures against the unchanged baseline. The user deferred reproduced baseline failures to GitHub #143.",
+        "acceptanceChecks": [
+          "Verify the root build passed and record the single completed full sweep after targeted task validation, with exact commands, revision, exit status and pass, failure, cancellation and skip counts. Preserve the failed result. Identify baseline-reproduced failures tracked in GitHub #143 and show that story-specific failures are corrected with passing targeted validation.",
+          "Check every captured in-scope root alert against every matching resolved dependency instance and preserve all four archived lockfiles byte-for-byte.",
+          "Keep eight low alerts outside the gate. Keep live alert reconciliation explicitly pending until a fresh authenticated default-branch scan check can verify each scoped alert.",
+          "Record each evidence-only alert and any ZIP advisory metadata discrepancy separately. Do not dismiss tracker alerts as a build side effect."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "Verify root build, completed full sweep evidence and baseline failure deferral to GitHub #143"
+          },
+          {
+            "level": "unit",
+            "name": "Recompute all captured in-scope root ranges and byte-check the four archived lockfiles"
+          },
+          {
+            "level": "smoke",
+            "name": "Record tracker reconciliation commands and pending state until GitHub rescans the default branch"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "Daemon dependency closure",
+        "coveredByTaskIds": [
+          "t1",
+          "t2",
+          "t3",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Standalone memory consumer package graph",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Recorded historical alerts",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "MCP tool schema conversion",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "YAML merges and multi-document parsing",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "DuckDB CSV input",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "SMTP envelope and attachments",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "ZIP destination symlink rejection",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "CSV registration, preview and query via the existing DuckDB path after manifest removal",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Static and dynamic dependency caller inventory and packaged entry-point check for PDF.js and csv-parse",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "MCP stdio list and call",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "HTTP redirects and aborts, WebSocket handshake, Ollama streaming",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "SMTP STARTTLS delivery",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Cassandra, etcd, MySQL, and SQL Server connection and read paths",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Load pre-upgrade saved configurations for Cassandra, etcd, MySQL and SQL Server through the daemon registry, then connect, read schema and execute an authorized read query",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "macOS and Linux Node 22.22.1 native install",
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "ONNX embedding initialization",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Clean packed consumer memory create and reopen of pre-upgrade store",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/remediate-critical-high-moderate-dependabot-alerts-E2026110846667edf/S001/LLD.md#4-test-strategy"
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "docs/standalone/remediate-critical-high-moderate-dependabot-alerts-E2026110846667edf/S001/DEPENDENCY-BASELINE.md#root-dependency-selections"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/remediate-critical-high-moderate-dependabot-alerts-E2026110846667edf/S001/LLD.md#61-a1-scoped-updates-with-a-verified-standalone-package--chosen"
+    },
+    {
+      "id": "c4",
+      "kind": "doc",
+      "ref": "docs/standalone/remediate-critical-high-moderate-dependabot-alerts-E2026110846667edf/S001/DEPENDENCY-BASELINE.md#zip-symlink-regression-probe"
+    },
+    {
+      "id": "c5",
+      "kind": "doc",
+      "ref": "docs/standalone/remediate-critical-high-moderate-dependabot-alerts-E2026110846667edf/S001/DEPENDENCY-BASELINE.md#standalone-package-delivery"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/remediate-critical-high-moderate-dependabot-alerts-E2026110846667edf/S001/LLD.md#5-migration"
+    },
+    {
+      "id": "c7",
+      "kind": "doc",
+      "ref": "docs/standalone/remediate-critical-high-moderate-dependabot-alerts-E2026110846667edf/S001/DEPENDABOT-SNAPSHOT.json"
+    }
+  ]
+}

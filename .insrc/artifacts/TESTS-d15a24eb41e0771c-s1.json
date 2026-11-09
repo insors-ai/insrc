@@ -1,0 +1,510 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "e768c6a37e21df10cf02daf2e4ce627805270a5cf52d5916626b63134885acec",
+        "at": "2026-11-08T20:26:33.435Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "d15a24eb41e0771c",
+    "storyId": "s1",
+    "createdAt": "2026-11-08T20:25:09.500Z",
+    "updatedAt": "2026-11-08T20:26:33.389Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-08T20:00:01.326Z",
+    "epicSlug": "send-chat-prompts-enter-add-jump",
+    "revision": 2
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "5ae36ee34",
+        "ranAt": "2026-11-08T20:26:33.389Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "jump: hidden while following and at the end",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts",
+                "title": "jump: hidden while following and at the end",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jump: shown when the reader scrolls up and stays shown as new rows arrive",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts",
+                "title": "jump: shown when the reader scrolls up and stays shown as new rows arrive",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jump: stays hidden while a row is appended empty and then filled",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts",
+                "title": "jump: stays hidden while a row is appended empty and then filled",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jump: a click moves to the end, resumes following and hides the button",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts",
+                "title": "jump: a click moves to the end, resumes following and hides the button",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jump: hides when the reader scrolls back to the end",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts",
+                "title": "jump: hides when the reader scrolls back to the end",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jump: hidden after a session reset",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts",
+                "title": "jump: hidden after a session reset",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "composer: Enter submits and prevents the line break",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+                "title": "composer: Enter submits and prevents the line break",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "composer: Enter on an empty box sends nothing and adds no line break",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+                "title": "composer: Enter on an empty box sends nothing and adds no line break",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "composer: Ctrl+Enter inserts a line at the caret and does not submit",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+                "title": "composer: Ctrl+Enter inserts a line at the caret and does not submit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "composer: Cmd+Enter inserts a line and does not submit",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+                "title": "composer: Cmd+Enter inserts a line and does not submit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "composer: Shift+Enter does not submit and leaves the browser's line break",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+                "title": "composer: Shift+Enter does not submit and leaves the browser's line break",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "composer: an Enter confirming an IME composition does not submit",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+                "title": "composer: an Enter confirming an IME composition does not submit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "composer: the placeholders state the new keys",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+                "title": "composer: the placeholders state the new keys",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "shell: the jump button sits outside the transcript and a click returns focus to the prompt",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+                "title": "shell: the jump button sits outside the transcript and a click returns focus to the prompt",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "visual: the jump button floats over the transcript's lower edge in light and dark themes",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/send-chat-prompts-enter-add-jump-E20261108d15a24eb/S001/evidence/jump-button-dark.png and jump-button-light.png (real shell in headless Chrome with stand-in theme variables), plus chrome-probe.json and chrome-probe-after-click.json in the same directory. The probe dispatched the scroll event itself and the page ran with its CSP removed. Not checked inside a VS Code window."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 793,
+            "titles": [
+              {
+                "title": "the shell script runs: a windowed restore shows one page at the bottom with the bar, a page request round-trips and keeps the reader's place, a live row does not move a reader who scrolled up, and an old-style restore still works",
+                "result": "pass"
+              },
+              {
+                "title": "the shell script bounds the view of a long active session: rows past the limit are trimmed at the bottom and come back on request",
+                "result": "pass"
+              },
+              {
+                "title": "shell script: the attach button posts pick-attachments, an image paste posts attach-image with its base64 and is prevented, a text paste is untouched, chips render from attachments-pending with a remove control, and a blank box with chips submits",
+                "result": "pass"
+              },
+              {
+                "title": "shell: the attach button is icon-only with an aria-label, sits first in the status bar, and the content security policy is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "shell script: a chip click on a sent message posts open-attachment, and the error sentence is shown and cleared",
+                "result": "pass"
+              },
+              {
+                "title": "transcript-row: a diff row without replaces appends a widget stamped with its row index; one with replaces redraws the widget of that sid and keeps it open; a withdrawn one hides it; one for an unknown or trimmed sid changes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "transcript-row: a marker row appends the same line a restored marker row draws",
+                "result": "pass"
+              },
+              {
+                "title": "diff widget: a diff row in a session-restored window and in a transcript-page is appended as a widget",
+                "result": "pass"
+              },
+              {
+                "title": "chat shell: the outbox band is present only with the queue, and the queue hint replaces the input placeholder only with it; an outbox message draws its rows and summary and each action posts its seq; with the queue a submit does not mark the turn running",
+                "result": "pass"
+              },
+              {
+                "title": "a retrying row shows 'attempt n of 3', a countdown, a retry-now button and a cancel button, and retry-now posts outbox-retry-now with its seq",
+                "result": "pass"
+              },
+              {
+                "title": "chat shell: the progress widget is never hidden: idle at the start, working after turn-running, idle after done, error, Stop and session-restored",
+                "result": "pass"
+              },
+              {
+                "title": "session restore uses stored phase and elapsed time without another provider event",
+                "result": "pass"
+              },
+              {
+                "title": "chat shell binds Stop to a pending run before the provider spawns",
+                "result": "pass"
+              },
+              {
+                "title": "chat shell: an informational line's done does not end a running turn, and the turn's own done and error still do",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): #insrc-active chip sits LEFT of the .right history chip; active-list populates dot-coded menu rows; activating one posts open-chat { chatId }",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): TRUE end-to-end round trip — activating an active-menu row posts open-chat, the real host receives it, and answers session-restored for that chat",
+                "result": "pass"
+              },
+              {
+                "title": "history run-config restores provider model and effort across sessions and legacy defaults in the executable shell",
+                "result": "pass"
+              },
+              {
+                "title": "new-session model and effort controls open and apply selections in the executable shell",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): a rendered menu row and both triggers inline the REAL provider SVG (not a source string), and the empty active trigger reads \"no active work\"",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): activating a row writes the selection optimistically (both triggers re-render to the chosen chat before any host reply) and posts open-chat/new-chat",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-0d3939248a956860: opening the history menu on a fresh (draft) chat focuses the trailing new… row WITHOUT scrolling to it; arrow keys still scroll",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): activating a persisted history row posts open-chat (not new-chat) even when that chat is absent from the active list",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): session-restored settles BOTH triggers on the restored chat (and clears one absent from a list)",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): a history-list-only response (a rejected open-chat) recovers BOTH triggers to the confirmed session",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): active-list reconcile re-settles the active trigger to the confirmed session (dropped from active -> cleared)",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): the menu keyboard moves the roving tabindex (ArrowDown/ArrowUp/Home/End) and Escape closes",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): an unknown provider falls back to an empty .pico (no broken SVG or image)",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): session-restored-before-list ordering settles BOTH triggers once the lists arrive",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): the 'vibe' provider branch inlines the Vibe SVG too, not just Claude/Codex",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): with a run-config provider set, the history new… row posts new-chat carrying that provider",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Enter submits and prevents the line break",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Enter while a turn is running still submits",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Enter on an empty box sends nothing and adds no line break",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Ctrl+Enter inserts a line at the caret and does not submit",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Ctrl+Enter replaces a selection with one line",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Cmd+Enter inserts a line and does not submit",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Ctrl+Shift+Enter is a new line, never a send",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Shift+Enter does not submit and leaves the browser's line break",
+                "result": "pass"
+              },
+              {
+                "title": "composer: an Enter confirming an IME composition does not submit",
+                "result": "pass"
+              },
+              {
+                "title": "composer: the placeholders state the new keys",
+                "result": "pass"
+              },
+              {
+                "title": "shell: the jump button sits outside the transcript and a click returns focus to the prompt",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 742,
+            "titles": [
+              {
+                "title": "a live row rendered by the registry while the view is scrolled up leaves scrollTop unchanged and trims nothing, even with more than 300 rows held",
+                "result": "pass"
+              },
+              {
+                "title": "a live row rendered by the registry while the view is at the bottom moves the view to the bottom; with more than 300 rows held the oldest nodes are then removed back to a user row leaving about 200, and the view is still at the bottom",
+                "result": "pass"
+              },
+              {
+                "title": "one turn longer than 300 rows is trimmed by a plain cut, and a pending tool row in the removed range is dropped so a later result renders as its own row",
+                "result": "pass"
+              },
+              {
+                "title": "pager reset: a restore sets the first held index and total and ends at the bottom",
+                "result": "pass"
+              },
+              {
+                "title": "pager prepend: an older page is rendered above the held rows in transcript order, keyed r<absolute index>; scrollTop grows by exactly the height added and the view is never moved to the bottom while the page renders",
+                "result": "pass"
+              },
+              {
+                "title": "pager prepend: a page for another session, or whose before is not the first held index, is discarded and adds no row",
+                "result": "pass"
+              },
+              {
+                "title": "trimmed rows render again when their page comes back: the dropped keys are forgotten, so appendKeyed renders new nodes",
+                "result": "pass"
+              },
+              {
+                "title": "pager load request: one load-older is sent for the first held index on a bar click or a scroll to the top; no second request is sent while one is loading; the flag clears on the matching page, on a restore and after 5 seconds",
+                "result": "pass"
+              },
+              {
+                "title": "returning to the bottom with more than 300 rows held runs the trim from the scroll listener",
+                "result": "pass"
+              },
+              {
+                "title": "a row that throws while an older page renders falls back, and following is switched back on afterwards",
+                "result": "pass"
+              },
+              {
+                "title": "the 'load earlier' bar is shown only when the first held index is above 0, names the count of older rows, and appears after a trim",
+                "result": "pass"
+              },
+              {
+                "title": "rows that are appended empty and filled afterwards are still followed: the view stays at the bottom through a long run and a restore, the trim still runs, and a reader who scrolls up is left alone until they return",
+                "result": "pass"
+              },
+              {
+                "title": "jump: hidden while following and at the end",
+                "result": "pass"
+              },
+              {
+                "title": "jump: hidden on a transcript too short to scroll",
+                "result": "pass"
+              },
+              {
+                "title": "jump: shown when the reader scrolls up and stays shown as new rows arrive",
+                "result": "pass"
+              },
+              {
+                "title": "jump: stays hidden while a row is appended empty and then filled",
+                "result": "pass"
+              },
+              {
+                "title": "jump: a click moves to the end, resumes following and hides the button",
+                "result": "pass"
+              },
+              {
+                "title": "jump: hides when the reader scrolls back to the end",
+                "result": "pass"
+              },
+              {
+                "title": "jump: hidden after a session reset",
+                "result": "pass"
+              },
+              {
+                "title": "jump: stays shown when a page of older rows loads, and the reader keeps their place",
+                "result": "pass"
+              },
+              {
+                "title": "jump: arriving at the end by the button still trims a long view",
+                "result": "pass"
+              },
+              {
+                "title": "jump: the pager works with no jump element",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

@@ -49,3 +49,22 @@ test("gateway.test.ts: writeKey and writeKeyPath pass through the daemon's resta
   await assert.rejects(down.writeKey('logLevel', 'debug'), /daemon is not running/);
   await assert.rejects(down.writeKeyPath(['logLevel'], 'debug'), /daemon is not running/);
 });
+
+test('gateway.test.ts: panel reads forward their deadline through the VS Code read boundary', async () => {
+  const reads: unknown[] = [];
+  const client = clientAnswering([{ ok: true }]);
+  const gw = createDaemonConfigGateway(client, async (method, params, timeoutMs) => {
+    reads.push([method, params, timeoutMs]);
+    return {} as never;
+  });
+  await gw.catalog(100);
+  await gw.rawConfig(200);
+  await gw.repoSettings('/repo', 300);
+  assert.deepEqual(reads, [
+    ['config.catalog', undefined, 100],
+    ['config.show', undefined, 200],
+    ['repo.settings.get', { repo: '/repo' }, 300],
+  ]);
+  assert.deepEqual(await gw.writeKey('logLevel', 'debug'), { ok: true });
+  assert.equal(reads.length, 3);
+});

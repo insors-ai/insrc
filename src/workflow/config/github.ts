@@ -43,6 +43,7 @@ import { PATHS } from '../../shared/paths.js';
 import { parseGithubRemoteUrl } from '../tracker/github.js';
 import { createRegistryTable, workflowToolDeps } from '../tracker/registry-table.js';
 import type { PortResult } from '../tracker/port.js';
+import { OWNER_NAME_RE, REPO_NAME_RE } from './github-names.js';
 
 // Re-exported for back-compat (tests + callers import these here).
 export { parseGithubRemoteUrl };
@@ -328,8 +329,7 @@ export interface StrictTrackerTarget {
 	readonly repo: string;
 }
 
-export const OWNER_NAME_RE = /^[A-Za-z0-9][A-Za-z0-9-]*$/;
-export const REPO_NAME_RE = /^(?!\.{1,2}$)[A-Za-z0-9._-]+$/;
+export { OWNER_NAME_RE, REPO_NAME_RE };
 
 function strictRefuse(reason: string): PortResult<StrictTrackerTarget> {
 	return { ok: false, kind: 'rejected', reason };

@@ -1,0 +1,1444 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "store-5c8550d0-0831-484c-b868-fde981a8dc99",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T20:31:38.181Z",
+    "epicCreatedAt": "2026-11-08T20:00:01.326Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 2,
+    "epicHash": "d15a24eb41e0771c",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicSlug": "send-chat-prompts-enter-add-jump",
+    "standalone": true,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "187250499f170da3e3b32956617ffcf4b8008cc14e55a1ad289afc66d9bcde11",
+        "at": "2026-11-08T20:31:38.187Z",
+        "by": {
+          "id": "insrc:code-review",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "kind": "code-review",
+    "format": "task-based",
+    "storyId": "s1",
+    "status": "passed",
+    "reviews": [
+      {
+        "reviewId": "cr-d15a24eb41e0771c-s1",
+        "attempt": 1,
+        "storyId": "s1",
+        "reviewer": "daemon",
+        "status": "passed",
+        "finalScopeIdentity": "0b0914147dca89ceb9a29417d8517db9b23409016d7c2db97a4fbf0f07ab1e88",
+        "attributionIdentity": "4be24f6f31fb4d052f278018e1e2bd2851c590cf897db1a52cdc2b4e05e44c86",
+        "taskScopeIdentities": [
+          {
+            "taskId": "s1",
+            "identity": "3c4e527143ae9f71a6d0790a40ec44ef9ad718f2a92a31f3a60cf6616e08cab8"
+          }
+        ],
+        "scope": {
+          "reviewRevision": "e565794c3b5e9ca63cfafdf79a2a9cc25630793f",
+          "finalScope": {
+            "revision": "e565794c3b5e9ca63cfafdf79a2a9cc25630793f",
+            "identity": "0b0914147dca89ceb9a29417d8517db9b23409016d7c2db97a4fbf0f07ab1e88",
+            "entries": [
+              {
+                "originChangeIndex": 0,
+                "path": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                "blobOid": "d30dfd79f5755d9d25af705d97d3828197b1d8f1",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      2273,
+                      2273
+                    ]
+                  },
+                  {
+                    "after": [
+                      4509,
+                      4509
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 1,
+                "path": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+                "blobOid": "dba9edb80dc6a86abe5e525373a384041025654c",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      519,
+                      519
+                    ]
+                  },
+                  {
+                    "after": [
+                      530,
+                      530
+                    ]
+                  },
+                  {
+                    "after": [
+                      532,
+                      532
+                    ]
+                  },
+                  {
+                    "after": [
+                      541,
+                      541
+                    ]
+                  },
+                  {
+                    "after": [
+                      1135,
+                      1247
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 2,
+                "path": "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts",
+                "blobOid": "d6c690c53762ca6b6fd17ba4aa0be5be913a0d67",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      49,
+                      49
+                    ]
+                  },
+                  {
+                    "after": [
+                      66,
+                      66
+                    ]
+                  },
+                  {
+                    "after": [
+                      78,
+                      78
+                    ]
+                  },
+                  {
+                    "after": [
+                      96,
+                      96
+                    ]
+                  },
+                  {
+                    "after": [
+                      400,
+                      507
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 3,
+                "path": "vscode-plugin/src/chat/chat-panel.ts",
+                "blobOid": "ba9ac4432dfea016efd51f7bfd3fb7a5639d4002",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      263,
+                      264
+                    ]
+                  },
+                  {
+                    "after": [
+                      2102,
+                      2105
+                    ]
+                  },
+                  {
+                    "after": [
+                      2424,
+                      2424
+                    ]
+                  },
+                  {
+                    "after": [
+                      2618,
+                      2618
+                    ]
+                  },
+                  {
+                    "after": [
+                      2626,
+                      2632
+                    ]
+                  },
+                  {
+                    "after": [
+                      2670,
+                      2670
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 4,
+                "path": "vscode-plugin/src/chat/transcript-pager.ts",
+                "blobOid": "54c197fea3edd1da8c83a5b191a4873dfef37e4b",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      32,
+                      35
+                    ]
+                  },
+                  {
+                    "after": [
+                      49,
+                      50
+                    ]
+                  },
+                  {
+                    "after": [
+                      59,
+                      59
+                    ]
+                  },
+                  {
+                    "after": [
+                      64,
+                      65
+                    ]
+                  },
+                  {
+                    "after": [
+                      70,
+                      70
+                    ]
+                  },
+                  {
+                    "after": [
+                      92,
+                      92
+                    ]
+                  },
+                  {
+                    "after": [
+                      119,
+                      119
+                    ]
+                  },
+                  {
+                    "after": [
+                      121,
+                      121
+                    ]
+                  },
+                  {
+                    "after": [
+                      128,
+                      128
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 5,
+                "path": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                "blobOid": "d30dfd79f5755d9d25af705d97d3828197b1d8f1",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      4526,
+                      4526
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 6,
+                "path": "docs/standalone/send-chat-prompts-enter-add-jump-E20261108d15a24eb/S001/evidence/chrome-probe-after-click.json",
+                "blobOid": "42710fe840a321f79807a02179b3b4bc24417d8f",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      7
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 7,
+                "path": "docs/standalone/send-chat-prompts-enter-add-jump-E20261108d15a24eb/S001/evidence/chrome-probe.json",
+                "blobOid": "df70808d98c61b874d1626d677390fc75fc83e47",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      42
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 8,
+                "path": "vscode-plugin/src/chat/__tests__/chat-theme.test.ts",
+                "blobOid": "4c1e6f5835cc313969aebf7ee7aea311096f57a4",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      344,
+                      349
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 9,
+                "path": "vscode-plugin/src/chat/__tests__/chat-theme-before.json",
+                "blobOid": "e56c534c574d263ef2acbff56e54cb5f9b160420",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      157,
+                      157
+                    ]
+                  },
+                  {
+                    "after": [
+                      159,
+                      159
+                    ]
+                  }
+                ]
+              }
+            ],
+            "dispositions": [
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    2273,
+                    2273
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      2273,
+                      2273
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    4509,
+                    4509
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      4509,
+                      4509
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    519,
+                    519
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      519,
+                      519
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    530,
+                    530
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      530,
+                      530
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    532,
+                    532
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      532,
+                      532
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    541,
+                    541
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      541,
+                      541
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    1135,
+                    1247
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      1135,
+                      1247
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    49,
+                    49
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      49,
+                      49
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    66,
+                    66
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      66,
+                      66
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    78,
+                    78
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      78,
+                      78
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    96,
+                    96
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      96,
+                      96
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    400,
+                    507
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      400,
+                      507
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    263,
+                    264
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      263,
+                      264
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    2102,
+                    2105
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      2102,
+                      2105
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    2424,
+                    2424
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      2424,
+                      2424
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    2618,
+                    2618
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      2618,
+                      2618
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    2626,
+                    2632
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      2626,
+                      2632
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 5
+                },
+                "sourcePart": {
+                  "after": [
+                    2670,
+                    2670
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      2670,
+                      2670
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    32,
+                    35
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      32,
+                      35
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    49,
+                    50
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      49,
+                      50
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    59,
+                    59
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      59,
+                      59
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    64,
+                    65
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      64,
+                      65
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    70,
+                    70
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      70,
+                      70
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 5
+                },
+                "sourcePart": {
+                  "after": [
+                    92,
+                    92
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      92,
+                      92
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 6
+                },
+                "sourcePart": {
+                  "after": [
+                    119,
+                    119
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      119,
+                      119
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 7
+                },
+                "sourcePart": {
+                  "after": [
+                    121,
+                    121
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      121,
+                      121
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 8
+                },
+                "sourcePart": {
+                  "after": [
+                    128,
+                    128
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      128,
+                      128
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    4526,
+                    4526
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      4526,
+                      4526
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 6,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    1,
+                    7
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      1,
+                      7
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 7,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    1,
+                    42
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      1,
+                      42
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    344,
+                    349
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      344,
+                      349
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    157,
+                    157
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      157,
+                      157
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    159,
+                    159
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      159,
+                      159
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              }
+            ],
+            "selectedTaskIds": [
+              "s1"
+            ],
+            "testCount": 3,
+            "attributionIdentity": "4be24f6f31fb4d052f278018e1e2bd2851c590cf897db1a52cdc2b4e05e44c86",
+            "attributionState": "accepted",
+            "tasks": [
+              {
+                "taskId": "s1",
+                "changeIndexes": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9
+                ],
+                "testIndexes": [
+                  0,
+                  1,
+                  2
+                ],
+                "decision": {
+                  "action": "initial"
+                },
+                "identity": "3c4e527143ae9f71a6d0790a40ec44ef9ad718f2a92a31f3a60cf6616e08cab8"
+              }
+            ]
+          },
+          "storyId": "s1",
+          "documents": {
+            "lld": {
+              "path": "docs/standalone/send-chat-prompts-enter-add-jump-E20261108d15a24eb/S001/LLD.md",
+              "commit": "35cdd752bdf919b953308d4eb917ef040cd1d7b0"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "5f9217efb341ae8adfcbdb01b8a756d695d1369d",
+              "parent": "35cdd752bdf919b953308d4eb917ef040cd1d7b0",
+              "files": [
+                {
+                  "path": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        2273,
+                        2273
+                      ]
+                    },
+                    {
+                      "after": [
+                        4509,
+                        4509
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        519,
+                        519
+                      ]
+                    },
+                    {
+                      "after": [
+                        530,
+                        530
+                      ]
+                    },
+                    {
+                      "after": [
+                        532,
+                        532
+                      ]
+                    },
+                    {
+                      "after": [
+                        541,
+                        541
+                      ]
+                    },
+                    {
+                      "after": [
+                        1135,
+                        1247
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        49,
+                        49
+                      ]
+                    },
+                    {
+                      "after": [
+                        66,
+                        66
+                      ]
+                    },
+                    {
+                      "after": [
+                        78,
+                        78
+                      ]
+                    },
+                    {
+                      "after": [
+                        96,
+                        96
+                      ]
+                    },
+                    {
+                      "after": [
+                        400,
+                        507
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "vscode-plugin/src/chat/chat-panel.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        263,
+                        264
+                      ]
+                    },
+                    {
+                      "after": [
+                        2102,
+                        2105
+                      ]
+                    },
+                    {
+                      "after": [
+                        2424,
+                        2424
+                      ]
+                    },
+                    {
+                      "after": [
+                        2618,
+                        2618
+                      ]
+                    },
+                    {
+                      "after": [
+                        2626,
+                        2632
+                      ]
+                    },
+                    {
+                      "after": [
+                        2670,
+                        2670
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "vscode-plugin/src/chat/transcript-pager.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        32,
+                        35
+                      ]
+                    },
+                    {
+                      "after": [
+                        49,
+                        50
+                      ]
+                    },
+                    {
+                      "after": [
+                        59,
+                        59
+                      ]
+                    },
+                    {
+                      "after": [
+                        64,
+                        65
+                      ]
+                    },
+                    {
+                      "after": [
+                        70,
+                        70
+                      ]
+                    },
+                    {
+                      "after": [
+                        92,
+                        92
+                      ]
+                    },
+                    {
+                      "after": [
+                        119,
+                        119
+                      ]
+                    },
+                    {
+                      "after": [
+                        121,
+                        121
+                      ]
+                    },
+                    {
+                      "after": [
+                        128,
+                        128
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "136896e8c1692c5c2265db36051e6b85b78722c0",
+              "parent": "5f9217efb341ae8adfcbdb01b8a756d695d1369d",
+              "files": [
+                {
+                  "path": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        4526,
+                        4526
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "5ae36ee34aee83c4714b9ddd680e101d3a55d52a",
+              "parent": "136896e8c1692c5c2265db36051e6b85b78722c0",
+              "files": [
+                {
+                  "path": "docs/standalone/send-chat-prompts-enter-add-jump-E20261108d15a24eb/S001/evidence/chrome-probe-after-click.json",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        7
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "docs/standalone/send-chat-prompts-enter-add-jump-E20261108d15a24eb/S001/evidence/chrome-probe.json",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        42
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "0eb7959cc0c20a3e15e4f2929d30670cbc3d27fc",
+              "parent": "bd509926a32acd5e293e795a2c53b5c43ff88942",
+              "files": [
+                {
+                  "path": "vscode-plugin/src/chat/__tests__/chat-theme.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        344,
+                        349
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "e565794c3b5e9ca63cfafdf79a2a9cc25630793f",
+              "parent": "0eb7959cc0c20a3e15e4f2929d30670cbc3d27fc",
+              "files": [
+                {
+                  "path": "vscode-plugin/src/chat/__tests__/chat-theme-before.json",
+                  "segments": [
+                    {
+                      "after": [
+                        157,
+                        157
+                      ]
+                    },
+                    {
+                      "after": [
+                        159,
+                        159
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "s1",
+            "status": "passed",
+            "summary": "Reviewed every submitted changed segment against the pinned LLD and both acceptance criteria. No material implementation, compatibility, maintainability, or coverage defects found.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Inspected test bodies, assertions, and harness behavior. ac1 covers submission, default prevention, caret insertion, selection replacement, Ctrl/Cmd modifiers, Shift/Alt pass-through, IME guards, empty prompts, running turns, and placeholders. ac2 covers visibility, remembered following during row filling, reader-position preservation, click-to-bottom, resumed following, reset, prepend, trimming, optional jump elements, and prompt focus. Theme inventory and shell wiring assertions match the additions. The fake DOM exercises setRangeText; supplied Chrome evidence reports the execCommand path and click behavior. Attachment-only submission is asserted through the unchanged shared submit function, rather than through Enter. Reported test passes were not reviewer executions; TESTS.md records gate execution at 5ae36ee34, not the final reviewed commit.",
+              "evidenceReferences": [
+                "35cdd752bdf919b953308d4eb917ef040cd1d7b0:docs/standalone/send-chat-prompts-enter-add-jump-E20261108d15a24eb/S001/LLD.md",
+                "e565794c3b5e9ca63cfafdf79a2a9cc25630793f:vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+                "e565794c3b5e9ca63cfafdf79a2a9cc25630793f:vscode-plugin/src/chat/__tests__/transcript-pager.test.ts",
+                "e565794c3b5e9ca63cfafdf79a2a9cc25630793f:vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                "e565794c3b5e9ca63cfafdf79a2a9cc25630793f:vscode-plugin/src/chat/__tests__/chat-theme.test.ts",
+                "e565794c3b5e9ca63cfafdf79a2a9cc25630793f:docs/standalone/send-chat-prompts-enter-add-jump-E20261108d15a24eb/S001/TESTS.md",
+                "e565794c3b5e9ca63cfafdf79a2a9cc25630793f:docs/standalone/send-chat-prompts-enter-add-jump-E20261108d15a24eb/S001/evidence/chrome-probe.json",
+                "e565794c3b5e9ca63cfafdf79a2a9cc25630793f:docs/standalone/send-chat-prompts-enter-add-jump-E20261108d15a24eb/S001/evidence/chrome-probe-after-click.json"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: No tests, typecheck, build, or live VS Code checks were run by this reviewer. Supplied screenshots and Chrome probes were inspected as builder evidence; their documented CSP removal, synthetic scroll dispatch, and stand-in themes limit runtime conclusions.",
+              "Consider adding automated coverage for successful execCommand insertion and Enter submission with attachments only."
+            ],
+            "inspectedReferences": [
+              "35cdd752bdf919b953308d4eb917ef040cd1d7b0:docs/standalone/send-chat-prompts-enter-add-jump-E20261108d15a24eb/S001/LLD.md",
+              "e565794c3b5e9ca63cfafdf79a2a9cc25630793f:vscode-plugin/src/chat/chat-panel.ts",
+              "e565794c3b5e9ca63cfafdf79a2a9cc25630793f:vscode-plugin/src/chat/transcript-pager.ts",
+              "e565794c3b5e9ca63cfafdf79a2a9cc25630793f:vscode-plugin/src/chat/render-registry.ts",
+              "e565794c3b5e9ca63cfafdf79a2a9cc25630793f:vscode-plugin/src/chat/__tests__/fake-dom.ts",
+              "e565794c3b5e9ca63cfafdf79a2a9cc25630793f:vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+              "e565794c3b5e9ca63cfafdf79a2a9cc25630793f:vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+              "e565794c3b5e9ca63cfafdf79a2a9cc25630793f:vscode-plugin/src/chat/__tests__/transcript-pager.test.ts",
+              "e565794c3b5e9ca63cfafdf79a2a9cc25630793f:vscode-plugin/src/chat/__tests__/chat-theme.test.ts",
+              "e565794c3b5e9ca63cfafdf79a2a9cc25630793f:vscode-plugin/src/chat/__tests__/chat-theme-before.json",
+              "e565794c3b5e9ca63cfafdf79a2a9cc25630793f:docs/standalone/send-chat-prompts-enter-add-jump-E20261108d15a24eb/S001/BUILD.md",
+              "e565794c3b5e9ca63cfafdf79a2a9cc25630793f:docs/standalone/send-chat-prompts-enter-add-jump-E20261108d15a24eb/S001/TESTS.md",
+              "e565794c3b5e9ca63cfafdf79a2a9cc25630793f:docs/standalone/send-chat-prompts-enter-add-jump-E20261108d15a24eb/S001/evidence/chrome-probe.json",
+              "e565794c3b5e9ca63cfafdf79a2a9cc25630793f:docs/standalone/send-chat-prompts-enter-add-jump-E20261108d15a24eb/S001/evidence/chrome-probe-after-click.json",
+              "e565794c3b5e9ca63cfafdf79a2a9cc25630793f:docs/standalone/send-chat-prompts-enter-add-jump-E20261108d15a24eb/S001/evidence/jump-button-dark.png",
+              "e565794c3b5e9ca63cfafdf79a2a9cc25630793f:docs/standalone/send-chat-prompts-enter-add-jump-E20261108d15a24eb/S001/evidence/jump-button-light.png"
+            ],
+            "executedTests": []
+          }
+        ],
+        "summary": "1 selected task assessment(s): passed.",
+        "completedAt": "2026-11-08T20:31:37.136Z",
+        "buildFingerprint": "e6e8a651ed3776e1eceb6fc59dc91eaa1dc77a6c78674ee46a1721f46777e398"
+      }
+    ]
+  },
+  "citations": []
+}

@@ -19,10 +19,10 @@ import { fileURLToPath } from 'node:url';
 
 import { createApprovalRpc } from '../../../../src/daemon/approval.js';
 import { ApprovalBroker } from '../../../../src/daemon/approval-broker.js';
-import { IpcServer } from '../../../../src/daemon/server.js';
+import { directDispatch, IpcServer } from '../../../../src/daemon/server.js';
 import { createIpcClient } from '../../../../src/shared/ipc-client.js';
 import type { ApprovalRequest } from '../../../../src/shared/types.js';
-import { approvalDetails, approvalText, createApprovalPrompter, type ApprovalChoice, type ApprovalNotifier } from '../approval-subscribe.js';
+import { approvalDetails, approvalText, createApprovalNotifier, createApprovalPrompter, type ApprovalChoice, type ApprovalNotifier } from '../approval-subscribe.js';
 
 let seq = 0;
 function req(): ApprovalRequest {
@@ -49,23 +49,30 @@ function fakeSurface() {
 	return { shown, notifier };
 }
 
-async function startServer(path: string): Promise<{ broker: ApprovalBroker; server: IpcServer }> {
+async function startServer(path: string) {
 	const broker = new ApprovalBroker();
 	const rpc = createApprovalRpc(broker);
-	const server = new IpcServer({ 'approval.answer': rpc.answer }, { 'approval.subscribe': rpc.subscribe }, Date.now, path);
+	let attached = false;
+	const forward = directDispatch({ 'approval.answer': rpc.answer }, {
+		'approval.subscribe': (params, send, signal) => {
+			attached = true;
+			return rpc.subscribe(params, send, signal);
+		},
+	});
+	const server = new IpcServer(forward, Date.now, path);
 	await server.listen();
-	return { broker, server };
+	return { broker, server, waitForSubscription: () => until(() => attached) };
 }
 
 test('approval-subscribe.test.ts: the editor and chat client receive a gate frame, show the exact call and send approval.answer', async () => {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-ed-approval-'));
 	const path = join(dir, 'd.sock');
-	const { broker, server } = await startServer(path);
+	const { broker, server, waitForSubscription } = await startServer(path);
 	const surface = fakeSurface();
 	const prompter = createApprovalPrompter({ client: createIpcClient(() => createConnection(path)), notifier: surface.notifier, reconnectMs: 50 });
 	try {
 		prompter.start();
-		await new Promise(r => setTimeout(r, 100));
+		await waitForSubscription();
 		const a = req(); const outA = broker.ask(a);
 		await until(() => surface.shown.length === 1);
 		assert.match(surface.shown[0]!.text, /k8s_delete/);
@@ -95,12 +102,12 @@ test('approval-subscribe.test.ts: the editor and chat client receive a gate fram
 test('approval-subscribe.test.ts: a cancel frame closes the notification and the stream is reopened after a restart', async () => {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-ed-approval-'));
 	const path = join(dir, 'd.sock');
-	let { broker, server } = await startServer(path);
+	let { broker, server, waitForSubscription } = await startServer(path);
 	const surface = fakeSurface();
 	const prompter = createApprovalPrompter({ client: createIpcClient(() => createConnection(path)), notifier: surface.notifier, reconnectMs: 50 });
 	try {
 		prompter.start();
-		await new Promise(r => setTimeout(r, 100));
+		await waitForSubscription();
 
 		// a cancel frame closes the notification, and a late click sends nothing
 		const abort = new AbortController();
@@ -121,8 +128,8 @@ test('approval-subscribe.test.ts: a cancel frame closes the notification and the
 		await server.close();
 		assert.equal(await lost, 'no-client');
 		await until(() => surface.shown[1]!.closed);
-		({ broker, server } = await startServer(path));
-		await new Promise(r => setTimeout(r, 300));
+		({ broker, server, waitForSubscription } = await startServer(path));
+		await waitForSubscription();
 		const third = req(); const again = broker.ask(third);
 		await until(() => surface.shown.length === 3);
 		surface.shown[2]!.click('decline');
@@ -136,7 +143,8 @@ test('approval-subscribe.test.ts: the extension attaches the prompter and shows 
 	const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'extension.ts'), 'utf8');
 	assert.match(src, /createApprovalPrompter\(\{/);
 	assert.match(src, /showWarningMessage\(text, 'Approve', 'Decline', 'Show details'\)/);
-	assert.match(src, /approvals\.start\(\)/);
+	assert.match(src, /void activationSettled\.then\(\(\) => \{\s*if \(!approvalsDisposed\) approvals\.start\(\)/);
+	assert.match(src, /context\.subscriptions\.push\(\{ dispose: \(\) => \{\s*approvalsDisposed = true;\s*approvals\.stop\(\)/);
 	assert.match(approvalText(req()), /^Destructive call: k8s_delete in \/work\/repo with \{/);
 });
 
@@ -151,12 +159,12 @@ test('approval-subscribe.test.ts: a long call keeps its length in the text, the 
 
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-ed-approval-'));
 	const path = join(dir, 'd.sock');
-	const { broker, server } = await startServer(path);
+	const { broker, server, waitForSubscription } = await startServer(path);
 	const surface = fakeSurface(); const notices: string[] = [];
 	const prompter = createApprovalPrompter({ client: createIpcClient(() => createConnection(path)), notifier: { ...surface.notifier, notice: t => notices.push(t) }, reconnectMs: 50 });
 	try {
 		prompter.start();
-		await new Promise(r => setTimeout(r, 100));
+		await waitForSubscription();
 		const r = req(); const out = broker.ask(r);
 		await until(() => surface.shown.length === 1);
 		(broker as unknown as { finish: (id: string, o: unknown, why: string) => void }).finish(r.requestId, 'timed-out', 'no-client'); // closed without a cancel frame
@@ -166,5 +174,77 @@ test('approval-subscribe.test.ts: a long call keeps its length in the text, the 
 		assert.match(notices[0]!, /no longer open/);
 	} finally {
 		prompter.stop(); server.disconnectClients(); await server.close(); rmSync(dir, { recursive: true, force: true });
+	}
+});
+
+
+test('native approval notifier opens redacted JSON, re-prompts and returns a final decision or dismissal', async () => {
+	for (const [action, decision] of [['Approve', 'approve'], ['Decline', 'decline'], [undefined, undefined]] as const) {
+		const calls: string[] = [];
+		let count = 0;
+		const request = { ...req(), arguments: { token: '[redacted]' } };
+		const notification = createApprovalNotifier({
+			ask: async text => { calls.push(text); return count++ === 0 ? 'Show details' : action; },
+			openDetails: async json => { calls.push(json); },
+			notice: text => assert.fail(text),
+		}).show('warning', request);
+		assert.equal(await notification.choice, decision);
+		assert.deepEqual(calls, ['warning', approvalDetails(request), 'warning']);
+	}
+});
+
+test('native approval notifier ignores a late click and never re-prompts after Details is invalidated', async () => {
+	let choose: ((value: 'Approve') => void) | undefined;
+	const lateToast = createApprovalNotifier({
+		ask: () => new Promise(resolve => { choose = resolve; }),
+		openDetails: async () => assert.fail('closed toast'),
+		notice: text => assert.fail(text),
+	}).show('warning', req());
+	lateToast.close();
+	assert.ok(choose);
+	choose('Approve');
+	assert.equal(await lateToast.choice, undefined);
+
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-ed-approval-'));
+	const path = join(dir, 'd.sock');
+	let peer = await startServer(path);
+	let opened = false;
+	let finish: (() => void) | undefined;
+	let asks = 0;
+	const prompter = createApprovalPrompter({
+		client: createIpcClient(() => createConnection(path)),
+		reconnectMs: 50,
+		notifier: createApprovalNotifier({
+			ask: async () => { asks++; return 'Show details'; },
+			openDetails: () => new Promise(resolve => { opened = true; finish = resolve; }),
+			notice: text => assert.fail(text),
+		}),
+	});
+	try {
+		prompter.start();
+		for (const action of ['cancel', 'disconnect', 'dispose'] as const) {
+			opened = false;
+			await peer.waitForSubscription();
+			const abort = new AbortController();
+			const request = req();
+			const result = peer.broker.ask(request, abort.signal);
+			await until(() => opened);
+			const before = asks;
+			if (action === 'cancel') abort.abort();
+			if (action === 'disconnect') peer.server.disconnectClients();
+			if (action === 'dispose') prompter.stop();
+			await until(() => prompter.open().length === 0);
+			assert.equal(await result, action === 'cancel' ? 'cancelled' : 'no-client');
+			assert.ok(finish);
+			finish();
+			await new Promise(resolve => setImmediate(resolve));
+			assert.equal(asks, before);
+			if (action === 'disconnect') {
+				await peer.server.close();
+				peer = await startServer(path);
+			}
+		}
+	} finally {
+		prompter.stop(); peer.server.disconnectClients(); await peer.server.close(); rmSync(dir, { recursive: true, force: true });
 	}
 });

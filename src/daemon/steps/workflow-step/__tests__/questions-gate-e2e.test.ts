@@ -32,6 +32,7 @@ import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 
 import { handleWorkflowStep } from '../handler.js';
+import { runInStepContext } from '../../../../shared/step-context.js';
 import { registerWorkflowRunners } from '../../../../workflow/index.js';
 import { _clearWorkflowStateStoreForTests } from '../state-store.js';
 import { _setQuestionProviderForTests } from '../../../../workflow/questions.js';
@@ -277,6 +278,23 @@ test('synthesize `done` omits openQuestions when the artifact carries none', asy
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
+test('attribution: a Codex client with a reported model stamps cli-codex and that model', async () => {
+	await _clearWorkflowStateStoreForTests();
+	registerWorkflowRunners();
+	const repo = mkRepo();
+	try {
+		seed(repo, []);
+		const state = await walkLldToSynthesize(repo);
+		const done = payload(await runInStepContext({ cwd: repo, client: 'codex' }, () => handleWorkflowStep({
+			phase: 'synthesize', state, artifact: lldArtifact([]), authorModel: 'gpt-6.1-sol',
+		})));
+		assert.equal(done['next'], 'done', JSON.stringify(done));
+		assert.deepEqual((done['artifact'] as { meta: { attribution: unknown } }).meta.attribution, {
+			outputs: [{ role: '(client)', tier: 'core', runner: 'cli-codex', model: 'gpt-6.1-sol' }],
+		});
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
 // ---------------------------------------------------------------------------
 // LLD walk scaffolding (mirrors design-story-e2e)
 // ---------------------------------------------------------------------------
@@ -300,7 +318,7 @@ function lldArtifact(openQuestions: readonly string[]): Record<string, unknown> 
 			errorPaths: { errorCases: [{ scenario: 'unknown tag', detection: 'lookup miss', response: 'throw', userImpact: 'empty', recoverable: true }], edgeCases: [{ input: 'empty tag', expected: 'empty array' }], invariantsToPreserve: [{ text: 'status filter still works', source: 'c1' }] },
 			testStrategy: { testLevels: [{ level: 'unit', purpose: 'list()', subjects: ['TagFilterAPI.list'] }], acceptanceMapping: [{ criterionId: 'ac1', provingTests: ['unit:TagFilterAPI.list'] }], testFramework: 'node:test' },
 			migration: { stateBefore: 'status only', stateAfter: 'status + tag', migrationSteps: [{ order: 1, action: 'add tag index', rollbackable: true }], backwardCompat: 'unchanged', zeroDowntime: true, dataRewriteRequired: false },
-			alternativesConsidered: [{ id: 'a1', name: 'In-memory', oneLineSummary: 'x', approach: 'warm map', pros: ['fast'], cons: ['mem'], costEstimate: 'S' }],
+			alternativesConsidered: [{ id: 'a1', name: 'In-memory', oneLineSummary: 'x', approach: 'warm map', pros: ['fast'], cons: ['mem'], costEstimate: 'S' }, { id: 'a2', reasonRejected: 'coupling' }],
 			chosenAlternative: 'a1',
 			openQuestions,
 		},

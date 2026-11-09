@@ -1,0 +1,842 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 8,
+        "contentHash": "4234fd03b5b7b8fe338a75307b50421eb70750cce4a9c786b345af2444a7329f",
+        "at": "2026-11-08T11:03:34.091Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "36cbeeac485c0af7",
+    "storyId": "s1",
+    "createdAt": "2026-11-08T07:49:04.360Z",
+    "updatedAt": "2026-11-08T11:03:34.072Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-08T07:13:05.866Z",
+    "epicSlug": "llds-pass-every-gate-while-thin",
+    "revision": 8
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "bc3dc7b86",
+        "ranAt": "2026-11-08T07:49:04.360Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "title: the H1 shows id and title",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+                "title": "title: the H1 shows id and title",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "title: a title with a line break renders on one line",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+                "title": "title: a title with a line break renders on one line",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "title: the H1 shows id and title on both finalize paths",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+                "title": "title: the H1 shows id and title on both finalize paths",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "stored: a stored LLD with no storyTitle renders byte-identically",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+                "title": "stored: a stored LLD with no storyTitle renders byte-identically",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1139,
+            "titles": [
+              {
+                "title": "title: the H1 shows id and title",
+                "result": "pass"
+              },
+              {
+                "title": "title: a title with a line break renders on one line",
+                "result": "pass"
+              },
+              {
+                "title": "title: the H1 shows id and title on both finalize paths",
+                "result": "pass"
+              },
+              {
+                "title": "stored: a stored LLD with no storyTitle renders byte-identically",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "bd2d8319a",
+        "ranAt": "2026-11-08T08:08:45.706Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "overlay: a submission with only ids and reasonRejected stores every s2 field",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+                "title": "overlay: a submission with only ids and reasonRejected stores every s2 field",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "overlay: a submission that alters s2's content stores s2's values",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+                "title": "overlay: a submission that alters s2's content stores s2's values",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "finalize: duplicate submitted ids are refused as retryable",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+                "title": "finalize: duplicate submitted ids are refused as retryable",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "finalize: an id absent from s2 is refused as retryable",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+                "title": "finalize: an id absent from s2 is refused as retryable",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "finalize: an s2 alternative missing from the submission is refused as retryable",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+                "title": "finalize: an s2 alternative missing from the submission is refused as retryable",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "finalize: duplicate s2 ids are refused as non-retryable",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+                "title": "finalize: duplicate s2 ids are refused as non-retryable",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "fallback: a run with no s2 output accepts complete submitted alternatives",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+                "title": "fallback: a run with no s2 output accepts complete submitted alternatives",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "fallback: a run with no s2 output refuses an id-only submission",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+                "title": "fallback: a run with no s2 output refuses an id-only submission",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "finalize: both the Epic and the standalone path apply the overlay",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+                "title": "finalize: both the Epic and the standalone path apply the overlay",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "finalize: an incomplete s2 record is refused as non-retryable, naming a restart, and writes nothing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+                "title": "finalize: an incomplete s2 record is refused as non-retryable, naming a restart, and writes nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "stored: isLldBody still accepts a stored LLD with partial alternatives",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+                "title": "stored: isLldBody still accepts a stored LLD with partial alternatives",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1389,
+            "titles": [
+              {
+                "title": "title: the H1 shows id and title",
+                "result": "pass"
+              },
+              {
+                "title": "title: a title with a line break renders on one line",
+                "result": "pass"
+              },
+              {
+                "title": "title: the H1 shows id and title on both finalize paths",
+                "result": "pass"
+              },
+              {
+                "title": "stored: a stored LLD with no storyTitle renders byte-identically",
+                "result": "pass"
+              },
+              {
+                "title": "overlay: a submission with only ids and reasonRejected stores every s2 field",
+                "result": "pass"
+              },
+              {
+                "title": "overlay: a submission that alters s2's content stores s2's values",
+                "result": "pass"
+              },
+              {
+                "title": "finalize: duplicate submitted ids are refused as retryable",
+                "result": "pass"
+              },
+              {
+                "title": "finalize: an id absent from s2 is refused as retryable",
+                "result": "pass"
+              },
+              {
+                "title": "finalize: an s2 alternative missing from the submission is refused as retryable",
+                "result": "pass"
+              },
+              {
+                "title": "finalize: duplicate s2 ids are refused as non-retryable",
+                "result": "pass"
+              },
+              {
+                "title": "fallback: a run with no s2 output accepts complete submitted alternatives",
+                "result": "pass"
+              },
+              {
+                "title": "fallback: a run with no s2 output refuses an id-only submission",
+                "result": "pass"
+              },
+              {
+                "title": "finalize: both the Epic and the standalone path apply the overlay",
+                "result": "pass"
+              },
+              {
+                "title": "finalize: an incomplete s2 record is refused as non-retryable, naming a restart, and writes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "stored: isLldBody still accepts a stored LLD with partial alternatives",
+                "result": "pass"
+              },
+              {
+                "title": "citations: the DeepSeek LLD's actual refs are refused",
+                "result": "pass"
+              },
+              {
+                "title": "citations: a badly formed path-only ref under analyze-bundle is refused, as under code",
+                "result": "pass"
+              },
+              {
+                "title": "citations: a root-level file name alongside prose is refused",
+                "result": "pass"
+              },
+              {
+                "title": "citations: a URL alongside prose is refused",
+                "result": "pass"
+              },
+              {
+                "title": "citations: a text-only label, a well-formed path and a standalone URL all pass",
+                "result": "pass"
+              },
+              {
+                "title": "citations: a refused citation names its id, writes nothing and succeeds when corrected",
+                "result": "pass"
+              },
+              {
+                "title": "citations: other artifact kinds are unaffected",
+                "result": "pass"
+              },
+              {
+                "title": "stored: checkPathForms behaviour for other artifact kinds is unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "c9908d7d7",
+        "ranAt": "2026-11-08T11:03:34.072Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "citations: the DeepSeek LLD's actual refs are refused",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+                "title": "citations: the DeepSeek LLD's actual refs are refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "citations: a badly formed path-only ref under analyze-bundle is refused, as under code",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+                "title": "citations: a badly formed path-only ref under analyze-bundle is refused, as under code",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "citations: a root-level file name alongside prose is refused",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+                "title": "citations: a root-level file name alongside prose is refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "citations: a URL alongside prose is refused",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+                "title": "citations: a URL alongside prose is refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "citations: a text-only label, a well-formed path and a standalone URL all pass",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+                "title": "citations: a text-only label, a well-formed path and a standalone URL all pass",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "citations: a refused citation names its id, writes nothing and succeeds when corrected",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+                "title": "citations: a refused citation names its id, writes nothing and succeeds when corrected",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "citations: other artifact kinds are unaffected",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+                "title": "citations: other artifact kinds are unaffected",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "stored: checkPathForms behaviour for other artifact kinds is unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+                "title": "stored: checkPathForms behaviour for other artifact kinds is unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1235,
+            "titles": [
+              {
+                "title": "title: the H1 shows id and title",
+                "result": "pass"
+              },
+              {
+                "title": "title: a title with a line break renders on one line",
+                "result": "pass"
+              },
+              {
+                "title": "title: the H1 shows id and title on both finalize paths",
+                "result": "pass"
+              },
+              {
+                "title": "stored: a stored LLD with no storyTitle renders byte-identically",
+                "result": "pass"
+              },
+              {
+                "title": "overlay: a submission with only ids and reasonRejected stores every s2 field",
+                "result": "pass"
+              },
+              {
+                "title": "overlay: a submission that alters s2's content stores s2's values",
+                "result": "pass"
+              },
+              {
+                "title": "finalize: duplicate submitted ids are refused as retryable",
+                "result": "pass"
+              },
+              {
+                "title": "finalize: an id absent from s2 is refused as retryable",
+                "result": "pass"
+              },
+              {
+                "title": "finalize: an s2 alternative missing from the submission is refused as retryable",
+                "result": "pass"
+              },
+              {
+                "title": "finalize: duplicate s2 ids are refused as non-retryable",
+                "result": "pass"
+              },
+              {
+                "title": "fallback: a run with no s2 output accepts complete submitted alternatives",
+                "result": "pass"
+              },
+              {
+                "title": "fallback: a run with no s2 output refuses an id-only submission",
+                "result": "pass"
+              },
+              {
+                "title": "finalize: both the Epic and the standalone path apply the overlay",
+                "result": "pass"
+              },
+              {
+                "title": "finalize: an incomplete s2 record is refused as non-retryable, naming a restart, and writes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "stored: isLldBody still accepts a stored LLD with partial alternatives",
+                "result": "pass"
+              },
+              {
+                "title": "citations: the DeepSeek LLD's actual refs are refused",
+                "result": "pass"
+              },
+              {
+                "title": "citations: a badly formed path-only ref under analyze-bundle is refused, as under code",
+                "result": "pass"
+              },
+              {
+                "title": "citations: a root-level file name alongside prose is refused",
+                "result": "pass"
+              },
+              {
+                "title": "citations: a URL alongside prose is refused",
+                "result": "pass"
+              },
+              {
+                "title": "citations: a text-only label, a well-formed path and a standalone URL all pass",
+                "result": "pass"
+              },
+              {
+                "title": "citations: a refused citation names its id, writes nothing and succeeds when corrected",
+                "result": "pass"
+              },
+              {
+                "title": "citations: other artifact kinds are unaffected",
+                "result": "pass"
+              },
+              {
+                "title": "stored: checkPathForms behaviour for other artifact kinds is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "attribution: absent, blank and multiline authorModel stamp unknown",
+                "result": "pass"
+              },
+              {
+                "title": "attribution: a client with no family stamps runner unknown",
+                "result": "pass"
+              },
+              {
+                "title": "attribution: modelSummary prints an unknown stamp",
+                "result": "pass"
+              },
+              {
+                "title": "attribution: a supplied multi-output attribution stays unchanged on both finalize paths",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "0af712793",
+        "ranAt": "2026-11-08T08:13:53.728Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "attribution: absent, blank and multiline authorModel stamp unknown",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+                "title": "attribution: absent, blank and multiline authorModel stamp unknown",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "attribution: a client with no family stamps runner unknown",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+                "title": "attribution: a client with no family stamps runner unknown",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "attribution: modelSummary prints an unknown stamp",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+                "title": "attribution: modelSummary prints an unknown stamp",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "attribution: a Codex client with a reported model stamps cli-codex and that model",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/questions-gate-e2e.test.ts",
+                "title": "attribution: a Codex client with a reported model stamps cli-codex and that model",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "attribution: a supplied multi-output attribution stays unchanged on both finalize paths",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+                "title": "attribution: a supplied multi-output attribution stays unchanged on both finalize paths",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/questions-gate-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2665,
+            "titles": [
+              {
+                "title": "start gates on an unresolved HLD open question, returns resolve_questions with options",
+                "result": "pass"
+              },
+              {
+                "title": "resolve_question resolve → HLD meta resolved, then start proceeds to emit_plan",
+                "result": "pass"
+              },
+              {
+                "title": "resolve_question ignore → HLD meta ignored, start proceeds",
+                "result": "pass"
+              },
+              {
+                "title": "resolve_question defer → deferred does NOT re-trigger start, shows in review_deferred",
+                "result": "pass"
+              },
+              {
+                "title": "start proceeds directly when the upstream HLD has no open questions",
+                "result": "pass"
+              },
+              {
+                "title": "synthesize `done` carries the new artifact's still-open questions",
+                "result": "pass"
+              },
+              {
+                "title": "synthesize `done` omits openQuestions when the artifact carries none",
+                "result": "pass"
+              },
+              {
+                "title": "attribution: a Codex client with a reported model stamps cli-codex and that model",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 908,
+            "titles": [
+              {
+                "title": "title: the H1 shows id and title",
+                "result": "pass"
+              },
+              {
+                "title": "title: a title with a line break renders on one line",
+                "result": "pass"
+              },
+              {
+                "title": "title: the H1 shows id and title on both finalize paths",
+                "result": "pass"
+              },
+              {
+                "title": "stored: a stored LLD with no storyTitle renders byte-identically",
+                "result": "pass"
+              },
+              {
+                "title": "overlay: a submission with only ids and reasonRejected stores every s2 field",
+                "result": "pass"
+              },
+              {
+                "title": "overlay: a submission that alters s2's content stores s2's values",
+                "result": "pass"
+              },
+              {
+                "title": "finalize: duplicate submitted ids are refused as retryable",
+                "result": "pass"
+              },
+              {
+                "title": "finalize: an id absent from s2 is refused as retryable",
+                "result": "pass"
+              },
+              {
+                "title": "finalize: an s2 alternative missing from the submission is refused as retryable",
+                "result": "pass"
+              },
+              {
+                "title": "finalize: duplicate s2 ids are refused as non-retryable",
+                "result": "pass"
+              },
+              {
+                "title": "fallback: a run with no s2 output accepts complete submitted alternatives",
+                "result": "pass"
+              },
+              {
+                "title": "fallback: a run with no s2 output refuses an id-only submission",
+                "result": "pass"
+              },
+              {
+                "title": "finalize: both the Epic and the standalone path apply the overlay",
+                "result": "pass"
+              },
+              {
+                "title": "finalize: an incomplete s2 record is refused as non-retryable, naming a restart, and writes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "stored: isLldBody still accepts a stored LLD with partial alternatives",
+                "result": "pass"
+              },
+              {
+                "title": "citations: the DeepSeek LLD's actual refs are refused",
+                "result": "pass"
+              },
+              {
+                "title": "citations: a badly formed path-only ref under analyze-bundle is refused, as under code",
+                "result": "pass"
+              },
+              {
+                "title": "citations: a root-level file name alongside prose is refused",
+                "result": "pass"
+              },
+              {
+                "title": "citations: a URL alongside prose is refused",
+                "result": "pass"
+              },
+              {
+                "title": "citations: a text-only label, a well-formed path and a standalone URL all pass",
+                "result": "pass"
+              },
+              {
+                "title": "citations: a refused citation names its id, writes nothing and succeeds when corrected",
+                "result": "pass"
+              },
+              {
+                "title": "citations: other artifact kinds are unaffected",
+                "result": "pass"
+              },
+              {
+                "title": "stored: checkPathForms behaviour for other artifact kinds is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "attribution: absent, blank and multiline authorModel stamp unknown",
+                "result": "pass"
+              },
+              {
+                "title": "attribution: a client with no family stamps runner unknown",
+                "result": "pass"
+              },
+              {
+                "title": "attribution: modelSummary prints an unknown stamp",
+                "result": "pass"
+              },
+              {
+                "title": "attribution: a supplied multi-output attribution stays unchanged on both finalize paths",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

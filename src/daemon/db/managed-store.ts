@@ -7,8 +7,8 @@ import { dirname, join } from 'node:path';
 import type { ConnectionsFile } from '../../shared/db-driver.js';
 import type { ManagementEnvelope, PreparationRecord } from '../../shared/connection-management.js';
 export class ManagedStoreError extends Error {
-	constructor(readonly code: 'registry-unreadable' | 'recovery-required' | 'reconciliation-required' | 'unsupported-filesystem') {
-		super({ 'registry-unreadable': 'Connection registry cannot be read safely.', 'recovery-required': 'Connection registry requires recovery.', 'reconciliation-required': 'Connection commit requires reconciliation.', 'unsupported-filesystem': 'Connection management requires a verified filesystem fence.' }[code]);
+	constructor(readonly code: 'registry-unreadable' | 'recovery-required' | 'reconciliation-required' | 'unsupported-filesystem', options?: ErrorOptions) {
+		super({ 'registry-unreadable': 'Connection registry cannot be read safely.', 'recovery-required': 'Connection registry requires recovery.', 'reconciliation-required': 'Connection commit requires reconciliation.', 'unsupported-filesystem': 'Connection management requires a verified filesystem fence.' }[code], options);
 		this.name = 'ManagedStoreError';
 	}
 }

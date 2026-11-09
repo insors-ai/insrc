@@ -1,0 +1,677 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "store-a751d15d-0154-45ad-9898-00c4461e61dd",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T04:35:27.762Z",
+    "epicCreatedAt": "2026-11-09T04:30:40.241Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 2,
+    "epicHash": "a48d81d66e4c55ee",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "standalone": true,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "5fa6614a0daad02c3907bec8e2461457a8ebcaa09ff417fcc485b68387f7b5ed",
+        "at": "2026-11-09T04:35:27.766Z",
+        "by": {
+          "id": "insrc:code-review",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "kind": "code-review",
+    "format": "task-based",
+    "storyId": "s1",
+    "status": "passed",
+    "reviews": [
+      {
+        "reviewId": "cr-a48d81d66e4c55ee-s1",
+        "attempt": 1,
+        "storyId": "s1",
+        "reviewer": "daemon",
+        "status": "passed",
+        "finalScopeIdentity": "c8fffeed0ebb588cf98a8004a0b7f552238e960103a359e160e2fd86e7ec10c3",
+        "attributionIdentity": "8fd9fd9f8aea5deb4f0fd145597eff29a192aeb7be30536c4772ebb8bb43a1b6",
+        "taskScopeIdentities": [
+          {
+            "taskId": "s1",
+            "identity": "34d9bd82822aab997eb28f67a6c007ff0fecfa2bca80d55be9085a3d5f0272cb"
+          }
+        ],
+        "scope": {
+          "reviewRevision": "e08f5bbbe1d50dfad7360bcdfec3db6b041e067f",
+          "finalScope": {
+            "revision": "e08f5bbbe1d50dfad7360bcdfec3db6b041e067f",
+            "identity": "c8fffeed0ebb588cf98a8004a0b7f552238e960103a359e160e2fd86e7ec10c3",
+            "entries": [
+              {
+                "originChangeIndex": 0,
+                "path": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                "blobOid": "a61b42e63b1bb1e35b4a8687a257f19c90338b0a",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      2225,
+                      2225
+                    ]
+                  },
+                  {
+                    "after": [
+                      2291,
+                      2291
+                    ]
+                  },
+                  {
+                    "after": [
+                      2425,
+                      2425
+                    ]
+                  },
+                  {
+                    "after": [
+                      2438,
+                      2438
+                    ]
+                  },
+                  {
+                    "after": [
+                      2441,
+                      2441
+                    ]
+                  },
+                  {
+                    "after": [
+                      2444,
+                      2445
+                    ]
+                  },
+                  {
+                    "after": [
+                      2450,
+                      2450
+                    ]
+                  },
+                  {
+                    "after": [
+                      2454,
+                      2456
+                    ]
+                  },
+                  {
+                    "after": [
+                      2459,
+                      2459
+                    ]
+                  },
+                  {
+                    "after": [
+                      2462,
+                      2484
+                    ]
+                  },
+                  {
+                    "deletionAt": 3042
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 1,
+                "path": "vscode-plugin/src/chat/chat-panel.ts",
+                "blobOid": "ebb8ff62b18c40d238b60c9cd00ddb16931a79da",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      319,
+                      323
+                    ]
+                  },
+                  {
+                    "after": [
+                      2546,
+                      2546
+                    ]
+                  },
+                  {
+                    "after": [
+                      2697,
+                      2697
+                    ]
+                  },
+                  {
+                    "after": [
+                      3373,
+                      3373
+                    ]
+                  }
+                ]
+              }
+            ],
+            "dispositions": [
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    2225,
+                    2225
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      2225,
+                      2225
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    2291,
+                    2291
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      2291,
+                      2291
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    2425,
+                    2425
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      2425,
+                      2425
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    2438,
+                    2438
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      2438,
+                      2438
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    2441,
+                    2441
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      2441,
+                      2441
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 5
+                },
+                "sourcePart": {
+                  "after": [
+                    2444,
+                    2445
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      2444,
+                      2445
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 6
+                },
+                "sourcePart": {
+                  "after": [
+                    2450,
+                    2450
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      2450,
+                      2450
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 7
+                },
+                "sourcePart": {
+                  "after": [
+                    2454,
+                    2456
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      2454,
+                      2456
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 8
+                },
+                "sourcePart": {
+                  "after": [
+                    2459,
+                    2459
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      2459,
+                      2459
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 9
+                },
+                "sourcePart": {
+                  "after": [
+                    2462,
+                    2484
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      2462,
+                      2484
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 10
+                },
+                "sourcePart": {
+                  "deletionAt": 3042
+                },
+                "kind": "deleted",
+                "finalSegments": [
+                  {
+                    "deletionAt": 3042
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    319,
+                    323
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      319,
+                      323
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    2546,
+                    2546
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      2546,
+                      2546
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    2697,
+                    2697
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      2697,
+                      2697
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    3373,
+                    3373
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      3373,
+                      3373
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              }
+            ],
+            "selectedTaskIds": [
+              "s1"
+            ],
+            "testCount": 1,
+            "attributionIdentity": "8fd9fd9f8aea5deb4f0fd145597eff29a192aeb7be30536c4772ebb8bb43a1b6",
+            "attributionState": "accepted",
+            "tasks": [
+              {
+                "taskId": "s1",
+                "changeIndexes": [
+                  0,
+                  1
+                ],
+                "testIndexes": [
+                  0
+                ],
+                "decision": {
+                  "action": "initial"
+                },
+                "identity": "34d9bd82822aab997eb28f67a6c007ff0fecfa2bca80d55be9085a3d5f0272cb"
+              }
+            ]
+          },
+          "storyId": "s1",
+          "documents": {},
+          "reviewSet": [
+            {
+              "commit": "62579351a393561ab88486f094d287492ff76b01",
+              "parent": "e565794c3b5e9ca63cfafdf79a2a9cc25630793f",
+              "files": [
+                {
+                  "path": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        2225,
+                        2225
+                      ]
+                    },
+                    {
+                      "after": [
+                        2291,
+                        2291
+                      ]
+                    },
+                    {
+                      "after": [
+                        2425,
+                        2425
+                      ]
+                    },
+                    {
+                      "after": [
+                        2438,
+                        2438
+                      ]
+                    },
+                    {
+                      "after": [
+                        2441,
+                        2441
+                      ]
+                    },
+                    {
+                      "after": [
+                        2444,
+                        2445
+                      ]
+                    },
+                    {
+                      "after": [
+                        2450,
+                        2450
+                      ]
+                    },
+                    {
+                      "after": [
+                        2454,
+                        2456
+                      ]
+                    },
+                    {
+                      "after": [
+                        2459,
+                        2459
+                      ]
+                    },
+                    {
+                      "after": [
+                        2462,
+                        2484
+                      ]
+                    },
+                    {
+                      "deletionAt": 3042
+                    }
+                  ]
+                },
+                {
+                  "path": "vscode-plugin/src/chat/chat-panel.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        319,
+                        323
+                      ]
+                    },
+                    {
+                      "after": [
+                        2546,
+                        2546
+                      ]
+                    },
+                    {
+                      "after": [
+                        2697,
+                        2697
+                      ]
+                    },
+                    {
+                      "after": [
+                        3373,
+                        3373
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "s1",
+            "status": "passed",
+            "summary": "Reviewed all submitted changed segments, the functional requirements and acceptance check, and relevant test bodies/assertions at e08f5bbbe1d50dfad7360bcdfec3db6b041e067f. The implementation enforces Auto for new and restored chats, disables the other options, rejects their requests, and preserves stored choices. No material defects found; state ownership, naming, encapsulation and wire compatibility remain appropriate.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Coverage inspection is complete. Rendered-shell assertions check both disabled options and selected Auto. Adapter-request assertions check new-chat execution, rejected disabled/invalid requests, and restoration from both stored alternatives. Restoration tests also assert Auto in the control payload and preservation of the stored choice. Inspected the changed deletion, surrounding persistence/restore tests, fake channel, scripted adapter and wait helper. These establish host behavior and markup contracts; they do not establish real VS Code rendering.",
+              "evidenceReferences": [
+                "e08f5bbbe1d50dfad7360bcdfec3db6b041e067f:vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                "e08f5bbbe1d50dfad7360bcdfec3db6b041e067f:vscode-plugin/src/chat/__tests__/fixtures.ts",
+                "e08f5bbbe1d50dfad7360bcdfec3db6b041e067f:vscode-plugin/src/chat/chat-panel.ts",
+                "e08f5bbbe1d50dfad7360bcdfec3db6b041e067f:vscode-plugin/src/chat/session-store.ts"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: No tests, build, typecheck or real VS Code UI check were run by this reviewer. Builder-reported results were not independently verified or tied to an explicitly identified tested commit."
+            ],
+            "inspectedReferences": [
+              "62579351a393561ab88486f094d287492ff76b01:vscode-plugin/src/chat/chat-panel.ts",
+              "62579351a393561ab88486f094d287492ff76b01:vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+              "e08f5bbbe1d50dfad7360bcdfec3db6b041e067f:vscode-plugin/src/chat/chat-panel.ts",
+              "e08f5bbbe1d50dfad7360bcdfec3db6b041e067f:vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+              "e08f5bbbe1d50dfad7360bcdfec3db6b041e067f:vscode-plugin/src/chat/session-store.ts",
+              "e08f5bbbe1d50dfad7360bcdfec3db6b041e067f:vscode-plugin/src/chat/__tests__/fixtures.ts"
+            ],
+            "executedTests": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                "cases": [
+                  "edits mode: a new chat runs in Auto",
+                  "edits mode: a request for a disabled or invalid mode is dropped and the next turn runs in Auto",
+                  "edits mode: a chat saved as manual opens and runs in Auto, and its saved choice is kept",
+                  "edits mode: a chat saved as edit-auto opens and runs in Auto, and its saved choice is kept"
+                ],
+                "command": "npx tsx --test --test-force-exit src/chat/__tests__/chat-panel.test.ts (from vscode-plugin)",
+                "result": "pass",
+                "executionDetails": "Builder-reported pass only; not executed by this reviewer. The report identifies Node v26 but does not explicitly identify the tested commit, so it is not treated as verified execution of the pinned revision.",
+                "evidenceReferences": [
+                  "e08f5bbbe1d50dfad7360bcdfec3db6b041e067f:vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+                ]
+              }
+            ]
+          }
+        ],
+        "summary": "1 selected task assessment(s): passed.",
+        "completedAt": "2026-11-09T04:35:27.528Z",
+        "buildFingerprint": "144e01ddf67cd511baf785f4f4d2bc7c684ff2ae753ccff8486e4f52270acfa3"
+      }
+    ]
+  },
+  "citations": []
+}

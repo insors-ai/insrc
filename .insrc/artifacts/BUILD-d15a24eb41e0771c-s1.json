@@ -1,0 +1,128 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "09b6905f06ff03e3e8e78dd07980d7cb12a819f08700a1e2af1060e5ddd26508",
+        "at": "2026-11-08T20:27:18.080Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T04:25:48.689Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-04fdcc6f-9f9f-44d5-9d5c-189c691068a4",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T20:25:09.500Z",
+    "epicCreatedAt": "2026-11-08T20:00:01.326Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d15a24eb41e0771c",
+    "storyId": "s1",
+    "revision": 2,
+    "updatedAt": "2026-11-08T20:26:33.389Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "One module, two source files and their tests, with no storage, IPC or contract change.",
+    "epicSlug": "send-chat-prompts-enter-add-jump"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "In the VS Code dev chat, Enter sends and Ctrl/Cmd+Enter inserts a line; a floating button returns to the latest output while the reader has scrolled up, driven by the transcript pager's following state.",
+    "testRecord": {
+      "md": "docs/standalone/send-chat-prompts-enter-add-jump-E20261108d15a24eb/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T20:26:33.389Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T20:26:33.389Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T20:26:33.389Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T20:26:33.389Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/transcript-pager.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T20:26:33.389Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/send-chat-prompts-enter-add-jump-E20261108d15a24eb/S001/evidence/chrome-probe-after-click.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T20:26:33.389Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/send-chat-prompts-enter-add-jump-E20261108d15a24eb/S001/evidence/chrome-probe.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T20:26:33.389Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/send-chat-prompts-enter-add-jump-E20261108d15a24eb/S001/evidence/jump-button-dark.png"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T20:26:33.389Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/send-chat-prompts-enter-add-jump-E20261108d15a24eb/S001/evidence/jump-button-light.png"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T20:26:33.389Z"
+      }
+    ],
+    "commit": "5ae36ee34"
+  },
+  "citations": []
+}

@@ -10,13 +10,11 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { createSessionOutput, parseMarker } from '../session-output.js';
-import { tick, waitFor } from './fixtures.js';
 import { defaultProcessStartTime } from '../session-lock.js';
-import { appendFileSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { createProviderRegistry, classifyPermissionDenial, deriveChatTitle, nodeSpawner, writeReachedStdin } from '../cli-adapter.js';
 import type { AdapterDeps, ProviderId, ProviderRegistry, StreamAdapter, TurnProcess, TurnRequest, SessionHandle, SpawnedProcess, SpawnFn } from '../cli-adapter.js';
@@ -24,6 +22,7 @@ import type { TurnEvent } from '../stream-events.js';
 import {
   makeFakeSpawner,
   tick,
+  waitFor,
   CLAUDE_TEXT_TURN,
   CLAUDE_TOOL_TURN,
   CLAUDE_ERROR_TURN,
@@ -1441,6 +1440,70 @@ test('resume() from a saved offset yields only the later events, ends at the ter
   assert.equal(lost[0]!.kind, 'error');
   assert.equal((lost[0] as { observationFailure?: boolean }).observationFailure, true, 'SegmentGone is an observation failure, not a terminal');
   assert.match((lost[0] as { message: string }).message, /no longer kept/);
+});
+
+test('resume with unknown identity retains output observation and cannot verify Stop', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'chat-out-'));
+  const ctl = new AbortController();
+  let probes = 0;
+  let alive = true;
+  const signals: string[] = [];
+  const sessionOutput = createSessionOutput({ root, pollMs: 5 });
+  const adapter = createProviderRegistry({
+    spawn: makeFakeSpawner({ lines: [] }).spawn,
+    isInstalled: () => true,
+    sessionOutput,
+    isAlive: () => { probes++; return alive; },
+    processStartTime: () => undefined,
+    killGroup: (_, signal) => { signals.push(signal); },
+    livenessPollMs: 5,
+  }).get('claude');
+  let handle: TurnProcess | undefined;
+  let exited = false;
+  let checkpointed = false;
+  let following: Promise<TurnEvent[]> | undefined;
+  try {
+    const seg = await sessionOutput.beginTurn('s1', 't');
+    following = collect(adapter.resume({ cursor: seg.cursor, pid: 700, startedAt: 5 }, {
+      signal: ctl.signal,
+      onProgress: () => { checkpointed = true; },
+      onAttach: (proc) => {
+        handle = proc;
+        void proc.exit.then(() => { exited = true; });
+      },
+    }));
+    await waitFor(() => handle !== undefined);
+    assert.equal(await handle!.stopVerified!(), false);
+    handle!.kill('SIGKILL');
+    assert.deepEqual(signals, []);
+    appendFileSync(seg.outPath, '{"type":"system","subtype":"init","session_id":"native-1"}\n');
+    await waitFor(() => checkpointed);
+    ctl.abort();
+    assert.deepEqual((await following).map((event) => event.kind), ['status']);
+    const stoppedAt = probes;
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    assert.equal(probes, stoppedAt, 'aborting the follower disposes its process poll');
+    assert.equal(exited, false, 'abort does not certify process departure');
+
+    const terminal = await sessionOutput.beginTurn('s2', 't2');
+    appendFileSync(terminal.outPath, '{"type":"result","subtype":"success","is_error":false}\n');
+    let finalized = false;
+    const completing = collect(adapter.resume({ cursor: terminal.cursor, pid: 700, startedAt: 5 }, {
+      waitForDeparture: true,
+    })).then((events) => {
+      finalized = true;
+      return events;
+    });
+    await tick(25);
+    assert.equal(finalized, false, 'logical terminal output does not certify departure');
+    alive = false;
+    await waitFor(() => finalized);
+    assert.deepEqual((await completing).map((event) => event.kind), ['done']);
+  } finally {
+    ctl.abort();
+    await following;
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test("resume()'s handed-over process stops the recorded pid's group only while its start time matches", async () => {

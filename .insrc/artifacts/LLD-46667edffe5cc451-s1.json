@@ -1,0 +1,429 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1794158892326-31wwbi",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T17:28:14.859Z",
+    "epicCreatedAt": "2026-11-08T16:46:43.683Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 2153,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "46667edffe5cc451",
+    "epicSlug": "remediate-critical-high-moderate-dependabot-alerts",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1794158892326-31wwbi",
+    "hldEffectiveHash": "7cca28aa1022bf998ab35918e0b0b7692a6b02f4466286eec275e61b20552646",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Remediate critical, high, and moderate Dependabot alerts",
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "revision": 3,
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 3,
+        "contentHash": "fd5c54dd4fb14ae4469f0dc97fa3416444c611f0f63681781cdd1c63148860de",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 3,
+        "reviewer": {
+          "id": "agent:design-review-daemon",
+          "kind": "agent",
+          "properties": {
+            "party": "daemon"
+          }
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "HIGH": 0,
+          "MED": 0,
+          "LOW": 0
+        },
+        "at": "2026-11-08T17:38:02.964Z",
+        "report": {
+          "entityId": "LLD-46667edffe5cc451-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "8c42fd91905fc0704a246c85f534543eb8a96a0b6b7d8fc63f93296a1bb65fc3"
+        }
+      },
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T18:28:09.678Z"
+      }
+    },
+    "rangeBase": "7e322e0f5cef163377553c27e68b2c1381e26975"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Patch the daemon and standalone project-memory dependency graphs. The daemon owns its local embedding runtime, while standalone memory uses LanceDB for storage with caller-supplied embeddings. Preserve current protocols and stored data, and verify the packed package from a clean consumer before release. The approved ISSUE sets the historical scope, and its captured alert records support offline design verification. Live GitHub closure is checked after the default branch is rescanned."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Remediate critical, high, and moderate Dependabot alerts"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": []
+    },
+    "dataModelChanges": [],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A root or packed consumer still resolves an affected dependency copy",
+          "detection": "Enumerate every resolved copy and compare against the approved historical scope in docs/standalone/remediate-critical-high-moderate-dependabot-alerts-E2026110846667edf/S001/DEPENDABOT-SNAPSHOT.json. Independently recompute the manifest and severity counts from the captured records. Install the produced tarball in a clean consumer with default optional dependencies and no host overrides.",
+          "response": "Fail the applicable release gate and correct resolution. If the published upstream graph cannot be secured, qualify a narrowly scoped package change separately before releasing standalone memory.",
+          "userImpact": "The affected release stays pending while independently validated daemon batches can be assessed.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Native dependency fails to load or an existing memory store fails to reopen",
+          "detection": "Run real binding, embedding, and store reopen checks in clean Node 22.22.1 macOS and Linux installs.",
+          "response": "Block release for the affected package and retain the existing store data. Diagnose ABI, package selection, or API mismatch before rerunning.",
+          "userImpact": "Users avoid an installer or store compatibility regression.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Dependabot continues to report the ZIP symlink advisory after the patched package is deployed",
+          "detection": "Run extractAllTo, extractAllToAsync and extractEntryTo with overwrite and permission preservation enabled on separate temporary fixtures. In each fixture, an archive entry targets a pre-existing symlink pointing outside the destination to a sentinel with distinct bytes and mode 0600. The vulnerable baseline must replace the bytes and change permissions. The patched release must preserve both regardless of whether extraction throws or skips. The disposable 0.5.18 and 0.6.1 probes demonstrated the expected outcomes across all three calls.",
+          "response": "Record the runtime result and tracker status separately. Treat an actual outside write as a blocker and escalate any advisory metadata mismatch.",
+          "userImpact": "Completion evidence shows which result is verified.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A live test service is unavailable",
+          "detection": "Record the failing reachability or credential preflight and the exact affected checks.",
+          "response": "Run available fixture and unit checks. Keep live coverage explicitly pending with instructions for an environment that provides the service.",
+          "userImpact": "Release evidence distinguishes completed coverage from pending service validation.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Producer resolves patched Sharp but an installed package reintroduces the old optional branch",
+          "detection": "Compare the packed artifact and a clean consumer lockfile. A disposable Node 22 probe resolved sharp 0.35.5 at the producer and 0.33.5 from the packed shrinkwrap in the consumer.",
+          "response": "Use the bundled storage-only SDK recipe in docs/standalone/remediate-critical-high-moderate-dependabot-alerts-E2026110846667edf/S001/DEPENDENCY-BASELINE.md. Verify the upstream checksum and license, exclusion of optional embedding branches, presence of the bundled SDK and correct resolution of the original native binding, and installation with default options and no host overrides.",
+          "userImpact": "Standalone users receive a safe default install without editing the host manifest.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Current GitHub alert state is unavailable after deployment",
+          "detection": "Run the authenticated paginated alert query after the default-branch dependency scan and check each historical alert ID for its current state.",
+          "response": "Leave tracker reconciliation pending and retry when access is restored. Record current state separately from the frozen design evidence and package-level remediation results.",
+          "userImpact": "The release record identifies which GitHub closures were verified.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Valid CSV through an existing file connection after manifest cleanup",
+          "expected": "DuckDB preview and query remain functional."
+        },
+        {
+          "input": "Nested but valid YAML merge and multiple documents",
+          "expected": "Existing project config and infrastructure discovery still parse supported documents."
+        },
+        {
+          "input": "Historical lockfile still names an old Sharp version",
+          "expected": "The historical content and original test provenance remain intact. Any tracker disposition is scoped to those four paths."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Keep MCP stdio and current tool request and response schemas.",
+          "source": "c1"
+        },
+        {
+          "text": "Keep the package API, existing LanceDB data, and local-only embedding behavior.",
+          "source": "c2"
+        },
+        {
+          "text": "Keep saved driver settings and existing CSV file behavior.",
+          "source": "c3"
+        },
+        {
+          "text": "Standalone storage owns one LanceDB SDK dependency. The SDK selects one installed native binding for the host and memory receives vectors from its caller. The daemon owns its separate Transformers dependency. A standalone SDK distribution may narrow optional install edges while retaining the SDK version, platform bindings, and Arrow and store compatibility.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "contract",
+          "purpose": "Compare every package instance to the open advisory ranges in the root and fresh packed consumer lockfiles.",
+          "subjects": [
+            "Daemon dependency closure",
+            "Standalone memory consumer package graph",
+            "Recorded historical alerts"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Exercise existing affected behavior and add narrow regressions for security-sensitive gaps.",
+          "subjects": [
+            "MCP tool schema conversion",
+            "YAML merges and multi-document parsing",
+            "DuckDB CSV input",
+            "SMTP envelope and attachments",
+            "ZIP destination symlink rejection",
+            "CSV registration, preview and query via the existing DuckDB path after manifest removal",
+            "Static and dynamic dependency caller inventory and packaged entry-point check for PDF.js and csv-parse"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Verify protocol, TLS, and package compatibility using real transports and clean installs.",
+          "subjects": [
+            "MCP stdio list and call",
+            "HTTP redirects and aborts, WebSocket handshake, Ollama streaming",
+            "SMTP STARTTLS delivery",
+            "Cassandra, etcd, MySQL, and SQL Server connection and read paths",
+            "Load pre-upgrade saved configurations for Cassandra, etcd, MySQL and SQL Server through the daemon registry, then connect, read schema and execute an authorized read query"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Verify installed platform bindings and preserve existing store compatibility.",
+          "subjects": [
+            "macOS and Linux Node 22.22.1 native install",
+            "ONNX embedding initialization",
+            "Clean packed consumer memory create and reopen of pre-upgrade store"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "Batch 1 acceptance means the daemon transport, parsers and tooling resolve outside every mapped affected range while keeping existing interfaces.",
+            "Check the MCP SDK and Express proxy chain, stdio list and call, YAML merges, HTTP redirects and TLS, WebSocket and Ollama streaming. Search source, loaders, scripts, package edges and built entry points before dependency removal. Verify CSV through a saved DuckDB connection and no affected PDF.js or csv-parse dependency in the packed backend."
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "Batch 2 acceptance means SMTP and driver version changes preserve existing configurations, secure transports and authorized reads.",
+            "Check SMTP STARTTLS and authenticated delivery with recipients and attachments. Load existing Cassandra, etcd, MySQL and SQL Server configurations and exercise connection and read paths. Run the validated ZIP sentinel regression across all three extraction APIs."
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "Batch 3 acceptance means daemon and standalone memory native dependencies resolve safely, load on supported macOS and Linux Node 22.22.1, and preserve storage.",
+            "Check ONNX startup, then clean consumer install of the packed memory tarball with default optional dependencies and no host override. Verify the SDK checksum, license and graph, native binding, and records, vectors, queue and receipts when reopening a populated baseline store."
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "Combined acceptance requires targeted evidence for each ordered batch and one full repository sweep after all batches pass.",
+            "Recompute the approved historical inventory from the cited machine-readable snapshot. Check advisory ranges against the resolved lockfiles and preserve archived evidence byte-for-byte. The eight low alerts are outside this issue.",
+            "After the default-branch scan, independently query GitHub for the current state of each in-scope alert and record evidence-only and advisory metadata exceptions. An unavailable endpoint leaves this release check pending."
+          ]
+        }
+      ],
+      "testFramework": "Node test runner with tsx, existing npm build and project-memory qualification workflow. Use disposable services or existing fixtures and record live-service availability."
+    },
+    "migration": {
+      "stateBefore": "The existing stdio server, network clients, and memory store adapters described in s1 use the locked runtime dependency versions. A default standalone project-memory installation resolves its own LanceDB dependency closure.",
+      "stateAfter": "The daemon and standalone consumer package graphs pass the same advisory-range checks and existing stores reopen using their current schemas.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Qualify batch 1 with its scoped transport, parser, caller and lockfile checks.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Qualify batch 2 with its SMTP, saved driver and ZIP checks.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Qualify batch 3 with clean native installs, a packed consumer, and a populated pre-upgrade store fixture.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Run the full repository sweep once after all three batches pass targeted checks.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Before deployment, stop the writer, make a verified consistent backup of the store and queue including receipts, and restore it into a scratch location using the previous release to confirm recoverability. Preserve the backup and previous release artifact until verification completes.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Deploy and verify the daemon and standalone releases. On rollback, stop the writer, preserve the upgraded store separately, restore the verified pre-upgrade backup, and reopen it with the previous release. Treat post-upgrade writes as pending recovery until explicitly reconciled.",
+          "rollbackable": true
+        },
+        {
+          "order": 7,
+          "action": "After the default branch is updated and rescanned, query GitHub and reconcile each historical alert ID. Retain the approved inventory as historical evidence. Record current open alerts and unavailable tracker checks separately.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Preserve MCP schemas, daemon IPC, memory exports, saved connections and forward reopening of a populated store and queue written by the pre-remediation release. Select the baseline artifact from the release immediately before this story. Include records with vectors and both a pending queue item and a completed receipt. Rollback uses the verified pre-upgrade backup. It does not assume the previous release can open data written after upgrade.",
+      "zeroDowntime": false,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Scoped updates with a verified standalone package",
+        "oneLineSummary": "Refresh compatible versions and scope exceptions to their parent packages, with a separate packed consumer gate.",
+        "approach": "Use the resolved package versions, parent-scoped constraints, and advisory mapping in docs/standalone/remediate-critical-high-moderate-dependabot-alerts-E2026110846667edf/S001/DEPENDENCY-BASELINE.md. Batch 1 updates the MCP SDK to 1.32.2, Express to 5.3.0 and proxy-addr to 2.0.8, keeps Undici on 7.x with 7.30.2 verified, and refreshes the remaining transport, validation, YAML and tooling dependencies. Remove pdfjs-dist and csv-parse after checking tracked static imports, dynamic loading, dependency parents and packaged entry points. Batch 2 moves Nodemailer to 10.4.0, Cassandra to 4.10.0 with adm-zip 0.6.1 in the new parent range, MySQL to 3.24.6, etcd's gRPC to 1.14.7, and Tedious's Azure Identity to 4.14.1 with MSAL 7.2.1. Batch 3 resolves Sharp 0.35.5 and tar 7.5.22 for the daemon native paths. For standalone memory, bundle a manifest-only storage copy of upstream LanceDB 0.40.0 in the normal memory tarball. Leave the original platform bindings as version-pinned consumer optional dependencies. The verified upstream integrity, staging manifest, bundle mechanism, licensing and isolated consumer results are recorded in docs/standalone/remediate-critical-high-moderate-dependabot-alerts-E2026110846667edf/S001/DEPENDENCY-BASELINE.md.",
+        "pros": [
+          "Preserves existing workflows and narrows regression scope.",
+          "Separates deployed risk from historical evidence."
+        ],
+        "cons": [
+          "Consumer packaging must prove that the fixed dependency graph survives installation.",
+          "A few parent constraints need targeted exceptions."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Replace affected upstream dependency chains",
+        "oneLineSummary": "Replace or fork packages whose current dependency graph cannot resolve securely by normal version selection.",
+        "approach": "Replace broad dependency families or maintain a fork that changes runtime behavior, while keeping the external daemon and memory contracts equivalent.",
+        "pros": [
+          "Can remove a problematic transitive chain from consumer installations.",
+          "Avoids carrying range overrides for dependencies that cannot accept them."
+        ],
+        "cons": [
+          "Increases supply-chain maintenance and compatibility qualification.",
+          "Driver and native library replacements expand the regression surface."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "A broad fork or replacement can satisfy consumer resolution, but changes to the runtime SDK or provider behaviors would increase compatibility and maintenance costs beyond what this issue needs."
+      },
+      {
+        "id": "a3",
+        "name": "Upgrade full dependency families",
+        "oneLineSummary": "Use the latest major releases across affected families.",
+        "approach": "Adopt the current supported upstream lines and migrate each affected integration wherever its public API changed.",
+        "pros": [
+          "Moves more dependencies back onto current upstream lines."
+        ],
+        "cons": [
+          "Introduces unrelated behavioral changes.",
+          "The latest LanceDB still resolves the older optional Transformers branch."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Adds unrelated integration churn and the newer LanceDB release still selects the affected optional Transformers branch."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/mcp/server.ts:1264"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "packages/project-memory/src/store/lance-store.ts:184"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/db/file-execution.ts:45"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-46667edffe5cc451"
+    },
+    {
+      "id": "c5",
+      "kind": "doc",
+      "ref": "package-lock.json"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "packages/project-memory/src/__tests__/packed.test.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/agent/providers/onnx-embedder.ts:95"
+    },
+    {
+      "id": "c8",
+      "kind": "doc",
+      "ref": "https://docs.npmjs.com/cli/v10/configuring-npm/package-json/#overrides"
+    },
+    {
+      "id": "c9",
+      "kind": "doc",
+      "ref": "https://github.com/advisories/GHSA-vwc7-r8mq-g2x9"
+    },
+    {
+      "id": "c10",
+      "kind": "doc",
+      "ref": "https://github.com/cthackers/adm-zip/releases/tag/v0.6.1"
+    },
+    {
+      "id": "c11",
+      "kind": "doc",
+      "ref": "docs/standalone/remediate-critical-high-moderate-dependabot-alerts-E2026110846667edf/S001/DEPENDENCY-BASELINE.md"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "src/daemon/db/config.ts"
+    },
+    {
+      "id": "c13",
+      "kind": "doc",
+      "ref": "docs/standalone/remediate-critical-high-moderate-dependabot-alerts-E2026110846667edf/S001/DEPENDABOT-SNAPSHOT.json"
+    }
+  ]
+}

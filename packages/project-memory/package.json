@@ -25,7 +25,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "node --import tsx --test src/__tests__/*.test.ts",
-    "prepack": "npm run build"
+    "prepack": "node -e \"throw new Error('Use npm run pack:release to produce the verified standalone tarball')\"",
+    "pack:release": "node scripts/pack-release.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
@@ -36,5 +37,6 @@
     "@lancedb/lancedb": "0.40.0",
     "apache-arrow": "18.1.0",
     "fs-ext": "2.1.1"
-  }
+  },
+  "private": true
 }

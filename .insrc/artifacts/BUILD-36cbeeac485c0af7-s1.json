@@ -1,0 +1,162 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 8,
+        "contentHash": "4ac7cf39b750a3c38f0f38978287ba8e6a1c175bd51347732c92d9d4e9176286",
+        "at": "2026-11-08T11:04:12.669Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 8,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T11:45:36.640Z",
+        "override": {
+          "reason": "User chose override (option 1) after three code-review rounds. Open: one MED on t3, a URL attached to a colon label (read:source:https://...) passes the non-path citation check; it is a narrow false negative that refuses nothing valid, and is filed as a follow-up issue. One LOW on t1: the byte-identical heading test uses trimEnd. Build gate: t3 is recorded failed on scope only, because commit 5b1a698e5 also carried sibling t2's validation fix; all t3 acceptance checks and tests pass."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-f63b196e-03bf-411d-aab6-4c6bdaca9270",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T07:49:04.360Z",
+    "epicCreatedAt": "2026-11-08T07:13:05.866Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "36cbeeac485c0af7",
+    "storyId": "s1",
+    "revision": 8,
+    "updatedAt": "2026-11-08T11:03:34.072Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "llds-pass-every-gate-while-thin"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": false
+      },
+      {
+        "id": "t4",
+        "passed": true
+      }
+    ],
+    "summary": "Citation rule for non-path kinds at LLD finalize, now keeping a standalone URL whole (c9908d7d7, code-review finding). Commit 5b1a698e5 also carried the 11-line fix for sibling t2's validate finding, committed under the wrong label and named in that commit's message; t2 has since passed validation with it.",
+    "testRecord": {
+      "md": "docs/standalone/llds-pass-every-gate-while-thin-E2026110836cbeeac/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/__tests__/lld-authoring-gates.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T11:03:34.072Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/lld.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T11:03:34.072Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/orchestrator.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T11:03:34.072Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/workflow-step/__tests__/questions-gate-e2e.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T11:03:34.072Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/hld.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T11:03:34.072Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/synthesizer.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T11:03:34.072Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/workflow-step/phases/synthesize.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T11:03:34.072Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/workflow-step/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T11:03:34.072Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/fixtures/tool-surface.golden.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T11:03:34.072Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/server.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T11:03:34.072Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/attribution.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T11:03:34.072Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T11:03:34.072Z"
+      }
+    ],
+    "commit": "c9908d7d7"
+  },
+  "citations": []
+}

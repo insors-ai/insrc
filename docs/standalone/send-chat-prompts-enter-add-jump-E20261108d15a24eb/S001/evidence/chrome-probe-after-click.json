@@ -1,0 +1,7 @@
+{
+ "afterClick": {
+  "hidden": true,
+  "atEnd": true,
+  "focus": true
+ }
+}

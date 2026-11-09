@@ -18,7 +18,7 @@ import { ConnectionsWorkbenchOwner } from './connections/session-owner.js';
 import { ConnectionsManagerHost } from './connections/host.js';
 import { registerConnectionCommands } from './connections/wiring.js';
 import { ConnectionRemovals } from '../../src/shared/connection-manager/removal.js';
-import { createIpcClient } from '../../src/shared/ipc-client.js';
+import { createIpcClient, rpc } from '../../src/shared/ipc-client.js';
 import { PATHS } from '../../src/shared/paths.js';
 import { createStatusSurface } from './surfaces/status-surface.js';
 import { createCommandRegistry } from './surfaces/command-registry.js';
@@ -50,7 +50,7 @@ import { createWebviewPanelHost } from './panels/webview-host.js';
 import { defaultProcessScan } from './panels/process-scan.js';
 import { renderDaemonTab, renderWorkflowsTab } from './panels/detail-renderers.js';
 import { renderDebugTab, createDebugTabController, createDebugActionHandler } from './panels/debug-renderer.js';
-import { renderRepoConfig, createRepoConfigWriteHandler, createRepoRegisterProvidersHandler } from './panels/repo-config.js';
+import { renderRepoConfig, createRepoConfigWriteHandler, createRepoRegisterProvidersHandler, createRepoTrackerWriteHandler } from './panels/repo-config.js';
 import { renderModelTiers, createModelTiersWriteHandler } from './panels/model-tiers.js';
 import { createLogTail } from './panels/log-tail.js';
 import { createOrphanKill, readManagedPid } from './panels/orphan-kill.js';
@@ -76,6 +76,7 @@ import type { DiffView } from './chat/edit-governor.js';
 import { createLinkOpener } from './chat/link-opener.js';
 import { createDocsReviewHost, type DocsReviewHost } from './chat/docs-review-panel.js';
 import { createDocsReviewClient } from './chat/docs-review-client.js';
+import { createApprovalNotifier, createApprovalPrompter } from './chat/approval-subscribe.js';
 import { createReviewPresenter } from './chat/review-presenter.js';
 import { createCompanionReader } from './chat/companion-reader.js';
 import { createGitBaseline } from './chat/git-baseline.js';
@@ -189,6 +190,30 @@ export function activate(context: vscode.ExtensionContext): void {
   });
   activateExtension({ client, status, controller, onSettled: () => resolveActivationSettled() });
 
+  const approvals = createApprovalPrompter({
+    client,
+    notifier: createApprovalNotifier({
+      ask: async text => {
+        const action = await vscode.window.showWarningMessage(text, 'Approve', 'Decline', 'Show details');
+        if (action === 'Approve' || action === 'Decline' || action === 'Show details') return action;
+        return undefined;
+      },
+      openDetails: async content => {
+        const document = await vscode.workspace.openTextDocument({ language: 'json', content });
+        await vscode.window.showTextDocument(document, { preview: true });
+      },
+      notice: text => { void vscode.window.showWarningMessage(text); },
+    }),
+  });
+  let approvalsDisposed = false;
+  context.subscriptions.push({ dispose: () => {
+    approvalsDisposed = true;
+    approvals.stop();
+  } });
+  void activationSettled.then(() => {
+    if (!approvalsDisposed) approvals.start();
+  });
+
   // S003 daemon-auto-update: keep the locally-installed daemon current. This is the
   // SOLE vscode importer, so it binds the real seams — the daemon-owned update+restart
   // IPC (client.update/updateOutcome, sc1; NEVER a daemon-ctl.sh shell-out, k2), the
@@ -256,7 +281,9 @@ export function activate(context: vscode.ExtensionContext): void {
   // The sc8 ConfigGateway (config.catalog/config.show/config.write over the shared
   // client) — constructed once and reused by the ConfigSync engine AND the S007
   // Repo Configuration panel (its writeKeyPath/rawConfig per-repo read/write).
-  const configGateway = createDaemonConfigGateway(client);
+  const readDaemon = <T>(method: string, params?: unknown, timeoutMs?: number): Promise<T> =>
+    timeoutMs === undefined ? client.rpc<T>(method, params) : rpc<T>(method, params, undefined, { timeoutMs });
+  const configGateway = createDaemonConfigGateway(client, readDaemon);
   // Offer a daemon restart for changes that apply only after one (s6): the action runs the
   // restart and reports whether the daemon came back (restartDaemonAndReport).
   const offerRestart = (message: string): void => {
@@ -322,7 +349,7 @@ export function activate(context: vscode.ExtensionContext): void {
     error: (message: string): void => console.error(`[insrc] ${message}`),
   };
   const daemonData = createDaemonDataGateway({
-    rpc: (method, params) => client.rpc(method, params),
+    rpc: readDaemon,
     artifactsRoot: () => {
       const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
       return root === undefined ? undefined : join(root, '.insrc', 'artifacts');
@@ -410,6 +437,7 @@ export function activate(context: vscode.ExtensionContext): void {
   // (here) and registerDeliveryBoard()'s call, ~500 lines below — the closure
   // below reads this by reference, so it resolves correctly once assigned.
   let deliveryBoardOpen: (() => void) | undefined;
+  const repoConfigReadTimeoutMs = 15_000;
   const panelHost = createWebviewPanelHost({
     panels: ({ viewType, title }): PanelHandle => {
       // S005: enableScripts:true so the Detailed Status tab strip + Refresh can
@@ -464,11 +492,13 @@ export function activate(context: vscode.ExtensionContext): void {
     // from the sc9 registeredRepos read) + the selected repo's per-repo model-tiering
     // form read from the sc8 gateway's rawConfig (config.show).
     repoRenderer: renderRepoConfig({
-      registeredRepos: () => daemonData.registeredRepos(),
-      rawConfig: () => configGateway.rawConfig(),
+      registeredRepos: () => daemonData.registeredRepos(repoConfigReadTimeoutMs),
+      rawConfig: () => configGateway.rawConfig(repoConfigReadTimeoutMs),
+      repoFields: async () => (await configGateway.catalog(repoConfigReadTimeoutMs)).repoFields,
+      repoSettings: (repoPath) => configGateway.repoSettings(repoPath, repoConfigReadTimeoutMs),
       // Forward the selected repo so mcp.status also probes the repo's own
       // project-layer .vibe/config.toml for vibe (vibe merges layers by name).
-      mcpRegistration: (repoPath?: string) => daemonData.mcpRegistration(repoPath),
+      mcpRegistration: (repoPath?: string) => daemonData.mcpRegistration(repoPath, repoConfigReadTimeoutMs),
     }),
     // S007: the consent-gated per-repo write sink. Reuses the sc8 writeKeyPath ARRAY
     // form (config.write) — no new daemon capability (k3); gated by sc4 (k4); the
@@ -481,6 +511,15 @@ export function activate(context: vscode.ExtensionContext): void {
       logger: panelLog,
       refresh: () => panelHost.openRepoConfiguration(),
       offerRestart,
+    }),
+    onRepoTrackerWrite: createRepoTrackerWriteHandler({
+      consent,
+      registeredRepos: () => daemonData.registeredRepos(),
+      repoFields: async () => (await configGateway.catalog()).repoFields,
+      writeRepoSetting: (repoPath, key, value) => configGateway.writeRepoSetting(repoPath, key, value),
+      status,
+      logger: panelLog,
+      refresh: () => panelHost.openRepoConfiguration(),
     }),
     // Post-setup provider registration: the repo form's Providers section posts
     // the checked (unregistered) providers; the sink consent-gates and calls the
@@ -719,6 +758,7 @@ export function activate(context: vscode.ExtensionContext): void {
     // the chat in this window (with a notice) instead of failing the extension. Story S005: there is
     // no direct path; everything below that turns the chat on is gated on the queue existing.
     const chatQueue = createQueueFactory({
+      mode: 'session-leases',
       path: queuePathOf(PATHS.insrc, repoKeyOf(chatCwd(), {
         gitTopLevel: (cwd) => execFileSync('git', ['-C', cwd, 'rev-parse', '--show-toplevel'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }),
         realpath: (p) => realpathSync(p),
@@ -814,6 +854,10 @@ export function activate(context: vscode.ExtensionContext): void {
               'Revert',
             );
             if (pick === 'Revert') {
+              if (opts.canRevert?.() === false) {
+                void vscode.window.showWarningMessage('The edit could not be reverted because its original baseline is no longer exclusive.');
+                return;
+              }
               if (baseline === undefined) await nodeFsp.rm(abs, { force: true });
               else await nodeFsp.writeFile(abs, baseline, 'utf8');
             }

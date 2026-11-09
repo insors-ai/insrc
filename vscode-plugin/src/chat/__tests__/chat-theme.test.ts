@@ -341,6 +341,12 @@ test("chat theme: every selector and element id of the shell and the row rendere
     '.chatbtn .chev',
     '.chatmenu',
     '#insrc-histmenu',
+    // Story d15a24eb41e0771c/s1: the floating jump-to-latest button and the wrapper that positions it.
+    '#insrc-jump',
+    '#insrc-jump:focus-visible',
+    '#insrc-jump:hover',
+    '#insrc-jump[hidden]',
+    '#insrc-termwrap',
     '.popup .item .sub[data-dot="green"]',
     '.popup .item .sub[data-dot="red"]',
     '.popup .item .sub[data-dot="yellow"]',

@@ -4464,8 +4464,8 @@ test('t2: each of the FOUR real ledger uxDefinitions renders COMPLETELY', async 
   // discovered, so this test says WHICH records it is the contract for. Two of the
   // four belong to this Epic — the surface rendering its own design.
   const files = [
-    'LLD-85e6a58693579b6d-S001.json',
-    'LLD-7c219c7471d79496-S001.json',
+    'LLD-85e6a58693579b6d-s1.json',
+    'LLD-7c219c7471d79496-s1.json',
     'LLD-bfe98ff7f97178cf-s2.json',
     'HLD-bfe98ff7f97178cf.json',
   ];
@@ -4473,7 +4473,7 @@ test('t2: each of the FOUR real ledger uxDefinitions renders COMPLETELY', async 
   let checked = 0;
   for (const f of files) {
     const p = join(ledger, f);
-    if (!existsSync(p)) continue;
+    assert.ok(existsSync(p), `missing UX fixture ${f}`);
     const record = JSON.parse(readFileSync(p, 'utf8')).body.uxDefinition;
     assert.ok(record !== undefined && Array.isArray(record.body), `${f} carries a card body`);
 
@@ -5148,14 +5148,14 @@ test('t4: EVERY one of the four real records renders UNTRUNCATED — the bound n
   const here = dirname(fileURLToPath(import.meta.url));
   const ledger = join(here, '..', '..', '..', '..', '.insrc', 'artifacts');
   const files = [
-    'LLD-85e6a58693579b6d-S001.json', 'LLD-7c219c7471d79496-S001.json',
+    'LLD-85e6a58693579b6d-s1.json', 'LLD-7c219c7471d79496-s1.json',
     'LLD-bfe98ff7f97178cf-s2.json', 'HLD-bfe98ff7f97178cf.json',
   ];
 
   let checked = 0;
   for (const f of files) {
     const p = join(ledger, f);
-    if (!existsSync(p)) continue;
+    assert.ok(existsSync(p), `missing UX fixture ${f}`);
     const record = JSON.parse(readFileSync(p, 'utf8')).body.uxDefinition;
     const { el } = loadUx().uxRenderCard(record);
     // The guard's own degradation names depth. NONE may appear.

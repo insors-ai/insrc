@@ -1,0 +1,81 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4ff2ed67-503f-4f31-b5d7-80a1debb1912",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T06:58:01.309Z",
+    "epicCreatedAt": "2026-11-08T05:31:52.982Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d8b2fe8e08f1d1be",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Preserve unknown process identity through resume and Stop",
+      "parent": {
+        "entityId": "STORY-d8b2fe8e08f1d1be-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d8b2fe8e08f1d1be-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "64b5acf723945300c358741b599a22d1acd206c1481a53fcc2af52a747210900",
+        "at": "2026-11-08T06:58:01.309Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T06:58:01.313Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Preserve unknown process identity through resume and Stop",
+    "summary": "Extend the shared process observation used by queue setup, the resumed adapter, lifecycle and detached observer. Separate logical terminal output from positive process departure. Preserve live state and resume observation after unverified Stop.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Only definitive absence, confirmed replacement or trusted child exit certifies the recorded process departed.",
+      "A live PID with unreadable identity retains cursor, pin, progress and pending decisions. Stop sends no signal and does not certify completion. Follower abort disposes polls without settling exit."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts: resume with unknown identity retains output observation and cannot verify Stop"
+      },
+      {
+        "level": "integration",
+        "name": "vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts: unverified resumed Stop preserves the saved cursor and reattaches"
+      },
+      {
+        "level": "integration",
+        "name": "vscode-plugin/src/chat/__tests__/chat-queue-setup.test.ts: process observation distinguishes absence, reuse and unknown identity"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

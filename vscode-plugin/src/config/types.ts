@@ -17,6 +17,7 @@ import type { SettingsResult } from '../../../src/daemon/repo-settings.js';
 
 /** A settings row's shape (type, default, enum, group), as the sync engine validates against it. */
 export type { ConfigOption };
+export type DaemonRead = <T = unknown>(method: string, params?: unknown, timeoutMs?: number) => Promise<T>;
 import type { ModelDefinitions } from '../models/definitions.js';
 
 /** One native settings key that changed since the last daemon sync. */
@@ -73,7 +74,7 @@ export interface ConfigCatalogSnapshot {
  */
 export interface ConfigGateway {
   /** Read the daemon config snapshot; rejects when the daemon is unreachable. */
-  catalog(): Promise<ConfigCatalogSnapshot>;
+  catalog(timeoutMs?: number): Promise<ConfigCatalogSnapshot>;
   /** Write `value` at the daemon dot-path `key`; the daemon does NOT validate the value. */
   writeKey(key: string, value: unknown): Promise<ConfigWriteResult>;
   /**
@@ -89,9 +90,9 @@ export interface ConfigGateway {
    * (`models.tasks.*`) that the `config.catalog` snapshot omits. Rejects when the
    * daemon is unreachable.
    */
-  rawConfig(): Promise<Record<string, unknown>>;
+  rawConfig(timeoutMs?: number): Promise<Record<string, unknown>>;
   /** One repo's tracker settings, sign-in status and policy rows (`repo.settings.get`); rejects when the daemon is unreachable. */
-  repoSettings(repoPath: string): Promise<SettingsResult>;
+  repoSettings(repoPath: string, timeoutMs?: number): Promise<SettingsResult>;
   /** Set (or, with null, clear) one local tracker row of a repo (`repo.settings.set`); a daemon refusal becomes a reason-carrying result. */
   writeRepoSetting(repoPath: string, key: string, value: string | boolean | null): Promise<ConfigWriteResult>;
 }

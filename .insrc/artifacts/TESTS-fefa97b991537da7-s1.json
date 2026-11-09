@@ -1,0 +1,802 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 10,
+        "contentHash": "3fadc9d62f821a0e7a0164226cba0489bce54c73e7fcf050f7c252f03bf678c0",
+        "at": "2026-11-08T18:39:41.094Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "fefa97b991537da7",
+    "storyId": "s1",
+    "createdAt": "2026-11-08T16:59:13.219Z",
+    "updatedAt": "2026-11-08T18:39:41.076Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-04T19:31:14.890Z",
+    "epicSlug": "open-saved-connections-demand-read-all",
+    "revision": 10
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "3260a9940",
+        "ranAt": "2026-11-08T17:11:18.840Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "boot: a daemon start reads nothing from the Keychain and opens its socket",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/on-demand-open.test.ts",
+                "title": "boot: a daemon start reads nothing from the Keychain and opens its socket",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "on-demand: the first management request opens the repository and a later one does not reopen it",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/on-demand-open.test.ts",
+                "title": "on-demand: the first management request opens the repository and a later one does not reopen it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "on-demand: a refused Keychain read reports secret-unavailable and the next request retries",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/on-demand-open.test.ts",
+                "title": "on-demand: a refused Keychain read reports secret-unavailable and the next request retries",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "on-demand: a refused first-time set-up leaves nothing on disk",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/on-demand-open.test.ts",
+                "title": "on-demand: a refused first-time set-up leaves nothing on disk",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "on-demand: a plain listing of an unmanaged repository touches nothing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/on-demand-open.test.ts",
+                "title": "on-demand: a plain listing of an unmanaged repository touches nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "on-demand: shutdown closes every root opened on demand",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/on-demand-open.test.ts",
+                "title": "on-demand: shutdown closes every root opened on demand",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/on-demand-open.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 23765,
+            "titles": [
+              {
+                "title": "boot: a daemon start reads nothing from the Keychain and opens its socket",
+                "result": "pass"
+              },
+              {
+                "title": "on-demand: the first management request opens the repository and a later one does not reopen it",
+                "result": "pass"
+              },
+              {
+                "title": "on-demand: a refused Keychain read reports secret-unavailable and the next request retries",
+                "result": "pass"
+              },
+              {
+                "title": "on-demand: a plain listing of an unmanaged repository touches nothing",
+                "result": "pass"
+              },
+              {
+                "title": "on-demand: a refused first-time set-up leaves nothing on disk",
+                "result": "pass"
+              },
+              {
+                "title": "on-demand: shutdown closes every root opened on demand",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "15ab2f42c",
+        "ranAt": "2026-11-08T17:16:31.205Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "vault: concurrent reads perform one Keychain read",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/keystore-vault.test.ts",
+                "title": "vault: concurrent reads perform one Keychain read",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "vault: a refused load fails at once for five minutes and then retries",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/keystore-vault.test.ts",
+                "title": "vault: a refused load fails at once for five minutes and then retries",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "vault: a payload with a bad version, missing secrets, a non-string value or a bad retired list fails closed and is never rewritten",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/keystore-vault.test.ts",
+                "title": "vault: a payload with a bad version, missing secrets, a non-string value or a bad retired list fails closed and is never rewritten",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "vault: a malformed name or value leaves memory and the stored item unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/keystore-vault.test.ts",
+                "title": "vault: a malformed name or value leaves memory and the stored item unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "vault: a name such as __proto__ is stored and read as an ordinary key",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/keystore-vault.test.ts",
+                "title": "vault: a name such as __proto__ is stored and read as an ordinary key",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "vault: a failed write leaves memory unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/keystore-vault.test.ts",
+                "title": "vault: a failed write leaves memory unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "vault: concurrent saves lose no update",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/keystore-vault.test.ts",
+                "title": "vault: concurrent saves lose no update",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "vault: a deleted name is recorded as retired",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/keystore-vault.test.ts",
+                "title": "vault: a deleted name is recorded as retired",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "vault: a retired name saved again is readable",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/keystore-vault.test.ts",
+                "title": "vault: a retired name saved again is readable",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "keystore: listKeys never calls findCredentials",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/keystore-vault.test.ts",
+                "title": "keystore: listKeys never calls findCredentials",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/keystore-vault.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 888,
+            "titles": [
+              {
+                "title": "vault: concurrent reads perform one Keychain read",
+                "result": "pass"
+              },
+              {
+                "title": "vault: a refused load fails at once for five minutes and then retries",
+                "result": "pass"
+              },
+              {
+                "title": "vault: a payload with a bad version, missing secrets, a non-string value or a bad retired list fails closed and is never rewritten",
+                "result": "pass"
+              },
+              {
+                "title": "vault: a syntax error does not carry the stored item in its cause",
+                "result": "pass"
+              },
+              {
+                "title": "vault: a malformed name or value leaves memory and the stored item unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "vault: a name such as __proto__ is stored and read as an ordinary key",
+                "result": "pass"
+              },
+              {
+                "title": "vault: a failed write leaves memory unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "vault: concurrent saves lose no update",
+                "result": "pass"
+              },
+              {
+                "title": "vault: a deleted name is recorded as retired",
+                "result": "pass"
+              },
+              {
+                "title": "vault: a retired name saved again is readable",
+                "result": "pass"
+              },
+              {
+                "title": "keystore: listKeys never calls findCredentials",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "c58d36110",
+        "ranAt": "2026-11-08T17:19:27.210Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "migration: a legacy secret is copied once and read from the vault afterwards",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/keystore-vault.test.ts",
+                "title": "migration: a legacy secret is copied once and read from the vault afterwards",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "migration: concurrent misses of one name share one legacy read and one copy",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/keystore-vault.test.ts",
+                "title": "migration: concurrent misses of one name share one legacy read and one copy",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "migration: a save during a legacy read wins and the copy is discarded",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/keystore-vault.test.ts",
+                "title": "migration: a save during a legacy read wins and the copy is discarded",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "migration: a delete during a legacy read wins and the copy is discarded",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/keystore-vault.test.ts",
+                "title": "migration: a delete during a legacy read wins and the copy is discarded",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "migration: a failed copy serves later reads from memory, keeps the legacy item and reads it again on the next run",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/keystore-vault.test.ts",
+                "title": "migration: a failed copy serves later reads from memory, keeps the legacy item and reads it again on the next run",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "migration: an absent name causes no write and no second lookup in the run",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/keystore-vault.test.ts",
+                "title": "migration: an absent name causes no write and no second lookup in the run",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "migration: a refused legacy read fails at once for five minutes for that name only and then retries",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/keystore-vault.test.ts",
+                "title": "migration: a refused legacy read fails at once for five minutes for that name only and then retries",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "vault: a retired name does not fall back to its legacy item",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/keystore-vault.test.ts",
+                "title": "vault: a retired name does not fall back to its legacy item",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/keystore-vault.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 741,
+            "titles": [
+              {
+                "title": "vault: concurrent reads perform one Keychain read",
+                "result": "pass"
+              },
+              {
+                "title": "vault: a refused load fails at once for five minutes and then retries",
+                "result": "pass"
+              },
+              {
+                "title": "vault: a payload with a bad version, missing secrets, a non-string value or a bad retired list fails closed and is never rewritten",
+                "result": "pass"
+              },
+              {
+                "title": "vault: a syntax error does not carry the stored item in its cause",
+                "result": "pass"
+              },
+              {
+                "title": "vault: a malformed name or value leaves memory and the stored item unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "vault: a name such as __proto__ is stored and read as an ordinary key",
+                "result": "pass"
+              },
+              {
+                "title": "vault: a failed write leaves memory unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "vault: concurrent saves lose no update",
+                "result": "pass"
+              },
+              {
+                "title": "vault: a deleted name is recorded as retired",
+                "result": "pass"
+              },
+              {
+                "title": "vault: a retired name saved again is readable",
+                "result": "pass"
+              },
+              {
+                "title": "keystore: listKeys never calls findCredentials",
+                "result": "pass"
+              },
+              {
+                "title": "migration: a legacy secret is copied once and read from the vault afterwards",
+                "result": "pass"
+              },
+              {
+                "title": "migration: concurrent misses of one name share one legacy read and one copy",
+                "result": "pass"
+              },
+              {
+                "title": "migration: a save during a legacy read wins and the copy is discarded",
+                "result": "pass"
+              },
+              {
+                "title": "migration: a delete during a legacy read wins and the copy is discarded",
+                "result": "pass"
+              },
+              {
+                "title": "migration: a failed copy serves later reads from memory, keeps the legacy item and reads it again on the next run",
+                "result": "pass"
+              },
+              {
+                "title": "migration: an absent name causes no write and no second lookup in the run",
+                "result": "pass"
+              },
+              {
+                "title": "migration: a refused legacy read fails at once for five minutes for that name only and then retries",
+                "result": "pass"
+              },
+              {
+                "title": "vault: a retired name does not fall back to its legacy item",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "19d10b5b9",
+        "ranAt": "2026-11-08T17:24:05.710Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "threads: workers on two threads share one Keychain read",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/keystore-forwarding.test.ts",
+                "title": "threads: workers on two threads share one Keychain read",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "threads: a worker never calls the backend directly",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/keystore-forwarding.test.ts",
+                "title": "threads: a worker never calls the backend directly",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "threads: a closed hub channel does not fall back to the Keychain",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/keystore-forwarding.test.ts",
+                "title": "threads: a closed hub channel does not fall back to the Keychain",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "threads: a save on one worker is visible on another",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/keystore-forwarding.test.ts",
+                "title": "threads: a save on one worker is visible on another",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "threads: a malformed request from a worker reports KeystoreInputError",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/keystore-forwarding.test.ts",
+                "title": "threads: a malformed request from a worker reports KeystoreInputError",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/keystore-forwarding.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3491,
+            "titles": [
+              {
+                "title": "threads: workers on two threads share one Keychain read",
+                "result": "pass"
+              },
+              {
+                "title": "threads: a worker never calls the backend directly",
+                "result": "pass"
+              },
+              {
+                "title": "threads: a save on one worker is visible on another",
+                "result": "pass"
+              },
+              {
+                "title": "threads: a closed hub channel does not fall back to the Keychain",
+                "result": "pass"
+              },
+              {
+                "title": "threads: a malformed request from a worker reports KeystoreInputError",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "0ed541b91",
+        "ranAt": "2026-11-08T18:39:41.076Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "guard: a daemon holding no vault fails requests while maintenance holds the guard and succeeds after release",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/keystore-guard.test.ts",
+                "title": "guard: a daemon holding no vault fails requests while maintenance holds the guard and succeeds after release",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "guard: maintenance refuses and releases the guard when the daemon socket exists after acquiring it",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/keystore-guard.test.ts",
+                "title": "guard: maintenance refuses and releases the guard when the daemon socket exists after acquiring it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "maintenance: the offline tool reads the vault once",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/keystore-guard.test.ts",
+                "title": "maintenance: the offline tool reads the vault once",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/keystore-guard.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8321,
+            "titles": [
+              {
+                "title": "guard: a daemon holding no vault fails requests while maintenance holds the guard and succeeds after release",
+                "result": "pass"
+              },
+              {
+                "title": "guard: maintenance refuses and releases the guard when the daemon socket exists after acquiring it",
+                "result": "pass"
+              },
+              {
+                "title": "maintenance: the offline tool reads the vault once",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "640372bb9",
+        "ranAt": "2026-11-08T17:36:01.579Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "consumers: notify, web and keys handlers read through the vault",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/keystore-consumers.test.ts",
+                "title": "consumers: notify, web and keys handlers read through the vault",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ipc: keys.get reports exists:true for an empty saved secret",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/keystore-consumers.test.ts",
+                "title": "ipc: keys.get reports exists:true for an empty saved secret",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ipc: keys.set with a non-string value is refused and other secrets stay readable after a restart",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/keystore-consumers.test.ts",
+                "title": "ipc: keys.set with a non-string value is refused and other secrets stay readable after a restart",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "live: after a node upgrade one dialog appears across several connections and threads once migration is complete",
+            "level": "live",
+            "source": "none",
+            "cases": [],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/keystore-consumers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 14209,
+            "titles": [
+              {
+                "title": "consumers: notify, web and keys handlers read through the vault",
+                "result": "pass"
+              },
+              {
+                "title": "ipc: keys.get reports exists:true for an empty saved secret",
+                "result": "pass"
+              },
+              {
+                "title": "ipc: keys.set with a non-string value is refused and other secrets stay readable after a restart",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ],
+        "note": "named tests matched no test file: live: after a node upgrade one dialog appears across several connections and threads once migration is complete (pass a `tests` mapping at the validate turn: for each named test, the file and title of the test cases that carry it)"
+      }
+    ]
+  },
+  "citations": []
+}

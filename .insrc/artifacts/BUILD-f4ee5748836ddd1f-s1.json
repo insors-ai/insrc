@@ -1,0 +1,81 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "150a84636ee63b60f6fd07fb5b9275541ceffa1142be48970174d748134b0fc5",
+        "at": "2026-11-08T11:50:44.148Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T11:54:51.007Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-6e5adf8a-a93f-47c8-bb14-8e74d7338295",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T11:48:37.291Z",
+    "epicCreatedAt": "2026-11-08T11:46:34.545Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f4ee5748836ddd1f",
+    "storyId": "s1",
+    "revision": 2,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "A defect in one private helper with one obvious fix, plus one assertion in one test file; no contract, storage or design decision.",
+    "epicSlug": "refuse-url-attached-colon-label-lld",
+    "updatedAt": "2026-11-08T11:49:59.956Z"
+  },
+  "body": {
+    "focus": "A URL that follows a colon label is recognised as a file reference in an LLD citation, so a citation holding one beside other text is refused, while a standalone URL and a text-only label keep passing. The 'stored: a stored LLD with no storyTitle renders byte-identically' test compares the rendered strings without trimming them. No other citation kind, finalize path or stored artifact changes.",
+    "producesLld": false,
+    "commit": "51785ec0c",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "isFileToken now recognises a URL that follows a colon label, so such a citation beside other text is refused. The byte-identical LLD test compares exact bytes instead of trimming them.",
+    "testRecord": {
+      "md": "docs/standalone/refuse-url-attached-colon-label-lld-E20261108f4ee5748/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/__tests__/lld-authoring-gates.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T11:49:59.956Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/synthesizer.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T11:49:59.956Z"
+      }
+    ]
+  },
+  "citations": []
+}

@@ -20,7 +20,8 @@ import type { ArtifactModelAttribution, Citation, WorkflowIntent, WorkflowName, 
 import { singleModelAttribution } from './attribution.js';
 import type { Party } from './review/party.js';
 import type { BoundaryFinding, ValidationResult } from './synthesizer.js';
-import { renderCitationBlock, validateBodyAndCitations } from './synthesizer.js';
+import type { Alternative } from './artifacts/hld.js';
+import { checkNonPathCitationRefs, renderCitationBlock, validateBodyAndCitations } from './synthesizer.js';
 import {
 	isCitationArray,
 	isStubArtifact,
@@ -69,6 +70,7 @@ import {
 	checkStoryCoverage,
 	HLD_SCHEMA_VERSION,
 	isCitationArray as isHldCitationArray,
+	isAlternative,
 	isHldBody,
 	reconcileDependsFromConsumers,
 	renderHldMarkdown,
@@ -2019,7 +2021,7 @@ function designStorySynthesizer(
 		`- ${migrationOptional
 			? '`body.migration` MUST be OMITTED (Epic is new-capability; s7 short-circuited).'
 			: '`body.migration` MUST be verbatim from s7.'}`,
-		'- `body.alternativesConsidered` MUST include every alternative from s2 with losers carrying `reasonRejected` pulled from s3.',
+		'- `body.alternativesConsidered` MUST list every alternative from s2 by `id`, with losers carrying `reasonRejected` pulled from s3. The daemon fills every other field from s2, so they need not be repeated.',
 		'- `body.chosenAlternative` MUST equal s3.winnerId.',
 		'- `body.openQuestions` collects `missed`/`ambiguous` verdicts from s8 (except sbdry1-5 which hard-fail).',
 		ER_CONTENT_GATE_RULE,
@@ -2082,7 +2084,7 @@ function designStorySynthesizer(
 					errorPaths:            { type: 'object' },
 					testStrategy:          { type: 'object' },
 					migration:             { type: 'object' },
-					alternativesConsidered: { type: 'array', minItems: 2 },
+					alternativesConsidered: { type: 'array', minItems: 2, items: { type: 'object', required: ['id'], properties: { id: { type: 'string' }, reasonRejected: { type: 'string' } } } },
 					chosenAlternative:     { type: 'string', pattern: '^a\\d+$' },
 					openQuestions:         { type: 'array', items: { type: 'string' } },
 					erDefinition:          ER_DEFINITION_PROPERTY_SCHEMA,
@@ -2114,6 +2116,59 @@ function designStorySynthesizer(
 	return { systemPrompt, userTurn, schema: schema as unknown as Record<string, unknown> };
 }
 
+/**
+ * ISSUE-36cbeeac485c0af7: an LLD's alternatives as the alternatives step (s2) wrote them, so what
+ * the synthesizing model re-types cannot lose or change them. The author contributes only which
+ * ids are listed and each `reasonRejected`. A defect in s2 itself is not retryable: every
+ * resubmission would meet the same stored step output. A run with no s2 output has nothing to
+ * overlay, so the submitted list must be complete as it stands.
+ */
+function applyStepAlternatives(
+	submitted:   readonly Alternative[],
+	stepOutputs: Readonly<Record<string, unknown>>,
+): { ok: true; value: readonly Alternative[] } | { ok: false; failure: ValidationResult } {
+	const fields = 'id, name, oneLineSummary, approach, pros, cons and costEstimate';
+	const step = stepOutputs['s2'] as { alternatives?: unknown } | null | undefined;
+	if (step === undefined) {
+		const incomplete = submitted.filter(a => !isAlternative(a)).map(a => (a as { id?: unknown } | null)?.id ?? '(no id)');
+		if (incomplete.length === 0) return { ok: true, value: submitted };
+		return { ok: false, failure: schemaFailure(`alternativesConsidered entries ${incomplete.join(', ')} are incomplete: each needs ${fields}`) };
+	}
+
+	const source = step?.alternatives;
+	const restart = 'Restart design.story: resubmitting cannot correct the alternatives step.';
+	if (!Array.isArray(source) || !source.every(isAlternative)) {
+		return { ok: false, failure: { ok: false, kind: 'schema', retryable: false, message: `the alternatives step output is malformed: each alternative needs ${fields}. ${restart}` } };
+	}
+	const records = source as readonly Alternative[];
+	const recordIds = records.map(r => r.id);
+	if (new Set(recordIds).size !== recordIds.length) {
+		return { ok: false, failure: { ok: false, kind: 'schema', retryable: false, message: `the alternatives step output has duplicate ids (${recordIds.join(', ')}). ${restart}` } };
+	}
+
+	const ids = submitted.map(a => (a as { id?: unknown } | null)?.id);
+	const duplicates = ids.filter((id, i) => ids.indexOf(id) !== i);
+	const unknownIds = ids.filter(id => typeof id !== 'string' || !recordIds.includes(id));
+	const missing = recordIds.filter(id => !ids.includes(id));
+	if (duplicates.length > 0 || unknownIds.length > 0 || missing.length > 0) {
+		const parts = [
+			duplicates.length > 0 ? `duplicated: ${duplicates.join(', ')}` : '',
+			unknownIds.length > 0 ? `not in the alternatives step: ${unknownIds.join(', ')}` : '',
+			missing.length > 0 ? `missing: ${missing.join(', ')}` : '',
+		].filter(p => p.length > 0);
+		return { ok: false, failure: schemaFailure(`alternativesConsidered must list each alternative step id exactly once (${parts.join('; ')})`) };
+	}
+
+	return {
+		ok: true,
+		value: submitted.map(a => {
+			const r = records.find(x => x.id === a.id)!;
+			const base: Alternative = { id: r.id, name: r.name, oneLineSummary: r.oneLineSummary, approach: r.approach, pros: r.pros, cons: r.cons, costEstimate: r.costEstimate };
+			return typeof a.reasonRejected === 'string' ? { ...base, reasonRejected: a.reasonRejected } : base;
+		}),
+	};
+}
+
 async function finalizeDesignStory(
 	intent:      WorkflowIntent,
 	stepOutputs: Readonly<Record<string, unknown>>,
@@ -2126,9 +2181,9 @@ async function finalizeDesignStory(
 	if (typeof llmResponse !== 'object' || llmResponse === null) {
 		return { ok: false, failure: schemaFailure(`synthesizer response is not an object`) };
 	}
-	const body      = (llmResponse as { body?: unknown }).body;
+	const rawBody   = (llmResponse as { body?: unknown }).body;
 	const citations = (llmResponse as { citations?: unknown }).citations;
-	if (!isLldBody(body)) {
+	if (!isLldBody(rawBody)) {
 		return { ok: false, failure: schemaFailure(`body does not match LldBody shape`) };
 	}
 	if (!isLldCitationArray(citations)) {
@@ -2152,11 +2207,20 @@ async function finalizeDesignStory(
 		}
 	}
 
+	// ISSUE-36cbeeac485c0af7: an LLD's citations meet the file-reference rule whatever kind they carry.
+	const citationRefs = checkNonPathCitationRefs(citations, intent.repoPath);
+	if (!citationRefs.ok) return { ok: false, failure: citationRefs };
+
+	// ISSUE-36cbeeac485c0af7: both paths store the alternatives step's content, not the author's copy.
+	const alternatives = applyStepAlternatives(rawBody.alternativesConsidered, stepOutputs);
+	if (!alternatives.ok) return { ok: false, failure: alternatives.failure };
+	const body: LldBody = { ...rawBody, alternativesConsidered: alternatives.value };
+
 	// Standalone LLD (triage-routed non-Epic feature) — no parent Epic/HLD to
 	// validate against. Skip the HLD cross-artifact checks + amendment back-flow
 	// and stamp the triage provenance instead. See `docs/plans/feature-triage-router.md`.
 	if (intent.params['standalone'] === true) {
-		return await finalizeStandaloneLld(intent, runId, elapsedMs, body, citations, model);
+		return await finalizeStandaloneLld(intent, runId, elapsedMs, body, citations, model, attribution);
 	}
 
 	// Cross-artifact invariants — LLD must fit approved Epic + HLD.
@@ -2233,6 +2297,7 @@ async function finalizeDesignStory(
 		hldBaseRunId:         baseHld.meta.runId,
 		hldEffectiveHash:     effectiveHash,
 		hldAmendmentsApplied: appliedAmendments.map(a => a.id),
+		storyTitle:           story.title,
 	};
 	// sc4 (S003): render + attach the ER companion when the LLM authored an
 	// erDefinition (author-gate). Deterministic; a sibling of the LLD.md.
@@ -2415,6 +2480,7 @@ async function finalizeStandaloneLld(
 		hldBaseRunId:         runId,
 		hldEffectiveHash:     computeHldEffectiveHash(runId, []),
 		hldAmendmentsApplied: [],
+		storyTitle:           storyTitle ?? body.hldContextSlice.boundary.internal,
 		standalone:           true,
 		...(sizeClass !== undefined ? { sizeClass } : {}),
 		...(triageRationale !== undefined ? { triageRationale } : {}),

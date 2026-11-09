@@ -139,6 +139,12 @@ prefix under a durable intent and receipt-capability barrier. Queue-only hosts c
 support; the S3 factory supplies that support. This
 is not a second permanent receipt ledger or a claim of physical memory purge.
 
+## Standalone release tarball
+
+From this package, run `npm run pack:release -- /path/to/output` on Node 22 after installing development dependencies. The command emits the normal `@insrc/project-memory` tarball. Install that tarball with npm using its default optional dependency behavior. The source workspace is private to keep direct source packaging from shipping the development dependency graph.
+
+The release bundles the integrity-checked LanceDB 0.40.0 JavaScript SDK with its optional embedding providers removed. The package still resolves the official LanceDB binding for the consumer's platform. The packaged API and existing store formats are unchanged.
+
 ## Ownership and lifecycle
 
 The qualified runtime is Node >=22.22.1 and <23 on local APFS/macOS or ext4/Linux,

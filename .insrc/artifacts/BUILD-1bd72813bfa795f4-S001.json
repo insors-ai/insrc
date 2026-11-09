@@ -8,7 +8,12 @@
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-11-03T16:24:43.002Z",
-    "epicSlug": "multiple-concurrent-chats-chat-panel-active"
+    "epicSlug": "multiple-concurrent-chats-chat-panel-active",
+    "approvedAt": "2026-11-05T08:55:38.498Z",
+    "reviewOverride": {
+      "reason": "Code review was done outside the framework: the daemon automated insrc_code_review_step exceeded its time budget on every attempt, so the story was reviewed via manual review rounds 1-7 (docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/MANUAL-CODE-REVIEW-ROUND-{1..7}.md). Round 7 (cycle 3, round 1) verdict: PASS, no remaining HIGH/MED. All findings were fixed and re-verified: daemon build gates t5/t6/t10 passed on a fresh index, tsc clean, 238/238 local tests on the affected suites.",
+      "at": "2026-11-05T08:55:38.498Z"
+    }
   },
   "body": {
     "tasks": [

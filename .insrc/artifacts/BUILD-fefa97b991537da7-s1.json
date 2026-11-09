@@ -1,0 +1,261 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 10,
+        "contentHash": "587ead056d732211734a290ec7e1b9b78914c636739439d6c16ff455753f6cba",
+        "at": "2026-11-08T18:40:15.322Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 10,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T19:22:20.305Z",
+        "override": {
+          "reason": "User decision 2026-11-09 after three review rounds: t4 was incomplete only because the LLD's sequence-diagram.html was absent from the pinned design commit 2486e21cf; the reviewer found no defects in t4's code or tests and passed the other five tasks. Considered immaterial by the user. The diagram was not reviewed against the worker forwarding. t6's live one-dialog test on a real Mac has not been run and remains outstanding."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-8ffb4994-599c-4b9f-8e68-ed5487d7d837",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T16:59:13.219Z",
+    "epicCreatedAt": "2026-11-04T19:31:14.890Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "fefa97b991537da7",
+    "storyId": "s1",
+    "revision": 10,
+    "updatedAt": "2026-11-08T18:39:41.076Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "open-saved-connections-demand-read-all"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": false
+      }
+    ],
+    "summary": "The keys handlers read through the vault, keys.get treats an empty saved secret as existing, the vault module documents the cooldown and legacy retention, and the inventories match the changed sources.",
+    "testRecord": {
+      "md": "docs/standalone/open-saved-connections-demand-read-all-E20261104fefa97b9/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/__tests__/fixtures/fake-keytar.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T18:39:41.076Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/on-demand-open.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T18:39:41.076Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/connection-management-rpc.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T18:39:41.076Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db-rpc.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T18:39:41.076Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T18:39:41.076Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/managed-store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T18:39:41.076Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/management-defaults.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T18:39:41.076Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/management.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T18:39:41.076Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/secrets.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T18:39:41.076Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T18:39:41.076Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/helpers/mcp-e2e.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T18:39:41.076Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/keystore.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T18:39:41.076Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/fixtures/module-state-inventory.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T18:39:41.076Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/__tests__/keystore-vault.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T18:39:41.076Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/keystore-forwarding.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T18:39:41.076Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/main-services.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T18:39:41.076Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/worker-entry.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T18:39:41.076Z"
+      },
+      {
+        "target": {
+          "file": "src/bin/insrc-connection-maintenance.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T18:39:41.076Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/keystore-guard.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T18:39:41.076Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/paths.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T18:39:41.076Z"
+      },
+      {
+        "target": {
+          "file": "src/assets/connection-management-inventory.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T18:39:41.076Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/keystore-consumers.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T18:39:41.076Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/handler-runtime.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T18:39:41.076Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/fixtures/driver-field-matrix.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T18:39:41.076Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/management-adoption.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T18:39:41.076Z"
+      }
+    ],
+    "commit": "0ed541b91"
+  },
+  "citations": []
+}

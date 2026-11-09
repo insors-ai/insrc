@@ -1,0 +1,297 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1794132886145-4uu1ou",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T10:15:50.139Z",
+    "epicCreatedAt": "2026-11-08T08:48:39.709Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 63618,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "dc557863fa52ecf5",
+    "epicSlug": "fix-16-pre-existing-vs-code",
+    "storyId": "s1",
+    "lldRunId": "wf-1794129533555-8lkc5i",
+    "lldEffectiveHash": "814feeaf16ea0053e47e072bb1fb1a23aa635ee5a0e8f7f719fdd29837997ba8",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ef9ad4ccc72ce477dd760d69a00ecae32e94a698db45da179005d386297fff72",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T10:23:46.441Z"
+      }
+    },
+    "rangeBase": "726772a72994f5edff45f45dd4918d8dda86b999"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Restore the VS Code Tracker and approval integrations with the existing daemon contracts. Verify each implementation task with its focused tests, then run one full extension sweep and record the 16 targeted outcomes separately from unrelated failures."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Restore repository Tracker controls",
+        "summary": "Consume the catalog and repo settings gateway in the existing selected-repo configuration panel. Wire the host write dispatch through consent and preserve the model and provider controls.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Render escaped catalog-derived values, notes and sources. Only local fields accept editing and unavailable Tracker reads preserve the rest of the panel.",
+          "Reject forged, invalid, unregistered and stale selection writes before mutation, including after consent. Honor scalar and clear semantics and reload authoritative values for the active repo.",
+          "Repair all six affected Tracker renderer, catalog, dispatch and activation cases.",
+          "Verify boolean true, false and clear, invalid enum choices, escaped catalog and payload values, unavailable policy rows and reads completing after a repo switch."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "vscode-plugin/src/panels/__tests__/detail-renderers.test.ts"
+          },
+          {
+            "level": "unit",
+            "name": "vscode-plugin/src/panels/__tests__/repo-fields-contract.test.ts"
+          },
+          {
+            "level": "unit",
+            "name": "vscode-plugin/src/panels/__tests__/webview-host.test.ts"
+          },
+          {
+            "level": "unit",
+            "name": "vscode-plugin/src/workspace/__tests__/activation.test.ts"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Restore daemon approvals in VS Code",
+        "summary": "Attach one existing prompter per activation and implement the native notification adapter. Modernize the isolated IPC fixture.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Approve and Decline answer active requests once. Show details opens redacted JSON and re-prompts while live. Dismissal, cancel, disconnect and disposal guard against stale clicks.",
+          "Verify reconnect and teardown with the current server constructor and real streaming approval RPCs. Repair all four affected cases.",
+          "Cancel, disconnect and dispose while Details opens, and verify no re-prompt or answer. Surface stale answer rejection."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "vscode-plugin/src/chat/__tests__/approval-subscribe.test.ts"
+          },
+          {
+            "level": "unit",
+            "name": "Native notifier adapter Details, dismissal and stale-click cases"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Repair drifted regression assertions",
+        "summary": "Update only coverage that drifted from current fixture identities, taxonomy, settings activation, or provider routing.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Resolve all four UX fixtures and keep rendering and truncation checks. Derive model role groups and counts from taxonomy and verify Core floor separately.",
+          "Verify settings pull and migration ordering. Check live Claude/Codex/Vibe registry membership independently of Claude-to-Ollama routing. Repair the six remaining targeted cases.",
+          "Use LLD-85e6a58693579b6d-s1.json and LLD-7c219c7471d79496-s1.json. Report any missing fixture by ID."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "vscode-plugin/src/__tests__/activation.test.ts"
+          },
+          {
+            "level": "unit",
+            "name": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts"
+          },
+          {
+            "level": "unit",
+            "name": "vscode-plugin/src/chat/__tests__/exec-path-scan.test.ts"
+          },
+          {
+            "level": "unit",
+            "name": "vscode-plugin/src/panels/__tests__/repo-config.test.ts"
+          },
+          {
+            "level": "unit",
+            "name": "vscode-plugin/src/chat/__tests__/ollama-routing.test.ts"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Verify the completed extension changes",
+        "summary": "After all implementation tasks have passed focused checks, run the extension typecheck and full VS Code sweep and record evidence.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Run the full extension sweep only after t1 through t3. Record Node version, command and outcomes for all 16 target cases. Report unrelated failures separately, including the three original isolated-rerun passes if they recur.",
+          "Record manual Tracker and approval smoke status if an IDE is available. Retain rollout and rollback through extension replacement and host reload without a data rewrite."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5",
+          "c6",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "node --import tsx --test --test-force-exit --test-reporter=tap 'vscode-plugin/src/**/__tests__/*.test.ts'"
+          },
+          {
+            "level": "smoke",
+            "name": "VS Code extension TypeScript check"
+          },
+          {
+            "level": "smoke",
+            "name": "Manual Tracker read, write and native approval notification"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "Repo Configuration renderer and webview host",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Activation settings ordering and migration",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Role taxonomy groups and floor",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Four UX ledger fixtures and truncation",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Provider registry plus separate Ollama routing",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Subscribe, present, answer, cancel, reconnect, dispose and no duplicate answers",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "VS Code extension tests and TypeScript",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Manual Tracker selection/write and approval notification checks when an IDE is available",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/fix-16-pre-existing-vs-code-E20261108dc557863/S001/LLD.md#summary"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/fix-16-pre-existing-vs-code-E20261108dc557863/S001/LLD.md#2-contract-details"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/fix-16-pre-existing-vs-code-E20261108dc557863/S001/LLD.md#4-error-paths"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/fix-16-pre-existing-vs-code-E20261108dc557863/S001/LLD.md#3-diagrams"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/fix-16-pre-existing-vs-code-E20261108dc557863/S001/LLD.md#5-test-strategy",
+      "quotedText": "Acceptance mapping"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/fix-16-pre-existing-vs-code-E20261108dc557863/S001/LLD.md#6-migration"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/fix-16-pre-existing-vs-code-E20261108dc557863/S001/LLD.md#5-test-strategy",
+      "quotedText": "Test levels and subjects"
+    }
+  ]
+}

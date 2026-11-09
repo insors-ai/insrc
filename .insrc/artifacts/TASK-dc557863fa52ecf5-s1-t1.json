@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-99bc92db-6201-4387-bc3a-f5f17f3b7e45",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T10:23:47.970Z",
+    "epicCreatedAt": "2026-11-08T08:48:39.709Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "dc557863fa52ecf5",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Restore repository Tracker controls",
+      "parent": {
+        "entityId": "STORY-dc557863fa52ecf5-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-dc557863fa52ecf5-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9d2fa5e646e7d4de72e7ff01686c7b48e83b4032d1083bab50a2672817096c5a",
+        "at": "2026-11-08T10:23:47.970Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T10:23:47.971Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Restore repository Tracker controls",
+    "summary": "Consume the catalog and repo settings gateway in the existing selected-repo configuration panel. Wire the host write dispatch through consent and preserve the model and provider controls.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Render escaped catalog-derived values, notes and sources. Only local fields accept editing and unavailable Tracker reads preserve the rest of the panel.",
+      "Reject forged, invalid, unregistered and stale selection writes before mutation, including after consent. Honor scalar and clear semantics and reload authoritative values for the active repo.",
+      "Repair all six affected Tracker renderer, catalog, dispatch and activation cases.",
+      "Verify boolean true, false and clear, invalid enum choices, escaped catalog and payload values, unavailable policy rows and reads completing after a repo switch."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "vscode-plugin/src/panels/__tests__/detail-renderers.test.ts"
+      },
+      {
+        "level": "unit",
+        "name": "vscode-plugin/src/panels/__tests__/repo-fields-contract.test.ts"
+      },
+      {
+        "level": "unit",
+        "name": "vscode-plugin/src/panels/__tests__/webview-host.test.ts"
+      },
+      {
+        "level": "unit",
+        "name": "vscode-plugin/src/workspace/__tests__/activation.test.ts"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

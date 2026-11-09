@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-31f1c177-53b5-4d01-80d1-9e5640ff09c8",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T16:48:25.976Z",
+    "epicCreatedAt": "2026-11-04T19:31:14.890Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "fefa97b991537da7",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Open saved connections on demand instead of at boot",
+      "parent": {
+        "entityId": "STORY-fefa97b991537da7-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-fefa97b991537da7-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "745e9bc5bc18ef6b4a2ffd7c70244a6da10af5cc233e6c2652e38e79c8a440b0",
+        "at": "2026-11-08T16:48:25.977Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T16:48:25.984Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Open saved connections on demand instead of at boot",
+    "summary": "Remove the boot loop, make the main-thread management handlers open a repository on first use, have fresh initialization take its ticket key before its first disk write, and carry a keystore failure's cause to managementRejection.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "A daemon start reads nothing from the Keychain and opens its socket",
+      "The first management request opens a repository and a later one does not reopen it",
+      "A refused Keychain read reports secret-unavailable and the next request retries",
+      "A refused first-time set-up leaves nothing on disk",
+      "A plain listing of an unmanaged repository creates no state and reads no secret",
+      "Shutdown still closes every root opened on demand"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "boot: a daemon start reads nothing from the Keychain and opens its socket"
+      },
+      {
+        "level": "integration",
+        "name": "on-demand: the first management request opens the repository and a later one does not reopen it"
+      },
+      {
+        "level": "integration",
+        "name": "on-demand: a refused Keychain read reports secret-unavailable and the next request retries"
+      },
+      {
+        "level": "integration",
+        "name": "on-demand: a refused first-time set-up leaves nothing on disk"
+      },
+      {
+        "level": "integration",
+        "name": "on-demand: a plain listing of an unmanaged repository touches nothing"
+      },
+      {
+        "level": "integration",
+        "name": "on-demand: shutdown closes every root opened on demand"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

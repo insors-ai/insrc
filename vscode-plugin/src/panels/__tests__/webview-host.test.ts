@@ -9,6 +9,9 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 import { createWebviewPanelHost } from '../webview-host.js';
+import { renderRepoConfig } from '../repo-config.js';
+import { REPO_TRACKER_FIELDS } from '../../../../src/config/repo-fields.js';
+import type { SettingsResult } from '../../../../src/daemon/repo-settings.js';
 import {
   GatewayReadError,
   type DaemonDataGateway,
@@ -78,6 +81,7 @@ function makeHost(opts: {
   onDetailAction?: WebviewPanelHostDeps['onDetailAction'];
   repoRenderer?: WebviewPanelHostDeps['repoRenderer'];
   onRepoConfigWrite?: WebviewPanelHostDeps['onRepoConfigWrite'];
+  onRepoTrackerWrite?: WebviewPanelHostDeps['onRepoTrackerWrite'];
   onRepoRegisterProviders?: WebviewPanelHostDeps['onRepoRegisterProviders'];
   modelTiersRenderer?: WebviewPanelHostDeps['modelTiersRenderer'];
   onModelTiersWrite?: WebviewPanelHostDeps['onModelTiersWrite'];
@@ -109,6 +113,7 @@ function makeHost(opts: {
     onDetailAction: opts.onDetailAction,
     repoRenderer: opts.repoRenderer,
     onRepoConfigWrite: opts.onRepoConfigWrite,
+    onRepoTrackerWrite: opts.onRepoTrackerWrite,
     onRepoRegisterProviders: opts.onRepoRegisterProviders,
     modelTiersRenderer: opts.modelTiersRenderer,
     onModelTiersWrite: opts.onModelTiersWrite,
@@ -653,47 +658,132 @@ test('S007: a malformed selectRepo/repoWrite is a silent no-op (no re-render, no
   assert.equal(warns.length, 0, 'a malformed message is a silent no-op, not an error');
 });
 
-test('Story s3: a {repoTrackerWrite} is forwarded as a validated RepoTrackerWrite; the models.byRepo route and malformed tracker messages are unaffected', async () => {
+test('Tracker writes require the active repo and current rendered document', async () => {
   const writes: unknown[] = [];
+  let isCurrent: (() => boolean) | undefined;
   const { host, created, warns } = makeHost({
-    repoRenderer: async () => `<div>body</div>`,
-    onRepoConfigWrite: (w) => writes.push(w),
+    repoRenderer: async () => '<div>body</div>',
+    onRepoTrackerWrite: (write, current) => { writes.push(write); isCurrent = current; },
+    onRepoConfigWrite: (write) => writes.push(write),
   });
   host.openRepoConfiguration();
   await tick();
-
-  created[0]!.injectMessage({ type: 'repoTrackerWrite', repoPath: '/repo/a', key: 'ghHost', value: 'ghe.example.com' });
-  created[0]!.injectMessage({ type: 'repoTrackerWrite', repoPath: '/repo/a', key: 'ghPath', value: null });
-  created[0]!.injectMessage({ type: 'repoTrackerWrite', repoPath: '/repo/a', key: 'pushTasks', value: true });
-  created[0]!.injectMessage({ type: 'repoWrite', repoPath: '/repo/a', segments: ['tiers', 'core', 'runner'], value: 'ollama' });
+  const panel = created[0]!;
+  panel.injectMessage({ type: 'selectRepo', repoPath: '/repo/a' });
+  await tick();
+  const renderId = /data-render-id="([^"]+)"/.exec(panel.html)?.[1];
+  const tracker = { type: 'repoTrackerWrite', repoPath: '/repo/a', renderId };
+  for (const value of [true, false, null]) panel.injectMessage({ ...tracker, key: 'gitHooks', value });
+  panel.injectMessage({ type: 'repoWrite', repoPath: '/repo/a', segments: ['coreFloor'], value: 'mid' });
   assert.deepEqual(writes, [
-    { repoPath: '/repo/a', key: 'ghHost', value: 'ghe.example.com' },
-    { repoPath: '/repo/a', key: 'ghPath', value: null },
-    { repoPath: '/repo/a', key: 'pushTasks', value: true },
-    { repoPath: '/repo/a', segments: ['tiers', 'core', 'runner'], value: 'ollama' },
-  ], 'tracker writes carry key and value; the models.byRepo write keeps its segments shape');
-
-  // Malformed tracker messages are silent no-ops.
-  const before = writes.length;
-  created[0]!.injectMessage({ type: 'repoTrackerWrite', key: 'ghHost', value: 'x' });                       // no repoPath
-  created[0]!.injectMessage({ type: 'repoTrackerWrite', repoPath: '/r', value: 'x' });                      // no key
-  created[0]!.injectMessage({ type: 'repoTrackerWrite', repoPath: '/r', key: '', value: 'x' });             // empty key
-  created[0]!.injectMessage({ type: 'repoTrackerWrite', repoPath: '/r', key: 'ghHost', value: 5 });         // bad value
-  created[0]!.injectMessage({ type: 'repoTrackerWrite', repoPath: '/r', key: 'ghHost', value: ['a'] });     // bad value
-  created[0]!.injectMessage({ type: 'repoTrackerWrite', repoPath: '/r', key: 'ghHost' });                   // missing value
-  assert.equal(writes.length, before, 'no forward on a malformed repoTrackerWrite');
-  assert.equal(warns.length, 0, 'a malformed message is a silent no-op');
+    ...[true, false, null].map(value => ({ repoPath: '/repo/a', key: 'gitHooks', value })),
+    { repoPath: '/repo/a', segments: ['coreFloor'], value: 'mid' },
+  ]);
+  assert.equal(isCurrent?.(), true);
+  for (const invalid of [{ key: '', value: 'x' }, { key: 'ghHost', value: 5 }, { key: 'ghHost' }, { key: 'ghHost', value: 'x', repoPath: '/other' }]) {
+    panel.injectMessage({ ...tracker, ...invalid });
+  }
+  panel.injectMessage({ type: 'selectRepo', repoPath: '/repo/b' });
+  panel.injectMessage({ type: 'selectRepo', repoPath: '/repo/a' });
+  await tick();
+  panel.injectMessage({ ...tracker, key: 'ghHost', value: 'x' });
+  assert.equal(isCurrent?.(), false);
+  assert.equal(writes.length, 4);
+  assert.deepEqual(warns, []);
 });
 
 test('Story s3: a throwing tracker write sink is caught and logged; errors never reach the webview', async () => {
   const { host, created, warns } = makeHost({
-    repoRenderer: async () => `<div>ok</div>`,
-    onRepoConfigWrite: () => { throw new Error('sink boom'); },
+    repoRenderer: async () => '<div>ok</div>',
+    onRepoTrackerWrite: () => { throw new Error('sink boom'); },
   });
   host.openRepoConfiguration();
   await tick();
-  assert.doesNotThrow(() => created[0]!.injectMessage({ type: 'repoTrackerWrite', repoPath: '/r', key: 'ghHost', value: 'x' }));
+  const panel = created[0]!;
+  panel.injectMessage({ type: 'selectRepo', repoPath: '/r' });
+  await tick();
+  const renderId = /data-render-id="([^"]+)"/.exec(panel.html)?.[1];
+  assert.doesNotThrow(() => panel.injectMessage({ type: 'repoTrackerWrite', repoPath: '/r', key: 'ghHost', value: 'x', renderId }));
   assert.ok(warns.some((w) => /repo tracker write handler failed/.test(w)));
+});
+
+test('a delayed repo render never replaces the current selection', async () => {
+  let finish: ((value: string) => void) | undefined;
+  const { host, created } = makeHost({
+    repoRenderer: async selected => selected === '/slow' ? new Promise(resolve => { finish = resolve; }) : `<p>${selected}</p>`,
+  });
+  host.openRepoConfiguration();
+  const panel = created[0]!;
+  panel.injectMessage({ type: 'selectRepo', repoPath: '/slow' });
+  panel.injectMessage({ type: 'selectRepo', repoPath: '/current' });
+  await tick();
+  finish?.('<p>stale render</p>');
+  await tick();
+  assert.match(panel.html, /<p>\/current<\/p>/);
+  assert.doesNotMatch(panel.html, /stale render/);
+});
+
+test('Repo Configuration paints model controls while Tracker and Providers are still loading', async () => {
+  const repo = '/repo/a';
+  const tracker = Promise.withResolvers<SettingsResult>();
+  const providers = Promise.withResolvers<[]>();
+  const started: string[] = [];
+  const { host, created } = makeHost({
+    repoRenderer: renderRepoConfig({
+      registeredRepos: async () => [{ path: repo, name: 'a' }],
+      rawConfig: async () => ({}),
+      repoFields: async () => REPO_TRACKER_FIELDS,
+      repoSettings: () => { started.push('tracker'); return tracker.promise; },
+      mcpRegistration: () => { started.push('providers'); return providers.promise; },
+    }),
+  });
+  host.openRepoConfiguration();
+  const panel = created[0]!;
+  panel.injectMessage({ type: 'selectRepo', repoPath: repo });
+  await tick();
+  assert.match(panel.html, /Core floor/);
+  assert.match(panel.html, /Loading Tracker settings/);
+  assert.match(panel.html, /Loading provider status/);
+  assert.deepEqual(started.sort(), ['providers', 'tracker']);
+
+  tracker.reject(new Error('timeout'));
+  providers.resolve([]);
+  await tick();
+  assert.match(panel.html, /Core floor/);
+  assert.match(panel.html, /Tracker settings are unavailable/);
+  assert.doesNotMatch(panel.html, /Loading Tracker settings/);
+});
+
+test('Tracker stays expanded across repaints and resets when the repo changes', () => {
+  const source = readFileSync(join(HERE, '..', 'webview-host.ts'), 'utf8');
+  const script = /const REPO_BOOTSTRAP = `([\s\S]*?)`;/.exec(source)?.[1];
+  assert.ok(script);
+  let state: { trackerOpen: boolean } | undefined;
+  const posted: unknown[] = [];
+  function loadDocument() {
+    const listeners = new Map<string, () => void>();
+    const tracker = { open: false, addEventListener: (event: string, fn: () => void) => listeners.set(event, fn) };
+    const repo = { value: '/repo/b', addEventListener: (event: string, fn: () => void) => listeners.set(event, fn) };
+    const document = {
+      getElementById: (id: string) => id === 'insrc-tracker' ? tracker : id === 'insrc-repo-select' ? repo : null,
+      querySelectorAll: () => [],
+    };
+    new Function('acquireVsCodeApi', 'document', script!)(() => ({
+      getState: () => state,
+      setState: (next: { trackerOpen: boolean }) => { state = next; },
+      postMessage: (message: unknown) => posted.push(message),
+    }), document);
+    return { tracker, listeners };
+  }
+  const initial = loadDocument();
+  assert.equal(initial.tracker.open, false);
+  initial.tracker.open = true;
+  initial.listeners.get('toggle')?.();
+  const repainted = loadDocument();
+  assert.equal(repainted.tracker.open, true);
+  repainted.listeners.get('change')?.();
+  assert.deepEqual(posted, [{ type: 'selectRepo', repoPath: '/repo/b' }]);
+  assert.equal(loadDocument().tracker.open, false);
 });
 
 test('S007: the empty selectRepo option clears the selection back to picker-only', async () => {

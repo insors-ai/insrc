@@ -1,0 +1,244 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 11,
+        "contentHash": "6036536da2f6e195d80e4c71a2b9b43b94e2b72f048a88895ea4b21004854d06",
+        "at": "2026-11-09T04:37:31.454Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 11,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T05:11:31.452Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-6feea73a-c6ff-470c-9008-bc9b7dc73182",
+    "repoPath": "/private/tmp/insrc-dependabot-build.VhhDqJ",
+    "createdAt": "2026-11-08T18:41:33.396Z",
+    "epicCreatedAt": "2026-11-08T16:46:43.683Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "46667edffe5cc451",
+    "storyId": "s1",
+    "revision": 11,
+    "updatedAt": "2026-11-09T04:36:37.697Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "remediate-critical-high-moderate-dependabot-alerts"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      }
+    ],
+    "summary": "The root build passed and the combined sweep exited 1. The unchanged baseline reproduced 601 of 602 failure and cancellation signatures, tracked in GitHub #143. The branch-specific diagnostic pins were corrected, and all seven targeted checks and t2 revalidation passed. Live SQL Server and authenticated post-deployment alert reconciliation remain deferred or pending as documented.",
+    "testRecord": {
+      "md": "docs/standalone/remediate-critical-high-moderate-dependabot-alerts-E2026110846667edf/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "package-lock.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T04:36:37.697Z"
+      },
+      {
+        "target": {
+          "file": "package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T04:36:37.697Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/http/__tests__/transport.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T04:36:37.697Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/stdio-dependencies.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T04:36:37.697Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/saved-csv-dependencies.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T04:36:37.697Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/target-resolution/__tests__/core-and-parsers.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T04:36:37.697Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/cassandra-zip-dependencies.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T04:36:37.697Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/notify/__tests__/smtp-dependencies.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T04:36:37.697Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/notify/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T04:36:37.697Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/remediate-critical-high-moderate-dependabot-alerts-E2026110846667edf/S001/DRIVER-QUALIFICATION.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T04:36:37.697Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/saved-driver-dependencies.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T04:36:37.697Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/remediate-critical-high-moderate-dependabot-alerts-E2026110846667edf/S001/NATIVE-QUALIFICATION.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T04:36:37.697Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/onnx-native-dependencies.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T04:36:37.697Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/README.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T04:36:37.697Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T04:36:37.697Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/scripts/Apache-2.0.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T04:36:37.697Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/scripts/pack-release.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T04:36:37.697Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/__tests__/packed.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T04:36:37.697Z"
+      },
+      {
+        "target": {
+          "file": ".github/workflows/project-memory.yml"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T04:36:37.697Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/__tests__/fixtures/packed-store-consumer.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T04:36:37.697Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/remediate-critical-high-moderate-dependabot-alerts-E2026110846667edf/S001/RELEASE-VERIFICATION.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T04:36:37.697Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/remediate-critical-high-moderate-dependabot-alerts-E2026110846667edf/S001/release-verification.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T04:36:37.697Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/fixtures/session-sdk-diagnostics.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T04:36:37.697Z"
+      }
+    ],
+    "commit": "166764991"
+  },
+  "citations": []
+}

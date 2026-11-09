@@ -10,6 +10,7 @@ import { dirname, join } from 'node:path';
 
 import { renderRepoConfig, createRepoConfigWriteHandler, type RepoConfigWriteDeps } from '../repo-config.js';
 import { escapeHtml } from '../html.js';
+import { reasoningRoleTaxonomy } from '../../../../src/config/role-taxonomy.js';
 import type { RepoRef } from '../types.js';
 import type { ConfigWriteResult } from '../../config/types.js';
 import type { ConsentGate, ConsentOutcome } from '../../surfaces/consent-gate.js';
@@ -53,17 +54,19 @@ test('renderRepoConfig: discrete per-repo form fields from models.byRepo[repoPat
   assert.match(missing, new RegExp(`data-segments="${seg(['tasks', 'review'])}"><option value="" selected>global</option>`), 'a missing byRepo entry -> all-global form');
 });
 
-test('renderRepoConfig renders 14 critical roles in an open <details> group and 21 peripheral roles in a closed <details> group, not one flat 35-row table', async () => {
+test('renderRepoConfig groups the taxonomy into open critical and closed peripheral roles', async () => {
   const html = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async () => [] })(REPOS[0]!.path);
   assert.doesNotMatch(html, /<table/, 'no flat table — roles render as grouped rows, not <tr>s');
   const critical = /<details class="section" open><summary class="section-head">Critical roles <span class="count">(\d+)<\/span><\/summary>([^]*?)<\/details>/.exec(html);
   const peripheral = /<details class="section"><summary class="section-head">Peripheral roles <span class="count">(\d+)<\/span><\/summary>([^]*?)<\/details>/.exec(html);
   assert.ok(critical, 'the critical group is open (no explicit open attr elsewhere -> this regex)');
   assert.ok(peripheral, 'the peripheral group is present and closed (no "open" attribute)');
-  assert.equal(critical![1], '14', '14 critical roles');
-  assert.equal(peripheral![1], '21', '21 peripheral roles');
-  assert.equal((critical![2]!.match(/class="role-row"/g) ?? []).length, 14, 'the critical group renders exactly its 14 role rows');
-  assert.equal((peripheral![2]!.match(/class="role-row"/g) ?? []).length, 21, 'the peripheral group renders exactly its 21 role rows');
+  for (const [criticality, group] of [['critical', critical], ['peripheral', peripheral]] as const) {
+    const roles = reasoningRoleTaxonomy().roles.filter(role => role.criticality === criticality);
+    assert.equal(Number(group[1]), roles.length);
+    const segments = [...group[2]!.matchAll(/data-segments="([^"]+)"/g)].map(match => match[1]);
+    assert.deepEqual(segments, roles.map(role => escapeHtml(JSON.stringify(['tasks', role.id]))));
+  }
 });
 
 test('the core floor renders in its own <details>/section, separate from the role groups', async () => {
@@ -76,13 +79,16 @@ test('the core floor renders in its own <details>/section, separate from the rol
   assert.doesNotMatch(html, /<details[^>]*>(?:(?!<\/details>).)*Core floor/s, "the core floor is its own section, not nested inside a role-group <details>");
 });
 
-test("repo-config.test.ts: all roles at 'global' still render all 35 rows across both groups", async () => {
+test('repo-config.test.ts: global defaults render every taxonomy role and the separate Core floor', async () => {
   const html = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async () => [] })(REPOS[0]!.path);
-  assert.equal((html.match(/class="role-row"/g) ?? []).length, 36, '35 role rows + 1 core-floor row, all rendered at the global default');
-  assert.match(html, /<span class="count">14<\/span>/, 'the critical group still reports 14 at all-global');
-  assert.match(html, /<span class="count">21<\/span>/, 'the peripheral group still reports 21 at all-global');
-  const ids = new Set([...html.matchAll(/data-segments="([^"]+)"/g)].map((m) => m[1]));
-  assert.equal(ids.size, 36, '35 distinct role segments + 1 coreFloor segment, not duplicates');
+  const roles = reasoningRoleTaxonomy().roles;
+  const rows = [...html.matchAll(/<select data-segments="([^"]+)">([^]*?)<\/select>/g)];
+  assert.equal(rows.length, roles.length + 1);
+  assert.deepEqual(
+    rows.map(row => row[1]).sort(),
+    [...roles.map(role => escapeHtml(JSON.stringify(['tasks', role.id]))), escapeHtml(JSON.stringify(['coreFloor']))].sort(),
+  );
+  for (const row of rows) assert.match(row[2]!, /<option value="" selected>global<\/option>/);
 });
 
 test("repo-config.test.ts: a repo switch always renders the default open/closed groups afresh (no stale collapse state carried between repos)", async () => {

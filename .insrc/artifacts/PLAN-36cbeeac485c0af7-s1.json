@@ -1,0 +1,333 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1794123914487-v1ne45",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T07:46:38.956Z",
+    "epicCreatedAt": "2026-11-08T07:13:05.866Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 83964,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "36cbeeac485c0af7",
+    "epicSlug": "llds-pass-every-gate-while-thin",
+    "storyId": "s1",
+    "lldRunId": "wf-1794122938555-ch5567",
+    "lldEffectiveHash": "7f5480f3f7563fec2e5641d8a8ab0d2512a9f618ca129b1fbcb5c2de3ff43994",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7fdd012e70d1c6dde4c63e81b1c01094f9bb779fc7408e1a44ad31d1b85d1b00",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T07:47:03.589Z"
+      }
+    },
+    "rangeBase": "f9614591d72818a73fe4cac17f1b82b8c726e061"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "The build makes four independent changes to the write path for workflow artifacts: the LLD heading gains the Story title, alternatives are rebuilt from the step that wrote them, non-path citations are held to the file-reference rule, and client-authored artifacts record who wrote them. Nothing changes for artifacts already stored. The largest risk is existing test fixtures that submit incomplete alternatives, which the alternatives task must update."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Show the Story title in the LLD heading",
+        "summary": "Add optional storyTitle to the LLD meta, set it on the Epic and standalone finalize paths, and render it in the H1 when present.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A new LLD's H1 reads 'LLD: <id> — <title>' on both finalize paths",
+          "A title with a line break renders on one line",
+          "A stored LLD with no storyTitle renders byte-identically"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "title: the H1 shows id and title"
+          },
+          {
+            "level": "unit",
+            "name": "title: a title with a line break renders on one line"
+          },
+          {
+            "level": "integration",
+            "name": "title: the H1 shows id and title on both finalize paths"
+          },
+          {
+            "level": "integration",
+            "name": "stored: a stored LLD with no storyTitle renders byte-identically"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Rebuild alternatives from the alternatives step at finalize",
+        "summary": "Export isAlternative, add the overlay before the standalone branch with unique one-to-one ids, non-retryable handling of a malformed s2 and the no-s2 fallback, relax the synthesis schema and prompt, and update fixtures that submit incomplete alternatives.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Stored alternatives equal s2's records, keeping only the submitted reasonRejected",
+          "A submission whose content differs from s2 is accepted and s2's values are stored",
+          "Mismatched or duplicate submitted ids are refused as retryable",
+          "A malformed s2 is refused as non-retryable, naming a restart, and writes nothing",
+          "A run with no s2 output accepts complete alternatives and refuses incomplete ones",
+          "isLldBody is unchanged, so stored LLDs still read"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "overlay: a submission with only ids and reasonRejected stores every s2 field"
+          },
+          {
+            "level": "unit",
+            "name": "overlay: a submission that alters s2's content stores s2's values"
+          },
+          {
+            "level": "unit",
+            "name": "finalize: duplicate submitted ids are refused as retryable"
+          },
+          {
+            "level": "unit",
+            "name": "finalize: an id absent from s2 is refused as retryable"
+          },
+          {
+            "level": "unit",
+            "name": "finalize: an s2 alternative missing from the submission is refused as retryable"
+          },
+          {
+            "level": "unit",
+            "name": "finalize: duplicate s2 ids are refused as non-retryable"
+          },
+          {
+            "level": "unit",
+            "name": "fallback: a run with no s2 output accepts complete submitted alternatives"
+          },
+          {
+            "level": "unit",
+            "name": "fallback: a run with no s2 output refuses an id-only submission"
+          },
+          {
+            "level": "integration",
+            "name": "finalize: both the Epic and the standalone path apply the overlay"
+          },
+          {
+            "level": "integration",
+            "name": "finalize: an incomplete s2 record is refused as non-retryable, naming a restart, and writes nothing"
+          },
+          {
+            "level": "integration",
+            "name": "stored: isLldBody still accepts a stored LLD with partial alternatives"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Enforce the file-reference rule on non-path citations in LLDs",
+        "summary": "Add checkNonPathCitationRefs beside pathFormProblem and call it only from finalizeDesignStory.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "The DeepSeek LLD's actual refs are refused",
+          "A badly formed path-only ref, a root-level file name with prose and a URL with prose are refused",
+          "A text-only label, a well-formed path and a standalone URL pass",
+          "A refused citation names its id and writes nothing",
+          "checkPathForms is unchanged and other artifact kinds are unaffected"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "citations: the DeepSeek LLD's actual refs are refused"
+          },
+          {
+            "level": "unit",
+            "name": "citations: a badly formed path-only ref under analyze-bundle is refused, as under code"
+          },
+          {
+            "level": "unit",
+            "name": "citations: a root-level file name alongside prose is refused"
+          },
+          {
+            "level": "unit",
+            "name": "citations: a URL alongside prose is refused"
+          },
+          {
+            "level": "unit",
+            "name": "citations: a text-only label, a well-formed path and a standalone URL all pass"
+          },
+          {
+            "level": "integration",
+            "name": "citations: a refused citation names its id, writes nothing and succeeds when corrected"
+          },
+          {
+            "level": "integration",
+            "name": "citations: other artifact kinds are unaffected"
+          },
+          {
+            "level": "integration",
+            "name": "stored: checkPathForms behaviour for other artifact kinds is unchanged"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Record the real client and reported model on client-authored artifacts",
+        "summary": "Widen the stamp's runner to include 'unknown', add clientAttribution, add optional authorModel to the synthesize input and the workflow-step tool, build the stamp in handleSynthesize from the step context, and forward attribution on the standalone path.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A Codex client with a reported model stamps cli-codex and that model",
+          "An absent, blank or multiline authorModel stamps unknown",
+          "A client with no family stamps runner unknown",
+          "A supplied multi-output attribution stays unchanged on both finalize paths",
+          "The source type-checks with the widened runner and modelSummary prints an unknown stamp"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "attribution: absent, blank and multiline authorModel stamp unknown"
+          },
+          {
+            "level": "unit",
+            "name": "attribution: a client with no family stamps runner unknown"
+          },
+          {
+            "level": "unit",
+            "name": "attribution: modelSummary prints an unknown stamp"
+          },
+          {
+            "level": "integration",
+            "name": "attribution: a Codex client with a reported model stamps cli-codex and that model"
+          },
+          {
+            "level": "integration",
+            "name": "attribution: a supplied multi-output attribution stays unchanged on both finalize paths"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "applyStepAlternatives",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "checkNonPathCitationRefs",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderLldMarkdown",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "clientAttribution",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "finalizeDesignStory",
+        "coveredByTaskIds": [
+          "t1",
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "handleSynthesize",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "stored LLD re-render",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges alternatives at finalize"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges citations at finalize"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges OutputModelStamp"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges WorkflowStepInputSynthesize"
+    }
+  ]
+}

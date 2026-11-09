@@ -13,6 +13,25 @@ import type { TranscriptEntry } from '../session-store.js';
 import { HOST_TO_WEBVIEW_TYPES, WEBVIEW_TO_HOST_TYPES, type PendingAttachmentView, type HostToWebview, type HostToWebviewType, type WebviewToHost, type WebviewToHostType, type PermissionMode, type ActiveChatEntry, type DocsDocumentTab } from '../protocol.js';
 import { PROTOCOL_CONTRACT_KINDS, contractActiveList, contractDocsContent, contractDocsTab, contractEntryExtra, contractOpenChat, contractOpenCompanion, contractOpenDoc, contractDocsDecision, contractSelectionDecision } from '../protocol-contract.js';
 
+test('restore and targeted action frames preserve session, turn and generation identity', () => {
+  const target = { sessionId: 'A', turnId: 'turn-A', viewGeneration: 9 };
+  const progress = { turnId: target.turnId, startedAt: 1000, phase: 'waiting-approval' } as const;
+  const restore: HostToWebview = { type: 'session-restored', sessionId: target.sessionId, viewGeneration: 9, progress, transcript: [] };
+  const update: HostToWebview = { type: 'turn-progress', target, progress };
+  const request = { ...target, requestId: 'req-1' };
+  const actions: WebviewToHost[] = [
+    { type: 'cancel-turn', target },
+    { type: 'permission-decision', target: request, requestId: request.requestId, decision: 'approve' },
+    { type: 'selection-decision', target: request, requestId: request.requestId, selected: ['one'] },
+    { type: 'edit-decision', target, path: 'src/file.ts', accept: true },
+  ];
+  assert.ok(HOST_TO_WEBVIEW_TYPES.includes(update.type));
+  assert.equal(restore.progress?.turnId, update.target.turnId);
+  assert.equal(restore.sessionId, update.target.sessionId);
+  assert.equal(restore.viewGeneration, update.target.viewGeneration);
+  for (const action of actions) assert.deepEqual(JSON.parse(JSON.stringify(action)).target, action.target);
+});
+
 test("WEBVIEW_TO_HOST_TYPES reserves 'cancel-turn' alongside every prior kind (additive, k2)", () => {
   for (const k of ['submit-turn', 'new-chat', 'open-chat', 'set-edit-mode', 'edit-decision', 'docs-decision', 'open-doc']) {
     assert.ok(WEBVIEW_TO_HOST_TYPES.includes(k as WebviewToHostType), `existing kind ${k} still present`);

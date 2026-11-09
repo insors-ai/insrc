@@ -65,9 +65,10 @@ export interface RunningDaemon {
 }
 
 /** Start the real daemon with HOME in `home`; resolves once its socket answers. */
-export async function startDaemon(home: string): Promise<RunningDaemon> {
-	const child: ChildProcess = spawn(process.execPath, ['--import', TSX_ESM, join(REPO_ROOT, 'src', 'daemon', 'index.ts')], {
-		cwd: REPO_ROOT, env: childEnv(home), stdio: ['ignore', 'ignore', 'pipe'],
+export async function startDaemon(home: string, options: { readonly preload?: string; readonly env?: Record<string, string> } = {}): Promise<RunningDaemon> {
+	const preload = options.preload === undefined ? [] : ['--import', options.preload];
+	const child: ChildProcess = spawn(process.execPath, ['--import', TSX_ESM, ...preload, join(REPO_ROOT, 'src', 'daemon', 'index.ts')], {
+		cwd: REPO_ROOT, env: { ...childEnv(home), ...options.env }, stdio: ['ignore', 'ignore', 'pipe'],
 	});
 	let stderr = '';
 	// Diagnosis: with INSRC_TEST_DAEMON_STDERR set to a file, the daemon's stderr is also appended there.

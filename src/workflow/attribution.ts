@@ -24,6 +24,7 @@
  * OPTIONAL on the type (writers no longer set it).
  */
 
+import type { FamilyId } from '../daemon/model-catalog.js';
 import type { ArtifactMetaBase, ArtifactModelAttribution, OutputModelStamp } from './types.js';
 import { SHIPPED_DEFINITIONS } from '../config/model-defaults.js';
 
@@ -62,6 +63,17 @@ function labelStamp(label: string, role: string, keepRawLabel = false): OutputMo
  */
 export function singleModelAttribution(label: string): ArtifactModelAttribution {
 	return { outputs: [labelStamp(label, '(client)')] };
+}
+
+/**
+ * The attribution of a client-authored artifact: the family the calling client
+ * maps to and the model it reports. Either one not known stamps `unknown`, so an
+ * artifact never claims an author nobody reported.
+ */
+export function clientAttribution(family: FamilyId | undefined, authorModel: string | undefined): ArtifactModelAttribution {
+	const reported = typeof authorModel === 'string' ? authorModel.trim() : '';
+	const model = reported.length > 0 && !/[\r\n]/.test(reported) ? reported : 'unknown';
+	return { outputs: [{ role: '(client)', tier: 'core', runner: family ?? 'unknown', model }] };
 }
 
 /**

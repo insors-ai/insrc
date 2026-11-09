@@ -1,0 +1,42 @@
+{
+ "afterRestore": {
+  "hidden": true,
+  "display": "none",
+  "atEnd": true,
+  "termH": 293,
+  "scrollH": 7103,
+  "inputTop": 383,
+  "termBottom": 336
+ },
+ "ctrl": {
+  "prevented": true,
+  "value": "ab\nef",
+  "caret": 3,
+  "sent": 0,
+  "active": true
+ },
+ "shift": {
+  "prevented": false,
+  "sent": 0
+ },
+ "enter": {
+  "prevented": true,
+  "value": "",
+  "sent": [
+   "hello"
+  ]
+ },
+ "scrollEvent": {
+  "firedBeforeManual": 0,
+  "hiddenBeforeManual": true,
+  "top": 200
+ },
+ "scrolledUp": {
+  "hidden": false,
+  "display": "block",
+  "position": "absolute",
+  "right": 18,
+  "bottom": 12,
+  "w": 28
+ }
+}

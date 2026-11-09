@@ -19,7 +19,7 @@
  */
 
 import type { GithubEntry } from '../workflow/config/github.js';
-import { OWNER_NAME_RE, REPO_NAME_RE } from '../workflow/config/github.js';
+import { OWNER_NAME_RE, REPO_NAME_RE } from '../workflow/config/github-names.js';
 import type { TeamPolicy } from '../workflow/team/types.js';
 
 export type RepoFieldKind = 'local' | 'status' | 'policy';

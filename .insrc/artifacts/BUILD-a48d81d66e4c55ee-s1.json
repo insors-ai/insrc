@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "99767d3c7d9e473372640d9ad165a2323067be82d22341818afcb8d16ee35f0f",
+        "at": "2026-11-09T04:33:43.377Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T04:45:17.980Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-d8e6e778-cbf4-4d37-b978-f9c76aab3917",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T04:30:40.241Z",
+    "epicCreatedAt": "2026-11-09T04:30:40.241Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a48d81d66e4c55ee",
+    "storyId": "s1",
+    "revision": 2,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "One file, one mechanical approach with no new contract.",
+    "updatedAt": "2026-11-09T04:33:14.665Z"
+  },
+  "body": {
+    "focus": "VS Code dev chat: the edits mode setting defaults to Auto, and the Manual and Edit Automatically options are disabled for now, because the approval widgets those modes depend on break the chat flow. Applies to new chats and to chats already saved with another mode.",
+    "producesLld": false,
+    "commit": "62579351a",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Every chat now runs in Auto: the Manual and Edit Automatically options are disabled, a request for them is dropped, and a chat saved with another mode keeps that stored choice for when the modes return.",
+    "testRecord": {
+      "md": "docs/standalone/a48d81d66e4c55ee-E20261109a48d81d6/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T04:33:14.665Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T04:33:14.665Z"
+      }
+    ]
+  },
+  "citations": []
+}

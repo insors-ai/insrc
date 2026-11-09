@@ -28,7 +28,8 @@ import { connectionsPath, loadConnections, repoIdOf, saveConnections, } from './
 import { deleteSecret, extractUrlPassword, makeSecretRef, referencedSecrets, credentialKeystore, } from './db/secrets.js';
 import { reloadAll, savedConnectionResolver } from './db/pool-cache.js';
 import { assertUnmanagedWrite, managementMarkerExists } from './db/managed-store.js';
-import { savedManagementFor, withSavedRootGate, managementRejection } from './db/management.js';
+import { isKeystoreFailure, savedManagementFor, withSavedRootGate, managementRejection } from './db/management.js';
+import { ensureDefaultManagedRoot } from './db/management-defaults.js';
 import { materializeDraft, safeConnection } from './db/driver-profiles.js';
 import { connectionTestSupervisor } from './db/draft-test.js';
 import { assertDraftTestJson, assertNoRuntimeAuth } from '../shared/connection-management-wire.js';
@@ -76,6 +77,9 @@ export async function listConnectionsRpc(params: {
 		return [];
 	}
 	try {
+		// A plain listing of an unmanaged registry creates nothing and reads no secret.
+		if (transport && !savedManagementFor(repoRoot) && await managementMarkerExists(connectionsPath(repoRoot)))
+			await ensureDefaultManagedRoot(repoRoot).catch(() => undefined);
 		const managed = savedManagementFor(repoRoot);
 		const loaded = managed ? undefined : await loadConnections(repoRoot);
 		if ((!transport && managed) || loaded?.file._management || (!managed && await managementMarkerExists(connectionsPath(repoRoot))))
@@ -131,6 +135,10 @@ export async function saveConnectionRpc(params: {
 	const cfg = parseSaveInput(params.config);
 	if (typeof cfg === 'string') {
 		return { error: cfg };
+	}
+	if (!savedManagementFor(repoRoot)) {
+		try { await ensureDefaultManagedRoot(repoRoot); }
+		catch (error) { if (isKeystoreFailure(error)) { const rejection = managementRejection(error); return { error: `${rejection.code}: ${rejection.message}` }; } }
 	}
 	const managed = savedManagementFor(repoRoot);
 	if (managed) {

@@ -10,7 +10,7 @@ import { createInMemoryChatSessionStore } from '../session-store.js';
 import type { ProviderId, ProviderRegistry, RunOptions, StreamAdapter, TurnRequest } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
 import { createChatQueueStore, type SqliteDatabase } from '../chat-queue-store.js';
-import { createChatQueueWorker } from '../chat-queue-worker.js';
+import { createChatQueueWorker, createSessionQueueWorker } from '../chat-queue-worker.js';
 import { fakeLiveProc, waitFor, type FakeLiveProc } from './fixtures.js';
 
 interface Posted { v: number; payload: { type: string; [k: string]: unknown } }
@@ -46,21 +46,29 @@ function spawningAdapter(decisions: string[]): { adapter: StreamAdapter; runs: R
       }
     },
     cancel: async () => {},
-    decide: (_turnId, requestId, decision) => void decisions.push(`${requestId}:${decision}`),
+    decide: (_turnId, requestId, decision) => {
+      decisions.push(`${requestId}:${decision}`);
+      return { delivered: true };
+    },
     capabilities: { resume: true },
   };
   return { adapter, runs };
 }
-function harness() {
+function harness(sessionLeases = false) {
   const dir = mkdtempSync(join(tmpdir(), 'insrc-chat-routing-'));
-  const qstore = createChatQueueStore({ path: join(dir, 'repo.sqlite'), openDatabase: (p) => new DatabaseSync(p) as unknown as SqliteDatabase, now: () => Date.now(), pluginVersion: 't' });
+  const deps = { path: join(dir, 'repo.sqlite'), openDatabase: (p: string) => new DatabaseSync(p) as unknown as SqliteDatabase, now: () => Date.now(), pluginVersion: 't' };
+  const qstore = sessionLeases ? createChatQueueStore({ ...deps, mode: 'session-leases' }) : createChatQueueStore(deps);
   const fc = fakeChannel();
   const decisions: string[] = [];
   const { adapter, runs } = spawningAdapter(decisions);
   const registry: ProviderRegistry = { available: ['claude' as ProviderId], get: () => adapter };
   const host = createChatPanelHost({
     createPanel: () => fc.channel, providers: registry, store: createInMemoryChatSessionStore(), cwd: () => '/repo',
-    queue: (runner) => createChatQueueWorker({ store: qstore, claim: { windowKey: 'w-1', pid: process.pid }, runner, isAlive: () => false, now: () => Date.now() }),
+    queue: (runner) => {
+      const shared = { claim: { windowKey: 'w-1', pid: process.pid }, runner, now: deps.now };
+      return 'mode' in qstore ? createSessionQueueWorker({ ...shared, store: qstore, observe: () => ({ kind: 'unknown' }) }) :
+        createChatQueueWorker({ ...shared, store: qstore, isAlive: () => false });
+    },
   });
   host.open();
   fc.send('ready');
@@ -70,6 +78,45 @@ function harness() {
 const doneEv = (turnId: string): TurnEvent => ({ kind: 'done', turnId, ok: true, sessionId: 'native-1' });
 const deltas = (fc: { posted: Posted[] }): string[] =>
   fc.posted.filter((p) => p.payload.type === 'turn-event' && (p.payload['event'] as TurnEvent).kind === 'assistant-delta').map((p) => (p.payload['event'] as { text: string }).text);
+
+test('waiting approval or retry in A allows B and full capacity queues C', async () => {
+  const h = harness(true);
+  try {
+    h.fc.send('submit-turn', { text: 'A' });
+    await waitFor(() => h.runs.length === 1);
+    h.runs[0]!.feed({ kind: 'approval-request', turnId: 't1', requestId: 'ask-A', title: 'Approval', detail: 'Waiting', resolution: 'in-turn' });
+    await waitFor(() => h.qstore.list().some((row) => row.text === 'A' && row.waitingOn === 'approval'));
+    h.fc.send('new-chat', { provider: 'claude' });
+    h.fc.send('submit-turn', { text: 'B' });
+    await waitFor(() => h.runs.length === 2);
+    assert.equal(h.runs[1]!.req.prompt, 'B');
+    h.fc.send('new-chat', { provider: 'claude' });
+    h.fc.send('submit-turn', { text: 'C' });
+    await waitFor(() => h.qstore.list().some((row) => row.text === 'C' && row.state === 'queued'));
+    assert.equal(h.runs.length, 2);
+    h.runs[1]!.feed(doneEv('t2'));
+    h.runs[1]!.proc.exitNow();
+    await waitFor(() => h.runs.length === 3);
+    assert.equal(h.runs[2]!.req.prompt, 'C');
+
+    // A's live approval must be answered in its own chat before a retryable error.
+    const idA = h.qstore.list().find((row) => row.text === 'A')!.sessionId;
+    h.fc.send('open-chat', { chatId: idA });
+    h.fc.send('permission-decision', { requestId: 'ask-A', decision: 'deny' });
+    h.runs[0]!.feed({ kind: 'error', turnId: 't1', message: 'API Error: 529 overloaded' });
+    h.runs[0]!.proc.exitNow();
+    await waitFor(() => h.qstore.list().some((row) => row.text === 'A' && row.state === 'retrying'));
+    h.fc.send('submit-turn', { text: 'A younger' });
+    h.fc.send('new-chat', { provider: 'claude' });
+    h.fc.send('submit-turn', { text: 'B independent' });
+    await waitFor(() => h.runs.length === 4);
+    assert.equal(h.runs[3]!.req.prompt, 'B independent');
+    assert.ok(h.qstore.list().some((row) => row.text === 'A younger' && row.state === 'queued'));
+  } finally {
+    for (const run of h.runs) run.proc.exitNow();
+    h.done();
+  }
+});
 
 test("chat host: a message sent while a turn runs waits in the queue, the running turn keeps reporting, and the message runs when the turn ends; a typed message no longer denies the running turn's waiting approval", async () => {
   const h = harness();

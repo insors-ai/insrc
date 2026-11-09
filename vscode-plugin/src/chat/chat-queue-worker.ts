@@ -17,9 +17,11 @@ import { randomUUID } from 'node:crypto';
 import { REAL_TIMERS, type Timers } from './async-util.js';
 import type { AttachmentRef } from './attachment-store.js';
 import type { ChatPanelLogger } from './chat-panel.js';
+import { observeProcess, processDeparted, type ProcessObservation } from './session-lock.js';
 import {
   BUSY_NOTE, LEASE_HEARTBEAT_MS, LEASE_TAKEOVER_MS, PRESENCE_GRACE_MS, StoreBusy,
   type ChatQueueLeases, type ChatQueueStore, type EnqueueResult, type LeaseClaim, type QueuedMessage, type RepoLease, type TurnOutcome,
+  type LeaseToken, type ProcessExitProof, type SessionLease, type SessionQueueSnapshot, type SessionQueueStore,
 } from './chat-queue-store.js';
 
 /** How often the queue is checked while it has rows or this window holds the lease. */
@@ -30,6 +32,12 @@ export const IDLE_POLL_MS = 5_000;
 /** The card a running queued message waits on (Epic E20261014613abdb3 Story S002), or undefined when none. */
 export type WaitingOn = 'approval' | 'selection' | undefined;
 
+export interface QueuedCliIdentity {
+  readonly pid?: number | undefined;
+  readonly startedAt?: number | undefined;
+  readonly exited?: Promise<void> | undefined;
+}
+
 /** Runs one acknowledged message in this window (the chat host's runQueued, HLD sc3). */
 export interface QueuedTurnRunner {
   /**
@@ -38,11 +46,13 @@ export interface QueuedTurnRunner {
    */
   run(
     message: QueuedMessage,
-    onSpawn: (cli: { readonly pid?: number | undefined; readonly startedAt?: number | undefined }) => void,
+    onSpawn: (cli: QueuedCliIdentity) => void,
     onWaiting?: (on: WaitingOn) => void,
   ): Promise<TurnOutcome>;
   /** Story S004: says a line in the message's chat (the worker's give-up note for a busy outcome write). */
   note?(message: QueuedMessage, text: string): void;
+  /** Positive spawn evidence from the persisted live-turn checkpoint if the lease missed it. */
+  recoverCli?(lease: SessionLease): QueuedCliIdentity | undefined;
 }
 
 /** Story S004: how long a busy outcome write is retried before the worker stops and asks for a reload. */
@@ -77,6 +87,8 @@ export interface ChatQueueWorker {
   liveSessionIds(): ReadonlySet<string>;
   /** Whether this window is running a queued message now. */
   running(): boolean;
+  /** Consistent admission state for v3 outbox projection. */
+  eligibility?(): SessionQueueSnapshot;
   /**
    * Story S002 (AMD-3): an outbox action. cancel a queued or retrying message, dismiss a failed or
    * not-delivered one, or resend it at the back as this window's. The change is noticed at once; a
@@ -100,7 +112,71 @@ export interface ChatQueueWorkerDeps {
   readonly newTurnId?: (() => string) | undefined;
 }
 
+export interface SessionQueueWorkerDeps extends Omit<ChatQueueWorkerDeps, 'store' | 'isAlive'> {
+  readonly store: SessionQueueStore;
+  readonly observe?: ((pid: number) => ProcessObservation) | undefined;
+}
+
 const errText = (e: unknown): string => (e instanceof Error ? e.message : String(e));
+
+function queueCommands(
+  store: Pick<ChatQueueStore, 'enqueue' | 'list' | 'resendFrom' | 'retryNow' | 'cancel' | 'dismiss'>,
+  claim: LeaseClaim,
+  newTurnId: () => string,
+  listeners: Set<(rows: readonly QueuedMessage[]) => void>,
+  isDisposed: () => boolean,
+  schedule: (ms?: number) => void,
+  log: ChatPanelLogger | undefined,
+): Omit<ChatQueueWorker, 'running' | 'dispose'> {
+  return {
+    submit(m) {
+      const turnId = newTurnId();
+      const res = store.enqueue({
+        key: `${m.sessionId}::${turnId}`,
+        sessionId: m.sessionId,
+        turnId,
+        windowKey: claim.windowKey,
+        origin: m.origin,
+        text: m.text,
+        attachments: m.attachments,
+      });
+      schedule(0);
+      return res;
+    },
+    onChange(listener) {
+      listeners.add(listener);
+      return { dispose: () => void listeners.delete(listener) };
+    },
+    liveSessionIds() {
+      try {
+        return new Set(store.list().map((r) => r.sessionId));
+      } catch {
+        return new Set();
+      }
+    },
+    act(seq, action) {
+      if (isDisposed()) return { ok: false, note: ACTION_NOTES.gone };
+      let res: QueueActionResult;
+      try {
+        if (action === 'resend') {
+          const sent = store.resendFrom(seq, newTurnId(), claim.windowKey);
+          res = sent.ok ? { ok: true } : { ok: false, note: sent.note };
+        } else if (action === 'retry-now') {
+          res = store.retryNow(seq) ? { ok: true } : { ok: false, note: ACTION_NOTES.notRetrying };
+        } else if (action === 'cancel') {
+          res = store.cancel(seq) ? { ok: true } : { ok: false, note: store.list().some((r) => r.seq === seq && r.state === 'processing') ? ACTION_NOTES.started : ACTION_NOTES.gone };
+        } else {
+          res = store.dismiss(seq) ? { ok: true } : { ok: false, note: ACTION_NOTES.gone };
+        }
+      } catch (err) {
+        log?.warn(`[chat-queue] ${action} of message ${seq} failed: ${errText(err)}`);
+        res = { ok: false, note: err instanceof StoreBusy ? BUSY_NOTE : `The chat queue could not change the message: ${errText(err)}` };
+      }
+      if (res.ok) schedule(0);
+      return res;
+    },
+  };
+}
 
 export function createChatQueueWorker(deps: ChatQueueWorkerDeps): ChatQueueWorker {
   const { store, claim, now } = deps;
@@ -363,55 +439,8 @@ export function createChatQueueWorker(deps: ChatQueueWorkerDeps): ChatQueueWorke
   schedule(0);
 
   return {
-    submit(m) {
-      const turnId = newTurnId();
-      const res = store.enqueue({
-        key: `${m.sessionId}::${turnId}`,
-        sessionId: m.sessionId,
-        turnId,
-        windowKey: claim.windowKey,
-        origin: m.origin,
-        text: m.text,
-        attachments: m.attachments,
-      });
-      schedule(0);
-      return res;
-    },
-    onChange(listener) {
-      listeners.add(listener);
-      return { dispose: () => void listeners.delete(listener) };
-    },
-    liveSessionIds() {
-      try {
-        return new Set(store.list().map((r) => r.sessionId));
-      } catch {
-        return new Set();
-      }
-    },
-    running() {
-      return current !== undefined;
-    },
-    act(seq, action) {
-      if (disposed) return { ok: false, note: ACTION_NOTES.gone };
-      let res: QueueActionResult;
-      try {
-        if (action === 'resend') {
-          const sent = store.resendFrom(seq, newTurnId(), claim.windowKey);
-          res = sent.ok ? { ok: true } : { ok: false, note: sent.note };
-        } else if (action === 'retry-now') {
-          res = store.retryNow(seq) ? { ok: true } : { ok: false, note: ACTION_NOTES.notRetrying };
-        } else if (action === 'cancel') {
-          res = store.cancel(seq) ? { ok: true } : { ok: false, note: store.list().some((r) => r.seq === seq && r.state === 'processing') ? ACTION_NOTES.started : ACTION_NOTES.gone };
-        } else {
-          res = store.dismiss(seq) ? { ok: true } : { ok: false, note: ACTION_NOTES.gone };
-        }
-      } catch (err) {
-        log?.warn(`[chat-queue] ${action} of message ${seq} failed: ${errText(err)}`);
-        res = { ok: false, note: err instanceof StoreBusy ? BUSY_NOTE : `The chat queue could not change the message: ${errText(err)}` };
-      }
-      if (res.ok) schedule(0);
-      return res;
-    },
+    ...queueCommands(store, claim, newTurnId, listeners, () => disposed, schedule, log),
+    running: () => current !== undefined,
     dispose() {
       if (disposed) return;
       disposed = true;
@@ -436,6 +465,205 @@ export function createChatQueueWorker(deps: ChatQueueWorkerDeps): ChatQueueWorke
       } catch (err) {
         log?.warn(`[chat-queue] closing the queue worker: ${errText(err)}`);
       }
+      listeners.clear();
+    },
+  };
+}
+
+/** Staged v3 scheduler. The production factory selects it at queue cutover. */
+export function createSessionQueueWorker(deps: SessionQueueWorkerDeps): ChatQueueWorker {
+  const { store, claim, now, runner, log } = deps;
+  const timers = deps.timers ?? REAL_TIMERS;
+  const observe = deps.observe ?? observeProcess;
+  const listeners = new Set<(rows: readonly QueuedMessage[]) => void>();
+  interface LocalRun {
+    readonly token: LeaseToken;
+    readonly message: QueuedMessage;
+    child?: { readonly identity: QueuedCliIdentity; exited: boolean } | undefined;
+    pendingCli?: QueuedCliIdentity | undefined;
+    pendingWaiting?: { readonly on: WaitingOn } | undefined;
+    outcome?: TurnOutcome | undefined;
+    firstWriteFailure?: number | undefined;
+    gaveUp?: boolean | undefined;
+  }
+  const active = new Map<string, LocalRun>();
+  const recovered = new Map<string, { readonly token: LeaseToken; readonly child: QueuedCliIdentity }>();
+  let disposed = false;
+  let poll: unknown;
+  let lastBeat = Number.NEGATIVE_INFINITY;
+  let stamp = '';
+
+  const proofFor = (pid: number, startedAt?: number): ProcessExitProof =>
+    ({ pid, recordedStartedAt: startedAt, observation: observe(pid) });
+  const departed = (child: QueuedCliIdentity): boolean =>
+    child.pid !== undefined && processDeparted(observe(child.pid), child.startedAt);
+
+  function flush(run: LocalRun, at: number): void {
+    if (active.get(run.token.sessionId) !== run || run.gaveUp) return;
+    try {
+      if (run.pendingCli !== undefined) {
+        if (!store.attachCli(run.token, run.pendingCli)) {
+          active.delete(run.token.sessionId);
+          return;
+        }
+        run.pendingCli = undefined;
+      }
+      if (run.pendingWaiting !== undefined) {
+        store.markWaiting(run.token, run.pendingWaiting.on);
+        run.pendingWaiting = undefined;
+      }
+      if (run.outcome === undefined || run.gaveUp ||
+          (run.child !== undefined && !run.child.exited && !departed(run.child.identity))) return;
+      store.finish(run.token, run.outcome);
+      active.delete(run.token.sessionId);
+    } catch (err) {
+      log?.warn(`[chat-queue] message ${run.token.seq} state write failed: ${errText(err)}`);
+      if (run.outcome === undefined || run.gaveUp) return;
+      run.firstWriteFailure ??= at;
+      if (at - run.firstWriteFailure < BUSY_GIVE_UP_MS) return;
+      run.gaveUp = true;
+      try { runner.note?.(run.message, GIVE_UP_NOTE); }
+      catch (noteErr) { log?.warn(`[chat-queue] could not show the recovery note: ${errText(noteErr)}`); }
+    }
+  }
+
+  async function runMessage(message: QueuedMessage, token: LeaseToken): Promise<void> {
+    const run: LocalRun = { message, token };
+    active.set(token.sessionId, run);
+    const isCurrent = () => !disposed && active.get(token.sessionId) === run;
+    try {
+      run.outcome = await runner.run(message, (identity) => {
+        if (!isCurrent()) return;
+        const child = { identity, exited: false };
+        run.child = child;
+        if (identity.pid !== undefined) run.pendingCli = identity;
+        if (identity.exited !== undefined) void identity.exited.then(() => {
+          if (!isCurrent() || run.child !== child) return;
+          child.exited = true;
+          schedule(0);
+        }, () => {});
+        flush(run, now());
+      }, (on) => {
+        if (!isCurrent()) return;
+        run.pendingWaiting = { on };
+        flush(run, now());
+        schedule(0);
+      });
+    } catch (err) {
+      run.outcome = { kind: 'failed', error: errText(err), acted: true };
+    }
+    if (!isCurrent()) return;
+    flush(run, now());
+    schedule(0);
+  }
+
+  function recover(lease: SessionLease, beat: boolean): void {
+    const known = recovered.get(lease.sessionId);
+    if (known?.token.epoch === lease.epoch) {
+      if (departed(known.child)) {
+        store.finish(known.token, { kind: 'detached-ended' });
+        recovered.delete(lease.sessionId);
+      } else {
+        if (lease.cliPid === undefined) store.attachCli(known.token, known.child);
+        if (beat) store.heartbeat(known.token);
+      }
+      return;
+    }
+    if (lease.windowKey === claim.windowKey && lease.pid === claim.pid && lease.pidStartedAt === claim.pidStartedAt) return;
+    const owner = proofFor(lease.pid, lease.pidStartedAt);
+    if (!processDeparted(owner.observation, owner.recordedStartedAt)) return;
+    const child = lease.cliPid === undefined ? runner.recoverCli?.(lease) : { pid: lease.cliPid, startedAt: lease.cliStartedAt };
+    if (child?.pid === undefined) return; // missing spawn evidence is unresolved
+    if (lease.cliPid !== undefined) {
+      const cli = proofFor(lease.cliPid, lease.cliStartedAt);
+      if (processDeparted(cli.observation, cli.recordedStartedAt)) {
+        store.takeOver(lease, claim, { owner, cli });
+        return;
+      }
+    }
+    if (lease.windowKey !== claim.windowKey) return;
+    const token = store.reclaim(lease, claim, owner);
+    if (token === undefined) return;
+    recovered.set(lease.sessionId, { token, child });
+    if (lease.cliPid === undefined) store.attachCli(token, child);
+  }
+
+  function markClosedRows(rows: readonly QueuedMessage[], at: number): void {
+    for (const row of rows) {
+      if (row.windowKey === claim.windowKey || (row.state !== 'queued' && row.state !== 'retrying')) continue;
+      const presence = store.presenceOf(row.windowKey);
+      if (presence === undefined) {
+        if (at - row.createdAt > PRESENCE_GRACE_MS) store.markNotDeliveredIfHead(row.seq);
+      } else if (at - presence.heartbeatAt > PRESENCE_GRACE_MS) {
+        const proof = proofFor(presence.pid, presence.pidStartedAt);
+        if (processDeparted(proof.observation, proof.recordedStartedAt)) store.markNotDeliveredIfHead(row.seq, proof);
+      }
+    }
+  }
+
+  function tick(): void {
+    poll = undefined;
+    if (disposed) return;
+    let hasRows = true;
+    try {
+      const at = now();
+      const beat = at - lastBeat >= LEASE_HEARTBEAT_MS;
+      if (beat) {
+        store.presence(claim);
+        lastBeat = at;
+      }
+      const leases = store.leases();
+      for (const [sessionId, run] of active) {
+        if (!leases.some((lease) => lease.epoch === run.token.epoch)) active.delete(sessionId);
+        else {
+          flush(run, at);
+          if (beat && active.has(sessionId)) store.heartbeat(run.token);
+        }
+      }
+      for (const [sessionId, entry] of recovered) {
+        if (!leases.some((lease) => lease.epoch === entry.token.epoch)) recovered.delete(sessionId);
+      }
+      for (const lease of leases) {
+        if (active.has(lease.sessionId)) continue;
+        try { recover(lease, beat); }
+        catch (err) { log?.warn(`[chat-queue] recovery of message ${lease.seq} will retry: ${errText(err)}`); }
+      }
+      for (let head = store.head(claim.windowKey, at); head !== undefined; head = store.head(claim.windowKey, at)) {
+        const token = store.acknowledge(head.seq, claim);
+        if (token === undefined) break;
+        void runMessage({ ...head, state: 'processing' }, token);
+      }
+      markClosedRows(store.list(), at);
+      const nextStamp = `${store.dataVersion()}:${store.ownWrites()}`;
+      if (nextStamp !== stamp) {
+        const rows = store.list();
+        hasRows = rows.length > 0;
+        stamp = nextStamp;
+        for (const listener of listeners) {
+          try { listener(rows); }
+          catch (err) { log?.error(`[chat-queue] an onChange listener failed: ${errText(err)}`); }
+        }
+      } else hasRows = store.list().length > 0;
+    } catch (err) {
+      log?.warn(`[chat-queue] check failed, retrying on the next poll: ${errText(err)}`);
+    }
+    if (poll === undefined) schedule(hasRows ? ACTIVE_POLL_MS : IDLE_POLL_MS);
+  }
+
+  function schedule(delay = 0): void {
+    if (disposed) return;
+    if (poll !== undefined) timers.clearTimeout(poll);
+    poll = timers.setTimeout(tick, delay);
+  }
+
+  schedule();
+  return {
+    ...queueCommands(store, claim, deps.newTurnId ?? randomUUID, listeners, () => disposed, schedule, log),
+    running: () => active.size > 0 || recovered.size > 0,
+    eligibility: () => store.snapshot(now()),
+    dispose() {
+      disposed = true;
+      if (poll !== undefined) timers.clearTimeout(poll);
       listeners.clear();
     },
   };

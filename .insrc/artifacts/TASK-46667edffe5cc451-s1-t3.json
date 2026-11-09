@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e80f914f-5d9d-4638-b3e3-7dec83d47263",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T18:32:29.873Z",
+    "epicCreatedAt": "2026-11-08T16:46:43.683Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "46667edffe5cc451",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Patch and qualify daemon native dependency resolution",
+      "parent": {
+        "entityId": "STORY-46667edffe5cc451-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-46667edffe5cc451-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-46667edffe5cc451-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "00e66a729a6267341e61ac0221aa37fa006c72cd8664f657d42c71ace3b1d946",
+        "at": "2026-11-08T18:32:29.873Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T18:32:29.876Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Patch and qualify daemon native dependency resolution",
+    "summary": "Apply batch 3 daemon Sharp and ONNX tar constraints. Qualify clean macOS and Linux installations with Node 22.22.1 and exercise local ONNX startup and embedding.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Confirm every root Sharp and tar instance is outside mapped affected ranges.",
+      "Verify real macOS and Linux clean installation, native loading and local embedding on Node 22.22.1. Capture platform, binary versions and outputs."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "Clean macOS and Linux Node 22.22.1 daemon installs with native dependency version checks"
+      },
+      {
+        "level": "integration",
+        "name": "Load local ONNX and run a representative embedding without a cloud dependency"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

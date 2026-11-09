@@ -8,6 +8,9 @@ import { ArtifactIds } from '../../artifact-ids.js';
 import { artifactJsonPath } from '../../storage.js';
 import { DESIGN_LIMITS, DesignCheckpointSchema, DesignReviewError, DesignReviewPersistenceError, decodeDesign, requireDesign } from './contracts.js';
 import type { DesignReviewCheckpoint, DesignAttempt, DesignUnitState, DesignUnitSummary } from './contracts.js';
+import { isDesignAdmission } from './contracts.js';
+import type { StoredDesignCheckpoint } from './contracts.js';
+import { checkDesignAdmissionEvolution, decodeStoredDesignCheckpoint } from './admission-checkpoint.js';
 
 const same=(a:unknown,b:unknown):boolean=>JSON.stringify(a)===JSON.stringify(b);
 function checkUnit(unit:DesignUnitState|DesignUnitSummary):void {
@@ -132,6 +135,12 @@ export function validateDesignCheckpointIdentity(project: string, id: string, ch
  }
 }
 export async function loadDesignCheckpoint(project: string, reviewId: string): Promise<DesignReviewCheckpoint | undefined> {
+ const checkpoint = await loadStoredDesignCheckpoint(project, reviewId);
+ if (!checkpoint) return undefined;
+ requireDesign(checkpoint.schemaVersion === 1, 'unsupported_checkpoint', 'Admission checkpoint requires a version-2-aware consumer');
+ return checkpoint;
+}
+export async function loadStoredDesignCheckpoint(project: string, reviewId: string): Promise<StoredDesignCheckpoint | undefined> {
  const path=designCheckpointPath(project,reviewId);
  if(!await checkDirectories(project,false))return undefined;
  let file;
@@ -145,12 +154,16 @@ export async function loadDesignCheckpoint(project: string, reviewId: string): P
   requireDesign(size<=stat.size,'checkpoint_changed','Checkpoint changed while reading');
   let parsed:unknown;
   try{parsed=JSON.parse(bytes.subarray(0,size).toString('utf8'));}catch{throw new DesignReviewError('invalid_checkpoint','Checkpoint is not valid JSON');}
-  const checkpoint=decodeDesign(DesignCheckpointSchema,parsed);
-  validateDesignCheckpointIdentity(project,reviewId,checkpoint);return checkpoint;
+  const checkpoint=decodeStoredDesignCheckpoint(parsed);
+  validateStoredDesignIdentity(project,reviewId,checkpoint);return checkpoint;
  } finally {await file.close();}
 }
 /** A failed pre-rename write leaves the previous accepted snapshot intact. No advance may follow a rejected save. */
 export async function saveDesignCheckpoint(project: string, input: DesignReviewCheckpoint): Promise<void> {
+ const checkpoint = decodeDesign(DesignCheckpointSchema, input);
+ return serializeDesignWrite(designCheckpointPath(project, checkpoint.reviewId), () => saveQualifiedDesignCheckpoint(project, checkpoint));
+}
+async function saveQualifiedDesignCheckpoint(project: string, input: DesignReviewCheckpoint): Promise<void> {
  try{
  const checkpoint=decodeDesign(DesignCheckpointSchema,input),path=designCheckpointPath(project,checkpoint.reviewId);
  validateDesignCheckpointIdentity(project,checkpoint.reviewId,checkpoint);
@@ -161,6 +174,13 @@ export async function saveDesignCheckpoint(project: string, input: DesignReviewC
  if(previous)checkEvolution(previous,checkpoint);
  const raw=serializeDesignCheckpoint(checkpoint);
  requireDesign(Buffer.byteLength(raw)<=DESIGN_LIMITS.checkpointBytes,'checkpoint_too_large','Checkpoint exceeds limit');
+ await writeDesignCheckpointBytes(path,raw);
+ }catch(error){
+  if(error instanceof DesignReviewError)throw error;
+  throw new DesignReviewPersistenceError(error instanceof Error?error.message:'Checkpoint save failed');
+ }
+}
+async function writeDesignCheckpointBytes(path: string, raw: string): Promise<void> {
  const temporary=`${path}.${randomUUID()}.tmp`;
  let created=false;
  try {
@@ -173,8 +193,66 @@ export async function saveDesignCheckpoint(project: string, input: DesignReviewC
  } finally {
   if(created)await fs.unlink(temporary).catch((e:NodeJS.ErrnoException)=>{if(e.code!=='ENOENT')throw e;});
  }
- }catch(error){
-  if(error instanceof DesignReviewError)throw error;
-  throw new DesignReviewPersistenceError(error instanceof Error?error.message:'Checkpoint save failed');
+}
+
+/** Qualified prefix only until the history readers in the following task
+ * support failed-admission gaps. Refuse an ambiguous conversion explicitly. */
+function qualifiedDesignProjection(cp: StoredDesignCheckpoint): DesignReviewCheckpoint | undefined {
+ if (cp.schemaVersion === 1) return cp;
+ const attempts: DesignAttempt[] = [];
+ let admissionSeen = false;
+ for (const attempt of cp.attempts) {
+  if (isDesignAdmission(attempt)) { admissionSeen = true; continue; }
+  requireDesign(!admissionSeen, 'unsupported_checkpoint', 'Qualified history after admission gaps requires admission-aware history readers');
+  const { resourceGuard: _guard, acceptedAt: _at, submitted: _input, ...qualified } = attempt;
+  attempts.push(qualified);
  }
+ if (!attempts.length) {
+  requireDesign(!cp.subject && !cp.artifactId && !cp.submitted, 'invalid_checkpoint', 'Unverified admission cannot carry accepted subject authority');
+  return undefined;
+ }
+ requireDesign(cp.subject && cp.artifactId && cp.submitted, 'invalid_checkpoint', 'Qualified history needs its original subject and submission');
+ return { schemaVersion: 1, reviewId: cp.reviewId, project: cp.project, artifactId: cp.artifactId, subject: cp.subject, submitted: cp.submitted, attempts };
+}
+function validateStoredDesignIdentity(project: string, id: string, cp: StoredDesignCheckpoint): void {
+ requireDesign(cp.project === project && cp.reviewId === id, 'foreign_checkpoint', 'Checkpoint identity does not match request');
+ const prefix = qualifiedDesignProjection(cp);
+ if (prefix) validateDesignCheckpointIdentity(project, id, prefix);
+ if (cp.schemaVersion === 2) for (const attempt of cp.attempts) if (isDesignAdmission(attempt)) {
+  requireDesign(attempt.progress.checkpointPath === designCheckpointPath(project, id), 'foreign_checkpoint', 'Progress names another checkpoint');
+  // The requested file is not resolved or treated as a verified subject yet.
+  requireDesign(!attempt.submitted.artifactPath?.includes('\0'), 'invalid_checkpoint', 'Invalid requested artifact path');
+ }
+}
+
+const checkpointWrites = new Map<string, Promise<unknown>>();
+function serializeDesignWrite<T>(path: string, write: () => Promise<T>): Promise<T> {
+ const work = (checkpointWrites.get(path) ?? Promise.resolve()).catch(() => {}).then(write);
+ checkpointWrites.set(path, work);
+ void work.finally(() => { if (checkpointWrites.get(path) === work) checkpointWrites.delete(path); }).catch(() => {});
+ return work;
+}
+/** Read-modify-write under one per-checkpoint queue. Mutators always receive
+ * the latest durable snapshot, so a delayed progress save cannot drop a lease.
+ * Ownership across workers/processes remains the daemon registry's job. */
+export function updateStoredDesignCheckpoint(project: string, reviewId: string,
+ mutate: (current: StoredDesignCheckpoint | undefined) => StoredDesignCheckpoint | Promise<StoredDesignCheckpoint>): Promise<StoredDesignCheckpoint> {
+ const path = designCheckpointPath(project, reviewId);
+ return serializeDesignWrite(path, async () => {
+  const previous = await loadStoredDesignCheckpoint(project, reviewId);
+  const cp = decodeStoredDesignCheckpoint(await mutate(previous && structuredClone(previous)));
+  validateStoredDesignIdentity(project, reviewId, cp);
+  if (cp.schemaVersion === 1) { await saveQualifiedDesignCheckpoint(project, cp); return cp; }
+  if (previous) {
+   checkDesignAdmissionEvolution(previous, cp);
+   const before = qualifiedDesignProjection(previous), after = qualifiedDesignProjection(cp);
+   if (before && after) checkEvolution(before, after);
+  }
+  const raw = JSON.stringify(cp) + '\n';
+  requireDesign(Buffer.byteLength(raw) <= DESIGN_LIMITS.checkpointBytes, 'checkpoint_too_large', 'Checkpoint exceeds limit');
+  await checkDirectories(project, true);
+  try { await writeDesignCheckpointBytes(path, raw); }
+  catch (error) { throw new DesignReviewPersistenceError(error instanceof Error ? error.message : 'Checkpoint save failed'); }
+  return cp;
+ });
 }

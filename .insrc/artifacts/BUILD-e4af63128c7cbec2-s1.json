@@ -1,0 +1,142 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 3,
+        "contentHash": "3ebf2b1e669ed0e35ced494d99e03c350fd1f2118302bf750012bb03ff54178f",
+        "at": "2026-11-09T08:06:16.201Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-50be13b0-4b23-48df-bd60-ce7396e05988",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-09T07:52:13.312Z",
+    "epicCreatedAt": "2026-11-09T04:29:20.389Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e4af63128c7cbec2",
+    "storyId": "s1",
+    "revision": 3,
+    "updatedAt": "2026-11-09T08:05:19.987Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "isolate-each-code-design-review-its"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      }
+    ],
+    "summary": "Unified existing saveDesignCheckpoint and admission read-modify-write updates behind one per-path queue, with private atomic persistence. Tests block each competing writer at rename and prove neither ordering loses an open intent; complete recovery inputs remain pinned. All 136 affected-family tests and typecheck pass.",
+    "testRecord": {
+      "md": "docs/standalone/isolate-each-code-design-review-its-E20261109e4af6312/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/shared/__tests__/review-resources.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T08:05:19.987Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/review-resources.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T08:05:19.987Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/admission-checkpoint.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T08:05:19.987Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/admission-checkpoint.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T08:05:19.987Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/checkpoint.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T08:05:19.987Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/contracts.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T08:05:19.987Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/design-review/__tests__/admission-checkpoint.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T08:05:19.987Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/design-review/__tests__/checkpoint-progress.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T08:05:19.987Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/design-review/__tests__/fixtures.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T08:05:19.987Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/design-review/admission-checkpoint.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T08:05:19.987Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/design-review/checkpoint.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T08:05:19.987Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/design-review/contracts.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T08:05:19.987Z"
+      }
+    ],
+    "commit": "81edc5d07"
+  },
+  "citations": []
+}

@@ -555,8 +555,8 @@ export const notifyEmailTool: Tool = {
       const data: EmailSendData = {
         smtpHost, from, to, cc, bcc,
         messageId: info.messageId,
-        accepted: (info.accepted ?? []).map(v => typeof v === 'string' ? v : v.address),
-        rejected: (info.rejected ?? []).map(v => typeof v === 'string' ? v : v.address),
+        accepted: info.accepted ?? [],
+        rejected: info.rejected ?? [],
         response: info.response,
       };
       const ok = data.rejected.length === 0;

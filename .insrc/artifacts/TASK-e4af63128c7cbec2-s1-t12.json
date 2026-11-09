@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d5860687-092b-4b1e-8771-1f79251ff2f6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-09T07:42:48.098Z",
+    "epicCreatedAt": "2026-11-09T04:29:20.389Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e4af63128c7cbec2",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Expose responsive admission progress across supported clients",
+      "parent": {
+        "entityId": "STORY-e4af63128c7cbec2-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e4af63128c7cbec2-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e4af63128c7cbec2-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e4af63128c7cbec2-s1-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e4af63128c7cbec2-s1-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b0e98227677ce12fd7342707cb51ab8399d91e3af988c02ed90c66bbdf70008a",
+        "at": "2026-11-09T07:42:48.098Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T07:42:48.100Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Expose responsive admission progress across supported clients",
+    "summary": "Wire bounded per-review worker progress/status into current MCP/RPC readers, daemon thread status, CLI surfaces and live VS Code/JetBrains review DTOs/renderers. Preserve method names, identities and artifact-review behavior; add only the approved admission-phase/diagnostic fields and rendering semantics.",
+    "size": "M",
+    "order": 12,
+    "acceptanceChecks": [
+      "During blocked admission, progress/status respond without waiting for worker computation and report freshness, timestamps and unverified state rather than fabricated completion.",
+      "Code uses scope_preparation with task:null and unknown inventory represented by numeric zero plus explicit pending/unverified admission; design uses admission phase before its accepted plan.",
+      "Clients display Preparing review or technical admission failure, never successful empty scope; existing qualified/completed review views still decode.",
+      "Controller admission-to-assignment observation does not steal authority, restart admission or allocate another execution identity.",
+      "Current vscode-plugin and jetbrains-plugin IPC field names remain aligned; deprecated insrc-ide is outside scope."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/threads/__tests__/review-worker-progress.test.ts: pending admission and cached progress stay responsive during blocked worker computation"
+      },
+      {
+        "level": "unit",
+        "name": "vscode-plugin/src/chat/__tests__/review-worker-progress.test.ts: admission DTOs render preparing or failure without empty success"
+      },
+      {
+        "level": "unit",
+        "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/review/ReviewWorkerProgressTest.kt: admission DTOs preserve unknown inventory and current review identity"
+      }
+    ],
+    "planTaskId": "t12"
+  },
+  "citations": []
+}

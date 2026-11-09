@@ -28,6 +28,8 @@ Targeted reruns on baseline `33eefb2693c64ae393b54ebda479c5dce182d846` reproduce
 
 The driver diagnostic audit was the sole remaining branch-specific failure. Commit `445774cf2` refreshed reviewed SDK version and source pins after auditing the changed SDKs. All seven targeted checks passed in `t2-post-sweep.tap`, and the daemon revalidated t2. The combined sweep remains red at the recorded revision. The correction was tested with targeted checks after the sweep.
 
+The story owner deferred remediation of the reproduced baseline failures to [GitHub issue #143](https://github.com/insors-ai/insrc/issues/143).
+
 ## Post-deployment GitHub reconciliation
 
 Status is pending a deployment to the default branch and completion of its dependency scan. Run the following from a session with access to the repository's Dependabot API. The command is read-only and includes fixed and dismissed states.

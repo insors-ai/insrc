@@ -1,0 +1,246 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 16,
+        "contentHash": "2e352d3005ed199888716fe1acb026bf5aaba0f84a66807ba743fc7a355202d9",
+        "at": "2026-11-09T16:12:34.114Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 16,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T16:12:49.529Z",
+        "override": {
+          "reason": "The story owner authorized approval with override after fixing the final MED finding. Commit ab9b6f142 reconciles recovered nonterminal lifecycle writes and adds a directory-sync failure regression covering exact replay, conflicting equal-sequence rejection, and acceptance of a newer terminal transition. T2 daemon revalidation passed. The override applies to the third review's blocking verdict on the prior revision."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-a0ae9498-be78-44fa-b745-83ac8f6e9d6d",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T12:37:20.630Z",
+    "epicCreatedAt": "2026-11-09T06:00:04.355Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "206db3426ffd4428",
+    "storyId": "s1",
+    "revision": 16,
+    "updatedAt": "2026-11-09T16:11:46.333Z",
+    "authoredBy": "controller",
+    "epicSlug": "show-long-running-task-progress-chat"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      }
+    ],
+    "summary": "Reconciled the runtime sequence and replay evidence when storage recovers a nonterminal lifecycle write. The regression test injects a directory sync failure and verifies exact replay, conflicting equal-sequence rejection and acceptance of a newer terminal update.",
+    "testRecord": {
+      "md": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/task-progress/__tests__/store.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:11:46.333Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/task-progress/record.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:11:46.333Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/task-progress/store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:11:46.333Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/task-progress.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:11:46.333Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/task-progress/__tests__/coordinator.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:11:46.333Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/task-progress/coordinator.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:11:46.333Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/repo-call-audit.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:11:46.333Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/handler-runtime.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:11:46.333Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:11:46.333Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/repo-call-audit.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:11:46.333Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/task-progress/__tests__/access.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:11:46.333Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/task-progress/access.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:11:46.333Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/task-progress/rpc.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:11:46.333Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/task-progress/runtime.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:11:46.333Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/method-class.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:11:46.333Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/task-progress/__tests__/fallback.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:11:46.333Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/task-progress/fallback.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:11:46.333Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/request-context.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:11:46.333Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/server.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:11:46.333Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/task-progress/__tests__/predecessors.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:11:46.333Z"
+      },
+      {
+        "target": {
+          "file": "src/db/repos.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:11:46.333Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/handler-runtime.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:11:46.333Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/S001/VERIFICATION.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:11:46.333Z"
+      }
+    ],
+    "commit": "ab9b6f142"
+  },
+  "citations": []
+}

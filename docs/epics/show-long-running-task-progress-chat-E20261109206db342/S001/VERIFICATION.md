@@ -46,3 +46,14 @@ Raw build and sweep logs, baseline comparisons, and the focused registry rerun a
 ## Gate disposition
 
 The story owner authorized accepting the reproduced upstream failures and the three non-reproducing signatures for S1. The handler registry mismatch was corrected and rechecked on the merged source. Under the approved plan, this disposition completes the verification criterion for the single sweep. The original failed sweep and its counts remain part of the evidence.
+
+## Completion evidence
+
+The BUILD records the review override. Commit `ab9b6f142` reconciles recovered nonterminal lifecycle sequences and covers replay and conflict handling after a directory sync failure. The final T2 daemon validation passed.
+
+- [Approved BUILD](BUILD.md)
+- [Independent code review and round history](CR.md)
+- [Task validation results](TESTS.md)
+- [Final recovery regression run](evidence/final-recovery-tests.tap)
+- [487 failure signatures reproduced upstream](evidence/reproduced-signatures.tsv)
+- [Three signatures that did not recur in targeted runs](evidence/unmatched-signatures.tsv)

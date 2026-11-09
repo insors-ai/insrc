@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-62de3ece-c704-488a-bdc1-29033042cabf",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T12:31:24.029Z",
+    "epicCreatedAt": "2026-11-09T06:00:04.355Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "206db3426ffd4428",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Define shared progress contracts and bounded task storage",
+      "parent": {
+        "entityId": "STORY-206db3426ffd4428-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-206db3426ffd4428-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#148",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "36adfb0ba744f7305143d8a3a03074599c3823f2efceb7838c8638712bba3838",
+        "at": "2026-11-09T12:31:24.030Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T12:31:24.031Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Define shared progress contracts and bounded task storage",
+    "summary": "Add the daemon-private versioned per-task record, codecs, reservation accounting and durable publication seam.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Persist one validated envelope per task using private paths, exclusive temporary files, flush–rename–directory flush, and restart-safe reads. Do not expose raw credentials, prompts or logs.",
+      "Reserve encoded snapshot and terminal capacity before admitting observation. Enforce per-project and global limits, recover or quarantine corrupt records within budget, and fail observation visibly without stopping the executor.",
+      "Preserve existing IPC, workflow and executor state. Retain deterministic file-fault tests for failures before and after rename."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Recover bounded snapshots across storage failure, restart and owner revalidation"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

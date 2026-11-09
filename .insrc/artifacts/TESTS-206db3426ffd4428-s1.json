@@ -1,0 +1,713 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 16,
+        "contentHash": "f360df2b3524d43225671f01ae05e17b5e4e9ede45a6c6b9ea275bd7acd45d7a",
+        "at": "2026-11-09T16:11:46.350Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "206db3426ffd4428",
+    "storyId": "s1",
+    "createdAt": "2026-11-09T12:37:20.630Z",
+    "updatedAt": "2026-11-09T16:11:46.333Z",
+    "epicCreatedAt": "2026-11-09T06:00:04.355Z",
+    "epicSlug": "show-long-running-task-progress-chat",
+    "revision": 16
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "ed7a49bdd",
+        "ranAt": "2026-11-09T15:27:24.396Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Recover bounded snapshots across storage failure, restart and owner revalidation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/store.test.ts",
+                "title": "Progress storage recovers a populated snapshot and revalidates only the matching durable owner",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/store.test.ts",
+                "title": "Progress storage withholds ambiguous publication and reconciles the replaced record",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/store.test.ts",
+                "title": "Progress storage reserves active and terminal capacity without evicting active tasks",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/store.test.ts",
+                "title": "Progress storage quarantines bounded corrupt records and rejects path substitution",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/store.test.ts",
+                "title": "Progress storage rejects unsafe or oversized measurements before writing",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/coordinator.test.ts",
+                "title": "The complete delivered snapshot fits the byte limit and preserves the terminal result",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/task-progress/__tests__/coordinator.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 976,
+            "titles": [
+              {
+                "title": "Progress coordinator fences duplicate admission, old owners and a delayed delegate after terminal commit",
+                "result": "pass"
+              },
+              {
+                "title": "Meaningful progress revisions isolate tasks and preserve original measurements on repeats and heartbeats",
+                "result": "pass"
+              },
+              {
+                "title": "Progress coordinator publishes no terminal outcome when the durable write fails",
+                "result": "pass"
+              },
+              {
+                "title": "The complete delivered snapshot fits the byte limit and preserves the terminal result",
+                "result": "pass"
+              },
+              {
+                "title": "Progress coordinator requires trusted revalidation to bind a recovered attempt to a new epoch",
+                "result": "pass"
+              },
+              {
+                "title": "Verify 30-second owner renewal and 120-second expiry with no observers, separate tasks in one chat, removal, and stale callbacks",
+                "result": "pass"
+              },
+              {
+                "title": "Restart repeatedly without owners, preserve the recovery deadline, release expired reservations and refuse stale revalidation without inventing termination",
+                "result": "pass"
+              },
+              {
+                "title": "Observation refusal at project and global capacity or on file failure leaves execution running",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/task-progress/__tests__/store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 526,
+            "titles": [
+              {
+                "title": "Progress storage recovers a populated snapshot and revalidates only the matching durable owner",
+                "result": "pass"
+              },
+              {
+                "title": "Progress storage withholds ambiguous publication and reconciles the replaced record",
+                "result": "pass"
+              },
+              {
+                "title": "Progress storage reserves active and terminal capacity without evicting active tasks",
+                "result": "pass"
+              },
+              {
+                "title": "Inactive retention evicts only the oldest record for the saturated project",
+                "result": "pass"
+              },
+              {
+                "title": "Progress storage quarantines bounded corrupt records and rejects path substitution",
+                "result": "pass"
+              },
+              {
+                "title": "Progress storage rejects unsafe or oversized measurements before writing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "ab9b6f142",
+        "ranAt": "2026-11-09T16:11:46.333Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Fence async refresh, duplicate registration and old attempt callbacks",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/coordinator.test.ts",
+                "title": "Progress coordinator fences duplicate admission, old owners and a delayed delegate after terminal commit",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/coordinator.test.ts",
+                "title": "Progress coordinator publishes no terminal outcome when the durable write fails",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/coordinator.test.ts",
+                "title": "Progress coordinator requires trusted revalidation to bind a recovered attempt to a new epoch",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/coordinator.test.ts",
+                "title": "Recovery publishes an ambiguously committed terminal result exactly once",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/coordinator.test.ts",
+                "title": "Recovery fences conflicting lifecycle evidence at the recovered nonterminal sequence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Meaningful measurement normalization across two tasks with phase and count changes, declared units, unknown totals, duplicate samples, reads and heartbeats",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/coordinator.test.ts",
+                "title": "Meaningful progress revisions isolate tasks and preserve original measurements on repeats and heartbeats",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/task-progress/__tests__/coordinator.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1904,
+            "titles": [
+              {
+                "title": "Progress coordinator fences duplicate admission, old owners and a delayed delegate after terminal commit",
+                "result": "pass"
+              },
+              {
+                "title": "Meaningful progress revisions isolate tasks and preserve original measurements on repeats and heartbeats",
+                "result": "pass"
+              },
+              {
+                "title": "Progress coordinator publishes no terminal outcome when the durable write fails",
+                "result": "pass"
+              },
+              {
+                "title": "Recovery publishes an ambiguously committed terminal result exactly once",
+                "result": "pass"
+              },
+              {
+                "title": "Recovery fences conflicting lifecycle evidence at the recovered nonterminal sequence",
+                "result": "pass"
+              },
+              {
+                "title": "The complete delivered snapshot fits the byte limit and preserves the terminal result",
+                "result": "pass"
+              },
+              {
+                "title": "Progress coordinator requires trusted revalidation to bind a recovered attempt to a new epoch",
+                "result": "pass"
+              },
+              {
+                "title": "Verify 30-second owner renewal and 120-second expiry with no observers, separate tasks in one chat, removal, and stale callbacks",
+                "result": "pass"
+              },
+              {
+                "title": "Restart repeatedly without owners, preserve the recovery deadline, release expired reservations and refuse stale revalidation without inventing termination",
+                "result": "pass"
+              },
+              {
+                "title": "Observation refusal at project and global capacity or on file failure leaves execution running",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "ed7a49bdd",
+        "ranAt": "2026-11-09T15:28:24.512Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Reject cross-project and cross-conversation reads, controls and raw details",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/access.test.ts",
+                "title": "Reject cross-project and cross-conversation reads, controls and raw details",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Verify trusted launch, denial of forged ordinary IPC scopes, grants across reconnect and restart, revocation and scoped project-history access after removal",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/access.test.ts",
+                "title": "Verify trusted launch, denial of forged ordinary IPC scopes, grants across reconnect and restart, revocation and scoped project-history access after removal",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/access.test.ts",
+                "title": "Revocation releases exhausted observer capacity and interrupts a blocked subscription",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "First observer grant requires daemon-owned origin bootstrap or an existing origin capability",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/access.test.ts",
+                "title": "First observer grant requires daemon-owned origin bootstrap or an existing origin capability",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/task-progress/__tests__/access.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1775,
+            "titles": [
+              {
+                "title": "Reject cross-project and cross-conversation reads, controls and raw details",
+                "result": "pass"
+              },
+              {
+                "title": "Verify trusted launch, denial of forged ordinary IPC scopes, grants across reconnect and restart, revocation and scoped project-history access after removal",
+                "result": "pass"
+              },
+              {
+                "title": "First observer grant requires daemon-owned origin bootstrap or an existing origin capability",
+                "result": "pass"
+              },
+              {
+                "title": "Removing one conversation releases its activity without stopping its tasks or other conversations",
+                "result": "pass"
+              },
+              {
+                "title": "Revocation releases exhausted observer capacity and interrupts a blocked subscription",
+                "result": "pass"
+              },
+              {
+                "title": "Check stop, cancel replay and verified completion races",
+                "result": "pass"
+              },
+              {
+                "title": "A full observer queue coalesces progress and reserves the verified terminal frame",
+                "result": "pass"
+              },
+              {
+                "title": "Revoking a conversation discards its reserved terminal frame after storage eviction",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "eb419df39",
+        "ranAt": "2026-11-09T13:08:04.186Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Verify monotonic 60-second fallback, transfer, suspension and unchanged suppression",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/fallback.test.ts",
+                "title": "Verify monotonic 60-second fallback, transfer, suspension and unchanged suppression",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Verify 30-second owner renewal and 120-second expiry with no observers, separate tasks in one chat, removal, and stale callbacks",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/coordinator.test.ts",
+                "title": "Verify 30-second owner renewal and 120-second expiry with no observers, separate tasks in one chat, removal, and stale callbacks",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/access.test.ts",
+                "title": "Removing one conversation releases its activity without stopping its tasks or other conversations",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Fence scheduler claim, renew, release, duplicate slots and late replies across transfer with deterministic 60-second cadence and 120-second expiry",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/fallback.test.ts",
+                "title": "Fence scheduler claim, renew, release, duplicate slots and late replies across transfer with deterministic 60-second cadence and 120-second expiry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Restart repeatedly without owners, preserve the recovery deadline, release expired reservations and refuse stale revalidation without inventing termination",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/coordinator.test.ts",
+                "title": "Restart repeatedly without owners, preserve the recovery deadline, release expired reservations and refuse stale revalidation without inventing termination",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/task-progress/__tests__/access.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1042,
+            "titles": [
+              {
+                "title": "Reject cross-project and cross-conversation reads, controls and raw details",
+                "result": "pass"
+              },
+              {
+                "title": "Verify trusted launch, denial of forged ordinary IPC scopes, grants across reconnect and restart, revocation and scoped project-history access after removal",
+                "result": "pass"
+              },
+              {
+                "title": "First observer grant requires daemon-owned origin bootstrap or an existing origin capability",
+                "result": "pass"
+              },
+              {
+                "title": "Removing one conversation releases its activity without stopping its tasks or other conversations",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/task-progress/__tests__/coordinator.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 664,
+            "titles": [
+              {
+                "title": "Progress coordinator fences duplicate admission, old owners and a delayed delegate after terminal commit",
+                "result": "pass"
+              },
+              {
+                "title": "Meaningful progress revisions isolate tasks and preserve original measurements on repeats and heartbeats",
+                "result": "pass"
+              },
+              {
+                "title": "Progress coordinator publishes no terminal outcome when the durable write fails",
+                "result": "pass"
+              },
+              {
+                "title": "Progress coordinator requires trusted revalidation to bind a recovered attempt to a new epoch",
+                "result": "pass"
+              },
+              {
+                "title": "Verify 30-second owner renewal and 120-second expiry with no observers, separate tasks in one chat, removal, and stale callbacks",
+                "result": "pass"
+              },
+              {
+                "title": "Restart repeatedly without owners, preserve the recovery deadline, release expired reservations and refuse stale revalidation without inventing termination",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/task-progress/__tests__/fallback.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 376,
+            "titles": [
+              {
+                "title": "Verify monotonic 60-second fallback, transfer, suspension and unchanged suppression",
+                "result": "pass"
+              },
+              {
+                "title": "Fence scheduler claim, renew, release, duplicate slots and late replies across transfer with deterministic 60-second cadence and 120-second expiry",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "ed7a49bdd",
+        "ranAt": "2026-11-09T15:29:49.800Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Check stop, cancel replay and verified completion races",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/access.test.ts",
+                "title": "Check stop, cancel replay and verified completion races",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Saturate per-project active/inactive and global reservations, coalesce full observer queues, and preserve terminal delivery and running execution",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/access.test.ts",
+                "title": "A full observer queue coalesces progress and reserves the verified terminal frame",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/coordinator.test.ts",
+                "title": "Observation refusal at project and global capacity or on file failure leaves execution running",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/store.test.ts",
+                "title": "Inactive retention evicts only the oldest record for the saturated project",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/access.test.ts",
+                "title": "Revoking a conversation discards its reserved terminal frame after storage eviction",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Verify S001/#42 to s1–s2, S002/#43 to s6 and S003/#44 to s5 from local predecessor records and successor scope",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/predecessors.test.ts",
+                "title": "Verify S001/#42 to s1–s2, S002/#43 to s6 and S003/#44 to s5 from local predecessor records and successor scope",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/task-progress/__tests__/access.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1666,
+            "titles": [
+              {
+                "title": "Reject cross-project and cross-conversation reads, controls and raw details",
+                "result": "pass"
+              },
+              {
+                "title": "Verify trusted launch, denial of forged ordinary IPC scopes, grants across reconnect and restart, revocation and scoped project-history access after removal",
+                "result": "pass"
+              },
+              {
+                "title": "First observer grant requires daemon-owned origin bootstrap or an existing origin capability",
+                "result": "pass"
+              },
+              {
+                "title": "Removing one conversation releases its activity without stopping its tasks or other conversations",
+                "result": "pass"
+              },
+              {
+                "title": "Revocation releases exhausted observer capacity and interrupts a blocked subscription",
+                "result": "pass"
+              },
+              {
+                "title": "Check stop, cancel replay and verified completion races",
+                "result": "pass"
+              },
+              {
+                "title": "A full observer queue coalesces progress and reserves the verified terminal frame",
+                "result": "pass"
+              },
+              {
+                "title": "Revoking a conversation discards its reserved terminal frame after storage eviction",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/task-progress/__tests__/coordinator.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 739,
+            "titles": [
+              {
+                "title": "Progress coordinator fences duplicate admission, old owners and a delayed delegate after terminal commit",
+                "result": "pass"
+              },
+              {
+                "title": "Meaningful progress revisions isolate tasks and preserve original measurements on repeats and heartbeats",
+                "result": "pass"
+              },
+              {
+                "title": "Progress coordinator publishes no terminal outcome when the durable write fails",
+                "result": "pass"
+              },
+              {
+                "title": "The complete delivered snapshot fits the byte limit and preserves the terminal result",
+                "result": "pass"
+              },
+              {
+                "title": "Progress coordinator requires trusted revalidation to bind a recovered attempt to a new epoch",
+                "result": "pass"
+              },
+              {
+                "title": "Verify 30-second owner renewal and 120-second expiry with no observers, separate tasks in one chat, removal, and stale callbacks",
+                "result": "pass"
+              },
+              {
+                "title": "Restart repeatedly without owners, preserve the recovery deadline, release expired reservations and refuse stale revalidation without inventing termination",
+                "result": "pass"
+              },
+              {
+                "title": "Observation refusal at project and global capacity or on file failure leaves execution running",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/task-progress/__tests__/predecessors.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 311,
+            "titles": [
+              {
+                "title": "Verify S001/#42 to s1–s2, S002/#43 to s6 and S003/#44 to s5 from local predecessor records and successor scope",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/task-progress/__tests__/store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 577,
+            "titles": [
+              {
+                "title": "Progress storage recovers a populated snapshot and revalidates only the matching durable owner",
+                "result": "pass"
+              },
+              {
+                "title": "Progress storage withholds ambiguous publication and reconciles the replaced record",
+                "result": "pass"
+              },
+              {
+                "title": "Progress storage reserves active and terminal capacity without evicting active tasks",
+                "result": "pass"
+              },
+              {
+                "title": "Inactive retention evicts only the oldest record for the saturated project",
+                "result": "pass"
+              },
+              {
+                "title": "Progress storage quarantines bounded corrupt records and rejects path substitution",
+                "result": "pass"
+              },
+              {
+                "title": "Progress storage rejects unsafe or oversized measurements before writing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "0b05fce64",
+        "ranAt": "2026-11-09T14:23:30.747Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Verify merged-baseline root build and single full repository sweep with recorded results and disposition of any failures",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "This result applies to the named verification criterion, including failure disposition. The underlying combined sweep exited 1 with 485 failures and 7 cancellations. docs/epics/show-long-running-task-progress-chat-E20261109206db342/S001/VERIFICATION.md records the original run, corrected registry test with a passing focused rerun, and the authorized exception for 487 reproduced upstream signatures and three non-reproducing signatures."
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      }
+    ]
+  },
+  "citations": []
+}

@@ -1,0 +1,105 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-52904663-5d91-48aa-88d8-bd22e47e7059",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T12:31:24.039Z",
+    "epicCreatedAt": "2026-11-09T06:00:04.355Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "206db3426ffd4428",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement activity leases, restart recovery and fallback scheduling",
+      "parent": {
+        "entityId": "STORY-206db3426ffd4428-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-206db3426ffd4428-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-206db3426ffd4428-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-206db3426ffd4428-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#151",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "45b2d19ad34c9571b9bc3fba98f7f7df460cfba0686c3fade8c5ca320c33290c",
+        "at": "2026-11-09T12:31:24.039Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T12:31:24.041Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement activity leases, restart recovery and fallback scheduling",
+    "summary": "Keep executor-owned activity distinct from the fixed 60-second fallback scheduler and reclaim stale observation capacity.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Verify 30-second owner renewal and 120-second expiry without observers, including multiple tasks in one conversation, selective release, and stale callbacks. Readers cannot renew owner activity.",
+      "Recover the last verified committed snapshot, preserve the first bounded owner-loss deadline across restarts and fence old epochs. After expiry release active capacity and retain an explicit bounded unknown observation when capacity allows. Never infer a terminal execution result or relaunch work.",
+      "Keep one opted-in scheduler per stable task. Verify anchored 60-second slots, 120-second scheduler lease expiry, disconnect and handoff, in-flight fencing, no catch-up burst, and separate terminal shutdown."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Verify monotonic 60-second fallback, transfer, suspension and unchanged suppression"
+      },
+      {
+        "level": "unit",
+        "name": "Verify 30-second owner renewal and 120-second expiry with no observers, separate tasks in one chat, removal, and stale callbacks"
+      },
+      {
+        "level": "unit",
+        "name": "Fence scheduler claim, renew, release, duplicate slots and late replies across transfer with deterministic 60-second cadence and 120-second expiry"
+      },
+      {
+        "level": "integration",
+        "name": "Restart repeatedly without owners, preserve the recovery deadline, release expired reservations and refuse stale revalidation without inventing termination"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

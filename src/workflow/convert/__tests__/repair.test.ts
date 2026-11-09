@@ -24,6 +24,7 @@ import { REPO_SCHEMA_FILE, writeRepoSchema } from '../../artifact-core/repo-sche
 import { createFileSidecarStore } from '../../artifact-core/sidecar-store.js';
 import { artifactJsonPath } from '../../storage.js';
 import { H } from '../../tasks/__tests__/task-set-kit.js';
+import { unitKey } from '../../tracker/unit-issue.js';
 import { runRepair } from '../repair.js';
 import type { RepairReport, RepairResult } from '../types.js';
 import { legacyRepo } from './legacy-repo.js';
@@ -160,6 +161,20 @@ test('moving a binding reports each write it made, including a failed pending li
 		assert.equal(bindingWrites(r), 3, 'the reference and both posts were committed');
 		assert.equal(head(bad.repo, story).meta['envelope'].binding.posted.length, 2);
 	} finally { bad.done(); }
+});
+
+test('a Task record moved from the plan onto its Task head is reported, though it does not go through the store', async () => {
+	const l = legacyRepo();
+	try {
+		const task = `TASK-${H}-s1-t1`;
+		const plan = head(l.repo, `PLAN-${H}-S001`);
+		const key = unitKey({ unit: 'task', repoPath: l.repo, epicHash: H, storyId: 's1', taskId: 't1' });
+		put(l.repo, `PLAN-${H}-S001`, { ...plan, meta: { ...plan.meta, tracker: { units: { [key]: { issue: 'o/r#9', pendingLink: { parent: 'o/r#2', childId: 'x' } } } } } });
+		const r = result(await runRepair(l.repo, 'repair'));
+		assert.equal(r.stoppedAt, undefined, JSON.stringify(r.stoppedAt));
+		assert.equal(head(l.repo, task).meta['envelope'].binding.reference.entityId, 'o/r#9', 'control: the record moved');
+		assert.equal(r.written.filter(w => w.step === 'tasks' && w.artifactId === task && w.action === 'binding').length, 2, 'the binding and its pending link are each listed');
+	} finally { l.done(); }
 });
 
 test('a plan with a rename collision answers an error and writes nothing', async () => {

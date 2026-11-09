@@ -56,7 +56,7 @@ function repairDeps(repo: string, record: RepairRecorder, options: RepairOptions
 		...(options.writeHead !== undefined ? { writeHead: options.writeHead } : {}),
 	};
 	const { store, history, service } = createRepoLifecycle(repo, observer);
-	return { store, history, now: () => new Date(), actor: MIGRATION_ACTOR, taskSets: new TaskSets({ repoPath: repo, store, service, history }) };
+	return { store, history, now: () => new Date(), actor: MIGRATION_ACTOR, taskSets: new TaskSets({ repoPath: repo, store, service, history, bindingWritten: id => record(id, 'binding') }) };
 }
 
 /** The steps in the order they have to run: renames first because History refuses an uppercase Story id, amendments before migration because it skips a record with no meta. */

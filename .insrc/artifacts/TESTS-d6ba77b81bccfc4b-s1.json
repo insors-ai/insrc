@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "5a13b8d2267675a88891e5ee5983d76bc8f4b22cbe3a2b59de96060237de1755",
+        "at": "2026-11-09T10:25:11.611Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "d6ba77b81bccfc4b",
+    "storyId": "s1",
+    "createdAt": "2026-11-09T10:25:11.525Z",
+    "updatedAt": "2026-11-09T10:25:11.525Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-09T10:17:04.018Z",
+    "epicSlug": "register-analyze-templates-runtimes-each-session",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "100aba694",
+        "ranAt": "2026-11-09T10:25:11.525Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/threads/__tests__/s3-acceptance.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/daemon/threads/__tests__/s3-acceptance.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/s3-acceptance.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 43133,
+            "titles": [
+              {
+                "title": "ac1: session B is answered on its own thread while session A's worker spins",
+                "result": "pass"
+              },
+              {
+                "title": "ac2/ac3: one session over two connections runs in order on one worker thread, released after idle",
+                "result": "pass"
+              },
+              {
+                "title": "ac4: a session worker failure is contained; a throwing handler keeps its worker",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: no Promise.all over provider calls in the modules s3 adds or changes",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: a recording provider shows a session's provider calls strictly sequential, over two of its connections at once",
+                "result": "pass"
+              },
+              {
+                "title": "ac6: a token of each step kind resumes on a new worker after an idle release",
+                "result": "pass"
+              },
+              {
+                "title": "ac7: daemon.status answers within 100 ms at p99 of 200 calls while a session worker spins",
+                "result": "pass"
+              },
+              {
+                "title": "parity: moved session methods answer over the socket as the single-thread daemon does",
+                "result": "pass"
+              },
+              {
+                "title": "a session worker thread has the analyze template catalog and the task runtimes, as the main thread has",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

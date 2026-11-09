@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { createConnection } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -9,6 +9,7 @@ import type { TestContext } from 'node:test';
 import type { ProgressSnapshot, TaskOwnerFence, TaskRef } from '../../../shared/task-progress.js';
 import { directDispatch, IpcServer } from '../../server.js';
 import { progressProjectId } from '../access.js';
+import { progressTaskKey } from '../record.js';
 import { createProgressRoutes } from '../rpc.js';
 import { openProgressRuntime } from '../runtime.js';
 
@@ -147,7 +148,9 @@ async function fixture(t: TestContext, holdProgressWrites = false) {
   }
 
   await start();
-  return { client, start, projects, cancellations, drain: () => drainWrite() };
+  const retainedRecord = async (task: TaskRef) =>
+    JSON.parse(await readFile(join(root, 'task-progress', progressTaskKey(task) + '.json'), 'utf8')) as { recoveryDeadline: number | null };
+  return { client, start, projects, cancellations, retainedRecord, drain: () => drainWrite() };
 }
 
 test('Reject cross-project and cross-conversation reads, controls and raw details', { timeout: 5000 }, async t => {
@@ -197,6 +200,7 @@ test('Verify trusted launch, denial of forged ordinary IPC scopes, grants across
   await assert.rejects(reconnect.request('progress.origin.revoke', { originId: origin.originId }), /task-unavailable/);
 
   await f.start();
+  assert.ok((await f.retainedRecord(launch.task)).recoveryDeadline, 'startup recovery precedes any client request');
   const restarted = f.client();
   await assert.rejects(restarted.read(second), /task-unavailable/);
   const third = await restarted.attach(launch);
@@ -253,6 +257,27 @@ test('Removing one conversation releases its activity without stopping its tasks
     const history = await owner.attach(launch, 'history');
     assert.equal((await owner.read(history)).snapshot.workerHealth, 'alive');
   }
+});
+
+test('Revocation releases exhausted observer capacity and interrupts a blocked subscription', { timeout: 10000 }, async t => {
+  const f = await fixture(t, true);
+  const owner = f.client();
+  const origin = await owner.open();
+  const revoked = await owner.launch(origin.originId);
+  const retained = await owner.launch((await owner.open()).originId);
+  const binding = await owner.attach(revoked);
+  const stream = owner.send('progress.subscribe', { observerId: binding }, true);
+  assert.equal((await owner.next(stream)).stream, 'progress');
+  const history = await owner.attach(revoked, 'history');
+  for (let index = 2; index < 1024; index++) await owner.attach(revoked);
+  await assert.rejects(owner.attach(retained), /progress-capacity/);
+  await owner.request('progress.origin.revoke', { originId: origin.originId });
+  const terminal = await owner.next(stream);
+  assert.equal(terminal.stream, 'error');
+  assert.match(JSON.stringify(terminal.data), /task-unavailable/);
+  await assert.rejects(owner.read(binding), /task-unavailable/);
+  assert.equal((await owner.read(history)).snapshot.task.invocationId, revoked.task.invocationId);
+  assert.deepEqual((await owner.read(await owner.attach(retained))).snapshot.task, retained.task);
 });
 
 test('Check stop, cancel replay and verified completion races', { timeout: 5000 }, async t => {

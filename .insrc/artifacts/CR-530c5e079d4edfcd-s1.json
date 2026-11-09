@@ -1,0 +1,848 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "store-6550651b-7325-4d16-9f6d-21ff6740482b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-09T09:27:08.089Z",
+    "epicCreatedAt": "2026-11-09T09:08:21.565Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 2,
+    "epicHash": "530c5e079d4edfcd",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicSlug": "fail-clearly-empty-planner-catalog-name",
+    "standalone": true,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "84dde76c4f173229a2976e8ffcb8d02a4eb00547768fb3f49b77c37660218e4c",
+        "at": "2026-11-09T09:27:08.089Z",
+        "by": {
+          "id": "insrc:code-review",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "kind": "code-review",
+    "format": "task-based",
+    "storyId": "s1",
+    "status": "passed",
+    "reviews": [
+      {
+        "reviewId": "planner-catalog-r1",
+        "attempt": 1,
+        "storyId": "s1",
+        "reviewer": "daemon",
+        "status": "passed",
+        "finalScopeIdentity": "15d8f411a98e6b717c55f1b6af62acc96ed846d1c88d47744ff17374f28718f6",
+        "attributionIdentity": "96ae13e5e861296b661a91a09184a880f15e70bebf57f7fbb5c3425324b60e65",
+        "taskScopeIdentities": [
+          {
+            "taskId": "s1",
+            "identity": "a53c241ae4de57426bd73edbf2033200f9f5819373b3a75e99b8f707bdf26128"
+          }
+        ],
+        "scope": {
+          "reviewRevision": "7efbf01e616c607ccd05d730388177806744e70a",
+          "finalScope": {
+            "revision": "7efbf01e616c607ccd05d730388177806744e70a",
+            "identity": "15d8f411a98e6b717c55f1b6af62acc96ed846d1c88d47744ff17374f28718f6",
+            "entries": [
+              {
+                "originChangeIndex": 0,
+                "path": "src/agent/providers/__tests__/cli-codex-strict-schema.test.ts",
+                "blobOid": "254eb9aa5e99c7154222250c196b1672fa1d2722",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      375,
+                      399
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 1,
+                "path": "src/agent/providers/cli-provider.ts",
+                "blobOid": "8eedc54228786fa31198e9bbb966820845870e96",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      75,
+                      75
+                    ]
+                  },
+                  {
+                    "after": [
+                      435,
+                      444
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 2,
+                "path": "src/agent/providers/structured-schema.ts",
+                "blobOid": "c059adcfc4eb5057646dd82959bc5cd8aa60e0d3",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      146,
+                      154
+                    ]
+                  },
+                  {
+                    "after": [
+                      157,
+                      164
+                    ]
+                  },
+                  {
+                    "after": [
+                      166,
+                      173
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 3,
+                "path": "src/analyze/orchestrator/__tests__/scope-before-plan.test.ts",
+                "blobOid": "b34fe9b18b642694ce6ee2d6a7504282bad6a358",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      30,
+                      30
+                    ]
+                  },
+                  {
+                    "after": [
+                      41,
+                      42
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 4,
+                "path": "src/analyze/planner/__tests__/driver-unit.test.ts",
+                "blobOid": "49a44412af10bd5b7f6081f0fa2796669f8e0cde",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      27,
+                      28
+                    ]
+                  },
+                  {
+                    "after": [
+                      552,
+                      572
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 5,
+                "path": "src/analyze/planner/driver.ts",
+                "blobOid": "764efc50db4b8784ff3db5e0245c506927184c13",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      141,
+                      160
+                    ]
+                  },
+                  {
+                    "after": [
+                      216,
+                      217
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 6,
+                "path": "src/analyze/planner/index.ts",
+                "blobOid": "e27ab6eaffca2f590f31a381ab350056fec36f43",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      83,
+                      83
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 7,
+                "path": "src/agent/providers/__tests__/cli-codex-strict-schema.test.ts",
+                "blobOid": "254eb9aa5e99c7154222250c196b1672fa1d2722",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      27,
+                      27
+                    ]
+                  },
+                  {
+                    "after": [
+                      400,
+                      414
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 8,
+                "path": "src/agent/providers/structured-schema.ts",
+                "blobOid": "c059adcfc4eb5057646dd82959bc5cd8aa60e0d3",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      155,
+                      156
+                    ]
+                  },
+                  {
+                    "after": [
+                      165,
+                      165
+                    ]
+                  }
+                ]
+              }
+            ],
+            "dispositions": [
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    374,
+                    398
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      375,
+                      399
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    75,
+                    75
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      75,
+                      75
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    435,
+                    444
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      435,
+                      444
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    146,
+                    154
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      146,
+                      154
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    155,
+                    162
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      157,
+                      164
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    163,
+                    170
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      166,
+                      173
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    30,
+                    30
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      30,
+                      30
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    41,
+                    42
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      41,
+                      42
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    27,
+                    28
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      27,
+                      28
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    552,
+                    572
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      552,
+                      572
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    141,
+                    160
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      141,
+                      160
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    216,
+                    217
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      216,
+                      217
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 6,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    83,
+                    83
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      83,
+                      83
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 7,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    27,
+                    27
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      27,
+                      27
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 7,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    400,
+                    414
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      400,
+                      414
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    155,
+                    156
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      155,
+                      156
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    165,
+                    165
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      165,
+                      165
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              }
+            ],
+            "selectedTaskIds": [
+              "s1"
+            ],
+            "testCount": 3,
+            "attributionIdentity": "96ae13e5e861296b661a91a09184a880f15e70bebf57f7fbb5c3425324b60e65",
+            "attributionState": "accepted",
+            "tasks": [
+              {
+                "taskId": "s1",
+                "changeIndexes": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8
+                ],
+                "testIndexes": [
+                  0,
+                  1,
+                  2
+                ],
+                "decision": {
+                  "action": "initial"
+                },
+                "identity": "a53c241ae4de57426bd73edbf2033200f9f5819373b3a75e99b8f707bdf26128"
+              }
+            ]
+          },
+          "storyId": "s1",
+          "documents": {
+            "issue": {
+              "path": ".insrc/artifacts/ISSUE-530c5e079d4edfcd.json",
+              "commit": "f77cecbac1a52a2af83d7597ed49f7c52b0d912e"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "65b8a241c89cd1c733fef29d786bc7e0a12c2359",
+              "parent": "6e4e7e4192a3f2f40c7a248f27c65f86b5195fc0",
+              "files": [
+                {
+                  "path": "src/agent/providers/__tests__/cli-codex-strict-schema.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        374,
+                        398
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/agent/providers/cli-provider.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        75,
+                        75
+                      ]
+                    },
+                    {
+                      "after": [
+                        435,
+                        444
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/agent/providers/structured-schema.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        146,
+                        170
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/analyze/orchestrator/__tests__/scope-before-plan.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        30,
+                        30
+                      ]
+                    },
+                    {
+                      "after": [
+                        41,
+                        42
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/analyze/planner/__tests__/driver-unit.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        27,
+                        28
+                      ]
+                    },
+                    {
+                      "after": [
+                        552,
+                        572
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/analyze/planner/driver.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        141,
+                        160
+                      ]
+                    },
+                    {
+                      "after": [
+                        216,
+                        217
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/analyze/planner/index.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        83,
+                        83
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "7efbf01e616c607ccd05d730388177806744e70a",
+              "parent": "65b8a241c89cd1c733fef29d786bc7e0a12c2359",
+              "files": [
+                {
+                  "path": "src/agent/providers/__tests__/cli-codex-strict-schema.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        27,
+                        27
+                      ]
+                    },
+                    {
+                      "after": [
+                        400,
+                        414
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/agent/providers/structured-schema.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        155,
+                        156
+                      ]
+                    },
+                    {
+                      "after": [
+                        165,
+                        165
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "s1",
+            "status": "passed",
+            "summary": "Reviewed all submitted changed segments against ISSUE-530c5e079d4edfcd and its acceptance checks. No material defects found. The planner rejects an empty effective catalog before schema construction or model invocation; codex rejection diagnostics summarize the transmitted schema while excluding literal data. Existing internal-error mapping preserves IPC compatibility.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Inspected test bodies and assertions in all three changed test modules. The planner regression checks the exported error type, target, explanatory message and zero model calls; source ordering establishes rejection before schema construction. The fake-codex regression asserts rejection, preservation of upstream error text, keyword count and empty-anyOf location. The summary test checks exclusion of const/enum/default/examples contents and keyword-like property names. The orchestrator fixture registers builtins and retains assertions that indexed requests reach planning while invalid scopes stop earlier. Coverage assessment is complete; builder-reported executions were not independently verified.",
+              "evidenceReferences": [
+                "7efbf01e616c607ccd05d730388177806744e70a:src/analyze/planner/__tests__/driver-unit.test.ts",
+                "7efbf01e616c607ccd05d730388177806744e70a:src/analyze/planner/driver.ts",
+                "7efbf01e616c607ccd05d730388177806744e70a:src/agent/providers/__tests__/cli-codex-strict-schema.test.ts",
+                "7efbf01e616c607ccd05d730388177806744e70a:src/analyze/orchestrator/__tests__/scope-before-plan.test.ts"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: Tests, typecheck, build and integration checks were not run. The builder's cited TESTS.md is absent from the reviewed commit, so its reported passes do not establish execution of that version.",
+              "Consider table-driven summary tests for repeated keyword counts and empty oneOf/allOf/enum/required locations."
+            ],
+            "inspectedReferences": [
+              "f77cecbac1a52a2af83d7597ed49f7c52b0d912e:.insrc/artifacts/ISSUE-530c5e079d4edfcd.json",
+              "7efbf01e616c607ccd05d730388177806744e70a:src/agent/providers/cli-provider.ts",
+              "7efbf01e616c607ccd05d730388177806744e70a:src/agent/providers/structured-schema.ts",
+              "7efbf01e616c607ccd05d730388177806744e70a:src/agent/providers/__tests__/cli-codex-strict-schema.test.ts",
+              "7efbf01e616c607ccd05d730388177806744e70a:src/analyze/planner/driver.ts",
+              "7efbf01e616c607ccd05d730388177806744e70a:src/analyze/planner/index.ts",
+              "7efbf01e616c607ccd05d730388177806744e70a:src/analyze/planner/__tests__/driver-unit.test.ts",
+              "7efbf01e616c607ccd05d730388177806744e70a:src/analyze/orchestrator/__tests__/scope-before-plan.test.ts",
+              "7efbf01e616c607ccd05d730388177806744e70a:src/analyze/orchestrator/driver.ts",
+              "7efbf01e616c607ccd05d730388177806744e70a:src/analyze/planner/wire-schema.ts",
+              "7efbf01e616c607ccd05d730388177806744e70a:src/analyze/planner/templates/bootstrap.ts",
+              "7efbf01e616c607ccd05d730388177806744e70a:src/analyze/planner/templates/registry.ts"
+            ],
+            "executedTests": []
+          }
+        ],
+        "summary": "1 selected task assessment(s): passed.",
+        "completedAt": "2026-11-09T09:26:46.223Z",
+        "buildFingerprint": "ac2c19b57369c5a167f20b8b677e806cd6c1d14d642287185d9f3ceb7c4fc23f"
+      }
+    ]
+  },
+  "citations": []
+}

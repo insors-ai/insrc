@@ -11,6 +11,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { InputTooLargeError } from '../../../agent/providers/cli-provider.js';
 import { ModelCallFailedError, ModelResponseShapeError } from '../../../agent/providers/model-call-error.js';
 import { OllamaProvider } from '../../../agent/providers/ollama.js';
 import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
@@ -315,4 +316,10 @@ test("classifyError keeps prefixes and messages and sets the original as cause; 
 	assert.equal(schema.cause, shape);
 	assert.match(aggregatorClassify('plain').message, /^aggregator-internal: plain/);
 	assert.equal(aggregatorClassify('plain').cause, 'plain');
+});
+
+test('a typed input-size refusal that keeps the CLI exit wording is not a failed call', () => {
+	const refusal = new InputTooLargeError('vibe exited with 1. stderr=Prompt is too long', 'Prompt is too long', { maxChars: 1_000, actualChars: 2_000 });
+	assert.equal(isModelCallFailure(refusal), false);
+	assert.equal(isModelCallFailure(new Error('vibe exited with 1. stderr=API Error: overloaded')), true, 'a real exit still is');
 });

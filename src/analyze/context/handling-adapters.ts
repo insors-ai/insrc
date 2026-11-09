@@ -48,6 +48,16 @@ function lineKey(line: string): string | undefined {
 }
 
 /**
+ * True when the entry names a candidate module: its whole path, or the whole path followed by an annotation in
+ * brackets or after a dash. A longer path that merely begins with a candidate's (`src/a b` for `src/a`) is another module.
+ */
+function isExcluded(key: string, excluded: ReadonlySet<string>): boolean {
+	if (excluded.has(key)) return true;
+	for (const p of excluded) if (key.startsWith(`${p} (`) || key.startsWith(`${p} — `) || key.startsWith(`${p} - `) || key.startsWith(`${p}: `)) return true;
+	return false;
+}
+
+/**
  * Lists a prompt dedupes (Related docs by file, Related modules by path, the
  * surface by file or path) are listed once in the concatenation of the parts,
  * the first occurrence winning. A `surface` entry covers the whole layer; any
@@ -67,7 +77,7 @@ export function dedupeLayer(text: string, layer: string, target: SynthesizerProm
 		const key = rule === undefined || heading !== null ? undefined : lineKey(line);
 		if (rule === undefined || key === undefined) { out.push(line); continue; }
 		// A module that is a reuse candidate is not listed among the other modules, whichever part saw it.
-		if (rule.section === 'Related modules' && excluded !== undefined && (excluded.has(key) || excluded.has(key.split(/\s+/)[0] ?? ''))) continue;
+		if (rule.section === 'Related modules' && excluded !== undefined && isExcluded(key, excluded)) continue;
 		const bucket = seen.get(rule.section) ?? new Set<string>();
 		seen.set(rule.section, bucket);
 		if (bucket.has(key)) continue;

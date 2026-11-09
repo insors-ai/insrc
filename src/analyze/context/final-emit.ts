@@ -26,19 +26,43 @@ import type { EvidenceBlock } from './sections.js';
 
 const SUMMARY_CAP = 2_000;
 
-/** A tool result larger than this is cut into blocks at line breaks, so a `path:line: text` entry is never cut in two. */
-const RESULT_CHUNK = 6_000;
+/**
+ * A tool result larger than this many bytes is cut into blocks at line breaks, so a `path:line: text` entry is never cut
+ * in two. It is below the least room a section is given (the minimum section room), so a chunk always fits whole next to
+ * its envelope and is never cut again mid-line by the sectioning.
+ */
+const RESULT_CHUNK = 3_000;
 
-/** The text in chunks of about RESULT_CHUNK that end at a line break; a line longer than a chunk stays whole. */
+const bytesOf = (text: string): number => Buffer.byteLength(text, 'utf8');
+
+/** The pieces of one over-long line, each at most `size` bytes at a code-point boundary, each carrying the line's `path:line:` prefix. */
+function splitLongLine(line: string, size: number): readonly string[] {
+	const prefix = /^(\S+?:\d+:)\s/.exec(line)?.[1];
+	const lead = prefix === undefined ? '' : `${prefix} (continued) `;
+	const room = Math.max(1, size - bytesOf(lead));
+	const pieces: string[] = [];
+	let current = '';
+	for (const ch of line) {
+		if (bytesOf(current) + bytesOf(ch) > room) { pieces.push(current); current = ''; }
+		current += ch;
+	}
+	if (current.length > 0) pieces.push(current);
+	return pieces.map((piece, i) => (i === 0 ? piece : `${lead}${piece}`));
+}
+
+/** The text in chunks of at most `size` bytes that end at a line break; a longer line is split with its citation kept on every piece. */
 export function chunkAtLines(text: string, size = RESULT_CHUNK): readonly string[] {
-	if (text.length <= size) return [text];
+	if (bytesOf(text) <= size) return [text];
 	const chunks: string[] = [];
 	let current = '';
+	const flush = (): void => { if (current.length > 0) chunks.push(current); current = ''; };
 	for (const line of text.split('\n')) {
-		const next = current.length === 0 ? line : `${current}\n${line}`;
-		if (current.length > 0 && next.length > size) { chunks.push(current); current = line; } else current = next;
+		for (const piece of bytesOf(line) > size ? splitLongLine(line, size) : [line]) {
+			const next = current.length === 0 ? piece : `${current}\n${piece}`;
+			if (current.length > 0 && bytesOf(next) > size) { flush(); current = piece; } else current = next;
+		}
 	}
-	if (current.length > 0) chunks.push(current);
+	flush();
 	return chunks;
 }
 

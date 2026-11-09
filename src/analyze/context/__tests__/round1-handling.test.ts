@@ -243,3 +243,21 @@ test('a tool result cut into blocks is cut at line breaks: no entry loses its so
 	assert.equal(new Set(entries).size, 600, 'every entry reached a part');
 	for (const e of entries) assert.match(e, /^src\/f\d+\.ts:\d+: needle \d+$/);
 });
+
+test('a candidate module is excluded by its whole path: a longer path that begins with it stays listed', () => {
+	const text = '## Related modules (concept.resolve)\n- src/a\n- src/a b\n- src/a (score 0.4)\n- src/free';
+	const out = dedupeLayer(text, 'structure', 'capability', new Set(['src/a'])).split('\n');
+	assert.ok(!out.includes('- src/a') && !out.includes('- src/a (score 0.4)'), 'the candidate is excluded, with or without an annotation');
+	assert.ok(out.includes('- src/a b'), 'a distinct path sharing the prefix is kept');
+	assert.ok(out.includes('- src/free'));
+});
+
+test('result chunks never exceed their byte size and a long entry is split with its source on every piece', () => {
+	const wide = `src/w.ts:7: ${'漢'.repeat(2_000)}`;
+	const long = `src/l.ts:9: ${'x'.repeat(8_000)}`;
+	const text = ['src/a.ts:1: one', wide, long, 'src/z.ts:2: two'].join('\n');
+	const chunks = chunkAtLines(text);
+	for (const chunk of chunks) assert.ok(Buffer.byteLength(chunk, 'utf8') <= 3_000, `a chunk fits its size: ${Buffer.byteLength(chunk, 'utf8')}`);
+	for (const chunk of chunks) for (const line of chunk.split('\n')) assert.match(line, /^src\/[a-z]\.ts:\d+: /, `every line keeps its source: ${line.slice(0, 40)}`);
+	assert.equal(chunks.join('\n').replace(/src\/[wl]\.ts:\d+: \(continued\) /g, '').replace(/\n(?=[漢x])/g, ''), text.replace(/\n(?=src\/[wl])/g, '\n'), 'nothing is lost');
+});

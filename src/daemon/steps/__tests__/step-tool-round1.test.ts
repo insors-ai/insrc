@@ -210,3 +210,27 @@ test('the cause of an invalid part survives the stored progress and the terminal
 		assert.deepEqual(f.cause, { name: 'Error', message: `part ${i + 1} reply was not a bundle` }, 'the cause keeps its name and message');
 	});
 });
+
+test('a combine turn that stays invalid is asked again, then falls back to the parts with combine not covered', () => {
+	const executed = plan([search('e1', 40_000), search('e2', 40_000)]);
+	let progress = startAnswerProgress({ intent, executed, target: 'code' }, 'XL');
+	assert.equal(progress.mode, 'partitioned');
+	// Answer every part; the answer then asks for the combine.
+	for (let i = 0; i < progress.parts.length; i++) {
+		const next = applyReply(progress, { ...LAYERS, summary: `covers part ${i + 1}`, structure: `- finding of part ${i + 1}` }, { executed });
+		assert.equal(next.kind, 'next');
+		if (next.kind !== 'next') return;
+		progress = next.progress;
+	}
+	assert.equal(progress.pending?.kind, 'combine');
+	// The first invalid reply asks the same turn again; the second (the bound) ends the combine.
+	const again = recordInvalid(progress, 'not a narrative', 2, { executed });
+	assert.equal(again.kind, 'retry');
+	if (again.kind !== 'retry') return;
+	assert.equal(again.progress.pending?.kind, 'combine');
+	const done = recordInvalid(again.progress, 'still not a narrative', 2, { executed });
+	assert.equal(done.kind, 'final');
+	if (done.kind !== 'final') return;
+	assert.ok(done.handling.notCovered.some(n => n.part === 'combine'), 'the combine is named as not covered');
+	for (let i = 0; i < progress.parts.length; i++) assert.ok(done.layers.structure.includes(`- finding of part ${i + 1}`), `part ${i + 1} is kept`);
+});

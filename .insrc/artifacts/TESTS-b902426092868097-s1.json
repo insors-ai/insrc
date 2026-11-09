@@ -1,0 +1,379 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "a9852b033f6fb33d33e59ba270736fbc094dd794caab15f67a7a5f9cd676a89f",
+        "at": "2026-11-09T07:33:37.403Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "b902426092868097",
+    "storyId": "s1",
+    "createdAt": "2026-11-09T07:31:19.289Z",
+    "updatedAt": "2026-11-09T07:33:37.388Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-09T05:12:49.979Z",
+    "epicSlug": "keep-vibe-configs-valid-when-registering",
+    "revision": 2
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "739e70e98",
+        "ranAt": "2026-11-09T07:33:37.388Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/__tests__/mcp-register.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/daemon/__tests__/mcp-register.test.ts"
+            ]
+          },
+          {
+            "name": "src/shared/__tests__/toml-inline-list.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/shared/__tests__/toml-inline-list.test.ts"
+            ]
+          },
+          {
+            "name": "vscode-plugin/src/hosts/__tests__/commands.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "vscode-plugin/src/hosts/__tests__/commands.test.ts"
+            ]
+          },
+          {
+            "name": "vscode-plugin/src/hosts/__tests__/writers.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "vscode-plugin/src/hosts/__tests__/writers.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/mcp-register.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 964,
+            "titles": [
+              {
+                "title": "unselected clients are always emitted as skipped, never omitted",
+                "result": "pass"
+              },
+              {
+                "title": "{claude:true} registers claude (mcp add --scope user); codex is skipped",
+                "result": "pass"
+              },
+              {
+                "title": "{agents:true} maps to the codex client (agents flag → codex, --scope omitted)",
+                "result": "pass"
+              },
+              {
+                "title": "{vibe:true} registers vibe via `vibe mcp add insrc --transport stdio`; no `mcp list` is spawned",
+                "result": "pass"
+              },
+              {
+                "title": "vibe already present in config.toml [[mcp_servers]] → unchanged, no add spawned",
+                "result": "pass"
+              },
+              {
+                "title": "vibe add failure → failed carrying the CLI stderr; other clients unaffected",
+                "result": "pass"
+              },
+              {
+                "title": "upsertVibeAgentsSteering: creates AGENTS.md with the marked steering block when absent, idempotent on second call",
+                "result": "pass"
+              },
+              {
+                "title": "upsertVibeAgentsSteering: replaces only the marked span on re-registration (future release updates content in place), preserves surrounding user content",
+                "result": "pass"
+              },
+              {
+                "title": "upsertVibeAgentsSteering: malformed markers (open without close) are a guarded no-op — file untouched, never clobbered",
+                "result": "pass"
+              },
+              {
+                "title": "registerMcpClients with {vibe:true} also upserts the AGENTS.md steering block (in-memory seam), and registration still succeeds",
+                "result": "pass"
+              },
+              {
+                "title": "vibeConfigHasServer: matches an [[mcp_servers]] name line only, not other tables or values",
+                "result": "pass"
+              },
+              {
+                "title": "an existing `insrc` entry in `mcp list` → unchanged, no add spawned",
+                "result": "pass"
+              },
+              {
+                "title": "an `insrc` substring only inside a path (not a line-start name) does NOT count as registered",
+                "result": "pass"
+              },
+              {
+                "title": "an indeterminate `mcp list` (non-zero exit) → failed, and deliberately does NOT add",
+                "result": "pass"
+              },
+              {
+                "title": "a missing CLI binary (ENOENT spawn) → failed with a not-found note, no throw",
+                "result": "pass"
+              },
+              {
+                "title": "a non-zero `mcp add` exit → failed carrying the CLI stderr",
+                "result": "pass"
+              },
+              {
+                "title": "per-client isolation: claude add fails, codex still registers independently",
+                "result": "pass"
+              },
+              {
+                "title": "mixed idempotency: claude already present, codex absent → unchanged + registered",
+                "result": "pass"
+              },
+              {
+                "title": "a missing out/bin/insrc-mcp.js → failed for each selected client, no subprocess",
+                "result": "pass"
+              },
+              {
+                "title": "registerMcpClients never rejects even if the injected run throws",
+                "result": "pass"
+              },
+              {
+                "title": "probeMcpClients: per-client availability + registration from the same pre-checks registration uses; never throws",
+                "result": "pass"
+              },
+              {
+                "title": "probeMcpClients: an unreachable CLI resolves available:false, registered:false; a vibe without config text is registered:false",
+                "result": "pass"
+              },
+              {
+                "title": "vibe + repoPath: writes [[mcp_servers]] insrc into the repo's own .vibe/config.toml, never spawns `vibe mcp add`, note says restart vibe",
+                "result": "pass"
+              },
+              {
+                "title": "vibe + repoPath: existing project entry → unchanged, nothing written; existing unrelated content is preserved on write",
+                "result": "pass"
+              },
+              {
+                "title": "vibe without repoPath keeps the user-global `vibe mcp add` path (unchanged behavior)",
+                "result": "pass"
+              },
+              {
+                "title": "probeMcpClients with a repoPath counts the repo's project .vibe/config.toml as registered for vibe",
+                "result": "pass"
+              },
+              {
+                "title": "upsertVibeProjectServer on a real temp dir: creates .vibe/config.toml, idempotent, valid entry",
+                "result": "pass"
+              },
+              {
+                "title": "upsertVibeProjectServer moves an inline mcp_servers list to tables, keeping its servers",
+                "result": "pass"
+              },
+              {
+                "title": "upsertVibeProjectServer removes an empty inline list before adding the server",
+                "result": "pass"
+              },
+              {
+                "title": "upsertVibeProjectServer repairs a config holding both forms, and adds no second insrc entry",
+                "result": "pass"
+              },
+              {
+                "title": "upsertVibeProjectServer recognises an inline insrc entry with a quoted name key and adds no second one",
+                "result": "pass"
+              },
+              {
+                "title": "upsertVibeProjectServer leaves a config it cannot fix untouched and reports the failure",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/shared/__tests__/toml-inline-list.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 524,
+            "titles": [
+              {
+                "title": "a config with no inline list comes back unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "an empty inline list is removed and every other line is kept",
+                "result": "pass"
+              },
+              {
+                "title": "an empty list in a file that also has tables under the key is repaired",
+                "result": "pass"
+              },
+              {
+                "title": "entries in the form Vibe saves become tables after everything else",
+                "result": "pass"
+              },
+              {
+                "title": "commas, brackets and hashes inside strings do not split an entry",
+                "result": "pass"
+              },
+              {
+                "title": "only the root-level key is moved",
+                "result": "pass"
+              },
+              {
+                "title": "a quoted or escaped spelling of the key is the same key",
+                "result": "pass"
+              },
+              {
+                "title": "a comment after the list is kept on its own line",
+                "result": "pass"
+              },
+              {
+                "title": "a file ending without a newline after the list is handled",
+                "result": "pass"
+              },
+              {
+                "title": "what cannot be moved without loss is refused",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/hosts/__tests__/commands.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 488,
+            "titles": [
+              {
+                "title": "registerHostCommands registers the insrc.hosts.wire command into the registry",
+                "result": "pass"
+              },
+              {
+                "title": "the wire command asks ONE combined consent (items = detected displayNames) and wires NONE until accepted",
+                "result": "pass"
+              },
+              {
+                "title": "on accepted every detected adapter.wire() runs; a failing adapter does not abort the others; the outcome is pushed to sc2",
+                "result": "pass"
+              },
+              {
+                "title": "no supported host present → the command sets a \"no hosts detected\" status and wires nothing",
+                "result": "pass"
+              },
+              {
+                "title": "source-scan: vscode-plugin/src/hosts/ imports only node builtins + the s1 surfaces (+ shared local modules) — no daemon internals/indexer/storage, no cloud/HTTP (k5)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/hosts/__tests__/writers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 520,
+            "titles": [
+              {
+                "title": "writeInsrcServer sets mcpServers.insrc preserving every other key/server; idempotent; creates {} when absent",
+                "result": "pass"
+              },
+              {
+                "title": "writeInsrcServer throws HostFileAccessError (no write) when mcpServers is present-but-non-object (never clobber)",
+                "result": "pass"
+              },
+              {
+                "title": "removeInsrcServer deletes only the insrc key (other servers intact) and is a no-op when absent",
+                "result": "pass"
+              },
+              {
+                "title": "SteeringWriter.upsert: no-markers→append; markers→replace; malformed/duplicate→untouched; idempotent; remove deletes/absent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "SteeringWriter.remove deletes the marker block (restoring prior content) and is a no-op when no markers exist",
+                "result": "pass"
+              },
+              {
+                "title": "both writers leave the file byte-unchanged when HostFileSystem.write throws (no partial write)",
+                "result": "pass"
+              },
+              {
+                "title": "composeMcpEntry(path) = { command:node, args:[path] } and returns undefined for an undefined/empty target (no cloud/env/argv)",
+                "result": "pass"
+              },
+              {
+                "title": "toml writeInsrcServer creates the [[mcp_servers]] insrc section in an absent file",
+                "result": "pass"
+              },
+              {
+                "title": "toml writeInsrcServer appends to an existing config preserving every other table/key/comment",
+                "result": "pass"
+              },
+              {
+                "title": "toml writeInsrcServer replaces an existing insrc section (new args), keeping the header line, and is idempotent",
+                "result": "pass"
+              },
+              {
+                "title": "toml writer refuses duplicate insrc sections (never guesses) and leaves the file unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "toml removeInsrcServer drops the insrc section and its [mcp_servers.auth] sub-table, preserving everything else; no-op when absent",
+                "result": "pass"
+              },
+              {
+                "title": "toml writeInsrcServer removes an empty inline mcp_servers list so the file stays valid; idempotent",
+                "result": "pass"
+              },
+              {
+                "title": "toml writeInsrcServer moves inline servers to tables and keeps them",
+                "result": "pass"
+              },
+              {
+                "title": "toml writeInsrcServer repairs a file holding both forms without adding a second insrc section",
+                "result": "pass"
+              },
+              {
+                "title": "toml writeInsrcServer recognises an inline insrc entry with a quoted name key and adds no second one",
+                "result": "pass"
+              },
+              {
+                "title": "toml writeInsrcServer refuses a config it cannot fix and leaves it unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "toml writer escapes quotes/backslashes in the launch path (TOML basic string)",
+                "result": "pass"
+              },
+              {
+                "title": "toml writer surfaces fs failures as HostFileAccessError with no partial write",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

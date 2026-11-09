@@ -43,7 +43,7 @@ import { prepareDecompose, prepareSynthesize, finalizeArtifact, type FinalizedAr
 import { startRun, resumeRun } from '../workflow/executor.js';
 import { resolveDraftDeps } from '../workflow/draft-deps.js';
 import type { BoundaryFinding } from '../workflow/synthesizer.js';
-import { appendProgressLog, appendRunLog, pathsForWorkflow, writeArtifact, writeAtomic } from '../workflow/storage.js';
+import { appendProgressLog, appendRunLog, pathsForWorkflow, withWorkflowLifecycle, writeArtifact, writeAtomic } from '../workflow/storage.js';
 import type { ReviewReport } from '../workflow/review/types.js';
 import { WORKFLOW_NAMES, type ArtifactMetaBase, type ArtifactModelAttribution, type OutputModelStamp, type WorkflowIntent, type WorkflowName, type WorkflowPlan } from '../workflow/types.js';
 import { modelSummary } from '../workflow/attribution.js';
@@ -346,7 +346,7 @@ export async function runWorkflowServerSide(
 	// raw-write: markdown render of the draft.
 	writeAtomic(paths.md,   finalized.renderedMd);
 	// content: a draft mints a revision and keeps a replaced draft's tracker block.
-	writeArtifact(paths.json, JSON.parse(finalized.renderedJson), 'content');
+	writeArtifact(paths.json, withWorkflowLifecycle(paths.json, JSON.parse(finalized.renderedJson)), 'content');
 	// Team mode: make sure every unit of the draft has its issue. Never throws; the draft stays whatever it returns.
 	const readiness = readinessFields(await ensureDraftIssues(paths.json));
 	appendRunLog(epicKey, intent.workflow, runId, {

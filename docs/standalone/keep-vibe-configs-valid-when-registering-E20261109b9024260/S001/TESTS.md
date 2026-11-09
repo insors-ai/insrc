@@ -8,7 +8,7 @@ What the build validation gate ran for each Task of this Story, and what each te
 
 ## s1
 
-Run at 2026-11-09T07:33:37.388Z on commit `739e70e98`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-09T07:49:56.561Z on commit `c571e6fe7`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **src/daemon/__tests__/mcp-register.test.ts**
 
@@ -46,7 +46,7 @@ Run by file: the build commit touched this test file.
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/__tests__/mcp-register.test.ts` | 0 | 32 | 1 s |  |
-| `src/shared/__tests__/toml-inline-list.test.ts` | 0 | 10 | 0.5 s |  |
-| `vscode-plugin/src/hosts/__tests__/commands.test.ts` | 0 | 5 | 0.5 s |  |
-| `vscode-plugin/src/hosts/__tests__/writers.test.ts` | 0 | 19 | 0.5 s |  |
+| `src/daemon/__tests__/mcp-register.test.ts` | 0 | 32 | 1.1 s |  |
+| `src/shared/__tests__/toml-inline-list.test.ts` | 0 | 10 | 0.7 s |  |
+| `vscode-plugin/src/hosts/__tests__/commands.test.ts` | 0 | 5 | 0.6 s |  |
+| `vscode-plugin/src/hosts/__tests__/writers.test.ts` | 0 | 19 | 0.6 s |  |

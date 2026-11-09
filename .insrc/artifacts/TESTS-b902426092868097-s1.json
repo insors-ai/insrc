@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 2,
-        "contentHash": "a9852b033f6fb33d33e59ba270736fbc094dd794caab15f67a7a5f9cd676a89f",
-        "at": "2026-11-09T07:33:37.403Z",
+        "number": 3,
+        "contentHash": "797327b6fa517e3e75a8a719b97c452d2a44bc358cbcb42d247bef450d86eb01",
+        "at": "2026-11-09T07:49:56.579Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,18 +23,18 @@
     "epicHash": "b902426092868097",
     "storyId": "s1",
     "createdAt": "2026-11-09T07:31:19.289Z",
-    "updatedAt": "2026-11-09T07:33:37.388Z",
+    "updatedAt": "2026-11-09T07:49:56.561Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-09T05:12:49.979Z",
     "epicSlug": "keep-vibe-configs-valid-when-registering",
-    "revision": 2
+    "revision": 3
   },
   "body": {
     "tasks": [
       {
         "taskId": "s1",
-        "commit": "739e70e98",
-        "ranAt": "2026-11-09T07:33:37.388Z",
+        "commit": "c571e6fe7",
+        "ranAt": "2026-11-09T07:49:56.561Z",
         "testsPassed": true,
         "tests": [
           {
@@ -75,7 +75,7 @@
             "file": "src/daemon/__tests__/mcp-register.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 964,
+            "durationMs": 1064,
             "titles": [
               {
                 "title": "unselected clients are always emitted as skipped, never omitted",
@@ -212,7 +212,7 @@
             "file": "src/shared/__tests__/toml-inline-list.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 524,
+            "durationMs": 658,
             "titles": [
               {
                 "title": "a config with no inline list comes back unchanged",
@@ -261,7 +261,7 @@
             "file": "vscode-plugin/src/hosts/__tests__/commands.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 488,
+            "durationMs": 648,
             "titles": [
               {
                 "title": "registerHostCommands registers the insrc.hosts.wire command into the registry",
@@ -290,7 +290,7 @@
             "file": "vscode-plugin/src/hosts/__tests__/writers.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 520,
+            "durationMs": 609,
             "titles": [
               {
                 "title": "writeInsrcServer sets mcpServers.insrc preserving every other key/server; idempotent; creates {} when absent",

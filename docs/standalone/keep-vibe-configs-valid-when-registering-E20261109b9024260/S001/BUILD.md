@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story s1
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-11-09T05:13:39.589Z  ·  **Updated:** 2026-11-09T07:33:37.388Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-11-09T05:13:39.589Z  ·  **Updated:** 2026-11-09T07:49:56.561Z
 
-**Commit:** 739e70e98
+**Commit:** c571e6fe7
 
 ## Scope
 
@@ -16,7 +16,7 @@ Small bugfix ISSUE-b902426092868097: two writers append a server section without
 
 ## Summary
 
-Both Vibe config writers now move an inline mcp_servers list into [[mcp_servers]] tables before adding the insrc server, through one shared helper, and leave a config they cannot fix untouched. Quoted and escaped key spellings are recognised. A full sweep did not complete, so failing and unreached test files were compared one by one against an untouched HEAD; 182 of 1,419 files fail or time out on both.
+Both Vibe config writers now move an inline mcp_servers list into [[mcp_servers]] tables before adding the insrc server, through one shared helper, and leave a config they cannot fix untouched. Quoted and escaped spellings of the keys are recognised, and an inline entry spanning lines is refused. The user chose to keep the shared helper and accepted that an escaped server name is not recognised as insrc.
 
 ## Tasks validated
 
@@ -26,10 +26,13 @@ Both Vibe config writers now move an inline mcp_servers list into [[mcp_servers]
 
 ## Changes
 
-- `src/daemon/__tests__/mcp-register.test.ts` — **insrc-build** (2026-11-09T07:33:37.388Z)
-- `src/daemon/mcp-register.ts` — **insrc-build** (2026-11-09T07:33:37.388Z)
-- `src/shared/__tests__/toml-inline-list.test.ts` — **insrc-build** (2026-11-09T07:33:37.388Z)
-- `src/shared/toml-inline-list.ts` — **insrc-build** (2026-11-09T07:33:37.388Z)
-- `vscode-plugin/src/hosts/__tests__/commands.test.ts` — **insrc-build** (2026-11-09T07:33:37.388Z)
-- `vscode-plugin/src/hosts/__tests__/writers.test.ts` — **insrc-build** (2026-11-09T07:33:37.388Z)
-- `vscode-plugin/src/hosts/toml-mcp-writer.ts` — **insrc-build** (2026-11-09T07:33:37.388Z)
+- `src/daemon/__tests__/mcp-register.test.ts` — **insrc-build** (2026-11-09T07:49:56.561Z)
+- `src/daemon/mcp-register.ts` — **insrc-build** (2026-11-09T07:49:56.561Z)
+- `src/shared/__tests__/toml-inline-list.test.ts` — **insrc-build** (2026-11-09T07:49:56.561Z)
+- `src/shared/toml-inline-list.ts` — **insrc-build** (2026-11-09T07:49:56.561Z)
+- `vscode-plugin/src/hosts/__tests__/commands.test.ts` — **insrc-build** (2026-11-09T07:49:56.561Z)
+- `vscode-plugin/src/hosts/__tests__/writers.test.ts` — **insrc-build** (2026-11-09T07:49:56.561Z)
+- `vscode-plugin/src/hosts/toml-mcp-writer.ts` — **insrc-build** (2026-11-09T07:49:56.561Z)
+- `.insrc/artifacts/ISSUE-b902426092868097.json` — **insrc-build** (2026-11-09T07:49:56.561Z)
+- `.insrc/artifacts/ISSUE-b902426092868097.log.jsonl` — **insrc-build** (2026-11-09T07:49:56.561Z)
+- `docs/standalone/keep-vibe-configs-valid-when-registering-E20261109b9024260/ISSUE.md` — **insrc-build** (2026-11-09T07:49:56.561Z)

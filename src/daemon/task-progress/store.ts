@@ -2,9 +2,9 @@ import { randomUUID } from 'node:crypto';
 import { constants } from 'node:fs';
 import { lstat, mkdir, open, opendir, rename, unlink } from 'node:fs/promises';
 import { dirname, isAbsolute, join } from 'node:path';
-import { decodeProgressRecord, MAX_PROGRESS_RECORD_BYTES, progressTaskKey } from './record.js';
+import { decodeProgressRecord, MAX_PROGRESS_RECORD_BYTES, progressTaskKey, validProgressMeasurement } from './record.js';
 import type { DetailValidator, ProgressRecord } from './record.js';
-import type { TaskOwnerFence, TaskRef } from '../../shared/task-progress.js';
+import type { Measurement, TaskOwnerFence, TaskRef } from '../../shared/task-progress.js';
 
 const recordName = /^[a-f0-9]{64}\.json$/;
 const scratchName = /^[a-f0-9]{64}\.json\.[a-f0-9-]{36}\.(tmp|invalid)$/;
@@ -93,6 +93,14 @@ export class ProgressStore<D> {
   list(): readonly ProgressRecord<D>[] {
     if (this.unsettled.size > 0) throw new ProgressStorageError('unavailable');
     return [...this.records.values()].map(record => structuredClone(record));
+  }
+
+  settle(): Promise<void> {
+    return this.serialize(() => this.reconcile());
+  }
+
+  acceptsMeasurement(value: unknown): value is Measurement<D> {
+    return validProgressMeasurement(value, this.validateDetails);
   }
 
   /** The caller verifies survival. Replace only the exact durable fence it inspected. */

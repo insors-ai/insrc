@@ -75,8 +75,12 @@ export const MeasurementSchema = progressObject({
 });
 
 export type Measurement<D> = Readonly<Omit<Static<typeof MeasurementSchema>, 'details'> & { details: D }>;
-export type DelegateMeasurement<D> = Measurement<D> & Readonly<{ task: TaskRef; owner: TaskOwnerFence }>;
-export type DeliveredMeasurement<D> = Measurement<D> & Readonly<{ task: TaskRef }>;
+type TimedMeasurement<D> = Omit<Measurement<D>, 'measuredAt' | 'lastMeaningfulAt'> & Readonly<{
+  measuredAt: string;
+  lastMeaningfulAt: string | null;
+}>;
+export type DelegateMeasurement<D> = TimedMeasurement<D> & Readonly<{ task: TaskRef; owner: TaskOwnerFence }>;
+export type DeliveredMeasurement<D> = TimedMeasurement<D> & Readonly<{ task: TaskRef }>;
 
 export interface TaskProgressDelegate<D extends { readonly kind: ProgressKind }> {
   progress(task: TaskRef): Promise<DelegateMeasurement<D> | null>;
@@ -88,7 +92,7 @@ export interface ProgressSnapshot<D> {
   readonly state: TaskState;
   readonly freshness: 'live' | 'stale' | 'unavailable';
   readonly measurement: DeliveredMeasurement<D> | null;
-  readonly lastOwnerActivityAt: number | null;
+  readonly lastOwnerActivityAt: string | null;
   readonly workerHealth: 'alive' | 'lost' | 'unknown';
   readonly cancellation: 'none' | 'pending';
   readonly resultRef?: string | undefined;

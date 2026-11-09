@@ -1,0 +1,107 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 3,
+        "contentHash": "5cbddf35c2c09295d9f0a974c6b0a289ba231b18a28faaa2fa575bd6debc4b2c",
+        "at": "2026-11-09T09:24:23.535Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-065cc768-3728-4395-b26e-818108cb13b7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-09T09:15:52.154Z",
+    "epicCreatedAt": "2026-11-09T09:08:21.565Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "530c5e079d4edfcd",
+    "storyId": "s1",
+    "revision": 3,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "Small bugfix routed issue -> build with no LLD (ISSUE-530c5e079d4edfcd).",
+    "epicSlug": "fail-clearly-empty-planner-catalog-name",
+    "updatedAt": "2026-11-09T09:23:40.858Z"
+  },
+  "body": {
+    "focus": "ISSUE-530c5e079d4edfcd: (1) the planner refuses an empty template catalog with a typed error naming the target, before building the wire schema or calling a model (src/analyze/planner/wire-schema.ts, src/analyze/planner/driver.ts); (2) the CLI provider adds a summary of the schema keywords it sent to the error it raises when codex answers invalid_json_schema (src/agent/providers/cli-provider.ts); tests for both.",
+    "producesLld": false,
+    "commit": "7efbf01e6",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "The planner throws EmptyPlanCatalogError (no templates for the target) before building its schema or calling a model; a codex invalid_json_schema rejection now appends a keyword summary (schema keywords sent, empty lists located; literal data under const/enum/default/examples is not read as keywords) to its error. Tests: driver-unit (empty catalog), cli-codex-strict-schema (refusal summary and the data boundary); scope-before-plan now registers the builtin templates.",
+    "testRecord": {
+      "md": "docs/standalone/fail-clearly-empty-planner-catalog-name-E20261109530c5e07/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/cli-codex-strict-schema.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T09:23:40.858Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/cli-provider.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T09:23:40.858Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/structured-schema.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T09:23:40.858Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/orchestrator/__tests__/scope-before-plan.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T09:23:40.858Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/__tests__/driver-unit.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T09:23:40.858Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/driver.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T09:23:40.858Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T09:23:40.858Z"
+      }
+    ]
+  },
+  "citations": []
+}

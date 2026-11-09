@@ -701,6 +701,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   const startActiveTimer = (): void => {
     if (activeTimer !== undefined) return;
     activeTimer = setInterval(() => { if (!disposed) postActive(); }, deps.activeListTimerMs ?? 60_000);
+    activeTimer.unref?.(); // a panel-lifetime timer must not by itself keep the process alive
   };
 
   // E202611031bd72813:S001 t5 — the 60 s lossless observer for detached chats. For each active
@@ -725,6 +726,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   const startObserverTimer = (): void => {
     if (observerTimer !== undefined || deps.sessionOutput === undefined) return;
     observerTimer = setInterval(() => { void runObserverPass(); }, deps.observerTimerMs ?? 60_000);
+    observerTimer.unref?.(); // same as the active-list timer above
   };
   /** Persists a request onto the fresh record (union by requestId); returns whether it is UNRESOLVED. */
   const persistRequest = (s: ChatSession, r: PersistedRequest): boolean => {

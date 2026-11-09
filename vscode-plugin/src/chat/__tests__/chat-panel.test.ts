@@ -96,6 +96,10 @@ interface AdapterHooks {
   gateBeforeDone?: Promise<void>; // await this before yielding the terminal 'done'
   onDecide?: (turnId: string, requestId: string, decision: 'approve' | 'deny') => void; // S004: decide() relay
 }
+// One wait of a fake adapter's poll loop. A test can end with its turn still in flight, and an
+// abandoned loop must not keep the test process alive.
+const pollTick = (ms: number): Promise<void> => new Promise((r) => { setTimeout(r, ms).unref(); });
+
 function scriptedAdapter(events: TurnEvent[], hooks?: AdapterHooks): StreamAdapter {
   let cancelled = false;
   return {
@@ -103,7 +107,7 @@ function scriptedAdapter(events: TurnEvent[], hooks?: AdapterHooks): StreamAdapt
       hooks?.onRun?.(req);
       try {
         if (hooks?.hangBeforeFirst) {
-          while (!cancelled) await new Promise((r) => setTimeout(r, 5));
+          while (!cancelled) await pollTick(5);
           return;
         }
         for (const ev of events) {
@@ -113,7 +117,7 @@ function scriptedAdapter(events: TurnEvent[], hooks?: AdapterHooks): StreamAdapt
           yield ev;
         }
         if (hooks?.hang) {
-          while (!cancelled) await new Promise((r) => setTimeout(r, 5));
+          while (!cancelled) await pollTick(5);
         }
       } finally {
         hooks?.onReturn?.();
@@ -1037,7 +1041,7 @@ function fedAdapter(): { adapter: StreamAdapter; feed: (ev: TurnEvent) => void; 
       runs++;
       cancelled = false;
       for (;;) {
-        while (queue.length === 0 && !cancelled) await new Promise((r) => setTimeout(r, 2));
+        while (queue.length === 0 && !cancelled) await pollTick(2);
         if (cancelled) return;
         const ev = queue.shift()!;
         yield ev;
@@ -5403,7 +5407,7 @@ function gatedAdapter(): { adapter: StreamAdapter; runs: GatedRun[]; resumes: Ga
       const born = cancelled;
       runs.push({ req, feed: (ev) => void queue.push(ev) });
       for (;;) {
-        while (queue.length === 0 && cancelled === born) await new Promise((r) => setTimeout(r, 2));
+        while (queue.length === 0 && cancelled === born) await pollTick(2);
         if (queue.length === 0) return;
         const ev = queue.shift()!;
         yield ev;
@@ -5415,7 +5419,7 @@ function gatedAdapter(): { adapter: StreamAdapter; runs: GatedRun[]; resumes: Ga
       let failure: string | undefined;
       resumes.push({ feed: (ev) => void queue.push(ev), fail: (m) => void (failure = m) });
       for (;;) {
-        while (queue.length === 0 && failure === undefined && o?.signal?.aborted !== true) await new Promise((r) => setTimeout(r, 2));
+        while (queue.length === 0 && failure === undefined && o?.signal?.aborted !== true) await pollTick(2);
         if (failure !== undefined) throw new Error(failure);
         if (queue.length === 0) return;
         const ev = queue.shift()!;
@@ -7366,7 +7370,7 @@ test('E202611031bd72813:S001 t6/MR3-R5: an async delivery failure for chat A’s
         for (;;) { await new Promise((r) => setTimeout(r, 5)); yield { kind: 'token', turnId: 'origA', text: 'parked' }; }
       } else if (runs.length === 2) { // chat B's turn: runs while the async failure for A arrives
         opts?.onSpawn?.({ ...procB, cursor: { sessionId: 'x', turnId: 'turnB', generation: 1, offset: 0 } });
-        while (!bDone) { await new Promise((r) => setTimeout(r, 5)); yield { kind: 'token', turnId: 'turnB', text: 'working' }; }
+        while (!bDone) { await pollTick(5); yield { kind: 'token', turnId: 'turnB', text: 'working' }; }
         procB.exitNow();
         yield { kind: 'done', turnId: 'turnB', ok: true };
       } else { // the continuation for A's decision
@@ -7433,11 +7437,11 @@ test('E202611031bd72813:S001 t6/MR3-R5 fail-closed: when no per-turn handle exis
       if (runs.length === 1) {
         opts?.onSpawn?.({ ...procA, cursor: { sessionId: 'x', turnId: 'origA', generation: 1, offset: 0 } });
         yield { kind: 'approval-request', turnId: 'origA', requestId: 'reqA2', title: 'act', detail: 'd', command: 'cmd-A2', resolution: 'in-turn' };
-        while (!aDone) { await new Promise((r) => setTimeout(r, 5)); yield { kind: 'token', turnId: 'origA', text: 'parked' }; }
+        while (!aDone) { await pollTick(5); yield { kind: 'token', turnId: 'origA', text: 'parked' }; }
         yield { kind: 'done', turnId: 'origA', ok: true };
       } else if (runs.length === 2) {
         opts?.onSpawn?.({ ...procB, cursor: { sessionId: 'x', turnId: 'turnB', generation: 1, offset: 0 } });
-        while (!bDone) { await new Promise((r) => setTimeout(r, 5)); yield { kind: 'token', turnId: 'turnB', text: 'working' }; }
+        while (!bDone) { await pollTick(5); yield { kind: 'token', turnId: 'turnB', text: 'working' }; }
         procB.exitNow();
         yield { kind: 'done', turnId: 'turnB', ok: true };
       } else {
@@ -8398,4 +8402,38 @@ test('catalog refresh coalesces requests, retains good data and rejects disposed
     await new Promise(resolve => setTimeout(resolve, 30));
     assert.equal(probes, 0);
   } finally { host.dispose(); }
+});
+
+test('ISSUE-7dc5ecde2730fb17: an open panel keeps both repeating timers without holding the process open, and dispose clears them', () => {
+  const realSet = globalThis.setInterval;
+  const realClear = globalThis.clearInterval;
+  const started: NodeJS.Timeout[] = [];
+  const cleared: unknown[] = [];
+  globalThis.setInterval = ((...args: Parameters<typeof setInterval>) => {
+    const timer = realSet(...args);
+    started.push(timer);
+    return timer;
+  }) as typeof setInterval;
+  globalThis.clearInterval = ((timer: Parameters<typeof clearInterval>[0]) => {
+    cleared.push(timer);
+    realClear(timer);
+  }) as typeof clearInterval;
+  try {
+    const fc = fakeChannel();
+    const host = createChatPanelHost({
+      createPanel: () => fc.channel,
+      providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+      store: createInMemoryChatSessionStore(),
+      cwd: () => '/repo',
+      sessionOutput: {} as never,
+    });
+    host.open();
+    assert.equal(started.length, 2, 'the active-list and observer timers both start');
+    assert.deepEqual(started.map((timer) => timer.hasRef()), [false, false]);
+    fc.fireDispose();
+    assert.deepEqual(cleared, started);
+  } finally {
+    globalThis.setInterval = realSet;
+    globalThis.clearInterval = realClear;
+  }
 });

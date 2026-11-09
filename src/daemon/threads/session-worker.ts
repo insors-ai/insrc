@@ -48,6 +48,8 @@ import { inDaemonTarget } from './method-class.js';
 import { StatusBoardClient } from './status-board.js';
 import type { StatusSnapshot } from './status-board.js';
 import { setLiveRunPublisher } from '../../analyze/orchestrator/live-runs.js';
+import { registerBuiltinTemplates } from '../../analyze/planner/templates/bootstrap.js';
+import { registerBuiltinRuntimes } from '../../analyze/runtimes/bootstrap.js';
 import { pushedIndexRun, startDaemonWorker } from './worker-entry.js';
 import { serveRequests } from './worker-requests.js';
 
@@ -62,6 +64,10 @@ setRunBoard(board);
 setLiveRunPublisher((runId, live) => board.markAnalyzeRun(runId, threadId, live));
 // The running full indexes, pushed from the board: the search guard refuses or filters a repository under index, as on the main thread.
 setIndexRunSource(pushedIndexRun);
+// An analyze run is served here, and a worker thread has module state of its own: the template catalog and the task
+// runtimes the main thread registers at boot are not visible to it, so this thread registers them for itself.
+registerBuiltinTemplates();
+registerBuiltinRuntimes();
 
 const db = await getDb();
 const configStore = new ConfigStore(db);
@@ -150,6 +156,12 @@ function testHandlers(): RpcHandlers {
 			return { threadId, status: pollWorkflowRun(runId, 0).status, calls, maxActive };
 		},
 		// The step-state store as a step handler on this worker sees it (the shared store, through the hub).
+		// The analyze template catalog and task runtimes as this worker thread sees them.
+		'test.analyzeRegistry': async () => {
+			const { getTemplateCatalog, getTemplatesForTarget } = await import('../../analyze/planner/templates/registry.js');
+			const { listRegisteredRuntimes } = await import('../../analyze/executor/registry.js');
+			return { threadId, templates: getTemplateCatalog().length, docsTemplates: getTemplatesForTarget('docs').length, runtimes: listRegisteredRuntimes().length };
+		},
 		'test.stepState': async (params) => {
 			const { op, kind, token, payload } = params as { op: 'mint' | 'read' | 'update'; kind: StepKind; token?: string; payload?: unknown };
 			const store = getStepStateStore();

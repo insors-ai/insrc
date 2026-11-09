@@ -274,3 +274,12 @@ test('parity: moved session methods answer over the socket as the single-thread 
 		rmSync(home, { recursive: true, force: true });
 	}
 });
+
+test('a session worker thread has the analyze template catalog and the task runtimes, as the main thread has', { timeout: 60_000 }, async () => {
+	// analyze.run.start is served on a session worker, which has module state of its own: it registers the catalog itself.
+	const r = (await once('test.analyzeRegistry', null, { label: 'mcp', pid: 7601 })).result as { threadId: number; templates: number; docsTemplates: number; runtimes: number };
+	assert.ok(r.threadId > 0, 'the answer came from a worker thread');
+	assert.ok(r.templates >= 27, `the worker sees the template catalog: ${r.templates}`);
+	assert.ok(r.docsTemplates >= 6, `and the docs templates: ${r.docsTemplates}`);
+	assert.ok(r.runtimes > 0, `and the task runtimes: ${r.runtimes}`);
+});

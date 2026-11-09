@@ -100,4 +100,32 @@ test('serialized resource and progress updates cannot lose open intents', async 
  await assert.rejects(updateStoredDesignCheckpoint(q.repo, 'review-1', current => {
   assert.ok(current?.schemaVersion === 2); const a = current.attempts[0]!; assert.ok(!isDesignAdmission(a)); a.completedChunks[0]!.summary = 'Replacement'; return current;
  }), /replace completed/);
+ // Exercise the original public writer, not just two new mutators. Pause a
+ // rename on either side of the upgrade to reproduce the competing-writer race.
+ for (const legacyFirst of [true, false]) {
+  const r = designFixture(t); await saveDesignCheckpoint(r.repo, r.checkpoint);
+  let reached!: () => void, unblock!: () => void;
+  const atRename = new Promise<void>(resolve => { reached = resolve; });
+  const continueRename = new Promise<void>(resolve => { unblock = resolve; });
+  const rename = fs.rename;
+  let blocked = false;
+  const mocked = t.mock.method(fs, 'rename', async (...args: Parameters<typeof fs.rename>) => {
+   if (args[1] === r.path && !blocked) { blocked = true; reached(); await continueRename; }
+   return rename(...args);
+  });
+  const upgrade = () => updateStoredDesignCheckpoint(r.repo, 'review-1', current => {
+   assert.ok(current?.schemaVersion === 1);
+   return { ...current, schemaVersion: 2, attempts: current.attempts.map(a => ({ ...a, resourceGuard: { daemonInstance: 'daemon-1', openLeases: [lease] } })) };
+  });
+  const legacy = () => saveDesignCheckpoint(r.repo, r.checkpoint);
+  const first = legacyFirst ? legacy() : upgrade();
+  await atRename;
+  const second = legacyFirst ? upgrade() : legacy();
+  const secondOutcome = second.then(() => undefined, error => error);
+  unblock(); await first;
+  const error = await secondOutcome;
+  if (legacyFirst) assert.equal(error, undefined); else assert.match(String(error), /version-2-aware/);
+  mocked.mock.restore();
+  assert.deepEqual((await loadStoredDesignCheckpoint(r.repo, 'review-1'))!.attempts[0]!.resourceGuard?.openLeases, [lease]);
+ }
 });

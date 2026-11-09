@@ -15,7 +15,13 @@ export function decodeStoredDesignCheckpoint(input: unknown): StoredDesignCheckp
   if (attempt.resourceGuard) validateReviewResourceGuard(attempt.resourceGuard, { project: cp.project, family: 'design', reviewId: cp.reviewId });
   if (!isDesignAdmission(attempt)) continue;
   requireDesign(!actions.has(attempt.actionId), 'invalid_checkpoint', 'Duplicate admission action identity'); actions.add(attempt.actionId);
-  requireDesign(attempt.submitted.attempt === attempt.number, 'invalid_checkpoint', 'Submission attempt mismatch');
+  if (attempt.operation === 'start') requireDesign(attempt.submitted.artifactPath && !attempt.submitted.recovery && attempt.submitted.attempt === attempt.number, 'invalid_checkpoint', 'Invalid start submission identity');
+  else {
+   const recovery = attempt.submitted.recovery;
+   requireDesign(recovery && !attempt.submitted.artifactPath, 'invalid_checkpoint', 'Recovery admission needs its exact recovery input');
+   requireDesign(attempt.submitted.attempt === attempt.number - (recovery.operation === 'restart_full' ? 1 : 0), 'invalid_checkpoint', 'Recovery source attempt mismatch');
+   requireDesign(recovery.operation !== 'restart_full' || recovery.userDecision?.action === 'restart_full', 'invalid_checkpoint', 'Full restart requires its explicit user decision');
+  }
   const terminal = attempt.status === 'failed' || attempt.status === 'interrupted';
   requireDesign(terminal === (attempt.finishedAt !== undefined), 'invalid_checkpoint', 'Admission completion time disagrees with status');
   for (const time of [attempt.acceptedAt, attempt.startedAt, attempt.finishedAt, attempt.progress.observedAt]) if (time !== undefined) requireDesign(Number.isFinite(Date.parse(time)), 'invalid_checkpoint', 'Invalid admission timestamp');

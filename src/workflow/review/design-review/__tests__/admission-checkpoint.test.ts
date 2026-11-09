@@ -20,6 +20,10 @@ test('historical design attempts and unverified admission retain separate semant
   assert.throws(() => decodeStoredDesignCheckpoint({ ...cp, attempts: [{ ...admission, ...patch }] }));
  }
  for (const schemaVersion of [0, 3]) assert.throws(() => decodeStoredDesignCheckpoint({ ...cp, schemaVersion }));
+ const recovery = { ...admission, operation: 'recover', submitted: { attempt: 1, recovery: { operation: 'resume' } } };
+ decodeStoredDesignCheckpoint({ ...cp, attempts: [recovery] });
+ assert.throws(() => decodeStoredDesignCheckpoint({ ...cp, attempts: [{ ...recovery, submitted: { attempt: 1 } }] }), /exact recovery input/);
+ assert.throws(() => decodeStoredDesignCheckpoint({ ...cp, attempts: [{ ...recovery, submitted: { attempt: 1, recovery: { operation: 'restart_full' } } }] }), /source attempt/);
  // A second isolated identity is enough to test admission persistence without
  // pretending an active qualified attempt can be replaced by an admission.
  cp.reviewId = 'admission-1'; admission.progress.checkpointPath = f.path.replace('review-1.json', 'admission-1.json');

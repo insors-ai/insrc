@@ -160,6 +160,10 @@ export async function loadStoredDesignCheckpoint(project: string, reviewId: stri
 }
 /** A failed pre-rename write leaves the previous accepted snapshot intact. No advance may follow a rejected save. */
 export async function saveDesignCheckpoint(project: string, input: DesignReviewCheckpoint): Promise<void> {
+ const checkpoint = decodeDesign(DesignCheckpointSchema, input);
+ return serializeDesignWrite(designCheckpointPath(project, checkpoint.reviewId), () => saveQualifiedDesignCheckpoint(project, checkpoint));
+}
+async function saveQualifiedDesignCheckpoint(project: string, input: DesignReviewCheckpoint): Promise<void> {
  try{
  const checkpoint=decodeDesign(DesignCheckpointSchema,input),path=designCheckpointPath(project,checkpoint.reviewId);
  validateDesignCheckpointIdentity(project,checkpoint.reviewId,checkpoint);
@@ -217,22 +221,28 @@ function validateStoredDesignIdentity(project: string, id: string, cp: StoredDes
  if (cp.schemaVersion === 2) for (const attempt of cp.attempts) if (isDesignAdmission(attempt)) {
   requireDesign(attempt.progress.checkpointPath === designCheckpointPath(project, id), 'foreign_checkpoint', 'Progress names another checkpoint');
   // The requested file is not resolved or treated as a verified subject yet.
-  requireDesign(!attempt.submitted.artifactPath.includes('\0'), 'invalid_checkpoint', 'Invalid requested artifact path');
+  requireDesign(!attempt.submitted.artifactPath?.includes('\0'), 'invalid_checkpoint', 'Invalid requested artifact path');
  }
 }
 
-const admissionWrites = new Map<string, Promise<unknown>>();
+const checkpointWrites = new Map<string, Promise<unknown>>();
+function serializeDesignWrite<T>(path: string, write: () => Promise<T>): Promise<T> {
+ const work = (checkpointWrites.get(path) ?? Promise.resolve()).catch(() => {}).then(write);
+ checkpointWrites.set(path, work);
+ void work.finally(() => { if (checkpointWrites.get(path) === work) checkpointWrites.delete(path); }).catch(() => {});
+ return work;
+}
 /** Read-modify-write under one per-checkpoint queue. Mutators always receive
  * the latest durable snapshot, so a delayed progress save cannot drop a lease.
  * Ownership across workers/processes remains the daemon registry's job. */
 export function updateStoredDesignCheckpoint(project: string, reviewId: string,
  mutate: (current: StoredDesignCheckpoint | undefined) => StoredDesignCheckpoint | Promise<StoredDesignCheckpoint>): Promise<StoredDesignCheckpoint> {
  const path = designCheckpointPath(project, reviewId);
- const work = (admissionWrites.get(path) ?? Promise.resolve()).catch(() => {}).then(async () => {
+ return serializeDesignWrite(path, async () => {
   const previous = await loadStoredDesignCheckpoint(project, reviewId);
   const cp = decodeStoredDesignCheckpoint(await mutate(previous && structuredClone(previous)));
   validateStoredDesignIdentity(project, reviewId, cp);
-  if (cp.schemaVersion === 1) { await saveDesignCheckpoint(project, cp); return cp; }
+  if (cp.schemaVersion === 1) { await saveQualifiedDesignCheckpoint(project, cp); return cp; }
   if (previous) {
    checkDesignAdmissionEvolution(previous, cp);
    const before = qualifiedDesignProjection(previous), after = qualifiedDesignProjection(cp);
@@ -245,7 +255,4 @@ export function updateStoredDesignCheckpoint(project: string, reviewId: string,
   catch (error) { throw new DesignReviewPersistenceError(error instanceof Error ? error.message : 'Checkpoint save failed'); }
   return cp;
  });
- admissionWrites.set(path, work);
- void work.finally(() => { if (admissionWrites.get(path) === work) admissionWrites.delete(path); }).catch(() => {});
- return work;
 }

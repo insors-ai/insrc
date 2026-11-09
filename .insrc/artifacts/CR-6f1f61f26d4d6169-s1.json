@@ -1,0 +1,1412 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "store-d83244a8-45d4-4c50-b9b2-8472c9c2a027",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T19:17:55.134Z",
+    "epicCreatedAt": "2026-11-09T19:09:28.603Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 2,
+    "epicHash": "6f1f61f26d4d6169",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicSlug": "give-every-repository-install-c-standard",
+    "standalone": true,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 3,
+        "contentHash": "a80bb91f1c701c52508d4fbacf3f8571bcb018e14e404633d0325e7e351e6406",
+        "at": "2026-11-09T19:23:59.787Z",
+        "by": {
+          "id": "insrc:code-review",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 3
+  },
+  "body": {
+    "kind": "code-review",
+    "format": "task-based",
+    "storyId": "s1",
+    "status": "passed",
+    "reviews": [
+      {
+        "reviewId": "install-cxx-std-s1",
+        "attempt": 1,
+        "storyId": "s1",
+        "reviewer": "daemon",
+        "status": "incomplete",
+        "finalScopeIdentity": "44c1ac46c8718f3ca3b8d83cd2d55166df40ac729cca623e78d903631166f125",
+        "attributionIdentity": "89ddac8924364ec1faeec400523549af5ded3b8977793d29e8abc1a598a5a4c9",
+        "taskScopeIdentities": [
+          {
+            "taskId": "s1",
+            "identity": "6a576e052ec814d3327f678682a4e6ac56d0f2fffa0912ef3177b239bfc1168d"
+          }
+        ],
+        "scope": {
+          "reviewRevision": "209bb13a591bd786e1c8007ddb0991686ffb8471",
+          "finalScope": {
+            "revision": "209bb13a591bd786e1c8007ddb0991686ffb8471",
+            "identity": "44c1ac46c8718f3ca3b8d83cd2d55166df40ac729cca623e78d903631166f125",
+            "entries": [
+              {
+                "originChangeIndex": 0,
+                "path": ".github/workflows/ci.yml",
+                "blobOid": "7a442e1a5cb47f4008bf57d8b1ba6d921c9cfd47",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      38,
+                      39
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 1,
+                "path": ".github/workflows/vscode-plugin.yml",
+                "blobOid": "b070713c92f1b17450ae39e81e0fb7990d9818b9",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      36,
+                      37
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 2,
+                "path": "AGENTS.md",
+                "blobOid": "146fbe8e65f1b6eedaae2a842af37b22bfc36ffb",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      82,
+                      82
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 3,
+                "path": "CLAUDE.md",
+                "blobOid": "8573330c919b111b77a600e04008276c11dd23d6",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      82,
+                      82
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 4,
+                "path": "README.md",
+                "blobOid": "b7793e15d37d079f88c086487523f3db417d5f30",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      156,
+                      156
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 5,
+                "path": "docs/daemon.md",
+                "blobOid": "19f83626e00457445161c3c2b395834fd29295bd",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      131,
+                      131
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 6,
+                "path": "docs/installation.md",
+                "blobOid": "9ee747f2f95940aa6c277633529403f69e49e8fb",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      50,
+                      50
+                    ]
+                  }
+                ]
+              }
+            ],
+            "dispositions": [
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    38,
+                    39
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      38,
+                      39
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    36,
+                    37
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      36,
+                      37
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    82,
+                    82
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      82,
+                      82
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    82,
+                    82
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      82,
+                      82
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    156,
+                    156
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      156,
+                      156
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    131,
+                    131
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      131,
+                      131
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 6,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    50,
+                    50
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      50,
+                      50
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              }
+            ],
+            "selectedTaskIds": [
+              "s1"
+            ],
+            "testCount": 0,
+            "attributionIdentity": "89ddac8924364ec1faeec400523549af5ded3b8977793d29e8abc1a598a5a4c9",
+            "attributionState": "accepted",
+            "tasks": [
+              {
+                "taskId": "s1",
+                "changeIndexes": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ],
+                "testIndexes": [],
+                "decision": {
+                  "action": "initial"
+                },
+                "identity": "6a576e052ec814d3327f678682a4e6ac56d0f2fffa0912ef3177b239bfc1168d"
+              }
+            ]
+          },
+          "storyId": "s1",
+          "documents": {
+            "issue": {
+              "path": "docs/standalone/give-every-repository-install-c-standard-E202611096f1f61f2/ISSUE.md",
+              "commit": "209bb13a591bd786e1c8007ddb0991686ffb8471"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "3f7b0c0bd19b484f39c7a45df9b8eb42aca7dca0",
+              "parent": "b4613685c1723573b21f92fbd1931812d91309bb",
+              "files": [
+                {
+                  "path": ".github/workflows/ci.yml",
+                  "segments": [
+                    {
+                      "after": [
+                        38,
+                        39
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": ".github/workflows/vscode-plugin.yml",
+                  "segments": [
+                    {
+                      "after": [
+                        36,
+                        37
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "AGENTS.md",
+                  "segments": [
+                    {
+                      "after": [
+                        82,
+                        82
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "CLAUDE.md",
+                  "segments": [
+                    {
+                      "after": [
+                        82,
+                        82
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "README.md",
+                  "segments": [
+                    {
+                      "after": [
+                        156,
+                        156
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "docs/daemon.md",
+                  "segments": [
+                    {
+                      "after": [
+                        131,
+                        131
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "docs/installation.md",
+                  "segments": [
+                    {
+                      "after": [
+                        50,
+                        50
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "s1",
+            "status": "incomplete",
+            "summary": "Inspected all seven submitted changes and the acceptance requirements. The edits consistently request C++17 and introduce no demonstrated implementation defect. Required macOS confirmation remains unverified for the reviewed revision.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Completed coverage inspection. Existing daemon installer tests assert C++17 propagation, preservation of caller flags, and install failure handling using mocked npm. Packed-package tests exercise isolated installation with C++17, but do not validate the changed root workflows or documentation. TESTS.md records zero executed cases. The macOS install report tests a different dependency tree and cannot establish acceptance for this revision.",
+              "evidenceReferences": [
+                "209bb13a591bd786e1c8007ddb0991686ffb8471:src/cli/services/__tests__/daemon-ctl-install-marker.test.ts",
+                "209bb13a591bd786e1c8007ddb0991686ffb8471:src/cli/services/__tests__/maintenance-install-marker.test.ts",
+                "209bb13a591bd786e1c8007ddb0991686ffb8471:src/config/__tests__/installer-defs.test.ts",
+                "209bb13a591bd786e1c8007ddb0991686ffb8471:packages/project-memory/src/__tests__/packed.test.ts",
+                "209bb13a591bd786e1c8007ddb0991686ffb8471:docs/standalone/give-every-repository-install-c-standard-E202611096f1f61f2/S001/TESTS.md",
+                "209bb13a591bd786e1c8007ddb0991686ffb8471:docs/standalone/give-every-repository-install-c-standard-E202611096f1f61f2/S001/evidence/macos-clean-install.txt"
+              ]
+            },
+            "limitations": [
+              "The required macOS clean-install confirmation is unsupported for revision 209bb13a591bd786e1c8007ddb0991686ffb8471. The supplied report names f3e340fa1256cbd58feda8167c1d24e7a9f9726c, whose root manifest, lockfile and project-memory manifest differ materially. It also runs npm ci rather than the documented npm install. This evidence does not establish the required reviewed-version behavior."
+            ],
+            "advice": [
+              "Optional execution: I did not run installs, tests, builds, typechecks or GitHub workflows. The filesystem is read-only; a clean install requires writes.",
+              "Supply macOS clean-install evidence for the reviewed dependency tree using CXXFLAGS=-std=c++17 npm install, recording the revision, environment, exit status and fs-ext load result."
+            ],
+            "inspectedReferences": [
+              "209bb13a591bd786e1c8007ddb0991686ffb8471:.github/workflows/ci.yml",
+              "209bb13a591bd786e1c8007ddb0991686ffb8471:.github/workflows/vscode-plugin.yml",
+              "209bb13a591bd786e1c8007ddb0991686ffb8471:AGENTS.md",
+              "209bb13a591bd786e1c8007ddb0991686ffb8471:CLAUDE.md",
+              "209bb13a591bd786e1c8007ddb0991686ffb8471:README.md",
+              "209bb13a591bd786e1c8007ddb0991686ffb8471:docs/daemon.md",
+              "209bb13a591bd786e1c8007ddb0991686ffb8471:docs/installation.md",
+              "209bb13a591bd786e1c8007ddb0991686ffb8471:docs/standalone/give-every-repository-install-c-standard-E202611096f1f61f2/ISSUE.md",
+              "209bb13a591bd786e1c8007ddb0991686ffb8471:docs/standalone/give-every-repository-install-c-standard-E202611096f1f61f2/S001/BUILD.md",
+              "209bb13a591bd786e1c8007ddb0991686ffb8471:docs/standalone/give-every-repository-install-c-standard-E202611096f1f61f2/S001/TESTS.md",
+              "209bb13a591bd786e1c8007ddb0991686ffb8471:docs/standalone/give-every-repository-install-c-standard-E202611096f1f61f2/S001/evidence/macos-clean-install.txt",
+              "209bb13a591bd786e1c8007ddb0991686ffb8471:.github/workflows/project-memory.yml",
+              "209bb13a591bd786e1c8007ddb0991686ffb8471:.npmrc",
+              "209bb13a591bd786e1c8007ddb0991686ffb8471:package.json",
+              "209bb13a591bd786e1c8007ddb0991686ffb8471:package-lock.json",
+              "209bb13a591bd786e1c8007ddb0991686ffb8471:packages/project-memory/package.json",
+              "209bb13a591bd786e1c8007ddb0991686ffb8471:src/cli/services/maintenance.ts",
+              "209bb13a591bd786e1c8007ddb0991686ffb8471:scripts/daemon-ctl.sh",
+              "209bb13a591bd786e1c8007ddb0991686ffb8471:scripts/insrc-daemon-install.sh",
+              "209bb13a591bd786e1c8007ddb0991686ffb8471:src/cli/services/__tests__/daemon-ctl-install-marker.test.ts",
+              "209bb13a591bd786e1c8007ddb0991686ffb8471:src/cli/services/__tests__/maintenance-install-marker.test.ts",
+              "209bb13a591bd786e1c8007ddb0991686ffb8471:src/config/__tests__/installer-defs.test.ts",
+              "209bb13a591bd786e1c8007ddb0991686ffb8471:packages/project-memory/src/__tests__/packed.test.ts",
+              "f3e340fa1256cbd58feda8167c1d24e7a9f9726c:package.json",
+              "f3e340fa1256cbd58feda8167c1d24e7a9f9726c:package-lock.json",
+              "f3e340fa1256cbd58feda8167c1d24e7a9f9726c:packages/project-memory/package.json"
+            ],
+            "executedTests": [
+              {
+                "file": "docs/standalone/give-every-repository-install-c-standard-E202611096f1f61f2/S001/evidence/macos-clean-install.txt",
+                "cases": [
+                  "Clean dependency installation",
+                  "fs-ext loads"
+                ],
+                "command": "CXXFLAGS=-std=c++17 npm ci --no-audit --no-fund",
+                "result": "pass",
+                "executionDetails": "Builder-supplied report, not my execution: revision f3e340fa1256cbd58feda8167c1d24e7a9f9726c; Darwin arm64, Apple clang 21.0.0, Node v22.23.2; exit 0 in 42 seconds; fs-ext loads true. Revision mismatch prevents treating this as reviewed-version confirmation.",
+                "evidenceReferences": [
+                  "209bb13a591bd786e1c8007ddb0991686ffb8471:docs/standalone/give-every-repository-install-c-standard-E202611096f1f61f2/S001/evidence/macos-clean-install.txt"
+                ]
+              }
+            ]
+          }
+        ],
+        "summary": "1 selected task assessment(s): incomplete.",
+        "completedAt": "2026-11-09T19:17:54.409Z",
+        "buildFingerprint": "882a80e16ea9a381a31aadfefc85899b4dd5d2d44d589e008308b3643f660f33"
+      },
+      {
+        "reassessmentSummary": "All seven selected changes belong to s1, the single BUILD-derived review unit. No tests were supplied.",
+        "reviewId": "install-cxx-std-s1",
+        "attempt": 2,
+        "storyId": "s1",
+        "reviewer": "daemon",
+        "status": "failed",
+        "finalScopeIdentity": "88061d9e2fda4a3e4baa759d4804e5f69041f9052d8796074bc134e8204beb92",
+        "attributionIdentity": "7d6bb201085804e48254c3fd64f276475d454b548a7513eda3b218da00ca1c1f",
+        "taskScopeIdentities": [
+          {
+            "taskId": "s1",
+            "identity": "6a576e052ec814d3327f678682a4e6ac56d0f2fffa0912ef3177b239bfc1168d"
+          }
+        ],
+        "scope": {
+          "reviewRevision": "7954364f0ce2caa55ed344908198d2caa8576ce9",
+          "finalScope": {
+            "revision": "7954364f0ce2caa55ed344908198d2caa8576ce9",
+            "identity": "88061d9e2fda4a3e4baa759d4804e5f69041f9052d8796074bc134e8204beb92",
+            "entries": [
+              {
+                "originChangeIndex": 0,
+                "path": ".github/workflows/ci.yml",
+                "blobOid": "7a442e1a5cb47f4008bf57d8b1ba6d921c9cfd47",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      38,
+                      39
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 1,
+                "path": ".github/workflows/vscode-plugin.yml",
+                "blobOid": "b070713c92f1b17450ae39e81e0fb7990d9818b9",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      36,
+                      37
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 2,
+                "path": "AGENTS.md",
+                "blobOid": "146fbe8e65f1b6eedaae2a842af37b22bfc36ffb",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      82,
+                      82
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 3,
+                "path": "CLAUDE.md",
+                "blobOid": "8573330c919b111b77a600e04008276c11dd23d6",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      82,
+                      82
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 4,
+                "path": "README.md",
+                "blobOid": "b7793e15d37d079f88c086487523f3db417d5f30",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      156,
+                      156
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 5,
+                "path": "docs/daemon.md",
+                "blobOid": "19f83626e00457445161c3c2b395834fd29295bd",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      131,
+                      131
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 6,
+                "path": "docs/installation.md",
+                "blobOid": "9ee747f2f95940aa6c277633529403f69e49e8fb",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      50,
+                      50
+                    ]
+                  }
+                ]
+              }
+            ],
+            "dispositions": [
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    38,
+                    39
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      38,
+                      39
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    36,
+                    37
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      36,
+                      37
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    82,
+                    82
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      82,
+                      82
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    82,
+                    82
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      82,
+                      82
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    156,
+                    156
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      156,
+                      156
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    131,
+                    131
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      131,
+                      131
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 6,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    50,
+                    50
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      50,
+                      50
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              }
+            ],
+            "selectedTaskIds": [
+              "s1"
+            ],
+            "testCount": 0,
+            "attributionIdentity": "7d6bb201085804e48254c3fd64f276475d454b548a7513eda3b218da00ca1c1f",
+            "attributionState": "accepted",
+            "tasks": [
+              {
+                "taskId": "s1",
+                "changeIndexes": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ],
+                "testIndexes": [],
+                "decision": {
+                  "action": "reassess",
+                  "reason": "Reassess because new macOS clean-install evidence addresses the reviewed-revision verification gap that left attempt 1 incomplete. Both workflow changes and all five documentation changes implement s1's repository-install C++17 requirement."
+                },
+                "identity": "6a576e052ec814d3327f678682a4e6ac56d0f2fffa0912ef3177b239bfc1168d"
+              }
+            ]
+          },
+          "storyId": "s1",
+          "documents": {
+            "issue": {
+              "path": "docs/standalone/give-every-repository-install-c-standard-E202611096f1f61f2/ISSUE.md",
+              "commit": "209bb13a591bd786e1c8007ddb0991686ffb8471"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "3f7b0c0bd19b484f39c7a45df9b8eb42aca7dca0",
+              "parent": "b4613685c1723573b21f92fbd1931812d91309bb",
+              "files": [
+                {
+                  "path": ".github/workflows/ci.yml",
+                  "segments": [
+                    {
+                      "after": [
+                        38,
+                        39
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": ".github/workflows/vscode-plugin.yml",
+                  "segments": [
+                    {
+                      "after": [
+                        36,
+                        37
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "AGENTS.md",
+                  "segments": [
+                    {
+                      "after": [
+                        82,
+                        82
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "CLAUDE.md",
+                  "segments": [
+                    {
+                      "after": [
+                        82,
+                        82
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "README.md",
+                  "segments": [
+                    {
+                      "after": [
+                        156,
+                        156
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "docs/daemon.md",
+                  "segments": [
+                    {
+                      "after": [
+                        131,
+                        131
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "docs/installation.md",
+                  "segments": [
+                    {
+                      "after": [
+                        50,
+                        50
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "s1",
+            "status": "failed",
+            "summary": "Reviewer failed: evidence: Unresolved committed evidence reference",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "unverified",
+              "explanation": "No valid completed assessment was obtained.",
+              "evidenceReferences": []
+            },
+            "limitations": [
+              "Reviewer failed: evidence: Unresolved committed evidence reference"
+            ],
+            "advice": [],
+            "inspectedReferences": [],
+            "executedTests": [],
+            "error": "Reviewer failed: evidence: Unresolved committed evidence reference"
+          }
+        ],
+        "summary": "1 selected task assessment(s): failed.\nNative output diagnostics: [{\"phase\":\"assessment\",\"taskId\":\"s1\",\"provider\":\"codex\",\"resolved\":false,\"errors\":[{\"code\":\"HOST_VALIDATION_ERROR\",\"field\":\"evidence\",\"correction\":\"Correct the host-rejected review field before resubmitting.\",\"occurrences\":1}]}]",
+        "completedAt": "2026-11-09T19:21:51.206Z",
+        "buildFingerprint": "882a80e16ea9a381a31aadfefc85899b4dd5d2d44d589e008308b3643f660f33"
+      },
+      {
+        "reassessmentSummary": "All seven selected changes belong to s1, the single BUILD-derived review unit. No tests were supplied.",
+        "reviewId": "install-cxx-std-s1",
+        "attempt": 3,
+        "storyId": "s1",
+        "reviewer": "daemon",
+        "status": "passed",
+        "finalScopeIdentity": "88061d9e2fda4a3e4baa759d4804e5f69041f9052d8796074bc134e8204beb92",
+        "attributionIdentity": "44079a067a7d7a7977e2374c9eaeb4ea2922b9477ba1bf35c06e33af498c3a62",
+        "taskScopeIdentities": [
+          {
+            "taskId": "s1",
+            "identity": "6a576e052ec814d3327f678682a4e6ac56d0f2fffa0912ef3177b239bfc1168d"
+          }
+        ],
+        "scope": {
+          "reviewRevision": "7954364f0ce2caa55ed344908198d2caa8576ce9",
+          "finalScope": {
+            "revision": "7954364f0ce2caa55ed344908198d2caa8576ce9",
+            "identity": "88061d9e2fda4a3e4baa759d4804e5f69041f9052d8796074bc134e8204beb92",
+            "entries": [
+              {
+                "originChangeIndex": 0,
+                "path": ".github/workflows/ci.yml",
+                "blobOid": "7a442e1a5cb47f4008bf57d8b1ba6d921c9cfd47",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      38,
+                      39
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 1,
+                "path": ".github/workflows/vscode-plugin.yml",
+                "blobOid": "b070713c92f1b17450ae39e81e0fb7990d9818b9",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      36,
+                      37
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 2,
+                "path": "AGENTS.md",
+                "blobOid": "146fbe8e65f1b6eedaae2a842af37b22bfc36ffb",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      82,
+                      82
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 3,
+                "path": "CLAUDE.md",
+                "blobOid": "8573330c919b111b77a600e04008276c11dd23d6",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      82,
+                      82
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 4,
+                "path": "README.md",
+                "blobOid": "b7793e15d37d079f88c086487523f3db417d5f30",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      156,
+                      156
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 5,
+                "path": "docs/daemon.md",
+                "blobOid": "19f83626e00457445161c3c2b395834fd29295bd",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      131,
+                      131
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 6,
+                "path": "docs/installation.md",
+                "blobOid": "9ee747f2f95940aa6c277633529403f69e49e8fb",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      50,
+                      50
+                    ]
+                  }
+                ]
+              }
+            ],
+            "dispositions": [
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    38,
+                    39
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      38,
+                      39
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    36,
+                    37
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      36,
+                      37
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    82,
+                    82
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      82,
+                      82
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    82,
+                    82
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      82,
+                      82
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    156,
+                    156
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      156,
+                      156
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    131,
+                    131
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      131,
+                      131
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 6,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    50,
+                    50
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      50,
+                      50
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              }
+            ],
+            "selectedTaskIds": [
+              "s1"
+            ],
+            "testCount": 0,
+            "attributionIdentity": "44079a067a7d7a7977e2374c9eaeb4ea2922b9477ba1bf35c06e33af498c3a62",
+            "attributionState": "accepted",
+            "tasks": [
+              {
+                "taskId": "s1",
+                "changeIndexes": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ],
+                "testIndexes": [],
+                "decision": {
+                  "action": "reassess",
+                  "reason": "Both workflow edits and all five documentation edits implement s1's repository-install C++17 requirement. Reassess because attempt 2 failed on an unresolved evidence reference, leaving the reviewed-revision macOS confirmation unresolved; the current submission identifies committed evidence for that confirmation."
+                },
+                "identity": "6a576e052ec814d3327f678682a4e6ac56d0f2fffa0912ef3177b239bfc1168d"
+              }
+            ]
+          },
+          "storyId": "s1",
+          "documents": {
+            "issue": {
+              "path": "docs/standalone/give-every-repository-install-c-standard-E202611096f1f61f2/ISSUE.md",
+              "commit": "209bb13a591bd786e1c8007ddb0991686ffb8471"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "3f7b0c0bd19b484f39c7a45df9b8eb42aca7dca0",
+              "parent": "b4613685c1723573b21f92fbd1931812d91309bb",
+              "files": [
+                {
+                  "path": ".github/workflows/ci.yml",
+                  "segments": [
+                    {
+                      "after": [
+                        38,
+                        39
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": ".github/workflows/vscode-plugin.yml",
+                  "segments": [
+                    {
+                      "after": [
+                        36,
+                        37
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "AGENTS.md",
+                  "segments": [
+                    {
+                      "after": [
+                        82,
+                        82
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "CLAUDE.md",
+                  "segments": [
+                    {
+                      "after": [
+                        82,
+                        82
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "README.md",
+                  "segments": [
+                    {
+                      "after": [
+                        156,
+                        156
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "docs/daemon.md",
+                  "segments": [
+                    {
+                      "after": [
+                        131,
+                        131
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "docs/installation.md",
+                  "segments": [
+                    {
+                      "after": [
+                        50,
+                        50
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "s1",
+            "status": "passed",
+            "summary": "Reviewed all seven submitted changes against the issue and acceptance checks. Both root workflow installs and all five documented commands consistently request C++17. Daemon install behavior remains unchanged. Committed macOS evidence confirms clean documented installs for an implementation-identical revision. No material defects found.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Inspected relevant test bodies and assertions. Daemon installer tests assert C++17 propagation, caller-flag preservation, and failure handling using mocked npm. Packed-package tests install with C++17 and exercise native-backed consumers, but do not directly test the changed root workflows or documentation. No new automated cases were submitted; TESTS.md records zero cases. The separate macOS report records successful fresh-checkout npm install and npm ci runs with fs-ext loading at 209bb13a591bd786e1c8007ddb0991686ffb8471. Comparing that revision with the submission confirms only the evidence file differs. Coverage assessment is complete; reported executions were not independently rerun.",
+              "evidenceReferences": [
+                "7954364f0ce2caa55ed344908198d2caa8576ce9:src/cli/services/__tests__/daemon-ctl-install-marker.test.ts",
+                "7954364f0ce2caa55ed344908198d2caa8576ce9:src/cli/services/__tests__/maintenance-install-marker.test.ts",
+                "7954364f0ce2caa55ed344908198d2caa8576ce9:src/config/__tests__/installer-defs.test.ts",
+                "7954364f0ce2caa55ed344908198d2caa8576ce9:packages/project-memory/src/__tests__/packed.test.ts",
+                "7954364f0ce2caa55ed344908198d2caa8576ce9:packages/project-memory/src/__tests__/fixtures/node22.ts",
+                "7954364f0ce2caa55ed344908198d2caa8576ce9:docs/standalone/give-every-repository-install-c-standard-E202611096f1f61f2/S001/TESTS.md",
+                "7954364f0ce2caa55ed344908198d2caa8576ce9:docs/standalone/give-every-repository-install-c-standard-E202611096f1f61f2/S001/evidence/macos-clean-install-reviewed-revision.txt"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: I did not run installs, tests, typechecks, builds, or GitHub workflows. The supplied macOS results are reported evidence, not my executions."
+            ],
+            "inspectedReferences": [
+              "209bb13a591bd786e1c8007ddb0991686ffb8471:docs/standalone/give-every-repository-install-c-standard-E202611096f1f61f2/ISSUE.md",
+              "7954364f0ce2caa55ed344908198d2caa8576ce9:.github/workflows/ci.yml",
+              "7954364f0ce2caa55ed344908198d2caa8576ce9:.github/workflows/vscode-plugin.yml",
+              "7954364f0ce2caa55ed344908198d2caa8576ce9:AGENTS.md",
+              "7954364f0ce2caa55ed344908198d2caa8576ce9:CLAUDE.md",
+              "7954364f0ce2caa55ed344908198d2caa8576ce9:README.md",
+              "7954364f0ce2caa55ed344908198d2caa8576ce9:docs/daemon.md",
+              "7954364f0ce2caa55ed344908198d2caa8576ce9:docs/installation.md",
+              "7954364f0ce2caa55ed344908198d2caa8576ce9:.github/workflows/project-memory.yml",
+              "7954364f0ce2caa55ed344908198d2caa8576ce9:.npmrc",
+              "7954364f0ce2caa55ed344908198d2caa8576ce9:src/cli/services/maintenance.ts",
+              "7954364f0ce2caa55ed344908198d2caa8576ce9:scripts/daemon-ctl.sh",
+              "7954364f0ce2caa55ed344908198d2caa8576ce9:scripts/insrc-daemon-install.sh",
+              "7954364f0ce2caa55ed344908198d2caa8576ce9:src/cli/services/__tests__/daemon-ctl-install-marker.test.ts",
+              "7954364f0ce2caa55ed344908198d2caa8576ce9:src/cli/services/__tests__/maintenance-install-marker.test.ts",
+              "7954364f0ce2caa55ed344908198d2caa8576ce9:src/config/__tests__/installer-defs.test.ts",
+              "7954364f0ce2caa55ed344908198d2caa8576ce9:packages/project-memory/src/__tests__/packed.test.ts",
+              "7954364f0ce2caa55ed344908198d2caa8576ce9:packages/project-memory/src/__tests__/fixtures/node22.ts",
+              "7954364f0ce2caa55ed344908198d2caa8576ce9:docs/standalone/give-every-repository-install-c-standard-E202611096f1f61f2/S001/BUILD.md",
+              "7954364f0ce2caa55ed344908198d2caa8576ce9:docs/standalone/give-every-repository-install-c-standard-E202611096f1f61f2/S001/TESTS.md",
+              "7954364f0ce2caa55ed344908198d2caa8576ce9:docs/standalone/give-every-repository-install-c-standard-E202611096f1f61f2/S001/evidence/macos-clean-install-reviewed-revision.txt"
+            ],
+            "executedTests": [
+              {
+                "file": "docs/standalone/give-every-repository-install-c-standard-E202611096f1f61f2/S001/evidence/macos-clean-install-reviewed-revision.txt",
+                "cases": [
+                  "Fresh-checkout documented installation",
+                  "fs-ext loads",
+                  "Lockfile unchanged"
+                ],
+                "command": "CXXFLAGS=-std=c++17 npm install",
+                "result": "pass",
+                "executionDetails": "Supplied report, not reviewer execution: revision 209bb13a591bd786e1c8007ddb0991686ffb8471; Darwin arm64, Apple clang 21.0.0, Node v22.23.2; fresh checkout without node_modules; exit 0 in 46 seconds; fs-ext loads true; no lockfile changes. Only the evidence file differs from the submission pin.",
+                "evidenceReferences": [
+                  "7954364f0ce2caa55ed344908198d2caa8576ce9:docs/standalone/give-every-repository-install-c-standard-E202611096f1f61f2/S001/evidence/macos-clean-install-reviewed-revision.txt"
+                ]
+              },
+              {
+                "file": "docs/standalone/give-every-repository-install-c-standard-E202611096f1f61f2/S001/evidence/macos-clean-install-reviewed-revision.txt",
+                "cases": [
+                  "Fresh-checkout lockfile installation",
+                  "fs-ext loads",
+                  "Lockfile unchanged"
+                ],
+                "command": "CXXFLAGS=-std=c++17 npm ci",
+                "result": "pass",
+                "executionDetails": "Supplied report, not reviewer execution: revision 209bb13a591bd786e1c8007ddb0991686ffb8471; Darwin arm64, Apple clang 21.0.0, Node v22.23.2; separate fresh checkout without node_modules; exit 0 in 49 seconds; fs-ext loads true; no lockfile changes. This establishes reported local installation success, not a GitHub workflow execution.",
+                "evidenceReferences": [
+                  "7954364f0ce2caa55ed344908198d2caa8576ce9:docs/standalone/give-every-repository-install-c-standard-E202611096f1f61f2/S001/evidence/macos-clean-install-reviewed-revision.txt"
+                ]
+              }
+            ]
+          }
+        ],
+        "summary": "1 selected task assessment(s): passed.",
+        "completedAt": "2026-11-09T19:23:58.420Z",
+        "buildFingerprint": "882a80e16ea9a381a31aadfefc85899b4dd5d2d44d589e008308b3643f660f33"
+      }
+    ]
+  },
+  "citations": []
+}

@@ -1,0 +1,41 @@
+{
+  "method": "Built-in image generation; transparent six-character atlas",
+  "asset": "crew-six-poses-v2.png",
+  "style": "Original semi-realistic space-exploration crew. Muted teal, navy, ochre, rust and cream uniforms with original asymmetrical piping and hexagonal details; no recognizable actors or franchise insignia. Genuine alpha background.",
+  "layout": "3 columns by 2 rows; distinct full-body characters, generous cell padding",
+  "scenes": [
+    {
+      "scene": "Arrival bay",
+      "person": "Short-haired South Asian woman in teal",
+      "pose": "Lean forward and connect handheld equipment"
+    },
+    {
+      "scene": "Observation lab",
+      "person": "Silver-haired East Asian man with glasses in blue",
+      "pose": "Profile with raised scanning device"
+    },
+    {
+      "scene": "Mission briefing",
+      "person": "Black woman with high natural bun in ochre",
+      "pose": "Point toward the plan with tablet at hip"
+    },
+    {
+      "scene": "Engineering",
+      "person": "Bearded stocky Mediterranean man in rust",
+      "pose": "Kneel on one knee using a compact tool"
+    },
+    {
+      "scene": "Dispatch hangar",
+      "person": "Auburn-haired woman with braid in blue and cream",
+      "pose": "Look down and tap dispatch tablet"
+    },
+    {
+      "scene": "Command bridge",
+      "person": "Older Black man with gray hair in teal and gold",
+      "pose": "Sit in command chair and gesture"
+    }
+  ],
+  "orb": "Approved standalone sphere renderer; 154 px rendered sprite with animated eyes; retained bounce path and trailing markers",
+  "duration_seconds": 32,
+  "audio": "Silent; narration alignment remains separate"
+}

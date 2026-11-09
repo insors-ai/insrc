@@ -34,7 +34,7 @@ async function stateDir(t: { after(fn: () => Promise<void>): void }): Promise<st
   return join(root, 'state');
 }
 
-test('Progress storage recovers an unchanged record after failure before rename and fences stale revisions', async t => {
+test('Progress storage recovers a populated snapshot and revalidates only the matching durable owner', async t => {
   const dir = await stateDir(t);
   let fail = false;
   const store = await ProgressStore.open(dir, validate, limits, {
@@ -44,7 +44,14 @@ test('Progress storage recovers an unchanged record after failure before rename 
       await rename(source, target);
     },
   });
-  const task = active('a');
+  const task: ProgressRecord<Details> = {
+    ...active('a'), recoveryDeadline: 120_000,
+    measurement: {
+      kind: 'test', measuredAt: 1, meaningfulRevision: 1, lastMeaningfulAt: 1,
+      phase: 'execution', activeUnit: 'suite', counts: [{ unit: 'cases', completed: 3, total: null }],
+      milestones: ['started'], controls: [], details: { kind: 'test' },
+    },
+  };
   await store.commit(task, null);
   fail = true;
   await assert.rejects(store.commit(terminal(task, 2), 0), { reason: 'unavailable' });
@@ -53,9 +60,15 @@ test('Progress storage recovers an unchanged record after failure before rename 
   assert.deepEqual(reopened.get(task.task), task);
   assert.deepEqual(await readdir(dir), [progressTaskKey(task.task) + '.json']);
   await assert.rejects(reopened.commit({ ...task, revision: 2 }, 1), { reason: 'stale' });
-  const current = { ...task, owner: { ownerId: 'owner', ownerEpoch: 'revalidated', ownerSequence: 0 }, revision: 1 };
-  await reopened.commit(current, 0);
+  const fence = task.owner!;
+  await assert.rejects(reopened.revalidateOwner(task.task, { ...fence, ownerId: 'foreign' }, 'revalidated', 2), { reason: 'stale' });
+  await assert.rejects(reopened.revalidateOwner(task.task, fence, 'revalidated', 120_000), { reason: 'stale' });
+  const current = await reopened.revalidateOwner(task.task, fence, 'revalidated', 2);
   assert.deepEqual(reopened.get(task.task), current);
+  assert.deepEqual(current.measurement, task.measurement);
+  assert.equal(current.owner?.ownerEpoch, 'revalidated');
+  assert.equal(current.recoveryDeadline, null);
+  await assert.rejects(reopened.revalidateOwner(task.task, fence, 'older-replay', 3), { reason: 'stale' });
 });
 
 test('Progress storage withholds ambiguous publication and reconciles the replaced record', async t => {

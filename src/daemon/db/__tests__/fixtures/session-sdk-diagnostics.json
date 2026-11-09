@@ -16,7 +16,7 @@
     {
       "module": "mysql",
       "package": "mysql2",
-      "version": "3.22.6",
+      "version": "3.24.6",
       "temporary": "resource-local-controls",
       "rationale": "Force per-resource debug/trace false. The unconditional out-of-order packet warning formats only numeric protocol sequence values, not packet or source contents. Configuration is exercised; live SQL remains separate coverage.",
       "files": [
@@ -94,7 +94,7 @@
     {
       "module": "cassandra",
       "package": "cassandra-driver",
-      "version": "4.9.0",
+      "version": "4.10.0",
       "temporary": "resource-local-controls",
       "rationale": "Resource options install no-op logEmitter; SDK does not dispatch private log events to external subscribers. Actual configured emitter exercised.",
       "files": [
@@ -162,7 +162,7 @@
     "pg/lib/client.js": "86cda0e1fda47e03d27dde65f10c7b9d597f7411f77ed853c8d27d5f150978a2",
     "pg/lib/connection.js": "5c17c585f307518f8369d6162d138c58eef1309128ad2fae2d6b315c8000234e",
     "pg-pool/index.js": "6f304776edaabde2954cbf8c4366fa6d9512bfba0e408e78cc56b3c46c69d058",
-    "mysql2/lib/base/connection.js": "8d0e3b60922e5d2a2aa4eece795d715b6608e487f5d3a1927c6b2130c61084fa",
+    "mysql2/lib/base/connection.js": "b22610ef653a8c2e4e6395aa5fdfa78bd150a631fc8029e49e2d165f83d0ccb7",
     "tedious/lib/connection.js": "52d717fda36e9109a80645197cc52dcfea953e3e3d742b1c8bf87cb9a2e30f0c",
     "tedious/lib/debug.js": "b0bd84cb13c0f6583c40430ce6ffeb5ea76b104e17e6fc91bc5fe4d80631807e",
     "oracledb/lib/thin/connection.js": "314208c5995769801025b1e5b48de7eca7c868ba14893a9fdef07d2b5243f8b1",
@@ -186,7 +186,7 @@
     "@aws-sdk/credential-provider-node/dist-cjs/index.js": "69fb5a842bb3426f2029149de0a123e2216f95540a7090823ddec2445a52e995",
     "@aws-sdk/credential-provider-ini/dist-cjs/index.js": "2d975f8114b17e1e96eea2735c7271f735f08bab35dc922384cd15735bbdd085",
     "etcd3/lib/connection-pool.js": "0c866a84d97ee69f6d394c4acf3c8c7a143b3d239494bd612a3f7b5eb1ecb4b3",
-    "@grpc/grpc-js/build/src/logging.js": "9d8c08337c42fdaa1e4093e171f177245f0c2ae4b221e9fd6469421c0307a453",
+    "@grpc/grpc-js/build/src/logging.js": "4dc9fbc58dd207a779f26d03467cdec55ed47b81700c9639049a7320b1843335",
     "memjs/lib/memjs/memjs.js": "39afda5d78adb99d939af7ee830cc136c3e79d4db07532ea4884582ceae1e0b0",
     "memjs/lib/memjs/server.js": "eab37389a88a7f4a2d64b3d54f55a703771066b58aa54b21027e585d71d3a631",
     "@duckdb/node-api/lib/DuckDBInstance.js": "f2704ba3e0d0fd8d2cc7e7481569cf01f006140a8d34f51d0afe13db0750cd53"

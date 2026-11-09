@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4ff35350-297e-468f-abb4-337d982dcf66",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T18:32:29.869Z",
+    "epicCreatedAt": "2026-11-08T16:46:43.683Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "46667edffe5cc451",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Patch SMTP and database driver dependencies",
+      "parent": {
+        "entityId": "STORY-46667edffe5cc451-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-46667edffe5cc451-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-46667edffe5cc451-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "52f5c39ce9e596f3243ba15493f4a6570ecef00bd7ef7dd901debf08bbfa12b2",
+        "at": "2026-11-08T19:39:37.621Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T18:32:29.871Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Patch SMTP and database driver dependencies",
+    "summary": "Apply batch 2 Nodemailer, Cassandra and ZIP, MySQL, etcd and gRPC, and SQL Server Azure Identity changes. Preserve saved configuration loading and driver contracts.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Confirm every batch 2 resolved dependency is outside the mapped affected ranges.",
+      "Verify authenticated STARTTLS, recipient handling and attachments. Run live saved-configuration connection, schema and bounded-read checks for Cassandra, etcd and MySQL. Verify SQL Server saved configuration, schema and bounded reads at the Tedious SDK boundary with the existing fixture. Record live SQL Server qualification as deferred at the user's direction, outside this build gate.",
+      "Prove the overwrite-enabled destination symlink fixture detects baseline behavior and passes on the selected adm-zip release for synchronous, asynchronous and single-entry extraction."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Overwrite-enabled ZIP outside-sentinel regression for extractAllTo, extractAllToAsync and extractEntryTo"
+      },
+      {
+        "level": "integration",
+        "name": "Authenticated SMTP STARTTLS with attachments, authentication failure, required-TLS failure and partial recipient rejection"
+      },
+      {
+        "level": "live",
+        "name": "Load saved Cassandra, etcd and MySQL settings through the daemon registry, then connect, read schema and perform a bounded read"
+      },
+      {
+        "level": "integration",
+        "name": "Verify saved SQL Server configuration, schema and bounded reads at the Tedious SDK boundary using the fixture"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

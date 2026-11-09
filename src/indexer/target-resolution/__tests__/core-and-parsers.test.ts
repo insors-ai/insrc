@@ -166,13 +166,17 @@ test('t2: docker-compose parser — environment map + list forms, tagged docker'
 	assert.ok(map.some(e => e.key === 'QUEUE' && e.value === 'orders' && e.layer === 'docker'));
 });
 
-test('t2: k8s manifest parser — container env + ConfigMap data (multi-doc), tagged k8s, never kubectl', () => {
+test('Kubernetes parser resolves YAML merge keys, explicit overrides and multiple documents', () => {
 	const entries = parseK8sManifest([
 		'apiVersion: v1',
 		'kind: ConfigMap',
 		'metadata: { name: cfg }',
-		'data:',
+		'defaults: &defaults',
 		'  DB_HOST: db.example.com',
+		'  DB_PORT: 5432',
+		'data:',
+		'  <<: *defaults',
+		'  DB_PORT: 6432',
 		'---',
 		'apiVersion: apps/v1',
 		'kind: Deployment',
@@ -186,6 +190,7 @@ test('t2: k8s manifest parser — container env + ConfigMap data (multi-doc), ta
 		'              value: api.example.com',
 	].join('\n'));
 	assert.ok(entries.some(e => e.key === 'DB_HOST' && e.value === 'db.example.com' && e.layer === 'k8s'));
+	assert.deepEqual(entries.filter(e => e.key === 'DB_PORT'), [{ key: 'DB_PORT', value: '6432', layer: 'k8s' }]);
 	assert.ok(entries.some(e => e.key === 'API_HOST' && e.value === 'api.example.com' && e.layer === 'k8s'));
 });
 

@@ -24,7 +24,7 @@ const validate = (kind: string, input: unknown): input is Details =>
   kind === 'test' && input !== null && typeof input === 'object' &&
   'kind' in input && input.kind === 'test' && Object.keys(input).length === 1;
 
-async function fixture(t: TestContext, holdProgressWrites = false) {
+async function fixture(t: TestContext, holdProgressWrites = false, inactivePerProject = 1024) {
   const root = await mkdtemp(join(tmpdir(), 'insrc-progress-access-'));
   const path = join(root, 'rpc.sock');
   const projects = new Map([[project, 1], [otherProject, 2]]);
@@ -43,7 +43,9 @@ async function fixture(t: TestContext, holdProgressWrites = false) {
 
   async function start() {
     await stop();
-    const opened = await openProgressRuntime(root, async () => projects, validate);
+    const opened = await openProgressRuntime(root, async () => projects, validate, {
+      activePerProject: 128, inactivePerProject, globalBytes: 128 * 1024 * 1024, quarantineRecords: 4,
+    });
     runtime = opened;
     const { access, coordinator } = opened;
     const producer = coordinator.registerProducer('test', () => ({ kind: 'test' }));
@@ -328,7 +330,7 @@ test('Check stop, cancel replay and verified completion races', { timeout: 5000 
 });
 
 test('A full observer queue coalesces progress and reserves the verified terminal frame', { timeout: 5000 }, async t => {
-  const f = await fixture(t, true);
+  const f = await fixture(t, true, 1);
   const owner = f.client();
   const launch = await owner.launch((await owner.open()).originId);
   const binding = await owner.attach(launch);
@@ -340,10 +342,33 @@ test('A full observer queue coalesces progress and reserves the verified termina
     assert.equal(await owner.request('test.record', { task: launch.task, sequence, state: 'running' }), 'recorded');
   }
   assert.equal(await owner.request('test.record', { task: launch.task, sequence: 21, state: 'completed' }), 'recorded');
+  const replacement = await owner.launch((await owner.open()).originId);
+  assert.equal(await owner.request('test.record', { task: replacement.task, sequence: 2, state: 'completed' }), 'recorded');
+  await assert.rejects(f.retainedRecord(launch.task), { code: 'ENOENT' });
+  await assert.rejects(owner.read(binding), /task-unavailable/);
   f.drain();
   const terminal = await owner.next(stream);
   assert.equal(terminal.stream, 'done');
   assert.equal((terminal.data as Observation).disposition, 'resync');
   assert.equal((terminal.data as Observation).snapshot.state, 'completed');
   assert.equal((terminal.data as Observation).snapshot.resultRef, 'verified-result');
+});
+
+test('Revoking a conversation discards its reserved terminal frame after storage eviction', { timeout: 5000 }, async t => {
+  const f = await fixture(t, true, 1);
+  const owner = f.client();
+  const origin = await owner.open();
+  const launch = await owner.launch(origin.originId);
+  const binding = await owner.attach(launch);
+  const stream = owner.send('progress.subscribe', { observerId: binding }, true);
+  assert.equal((await owner.next(stream)).stream, 'progress');
+  assert.equal(await owner.request('test.record', { task: launch.task, sequence: 2, state: 'completed' }), 'recorded');
+  const replacement = await owner.launch((await owner.open()).originId);
+  assert.equal(await owner.request('test.record', { task: replacement.task, sequence: 2, state: 'completed' }), 'recorded');
+  await assert.rejects(f.retainedRecord(launch.task), { code: 'ENOENT' });
+  await owner.request('progress.origin.revoke', { originId: origin.originId });
+  const terminal = await owner.next(stream);
+  assert.equal(terminal.stream, 'error');
+  assert.match(JSON.stringify(terminal.data), /task-unavailable/);
+  f.drain();
 });

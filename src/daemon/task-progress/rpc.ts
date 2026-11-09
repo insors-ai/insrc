@@ -11,6 +11,7 @@ type Details = { readonly kind: ProgressKind };
 export interface ProgressRuntime<D extends Details> {
   readonly access: ProgressAccess<D>;
   readonly coordinator: ProgressCoordinator<D>;
+  close(): Promise<void>;
 }
 
 const repo = Type.String({ minLength: 1, maxLength: 4096 });

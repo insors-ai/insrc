@@ -165,3 +165,66 @@ test('Progress coordinator requires trusted revalidation to bind a recovered att
   await port.signalMeasurement(rebound.owner, 1);
   assert.equal(recovered.read(rebound.task)?.measurement?.meaningfulRevision, 2);
 });
+
+test('Verify 30-second owner renewal and 120-second expiry with no observers, separate tasks in one chat, removal, and stale callbacks', async t => {
+  const f = await fixture(t);
+  const a = await admitted(f, 'a', { progress: async () => null });
+  const b = await admitted(f, 'b', { progress: async () => null });
+  await f.clock.wait(30_000);
+  f.setTime(31_000);
+  assert.equal(await f.producer.renewActivity(b.owner, 1), 'renewed');
+  assert.equal(await f.producer.renewActivity(b.owner, 1), 'rejected');
+  assert.equal(f.coordinator.activityFor('project', 'chat').length, 2);
+  f.coordinator.read(a.task);
+  await f.clock.wait(90_000);
+  f.setTime(121_000);
+  await f.coordinator.sweep();
+  assert.deepEqual(f.coordinator.activityFor('project', 'chat').map(lease => lease.task), [b.task]);
+  assert.equal(f.coordinator.read(a.task)?.state, 'interrupted');
+  assert.equal(await f.producer.renewActivity(a.owner, 2), 'rejected');
+  assert.equal(await f.producer.recordLifecycle(a.owner, { sequence: 3, state: 'completed' }), 'rejected');
+  assert.equal(f.coordinator.read(b.task)?.workerHealth, 'alive');
+  const independent = await f.producer.register(f.authority.mint({
+    action: 'launch', invocationId: 'c', projectId: 'project', ownerId: 'owner', origin: { extensionChatId: 'other-chat' },
+  }), 'producer', { progress: async () => null });
+  assert.equal(independent.kind, 'admitted');
+  const record = f.store.get(b.task)!;
+  await f.store.commit({ ...record, revision: record.revision + 1, activityReleased: true }, record.revision);
+  assert.deepEqual(f.coordinator.activityFor('project', 'chat'), []);
+  assert.equal(f.coordinator.activityFor('project', 'other-chat').length, 1);
+  assert.equal(await f.producer.recordLifecycle(b.owner, { sequence: 2, state: 'completed' }), 'recorded');
+});
+
+test('Restart repeatedly without owners, preserve the recovery deadline, release expired reservations and refuse stale revalidation without inventing termination', async t => {
+  const f = await fixture(t);
+  const a = await admitted(f, 'a', { progress: async () => null });
+  const limits = { activePerProject: 1, inactivePerProject: 2, globalBytes: 512 * 1024, quarantineRecords: 0 };
+  let store = await ProgressStore.open(f.path, validate, limits);
+  let coordinator = new ProgressCoordinator(store, f.authority.inspect, f.clock);
+  f.setTime(2_000);
+  await coordinator.sweep();
+  assert.equal(coordinator.read(a.task)?.state, 'interrupted');
+  assert.equal(store.get(a.task)?.recoveryDeadline, 122_000);
+  const before = coordinator.registerProducer('test', () => details);
+  assert.deepEqual(await before.register(f.mint('b'), 'producer', { progress: async () => null }),
+    { kind: 'refused', reason: 'capacity' });
+
+  store = await ProgressStore.open(f.path, validate, limits);
+  coordinator = new ProgressCoordinator(store, f.authority.inspect, f.clock);
+  f.setTime(121_000);
+  await coordinator.sweep();
+  assert.equal(store.get(a.task)?.recoveryDeadline, 122_000);
+  f.setTime(122_000);
+  await coordinator.sweep();
+  assert.equal(store.get(a.task)?.retention, 'expired');
+  assert.equal(coordinator.read(a.task)?.state, 'unknown');
+  assert.equal(coordinator.read(a.task)?.workerHealth, 'lost');
+  assert.equal(coordinator.isTerminal(a.task), false);
+  const after = coordinator.registerProducer('test', () => details);
+  assert.deepEqual(await after.register(f.authority.mint({ action: 'revalidate', task: a.task, ownerId: 'owner' }),
+    'producer', { progress: async () => null }), { kind: 'refused', reason: 'expired' });
+  assert.equal((await after.register(f.mint('b'), 'producer', { progress: async () => null })).kind, 'admitted');
+  f.setTime(122_000 + 7 * 24 * 60 * 60 * 1000);
+  await coordinator.sweep();
+  assert.equal(coordinator.read(a.task), undefined);
+});

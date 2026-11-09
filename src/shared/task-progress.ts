@@ -83,7 +83,7 @@ export type DelegateMeasurement<D> = TimedMeasurement<D> & Readonly<{ task: Task
 export type DeliveredMeasurement<D> = TimedMeasurement<D> & Readonly<{ task: TaskRef }>;
 
 export interface TaskProgressDelegate<D extends { readonly kind: ProgressKind }> {
-  progress(task: TaskRef): Promise<DelegateMeasurement<D> | null>;
+  progress(task: TaskRef, signal?: AbortSignal): Promise<DelegateMeasurement<D> | null>;
 }
 
 export interface ProgressSnapshot<D> {

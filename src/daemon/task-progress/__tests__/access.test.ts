@@ -28,23 +28,27 @@ async function fixture(t: TestContext) {
   const path = join(root, 'rpc.sock');
   const projects = new Set([project, otherProject]);
   let server: IpcServer | undefined;
+  let runtime: Awaited<ReturnType<typeof openProgressRuntime<Details>>> | undefined;
   const sockets = new Set<ReturnType<typeof createConnection>>();
   const stop = async () => {
     for (const socket of sockets) socket.destroy();
     sockets.clear();
     await server?.close();
+    await runtime?.close();
   };
   t.after(async () => { await stop(); await rm(root, { recursive: true, force: true }); });
 
   async function start() {
     await stop();
-    const runtime = await openProgressRuntime(root, async () => projects, validate);
-    const producer = runtime.coordinator.registerProducer('test', () => ({ kind: 'test' }));
-    const { rpc, streams } = createProgressRoutes(async () => runtime);
+    const opened = await openProgressRuntime(root, async () => projects, validate);
+    runtime = opened;
+    const { access, coordinator } = opened;
+    const producer = coordinator.registerProducer('test', () => ({ kind: 'test' }));
+    const { rpc, streams } = createProgressRoutes(async () => opened);
     rpc['test.launch'] = async (params, context) => {
       assert.ok(context);
       const { repo, originId } = params as { repo: string; originId: string };
-      const launch = await runtime.access.launch(repo, originId, 'fixture-executor', context);
+      const launch = await access.launch(repo, originId, 'fixture-executor', context);
       let identity: { task: TaskRef; fence: import('../../../shared/task-progress.js').TaskOwnerFence } | undefined;
       const admission = await producer.register(launch.authorization, 'suite', {
         progress: async () => identity === undefined ? null : {
@@ -62,11 +66,15 @@ async function fixture(t: TestContext) {
     };
     rpc['test.permission'] = async (params, context) => {
       const { observerId, permission } = params as { observerId: string; permission: 'details' | 'cancel' | 'fallback' };
-      await runtime.access.authorize(observerId, permission, context);
+      await access.authorize(observerId, permission, context);
       return { allowed: true };
     };
+    rpc['test.activity'] = async (params, context) => {
+      assert.ok(context);
+      return access.activityFor((params as { originId: string }).originId, context);
+    };
     server = new IpcServer(directDispatch(rpc, streams), Date.now, path);
-    server.onConnectionClose(context => runtime.access.disconnect(context));
+    server.onConnectionClose(context => access.disconnect(context));
     await server.listen();
   }
 
@@ -192,4 +200,23 @@ test('First observer grant requires daemon-owned origin bootstrap or an existing
   await impostor.bind(origin);
   const launch = await impostor.launch(origin.originId);
   assert.deepEqual((await impostor.read(await impostor.attach(launch))).snapshot.task, launch.task);
+});
+
+test('Removing one conversation releases its activity without stopping its tasks or other conversations', { timeout: 5000 }, async t => {
+  const f = await fixture(t);
+  const owner = f.client();
+  const first = await owner.open();
+  const second = await owner.open();
+  const a = await owner.launch(first.originId);
+  const b = await owner.launch(first.originId);
+  const c = await owner.launch(second.originId);
+  const activity = (origin: Origin) => owner.request<{ task: TaskRef }[]>('test.activity', { originId: origin.originId });
+  assert.deepEqual((await activity(first)).map(item => item.task), [a.task, b.task]);
+  await owner.request('progress.origin.revoke', { originId: first.originId });
+  await assert.rejects(activity(first), /task-unavailable/);
+  assert.deepEqual((await activity(second)).map(item => item.task), [c.task]);
+  for (const launch of [a, b]) {
+    const history = await owner.attach(launch, 'history');
+    assert.equal((await owner.read(history)).snapshot.workerHealth, 'alive');
+  }
 });

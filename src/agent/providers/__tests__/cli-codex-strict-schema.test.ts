@@ -24,6 +24,7 @@ import { test } from 'node:test';
 import { CliProvider } from '../cli-provider.js';
 import { ModelResponseShapeError } from '../model-call-error.js';
 import { codexStrictSchema } from '../structured-output.js';
+import { schemaKeywordSummary } from '../structured-schema.js';
 import { modelFacingBundleSchema } from '../../../analyze/context/schema.js';
 import type { StructuredSchema } from '../../../shared/types.js';
 
@@ -395,4 +396,19 @@ test('a codex schema rejection names the keywords that were sent and where a lis
 	} finally {
 		rmSync(dir, { recursive: true, force: true });
 	}
+});
+
+test('the keyword summary of a rejected schema counts schema keywords only: data under const, enum, default and examples is not read as keywords', () => {
+	const schema = {
+		type: 'object',
+		properties: { kind: { const: { anyOf: [], oneOf: [] } }, tag: { enum: [{ required: [] }], default: { allOf: [] } }, anyOf: { type: 'string' } },
+		examples: [{ anyOf: [] }],
+	};
+	const summary = schemaKeywordSummary(schema);
+	assert.doesNotMatch(summary, /empty lists at/, `data is not read as an empty list: ${summary}`);
+	assert.doesNotMatch(summary, /allOf|oneOf|required/, `data keywords are not counted: ${summary}`);
+	assert.match(summary, /const×1/);
+	assert.match(summary, /enum×1/);
+	// A property that is named like a keyword is a name, not a keyword.
+	assert.doesNotMatch(summary, /anyOf×/);
 });

@@ -152,6 +152,8 @@ export function schemaKeywordSummary(schema: unknown): string {
 	const counts = new Map<string, number>();
 	const empty: string[] = [];
 	const MAPS = new Set(['properties', 'patternProperties', '$defs', 'definitions']);
+	// The value of these is data, not a schema: what it holds is never a keyword.
+	const DATA = new Set(['const', 'enum', 'default', 'examples', 'example']);
 	const walk = (v: unknown, path: string, inMap: boolean): void => {
 		if (Array.isArray(v)) { v.forEach((x, i) => walk(x, `${path}[${i}]`, false)); return; }
 		if (v === null || typeof v !== 'object') return;
@@ -160,6 +162,7 @@ export function schemaKeywordSummary(schema: unknown): string {
 				counts.set(k, (counts.get(k) ?? 0) + 1);
 				if (['anyOf', 'oneOf', 'allOf', 'enum', 'required'].includes(k) && Array.isArray(x) && x.length === 0) empty.push(`${path}.${k}`);
 			}
+			if (!inMap && DATA.has(k)) continue;
 			walk(x, `${path}.${k}`, !inMap && MAPS.has(k));
 		}
 	};

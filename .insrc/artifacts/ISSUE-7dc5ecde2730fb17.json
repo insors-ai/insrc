@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1794215380987-kg48g7",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T09:10:15.201Z",
+    "epicCreatedAt": "2026-11-09T09:10:15.201Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "claude-opus-5-5"
+        }
+      ]
+    },
+    "elapsedMs": 34210,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "7dc5ecde2730fb17",
+    "epicSlug": "stop-chat-panel-timers-from-keeping",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f5f8eb0ebee83f160c23af6743d30e6f0f31ee120ebc1e32482a3f22cffab874",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T17:57:19.424Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "7dc5ecde2730fb17",
+      "slug": "EPIC-7dc5ecde2730fb17"
+    }
+  },
+  "body": {
+    "title": "Stop chat panel timers from keeping the test process alive",
+    "reproduction": "Run `node --import tsx --test --test-reporter=tap vscode-plugin/src/chat/__tests__/chat-panel.test.ts` without `--test-force-exit`.\n\nObserved: on 2026-11-09 the run reported 229 passing tests and no failures, then was still running when a 150 second limit stopped it. An earlier run of the same file stayed alive for about 26 hours at roughly 8% CPU until it was killed, which also blocked the command waiting on it.\n\nExpected: the test process exits on its own soon after the last test finishes.",
+    "rootCause": "Each chat panel starts two repeating timers when its channel is wired: the active-chat list refresh in `startActiveTimer` and the detached-session observer in `startObserverTimer`. Both are created with `setInterval` and are cleared only when the panel is disposed. Many tests open a panel without disposing it, so these timers keep the Node event loop alive after the tests finish. A timer log taken during the hang showed 281 active Timeout resources, and every repeating timer it tracked came from these two start sites, with intervals of 60 s, 20 ms and 600 s. The 20 ms intervals, which tests inject through `observerTimerMs`, account for the ongoing CPU use. Comparable timers in this code already call `unref`, so they do not hold the process open; these two do not.",
+    "fixIntent": "A chat panel's repeating timers must no longer keep the Node process alive on their own, while still firing on the same schedule for as long as the process runs and still being cleared on dispose. After the change the chat panel test file must exit on its own with every test still passing and no test weakened or removed. Because only timers were logged, the fix must confirm by re-running the file that no other open handle still prevents exit."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:634",
+      "quotedText": "activeTimer = setInterval(() => { if (!disposed) postActive(); }, deps.activeListTimerMs ?? 60_000);"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:658",
+      "quotedText": "observerTimer = setInterval(() => { void runObserverPass(); }, deps.observerTimerMs ?? 60_000);"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:3665-3679"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:762",
+      "quotedText": "watchdog.unref?.();"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:1591",
+      "quotedText": "stallTimer.unref?.();"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/cli-adapter.ts:1500",
+      "quotedText": "timer.unref?.();"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts:6264",
+      "quotedText": "observerTimerMs: 20,"
+    }
+  ]
+}

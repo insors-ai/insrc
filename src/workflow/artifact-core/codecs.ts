@@ -100,7 +100,8 @@ function codec(kind: ArtifactIdKind, workflow: string): KindCodec {
 		...(kind === 'CR' ? { contentMeta: (payload: HeadPayload, meta: Readonly<Record<string, unknown>>): Readonly<Record<string, unknown>> => {
 			if (payload.body['format'] === 'task-based') {
 				const body = validateTaskBody(payload.body);
-				return { schemaVersion: body.admissionFailures ? 3 : 2, reviewedBy: body.reviews.at(-1)?.reviewer ?? body.admissionFailures!.at(-1)!.attempt.header.reviewer, ...folderIdentityMeta(storyRecordFolderArgs(String(meta['repoPath']), String(meta['epicHash']), String(meta['storyId']), {}, { kind: 'read' })) };
+				const reviewer=body.reviews.at(-1)?.reviewer;
+				return { schemaVersion: body.admissionFailures ? 3 : 2, ...(reviewer?{reviewedBy:reviewer}:{}), ...folderIdentityMeta(storyRecordFolderArgs(String(meta['repoPath']), String(meta['epicHash']), String(meta['storyId']), {}, { kind: 'read' })) };
 			}
 			return { schemaVersion: 1 };
 		} } : {}),

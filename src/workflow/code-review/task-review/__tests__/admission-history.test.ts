@@ -10,6 +10,7 @@ import { ReviewProgressTracker } from '../progress.js';
 import { prepareReviewPacket } from '../packet.js';
 import { bindTaskFinalIdentities } from '../attribution-binding.js';
 import { inspectTaskCompletion } from '../completion.js';
+import { TaskReviewCoordinator } from '../coordinator.js';
 import { renderTaskReview } from '../record.js';
 import { codeReviewArtifactId } from '../../../storage.js';
 import { reviewResourceAudits } from '../../../review/resource-audit.js';
@@ -29,6 +30,9 @@ test('failed admission survives successful next attempt publication and post-cle
   await saveStoredCheckpoint(path, cp);
   const first = await publishTaskCheckpoint(f.repo, hash, cp.reviewId, f.deps);
   const technical = await readTaskReviewHistory(f.repo, hash, 's1');
+  const progress = await new TaskReviewCoordinator().progress(f.repo, cp.reviewId, 1);
+  assert.equal(progress.admission!.validation, 'unverified'); assert.equal(progress.admission!.error!.code, 'projection_limit');
+  assert.equal(progress.totalTasks, 0); assert.equal(progress.completedTasks, 0);
   assert.equal(technical.status, 'failed'); assert.equal(technical.reviews.length, 0);
   assert.equal(technical.admissionFailures![0]!.attempt.error!.code, 'projection_limit');
   const firstHead = JSON.parse(await readFile(first.jsonPath, 'utf8'));

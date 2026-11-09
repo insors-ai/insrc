@@ -1,12 +1,12 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { unlink } from 'node:fs/promises';
+import { unlink, readFile, writeFile } from 'node:fs/promises';
 import { impactFixture } from './impact-fixtures.js';
 import { admissionFixture } from './fixtures.js';
 import { isDesignAdmission } from '../contracts.js';
 import type { DesignAdmissionCheckpoint, ResourceDesignAttempt } from '../contracts.js';
-import { updateStoredDesignCheckpoint, loadStoredDesignCheckpoint, qualifiedDesignProjection } from '../checkpoint.js';
+import { updateStoredDesignCheckpoint, loadStoredDesignCheckpoint, qualifiedDesignProjection, saveDesignCheckpoint } from '../checkpoint.js';
 import { createRepoLifecycle } from '../../../artifact-core/repo-lifecycle.js';
 import { designAdmissionFailures, publishDesignAdmissionFailure, recordDesignAdmission, requireCurrentDesignApproval } from '../approval.js';
 import { publishDesignReview } from '../publication.js';
@@ -14,6 +14,7 @@ import { consolidateDesignReview } from '../results.js';
 import { designPreservationDigest, validatePermanentDesignReview } from '../history.js';
 import { permanentStoredDesignCheckpoint, renderPermanentDesignReview } from '../read.js';
 import { reviewResourceAudits } from '../../resource-audit.js';
+import { DesignReviewCoordinator } from '../coordinator.js';
 
 test('technical admission diagnostics remain non-review evidence across publication', async t => {
  const f = impactFixture(t), lifecycle = createRepoLifecycle(f.repo), cp = admissionFixture(f), failed = cp.attempts[0]!;
@@ -23,6 +24,10 @@ test('technical admission diagnostics remain non-review evidence across publicat
  const failureId = await publishDesignAdmissionFailure(f.repo, f.id, cp.reviewId, failed);
  assert.equal(await publishDesignAdmissionFailure(f.repo, f.id, cp.reviewId, failed), failureId);
  assert.equal(designAdmissionFailures(await lifecycle.history.log(f.id), f.repo, f.id).length, 1);
+  const coordinator = new DesignReviewCoordinator({ provider: () => { throw Error('History reads must not invoke a model'); } });
+  const diagnostic = await coordinator.progress(f.repo, cp.reviewId, 1);
+  assert.equal(diagnostic.admission!.validation, 'unverified'); assert.equal(diagnostic.failure!.code, 'subject_unavailable');
+  assert.equal(diagnostic.completedResults.length, 0); assert.equal(diagnostic.report, undefined);
  await assert.rejects(publishDesignReview(cp), /no consolidated report/);
  const headBefore = await lifecycle.store.readWithHistory(f.id);
  await assert.rejects(requireCurrentDesignApproval(f.repo, headBefore, headBefore.changeLog), /no permanent/);
@@ -72,13 +77,36 @@ test('technical admission diagnostics remain non-review evidence across publicat
  assert.match(renderPermanentDesignReview(permanent), /technical admission failed; no chunk assessment/);
  const head = await lifecycle.store.readWithHistory(f.id);
  await requireCurrentDesignApproval(f.repo, head, head.changeLog);
- const audit = reviewResourceAudits(log, f.id, { project: f.repo, family: 'design', reviewId: cp.reviewId });
- assert.equal(audit.at(-1)!.guards[0]!.resourceGuard.clearance!.approvalReceipt.requestId, 'clearance-later');
+  // Use the real artifact lifecycle approval, then prove resource-only replay
+  // does not replace its original approval actor, timestamp, revision or review.
+  await lifecycle.service.apply(f.id, 'approve', { id: 'human:fixture', kind: 'person', properties: {} });
+  const approved = (await lifecycle.service.inspect(f.id))!;
+  await updateStoredDesignCheckpoint(f.repo, cp.reviewId, saved => {
+   assert.ok(saved?.schemaVersion === 2); const guard = saved.attempts[1]!.resourceGuard!;
+   guard.clearance!.reason = 'Post-approval trusted fixture receipt'; guard.clearance!.approvalReceipt.requestId = 'clearance-post-approval'; return saved;
+  });
+  const postApproval = (await loadStoredDesignCheckpoint(f.repo, cp.reviewId))!;
+  const replayAfterApproval = await publishDesignReview(postApproval);
+  assert.equal(replayAfterApproval.artifactHistoryEntryId, receipt.artifactHistoryEntryId);
+  const afterReplay = (await lifecycle.service.inspect(f.id))!;
+  assert.deepEqual(afterReplay.lifecycle.approval, approved.lifecycle.approval);
+  assert.deepEqual(afterReplay.lifecycle.review, approved.lifecycle.review);
+  const approvedBytes = await readFile(f.json, 'utf8'); await writeFile(f.json, approvedBytes + ' ');
+  await assert.rejects(publishDesignReview(postApproval), /Published head changed/, 'unlogged edits cannot masquerade as an approved lifecycle delta');
+  await writeFile(f.json, approvedBytes);
+  const editedMetadata = JSON.parse(approvedBytes); editedMetadata.meta.unlogged = 'source metadata changed';
+  await writeFile(f.json, JSON.stringify(editedMetadata, null, 2) + '\n');
+  await assert.rejects(publishDesignReview(postApproval), /Published head changed/, 'non-lifecycle source metadata remains pinned');
+  await writeFile(f.json, approvedBytes);
+  const audit = reviewResourceAudits(await lifecycle.history.log(f.id), f.id, { project: f.repo, family: 'design', reviewId: cp.reviewId });
+  assert.equal(audit.at(-1)!.guards[0]!.resourceGuard.clearance!.approvalReceipt.requestId, 'clearance-post-approval');
  // A later failed admission is a technical failure, not a replacement pass.
- const later = { ...structuredClone(failed), number: 3, actionId: 'start-3', submitted: { ...failed.submitted, attempt: 3 } };
- await publishDesignAdmissionFailure(f.repo, f.id, cp.reviewId, later);
- const afterFailure = await lifecycle.store.readWithHistory(f.id);
- await assert.rejects(requireCurrentDesignApproval(f.repo, afterFailure, afterFailure.changeLog), /later or untracked/);
+  const g = impactFixture(t), gl = createRepoLifecycle(g.repo); g.checkpoint.attempts = [g.baseline];
+  await recordDesignAdmission(g.checkpoint); g.baseline.publication = await publishDesignReview(g.checkpoint); await saveDesignCheckpoint(g.repo, g.checkpoint);
+  const later = { ...structuredClone(failed), number: 2, actionId: 'start-2', submitted: { ...failed.submitted, artifactPath: g.json, attempt: 2 }, progress: { ...failed.progress, checkpointPath: g.path } };
+  await publishDesignAdmissionFailure(g.repo, g.id, 'review-1', later);
+  const afterFailure = await gl.store.readWithHistory(g.id);
+  await assert.rejects(requireCurrentDesignApproval(g.repo, afterFailure, afterFailure.changeLog), /later or untracked/);
  // Exercise permanent reads after removal of working state; actual fenced
  // cleanup and native-resource reclamation are qualified by the cleanup task.
  await unlink(f.path);
@@ -87,4 +115,8 @@ test('technical admission diagnostics remain non-review evidence across publicat
  assert.equal(read.attempts[1]!.number, 2);
  const failedRead = permanentStoredDesignCheckpoint(f.repo, f.json, cp.reviewId, 1).checkpoint;
  assert.ok(failedRead.schemaVersion === 2 && isDesignAdmission(failedRead.attempts[0]!)); assert.equal('subject' in failedRead, false);
+  const publicHistory = await coordinator.progress(f.repo, cp.reviewId, 2, { artifactPath: f.json, includeResult: true });
+  assert.equal(publicHistory.source, 'history'); assert.equal(publicHistory.report!.attempt, 2);
+  const publicFailure = await coordinator.progress(f.repo, cp.reviewId, 1, { artifactPath: f.json });
+  assert.equal(publicFailure.source, 'history'); assert.equal(publicFailure.admission!.validation, 'unverified');
 });

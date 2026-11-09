@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 3,
-        "contentHash": "e8c23d9c840edaaf869ba452b8048d6f2d7043577ca08a3eb58f14595710c323",
-        "at": "2026-11-09T08:05:20.249Z",
+        "number": 4,
+        "contentHash": "a16a8e26059429fbdd6d343be6af3304efee3ae74dfa24459223bf37e845539f",
+        "at": "2026-11-09T08:35:48.683Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "e4af63128c7cbec2",
     "storyId": "s1",
     "createdAt": "2026-11-09T07:52:13.312Z",
-    "updatedAt": "2026-11-09T08:05:19.987Z",
+    "updatedAt": "2026-11-09T08:35:48.551Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-09T04:29:20.389Z",
     "epicSlug": "isolate-each-code-design-review-its",
-    "revision": 3
+    "revision": 4
   },
   "body": {
     "tasks": [
@@ -164,6 +164,94 @@
               },
               {
                 "title": "serialized resource and progress updates cannot lose open intents",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "febda151e",
+        "ranAt": "2026-11-09T08:35:48.551Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/admission-history.test.ts: failed admission survives successful next attempt publication and post-cleanup reads",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/admission-history.test.ts",
+                "title": "failed admission survives successful next attempt publication and post-cleanup reads",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review/design-review/__tests__/admission-history.test.ts: technical admission diagnostics remain non-review evidence across publication",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/admission-history.test.ts",
+                "title": "technical admission diagnostics remain non-review evidence across publication",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/resource-preservation.test.ts: guard-only updates preserve report identity while reviewed-input or result mutations do not",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/resource-preservation.test.ts",
+                "title": "guard-only updates preserve report identity while reviewed-input or result mutations do not",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/admission-history.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1347,
+            "titles": [
+              {
+                "title": "failed admission survives successful next attempt publication and post-cleanup reads",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/resource-preservation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1139,
+            "titles": [
+              {
+                "title": "guard-only updates preserve report identity while reviewed-input or result mutations do not",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/design-review/__tests__/admission-history.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1025,
+            "titles": [
+              {
+                "title": "technical admission diagnostics remain non-review evidence across publication",
                 "result": "pass"
               }
             ],

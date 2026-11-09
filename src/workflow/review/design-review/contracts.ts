@@ -157,7 +157,7 @@ export const DesignActivitySchema = object({ sessionId: id, sequence: positive,
  toolId: Type.Optional(id),
 });
 export const DesignProgressSchema = object({ status: DesignStatusSchema,
- phase: enumeration(['planning','impact','chunk_review','tool_running','persisting','publishing','complete']),
+ phase: enumeration(['admission','planning','impact','chunk_review','tool_running','persisting','publishing','complete']),
  activeChunkId: Type.Optional(id), completedChunks: number, totalChunks: number,
  lastMeaningfulActivityAt: Type.Union([timestamp, Type.Null()]), activeToolCount: number,
  requiresUserInput: Type.Boolean(), checkpointPath: path, sequence: number,

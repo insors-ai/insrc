@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -51,3 +51,33 @@ Run at 2026-11-09T08:05:19.987Z on commit `81edc5d07`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/review/design-review/__tests__/admission-checkpoint.test.ts` | 0 | 1 | 0.8 s |  |
 | `src/workflow/review/design-review/__tests__/checkpoint-progress.test.ts` | 0 | 5 | 0.8 s |  |
+
+## t3
+
+Run at 2026-11-09T08:35:48.551Z on commit `febda151e`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/workflow/code-review/task-review/__tests__/admission-history.test.ts: failed admission survives successful next attempt publication and post-cleanup reads**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | failed admission survives successful next attempt publication and post-cleanup reads | `src/workflow/code-review/task-review/__tests__/admission-history.test.ts` |
+
+**integration: src/workflow/review/design-review/__tests__/admission-history.test.ts: technical admission diagnostics remain non-review evidence across publication**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | technical admission diagnostics remain non-review evidence across publication | `src/workflow/review/design-review/__tests__/admission-history.test.ts` |
+
+**unit: src/workflow/code-review/task-review/__tests__/resource-preservation.test.ts: guard-only updates preserve report identity while reviewed-input or result mutations do not**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | guard-only updates preserve report identity while reviewed-input or result mutations do not | `src/workflow/code-review/task-review/__tests__/resource-preservation.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/code-review/task-review/__tests__/admission-history.test.ts` | 0 | 1 | 1.3 s |  |
+| `src/workflow/code-review/task-review/__tests__/resource-preservation.test.ts` | 0 | 1 | 1.1 s |  |
+| `src/workflow/review/design-review/__tests__/admission-history.test.ts` | 0 | 1 | 1 s |  |

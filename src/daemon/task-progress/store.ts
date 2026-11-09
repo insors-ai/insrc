@@ -4,6 +4,7 @@ import { lstat, mkdir, open, opendir, rename, unlink } from 'node:fs/promises';
 import { dirname, isAbsolute, join } from 'node:path';
 import { decodeProgressRecord, MAX_PROGRESS_RECORD_BYTES, progressTaskKey } from './record.js';
 import type { DetailValidator, ProgressRecord } from './record.js';
+import type { TaskOwnerFence, TaskRef } from '../../shared/task-progress.js';
 
 const recordName = /^[a-f0-9]{64}\.json$/;
 const scratchName = /^[a-f0-9]{64}\.json\.[a-f0-9-]{36}\.(tmp|invalid)$/;
@@ -92,6 +93,24 @@ export class ProgressStore<D> {
   list(): readonly ProgressRecord<D>[] {
     if (this.unsettled.size > 0) throw new ProgressStorageError('unavailable');
     return [...this.records.values()].map(record => structuredClone(record));
+  }
+
+  /** The caller verifies survival. Replace only the exact durable fence it inspected. */
+  async revalidateOwner(task: TaskRef, expected: TaskOwnerFence, ownerEpoch: string, now: number): Promise<ProgressRecord<D>> {
+    const record = this.get(task);
+    const owner = record?.owner;
+    if (record === undefined || record.retention !== 'active' || owner == null ||
+        owner.ownerId !== expected.ownerId || owner.ownerEpoch !== expected.ownerEpoch ||
+        owner.ownerSequence !== expected.ownerSequence || ownerEpoch === owner.ownerEpoch ||
+        (record.recoveryDeadline !== null && now >= record.recoveryDeadline)) {
+      throw new ProgressStorageError('stale');
+    }
+    const next: ProgressRecord<D> = {
+      ...record, revision: record.revision + 1, updatedAt: now, recoveryDeadline: null,
+      owner: { ownerId: owner.ownerId, ownerEpoch, ownerSequence: 0 }, lastOwnerActivityAt: now,
+    };
+    await this.commit(next, record.revision);
+    return next;
   }
 
   /** A compare-and-replace prevents delayed callbacks from writing an older revision. */

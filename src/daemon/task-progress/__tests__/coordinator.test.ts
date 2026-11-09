@@ -172,6 +172,29 @@ test('Recovery publishes an ambiguously committed terminal result exactly once',
   assert.deepEqual(published, ['verified-result']);
 });
 
+test('Recovery fences conflicting lifecycle evidence at the recovered nonterminal sequence', async t => {
+  const f = await fixture(t);
+  const a = await admitted(f, 'a', { progress: async () => null });
+  let changes = 0;
+  t.after(f.coordinator.onChange(a.task, () => { changes++; }));
+  const running = { sequence: 1, state: 'running' } as const;
+
+  f.failDirectorySync(true);
+  await assert.rejects(f.producer.recordLifecycle(a.owner, running), { reason: 'unavailable' });
+  assert.equal(changes, 0);
+
+  f.failDirectorySync(false);
+  assert.equal(await f.producer.recordLifecycle(a.owner, { sequence: 1, state: 'paused' }), 'rejected');
+  assert.equal(await f.producer.recordLifecycle(a.owner, running), 'replay');
+  assert.equal(await f.producer.recordLifecycle(a.owner, { sequence: 1, state: 'completed' }), 'rejected');
+  assert.equal(f.coordinator.read(a.task)?.state, 'running');
+  assert.equal(f.store.get(a.task)?.owner?.ownerSequence, 1);
+  assert.equal(changes, 1);
+
+  assert.equal(await f.producer.recordLifecycle(a.owner, { sequence: 2, state: 'completed' }), 'recorded');
+  assert.equal(f.coordinator.read(a.task)?.state, 'completed');
+});
+
 test('The complete delivered snapshot fits the byte limit and preserves the terminal result', async t => {
   const f = await fixture(t);
   const authorization = f.authority.mint({

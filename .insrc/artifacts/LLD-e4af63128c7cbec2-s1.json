@@ -35,7 +35,7 @@
     },
     "revision": 5,
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 5,
         "contentHash": "771e02745fabbb0f42becfd934d258269e4d5b2cc49487c9184900da12de68e9",
@@ -70,8 +70,18 @@
           "relation": "reviews",
           "fragment": "4c60dc96193c6deb0fdb45d4225f750e69c137ec324958712ce11e8d249b578a"
         }
+      },
+      "approval": {
+        "revision": 5,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T06:21:58.443Z"
       }
-    }
+    },
+    "rangeBase": "0e0cdb427b1095dd56ee376afb5a555ac0ccf5ba"
   },
   "body": {
     "summary": {

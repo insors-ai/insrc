@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
 import { Value } from '@sinclair/typebox/value';
-import { MAX_PROGRESS_MILESTONES, ProgressId, ProgressSequence } from '../../shared/task-progress.js';
+import { MAX_PROGRESS_MILESTONES, MAX_PROGRESS_SNAPSHOT_BYTES, ProgressId, ProgressSequence } from '../../shared/task-progress.js';
 import type {
   DelegateMeasurement, Measurement, ProgressKind, ProgressSnapshot, TaskOrigin, TaskOwnerFence, TaskProgressDelegate, TaskRef,
 } from '../../shared/task-progress.js';
@@ -83,6 +83,16 @@ function measurementContent<D>(measurement: Measurement<D>): unknown {
   return content;
 }
 
+/** Compact the full wire projection, including repeated task identifiers and timestamps. */
+function boundedSnapshot<D>(snapshot: ProgressSnapshot<D>): ProgressSnapshot<D> {
+  const size = () => Buffer.byteLength(JSON.stringify(snapshot));
+  if (size() <= MAX_PROGRESS_SNAPSHOT_BYTES || snapshot.measurement === null) return snapshot;
+  const milestones = [...snapshot.measurement.milestones];
+  snapshot = { ...snapshot, measurement: { ...snapshot.measurement, milestones } };
+  while (milestones.length > 0 && size() > MAX_PROGRESS_SNAPSHOT_BYTES) milestones.shift();
+  return size() <= MAX_PROGRESS_SNAPSHOT_BYTES ? snapshot : { ...snapshot, measurement: null, freshness: 'unavailable' };
+}
+
 /** Daemon-private authority. Mint calls are reserved for the trusted execution host. */
 export function createProgressAuthority(): {
   readonly mint: (decision: Decision) => ProducerAuthorization;
@@ -141,7 +151,7 @@ export class ProgressCoordinator<D extends Details> {
     const runtime = this.active.get(progressTaskKey(task));
     const live = runtime !== undefined && this.live(runtime) && runtime.epoch === record.owner?.ownerEpoch;
     const sample = record.measurement;
-    return {
+    return boundedSnapshot({
       task: record.task, cursor: this.cursor(record.task, record.revision),
       state: record.retention === 'active' && !live ? 'interrupted' : record.state,
       freshness: sample === null ? 'unavailable' : record.measurementStale || (record.retention === 'active' && !live) ? 'stale' : 'live',
@@ -154,7 +164,7 @@ export class ProgressCoordinator<D extends Details> {
       workerHealth: live ? 'alive' : record.retention === 'expired' ? 'lost' : 'unknown',
       cancellation: record.retention === 'active' && record.cancelRequestId !== undefined ? 'pending' : 'none',
       ...(record.resultRef === undefined ? {} : { resultRef: record.resultRef }),
-    };
+    });
   }
 
   disposition(task: TaskRef, prior: string | undefined, current: string): 'changed' | 'unchanged' | 'resync' {

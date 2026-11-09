@@ -9,6 +9,8 @@
  * Run: npx tsx --test vscode-plugin/src/chat/__tests__/cli-adapter.test.ts
  */
 import { test } from 'node:test';
+import { execFileSync } from 'node:child_process';
+import { buildSync } from 'esbuild';
 import assert from 'node:assert/strict';
 import { appendFileSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -1969,7 +1971,7 @@ test('vibe: title generation uses the same explicit programmatic prompt transpor
 
 const VERIFIED_VIBE_CHAT = String.raw`#!/usr/bin/env node
 import assert from 'node:assert/strict';
-import { appendFileSync, readFileSync } from 'node:fs';
+import { appendFileSync, existsSync, readFileSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 const mode = readFileSync(new URL('./mode', import.meta.url), 'utf8');
 const log = new URL('./requests', import.meta.url);
@@ -2010,7 +2012,14 @@ createInterface({ input: process.stdin }).on('line', line => {
       history({ type: 'message', role: 'assistant', id: 'msg', generationStatus: 'in_progress', content: [{ type: 'text', text: 'hello ' }] });
       event('history/entryUpdated', { turnId, entryId: 'msg', patch: [{ op: 'append', path: '/content/0/text', value: 'world' }] });
       history({ type: 'effect', id: 'tool', generationStatus: 'completed', detail: { toolName: 'bash', input: { command: 'ls' } }, state: { status: 'completed', outputText: 'file' } });
-      if (mode !== 'hang') event('turn/completed', { turn: turn('completed') });
+      if (mode === 'detach') {
+        const timer = setInterval(() => {
+          if (!existsSync(new URL('./release', import.meta.url))) return;
+          clearInterval(timer);
+          history({ type: 'message', role: 'assistant', id: 'later', generationStatus: 'completed', content: [{ type: 'text', text: ' after host exit' }] });
+          event('turn/completed', { turn: turn('completed') });
+        }, 10);
+      } else if (mode !== 'hang') event('turn/completed', { turn: turn('completed') });
       return;
     case 'turn/interrupt':
       assert.equal(params.expectedTurnId, turnId);
@@ -2026,19 +2035,23 @@ function verifiedVibeChat(mode: string, options: Partial<AdapterDeps> = {}) {
   const cwd = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-vibe-chat-')));
   const bin = join(cwd, 'app-server.mjs');
   const log = join(cwd, 'requests');
+  const worker = join(cwd, 'vibe-session-worker.cjs');
+  buildSync({ entryPoints: [fileURLToPath(new URL('../../vibe-session-worker.ts', import.meta.url))], bundle: true, platform: 'node', format: 'cjs', outfile: worker });
+  const catalog = [{ id: 'mistral-vibe-cli-latest', aliases: ['mistral-medium-3.5'], efforts: ['low', 'high'] }];
   writeFileSync(bin, VERIFIED_VIBE_CHAT, { mode: 0o755 });
   writeFileSync(join(cwd, 'mode'), mode);
   writeFileSync(log, '');
   const adapter = createProviderRegistry({
     isInstalled: id => id === 'vibe',
-    spawn: () => { throw new Error('explicit settings must not use the headless mapper'); },
+    spawn: nodeSpawner,
     vibeAppServerPath: bin,
-    vibeCatalog: async () => [{ id: 'mistral-vibe-cli-latest', aliases: ['mistral-medium-3.5'], efforts: ['low', 'high'] }],
+    vibeWorkerPath: worker,
+    vibeCatalog: async () => catalog,
     ...options,
   }).get('vibe');
   const request = REQ({ provider: 'vibe', cwd, model: 'mistral-medium-3.5', effort: 'high' });
   return {
-    adapter, request,
+    adapter, request, bin, worker, catalog,
     calls: () => readFileSync(log, 'utf8').split('\n').filter(Boolean).map(line => JSON.parse(line) as { method: string; params: Record<string, unknown> }),
     cleanup: () => rmSync(cwd, { recursive: true, force: true }),
   };
@@ -2121,6 +2134,42 @@ test('explicit Vibe chat writes the terminal and native identity to the durable 
     assert.equal(replay.find(event => event.kind === 'done')?.sessionId, 'new-vibe');
     assert.equal(replay.find(event => event.kind === 'done')?.ok, true);
   } finally {
+    fixture.cleanup();
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('explicit Vibe worker writes a live turn after its launching host exits', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'insrc-vibe-reload-'));
+  const sessionOutput = createSessionOutput({ root, pollMs: 5 });
+  const fixture = verifiedVibeChat('detach', { sessionOutput });
+  const segment = await sessionOutput.beginTurn('durable-session', 'durable-turn');
+  const launcher = String.raw`
+    const { spawn } = require('node:child_process');
+    const { openSync, closeSync } = require('node:fs');
+    const [worker, out, cwd, job] = process.argv.slice(1);
+    const fd = openSync(out, 'a');
+    const child = spawn(process.execPath, [worker], { cwd, detached: true, stdio: ['pipe', fd, 'ignore'] });
+    closeSync(fd);
+    child.stdin.end(job, () => { child.unref(); console.log(child.pid); });
+  `;
+  let pid: number | undefined;
+  try {
+    pid = Number(execFileSync(process.execPath, ['-e', launcher, fixture.worker, segment.outPath, fixture.request.cwd,
+      JSON.stringify({ command: fixture.bin, request: fixture.request, catalog: fixture.catalog })],
+    { encoding: 'utf8', timeout: 5_000 }).trim());
+    assert.ok(pid > 0);
+    const startedAt = defaultProcessStartTime(pid) ?? null;
+    await waitFor(() => readFileSync(segment.outPath, 'utf8').includes('hello '), 5_000);
+    const following = collect(fixture.adapter.resume({ cursor: segment.cursor, pid, startedAt }));
+    assert.doesNotMatch(readFileSync(segment.outPath, 'utf8'), /after host exit/);
+    writeFileSync(join(fixture.request.cwd, 'release'), '');
+    const events = await following;
+    assert.equal(events.filter(event => event.kind === 'assistant-delta').map(event => event.text).join(''), 'hello world after host exit');
+    assert.equal(events.find(event => event.kind === 'done')?.sessionId, 'new-vibe');
+    assert.equal(events.find(event => event.kind === 'done')?.ok, true);
+  } finally {
+    if (pid !== undefined && pid > 0) { try { process.kill(pid, 'SIGTERM'); } catch {} }
     fixture.cleanup();
     rmSync(root, { recursive: true, force: true });
   }

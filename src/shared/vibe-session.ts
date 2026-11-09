@@ -62,11 +62,11 @@ export interface VibeSessionOptions {
 	readonly effort?: string | undefined;
 	readonly catalog: readonly VibeCatalogModel[];
 	readonly verifyRuntime?: ((runtime: Readonly<RecordValue>) => void) | undefined;
-	readonly onProcess?: ((pid: number | undefined) => void) | undefined;
+	/** A supervising process already owns the group and its final hard stop. */
+	readonly inheritProcessGroup?: boolean | undefined;
 }
 
 interface VibeTransport {
-	readonly pid: number | undefined;
 	request(method: string, params: RecordValue): Promise<unknown>;
 	notify(method: string, params: RecordValue): void;
 	observe(onEvent: (method: string, params: RecordValue) => void, onFailure: (error: Error) => void): void;
@@ -91,9 +91,10 @@ const MAX_FRAME_CHARS = 8 * 1024 * 1024;
 
 function startTransport(options: VibeSessionOptions): VibeTransport {
 	options.signal?.throwIfAborted();
+	const ownGroup = options.inheritProcessGroup !== true && process.platform !== 'win32';
 	const child = spawn(options.command, options.args ?? [], {
 		stdio: ['pipe', 'pipe', 'pipe'],
-		detached: process.platform !== 'win32',
+		detached: ownGroup,
 		cwd: options.cwd,
 		env: options.env,
 	});
@@ -113,7 +114,7 @@ function startTransport(options: VibeSessionOptions): VibeTransport {
 		for (const request of pending.values()) request.reject(error);
 		pending.clear();
 		failureListener?.(error);
-		if (child.pid !== undefined) killProcessGroup(child.pid);
+		if (ownGroup && child.pid !== undefined) killProcessGroup(child.pid);
 		else child.kill('SIGKILL');
 	}
 
@@ -133,7 +134,7 @@ function startTransport(options: VibeSessionOptions): VibeTransport {
 	child.stdin.on('error', error => stop(error));
 	child.once('error', error => stop(new Error('Could not launch the Vibe app server', { cause: error })));
 	child.once('exit', () => {
-		if (child.pid !== undefined && process.platform !== 'win32') killProcessGroup(child.pid);
+		if (ownGroup && child.pid !== undefined) killProcessGroup(child.pid);
 	});
 	child.once('close', () => stop(new Error('Vibe app server exited')));
 	onUtf8Data(child.stdout, chunk => {
@@ -173,7 +174,6 @@ function startTransport(options: VibeSessionOptions): VibeTransport {
 	});
 
 	return {
-		get pid() { return child.pid; },
 		request(method, params) {
 			return new Promise((resolve, reject) => {
 				const id = `insrc-${++sequence}`;
@@ -363,7 +363,6 @@ export async function openVerifiedVibeSession(options: VibeSessionOptions): Prom
 
 	const transport = startTransport(options);
 	try {
-		options.onProcess?.(transport.pid);
 		await transport.request('initialize', { clientInfo: { name: 'insrc', version: '1' } });
 		transport.notify('initialized', {});
 		const open = { agentConfig: options.agentConfig, historyLimit: 1 };

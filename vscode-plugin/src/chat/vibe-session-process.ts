@@ -1,9 +1,6 @@
-import { appendFileSync } from 'node:fs';
-import { createInterface } from 'node:readline';
-import { PassThrough } from 'node:stream';
 import { runVerifiedVibeTurn, VibeTurnError } from '../../../src/shared/vibe-session.js';
 import type { VibeCatalogModel, VibeTurnOptions } from '../../../src/shared/vibe-session.js';
-import type { SpawnedProcess, SpawnOutput, TurnRequest } from './cli-adapter.js';
+import type { TurnRequest } from './cli-adapter.js';
 
 type Row = Record<string, unknown>;
 
@@ -70,80 +67,47 @@ function emitEffectResult(emit: (line: Row) => void, id: string, state: Row | un
   });
 }
 
-export function spawnVerifiedVibeChat(
-  command: string,
-  request: TurnRequest,
-  catalog: readonly VibeCatalogModel[],
-  output: SpawnOutput | undefined,
-): SpawnedProcess {
-  const controller = new AbortController();
-  const stream = output === undefined ? new PassThrough() : undefined;
-  let pid: number | undefined;
-  let cursor = output?.cursor;
-  let finished = false;
+export interface VibeChatJob {
+  readonly command: string;
+  readonly request: TurnRequest;
+  readonly catalog: readonly VibeCatalogModel[];
+}
+
+export async function runVibeChatJob(job: VibeChatJob, signal: AbortSignal, write: (line: string) => void): Promise<number> {
+  const { command, request, catalog } = job;
   let sessionId = request.resume?.nativeSessionId;
   const emit = (row: Row): void => {
-    const line = JSON.stringify({ ...row, ...(sessionId !== undefined ? { sessionId } : {}) }) + '\n';
-    if (output !== undefined) appendFileSync(output.outPath, line, 'utf8');
-    else stream?.write(line);
+    write(JSON.stringify({ ...row, ...(sessionId !== undefined ? { sessionId } : {}) }) + '\n');
   };
-  const exit = (async () => {
-    try {
-      const result = await runVerifiedVibeTurn({
-        command, cwd: request.cwd, timeoutMs: 600_000, signal: controller.signal,
-        agentConfig: {
-          cwd: request.cwd,
-          headless: true,
-          ...(request.readDirs !== undefined ? { workspaceRoots: request.readDirs } : {}),
-          ...(request.permissionMode === 'auto' ? { autoApprove: true } : {}),
-          ...(request.permissionMode === 'manual' ? { agent: 'ask' } : {}),
-          ...(request.permissionMode === 'edit-auto' ? { agent: 'accept-edits' } : {}),
-        },
-        nativeSessionId: sessionId,
-        model: request.model || undefined, effort: request.effort || undefined, catalog,
-        prompt: request.prompt,
-        onProcess: value => { pid = value; },
-        onSession: value => {
-          sessionId = value;
-          emit({ type: 'insrc-vibe-thinking' });
-        },
-        onHistory: historyLines(emit),
-      });
-      emit({
-        type: 'insrc-vibe-result',
-        ok: result.stopReason === undefined,
-        ...(result.stopReason !== undefined ? { replayUnsafe: true, message: `Vibe turn stopped early (${result.stopReason})` } : {}),
-      });
-      return { code: 0, signal: null };
-    } catch (error) {
-      const replayUnsafe = error instanceof VibeTurnError && error.dispatchState !== 'not-sent';
-      emit({ type: 'insrc-vibe-result', ok: false, replayUnsafe, message: error instanceof Error ? error.message : 'Vibe turn failed' });
-      return { code: 1, signal: null };
-    } finally {
-      finished = true;
-      stream?.end();
-    }
-  })();
-  // A failed durable write also rejects exit. The consumer observes that failure;
-  // attach a handler now so an early failure cannot become an unhandled rejection.
-  void exit.catch(() => {});
-  return {
-    async *lines() {
-      if (output !== undefined) {
-        for await (const item of output.tail(output.cursor, () => finished)) {
-          cursor = item.cursor;
-          yield item.line;
-        }
-      } else if (stream !== undefined) {
-        const reader = createInterface({ input: stream, crlfDelay: Infinity });
-        try { yield* reader; } finally { reader.close(); }
-      }
-    },
-    stderr: () => '',
-    exit,
-    spawnError: Promise.resolve(undefined),
-    get pid() { return pid; },
-    get cursor() { return cursor; },
-    kill: () => controller.abort(),
-  };
+  try {
+    const result = await runVerifiedVibeTurn({
+      command, cwd: request.cwd, timeoutMs: 600_000, signal, inheritProcessGroup: true,
+      agentConfig: {
+        cwd: request.cwd,
+        headless: true,
+        ...(request.readDirs !== undefined ? { workspaceRoots: request.readDirs } : {}),
+        ...(request.permissionMode === 'auto' ? { autoApprove: true } : {}),
+        ...(request.permissionMode === 'manual' ? { agent: 'ask' } : {}),
+        ...(request.permissionMode === 'edit-auto' ? { agent: 'accept-edits' } : {}),
+      },
+      nativeSessionId: sessionId,
+      model: request.model || undefined, effort: request.effort || undefined, catalog,
+      prompt: request.prompt,
+      onSession: value => {
+        sessionId = value;
+        emit({ type: 'insrc-vibe-thinking' });
+      },
+      onHistory: historyLines(emit),
+    });
+    emit({
+      type: 'insrc-vibe-result',
+      ok: result.stopReason === undefined,
+      ...(result.stopReason !== undefined ? { replayUnsafe: true, message: `Vibe turn stopped early (${result.stopReason})` } : {}),
+    });
+    return 0;
+  } catch (error) {
+    const replayUnsafe = error instanceof VibeTurnError && error.dispatchState !== 'not-sent';
+    emit({ type: 'insrc-vibe-result', ok: false, replayUnsafe, message: error instanceof Error ? error.message : 'Vibe turn failed' });
+    return 1;
+  }
 }

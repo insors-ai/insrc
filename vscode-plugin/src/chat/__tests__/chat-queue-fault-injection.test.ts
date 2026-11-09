@@ -11,6 +11,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { createChatPanelHost, type ChatPanelChannel } from '../chat-panel.js';
 import { createInMemoryChatSessionStore } from '../session-store.js';
 import { createProviderRegistry } from '../cli-adapter.js';
+import type { ProviderId } from '../cli-adapter.js';
 import { createChatQueueStore, type SqliteDatabase } from '../chat-queue-store.js';
 import { createChatQueueWorker } from '../chat-queue-worker.js';
 import { RETRY_DELAYS_MS } from '../chat-failure.js';
@@ -89,12 +90,12 @@ test('v2 migration preserves records, defers live owners and rolls back atomical
   }
 });
 
-function setup(scripts: FakeProcScript[]) {
+function setup(scripts: FakeProcScript[], provider: ProviderId = 'claude') {
   const dir = mkdtempSync(join(tmpdir(), 'insrc-fault-'));
   const clock = { t: Date.now() };
   const store = createChatQueueStore({ path: join(dir, 'q.sqlite'), openDatabase: (p) => new DatabaseSync(p) as unknown as SqliteDatabase, now: () => clock.t, pluginVersion: 't' });
   const spawner = makeFakeSpawner(scripts);
-  const providers = createProviderRegistry({ spawn: spawner.spawn, isInstalled: (id) => id === 'claude', logger: { warn: () => {}, error: () => {} } });
+  const providers = createProviderRegistry({ spawn: spawner.spawn, isInstalled: (id) => id === provider, logger: { warn: () => {}, error: () => {} } });
   const sessions = createInMemoryChatSessionStore();
   const posted: Array<{ payload: { type: string; [k: string]: unknown } }> = [];
   let onMsg: ((m: unknown) => void) | undefined;
@@ -106,7 +107,7 @@ function setup(scripts: FakeProcScript[]) {
   });
   host.open();
   onMsg?.({ v: 1, payload: { type: 'ready' } });
-  const session = sessions.create('claude');
+  const session = sessions.create(provider);
   sessions.save(session);
   return {
     clock, store, spawner, sessions, session, worker: () => worker!,
@@ -156,5 +157,25 @@ test('FAULT INJECTION: an overload result before any tool call waits as retrying
     assert.equal(c.spawner.calls.length, 1, 'never run again');
   } finally {
     c.done();
+  }
+});
+
+test('an uncertain Vibe dispatch fails the queue without replay and releases its lease', async () => {
+  const uncertain = JSON.stringify({
+    type: 'insrc-vibe-result', ok: false, replayUnsafe: true,
+    message: 'API Error: 529 overloaded', sessionId: 'saved-vibe',
+  });
+  const fixture = setup([{ lines: [uncertain] }, { lines: [uncertain] }], 'vibe');
+  try {
+    const worker = fixture.worker();
+    assert.ok(worker.submit({ sessionId: fixture.session.id, text: 'run once', origin: 'typed', attachments: [] }).ok);
+    await waitFor(() => fixture.store.list()[0]?.state === 'failed' && !worker.running(), 4_000);
+    assert.equal(fixture.store.list()[0]?.attempts, 0);
+    assert.equal(fixture.store.lease(), undefined);
+    fixture.clock.t += RETRY_DELAYS_MS[0]! + 1_000;
+    await new Promise(resolve => setTimeout(resolve, 700));
+    assert.equal(fixture.spawner.calls.length, 1);
+  } finally {
+    fixture.done();
   }
 });

@@ -38,13 +38,14 @@ import { onUtf8Data } from '../../../src/shared/utf8-stream.js';
 import { spawn as nodeChildSpawn, execFileSync } from 'node:child_process';
 import { closeSync, openSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 import { ollamaClaudeEnv, type ChatOllamaTarget } from './ollama-routing.js';
 import type { TurnEvent, UnifiedDiff } from './stream-events.js';
 import type { PermissionMode } from './protocol.js';
 import { DEFAULT_GRACE_MS, defaultKillGroup, observeProcess, processDeparted, signalGroup, stopProcess } from './session-lock.js';
 import { parseMarker, SegmentGone, type SegmentCursor, type SessionOutput } from './session-output.js';
 
-import { spawnVerifiedVibeChat } from './vibe-session-process.js';
+import type { VibeChatJob } from './vibe-session-process.js';
 import type { VibeCatalogModel } from '../../../src/shared/vibe-session.js';
 
 export type ProviderId = 'claude' | 'codex' | 'vibe';
@@ -305,6 +306,8 @@ export type SpawnFn = (
      * prompt text until it ends, an open pipe means it never starts the turn.
      */
     readonly closeInput?: boolean | undefined;
+    /** Let the supervisor interrupt its worker before a group-wide hard stop. */
+    readonly gracefulLeader?: boolean | undefined;
     /** Full child environment (merged over nothing — pass a complete env). Absent -> inherit. */
     readonly env?: NodeJS.ProcessEnv | undefined;
   },
@@ -326,6 +329,7 @@ export interface AdapterDeps {
   readonly resolveOllamaTarget?: ((request: TurnRequest) => Promise<ChatOllamaTarget | undefined>) | undefined;
   readonly vibeCatalog?: (() => Promise<readonly VibeCatalogModel[]>) | undefined;
   readonly vibeAppServerPath?: string | undefined;
+  readonly vibeWorkerPath?: string | undefined;
   readonly logger?: AdapterLogger;
   /** cancel()'s wait after SIGTERM, and again after SIGKILL. Default 5000 ms. */
   readonly stopGraceMs?: number;
@@ -1227,7 +1231,9 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     let proc: SpawnedProcess;
     try {
       proc = vibeCatalog !== undefined
-        ? spawnVerifiedVibeChat(deps.vibeAppServerPath ?? 'vibe-app-server', effectiveReq, vibeCatalog, output)
+        ? deps.spawn(process.execPath, [deps.vibeWorkerPath ?? fileURLToPath(new URL('./vibe-session-worker.js', import.meta.url))], {
+          cwd: effectiveReq.cwd, output, gracefulLeader: true, env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' },
+        })
         : deps.spawn(BINARY[mapper.id], mapper.buildArgs(effectiveReq), {
           cwd: effectiveReq.cwd,
           ...(output !== undefined ? { output } : {}),
@@ -1285,18 +1291,27 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         yield { kind: 'error', turnId, message: spawnErr.code === 'ENOENT' ? `${BINARY[mapper.id]} CLI not found — install it or check your PATH` : failureMessage(mapper.id, spawnErr) };
         return;
       }
-      if (mapper.formatInput !== undefined && requestUuid !== undefined) {
+      if (vibeCatalog !== undefined || (mapper.formatInput !== undefined && requestUuid !== undefined)) {
         if (proc.write === undefined) throw new Error('CLI stdin unavailable for correlated input');
+        const job: VibeChatJob | undefined = vibeCatalog === undefined ? undefined : {
+          command: deps.vibeAppServerPath ?? 'vibe-app-server',
+          request: effectiveReq,
+          catalog: vibeCatalog,
+        };
+        const input = job === undefined
+          ? mapper.formatInput!(effectiveReq, requestUuid!)
+          : JSON.stringify(job) + '\n';
         // The turn's one user message goes through the same seam as the approval decisions: false is a
         // dead or absent stdin, and an asynchronous failure arrives on onError. Either one fails the turn.
         let accepted = false;
         try {
-          accepted = proc.write(mapper.formatInput(effectiveReq, requestUuid), (err) => {
+          accepted = proc.write(input, (err) => {
             if (inputFailure === undefined) inputFailure = new Error(`CLI stdin write failed: ${err instanceof Error ? err.message : String(err)}`);
             proc.kill('SIGTERM');
           });
         } catch { /* a seam that throws is a seam that did not deliver */ }
         if (!accepted) throw new Error('CLI stdin is closed');
+        if (job !== undefined) proc.endInput?.();
       }
       opts?.onSpawn?.({
         pid: proc.pid,
@@ -1783,7 +1798,7 @@ export async function deriveChatTitle(
       const ev = res.value;
       turnId = ev.turnId;
       if (ev.kind === 'assistant-delta') text += ev.text;
-      else if (ev.kind === 'error') return stop(undefined);
+      else if (ev.kind === 'error' || (ev.kind === 'done' && !ev.ok)) return stop(undefined);
     }
   } catch {
     return stop(undefined);
@@ -1862,6 +1877,11 @@ export const nodeSpawner: SpawnFn = (command, args, opts) => {
     if (!spawned) resolveSpawnErr(err);
     resolveExit({ code: null, signal: null });
   });
+  if (opts.gracefulLeader === true) {
+    // The worker's death is confirmed at exit even if a paused reader has
+    // not drained its pipe yet. Waiting for close would stall cancellation.
+    child.on('exit', (code, signal) => resolveExit({ code, signal }));
+  }
   child.on('close', (code, signal) => {
     exited = true;
     resolveExit({ code, signal });
@@ -1906,7 +1926,7 @@ export const nodeSpawner: SpawnFn = (command, args, opts) => {
     kill: (signal = 'SIGTERM') => {
       const pid = child.pid;
       // The CLI leads its group (detached): signal the group; else, or once it is gone, the child.
-      if (ownGroup && pid !== undefined && signalGroup(pid, signal)) return;
+      if (ownGroup && pid !== undefined && (signal === 'SIGKILL' || opts.gracefulLeader !== true) && signalGroup(pid, signal)) return;
       child.kill(signal);
     },
     endInput: () => {

@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import { artifactJsonPath, buildArtifactId, codeReviewArtifactId } from '../../storage.js';
+import { artifactJsonPath, buildArtifactId, codeReviewArtifactId, defineArtifactId, planArtifactId } from '../../storage.js';
 import { createCompletionEvidence } from '../completion-evidence.js';
 import { approvedMeta, draftMeta } from '../../__tests__/lifecycle-fixtures.js';
 import { FileSidecarStore } from '../sidecar-store.js';
@@ -87,5 +87,66 @@ describe('createCompletionEvidence', () => {
 			put(repo, codeReviewArtifactId(H, 's4'), cr('block', { reviewOverride: { reason: 'the stamp the conversion removes', at: 't' } }));
 			assert.deepEqual(await kind('s4'), { kind: 'blocked' });
 		} finally { rmSync(repo, { recursive: true, force: true }); }
+	});
+
+	describe('storyTasks', () => {
+		const plan = (status: string, number: number) => ({ meta: { workflow: 'plan', lifecycle: { status, revision: { number } } }, body: {} });
+		const tasks = (planRevision: number, taskIds: string[]) => ({ meta: { workflow: 'plan' }, body: { planRevision, taskIds, nextNumber: 9 } });
+		const TASKS = `TASKS-${H}-s1`;
+		const T1 = `TASK-${H}-s1-t1`;
+		const withRepo = async (run: (repo: string, answer: () => ReturnType<ReturnType<typeof createCompletionEvidence>['storyTasks']>) => Promise<void>): Promise<void> => {
+			const repo = mkdtempSync(join(tmpdir(), 'evidence-tasks-'));
+			try { await run(repo, () => createCompletionEvidence(repo).storyTasks(H, 's1')); }
+			finally { rmSync(repo, { recursive: true, force: true }); }
+		};
+
+		it('a qualifying PLAN at stored revision 0 matches a TASKS head at planRevision 1', () => withRepo(async (repo, answer) => {
+			put(repo, planArtifactId(H, 's1'), plan('approved', 0));
+			put(repo, TASKS, tasks(1, ['t1']));
+			assert.deepEqual(await answer(), { kind: 'listed', taskIds: [T1] });
+		}));
+
+		it('an empty current listing answers not-created', () => withRepo(async (repo, answer) => {
+			put(repo, planArtifactId(H, 's1'), plan('approved', 1));
+			put(repo, TASKS, tasks(1, []));
+			assert.deepEqual(await answer(), { kind: 'not-created' });
+		}));
+
+		it('a TASKS head from an older plan revision, and an approved PLAN with only some Task heads, answer not-created', () => withRepo(async (repo, answer) => {
+			put(repo, planArtifactId(H, 's1'), plan('completed', 2));
+			put(repo, T1, { meta: { workflow: 'plan', ...draftMeta() }, body: { planTaskId: 't1' } });
+			assert.deepEqual(await answer(), { kind: 'not-created' }, 'a part-way set');
+			put(repo, TASKS, tasks(1, ['t1']));
+			assert.deepEqual(await answer(), { kind: 'not-created' }, 'an older plan revision');
+			put(repo, TASKS, tasks(2, ['t1']));
+			assert.deepEqual(await answer(), { kind: 'listed', taskIds: [T1] }, 'a PLAN past approved still qualifies');
+		}));
+
+		it('with no qualifying PLAN a TASKS listing, then child TASK heads, then none-required apply in that order', () => withRepo(async (repo, answer) => {
+			assert.deepEqual(await answer(), { kind: 'none-required' });
+			put(repo, planArtifactId(H, 's1'), plan('draft', 1));
+			assert.deepEqual(await answer(), { kind: 'none-required' }, 'a draft PLAN does not qualify');
+			put(repo, T1, { meta: { workflow: 'plan', ...draftMeta() }, body: { planTaskId: 't1' } });
+			assert.deepEqual(await answer(), { kind: 'listed', taskIds: [T1] }, 'the child TASK heads');
+			put(repo, TASKS, tasks(7, ['t2']));
+			assert.deepEqual(await answer(), { kind: 'listed', taskIds: [`TASK-${H}-s1-t2`] }, 'the TASKS listing comes first');
+		}));
+
+		it('the override, approval and declared Stories are read from the records', async () => {
+			const repo = mkdtempSync(join(tmpdir(), 'evidence-approval-'));
+			try {
+				const evidence = createCompletionEvidence(repo);
+				assert.equal(await evidence.storyBuildApproved(H, 's1'), false);
+				assert.equal(await evidence.storyApprovalOverride(H, 's1'), undefined);
+				assert.deepEqual(await evidence.declaredStories(H), []);
+				put(repo, buildArtifactId(H, 's1'), { meta: { workflow: 'build', ...approvedMeta() }, body: {} });
+				assert.equal(await evidence.storyBuildApproved(H, 's1'), true);
+				assert.equal(await evidence.storyApprovalOverride(H, 's1'), undefined, 'an approval without a reason is not an override');
+				put(repo, buildArtifactId(H, 's1'), { meta: { workflow: 'build', ...approvedMeta({ override: 'accepted' }) }, body: {} });
+				assert.equal(await evidence.storyApprovalOverride(H, 's1'), 'accepted');
+				put(repo, defineArtifactId(H), { meta: { workflow: 'define' }, body: { stories: [{ id: 's1' }, { id: 's2' }] } });
+				assert.deepEqual(await evidence.declaredStories(H), ['s1', 's2']);
+			} finally { rmSync(repo, { recursive: true, force: true }); }
+		});
 	});
 });

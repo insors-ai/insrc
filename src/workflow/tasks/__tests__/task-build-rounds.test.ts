@@ -18,7 +18,7 @@ describe('task-build-rounds', () => {
 			await s.k.store.write(artifact(STORY), alice);
 			const evidence = createCompletionEvidence(s.k.repo);
 			// the Story's code review is the user's to give; here it is overridden, so the roll-up rests on the Tasks' rounds alone
-			const rolling = new LifecycleService({ store: s.k.store, evidence: { ...evidence, storyCodeReview: async () => ({ kind: 'overridden', overrideReason: 'accepted' }) } });
+			const rolling = new LifecycleService({ store: s.k.store, evidence: { ...evidence, storyBuildApproved: async () => true, storyCodeReview: async () => ({ kind: 'overridden', overrideReason: 'accepted' }) } });
 
 			// no round yet: the Task is not built
 			assert.equal(await evidence.taskBuildPassed(taskId(1)), false);
@@ -43,14 +43,14 @@ describe('task-build-rounds', () => {
 			await s.sets.recordBuildRound(taskId(1), { passed: true, summary: 'fixed' }, bob);
 			assert.equal(await evidence.taskBuildPassed(taskId(1)), true);
 
-			// the Task completes through the service, and the Story completes when the last Task does
-			assert.deepEqual((await rolling.completeIfRolledUp(taskId(1), bob)).completed, [taskId(1)]);
+			// the Story waits for every Task's round, and its Tasks complete with it
+			assert.deepEqual((await rolling.completeIfRolledUp(STORY, bob)).completed, []);
+			assert.equal((await s.k.store.read(taskId(1))).lifecycle.status, 'approved', 'a held Story leaves its Tasks as they are');
 			for (const n of [2, 3]) await s.sets.recordBuildRound(taskId(n), { passed: true, summary: 'ok' }, bob);
-			assert.deepEqual((await rolling.completeIfRolledUp(taskId(2), bob)).completed, [taskId(2)]);
-			assert.equal((await s.k.store.read(STORY)).lifecycle.status, 'draft');
-			const last = await rolling.completeIfRolledUp(taskId(3), bob);
-			assert.deepEqual(last.completed.slice(0, 2), [taskId(3), STORY]);
+			const last = await rolling.completeIfRolledUp(STORY, bob);
+			assert.equal(last.completed[0], STORY);
 			assert.equal((await s.k.store.read(STORY)).lifecycle.status, 'completed');
+			for (const n of [1, 2, 3]) assert.equal((await s.k.store.read(taskId(n))).lifecycle.status, 'completed');
 
 			// a round for a Task with no head is refused
 			await assert.rejects(s.sets.recordBuildRound(`TASK-${H}-s1-t9`, { passed: true, summary: 'x' }, bob), ArtifactNotFoundError);

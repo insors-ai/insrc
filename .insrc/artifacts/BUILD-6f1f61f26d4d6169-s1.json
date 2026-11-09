@@ -1,0 +1,107 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "4a0875cad188ca552b9ffefb39c0882b7b51d09e1eac07cb0e9326b2396e4762",
+        "at": "2026-11-09T19:16:08.205Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-765512de-2001-46fc-a979-664cb38e7aeb",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T19:12:52.141Z",
+    "epicCreatedAt": "2026-11-09T19:09:28.603Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6f1f61f26d4d6169",
+    "storyId": "s1",
+    "revision": 2,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "A defect with one established remedy: the daemon install paths already ask for C++17 through CXXFLAGS, and the remaining bare installs need the same setting. It touches two workflow files and the build instructions, with no code or contract change.",
+    "epicSlug": "give-every-repository-install-c-standard",
+    "updatedAt": "2026-11-09T19:14:41.943Z"
+  },
+  "body": {
+    "focus": "Every supported way of installing the repository must ask for the same C++ standard the daemon install paths already use, so fs-ext compiles in CI and when a developer follows the build instructions. The daemon install paths keep their existing behaviour. The fix must confirm on macOS that a clean install with the documented command succeeds.",
+    "producesLld": false,
+    "commit": "3f7b0c0bd",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "The root install steps in ci.yml and vscode-plugin.yml now set CXXFLAGS=-std=c++17, and CLAUDE.md, AGENTS.md, README.md, docs/installation.md and docs/daemon.md give the install command with that flag. A clean install of origin/v2 on macOS with the flag exited 0 and fs-ext loaded; the output is in docs/standalone/give-every-repository-install-c-standard-E202611096f1f61f2/S001/evidence/macos-clean-install.txt. The workflows were not run on GitHub, and a bare install without the flag still fails on macOS, as agreed with the user.",
+    "testRecord": {
+      "md": "docs/standalone/give-every-repository-install-c-standard-E202611096f1f61f2/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".github/workflows/ci.yml"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:14:41.943Z"
+      },
+      {
+        "target": {
+          "file": ".github/workflows/vscode-plugin.yml"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:14:41.943Z"
+      },
+      {
+        "target": {
+          "file": "AGENTS.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:14:41.943Z"
+      },
+      {
+        "target": {
+          "file": "CLAUDE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:14:41.943Z"
+      },
+      {
+        "target": {
+          "file": "README.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:14:41.943Z"
+      },
+      {
+        "target": {
+          "file": "docs/daemon.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:14:41.943Z"
+      },
+      {
+        "target": {
+          "file": "docs/installation.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:14:41.943Z"
+      }
+    ]
+  },
+  "citations": []
+}

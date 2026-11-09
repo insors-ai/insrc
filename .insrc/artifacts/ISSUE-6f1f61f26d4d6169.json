@@ -1,0 +1,110 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1794251335981-cy6156",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T19:09:28.603Z",
+    "epicCreatedAt": "2026-11-09T19:09:28.603Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "claude-opus-5-5"
+        }
+      ]
+    },
+    "elapsedMs": 32621,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "6f1f61f26d4d6169",
+    "epicSlug": "give-every-repository-install-c-standard",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b237a7ed67a5a343f35a598e7400d6f48f794d595a29ee1ac40cd8ded05a3713",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T19:12:43.790Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "6f1f61f26d4d6169",
+      "slug": "EPIC-6f1f61f26d4d6169"
+    }
+  },
+  "body": {
+    "title": "Give every repository install the C++ standard fs-ext needs",
+    "reproduction": "In a fresh checkout on macOS with Node 22 and Apple clang 21, run `npm ci` at the repository root with no CXXFLAGS set.\n\nObserved on 2026-11-10: the install stops while compiling fs-ext, with errors in the Node 22.22.1 V8 headers such as \"no template named 'is_void_v' in namespace 'std'\". The same command with `CXXFLAGS=-std=c++20` completes.\n\nExpected: every supported way of installing the repository compiles fs-ext.\n\nNot reproduced: the two GitHub workflows that run a bare `npm ci` use Ubuntu, where the failure has not been observed. A third workflow on Ubuntu already sets the flag.",
+    "rootCause": "The project-memory package depends on the native package fs-ext, whose build file sets no C++ standard, so the compiler's default applies. Under Apple clang that default is too old for the Node 22.22.1 headers. The daemon install paths work around this by asking for C++17 through CXXFLAGS, through `NATIVE_CXX_STD` in the maintenance service and the install scripts, and the project-memory workflow does the same. The other install paths never got that setting: the main CI workflow, the root install in the VS Code plugin workflow, and the manual `npm install` in the build instructions.",
+    "fixIntent": "Every supported way of installing the repository must ask for the same C++ standard the daemon install paths already use, so fs-ext compiles in CI and when a developer follows the build instructions. The daemon install paths keep their existing behaviour. The fix must confirm on macOS that a clean install with the documented command succeeds."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "packages/project-memory/src/native.ts:15",
+      "quotedText": "const nativeModule = 'fs-ext';"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/cli/services/maintenance.ts:58",
+      "quotedText": "export const NATIVE_CXX_STD = '-std=c++17';"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "scripts/daemon-ctl.sh:157",
+      "quotedText": "NATIVE_CXX_STD=\"-std=c++17\""
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "scripts/insrc-daemon-install.sh:205",
+      "quotedText": "# install installs again. CXXFLAGS asks for C++17 (NATIVE_CXX_STD there): fs-ext"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": ".github/workflows/project-memory.yml:46",
+      "quotedText": "CXXFLAGS: -std=c++17"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": ".github/workflows/ci.yml:38",
+      "quotedText": "run: npm ci"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": ".github/workflows/vscode-plugin.yml:36",
+      "quotedText": "run: npm ci"
+    }
+  ]
+}

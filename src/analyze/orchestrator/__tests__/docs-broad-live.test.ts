@@ -43,6 +43,7 @@ test('the broad docs request on this repository runs to a final report and the r
 		const handle = openStream(
 			'analyze.run.start',
 			{
+				runId: `docs-broad-live-${Date.now().toString(36)}`,
 				userPrompt: 'What do the documents of this repository say about the daemon, the workflow framework, the analyzers, the storage layer and the clients? Cover every area.',
 				scopeRef: { kind: 'repo', value: ROOT },
 				targetHint: 'docs',

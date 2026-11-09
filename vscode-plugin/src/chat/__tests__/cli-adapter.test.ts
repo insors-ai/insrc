@@ -10,7 +10,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { appendFileSync, existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { createSessionOutput, parseMarker } from '../session-output.js';
@@ -1846,9 +1846,9 @@ test('a claude result with is_error carries its text on done ok:false, a codex e
   assert.equal(rd.message, 'API Error: 529 {"type":"overloaded_error"}');
 });
 
-// ---- run config: model/effort in argv per provider + vibe env pin ------------
+// ---- run config: model/effort in provider argv --------------------------------
 
-test('run config: claude gets --model/--effort; codex -m/-c model_reasoning_effort=; vibe pins via env (no effort flag)', async () => {
+test('run config: claude gets --model/--effort; codex -m/-c model_reasoning_effort=', async () => {
   {
     const { deps, spawner } = depsFor({ lines: CLAUDE_TEXT_TURN });
     await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', model: 'opus', effort: 'high' })));
@@ -1858,14 +1858,6 @@ test('run config: claude gets --model/--effort; codex -m/-c model_reasoning_effo
     const { deps, spawner } = depsFor({ lines: CODEX_TEXT_TURN });
     await collect(createProviderRegistry(deps).get('codex').run(REQ({ provider: 'codex', model: 'gpt-6-astra', effort: 'ultra' })));
     assert.deepEqual(spawner.calls[0]!.args, ['exec', '--json', '-m', 'gpt-6-astra', '-c', 'model_reasoning_effort=ultra', '--', 'hi']);
-  }
-  {
-    // vibe: model via VIBE_ACTIVE_MODEL in the spawn env; effort not forwardable.
-    const { deps, spawner } = depsFor({ lines: VIBE_TEXT_TURN }, ['vibe']);
-    await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe', model: 'glm-5-3', effort: 'max' })));
-    assert.deepEqual(spawner.calls[0]!.args, ['--prompt=hi', '--output', 'streaming'], 'no --model/--effort flags for vibe');
-    const env = spawner.calls[0]!.env;
-    assert.equal(env?.['VIBE_ACTIVE_MODEL'], 'glm-5-3', 'the model is pinned via env');
   }
   {
     // absent run config → no model/effort flags; the prompt travels on stdin (request correlation)
@@ -1966,10 +1958,170 @@ test('vibe: explicit programmatic prompt preserves multiline option-like text in
 
 test('vibe: title generation uses the same explicit programmatic prompt transport', async () => {
   const { deps, spawner } = depsFor({ lines: VIBE_TEXT_TURN }, ['vibe']);
-  const title = await deriveChatTitle(createProviderRegistry(deps), { provider: 'vibe', prompt: 'Explain this project', cwd: '/repo', model: 'mistral-large' });
+  const title = await deriveChatTitle(createProviderRegistry(deps), { provider: 'vibe', prompt: 'Explain this project', cwd: '/repo' });
   assert.equal(title, 'Hello world');
   const call = spawner.calls[0]!;
   const option = call.args.find((arg) => arg.startsWith('--prompt='));
   assert.ok(option?.includes('Explain this project'), 'title request reaches the programmatic prompt');
-  assert.equal(call.env?.VIBE_ACTIVE_MODEL, 'mistral-large');
+  assert.equal(call.env?.VIBE_ACTIVE_MODEL, undefined);
+});
+
+
+const VERIFIED_VIBE_CHAT = String.raw`#!/usr/bin/env node
+import assert from 'node:assert/strict';
+import { appendFileSync, readFileSync } from 'node:fs';
+import { createInterface } from 'node:readline';
+const mode = readFileSync(new URL('./mode', import.meta.url), 'utf8');
+const log = new URL('./requests', import.meta.url);
+const model = { name: 'mistral-vibe-cli-latest', alias: 'mistral-medium-3.5', thinking: 'low', thinkingLevels: ['low', 'high'] };
+let sessionId = 'new-vibe';
+let activeModel = model;
+const reply = (id, result) => process.stdout.write(JSON.stringify({ jsonrpc: '2.0', id, result }) + '\n');
+const event = (method, params) => process.stdout.write(JSON.stringify({ jsonrpc: '2.0', method, params: { sessionId, ...params } }) + '\n');
+const turnId = 'turn-vibe';
+const turn = status => ({ id: turnId, sessionId, status });
+const history = entry => event('history/entryAdded', { turnId, entry });
+createInterface({ input: process.stdin }).on('line', line => {
+  const { method, id, params } = JSON.parse(line);
+  appendFileSync(log, JSON.stringify({ method, params }) + '\n');
+  switch (method) {
+    case 'initialize': reply(id, {}); return;
+    case 'initialized': return;
+    case 'session/resume': sessionId = params.sessionId;
+    case 'session/start':
+      assert.equal(params.agentConfig.cwd, process.cwd());
+      assert.equal(params.agentConfig.headless, true);
+      assert.equal(params.firstTurn, undefined);
+      reply(id, { state: { session: { id: sessionId } } });
+      return;
+    case 'runtime/read': reply(id, { runtime: { config: { activeModel, models: [model] } } }); return;
+    case 'config/model/write':
+      assert.equal(params.sessionOnly, true);
+      assert.equal(params.modelAlias, model.alias);
+      if (mode !== 'mismatch') activeModel = { ...model, thinking: params.reasoningEffort };
+      reply(id, { status: 'applied' });
+      return;
+    case 'turn/start':
+      if (mode === 'lost') process.exit(1);
+      assert.equal(activeModel.thinking, 'high');
+      reply(id, { turn: turn('in_progress') });
+      event('turn/started', { turn: turn('in_progress') });
+      history({ type: 'reasoning', id: 'thought' });
+      history({ type: 'message', role: 'assistant', id: 'msg', generationStatus: 'in_progress', content: [{ type: 'text', text: 'hello ' }] });
+      event('history/entryUpdated', { turnId, entryId: 'msg', patch: [{ op: 'append', path: '/content/0/text', value: 'world' }] });
+      history({ type: 'effect', id: 'tool', generationStatus: 'completed', detail: { toolName: 'bash', input: { command: 'ls' } }, state: { status: 'completed', outputText: 'file' } });
+      if (mode !== 'hang') event('turn/completed', { turn: turn('completed') });
+      return;
+    case 'turn/interrupt':
+      assert.equal(params.expectedTurnId, turnId);
+      reply(id, { accepted: true });
+      event('turn/completed', { turn: turn('interrupted') });
+      return;
+    default: throw new Error('unexpected method ' + method);
+  }
+});
+`;
+
+function verifiedVibeChat(mode: string, options: Partial<AdapterDeps> = {}) {
+  const cwd = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-vibe-chat-')));
+  const bin = join(cwd, 'app-server.mjs');
+  const log = join(cwd, 'requests');
+  writeFileSync(bin, VERIFIED_VIBE_CHAT, { mode: 0o755 });
+  writeFileSync(join(cwd, 'mode'), mode);
+  writeFileSync(log, '');
+  const adapter = createProviderRegistry({
+    isInstalled: id => id === 'vibe',
+    spawn: () => { throw new Error('explicit settings must not use the headless mapper'); },
+    vibeAppServerPath: bin,
+    vibeCatalog: async () => [{ id: 'mistral-vibe-cli-latest', aliases: ['mistral-medium-3.5'], efforts: ['low', 'high'] }],
+    ...options,
+  }).get('vibe');
+  const request = REQ({ provider: 'vibe', cwd, model: 'mistral-medium-3.5', effort: 'high' });
+  return {
+    adapter, request,
+    calls: () => readFileSync(log, 'utf8').split('\n').filter(Boolean).map(line => JSON.parse(line) as { method: string; params: Record<string, unknown> }),
+    cleanup: () => rmSync(cwd, { recursive: true, force: true }),
+  };
+}
+
+test('explicit Vibe chat preserves resume, attachments, permissions and live events', async () => {
+  const fixture = verifiedVibeChat('ok');
+  try {
+    for (const [mode, resume] of [['auto', undefined], ['manual', 'saved'], ['edit-auto', 'saved']] as const) {
+      const readDirs = [join(fixture.request.cwd, 'attachments')];
+      const events = await collect(fixture.adapter.run({
+        ...fixture.request, permissionMode: mode, readDirs,
+        ...(resume !== undefined ? { resume: { provider: 'vibe', nativeSessionId: resume } } : {}),
+      }));
+      assert.equal(events.filter(event => event.kind === 'assistant-delta').map(event => event.text).join(''), 'hello world');
+      assert.ok(events.some(event => event.kind === 'status' && event.phase === 'thinking'));
+      assert.ok(events.some(event => event.kind === 'tool-call' && event.command === 'ls'));
+      assert.ok(events.some(event => event.kind === 'tool-result' && event.output === 'file'));
+      const done = events.find(event => event.kind === 'done');
+      assert.equal(done?.ok, true);
+      assert.equal(done?.sessionId, resume ?? 'new-vibe');
+      const open = fixture.calls().filter(call => call.method.startsWith('session/')).at(-1);
+      assert.equal(open?.method, resume === undefined ? 'session/start' : 'session/resume');
+      assert.deepEqual(open?.params.agentConfig, {
+        cwd: fixture.request.cwd, headless: true, workspaceRoots: readDirs,
+        ...(mode === 'auto' ? { autoApprove: true } : { agent: mode === 'manual' ? 'ask' : 'accept-edits' }),
+      });
+    }
+  } finally { fixture.cleanup(); }
+});
+
+test('explicit Vibe chat refuses mismatch and marks uncertain dispatch as unsafe to replay', async () => {
+  for (const [mode, dispatches] of [['mismatch', 0], ['lost', 1]] as const) {
+    const fixture = verifiedVibeChat(mode);
+    let process: TurnProcess | undefined;
+    try {
+      const events = await collect(fixture.adapter.run(fixture.request, { onSpawn: child => { process = child; } }));
+      const done = events.find(event => event.kind === 'done');
+      assert.equal(done?.ok, false);
+      assert.equal(done?.replayUnsafe, mode === 'lost' ? true : undefined);
+      assert.equal(fixture.calls().filter(call => call.method === 'turn/start').length, dispatches);
+      assert.equal((await process?.exit)?.code, 1);
+      assert.equal(await fixture.adapter.stopTurnVerified?.(done!.turnId), undefined);
+    } finally { fixture.cleanup(); }
+  }
+});
+
+test('explicit Vibe chat cancellation interrupts the leased child and preserves partial output', async () => {
+  const fixture = verifiedVibeChat('hang');
+  let child: TurnProcess | undefined;
+  try {
+    const events: TurnEvent[] = [];
+    for await (const event of fixture.adapter.run(fixture.request, { onSpawn: process => { child = process; } })) {
+      events.push(event);
+      if (event.kind === 'assistant-delta' && events.filter(e => e.kind === 'assistant-delta').length === 2) {
+        await fixture.adapter.cancel(event.turnId);
+      }
+    }
+    const done = events.find(event => event.kind === 'done');
+    assert.equal(done?.ok, false);
+    assert.equal(done?.sessionId, 'new-vibe');
+    assert.equal(done?.replayUnsafe, true);
+    assert.ok(child?.pid);
+    assert.equal((await child.exit).code, 1);
+    assert.throws(() => process.kill(child!.pid!, 0), { code: 'ESRCH' });
+    assert.equal(fixture.calls().filter(call => call.method === 'turn/interrupt').length, 1);
+  } finally { fixture.cleanup(); }
+});
+
+test('explicit Vibe chat writes the terminal and native identity to the durable turn segment', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'insrc-vibe-chat-output-'));
+  const fixture = verifiedVibeChat('ok', { sessionOutput: createSessionOutput({ root, pollMs: 5 }) });
+  let child: TurnProcess | undefined;
+  try {
+    const events = await collect(fixture.adapter.run(fixture.request, { sessionId: 'host-session', onSpawn: process => { child = process; } }));
+    assert.equal(events.find(event => event.kind === 'done')?.sessionId, 'new-vibe');
+    assert.ok(child?.cursor);
+    const replay = await collect(fixture.adapter.resume({ cursor: child.cursor, pid: child.pid, startedAt: null }));
+    assert.equal(replay.filter(event => event.kind === 'assistant-delta').map(event => event.text).join(''), 'hello world');
+    assert.equal(replay.find(event => event.kind === 'done')?.sessionId, 'new-vibe');
+    assert.equal(replay.find(event => event.kind === 'done')?.ok, true);
+  } finally {
+    fixture.cleanup();
+    rmSync(root, { recursive: true, force: true });
+  }
 });

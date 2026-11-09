@@ -2967,6 +2967,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         followUpTurns.delete(ev.turnId);
         if (q !== undefined) {
           q.terminal = ev.kind;
+          if (ev.kind === 'done' && ev.replayUnsafe === true) q.acted = true;
           if (ev.kind === 'error') q.error = ev.message;
           // Story S004: a done with ok:false is a failed turn, not a finished one. claude and codex report an overload or
           // a rate limit as an is_error result, which the adapter maps to done(ok:false) with the provider's text.

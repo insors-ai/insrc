@@ -640,6 +640,12 @@ export function activate(context: vscode.ExtensionContext): void {
     });
     const chatProviders = createProviderRegistry({
       spawn: nodeSpawner, isInstalled: defaultBinaryProbe, sessionOutput: chatOutput,
+      vibeCatalog: async () => {
+        const definitions = await client.rpc<ModelDefinitions>('models.definitions');
+        const family = definitions.families.find(entry => entry.id === 'cli-vibe');
+        const rejected = new Set(family?.rejectedModels);
+        return family?.models.filter(model => !rejected.has(model.id)) ?? [];
+      },
       resolveOllamaTarget: createChatOllamaResolver({
         definitions: () => client.rpc<ModelDefinitions>('models.definitions'),
         rawConfig: () => configGateway.rawConfig(),

@@ -62,9 +62,11 @@ export interface VibeSessionOptions {
 	readonly effort?: string | undefined;
 	readonly catalog: readonly VibeCatalogModel[];
 	readonly verifyRuntime?: ((runtime: Readonly<RecordValue>) => void) | undefined;
+	readonly onProcess?: ((pid: number | undefined) => void) | undefined;
 }
 
 interface VibeTransport {
+	readonly pid: number | undefined;
 	request(method: string, params: RecordValue): Promise<unknown>;
 	notify(method: string, params: RecordValue): void;
 	observe(onEvent: (method: string, params: RecordValue) => void, onFailure: (error: Error) => void): void;
@@ -171,6 +173,7 @@ function startTransport(options: VibeSessionOptions): VibeTransport {
 	});
 
 	return {
+		get pid() { return child.pid; },
 		request(method, params) {
 			return new Promise((resolve, reject) => {
 				const id = `insrc-${++sequence}`;
@@ -352,6 +355,7 @@ export async function openVerifiedVibeSession(options: VibeSessionOptions): Prom
 
 	const transport = startTransport(options);
 	try {
+		options.onProcess?.(transport.pid);
 		await transport.request('initialize', { clientInfo: { name: 'insrc', version: '1' } });
 		transport.notify('initialized', {});
 		const open = { agentConfig: options.agentConfig, historyLimit: 1 };

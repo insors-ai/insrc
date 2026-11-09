@@ -79,6 +79,8 @@ export type TurnEvent =
        * is_error result (how claude and codex report an overload) is not an anonymous done. Absent otherwise.
        */
       readonly message?: string;
+      /** The prompt may have reached the provider. The queue must not replay it. */
+      readonly replayUnsafe?: true;
     }
   | {
       readonly kind: 'error';

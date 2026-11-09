@@ -381,15 +381,18 @@ const isUnmigrated = (unit: WorkItemNode['unit']): boolean => unit === null || u
 
 /**
  * What about an item is still to be brought into the common model, in words: its records with no lifecycle, its own head if an epic or a
- * story has none or an unmigrated one, and its planned Tasks if its plan is approved and they have none.
+ * story has none or an unmigrated one, its Tasks with an unmigrated head, and its planned Tasks if its plan is approved and they have none.
  */
 function needsMigration(item: WorkItemNode, counted: readonly ArtifactRecord[], graph: WorkItemGraph): string[] {
 	const out = counted.filter(r => r.approval.state === 'unmigrated').map(r => `${r.artifactId} has no lifecycle`);
 	if ((item.kind === 'epic' || item.kind === 'story') && isUnmigrated(item.unit)) out.push(item.unit === null ? `the ${item.kind} has no head` : `${item.unit.artifactId} has no lifecycle`);
-	if (item.kind === 'story' && counted.some(r => r.kind === 'PLAN' && r.approval.state === 'approved')) {
+	if (item.kind === 'story') {
+		const planApproved = counted.some(r => r.kind === 'PLAN' && r.approval.state === 'approved');
 		for (const childId of item.childIds) {
 			const child = graph.items.get(childId);
-			if (child?.kind === 'task' && child.sourceIds.some(s => item.plannedTaskIds.includes(s)) && isUnmigrated(child.unit)) out.push(`task ${childId} has no head`);
+			if (child?.kind !== 'task') continue;
+			if (child.unit?.status === 'unmigrated') out.push(`${child.unit.artifactId} has no lifecycle`);
+			else if (child.unit === null && planApproved && child.sourceIds.some(s => item.plannedTaskIds.includes(s))) out.push(`task ${childId} has no head`);
 		}
 	}
 	return out;

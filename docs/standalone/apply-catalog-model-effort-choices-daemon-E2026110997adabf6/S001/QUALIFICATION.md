@@ -27,7 +27,7 @@ npm run build
 (cd vscode-plugin && npm run build && npm run bundle)
 ```
 
-The daemon output contains the shared Vibe session verifier. The VS Code CommonJS extension bundle contains the same model mutation and turn interruption paths. The packaging test loads the normal bundle using a VS Code test shim.
+The daemon output contains the shared Vibe session verifier. The VS Code extension launches a bundled CommonJS worker that owns the app-server session and writes to the chat log after the extension host exits. The worker contains the shared model mutation and turn interruption paths. The packaging test loads the normal extension bundle using a VS Code test shim and checks the worker entry point.
 
 ## Release and manual checks
 
@@ -45,10 +45,13 @@ The task validations preceded the full suite runs.
 - VS Code from the repository root with `npx tsx --test --test-concurrency=1 --test-force-exit 'vscode-plugin/src/**/__tests__/*.test.ts'` finished with 1,740 passed, nine skipped and zero failures. The first parallel pass exposed a source-wiring assertion, a temporary-file race and a path resolved from the wrong directory. The wiring order was corrected and the serial rerun passed. An unrelated, uncommitted timer edit appeared in the shared checkout during that rerun. The review pins the committed story source without that edit.
 - Backend with `npx tsx --test --test-concurrency=6 --test-force-exit 'src/**/__tests__/*.test.ts'` finished with 8,071 passed, 509 failed, 145 skipped, three cancelled and three TODO results. Two workers in unchanged files with no registered test cases hung and were terminated individually. The parent runner reported both interruptions and completed the remaining files. Failures include native process-capability denials, missing or stale review test references, and search indexing fixtures. Two timing failures passed when repeated in isolation. The focused Vibe tests passed. The remaining backend failures have not all been attributed.
 
-After the full sweep exited, both build commands passed again. The local artifacts had these SHA-256 fingerprints.
+After the first independent code review, the daemon revalidated preflight, daemon Vibe execution, and the VS Code adapter. The VS Code fixtures covered live recovery after the launching process exited and verified that the queue does not retry an uncertain dispatch. The installed VS Code Electron executable also supported Node worker launch. Both build commands passed after these fixes.
+
+The rebuilt local artifacts had these SHA-256 fingerprints.
 
 ```text
 664d9b8eaf9c910730e426d16bfbe438cfcbaa2fa545ca46b3219c92f553973a  out/daemon/index.js
-3e9984072accdbf290759d33307a4eaa761551974b7934b16051360b6a9beb49  out/shared/vibe-session.js
-8dce4ee10e4b5d34018fa1d4774127e4bb4ac355b7c5e3432b83db48f281fe4d  vscode-plugin/out/extension.js
+d64fac30de0a1cf7c0fd468aeecfc4a908968e70ee83ab44b2d1de73cd88b902  out/shared/vibe-session.js
+61bc511f8550f4e0c78a216acc7dbe8d660233a52a2cd48bfbde37771d6ef7c1  vscode-plugin/out/extension.js
+0081dd2b0e3b5f93b97edcf8eac1e16004414313bbcd70a9ed778b1e3ffb0752  vscode-plugin/out/vibe-session-worker.js
 ```

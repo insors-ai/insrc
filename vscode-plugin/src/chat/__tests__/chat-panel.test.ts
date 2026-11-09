@@ -1735,12 +1735,14 @@ test('ISSUE-0d3939248a956860: changing the model or effort of a draft does not w
   const fc = fakeChannel();
   const store = createInMemoryChatSessionStore();
   const host = createChatPanelHost({
+    definitions: async () => PICKER_DEFINITIONS,
     createPanel: () => fc.channel,
     providers: registry({ claude: scriptedAdapter([{ kind: 'done', turnId: 't', ok: true }]) }, ['claude']),
     store,
     cwd: () => '/repo',
   });
   host.open();
+  await Promise.resolve();
   fc.send(env('set-run-config', { model: 'sonnet', effort: 'max' }));
   assert.equal(store.list().length, 0, 'set-run-config on a draft does not persist it');
   fc.send(env('submit-turn', { text: 'hi' }));
@@ -5855,10 +5857,26 @@ test('runCatalogView: maps cliKind→provider, keeps only installed providers, d
   assert.deepEqual(view[1]!.models[0], { id: 'zai-glm-5-3', name: 'zai-glm-5-3', alias: 'glm-5-3', efforts: ['low', 'max'] });
 });
 
+const PICKER_DEFINITIONS = {
+  version: 1,
+  defaultFamily: 'cli-claude',
+  families: [
+    { id: 'cli-claude', cliKind: 'claude', displayName: 'Claude', rejectedModels: [], models: [
+      { id: 'claude-opus', aliases: ['opus', 'opus-old'], efforts: ['low', 'high'], source: 'shipped' },
+      { id: 'claude-sonnet', aliases: ['sonnet'], efforts: ['low', 'max'], source: 'shipped' },
+      { id: 'claude-no-effort', aliases: [], efforts: [], source: 'shipped' },
+    ] },
+    { id: 'cli-codex', cliKind: 'codex', displayName: 'Codex', rejectedModels: [], models: [
+      { id: 'gpt-6.1-sol', aliases: [], efforts: ['low', 'medium'], source: 'shipped' },
+    ] },
+  ],
+} as never;
+
 test('new-chat with model/effort: the draft carries them and the next turn request includes them', async () => {
   const fc = fakeChannel();
   const reqs: TurnRequest[] = [];
   const host = createChatPanelHost({
+    definitions: async () => PICKER_DEFINITIONS,
     createPanel: () => fc.channel,
     providers: registry({ claude: scriptedAdapter([{ kind: 'done', turnId: 't', ok: true }], { onRun: (r) => reqs.push(r) }) }, ['claude']),
     store: createInMemoryChatSessionStore(),
@@ -5866,6 +5884,7 @@ test('new-chat with model/effort: the draft carries them and the next turn reque
     genNonce: () => 'FIXEDNONCE',
   });
   host.open();
+    await Promise.resolve();
   fc.send(env('new-chat', { provider: 'claude', model: 'opus', effort: 'high' }));
   await new Promise((r) => setTimeout(r, 0));
   fc.send(env('submit-turn', { text: 'hi' }));
@@ -5882,6 +5901,7 @@ test('set-run-config: updates the session for subsequent turns and echoes run-co
   const reqs: TurnRequest[] = [];
   const store = createInMemoryChatSessionStore();
   const host = createChatPanelHost({
+    definitions: async () => PICKER_DEFINITIONS,
     createPanel: () => fc.channel,
     providers: registry({ claude: scriptedAdapter([{ kind: 'done', turnId: 't', ok: true }], { onRun: (r) => reqs.push(r) }) }, ['claude']),
     store,
@@ -5889,6 +5909,7 @@ test('set-run-config: updates the session for subsequent turns and echoes run-co
     genNonce: () => 'FIXEDNONCE',
   });
   host.open();
+    await Promise.resolve();
   fc.send(env('new-chat', { provider: 'claude' }));
   await new Promise((r) => setTimeout(r, 0));
   fc.send(env('set-run-config', { model: 'sonnet' }));
@@ -8246,6 +8267,7 @@ test('history reopen from disk preserves each provider model effort and next-tur
   const reqs: TurnRequest[] = [];
   const adapter = scriptedAdapter([{ kind: 'done', turnId: 't', ok: true }], { onRun: (r) => reqs.push(r) });
   const host = createChatPanelHost({
+    definitions: async () => PICKER_DEFINITIONS,
     createPanel: () => fc.channel,
     providers: registry({ claude: adapter, codex: adapter }, ['claude', 'codex']),
     store: createFileChatSessionStore({ root: '/sessions', fs: fs.fs }),
@@ -8253,6 +8275,7 @@ test('history reopen from disk preserves each provider model effort and next-tur
   });
   try {
     host.open();
+    await Promise.resolve();
     for (const s of [a, b, a]) {
       fc.send(env('open-chat', { chatId: s.id }));
       const echo = fc.posted.filter((m) => m.payload.type === 'run-config').at(-1)!.payload;
@@ -8266,5 +8289,65 @@ test('history reopen from disk preserves each provider model effort and next-tur
     fc.send(env('new-chat', { provider: 'claude' }));
     const echo = fc.posted.filter((m) => m.payload.type === 'run-config').at(-1)!.payload;
     assert.deepEqual(echo, { type: 'run-config', provider: 'claude', model: '', effort: '' });
+  } finally { host.dispose(); }
+});
+
+test('catalog reconciliation drops incompatible effort on model, provider and history changes', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const invalid = store.create('claude', { model: 'opus-old', effort: 'max' });
+  const calls: TurnRequest[] = [];
+  const adapter = scriptedAdapter([{ kind: 'done', turnId: 't', ok: true }], { onRun: request => calls.push(request) });
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel, store, cwd: () => '/repo',
+    definitions: async () => PICKER_DEFINITIONS,
+    providers: registry({ claude: adapter, codex: adapter }, ['claude', 'codex']),
+  });
+  try {
+    host.open();
+    await Promise.resolve();
+    const config = () => fc.posted.filter(message => message.payload.type === 'run-config').at(-1)?.payload;
+    fc.send(env('new-chat', { provider: 'claude', model: 'opus', effort: 'high' }));
+    fc.send(env('set-run-config', { model: 'claude-no-effort' }));
+    assert.deepEqual(config(), { type: 'run-config', provider: 'claude', model: 'claude-no-effort', effort: '' });
+    fc.send(env('new-chat', { provider: 'codex', model: 'gpt-6.1-sol', effort: 'high' }));
+    assert.deepEqual(config(), { type: 'run-config', provider: 'codex', model: 'gpt-6.1-sol', effort: '' });
+    fc.send(env('open-chat', { chatId: invalid.id }));
+    assert.deepEqual(config(), { type: 'run-config', provider: 'claude', model: 'opus-old', effort: '' });
+    assert.equal(store.get(invalid.id)?.effort, undefined);
+    fc.send(env('set-run-config', { effort: 'high' }));
+    fc.send(env('submit-turn', { text: 'check the model' }));
+    await waitFor(() => calls.length === 1);
+    assert.equal(calls[0]?.provider, 'claude');
+    assert.equal(calls[0]?.model, 'opus-old');
+    assert.equal(calls[0]?.effort, 'high');
+  } finally { host.dispose(); }
+});
+
+test('unavailable catalog preserves restored selection and blocks unsupported edits and dispatch', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const saved = store.create('claude', { model: 'opus', effort: 'high' });
+  const calls: TurnRequest[] = [];
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel, store, cwd: () => '/repo',
+    definitions: async () => { throw new Error('catalog temporarily offline'); },
+    providers: registry({ claude: scriptedAdapter([{ kind: 'done', turnId: 't', ok: true }], { onRun: request => calls.push(request) }) }, ['claude']),
+  });
+  try {
+    host.open();
+    fc.send(env('open-chat', { chatId: saved.id }));
+    fc.send(env('set-run-config', { model: 'sonnet', effort: 'max' }));
+    assert.equal(store.get(saved.id)?.model, 'opus');
+    assert.equal(store.get(saved.id)?.effort, 'high');
+    fc.send(env('submit-turn', { text: 'check the model' }));
+    await waitFor(() => fc.posted.some(message => message.payload.type === 'turn-event' && message.payload.event.kind === 'error'
+      && /Model catalog unavailable/.test(message.payload.event.message)));
+    assert.equal(calls.length, 0);
+    fc.send(env('set-run-config', { model: '' }));
+    fc.send(env('submit-turn', { text: 'use the default' }));
+    await waitFor(() => calls.length === 1);
+    assert.equal(calls[0]?.model, undefined);
+    assert.equal(calls[0]?.effort, undefined);
   } finally { host.dispose(); }
 });

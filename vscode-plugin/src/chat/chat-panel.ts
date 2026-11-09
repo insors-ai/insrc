@@ -89,6 +89,7 @@ export interface RunModelView {
   readonly id: string;
   readonly name: string;
   readonly alias?: string | undefined;
+  readonly otherAliases?: readonly string[] | undefined;
   readonly efforts: readonly string[];
 }
 
@@ -130,11 +131,22 @@ export function runCatalogView(defs: ModelDefinitions, available: readonly Provi
         id: m.id,
         name: m.displayName ?? m.id,
         ...(m.aliases.length > 0 ? { alias: m.aliases[0] } : {}),
+        ...(m.aliases.length > 1 ? { otherAliases: m.aliases.slice(1) } : {}),
         efforts: m.efforts,
       });
     }
   }
   return [...byProvider.entries()].map(([id, e]) => ({ id, label: e.label, models: e.models }));
+}
+
+export function reconcileRunConfig(provider: ProviderId, next: RunConfig, catalog: readonly RunProviderView[]): RunConfig {
+  const model = next.model;
+  if (model === undefined || model === '') return {};
+  const selected = catalog.find(entry => entry.id === provider)?.models.find(entry =>
+    entry.id === model || entry.alias === model || entry.otherAliases?.includes(model) === true);
+  if (selected === undefined) return {};
+  return next.effort !== undefined && selected.efforts.includes(next.effort)
+    ? { model, effort: next.effort } : { model };
 }
 
 export interface ChatPanelHostDeps {
@@ -324,10 +336,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // Run-config controls (bottom-right popup + gauge): the daemon's model definitions,
   // loaded once at host start; when they land, a wired panel re-renders with them.
   let runCatalog: readonly RunProviderView[] = deps.providers.available.map((id) => ({ id, label: id, models: [] }));
+  let runCatalogReady = false;
   const refreshRunCatalog = (): void => {
     if (deps.definitions === undefined) return;
     void deps.definitions().then((d) => {
       runCatalog = runCatalogView(d, deps.providers.available);
+      runCatalogReady = true;
       if (channel !== undefined && !disposed) channel.setHtml(renderShell());
     }).catch((err) => {
       log.warn(`[chat] models.definitions unavailable; run-config popup lists providers only — ${err instanceof Error ? err.message : String(err)}`);
@@ -975,6 +989,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // of the transcript is sent (never the whole history), with the absolute index of its first row
   // and the transcript's total row count; the webview asks for older pages with 'load-older'.
   const postRestored = (s: ChatSession): void => {
+    reconcileSessionConfig(s);
     const window = latestWindow(s.transcript);
     viewGeneration += 1;
     post({ type: 'session-restored', sessionId: s.id, viewGeneration, progress: readTurnProgress(s), pendingTurnId: runtimes.get(s.id)?.pendingTurnId, transcript: [...window.rows], mode: permissionMode, firstIndex: window.firstIndex, total: s.transcript.length });
@@ -985,6 +1000,17 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   /** Echo the session's run config to the bottom-right buttons ('' = CLI default). */
   const postRunConfig = (s: ChatSession): void => {
     post({ type: 'run-config', provider: s.provider, model: s.model ?? '', effort: s.effort ?? '' });
+  };
+
+  const reconcileSessionConfig = (s: ChatSession, proposed: RunConfig = s): RunConfig => {
+    if (!runCatalogReady) return {};
+    const next = reconcileRunConfig(s.provider, proposed, runCatalog);
+    if (s.model !== next.model || s.effort !== next.effort) {
+      s.model = next.model;
+      s.effort = next.effort;
+      if (deps.store.get(s.id) !== undefined) trySave(s);
+    }
+    return next;
   };
 
   /**
@@ -2768,6 +2794,14 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     const s = opts?.session ?? session; // t6: a follow-up fallback may target a non-selected chat
     if ((typed === '' && files.length === 0) || s === undefined) return; // empty submit is a no-op
     const rt = runtimeOf(s);
+    if (!runCatalogReady && (s.model || s.effort)) {
+      const message = 'Model catalog unavailable. Reopen the model picker to retry or choose the default model.';
+      if (rt.queued !== undefined) rt.queued.error = message;
+      postLive(s, { kind: 'error', turnId: pendingTurnId, message }, undefined, false);
+      return;
+    }
+    const runCfg = reconcileSessionConfig(s);
+    if (s === session) postRunConfig(s);
     const governor = rt.governor;
     // The stored row keeps the user's own words; the paths are named only in what the CLI is sent.
     const prompt = files.length === 0 ? typed : [...(typed === '' ? [] : [typed, '']), ATTACHED_HEADING, ...files.map((f) => f.path)].join('\n');
@@ -2831,7 +2865,6 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         q.waitTimer = undefined;
       }
     }
-    const runCfg: RunConfig = { ...(s.model !== undefined ? { model: s.model } : {}), ...(s.effort !== undefined ? { effort: s.effort } : {}) };
     const req = s.nativeSessionId !== undefined
       ? { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode: modeOf(s), ...runCfg, ...grant, ...readable, resume: { provider: s.provider, nativeSessionId: s.nativeSessionId } }
       : { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode: modeOf(s), ...runCfg, ...grant, ...readable };
@@ -3209,10 +3242,15 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         }
         // A DRAFT (unsaved): the new chat is not written to history until its first turn, so
         // repeatedly starting/abandoning new chats never leaves empty sessions behind.
-        session = deps.store.draft(msg.provider, {
-          ...(typeof msg.model === 'string' && msg.model !== '' ? { model: msg.model } : {}),
-          ...(typeof msg.effort === 'string' && msg.effort !== '' ? { effort: msg.effort } : {}),
-        });
+        const proposed = {
+          model: typeof msg.model === 'string' ? msg.model : undefined,
+          effort: typeof msg.effort === 'string' ? msg.effort : undefined,
+        };
+        if (!runCatalogReady && (proposed.model || proposed.effort)) {
+          if (session !== undefined) postRunConfig(session);
+          return;
+        }
+        session = deps.store.draft(msg.provider, reconcileRunConfig(msg.provider, proposed, runCatalog));
         permissionMode = modeOf(session);
         postRestored(session);
         postPending(session.id);
@@ -3225,11 +3263,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         const model = typeof msg.model === 'string' ? msg.model : undefined;
         const effort = typeof msg.effort === 'string' ? msg.effort : undefined;
         if (model === undefined && effort === undefined) return;
-        if (model !== undefined) session.model = model === '' ? undefined : model;
-        if (effort !== undefined) session.effort = effort === '' ? undefined : effort;
-        // ISSUE-0d3939248a956860: a draft keeps its run config in memory and persists it on its
-        // first turn, as set-permission-mode does; saving it here wrote an empty chat to history.
-        if (deps.store.get(session.id) !== undefined) trySave(session);
+        if (runCatalogReady) {
+          reconcileSessionConfig(session, { model: model ?? session.model, effort: effort ?? session.effort });
+        } else if ((model === '' && !effort) || (model === undefined && effort === '')) {
+          if (model === '') session.model = undefined;
+          session.effort = undefined;
+          if (deps.store.get(session.id) !== undefined) trySave(session);
+        }
         postRunConfig(session);
         return;
       }

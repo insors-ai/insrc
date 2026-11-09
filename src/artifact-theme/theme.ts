@@ -324,6 +324,15 @@ export function pageStyleTags(structuralCss: string): string {
 }
 
 /** The legend CSS (shared, mode-agnostic — swatches carry their own colors). */
+/** The on-diagram controls svg-pan-zoom draws in fixed black and white, on the page
+ *  theme. These selectors outrank the stylesheet the library injects. Only the
+ *  docgen shells carry that library. */
+export const PAN_ZOOM_CONTROLS_CSS = [
+	`.insrc-viewer .svg-pan-zoom-control{fill:var(--iv-text);fill-opacity:.85}`,
+	`.insrc-viewer .svg-pan-zoom-control:hover{fill-opacity:1}`,
+	`.insrc-viewer .svg-pan-zoom-control-background{fill:var(--iv-panel);fill-opacity:1;stroke:var(--iv-border)}`,
+].join('\n');
+
 export const LEGEND_CSS = [
 	'.insrc-viewer .insrc-legend{display:flex;gap:14px;flex-wrap:wrap;padding:6px 10px;border-top:1px solid var(--iv-border);background:var(--iv-inset);font-size:12px;color:var(--iv-text)}',
 	'.insrc-viewer .insrc-legend .lg-item{display:inline-flex;align-items:center;gap:5px}',
@@ -467,6 +476,27 @@ export function viewerBootScript(opts: ViewerBootOpts): string {
   ready.then(doRender);
 })();
 `;
+}
+
+/**
+ * The theme switch alone, for a page with no diagram to re-render: it turns the
+ * two per-mode style tags into one theme and drives the toggle. It stays free of
+ * Mermaid and of the SVG export code, which such a page must not carry.
+ */
+export function themeBootScript(initialMode: ThemeMode): string {
+	return `(function(){
+  var root=document.querySelector('.insrc-viewer');
+  var mode=(function(){try{var m=localStorage.getItem('insrc-theme-mode');if(m==='light'||m==='dark')return m;}catch(e){}return '${initialMode}';})();
+  function apply(m){
+    mode=m;root.setAttribute('data-theme',m);
+    document.querySelectorAll('style[data-iv-mode]').forEach(function(s){s.disabled=(s.getAttribute('data-iv-mode')!==m);});
+    try{localStorage.setItem('insrc-theme-mode',m);}catch(e){}
+    var t=document.getElementById('iv-theme');if(t)t.setAttribute('aria-pressed',m==='dark'?'true':'false');
+  }
+  var b=document.getElementById('iv-theme');if(b)b.addEventListener('click',function(){apply(mode==='dark'?'light':'dark');});
+  window.insrcViewer={setMode:apply,mode:function(){return mode;}};
+  apply(mode);
+})();`;
 }
 
 // ---------------------------------------------------------------------------

@@ -1971,9 +1971,9 @@ test('run-config popup bootstrap: catalog parse + button wiring posts new-chat /
   // Both buttons are wired.
   assert.match(html, /if\(rb\)rb\.onclick=function\(e\)\{e\.stopPropagation\(\);/, 'run button opens the popup');
   assert.match(html, /if\(gb\)gb\.onclick=function\(e\)\{e\.stopPropagation\(\);/, 'gauge button opens the slider');
-  // A provider change posts new-chat carrying the current effort; a model change on the SAME
+  // A provider change starts with the default model and effort; a model change on the SAME
   // provider posts set-run-config.
-  assert.match(html, /type:'new-chat',provider:f\.id,model:'',effort:rstate\(\)\.effort/, 'provider pick posts new-chat');
+  assert.match(html, /type:'new-chat',provider:f\.id,model:''/, 'provider pick posts new-chat');
   assert.match(html, /type:'new-chat',provider:f\.id,model:id,effort:s\.effort/, 'cross-provider model pick posts new-chat');
   assert.match(html, /type:'set-run-config',model:id/, 'same-provider model pick posts set-run-config');
   assert.match(html, /type:'set-run-config',effort:e/, 'effort slider posts set-run-config');
@@ -4544,7 +4544,7 @@ test('the shell embeds the pager: line() appends through it, session-restored re
   assert.match(html, /else if\(m\.type==='user-row'\)\{pager\.track\(m\.rowIndex,function\(\)\{reg\.appendKeyed\(reg\.toViewModel\(\{role:'user',text:m\.text,attachments:m\.attachments\}\),m\.key\);\}\);\}/);
   assert.match(html, /else if\(m\.type==='transcript-row'\)\{pager\.track\(m\.rowIndex,function\(\)\{var r=m\.row;if\(r&&r\.role==='diff'&&r\.replaces!=null\)\{reg\.redrawDiff\(r\);\}else if\(r\)\{reg\.renderRow\(reg\.toViewModel\(r\)\);\}\}\);\}/, 'a row the host pushed is tracked with its index too');
   assert.match(html, /function track\(rowIndex,fn\)\{var from=term\.children\.length;try\{return fn\(\);\}finally\{stamp\(from,rowIndex\);if\(!rendering&&following\(\)\)toBottom\(\);trimIfNeeded\(\);showJump\(\);\}\}/, 'track stamps the new nodes, moves a following view to the bottom once the row is filled, and then trims');
-  assert.match(html, /else if\(m\.type==='run-config'\)\{curProv=m\.provider\|\|'';if\(rb\)\{rb\.setAttribute\('data-provider',m\.provider\|\|''\);rb\.setAttribute\('data-model',m\.model\|\|''\);rb\.setAttribute\('data-effort',m\.effort\|\|''\);\}rlabel\(\);elabel\(\);\}/, 'the run-config echo branch settles the buttons from the session');
+  assert.match(html, /else if\(m\.type==='run-config'\)\{curProv=m\.provider\|\|'';if\(rb\)\{rb\.setAttribute\('data-provider',m\.provider\|\|''\);rb\.setAttribute\('data-model',m\.model\|\|''\);rb\.setAttribute\('data-effort',m\.effort\|\|''\);\}rlabel\(\);elabel\(\);updatePickers\(\);\}/, 'the run-config echo branch settles the buttons from the session');
 });
 
 test("the shell is still one nonce'd inline script, with no direct scrollTop write outside the pager, no innerHTML outside the guarded markdown path and no remote origin", () => {
@@ -8349,5 +8349,53 @@ test('unavailable catalog preserves restored selection and blocks unsupported ed
     await waitFor(() => calls.length === 1);
     assert.equal(calls[0]?.model, undefined);
     assert.equal(calls[0]?.effort, undefined);
+  } finally { host.dispose(); }
+});
+
+test('catalog refresh coalesces requests, retains good data and rejects disposed generation results', async () => {
+  const first = fakeChannel();
+  const second = fakeChannel();
+  const stale = { version: 1, families: [] } as never;
+  const deferred: Array<{ resolve: (value: never) => void; reject: (error: Error) => void }> = [];
+  let probes = 0;
+  const host = createChatPanelHost({
+    createPanel: () => first.channel, store: createInMemoryChatSessionStore(), cwd: () => '/repo',
+    definitions: () => new Promise((resolve, reject) => deferred.push({ resolve, reject })),
+    catalogReachable: async () => { probes += 1; return false; },
+    catalogRetryMs: 15,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+  });
+  try {
+    host.open();
+    first.send(env('ready'));
+    first.send(env('open-run-picker'));
+    first.send(env('open-run-picker'));
+    assert.equal(deferred.length, 1);
+    host.adopt(second.channel);
+    second.send(env('ready'));
+    assert.equal(deferred.length, 2);
+    deferred[1]!.resolve(PICKER_DEFINITIONS);
+    await Promise.resolve();
+    const snapshots = () => second.posted.filter(message => message.payload.type === 'run-catalog');
+    const good = snapshots().at(-1)?.payload;
+    assert.equal(good?.status, 'ready');
+    const count = snapshots().length;
+    deferred[0]!.resolve(stale);
+    first.send(env('open-run-picker'));
+    first.fireDispose();
+    await Promise.resolve();
+    assert.equal(snapshots().length, count);
+    assert.equal(deferred.length, 2);
+    second.send(env('open-run-picker'));
+    second.send(env('open-run-picker'));
+    assert.equal(deferred.length, 3);
+    deferred[2]!.reject(new Error('catalog unavailable'));
+    await Promise.resolve();
+    const unavailable = snapshots().at(-1)?.payload;
+    assert.equal(unavailable?.status, 'unavailable');
+    assert.deepEqual(unavailable?.providers, good?.providers);
+    second.fireDispose();
+    await new Promise(resolve => setTimeout(resolve, 30));
+    assert.equal(probes, 0);
   } finally { host.dispose(); }
 });

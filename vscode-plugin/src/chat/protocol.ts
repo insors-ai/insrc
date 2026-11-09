@@ -107,6 +107,7 @@ export type HostToWebview =
   // Run-config echo: the active session's provider/model/effort ('' = CLI default), posted
   // on open/switch/restore and after a set-run-config, so the bottom-right buttons follow.
   | { readonly type: 'run-config'; readonly provider: string; readonly model: string; readonly effort: string }
+  | { readonly type: 'run-catalog'; readonly revision: number; readonly status: 'loading' | 'ready' | 'unavailable'; readonly providers: readonly import('./chat-panel.js').RunProviderView[] }
   // Story E20261012ddc4ede1:S001 (additive): `rowIndex` is the absolute transcript index of the row
   // this event wrote; absent on an event that writes no row (status, approval-request).
   // ISSUE-160fa1bb7a8604ad (additive): `info` marks the done that closes an informational line the host posts under its
@@ -292,6 +293,7 @@ export type WebviewToHost =
   /** Bottom-right run-config controls: change the model and/or effort for the current
    *  session's subsequent turns (absent field = CLI default). */
   | { readonly type: 'set-run-config'; readonly model?: string | undefined; readonly effort?: string | undefined }
+  | { readonly type: 'open-run-picker' }
   | { readonly type: 'open-chat'; readonly chatId: string }
   | { readonly type: 'set-edit-mode'; readonly mode: 'auto' | 'review' }
   | { readonly type: 'edit-decision'; readonly path: string; readonly accept: boolean; readonly target?: SessionActionTarget | undefined }
@@ -375,6 +377,7 @@ export const HOST_TO_WEBVIEW_TYPES = [
   'docs-decision-result',
   'docs-companion',
   'turn-running',
+  'run-catalog',
   'outbox',
 ] as const;
 
@@ -391,6 +394,7 @@ export const WEBVIEW_TO_HOST_TYPES = [
   'set-permission-mode',
   'selection-decision',
   'ready',
+  'open-run-picker',
   'load-older',
   'attach-image',
   'pick-attachments',

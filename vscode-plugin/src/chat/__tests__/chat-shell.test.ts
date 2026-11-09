@@ -11,7 +11,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { runInNewContext } from 'node:vm';
 import { marked } from 'marked';
-import { createChatPanelHost, type ChatPanelChannel } from '../chat-panel.js';
+import { createChatPanelHost, type ChatPanelChannel, type ChatPanelHostDeps } from '../chat-panel.js';
 import { createInMemoryChatSessionStore } from '../session-store.js';
 import type { ProviderRegistry, StreamAdapter } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
@@ -19,6 +19,7 @@ import { createAttachmentStore } from '../attachment-store.js';
 import { allOf, bodyStub, fire, textNode, textOf, type BodyStub } from './fake-dom.js';
 import { fakeAttachmentFs } from './fake-attachment-fs.js';
 import { PROVIDER_ICON_SVGS } from '../provider-icons.js';
+import { waitFor } from './fixtures.js';
 
 const ROW_PX = 10;
 const VIEW_PX = 100;
@@ -40,7 +41,7 @@ interface Shell {
   tickIntervals: () => void;
 }
 /** `attach` gives the host its attachment seams, so the shell has the attach controls. */
-function runShell(opts: { attach?: boolean | undefined; queue?: boolean | undefined; clock?: { t: number } | undefined; store?: ReturnType<typeof createInMemoryChatSessionStore> | undefined; channel?: ChatPanelChannel | undefined; catalog?: unknown } = {}): Shell {
+function runShell(opts: { attach?: boolean | undefined; queue?: boolean | undefined; clock?: { t: number } | undefined; store?: ReturnType<typeof createInMemoryChatSessionStore> | undefined; channel?: ChatPanelChannel | undefined; catalog?: unknown; hostDeps?: Partial<ChatPanelHostDeps> | undefined } = {}): Shell {
   let html = '';
   const inner: ChatPanelChannel = opts.channel ?? { setHtml: (h) => { html = h; }, postMessage: () => {}, onMessage: () => {}, onDidDispose: () => {}, reveal: () => {}, dispose: () => {} };
   // keep runShell's own html snapshot in sync when a caller supplies the channel
@@ -60,6 +61,7 @@ function runShell(opts: { attach?: boolean | undefined; queue?: boolean | undefi
     ...(opts.attach === true
       ? { attachments: { store: createAttachmentStore({ root: '/att', fs: fakeAttachmentFs().fs }), pickFiles: async () => [], open: () => {} } }
       : {}),
+    ...opts.hostDeps,
   }).open();
   const script = html.slice(html.indexOf('>', html.indexOf('<script nonce=')) + 1, html.lastIndexOf('</script>'));
 
@@ -842,12 +844,14 @@ test('new-session model and effort controls open and apply selections in the exe
   assert.ok(modelRows.length >= 2, 'catalog model rows are rendered');
   clickControl(modelRows.at(-1)!);
   assert.deepEqual(v.sent.at(-1), { type: 'set-run-config', model: 'claude-opus' });
+  v.msg({ type: 'run-config', provider: 'claude', model: 'claude-opus', effort: '' });
   assert.match(v.el('insrc-runbtn').innerHTML, /opus/);
   clickControl(v.el('insrc-effortbtn'));
   assert.equal(v.el('insrc-runbtn').getAttribute('aria-expanded'), 'false');
   assert.equal(v.el('insrc-effortbtn').getAttribute('aria-expanded'), 'true');
   clickControl(v.el('insrc-notches').children.at(-1)!);
   assert.deepEqual(v.sent.at(-1), { type: 'set-run-config', effort: 'high' });
+  v.msg({ type: 'run-config', provider: 'claude', model: 'claude-opus', effort: 'high' });
   assert.equal(v.el('insrc-effortlabel').textContent, 'high');
   assert.ok(v.el('insrc-runpop').listeners['click']?.length, 'menu consumes inside clicks before document dismissal');
   assert.ok(v.el('insrc-effortpop').listeners['click']?.length, 'slider consumes inside clicks before document dismissal');
@@ -1244,4 +1248,83 @@ test('shell: the jump button sits outside the transcript and a click returns foc
   const box = composer(v, '');
   fire(v.el('insrc-jump'), 'click');
   assert.equal(box.focusedWith, 'scroll');
+});
+
+test('picker opens in the real webview script and recovers catalog over the host handshake without reloading an active turn', async () => {
+  let shell: Shell | undefined;
+  let receive: ((message: unknown) => void) | undefined;
+  let dispose: (() => void) | undefined;
+  let renders = 0;
+  let requests = 0;
+  let reachable = false;
+  let release!: () => void;
+  const hold = new Promise<void>(resolve => { release = resolve; });
+  const adapter: StreamAdapter = {
+    async *run(): AsyncIterable<TurnEvent> {
+      yield { kind: 'assistant-delta', turnId: 'active-turn', text: 'working on it' };
+      await hold;
+      yield { kind: 'done', turnId: 'active-turn', ok: true };
+    },
+    cancel: () => { release(); }, decide: () => {}, capabilities: { resume: true },
+  };
+  const definitions = {
+    version: 1, defaultFamily: 'cli-claude', families: [
+      { id: 'cli-claude', cliKind: 'claude', displayName: 'Claude', models: [
+        { id: 'claude-opus', aliases: ['opus'], displayName: 'Opus', efforts: ['high'] },
+      ] },
+    ],
+  } as never;
+  const channel: ChatPanelChannel = {
+    setHtml: () => { renders += 1; },
+    postMessage: message => {
+      if (shell !== undefined) shell.msg((message as { payload: Record<string, unknown> }).payload);
+    },
+    onMessage: callback => { receive = callback; },
+    onDidDispose: callback => { dispose = callback; },
+    reveal: () => {},
+    dispose: () => dispose?.(),
+  };
+  shell = runShell({
+    channel,
+    hostDeps: {
+      providers: { available: ['claude'], get: () => adapter },
+      definitions: async () => {
+        requests += 1;
+        if (!reachable) throw new Error('offline');
+        return definitions;
+      },
+      catalogReachable: async () => reachable,
+      catalogRetryMs: 5,
+    },
+  });
+  let delivered = 0;
+  const flush = (): void => {
+    for (const payload of shell!.sent.slice(delivered)) receive?.({ v: 1, payload });
+    delivered = shell!.sent.length;
+  };
+  try {
+    flush();
+    await waitFor(() => requests === 1);
+    receive?.({ v: 1, payload: { type: 'submit-turn', text: 'keep this turn' } });
+    const hasAnswer = () => allOf(shell!.term).some(node => node.innerHTML.includes('working on it') || node.textContent.includes('working on it'));
+    await waitFor(hasAnswer);
+    const before = shell.term.children[0];
+    (shell.el('insrc-runbtn') as unknown as { onclick: (event: { stopPropagation(): void }) => void }).onclick({ stopPropagation() {} });
+    assert.equal(shell.sent.at(-1)?.['type'], 'open-run-picker');
+    flush();
+    await waitFor(() => requests === 2 && /unavailable/i.test(shell!.el('insrc-popfoot').textContent));
+    reachable = true;
+    await waitFor(() => requests === 3 && shell!.el('insrc-modelpane').children.length === 2);
+    assert.equal(renders, 1);
+    assert.equal(shell.term.children[0], before);
+    assert.ok(hasAnswer());
+    assert.equal(shell.el('insrc-runbtn').getAttribute('aria-expanded'), 'true');
+    const opus = shell.el('insrc-modelpane').children[1] as unknown as { onclick: () => void };
+    opus.onclick();
+    flush();
+    assert.equal(shell.el('insrc-runbtn').getAttribute('data-model'), 'claude-opus');
+  } finally {
+    release();
+    channel.dispose();
+  }
 });

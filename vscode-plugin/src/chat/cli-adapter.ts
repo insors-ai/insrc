@@ -88,6 +88,8 @@ export interface TurnRequest {
    */
   readonly model?: string | undefined;
   readonly effort?: string | undefined;
+  /** Snapshot supplied by the trusted chat host for this Vibe turn. */
+  readonly vibeCatalog?: readonly VibeCatalogModel[] | undefined;
 }
 
 /** The started CLI process of a turn, handed to the caller so it can tie a session lease to it. */
@@ -1184,8 +1186,8 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         effectiveReq = { ...effectiveReq, model: ollama.model };
       }
       if (mapper.id === 'vibe' && (effectiveReq.model || effectiveReq.effort)) {
-        if (deps.vibeCatalog === undefined) throw new Error('Vibe model selections require the daemon catalog');
-        vibeCatalog = await deps.vibeCatalog();
+        vibeCatalog = effectiveReq.vibeCatalog ?? await deps.vibeCatalog?.();
+        if (vibeCatalog === undefined) throw new Error('Vibe model selections require the daemon catalog');
       }
     } catch (err) {
       yield { kind: 'error', turnId, message: err instanceof Error ? err.message : String(err) };

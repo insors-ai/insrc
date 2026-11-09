@@ -350,7 +350,7 @@ function itemGates(
 
 	const reasons = new Set<AttentionReason>();
 	for (const r of counted) {
-		if (r.approval.state === 'pending' && r.kind !== 'CR') reasons.add('pending-decision');
+		if (r.approval.state === 'pending' && r.kind !== 'CR' && r.kind !== 'DIAG') reasons.add('pending-decision');
 		if (r.approval.state === 'rejected') reasons.add('rejected');
 		if (artifacts.get(r.artifactId)?.review?.blocking === true) reasons.add('review-blocked');
 	}

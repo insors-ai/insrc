@@ -8,8 +8,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { deriveGates } from '../gate.js';
 import { buildWorkItemGraph, groupRecordsByWorkItem } from '../graph.js';
-import type { WorkItemGraph, WorkItemNode } from '../types.js';
+import type { ArtifactRecord, WorkItemGraph, WorkItemNode } from '../types.js';
 import {
 	CREATED,
 	buildRecord,
@@ -40,6 +41,22 @@ function storyIds(graph: WorkItemGraph): string[] {
 
 function noticeCodes(graph: WorkItemGraph): string[] {
 	return graph.notices.map(n => n.code);
+}
+
+test('a DIAG head is evidence of the Story its id names, and a draft one asks nobody for a decision', () => {
+	const H = '1111111111111111';
+	const diagram = unitHeadOfDiagram(H);
+	const set = recordSet([defRecord(H, ['s1']), unitHead('EPIC', H, undefined, 'draft'), unitHead('STORY', H, 's1', 'draft'), diagram]);
+	const graph = buildWorkItemGraph(set);
+	const story = [...graph.items.values()].find(i => i.kind === 'story');
+	assert.ok(story !== undefined);
+	assert.deepEqual(story.evidenceArtifactIds, [diagram.artifactId], 'grouped by the Story in its id, though its meta names none');
+	assert.equal(diagram.approval.state, 'pending', 'control: it is a draft');
+	assert.ok(!deriveGates(graph, set).items.get(story.id)?.attentionReasons.includes('pending-decision'));
+});
+
+function unitHeadOfDiagram(hash: string): ArtifactRecord {
+	return recordFromFile(`DIAG-${hash}-s1-1.json`, { meta: { createdAt: CREATED, epicCreatedAt: CREATED, epicHash: hash, lifecycle: unitHead('STORY', hash, 's1', 'draft').meta['lifecycle'] }, body: {} });
 }
 
 test('buildWorkItemGraph: unit is null for a missing head and has status unmigrated for a head with no lifecycle', () => {

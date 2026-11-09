@@ -41,6 +41,9 @@ function groupKeyOf(r: ArtifactRecord): string | null {
 	if (r.kind === 'SPEC' || r.workItemHash === null) return null;
 	// A pending or rejected extension adds no story; it is its epic's evidence.
 	if (r.kind === 'EXT' && r.approval.state !== 'approved') return `${r.workItemHash}|`;
+	// a diagram is evidence of the Story its id names, whatever its meta says
+	const diagramStory = r.kind === 'DIAG' ? ArtifactIds.storyOrdinal(ArtifactIds.parse(r.artifactId)?.story ?? '') : null;
+	if (diagramStory !== null) return `${r.workItemHash}|${diagramStory}`;
 	if (r.storyIdRaw === null) return `${r.workItemHash}|`;
 	if (r.storyOrdinal !== null) return `${r.workItemHash}|${r.storyOrdinal}`;
 	return `${r.workItemHash}|R(${r.storyIdRaw})`;
@@ -126,7 +129,7 @@ function byTaskOrdinal(a: string, b: string): number {
 }
 
 /** The records that describe a unit rather than decide it: no one approves one, none is a work item's head, and none is evidence. */
-const UNIT_KINDS: ReadonlySet<ArtifactRecord['kind']> = new Set(['EPIC', 'STORY', 'TASK', 'TASKS', 'DIAG']);
+const UNIT_KINDS: ReadonlySet<ArtifactRecord['kind']> = new Set(['EPIC', 'STORY', 'TASK', 'TASKS']);
 
 /** A record a person reads as evidence of a work item; a unit's own head is shown as its status instead. */
 const isEvidence = (r: ArtifactRecord): boolean => !UNIT_KINDS.has(r.kind);

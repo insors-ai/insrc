@@ -6,7 +6,7 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 5,
         "contentHash": "8847d296a3d78da5abc128d815b74e4c8e96fcc2e485dbfae707626f96417db3",
@@ -17,7 +17,19 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 5,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T09:36:48.525Z",
+        "override": {
+          "reason": "Approved by the user in chat on 2026-11-09 after all three code review rounds. The final round was changes_requested with two MED findings on inputs Vibe does not write: a sub-table header with # or ] inside quotes, and a server name containing the other quote character. The build gate also remains failed: the shared helper and its one-path import allowance have no LLD, and the writers' existing line-by-line reading can misread section-like text inside a multi-line string. The user accepted these limits; a follow-up is to move the writers to a real TOML parser."
+        }
+      }
     },
     "workflow": "build",
     "runId": "store-c98607e8-852c-467c-82eb-7354df4d9c94",

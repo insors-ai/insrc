@@ -125,6 +125,8 @@ function findRootAssignment(text: string, key: string): { readonly keyStart: num
 
 function tableFor(key: string, element: string): string {
 	if (!element.startsWith('{')) throw new TomlInlineListError('a list element is not an inline table');
+	// The writers read tables line by line, so text inside a multi-line value could pass for a key.
+	if (element.includes('\n')) throw new TomlInlineListError('a list element spans more than one line');
 	const { end, parts } = splitBracketed(element, 0);
 	if (end !== element.length) throw new TomlInlineListError('a list element is not an inline table');
 	return [`[[${key}]]`, ...parts].join('\n');
@@ -137,8 +139,8 @@ function tableFor(key: string, element: string): string {
  * or `key` has another form that `[[key]]` could not be added to.
  */
 export function moveInlineListToTables(text: string, key: string): string {
-	if (new RegExp(`^[ \\t]*\\[[ \\t]*["']?${key}["']?[ \\t]*\\][ \\t]*(#.*)?\\r?$`, 'm').test(text)) {
-		throw new TomlInlineListError(`'${key}' is a single table, not a list`);
+	for (const header of text.matchAll(/^[ \t]*\[[ \t]*("(?:[^"\\\n]|\\.)*"|'[^'\n]*'|[A-Za-z0-9_-]+)[ \t]*\][ \t]*(?:#.*)?\r?$/gm)) {
+		if (keyText(header[1]!) === key) throw new TomlInlineListError(`'${key}' is a single table, not a list`);
 	}
 	const found = findRootAssignment(text, key);
 	if (found === undefined) return text;

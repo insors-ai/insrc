@@ -80,6 +80,8 @@ test('what cannot be moved without loss is refused', () => {
 		['mcp_servers = [\n', /not closed/],
 		['[mcp_servers]\nname = "a"\n', /single table/],
 		['["mcp_servers"]\nname = "a"\n', /single table/],
+		['["mcp\\u005fservers"]\nname = "a"\n', /single table/],
+		['mcp_servers = [{ env = { T = """\nname = "insrc"\n""" } }]\n', /more than one line/],
 		['mcp_servers.a = 1\n', /dotted keys/],
 		['"mcp\\qservers" = []\n', /cannot be read/],
 		['not a key\n', /not a key/],

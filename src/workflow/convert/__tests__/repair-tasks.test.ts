@@ -11,74 +11,17 @@
  */
 
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 
-import { reviewedBuildFingerprint } from '../../code-review/build-freshness.js';
 import { createCompletionEvidence } from '../../artifact-core/completion-evidence.js';
 import { History } from '../../artifact-core/history.js';
 import { createRepoLifecycle } from '../../artifact-core/repo-lifecycle.js';
-import { writeRepoSchema } from '../../artifact-core/repo-schema.js';
 import { createFileSidecarStore } from '../../artifact-core/sidecar-store.js';
 import { artifactJsonPath } from '../../storage.js';
-import { citations } from '../../tasks/__tests__/task-kit.js';
-import { threeRows } from '../../tasks/__tests__/task-set-kit.js';
-import { taskPayloadFromRow } from '../../tasks/pure.js';
 import type { PlanTask } from '../../artifacts/plan.js';
 import { runRepair } from '../repair.js';
-import type { RepairReport, RepairResult } from '../types.js';
-
-const H = '0123456789abcdef';
-const K = 'fedcba9876543210';
-const AT = '2026-10-10T00:00:00.000Z';
-const BY = { id: 'insrc:system', kind: 'system', properties: {} };
-const ACTOR = { id: 'insrc:build', kind: 'system', properties: {} };
-type Obj = Record<string, unknown>;
-
-function lifecycle(status: string, number = 1): Obj {
-	return { status, revision: { number, contentHash: '', at: AT, by: BY }, signoffs: [], ...(status !== 'draft' ? { approval: { revision: number, by: BY, at: AT } } : {}) };
-}
-function repository(): { repo: string; put(id: string, meta: Obj, body: Obj, cites?: unknown[]): void; done(): void } {
-	const repo = mkdtempSync(join(tmpdir(), 'insrc-repair-tasks-'));
-	execFileSync('git', ['init', '-q'], { cwd: repo });
-	writeRepoSchema(repo, { version: 2, convertedAt: AT });
-	return {
-		repo,
-		put: (id, meta, body, cites = []) => {
-			const path = artifactJsonPath(repo, id);
-			mkdirSync(dirname(path), { recursive: true });
-			writeFileSync(path, JSON.stringify({ meta: { repoPath: repo, createdAt: AT, epicCreatedAt: AT, revision: 1, ...meta }, body, citations: cites }, null, 2) + '\n');
-		},
-		done: () => rmSync(repo, { recursive: true, force: true }),
-	};
-}
-type Repo = ReturnType<typeof repository>;
-const head = (repo: string, id: string): { meta: Record<string, any>; body: Record<string, any> } => JSON.parse(readFileSync(artifactJsonPath(repo, id), 'utf8'));
-const has = (repo: string, id: string): boolean => existsSync(artifactJsonPath(repo, id));
-const result = (r: RepairReport): RepairResult => { assert.ok(r.result !== undefined, JSON.stringify(r)); return r.result; };
-const rows = (n = 3): PlanTask[] => threeRows().slice(0, n).map(r => ({ ...r, dependsOn: [] }));
-const plan = (r: Repo, hash: string, story: string, status: string, n = 3, number = 1): void => r.put(`PLAN-${hash}-${story}`, { workflow: 'plan', epicHash: hash, storyId: story, lifecycle: lifecycle(status, number), revision: number }, { tasks: rows(n) }, citations);
-/** A Task head made from plan row `row`, under the Story's head. */
-function task(r: Repo, hash: string, story: string, number: string, row: PlanTask, status = 'approved'): void {
-	r.put(`TASK-${hash}-${story}-${number}`, { workflow: 'plan', epicHash: hash, storyId: story, lifecycle: lifecycle(status), envelope: { description: row.title, parent: { entityId: `STORY-${hash}-${story}`, type: 'STORY', relation: 'derived-from' }, references: [], attachments: [] } }, taskPayloadFromRow(row) as unknown as Obj);
-}
-const tasksHead = (r: Repo, hash: string, story: string, planRevision: number, taskIds: string[]): void => r.put(`TASKS-${hash}-${story}`, { workflow: 'plan', epicHash: hash, storyId: story, lifecycle: lifecycle('draft') }, { planRevision, taskIds, nextNumber: taskIds.length + 1 });
-const storyHead = (r: Repo, hash: string, story: string): void => r.put(`STORY-${hash}-${story}`, { workflow: 'define', epicHash: hash, storyId: story, lifecycle: lifecycle('draft'), envelope: { description: '', parent: { entityId: `EPIC-${hash}`, type: 'EPIC', relation: 'derived-from' }, references: [], attachments: [] } }, {});
-const epicHead = (r: Repo, hash: string): void => { r.put(`DEF-${hash}`, { workflow: 'define', epicHash: hash, lifecycle: lifecycle('approved') }, { stories: [] }); r.put(`EPIC-${hash}`, { workflow: 'define', epicHash: hash, lifecycle: lifecycle('draft'), envelope: { description: '', references: [], attachments: [] } }, {}); };
-/** An approved BUILD with these task results and a passing code review bound to it. */
-function buildAndReview(r: Repo, hash: string, story: string, results: { id: string; passed: boolean }[]): void {
-	r.put(`BUILD-${hash}-${story}`, { workflow: 'build', epicHash: hash, storyId: story, authoredBy: 'controller', lifecycle: lifecycle('approved') }, { commit: 'abc1234', focus: 'Change it', summary: 'Changed', tasks: results, changeLog: [{ target: { file: 'src/a.ts' } }] });
-	const commit = 'a'.repeat(40);
-	const scope = { storyId: story, documents: {}, reviewSet: [{ commit, parent: 'b'.repeat(40), files: [{ path: 'src/a.ts', segments: [{ after: [1, 1] }] }] }] };
-	const review = (taskId: string) => ({ taskId, status: 'passed', summary: 'Correct', findings: [], testCoverage: { assessment: 'verified', explanation: 'Covered', evidenceReferences: ['ref:test'] }, limitations: [], advice: [], inspectedReferences: ['ref:code'], executedTests: [] });
-	const summary = { reviewId: 'review-1', attempt: 1, storyId: story, reviewer: 'daemon', status: 'passed', scope, tasks: results.map(t => review(t.id)), summary: 'Reviewed', completedAt: '2026-11-03T01:00:00.000Z', buildFingerprint: reviewedBuildFingerprint(head(r.repo, `BUILD-${hash}-${story}`)) };
-	r.put(`CR-${hash}-${story}`, { workflow: 'code-review', schemaVersion: 2, epicHash: hash, storyId: story, reviewedBy: 'daemon', lifecycle: lifecycle('draft') }, { kind: 'code-review', format: 'task-based', storyId: story, status: 'passed', reviews: [summary] });
-}
-const rounds = async (repo: string, id: string) => (await new History(createFileSidecarStore(repo)).log(id)).filter(e => (e.outcome?.data as { kind?: unknown } | undefined)?.kind === 'build-round');
-const appendRound = (repo: string, id: string, res: 'pass' | 'fail'): Promise<void> => new History(createFileSidecarStore(repo)).appendLog(id, { id: `own-${id}`, actor: ACTOR, timestamp: AT, operation: 'update', outcome: { result: res, summary: 'own round', data: { kind: 'build-round' } } });
+import { ACTOR, AT, H, K, appendRound, buildAndReview, epicHead, has, head, lifecycle, plan, repository, result, rounds, rows, storyHead, task, tasksHead } from './repair-kit.js';
 
 test('repair on an already converted repository creates missing EPIC, STORY, TASKS and TASK heads, including from signed-off and completed PLANs, and finishes a part-way Task set', async () => {
 	const r = repository();
@@ -124,7 +67,8 @@ test('repair with crossed Task numbers and plan rows gives each BUILD result to 
 		task(r, H, 's1', 't2', one);
 		task(r, H, 's1', 't3', three);
 		tasksHead(r, H, 's1', 1, ['t1', 't2', 't3']);
-		buildAndReview(r, H, 's1', [{ id: 't1', passed: true }, { id: 't2', passed: false }, { id: 't3', passed: true }]);
+		// approved after the completion rule, so the live rule is what settles it
+		buildAndReview(r, H, 's1', [{ id: 't1', passed: true }, { id: 't2', passed: false }, { id: 't3', passed: true }], '2026-11-20T00:00:00.000Z');
 		await appendRound(r.repo, `TASK-${H}-s1-t3`, 'fail');
 
 		const preview = await runRepair(r.repo, 'repair-preview');

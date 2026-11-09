@@ -257,6 +257,13 @@ export class LifecycleService {
 		return true;
 	}
 
+	/** The members of a unit that are completed now, for a report of a settlement that stopped part-way. */
+	async completedMembersOf(id: string): Promise<string[]> {
+		const out: string[] = [];
+		for (const member of await unitMembers(id, this.reader)) if ((await this.reader.statusOf(member)) === 'completed') out.push(member);
+		return out;
+	}
+
 	/** In a sentence, why a unit is not completed: a signoff hold, the BUILD, the review or its Tasks. */
 	async holdReason(id: string, ctx: EvidenceContext = {}): Promise<string> {
 		const key = ArtifactIds.parse(id);

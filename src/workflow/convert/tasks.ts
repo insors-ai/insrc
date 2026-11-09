@@ -32,7 +32,7 @@ const storyOf = (s: string): string => `s${Number(/\d+/.exec(s)?.[0] ?? '0')}`;
 /** The id of the round back-filled for a Task. */
 export const roundEntryId = (taskId: string): string => `migrated-${taskId}-round`;
 
-interface PlannedStory { readonly planId: string; readonly epicHash: string; readonly story: string; readonly rows: number; readonly head: RawHead }
+export interface PlannedStory { readonly planId: string; readonly epicHash: string; readonly story: string; readonly rows: number; readonly head: RawHead }
 
 const metaOf = (h: RawHead): Obj => (isObj(h.json) && isObj(h.json['meta']) ? h.json['meta'] : {});
 const bodyOf = (h: RawHead): Obj => (isObj(h.json) && isObj(h.json['body']) ? h.json['body'] : {});
@@ -44,7 +44,7 @@ function isApproved(h: RawHead, acceptLaterStatus: boolean): boolean {
 	return text(meta['approvedAt']) !== undefined && text(meta['rejectedAt']) === undefined && meta['status'] !== 'rejected';
 }
 
-function plannedStories(heads: readonly RawHead[], acceptLaterStatus = false): PlannedStory[] {
+export function plannedStories(heads: readonly RawHead[], acceptLaterStatus = false): PlannedStory[] {
 	const out: PlannedStory[] = [];
 	for (const head of heads) {
 		const m = /^PLAN-([0-9a-f]{16})-([sS]\d+)$/.exec(head.artifactId);
@@ -56,7 +56,7 @@ function plannedStories(heads: readonly RawHead[], acceptLaterStatus = false): P
 }
 
 /** The BUILD task results of a Story that passed, by the id the result names. */
-function passedResults(heads: readonly RawHead[], p: PlannedStory): { id: string; at: string | undefined }[] {
+export function passedResults(heads: readonly RawHead[], p: PlannedStory): { id: string; at: string | undefined }[] {
 	const build = heads.find(h => { const m = /^BUILD-([0-9a-f]{16})-([sS]\d+)$/.exec(h.artifactId); return m !== null && m[1] === p.epicHash && storyOf(m[2]!) === p.story; });
 	if (build === undefined) return [];
 	const tasks = bodyOf(build)['tasks'];
@@ -127,16 +127,18 @@ export interface ApplyTasksOptions {
 	readonly beforeRound?: ((taskId: string) => void) | undefined;
 }
 
-/** Whether any Task set a repair would visit is unusable as it stands, which it has to report even when nothing else needs doing. Reads only. */
-export function hasUnusableTaskSet(heads: readonly RawHead[]): boolean {
-	return plannedStories(heads, true).some(p => {
+/** The STORY ids whose Task set a repair cannot use as it stands, read from the heads alone. Such a Story is never settled. */
+export function unusableStories(heads: readonly RawHead[]): ReadonlySet<string> {
+	const out = new Set<string>();
+	for (const p of plannedStories(heads, true)) {
 		const tasksId = ArtifactIds.make({ kind: 'TASKS', epicHash: p.epicHash, story: p.story });
 		const tasks = heads.find(h => h.artifactId === tasksId);
-		if (tasks === undefined) return false;
+		if (tasks === undefined) continue;
 		const lifecycle = metaOf(p.head)['lifecycle'];
 		const number = isObj(lifecycle) && isObj(lifecycle['revision']) ? lifecycle['revision']['number'] : undefined;
-		return listedTaskMissing(heads, p, tasksId) !== undefined || (typeof number === 'number' && bodyOf(tasks)['planRevision'] !== Math.max(1, number));
-	});
+		if (listedTaskMissing(heads, p, tasksId) !== undefined || (typeof number === 'number' && bodyOf(tasks)['planRevision'] !== Math.max(1, number))) out.add(ArtifactIds.make({ kind: 'STORY', epicHash: p.epicHash, story: p.story }));
+	}
+	return out;
 }
 
 /** Why the Task set of a Story cannot be used as it stands: its head lists a Task that has no head, or it answers an error of the Task set's own. */

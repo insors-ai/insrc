@@ -16,6 +16,7 @@ import { basename } from 'node:path';
 
 import { createRepoLifecycle } from '../artifact-core/repo-lifecycle.js';
 import type { RepoWriteObserver } from '../artifact-core/repo-lifecycle.js';
+import type { LifecycleService } from '../artifact-core/lifecycle-service.js';
 import type { Actor } from '../artifact-core/types.js';
 import { TaskSets } from '../tasks/task-set.js';
 import { amendmentRule, applyAmendments } from './amendments.js';
@@ -27,7 +28,8 @@ import { applyRenames, renameRule } from './rename.js';
 import { applyStamps, stampRule } from './stamps.js';
 import { applyStoryHistory, storyHistoryRule } from './story-history.js';
 import { readRawHeads } from './raw-heads.js';
-import { applyTasks, hasUnusableTaskSet, repairTasksRule } from './tasks.js';
+import { applySettle, repairSettleRule } from './settle.js';
+import { applyTasks, repairTasksRule } from './tasks.js';
 import type { TasksResult } from './tasks.js';
 import { ConversionRefused } from './types.js';
 import type { ConversionChange, ConversionDeps, ConversionPlan, RepairRecorder, RepairReport, RepairStep, RepairWrite, UnitOutcome } from './types.js';
@@ -47,7 +49,7 @@ export interface RepairOptions {
 }
 
 /** The conversion's rules, with the units and Tasks found from any record: a repair also serves a Story with no Define and a plan past approved. */
-const REPAIR_RULES = [renameRule, stampRule, amendmentRule, feedbackRule, repairUnitsRule, repairTasksRule, storyHistoryRule];
+const REPAIR_RULES = [renameRule, stampRule, amendmentRule, feedbackRule, repairUnitsRule, repairTasksRule, storyHistoryRule, repairSettleRule];
 
 /** The plan of a repair: the conversion's rules at any schema version, with no requirement that the tree be clean. */
 export function planRepair(repo: string): Promise<ConversionPlan> {
@@ -55,18 +57,18 @@ export function planRepair(repo: string): Promise<ConversionPlan> {
 }
 
 /** The store, history and Task sets a repair writes through, each commit reported as it happens. They share the daemon's per-artifact queue. */
-function repairDeps(repo: string, record: RepairRecorder, options: RepairOptions): ConversionDeps {
+function repairDeps(repo: string, record: RepairRecorder, options: RepairOptions): ConversionDeps & { readonly service: LifecycleService } {
 	const observer: RepoWriteObserver = {
 		appended: (file, artifactId) => record(artifactId, file === 'feedback' ? 'feedback-line' : 'log-entry'),
 		headReplaced: path => record(basename(path, '.json'), 'head'),
 		...(options.writeHead !== undefined ? { writeHead: options.writeHead } : {}),
 	};
 	const { store, history, service } = createRepoLifecycle(repo, observer);
-	return { store, history, now: () => new Date(), actor: MIGRATION_ACTOR, taskSets: new TaskSets({ repoPath: repo, store, service, history, bindingWritten: id => record(id, 'binding') }) };
+	return { service, store, history, now: () => new Date(), actor: MIGRATION_ACTOR, taskSets: new TaskSets({ repoPath: repo, store, service, history, bindingWritten: id => record(id, 'binding') }) };
 }
 
 /** The steps in the order they have to run: renames first because History refuses an uppercase Story id, amendments before migration because it skips a record with no meta. */
-function stepsOf(repo: string, deps: ConversionDeps, record: RepairRecorder, options: RepairOptions, failed: UnitOutcome[]): readonly { readonly step: RepairStep; readonly run: () => unknown }[] {
+function stepsOf(repo: string, deps: ConversionDeps & { readonly service: LifecycleService }, record: RepairRecorder, options: RepairOptions, failed: UnitOutcome[], held: UnitOutcome[]): readonly { readonly step: RepairStep; readonly run: () => unknown }[] {
 	return [
 		{ step: 'rename',        run: () => applyRenames(repo, record) },
 		{ step: 'stamp',         run: () => applyStamps(repo, record) },
@@ -76,6 +78,7 @@ function stepsOf(repo: string, deps: ConversionDeps, record: RepairRecorder, opt
 		{ step: 'units',         run: () => applyUnits(repo, deps, record, knownEpicsOf) },
 		{ step: 'tasks',         run: async () => { const done: TasksResult = await applyTasks(repo, deps, { repair: true, beforeRound: options.beforeRound }); failed.push(...(done.failed ?? [])); } },
 		{ step: 'story-history', run: () => applyStoryHistory(repo, deps) },
+		{ step: 'settle',        run: () => applySettle(repo, deps, deps.service, failed, held) },
 	];
 }
 
@@ -90,22 +93,23 @@ export async function runRepair(repo: string, mode: RepairMode, options: RepairO
 	if (plan.problems.length > 0) {
 		throw new ConversionRefused(`the plan lists ${plan.problems.length} files that cannot be repaired: ${plan.problems.slice(0, 3).map(p => `${p.file} (${p.reason})`).join('; ')}`);
 	}
-	// opening the store creates files, so a repository with nothing to do or report is left exactly as it is
-	if (plan.changes.length === 0 && !hasUnusableTaskSet(readRawHeads(repo).heads)) return { mode, plan, result: { written: [], remaining: [], held: [], failed: [] } };
+	// opening the store creates files, so a repository with no records is left exactly as it is
+	if (readRawHeads(repo).heads.length === 0) return { mode, plan, result: { written: [], remaining: [], held: [], failed: [] } };
 
 	const written: RepairWrite[] = [];
 	let current: RepairStep = 'rename';
 	const record: RepairRecorder = (artifactId, action) => { written.push({ step: current, artifactId, action }); };
 	const deps = repairDeps(repo, record, options);
 	const failed: UnitOutcome[] = [];
+	const held: UnitOutcome[] = [];
 	let stoppedAt: { readonly step: RepairStep; readonly reason: string } | undefined;
-	for (const { step, run } of stepsOf(repo, deps, record, options, failed)) {
+	for (const { step, run } of stepsOf(repo, deps, record, options, failed, held)) {
 		current = step;
 		try { await run(); }
 		catch (err) { stoppedAt = { step, reason: err instanceof Error ? err.message : String(err) }; break; }
 	}
 	return {
 		mode, plan,
-		result: { written, remaining: await remainingAfter(repo, plan), ...(stoppedAt !== undefined ? { stoppedAt } : {}), held: [], failed },
+		result: { written, remaining: await remainingAfter(repo, plan), ...(stoppedAt !== undefined ? { stoppedAt } : {}), held, failed },
 	};
 }

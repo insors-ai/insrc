@@ -85,7 +85,7 @@ export const epicId = (hash: string): string => ArtifactIds.make({ kind: 'EPIC',
 export const storyId = (hash: string, story: string): string => ArtifactIds.make({ kind: 'STORY', epicHash: hash, story });
 
 /** The plan rule over the Epics `epics` finds: which EPIC and STORY heads are missing and which bindings would move. */
-const unitsRuleOver = (epics: (heads: readonly RawHead[]) => Epic[]): PlanRule => (ctx): RulePlan => {
+const unitsRuleOver = (epics: (heads: readonly RawHead[]) => Epic[], listParents: boolean): PlanRule => (ctx): RulePlan => {
 	const have = new Set(ctx.heads.map(h => h.artifactId));
 	const changes: ConversionChange[] = [];
 	for (const epic of epics(ctx.heads)) {
@@ -97,13 +97,14 @@ const unitsRuleOver = (epics: (heads: readonly RawHead[]) => Epic[]): PlanRule =
 			if (!have.has(id)) changes.push({ rule: 'create-story', artifactId: id, detail: `from ${have.has(`DEF-${epic.hash}`) ? `DEF-${epic.hash}` : 'its records'}` });
 			const lld = lldOf(ctx.heads, epic.hash, story.id);
 			if (holdsBinding(lld)) changes.push({ rule: 'move-binding', artifactId: lld!.artifactId, detail: `to ${id}` });
+			if (listParents && lld !== undefined && (envelopeOf(lld)['parent'] as { entityId?: unknown } | undefined)?.entityId !== id) changes.push({ rule: 'set-parent', artifactId: lld.artifactId, detail: `parent ${id}` });
 		}
 	}
 	return { changes };
 };
 
-export const unitsRule: PlanRule = unitsRuleOver(epicsOf);
-export const repairUnitsRule: PlanRule = unitsRuleOver(knownEpicsOf);
+export const unitsRule: PlanRule = unitsRuleOver(epicsOf, false);
+export const repairUnitsRule: PlanRule = unitsRuleOver(knownEpicsOf, true);
 
 export interface UnitsResult {
 	/** The heads created, in creation order. */

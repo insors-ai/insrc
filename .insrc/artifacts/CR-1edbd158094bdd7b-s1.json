@@ -1,0 +1,180 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "store-f0e007f9-19c4-4942-bb90-ed2b990ad825",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T18:47:25.677Z",
+    "epicCreatedAt": "2026-11-09T18:44:00.932Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 2,
+    "epicHash": "1edbd158094bdd7b",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "standalone": true,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "04e809906be6088ae1788ae132c076948822a6a71fab61f73162ecee1766e775",
+        "at": "2026-11-09T18:47:25.682Z",
+        "by": {
+          "id": "insrc:code-review",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "kind": "code-review",
+    "format": "task-based",
+    "storyId": "s1",
+    "status": "passed",
+    "reviews": [
+      {
+        "reviewId": "steering-long-work-s1",
+        "attempt": 1,
+        "storyId": "s1",
+        "reviewer": "daemon",
+        "status": "passed",
+        "finalScopeIdentity": "abd66c62a5d989a90f562eb706ff62e9262669f206ea50fcec3011aec70d0133",
+        "attributionIdentity": "531d284d3c5e31bbad649e16dfc3147a5454a6d38a83fa115febb66c2e397970",
+        "taskScopeIdentities": [
+          {
+            "taskId": "s1",
+            "identity": "bc307d230568b3d8a2837ac9e58117473063cc77ef8075b064321127afaebf7f"
+          }
+        ],
+        "scope": {
+          "reviewRevision": "c0da526b8027bff139369dc42d24a14e22ba28a3",
+          "finalScope": {
+            "revision": "c0da526b8027bff139369dc42d24a14e22ba28a3",
+            "identity": "abd66c62a5d989a90f562eb706ff62e9262669f206ea50fcec3011aec70d0133",
+            "entries": [
+              {
+                "originChangeIndex": 0,
+                "path": "src/prompts/steering-block.md",
+                "blobOid": "85e12e3ea6de1649d2eaac045ad6add69f3c132c",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      208,
+                      218
+                    ]
+                  }
+                ]
+              }
+            ],
+            "dispositions": [
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    208,
+                    218
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      208,
+                      218
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              }
+            ],
+            "selectedTaskIds": [
+              "s1"
+            ],
+            "testCount": 0,
+            "attributionIdentity": "531d284d3c5e31bbad649e16dfc3147a5454a6d38a83fa115febb66c2e397970",
+            "attributionState": "accepted",
+            "tasks": [
+              {
+                "taskId": "s1",
+                "changeIndexes": [
+                  0
+                ],
+                "testIndexes": [],
+                "decision": {
+                  "action": "initial"
+                },
+                "identity": "bc307d230568b3d8a2837ac9e58117473063cc77ef8075b064321127afaebf7f"
+              }
+            ]
+          },
+          "storyId": "s1",
+          "documents": {},
+          "reviewSet": [
+            {
+              "commit": "114ade9f27a276591aa0f77da1b2eb1ca82b30ce",
+              "parent": "86ae4ff8ad6ad1da5af01b199d8295387c5f9abf",
+              "files": [
+                {
+                  "path": "src/prompts/steering-block.md",
+                  "segments": [
+                    {
+                      "after": [
+                        208,
+                        218
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "s1",
+            "status": "passed",
+            "summary": "Reviewed all selected lines against the acceptance check. The short section requires small batches, chat updates, and no silent chaining of reviews or tests. It introduces no thresholds or approval stops and sits outside the guide markers. No defects found.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Inspected relevant test bodies and assertions for steering injection, guide stripping, and guide extraction. They cover general skeleton preservation and marker handling, but do not assert this new wording or agent progress behavior. No new test is necessary for this isolated prose change; every acceptance requirement is directly verifiable in the committed text.",
+              "evidenceReferences": [
+                "c0da526b8027bff139369dc42d24a14e22ba28a3:src/prompts/steering-block.md",
+                "c0da526b8027bff139369dc42d24a14e22ba28a3:src/daemon/__tests__/guide-strip.test.ts",
+                "c0da526b8027bff139369dc42d24a14e22ba28a3:src/daemon/__tests__/steering-inject.test.ts",
+                "c0da526b8027bff139369dc42d24a14e22ba28a3:src/daemon/__tests__/guide-sections.test.ts"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: Tests, integration checks, typecheck, and build were not run; this assessment uses committed-source and assertion inspection."
+            ],
+            "inspectedReferences": [
+              "114ade9f27a276591aa0f77da1b2eb1ca82b30ce:src/prompts/steering-block.md",
+              "c0da526b8027bff139369dc42d24a14e22ba28a3:src/prompts/steering-block.md",
+              "c0da526b8027bff139369dc42d24a14e22ba28a3:src/daemon/__tests__/guide-strip.test.ts",
+              "c0da526b8027bff139369dc42d24a14e22ba28a3:src/daemon/__tests__/steering-inject.test.ts",
+              "c0da526b8027bff139369dc42d24a14e22ba28a3:src/daemon/__tests__/guide-sections.test.ts"
+            ],
+            "executedTests": []
+          }
+        ],
+        "summary": "1 selected task assessment(s): passed.",
+        "completedAt": "2026-11-09T18:47:25.514Z",
+        "buildFingerprint": "7c2c4859bd53935b78634f065f9349bb4f994aafdb1bd0ac716eff75b76cbb0c"
+      }
+    ]
+  },
+  "citations": []
+}

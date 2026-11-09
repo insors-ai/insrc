@@ -2222,7 +2222,7 @@ test('S001 (bugfix): renderShell has the SINGLE merged mode control + wires the 
   assert.doesNotMatch(html, /id="insrc-permmode"/, 'the old separate perms dropdown is removed');
   assert.doesNotMatch(html, /id="insrc-editmode"/, 'the old separate edits dropdown is removed');
   const modeBlock = html.slice(html.indexOf('insrc-mode'));
-  assert.match(modeBlock.slice(0, 260), /<option value="manual">Manual<\/option><option value="edit-auto">Edit Automatically<\/option><option value="auto">Auto<\/option>/);
+  assert.match(modeBlock.slice(0, 260), /<option value="manual" disabled>Manual<\/option><option value="edit-auto" disabled>Edit Automatically<\/option><option value="auto" selected>Auto<\/option>/);
   // The bootstrap wires the decision sink + posts set-permission-mode + handles the live card.
   assert.match(html, /onApprovalDecision/, 'wires the approval decision sink');
   assert.match(html, /type:'permission-decision'/, 'card posts permission-decision');
@@ -2288,7 +2288,7 @@ test('ISSUE-6ae99f6e: the header holds ONLY the chat triggers (active + session)
   assert.doesNotMatch(chrome, /id="insrc-sesstitle"|class="seglabel"/, 'no duplicate session label/title text in the header');
   // Footer: the mode select on the left, then the run-config controls pushed to the bottom-right.
   assert.match(statusbar, /id="insrc-modeseg">edits <select id="insrc-mode"/, 'the edits (mode) select is in the footer');
-  assert.match(statusbar, /<option value="manual">Manual<\/option><option value="edit-auto">Edit Automatically<\/option><option value="auto">Auto<\/option>/, 'the mode options are preserved in the footer');
+  assert.match(statusbar, /<option value="manual" disabled>Manual<\/option><option value="edit-auto" disabled>Edit Automatically<\/option><option value="auto" selected>Auto<\/option>/, 'the mode options are preserved in the footer');
   assert.match(statusbar, /<span class="runctl">/, 'the runctl group is in the footer');
   assert.match(statusbar, /<button id="insrc-runbtn"/, 'the provider·model button is in the footer');
   assert.match(statusbar, /<button id="insrc-effortbtn"/, 'the effort gauge is in the footer');
@@ -2422,7 +2422,7 @@ test('S001 (fidelity) ac4 (regression): the S002 send/stop control + mode/provid
   assert.match(html, /function updatePermSeg\(\)\{if\(pmseg\)pmseg\.className='seg'\+\(pmode==='auto'\?' perm-auto':''/, 'updatePermSeg still applies the auto-pill class');
 });
 
-test("S001 (bugfix): a turn's mode defaults to manual; set-permission-mode switches the NEXT turn (edit-auto / auto)", async () => {
+test('edits mode: a new chat runs in Auto', async () => {
   const fc = fakeChannel();
   const seen: TurnRequest[] = [];
   const adapter = scriptedAdapter([{ kind: 'done', turnId: 't1', ok: true }], { onRun: (r) => seen.push(r) });
@@ -2435,33 +2435,52 @@ test("S001 (bugfix): a turn's mode defaults to manual; set-permission-mode switc
   host.open();
   fc.send(env('submit-turn', { text: 'one' }));
   await waitFor(() => seen.length >= 1);
-  assert.equal(seen[0]!.permissionMode, 'manual', 'defaults to manual (surface prompts)');
-  fc.send(env('set-permission-mode', { mode: 'edit-auto' }));
-  fc.send(env('submit-turn', { text: 'two' }));
-  await waitFor(() => seen.length >= 2);
-  assert.equal(seen[1]!.permissionMode, 'edit-auto', 'the next turn relays the chosen mode');
-  fc.send(env('set-permission-mode', { mode: 'auto' }));
-  fc.send(env('submit-turn', { text: 'three' }));
-  await waitFor(() => seen.length >= 3);
-  assert.equal(seen[2]!.permissionMode, 'auto', 'and again for auto');
+  assert.equal(seen[0]!.permissionMode, 'auto');
 });
 
-test('S001 (bugfix): an invalid set-permission-mode is dropped (mode unchanged)', async () => {
+test('edits mode: a request for a disabled or invalid mode is dropped and the next turn runs in Auto', async () => {
   const fc = fakeChannel();
   const seen: TurnRequest[] = [];
+  const store = createInMemoryChatSessionStore();
+  const saved = store.create('claude'); saved.mode = 'auto'; store.save(saved);
   const adapter = scriptedAdapter([{ kind: 'done', turnId: 't', ok: true }], { onRun: (r) => seen.push(r) });
   const host = createChatPanelHost({
     createPanel: () => fc.channel,
     providers: registry({ claude: adapter }, ['claude']),
-    store: createInMemoryChatSessionStore(),
+    store,
     cwd: () => '/repo',
   });
   host.open();
-  fc.send(env('set-permission-mode', { mode: 'bogus' }));
+  fc.send(env('open-chat', { chatId: saved.id }));
+  for (const mode of ['manual', 'edit-auto', 'bogus']) fc.send(env('set-permission-mode', { mode }));
+  assert.equal(store.get(saved.id)!.mode, 'auto', 'the refused request wrote nothing');
   fc.send(env('submit-turn', { text: 'x' }));
   await waitFor(() => seen.length >= 1);
-  assert.equal(seen[0]!.permissionMode, 'manual', 'invalid mode ignored, stays manual');
+  assert.equal(seen[0]!.permissionMode, 'auto');
 });
+
+for (const stored of ['manual', 'edit-auto'] as const) {
+  test(`edits mode: a chat saved as ${stored} opens and runs in Auto, and its saved choice is kept`, async () => {
+    const fc = fakeChannel();
+    const store = createInMemoryChatSessionStore();
+    const saved = store.create('claude'); saved.mode = stored; store.save(saved);
+    const seen: TurnRequest[] = [];
+    const host = createChatPanelHost({
+      createPanel: () => fc.channel,
+      providers: registry({ claude: scriptedAdapter([{ kind: 'done', turnId: 't', ok: true }], { onRun: (r) => seen.push(r) }) }, ['claude']),
+      store,
+      cwd: () => '/repo',
+    });
+    host.open();
+    fc.send(env('open-chat', { chatId: saved.id }));
+    const restored = fc.posted.filter((m) => m.payload.type === 'session-restored').map((m) => m.payload);
+    assert.equal(restored[restored.length - 1]!['mode'], 'auto', 'the control shows Auto');
+    fc.send(env('submit-turn', { text: 'x' }));
+    await waitFor(() => seen.length >= 1);
+    assert.equal(seen[0]!.permissionMode, 'auto');
+    assert.equal(store.get(saved.id)!.mode, stored, 'the saved choice returns when the modes are enabled again');
+  });
+}
 
 test('S004 t7: permission-decision is relayed to the live turn adapter.decide with (turnId, requestId, decision)', async () => {
   const fc = fakeChannel();
@@ -3021,7 +3040,6 @@ test('S001 (bugfix): set-permission-mode persists onto the active (saved) sessio
   fc.send(env('submit-turn', { text: 'go' })); // first turn persists the session
   await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
   const id = store.list()[0]!.id;
-  assert.equal(store.get(id)!.mode ?? 'manual', 'manual', 'a fresh session defaults to manual');
   fc.send(env('set-permission-mode', { mode: 'auto' }));
   assert.equal(store.get(id)!.mode, 'auto', 'the chosen mode is written onto the saved session (survives reload)');
 });

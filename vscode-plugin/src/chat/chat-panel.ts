@@ -316,12 +316,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   });
   // S001 (bugfix): the SINGLE chat mode (Manual / Edit Automatically / Auto). It is now a PERSISTED
   // per-session preference: it tracks the ACTIVE session's stored mode (synced on open/switch/
-  // restore) and is applied to the NEXT turn's buildArgs. Default 'manual' so tool use surfaces as
-  // in-chat approval cards (never silently blocked).
-  let permissionMode: PermissionMode = 'manual';
-  // Normalize a session's stored mode (optional/back-compat/corrupt -> 'manual').
-  const modeOf = (s: ChatSession | undefined): PermissionMode =>
-    s !== undefined && (s.mode === 'edit-auto' || s.mode === 'auto' || s.mode === 'manual') ? s.mode : 'manual';
+  // restore) and is applied to the NEXT turn's buildArgs.
+  // For now Auto is the only available mode: the approval cards Manual and Edit Automatically depend on
+  // break the chat flow. A session's stored mode is left as it is, so it returns when this is lifted.
+  let permissionMode: PermissionMode = 'auto';
+  const modeOf = (_s: ChatSession | undefined): PermissionMode => 'auto';
   // Run-config controls (bottom-right popup + gauge): the daemon's model definitions,
   // loaded once at host start; when they land, a wired panel re-renders with them.
   let runCatalog: readonly RunProviderView[] = deps.providers.available.map((id) => ({ id, label: id, models: [] }));
@@ -2544,7 +2543,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `function decisionTarget(ev){return viewGen>0?{sessionId:cur,viewGeneration:viewGen,turnId:ev.turnId,requestId:ev.requestId}:undefined;}` +
       // S001 (bugfix): the SINGLE chat-mode control (Manual / Edit Automatically / Auto). Posts
       // set-permission-mode; its wrapping seg flags 'perm-auto' (amber pill) when fully autonomous.
-      `var pmode='manual';` +
+      `var pmode='auto';` +
       `const pm=document.getElementById('insrc-mode');` +
       `const pmseg=document.getElementById('insrc-modeseg');` +
       // ISSUE-6ae99f6e: the read-only status-bar 'session'/'edits' mirror segments + the '✓ idle' marker
@@ -2695,7 +2694,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           `<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M13.2 7.3 8 12.5a3.2 3.2 0 0 1-4.5-4.5l5.6-5.6a2.1 2.1 0 0 1 3 3L6.6 10.9a1.1 1.1 0 0 1-1.5-1.5l4.8-4.8"/></svg>` +
           `</button>`
         : '') +
-      `<span class="seg" id="insrc-modeseg">edits <select id="insrc-mode" class="segsel ${provCls}" aria-label="mode"><option value="manual">Manual</option><option value="edit-auto">Edit Automatically</option><option value="auto">Auto</option></select></span>` +
+      `<span class="seg" id="insrc-modeseg">edits <select id="insrc-mode" class="segsel ${provCls}" aria-label="mode"><option value="manual" disabled>Manual</option><option value="edit-auto" disabled>Edit Automatically</option><option value="auto" selected>Auto</option></select></span>` +
       // Run-config controls, bottom-right corner of the status bar. The popups open upward.
       `<span class="runctl">` +
       `<button id="insrc-runbtn" type="button" class="runbtn ${provCls}" aria-haspopup="menu" aria-expanded="false" title="provider · model" data-provider="${attr(runProvider ?? '')}" data-model="${attr(runModelId ?? '')}" data-effort="${attr(runEffort ?? '')}"><span class="pico">${providerIcon(runProvider)}</span> ${attr(runProvider ?? '…')} · ${attr(runModelLabel)} <span class="chev">▾</span></button>` +
@@ -3371,7 +3370,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // turn's buildArgs and write it onto the active session so it survives reload + follows the
         // session. Persist immediately for an already-saved session (a draft persists on its first
         // turn, so its mode rides along without cluttering history with empty chats).
-        if (msg.mode !== 'manual' && msg.mode !== 'edit-auto' && msg.mode !== 'auto') return; // invalid -> drop
+        if (msg.mode !== 'auto') return; // invalid, or a mode that is disabled for now -> drop
         permissionMode = msg.mode;
         if (session !== undefined) {
           session.mode = msg.mode;

@@ -234,3 +234,21 @@ test('a combine turn that stays invalid is asked again, then falls back to the p
 	assert.ok(done.handling.notCovered.some(n => n.part === 'combine'), 'the combine is named as not covered');
 	for (let i = 0; i < progress.parts.length; i++) assert.ok(done.layers.structure.includes(`- finding of part ${i + 1}`), `part ${i + 1} is kept`);
 });
+
+test('when every part of an answer over complete lookups is invalid, the terminal failure reports the answer as incomplete', () => {
+	const executed = plan([search('e1', 40_000), search('e2', 40_000)]);
+	let current: AnswerProgress = startAnswerProgress({ intent, executed, target: 'code' }, 'XL');
+	assert.equal(current.mode, 'partitioned');
+	let thrown: unknown;
+	for (let i = 0; i < current.parts.length + 1 && thrown === undefined; i++) {
+		try {
+			const out = recordInvalid(current, 'not a bundle', 1, { executed });
+			if (out.kind !== 'next') break;
+			current = out.progress;
+		} catch (e) { thrown = e; }
+	}
+	assert.ok(thrown instanceof ShaperAnswerStepFailedError, String(thrown));
+	const report = thrown.found.report;
+	assert.equal(report.completeness.complete, false, 'complete lookups, an uncovered answer: not complete');
+	assert.ok(report.completeness.incomplete.some(f => f.sourceId.startsWith('answer step / ')), 'the uncovered parts are named');
+});

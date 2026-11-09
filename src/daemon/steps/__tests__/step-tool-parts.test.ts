@@ -153,6 +153,12 @@ test('prepareAnswerTurn creates progress, state without progress reads as single
 	for (let guard = 0; guard < 10 && single.next === 'emit_bundle'; guard++) { held = (single as StepOutputEmitBundle).state; single = await step({ bundle: bad, state: held }); }
 	assert.equal(single.next, 'error');
 	assert.equal((single as StepOutputError).error.retryable, false);
+	// The final failure keeps what the lookups found and how the answer was handled.
+	const finalData = (single as StepOutputError).error.data as { results: unknown[]; report: { answerFailure?: string; handling?: { method: string }; completeness: unknown } } | undefined;
+	assert.ok(finalData !== undefined, 'the failure carries data');
+	assert.equal(finalData.results.length, executed(1, 100).results.length, 'every lookup result is kept');
+	assert.match(finalData.report.answerFailure ?? '', /failed schema validation/);
+	assert.equal(finalData.report.handling?.method, 'single-pass');
 	await assert.rejects(loadState(held), StateTokenNotFound, 'the state is released when the single reply is given up');
 	// A valid reply after a retry completes, and the retry count does not leak into the answer.
 	const { token: again } = await awaitingBundle(executed(1, 100));

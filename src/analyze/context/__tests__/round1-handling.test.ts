@@ -285,3 +285,19 @@ test('a long entry whose source path holds spaces keeps its whole citation on ev
 	assert.ok(chunks.length >= 3);
 	for (const chunk of chunks) assert.ok(chunk.startsWith('src/long name.ts:7: '), `a piece starts with the whole citation: ${chunk.slice(0, 40)}`);
 });
+
+test('a long file-read line keeps its line number on every piece, and a very long path is never cut inside the citation', () => {
+	const numbered = `    42\t${'z'.repeat(7_000)}`;
+	const pieces = chunkAtLines(numbered);
+	assert.ok(pieces.length >= 3);
+	for (const piece of pieces) assert.match(piece, /^ {4}42\t/, `a piece keeps the number: ${JSON.stringify(piece.slice(0, 20))}`);
+
+	const path = `src/${'d/'.repeat(900)}f.ts`;
+	const entry = `${path}:7: ${'y'.repeat(5_000)}`;
+	const chunks = chunkAtLines(entry);
+	assert.ok(chunks.length >= 3);
+	for (const chunk of chunks) {
+		assert.ok(chunk.startsWith(`${path}:7:`), 'a piece opens with the whole citation');
+		assert.ok(Buffer.byteLength(chunk, 'utf8') <= 3_000, `a piece fits its size: ${Buffer.byteLength(chunk, 'utf8')}`);
+	}
+});

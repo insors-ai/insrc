@@ -35,20 +35,35 @@ const RESULT_CHUNK = 3_000;
 
 const bytesOf = (text: string): number => Buffer.byteLength(text, 'utf8');
 
-/** The pieces of one over-long line, each at most `size` bytes at a code-point boundary, each carrying the line's `path:line:` prefix. */
+/**
+ * The citation a line opens with: `path:line:` (a search hit, the path may hold spaces) or the padded line number and
+ * tab of a file read. The rest of the line is the content.
+ */
+function citationOf(line: string): { readonly prefix: string; readonly content: string } {
+	const hit = /^(.+?:\d+:)(\s.*)$/s.exec(line);
+	if (hit !== null) return { prefix: hit[1] as string, content: hit[2] as string };
+	const numbered = /^(\s*\d+\t)(.*)$/s.exec(line);
+	if (numbered !== null) return { prefix: numbered[1] as string, content: numbered[2] as string };
+	return { prefix: '', content: line };
+}
+
+/**
+ * The pieces of one over-long line, each at most `size` bytes at a code-point boundary. The citation is cut off first
+ * and the content alone is split, so every piece opens with the whole citation (the later ones marked as continued).
+ */
 function splitLongLine(line: string, size: number): readonly string[] {
-	// A source path may hold spaces: the prefix is everything up to the first `:<line>:`.
-	const prefix = /^(.+?:\d+:)\s/.exec(line)?.[1];
-	const lead = prefix === undefined ? '' : `${prefix} (continued) `;
-	const room = Math.max(1, size - bytesOf(lead));
+	const { prefix, content } = citationOf(line);
+	const lead = prefix === '' ? '' : `${prefix} (continued) `;
+	// A citation that leaves no room is rare; the content then gets a floor so the split still ends.
+	const room = Math.max(512, size - bytesOf(lead));
 	const pieces: string[] = [];
 	let current = '';
-	for (const ch of line) {
+	for (const ch of content) {
 		if (bytesOf(current) + bytesOf(ch) > room) { pieces.push(current); current = ''; }
 		current += ch;
 	}
 	if (current.length > 0) pieces.push(current);
-	return pieces.map((piece, i) => (i === 0 ? piece : `${lead}${piece}`));
+	return pieces.map((piece, i) => (i === 0 ? `${prefix}${piece}` : `${lead}${piece}`));
 }
 
 /** The text in chunks of at most `size` bytes that end at a line break; a longer line is split with its citation kept on every piece. */

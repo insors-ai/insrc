@@ -30,7 +30,16 @@
           "relation": "depends-on"
         }
       ],
-      "attachments": []
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#135",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 2,
+        "posted": []
+      }
     },
     "lifecycle": {
       "status": "draft",

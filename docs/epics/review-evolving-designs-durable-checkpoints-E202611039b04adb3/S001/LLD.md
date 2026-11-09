@@ -7,6 +7,7 @@
 **Epic:** `review-evolving-designs-durable-checkpoints`
 **HLD base run:** `wf-1793694252789-heyhey`
 **HLD effective hash:** `20a9ee7f3bdf...`
+**Tracker:** [insors-ai/insrc#104](https://github.com/insors-ai/insrc/issues/104)
 
 S1 restores a useful design-review entry point for current DEF, HLD and LLD documents. A dedicated daemon owner routes to the independent reviewer, validates a coherent chunk plan, saves each completed result and exposes progress plus a consolidated report. It does not yet add recovery, automatic retries, impact-selected attempts or approval cleanup.
 

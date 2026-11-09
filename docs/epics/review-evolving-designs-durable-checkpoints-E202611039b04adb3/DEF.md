@@ -6,6 +6,7 @@
 
 **Flavor:** new-capability
 **Seeded from:** `SPEC-16f49beb846e02b4`
+**Tracker:** [insors-ai/insrc#108](https://github.com/insors-ai/insrc/issues/108)
 
 Provide independent reviews of current design artifacts that remain understandable and recoverable even for large scopes. Users can see completed feedback while work continues, govern restarts and failures, and receive impact-aware feedback on corrections without losing review history.
 

@@ -105,7 +105,7 @@ export function createCompletionEvidence(repoPath: string, options: CompletionEv
 
 		async declaredStories(epicHash: string): Promise<readonly string[]> {
 			const stories = asRecord(readJson(artifactJsonPath(repoPath, defineArtifactId(epicHash)))?.['body'])?.['stories'];
-			return (Array.isArray(stories) ? stories : []).map(s => asRecord(s)?.['id']).filter((id): id is string => typeof id === 'string');
+			return (Array.isArray(stories) ? stories : []).map(s => asRecord(s)?.['id']).filter((id): id is string => typeof id === 'string').map(id => `s${Number(/\d+/.exec(id)?.[0] ?? '0')}`);
 		},
 
 		async storyTasks(epicHash: string, storyId: string): Promise<StoryTasks> {

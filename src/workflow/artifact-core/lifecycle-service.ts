@@ -14,7 +14,7 @@ import type { CleanupResult } from '../code-review/task-review/cleanup.js';
 import { randomUUID } from 'node:crypto';
 import { ArtifactIds } from '../artifact-ids.js';
 import { getLogger } from '../../shared/logger.js';
-import { checkIntegrity, isLifecycleOperation, nextLifecycle, rollUp, unitMembers } from './lifecycle.js';
+import { checkIntegrity, isLifecycleOperation, nextLifecycle, rollUp, storyTaskHolds, unitMembers } from './lifecycle.js';
 import type { ChildStatusReader, CompletionEvidence, Integrity, TransitionDetail } from './lifecycle.js';
 import type { HeadPayload } from './codecs.js';
 import type { ArtifactStore, WriteOptions } from './store.js';
@@ -152,7 +152,7 @@ export class LifecycleService {
 				outcome = await this.completionOutcome(id, evidence);
 			} else if (op === 'reopen') {
 				for (const member of members) await this.reopenMember(member, id, by);
-			} else if (op === 'approve' && detail.override !== undefined) {
+			} else if ((op === 'approve' || op === 'record-override') && detail.override !== undefined) {
 				outcome = { result: 'override', summary: detail.override.reason };
 			} else if ((op === 'reject' || op === 'ack-stale' || op === 'withdraw') && detail.reason !== undefined) {
 				// the reason is the whole point of the entry: the head keeps no copy of it
@@ -255,6 +255,22 @@ export class LifecycleService {
 			{ ...(opts.outcome !== undefined ? { outcome: opts.outcome } : {}), ...(opts.references !== undefined ? { references: opts.references } : {}) },
 		);
 		return true;
+	}
+
+	/** In a sentence, why a unit is not completed: a signoff hold, the BUILD, the review or its Tasks. */
+	async holdReason(id: string, ctx: EvidenceContext = {}): Promise<string> {
+		const key = ArtifactIds.parse(id);
+		if (key === undefined) return `${id} is not an artifact id`;
+		if ((await ctx.holds?.(id)) === true) return `${id} is waiting for its signoff`;
+		if (key.kind !== 'STORY' || key.story === undefined) return `${id} is waiting for its Stories`;
+		const evidence = this.evidenceFor(ctx);
+		if (!(await evidence.storyBuildApproved(key.epicHash, key.story))) return `${id} is waiting for its BUILD approval`;
+		const review = await evidence.storyCodeReview(key.epicHash, key.story);
+		if (review.kind !== 'clean' && review.kind !== 'overridden') return `${id} is waiting for its code review, which is ${review.kind}`;
+		const holds = await storyTaskHolds(id, key.epicHash, key.story, this.reader, evidence);
+		if (holds.notCreated) return `${id} is held: its Task set is not finished for the current plan`;
+		if (holds.tasks.length > 0) return `${id} is held by ${holds.tasks.join(', ')}: the latest build round did not pass`;
+		return `${id} is not completed`;
 	}
 
 	private evidenceFor(ctx: EvidenceContext): CompletionEvidence {

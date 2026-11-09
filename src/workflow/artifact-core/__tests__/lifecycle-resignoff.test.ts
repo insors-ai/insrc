@@ -33,7 +33,7 @@ describe('open-signoff from changes-requested', () => {
 		// the other steps from changes-requested are unchanged
 		const statuses = (from: Status) => LIFECYCLE_OPERATIONS.filter(op => LIFECYCLE_TABLE[op].from.includes(from));
 		assert.deepEqual(statuses('changes-requested'), ['open-signoff', 'withdraw', 'supersede', 'mark-stale', 'ack-stale']);
-		assert.deepEqual(statuses('approved'), ['reject', 'open-signoff', 'complete', 'withdraw', 'supersede', 'mark-stale', 'ack-stale']);
-		assert.deepEqual(statuses('in-signoff'), ['reject', 'signoff-changes', 'signed-off', 'withdraw', 'supersede', 'mark-stale', 'ack-stale']);
+		assert.deepEqual(statuses('approved'), ['reject', 'open-signoff', 'complete', 'withdraw', 'supersede', 'mark-stale', 'ack-stale', 'record-override']);
+		assert.deepEqual(statuses('in-signoff'), ['reject', 'signoff-changes', 'signed-off', 'withdraw', 'supersede', 'mark-stale', 'ack-stale', 'record-override']);
 	});
 });

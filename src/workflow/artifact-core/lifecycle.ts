@@ -23,7 +23,7 @@ import type {
 
 export type LifecycleOperation =
 	| 'request-review' | 'review' | 'approve' | 'reject' | 'open-signoff' | 'signoff-changes' | 'signed-off'
-	| 'complete' | 'reopen' | 'withdraw' | 'supersede' | 'mark-stale' | 'ack-stale';
+	| 'complete' | 'reopen' | 'withdraw' | 'supersede' | 'mark-stale' | 'ack-stale' | 'record-override';
 
 export interface Step {
 	readonly from: readonly Status[];
@@ -49,6 +49,7 @@ export const LIFECYCLE_TABLE: Readonly<Record<LifecycleOperation, Step>> = Objec
 	'supersede':       { from: NON_TERMINAL, to: 'superseded' },
 	'mark-stale':      { from: NON_TERMINAL, to: 'same' },
 	'ack-stale':       { from: NON_TERMINAL, to: 'same' },
+	'record-override': { from: ['approved', 'in-signoff', 'signed-off'], to: 'same' },
 });
 
 export const LIFECYCLE_OPERATIONS = Object.keys(LIFECYCLE_TABLE) as readonly LifecycleOperation[];
@@ -237,6 +238,12 @@ export function nextLifecycle(a: Pick<Artifact<unknown>, 'id' | 'lifecycle'>, op
 			}
 			const approval: Approval = { revision, by, at, ...(override !== undefined ? { override: { reason: override.reason } } : {}) };
 			return { ...lc, status, approval };
+		}
+		case 'record-override': {
+			const reason = detail.override?.reason;
+			if (reason === undefined || reason.trim().length === 0) throw new IllegalTransitionError(`${op} needs a reason`);
+			if (ArtifactIds.parse(a.id)?.kind !== 'BUILD' || lc.approval === undefined) throw new IllegalTransitionError(`${op} needs an approved BUILD`);
+			return { ...lc, status, approval: { ...lc.approval, override: { reason } } };
 		}
 		case 'reject':
 			need(detail.reason, op, 'a reason');

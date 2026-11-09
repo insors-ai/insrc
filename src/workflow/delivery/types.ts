@@ -23,9 +23,10 @@ export type { ReviewVerdict };
 // sc1 — ArtifactRecordSet
 // ---------------------------------------------------------------------------
 
-export type DeliveryArtifactKind = 'SPEC' | 'DEF' | 'HLD' | 'LLD' | 'PLAN' | 'BUILD' | 'CR' | 'ISSUE' | 'EXT' | 'AMD';
+export type DeliveryArtifactKind = 'SPEC' | 'DEF' | 'HLD' | 'LLD' | 'PLAN' | 'BUILD' | 'CR' | 'ISSUE' | 'EXT' | 'AMD' | 'EPIC' | 'STORY' | 'TASK' | 'TASKS' | 'DIAG';
 
-export type ApprovalState = 'approved' | 'rejected' | 'pending';
+/** `unmigrated`: the head has no lifecycle, so nothing about its approval can be read until a repair has given it one. */
+export type ApprovalState = 'approved' | 'rejected' | 'pending' | 'unmigrated';
 
 export interface ArtifactRecord {
 	/** File stem, e.g. 'LLD-<hash>-s1'. */
@@ -188,7 +189,7 @@ export interface StagePassResult {
  */
 export interface ArtifactGate {
 	readonly artifactId: string;
-	readonly approval:   { readonly state: 'approved' | 'rejected' | 'pending'; readonly at: string | null };
+	readonly approval:   { readonly state: ApprovalState; readonly at: string | null };
 	/** The record's signoff, shown apart from its review and approval and never counted as a review (Story s7); absent when it has none. */
 	readonly signoff?:   SignoffView | undefined;
 	readonly review: {
@@ -257,7 +258,7 @@ export interface ArtifactCurrency {
 export interface EffectiveAmendment {
 	/** e.g. 'AMD-<hash>-1'. */
 	readonly amendmentId:  string;
-	readonly status:       'pending' | 'approved' | 'rejected';
+	readonly status:       ApprovalState;
 	/** The amendment's recorded type, e.g. 'storyBoundary.addStory'. */
 	readonly type:         string | null;
 	readonly storyId:      string | null;
@@ -287,7 +288,7 @@ export interface DeliveryEvidenceEntry {
 	readonly mdPath:         string | null;
 	/** review-view when the markdown carries the artifact marker. */
 	readonly openWith:       'review-view' | 'evidence-read';
-	readonly approval:       { readonly state: 'approved' | 'rejected' | 'pending'; readonly at: string | null };
+	readonly approval:       { readonly state: ApprovalState; readonly at: string | null };
 	readonly review:         ArtifactGate['review'];
 	readonly reviewCurrency: ReviewCurrency | null;
 	/** The record's signoff, apart from its review and approval; absent when it has none (Story s7). */

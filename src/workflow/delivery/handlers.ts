@@ -27,6 +27,7 @@ import { DELIVERY_ARTIFACT_KINDS, liftStoreFile, loadArtifactRecordSet, nodeStor
 import { createMarkdownPort } from './markdown.js';
 import { errorText } from './read.js';
 import { assembleSnapshot } from './snapshot.js';
+import { ArtifactIds } from '../artifact-ids.js';
 import { deriveStages } from './stage.js';
 import type {
 	ArtifactRecord,
@@ -40,6 +41,12 @@ import type {
 const log = getLogger('delivery');
 
 const ARTIFACT_ID_RE = new RegExp(`^(${DELIVERY_ARTIFACT_KINDS.join('|')})-[0-9a-f]{16}(-[A-Za-z0-9]+)?$`);
+
+/** An id the store could hold: the one-suffix form (uppercase legacy ids included), or a canonical id with two suffixes (a TASK, a sequenced DIAG). */
+function isEvidenceId(id: string): boolean {
+	const kind = ArtifactIds.parse(id)?.kind;
+	return ARTIFACT_ID_RE.test(id) || (kind !== undefined && (DELIVERY_ARTIFACT_KINDS as readonly string[]).includes(kind));
+}
 
 /** The request's repo when a non-empty string, else the daemon's INSRC_REPO, else null. */
 function repoOf(params: { readonly repo?: string | undefined } | undefined, repoEnv: string | undefined): string | null {
@@ -106,7 +113,7 @@ export function handleDeliveryEvidence(
 	const repo = repoOf(params, repoEnv);
 	if (repo === null) return { error: 'workflow.deliveryEvidence: `repo` is required' };
 	const artifactId: unknown = params?.artifactId;
-	if (typeof artifactId !== 'string' || !ARTIFACT_ID_RE.test(artifactId)) return { error: 'invalid artifact id' };
+	if (typeof artifactId !== 'string' || !isEvidenceId(artifactId)) return { error: 'invalid artifact id' };
 
 	// The store record's existence, containment and read all go through the store fs seam;
 	// its rendered markdown under docs/ is the markdown port's job (deps.markdown).

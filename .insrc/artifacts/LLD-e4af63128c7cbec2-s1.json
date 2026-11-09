@@ -29,9 +29,49 @@
     "sizeClass": "feature",
     "authoredBy": "controller",
     "envelope": {
+      "description": "",
+      "references": [],
       "attachments": []
     },
-    "revision": 3
+    "revision": 3,
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 3,
+        "contentHash": "75676e0b76ae5f8aac40c39e690932438e9b7e6bdd0876227c01203eeaf75def",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 3,
+        "reviewer": {
+          "id": "agent:design-review-daemon",
+          "kind": "agent",
+          "properties": {
+            "party": "daemon"
+          }
+        },
+        "party": "daemon",
+        "verdict": "block",
+        "counts": {
+          "HIGH": 0,
+          "MED": 1,
+          "LOW": 0
+        },
+        "at": "2026-11-09T05:29:05.496Z",
+        "report": {
+          "entityId": "LLD-e4af63128c7cbec2-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "1caa63dca46edc88c33d97beafc0ddce487a41ad910b375e8fcacd9f6a2eaa81"
+        }
+      }
+    }
   },
   "body": {
     "summary": {

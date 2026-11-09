@@ -1,6 +1,7 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { StringDecoder } from 'node:string_decoder';
+import { isMainThread, workerData } from 'node:worker_threads';
 import type { ProcessGroupOpts, ProcessGroupResult } from './process-group.js';
 import type { ReviewNativeCommand, ReviewProcessReservation, ReviewIntentReceipt, ReviewProcessOutput, ReviewProcessOutcome } from './review-native.js';
 
@@ -19,7 +20,13 @@ const context=new AsyncLocalStorage<ReviewNativeTransport>();
 /** One scope per review worker. No provider model/response data is parsed by
  * this transport; the existing CliProvider continues to do that in the worker. */
 export function withReviewNativeTransport<T>(transport: ReviewNativeTransport, fn: ()=>T): T { return context.run(transport,fn); }
-export function reviewNativeTransport(): ReviewNativeTransport | undefined { return context.getStore(); }
+export function reviewNativeTransport(): ReviewNativeTransport | undefined {
+ const transport=context.getStore();
+ // The review bootstrap (Task 7) identifies its immutable thread role. A
+ // missing bridge is an initialization error, never permission to spawn here.
+ if(!transport&&!isMainThread&&workerData?.role==='review')throw new Error('Review worker native transport is not installed');
+ return transport;
+}
 
 /** Worker-side byte adapter for the existing process-group contract. Only
  * bounded mode collects stdout; activity mode feeds the existing stream parser

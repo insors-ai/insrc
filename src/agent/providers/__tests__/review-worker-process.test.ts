@@ -2,6 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import childProcess from 'node:child_process';
+import { Worker } from 'node:worker_threads';
 import { syncBuiltinESMExports } from 'node:module';
 import { chmod, mkdtemp, mkdir, open, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
@@ -41,6 +42,34 @@ async function fixture(t:{after:(fn:()=>Promise<void>)=>void}){
  }
  return{repo,events,resolved,transport,leases,owner,cli};
 }
+async function threadFixture(t:{after:(fn:()=>Promise<void>)=>void},h:Awaited<ReturnType<typeof fixture>>,noTransport=false){
+ const worker=new Worker(new URL('./helpers/review-process-worker.mjs',import.meta.url),{workerData:{role:'review',repo:h.repo,noTransport,provider:new URL('../cli-provider.ts',import.meta.url).href,bridge:new URL('../../../shared/review-process-bridge.ts',import.meta.url).href}});
+ let next=0,parsedThread=0;const acknowledgments=new Map<number,{resolve:()=>void;reject:(error:Error)=>void}>();
+ let active!:()=>void;const activity=new Promise<void>(r=>{active=r;});
+ const done=new Promise<{value?:unknown;error?:string;threadId:number}>((resolve,reject)=>{
+  worker.once('error',reject);
+  worker.on('message',async message=>{
+   if(message.kind==='parsed')parsedThread=message.threadId;
+   if(message.kind==='active')active();
+   if(message.kind==='done')resolve(message);
+   if(message.kind==='ack'){const p=acknowledgments.get(message.id);acknowledgments.delete(message.id);if(message.error)p?.reject(Error(message.error));else p?.resolve();}
+   if(message.kind==='request'){
+    try{
+     let value:unknown;
+     if(message.op==='start')value=await h.transport.start(message.args.r,message.args.receipt,output=>new Promise<void>((resolve,reject)=>{const id=++next;acknowledgments.set(id,{resolve,reject});worker.postMessage({kind:'output',id,output});}));
+     else{const method=message.op as 'resolveBinary';value=await h.transport[method](message.args);}
+     worker.postMessage({kind:'reply',id:message.id,value});
+    }catch(error){worker.postMessage({kind:'reply',id:message.id,error:String(error)});}
+   }
+  });
+ });
+ const closed=new Promise<Awaited<ReturnType<typeof h.leases.close>>>(resolve=>worker.once('exit',()=>{
+  for(const p of acknowledgments.values())p.reject(Error('worker ended'));acknowledgments.clear();
+  void h.leases.close(h.owner).then(resolve);
+ }));
+ t.after(async()=>{await worker.terminate();await closed;});
+ return{worker,done,closed,activity,parsedThread:()=>parsedThread};
+}
 test('fake native review CLI streams and cancellation use host-owned leases',async t=>{
  const h=await fixture(t);
  for(const kind of ['claude','codex'] as const){
@@ -60,6 +89,13 @@ test('fake native review CLI streams and cancellation use host-owned leases',asy
  let started!:()=>void;const live=new Promise<void>(r=>{started=r;});
  const lost=run("process.stdout.write('live');setInterval(()=>{},1000)",new AbortController().signal,async()=>{started();});
  await live;await h.leases.close(h.owner);assert.equal((await lost).aborted,true,'host owner survives loss of the worker consumer');
+ const threaded=await fixture(t);await threaded.cli('claude');
+ const real=await threadFixture(t,threaded);const complete=await real.done;
+ assert.deepEqual(complete.value,{ok:true});assert.ok(real.parsedThread()>0,'CLI response parsing happens on the real worker thread');await real.closed;
+ const dying=await fixture(t);await dying.cli('claude');
+ await writeFile(join(dying.repo,'claude.mjs'),'#!/usr/bin/env node\nprocess.stdin.resume();process.stdin.once("end",()=>{process.stdout.write(JSON.stringify({type:"stream_event",event:{type:"content_block_delta",delta:{type:"text_delta",text:"working"}}})+"\\n");setInterval(()=>{},1000)});');
+ const crash=await threadFixture(t,dying);await crash.activity;await crash.worker.terminate();
+ assert.ok((await crash.closed).every(result=>result.disposal.state==='confirmed'),'terminating the real worker leaves cleanup with the surviving host');
 });
 test('review binary lookup cannot spawn synchronously on the worker',async t=>{
  const h=await fixture(t);await h.cli('claude');let syncCalls=0;
@@ -68,4 +104,7 @@ test('review binary lookup cannot spawn synchronously on the worker',async t=>{
   const value=await withReviewNativeTransport(h.transport,()=>new CliProvider({kind:'claude',binPath:'bare-review-cli'}).runReviewSession('test prompt',schema,{mode:'activity',cwd:h.repo,signal:new AbortController().signal,inactivityMs:1800000,internalRetry:false,onActivity:()=>{},onCandidate:async()=>({accepted:true})}));
   assert.deepEqual(value,{ok:true});assert.deepEqual(h.resolved,['bare-review-cli']);assert.equal(syncCalls,0);
  }finally{mock.mock.restore();syncBuiltinESMExports();}
+ const guarded=await fixture(t);await guarded.cli('claude');
+ const unbound=await threadFixture(t,guarded,true);
+ assert.match((await unbound.done).error!,/native transport is not installed/);assert.equal(guarded.events.length,0,'an unbound review worker cannot fall back to local spawning');await unbound.closed;
 });

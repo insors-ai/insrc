@@ -356,7 +356,7 @@ function itemGates(
 	}
 	if (validation.tasks.some(t => t.result === 'failed') || validation.storyLevelResult === 'failed') reasons.add('validation-failed');
 	if (validation.conflict !== null) reasons.add('validation-conflict');
-	const migration = needsMigration(item, counted, graph);
+	const migration = needsMigration(item, counted, graph, byId);
 	if (migration.length > 0) reasons.add('needs-migration');
 
 	const gates: ItemGates = {
@@ -373,28 +373,38 @@ function itemGates(
 		attentionReasons: REASON_ORDER.filter(r => reasons.has(r)),
 		attentionRule:    `${ATTENTION_RULE} Excluded here: ${superseded.length === 0 ? 'none' : superseded.join(', ')}.`,
 	};
-	const migrationNotice = migration.length === 0 ? [] : [makeNotice('needs-migration', `${item.id} needs a repair: ${migration.join(', ')}`, { itemIds: [item.id], artifactIds: counted.filter(r => r.approval.state === 'unmigrated').map(r => r.artifactId) })];
+	const migrationNotice = migration.length === 0 ? [] : [makeNotice('needs-migration', `${item.id} needs a repair: ${migration.join(', ')}`, { itemIds: [item.id], artifactIds: [...counted.filter(r => r.approval.state === 'unmigrated').map(r => r.artifactId), ...(unmigratedTasksHead(item, byId) === undefined ? [] : [`TASKS-${item.workItemHash}-s${firstOrdinal(item.sourceIds, storyOrdinalOf)}`])] })];
 	return { gates, notices: [...validation.notices, ...migrationNotice] };
 }
 
 const isUnmigrated = (unit: WorkItemNode['unit']): boolean => unit === null || unit.status === 'unmigrated';
 
+/** A story's TASKS head when it has no lifecycle: it is no evidence and no unit, so nothing else would see it. */
+function unmigratedTasksHead(item: WorkItemNode, byId: ReadonlyMap<string, ArtifactRecord>): ArtifactRecord | undefined {
+	const ordinal = firstOrdinal(item.sourceIds, storyOrdinalOf);
+	const head = item.kind !== 'story' || ordinal === null ? undefined : byId.get(`TASKS-${item.workItemHash}-s${ordinal}`);
+	return head?.approval.state === 'unmigrated' ? head : undefined;
+}
+
 /**
  * What about an item is still to be brought into the common model, in words: its records with no lifecycle, its own head if an epic or a
  * story has none or an unmigrated one, its Tasks with an unmigrated head, and its planned Tasks if its plan is approved and they have none.
  */
-function needsMigration(item: WorkItemNode, counted: readonly ArtifactRecord[], graph: WorkItemGraph): string[] {
+function needsMigration(item: WorkItemNode, counted: readonly ArtifactRecord[], graph: WorkItemGraph, byId: ReadonlyMap<string, ArtifactRecord>): string[] {
 	const out = counted.filter(r => r.approval.state === 'unmigrated').map(r => `${r.artifactId} has no lifecycle`);
 	if ((item.kind === 'epic' || item.kind === 'story') && isUnmigrated(item.unit)) out.push(item.unit === null ? `the ${item.kind} has no head` : `${item.unit.artifactId} has no lifecycle`);
 	if (item.kind === 'story') {
-		const planApproved = counted.some(r => r.kind === 'PLAN' && r.approval.state === 'approved');
+		// a draft plan's Tasks come with its approval; with no plan at all a Task with no head is one a TASKS head lists
+		const draftPlan = counted.some(r => r.kind === 'PLAN') && !counted.some(r => r.kind === 'PLAN' && r.approval.state === 'approved');
+		const tasksHead = unmigratedTasksHead(item, byId);
+		if (tasksHead !== undefined) out.push(`${tasksHead.artifactId} has no lifecycle`);
 		for (const childId of item.childIds) {
 			const child = graph.items.get(childId);
 			if (child?.kind !== 'task') continue;
 			// A Task item with no head and no plan row behind it is a BUILD result that matches no Task: it is not an active Task, so by the
 			// design (LLD 2.12) it keeps its item and its validation result and raises no needs-migration.
 			if (child.unit?.status === 'unmigrated') out.push(`${child.unit.artifactId} has no lifecycle`);
-			else if (child.unit === null && planApproved && child.planRowId !== null) out.push(`task ${childId} has no head`);
+			else if (child.unit === null && !draftPlan && child.planRowId !== null) out.push(`task ${childId} has no head`);
 		}
 	}
 	return out;

@@ -119,6 +119,17 @@ test('a missing or unmigrated unit raises needs-migration and not pending-decisi
 	const fromBuild = [...units, buildRecord(H, 's1', [{ id: 't1', passed: true }]), unmigratedRecord(`TASK-${H}-s1-t1.json`, { epicHash: H, storyId: 's1' })];
 	assert.ok(reasons(fromBuild, 'story').includes('needs-migration'), JSON.stringify(reasons(fromBuild, 'story')));
 	assert.ok(!reasons([...units, buildRecord(H, 's1', [{ id: 't1', passed: true }])], 'story').includes('needs-migration'), 'an unmatched BUILD result is not an active Task, so by the design it raises no needs-migration');
+	// a Task a TASKS head lists with no head, and with no plan at all: it is an active Task, so it is flagged
+	const listing = (taskIds: readonly string[], lifecycle: boolean): ArtifactRecord => (lifecycle
+		? recordFromFile(`TASKS-${H}-s1.json`, { meta: { createdAt: CREATED, epicCreatedAt: CREATED, epicHash: H, storyId: 's1', lifecycle: unitHead('STORY', H, 's1', 'draft').meta['lifecycle'] }, body: { planRevision: 1, taskIds, nextNumber: 9 } })
+		: unmigratedRecord(`TASKS-${H}-s1.json`, { epicHash: H, storyId: 's1' }));
+	assert.ok(reasons([...units, listing(['t1'], true)], 'story').includes('needs-migration'));
+	assert.deepEqual(reasons([...units, listing(['t1'], true), unitHead('TASK', H, 's1-t1', 'approved')], 'story'), [], 'control: its head exists');
+	// a TASKS record with no lifecycle is neither evidence nor a unit, and is still flagged by name
+	const withUnmigratedTasks = [...units, listing([], false)];
+	assert.ok(reasons(withUnmigratedTasks, 'story').includes('needs-migration'));
+	const tasksSet = recordSet(withUnmigratedTasks);
+	assert.ok(deriveGates(buildWorkItemGraph(tasksSet), tasksSet).notices.some(n => n.code === 'needs-migration' && n.artifactIds.includes(`TASKS-${H}-s1`)));
 	// the attention is a notice too, naming the record
 	const set = recordSet([...decided, plain(`LLD-${H}-s1.json`, 's1')]);
 	const notices = deriveGates(buildWorkItemGraph(set), set).notices.filter(n => n.code === 'needs-migration');

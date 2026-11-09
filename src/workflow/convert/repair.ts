@@ -70,7 +70,9 @@ function repairDeps(repo: string, record: RepairRecorder, options: RepairOptions
 	};
 	const rules = missingSidecarRepoRules(repo);
 	const { store, history, service } = createRepoLifecycle(repo, observer);
-	for (const file of rules) record(file, 'repo-rules');
+	// the store's opening only warns when it cannot add a rule, so a file counts as written only if it no longer lacks them
+	const still = missingSidecarRepoRules(repo);
+	for (const file of rules) if (!still.includes(file)) record(file, 'repo-rules');
 	return { service, store, history, now: () => new Date(), actor: MIGRATION_ACTOR, taskSets: new TaskSets({ repoPath: repo, store, service, history, bindingWritten: id => record(id, 'binding') }) };
 }
 

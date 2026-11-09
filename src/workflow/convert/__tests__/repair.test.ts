@@ -11,7 +11,7 @@
  */
 
 import assert from 'node:assert/strict';
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 
@@ -202,6 +202,20 @@ test('the repository rules a repair adds are in its preview and its report, and 
 		assert.deepEqual(out.written.filter(w => w.action === 'repo-rules').map(w => w.artifactId), ['.gitattributes', '.gitignore']);
 		assert.ok(existsSync(join(l.repo, '.gitignore')));
 		assert.deepEqual((await runRepair(l.repo, 'repair-preview')).plan.changes.filter(c => c.rule === 'repo-rules'), []);
+	} finally { l.done(); }
+});
+
+test('a repository rule file that cannot be written is not reported as written', async () => {
+	const l = legacyRepo();
+	try {
+		const ignore = join(l.repo, '.gitignore');
+		writeFileSync(ignore, 'node_modules/\n');
+		chmodSync(ignore, 0o444);
+		const out = result(await runRepair(l.repo, 'repair'));
+		chmodSync(ignore, 0o644);
+		assert.equal(readFileSync(ignore, 'utf8'), 'node_modules/\n', 'control: the file could not be changed');
+		assert.deepEqual(out.written.filter(w => w.action === 'repo-rules').map(w => w.artifactId), ['.gitattributes'], 'only the file that really changed');
+		assert.ok(out.remaining.some(c => c.rule === 'repo-rules' && c.artifactId === '.gitignore'), 'and the other is still to do');
 	} finally { l.done(); }
 });
 

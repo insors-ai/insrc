@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 4,
-        "contentHash": "a16a8e26059429fbdd6d343be6af3304efee3ae74dfa24459223bf37e845539f",
-        "at": "2026-11-09T08:35:48.683Z",
+        "number": 5,
+        "contentHash": "86c6697b78d89d51fa1e46400e8a5f7f8170990b34314c35f5b385a757ba9992",
+        "at": "2026-11-09T09:08:06.377Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "e4af63128c7cbec2",
     "storyId": "s1",
     "createdAt": "2026-11-09T07:52:13.312Z",
-    "updatedAt": "2026-11-09T08:35:48.551Z",
+    "updatedAt": "2026-11-09T09:08:06.224Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-09T04:29:20.389Z",
     "epicSlug": "isolate-each-code-design-review-its",
-    "revision": 4
+    "revision": 5
   },
   "body": {
     "tasks": [
@@ -173,8 +173,8 @@
       },
       {
         "taskId": "t3",
-        "commit": "febda151e",
-        "ranAt": "2026-11-09T08:35:48.551Z",
+        "commit": "35c9f815f",
+        "ranAt": "2026-11-09T09:08:06.224Z",
         "testsPassed": true,
         "tests": [
           {
@@ -222,7 +222,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/admission-history.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1347,
+            "durationMs": 1157,
             "titles": [
               {
                 "title": "failed admission survives successful next attempt publication and post-cleanup reads",
@@ -235,7 +235,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/resource-preservation.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1139,
+            "durationMs": 960,
             "titles": [
               {
                 "title": "guard-only updates preserve report identity while reviewed-input or result mutations do not",
@@ -248,7 +248,7 @@
             "file": "src/workflow/review/design-review/__tests__/admission-history.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1025,
+            "durationMs": 874,
             "titles": [
               {
                 "title": "technical admission diagnostics remain non-review evidence across publication",

@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 3,
-        "contentHash": "797327b6fa517e3e75a8a719b97c452d2a44bc358cbcb42d247bef450d86eb01",
-        "at": "2026-11-09T07:49:56.579Z",
+        "number": 4,
+        "contentHash": "c3053dca0992d398104153a6615b1733b78421a77c19891b9c2d07cf6096eb48",
+        "at": "2026-11-09T07:55:33.122Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,18 +23,18 @@
     "epicHash": "b902426092868097",
     "storyId": "s1",
     "createdAt": "2026-11-09T07:31:19.289Z",
-    "updatedAt": "2026-11-09T07:49:56.561Z",
+    "updatedAt": "2026-11-09T07:55:33.108Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-09T05:12:49.979Z",
     "epicSlug": "keep-vibe-configs-valid-when-registering",
-    "revision": 3
+    "revision": 4
   },
   "body": {
     "tasks": [
       {
         "taskId": "s1",
-        "commit": "c571e6fe7",
-        "ranAt": "2026-11-09T07:49:56.561Z",
+        "commit": "621464563",
+        "ranAt": "2026-11-09T07:55:33.108Z",
         "testsPassed": true,
         "tests": [
           {
@@ -75,7 +75,7 @@
             "file": "src/daemon/__tests__/mcp-register.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1064,
+            "durationMs": 922,
             "titles": [
               {
                 "title": "unselected clients are always emitted as skipped, never omitted",
@@ -212,7 +212,7 @@
             "file": "src/shared/__tests__/toml-inline-list.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 658,
+            "durationMs": 505,
             "titles": [
               {
                 "title": "a config with no inline list comes back unchanged",
@@ -243,6 +243,10 @@
                 "result": "pass"
               },
               {
+                "title": "a sub-table of an existing [[key]] entry is not a conflict",
+                "result": "pass"
+              },
+              {
                 "title": "a comment after the list is kept on its own line",
                 "result": "pass"
               },
@@ -261,7 +265,7 @@
             "file": "vscode-plugin/src/hosts/__tests__/commands.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 648,
+            "durationMs": 632,
             "titles": [
               {
                 "title": "registerHostCommands registers the insrc.hosts.wire command into the registry",
@@ -290,7 +294,7 @@
             "file": "vscode-plugin/src/hosts/__tests__/writers.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 609,
+            "durationMs": 479,
             "titles": [
               {
                 "title": "writeInsrcServer sets mcpServers.insrc preserving every other key/server; idempotent; creates {} when absent",

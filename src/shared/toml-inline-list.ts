@@ -99,6 +99,12 @@ function keyText(raw: string): string {
 	}
 }
 
+/** The first component of a key, and whether more components follow it. */
+function firstComponent(raw: string): { readonly name: string; readonly dotted: boolean } | undefined {
+	const m = /^("(?:[^"\\\n]|\\.)*"|'[^'\n]*'|[A-Za-z0-9_-]+)\s*(\.)?/.exec(raw);
+	return m === null ? undefined : { name: keyText(m[1]!), dotted: m[2] !== undefined };
+}
+
 /** Find `key = ...` in the root table, which ends at the first table header. */
 function findRootAssignment(text: string, key: string): { readonly keyStart: number; readonly value: number } | undefined {
 	let i = 0;
@@ -112,14 +118,31 @@ function findRootAssignment(text: string, key: string): { readonly keyStart: num
 			else i++;
 		}
 		if (text[i] !== '=') throw new TomlInlineListError('a line before the first table is not a key and a value');
-		const name = keyText(text.slice(keyStart, i).trim());
+		const head = firstComponent(text.slice(keyStart, i).trim());
 		i++;
-		if (name.startsWith(`${key}.`)) throw new TomlInlineListError(`'${key}' is a table of dotted keys, not a list`);
-		if (name === key) {
+		if (head !== undefined && head.name === key) {
+			if (head.dotted) throw new TomlInlineListError(`'${key}' is a table of dotted keys, not a list`);
 			while (isBlank(text[i])) i++;
 			return { keyStart, value: i };
 		}
 		i = endOfValue(text, i);
+	}
+}
+
+/**
+ * The writers find a server by reading its `name` line, so an entry that line
+ * could misrepresent is refused rather than converted.
+ */
+function assertReadableField(field: string): void {
+	let i = 0;
+	while (i < field.length && field[i] !== '=') {
+		if (field[i] === '"' || field[i] === "'") i = endOfString(field, i);
+		else i++;
+	}
+	const rawKey = field.slice(0, i).trim();
+	if (rawKey.includes('\\')) throw new TomlInlineListError('a key in a list element uses an escape');
+	if (keyText(rawKey) === 'name' && !/^(?:"[^"\\\n]*"|'[^'\n]*')$/.test(field.slice(i + 1).trim())) {
+		throw new TomlInlineListError('a server name is not a plain quoted string');
 	}
 }
 
@@ -129,6 +152,7 @@ function tableFor(key: string, element: string): string {
 	if (element.includes('\n')) throw new TomlInlineListError('a list element spans more than one line');
 	const { end, parts } = splitBracketed(element, 0);
 	if (end !== element.length) throw new TomlInlineListError('a list element is not an inline table');
+	parts.forEach(assertReadableField);
 	return [`[[${key}]]`, ...parts].join('\n');
 }
 
@@ -139,8 +163,12 @@ function tableFor(key: string, element: string): string {
  * or `key` has another form that `[[key]]` could not be added to.
  */
 export function moveInlineListToTables(text: string, key: string): string {
-	for (const header of text.matchAll(/^[ \t]*\[[ \t]*("(?:[^"\\\n]|\\.)*"|'[^'\n]*'|[A-Za-z0-9_-]+)[ \t]*\][ \t]*(?:#.*)?\r?$/gm)) {
-		if (keyText(header[1]!) === key) throw new TomlInlineListError(`'${key}' is a single table, not a list`);
+	let hasArray = false;
+	for (const header of text.matchAll(/^[ \t]*(\[\[?)[ \t]*([^\]\n#]+?)[ \t]*\]\]?[ \t]*(?:#.*)?\r?$/gm)) {
+		const first = firstComponent(header[2]!);
+		if (first === undefined || first.name !== key) continue;
+		if (header[1] === '[[' && !first.dotted) hasArray = true;
+		else if (!first.dotted || !hasArray) throw new TomlInlineListError(`'${key}' is a single table, not a list`);
 	}
 	const found = findRootAssignment(text, key);
 	if (found === undefined) return text;

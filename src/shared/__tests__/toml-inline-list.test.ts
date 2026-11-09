@@ -62,6 +62,11 @@ test('a quoted or escaped spelling of the key is the same key', () => {
 	}
 });
 
+test('a sub-table of an existing [[key]] entry is not a conflict', () => {
+	const text = '[[mcp_servers]]\nname = "a"\n\n[mcp_servers.auth]\nx = 1\n';
+	assert.equal(move(text), text);
+});
+
 test('a comment after the list is kept on its own line', () => {
 	assert.equal(move('mcp_servers = [] # none yet\na = 1\n'), '# none yet\na = 1\n');
 });
@@ -84,6 +89,14 @@ test('what cannot be moved without loss is refused', () => {
 		['mcp_servers = [{ env = { T = """\nname = "insrc"\n""" } }]\n', /more than one line/],
 		['mcp_servers.a = 1\n', /dotted keys/],
 		['"mcp\\qservers" = []\n', /cannot be read/],
+		['mcp_servers . a = 1\n', /dotted keys/],
+		["'mcp_servers'.a = 1\n", /dotted keys/],
+		['[mcp_servers.auth]\nx = 1\n', /single table/],
+		['[ "mcp_servers" . auth ]\nx = 1\n', /single table/],
+		['mcp_servers = [{ name = """insrc""", command = "n" }]\n', /plain quoted string/],
+		["mcp_servers = [{ name = '''insrc''' }]\n", /plain quoted string/],
+		['mcp_servers = [{ name = "\\u0069nsrc" }]\n', /plain quoted string/],
+		['mcp_servers = [{ "na\\u006de" = "insrc" }]\n', /uses an escape/],
 		['not a key\n', /not a key/],
 	] as const) {
 		assert.throws(() => move(text), (err: unknown) => err instanceof TomlInlineListError && why.test(err.message), text);

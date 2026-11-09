@@ -138,6 +138,43 @@ export interface ConversionReport {
 	readonly result?: ConversionResult | undefined;
 }
 
+/** Told about each write the moment it is committed: a repair reports exactly what was written even when a later write of the same step fails. */
+export type RepairRecorder = (artifactId: string, action: string) => void;
+
+/** The steps of a repair: the conversion's, without the marker, then the settling of units. */
+export type RepairStep = 'rename' | 'stamp' | 'amendments' | 'feedback' | 'migrate' | 'units' | 'tasks' | 'story-history' | 'settle';
+
+/** One committed write of a repair. */
+export interface RepairWrite {
+	readonly step:       RepairStep;
+	readonly artifactId: string;
+	readonly action:     string;
+}
+
+/** A unit a repair could not complete, with why and the members it had already completed. */
+export interface UnitOutcome {
+	readonly artifactId:       string;
+	readonly reason:           string;
+	readonly completedMembers: readonly string[];
+}
+
+export interface RepairResult {
+	/** Exactly what was committed, in the order it was. */
+	readonly written:    readonly RepairWrite[];
+	/** The plan computed again after the run: what a further run would still consider. */
+	readonly remaining:  readonly ConversionChange[];
+	/** Where a step threw and why. Later steps did not run and nothing was settled. */
+	readonly stoppedAt?: { readonly step: RepairStep; readonly reason: string } | undefined;
+	readonly held:       readonly UnitOutcome[];
+	readonly failed:     readonly UnitOutcome[];
+}
+
+export interface RepairReport {
+	readonly mode:    'repair-preview' | 'repair';
+	readonly plan:    ConversionPlan;
+	readonly result?: RepairResult | undefined;
+}
+
 /** The tree is not in a state the command may start from (a merge, uncommitted artifacts, a changed plan). */
 export class ConversionRefused extends Error {
 	constructor(message: string, readonly paths: readonly string[] = []) { super(message); this.name = 'ConversionRefused'; }

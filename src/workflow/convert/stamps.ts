@@ -15,7 +15,7 @@ import { join } from 'node:path';
 import { ARTIFACTS_DIR, writeAtomic } from '../storage.js';
 import type { PlanRule, RulePlan } from './plan.js';
 import { readRawHeads } from './raw-heads.js';
-import type { ConversionChange, ConversionProblem, RawHead } from './types.js';
+import type { ConversionChange, ConversionProblem, RawHead, RepairRecorder } from './types.js';
 
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -70,12 +70,13 @@ export const stampRule: PlanRule = (ctx): RulePlan => {
 };
 
 /** Writes meta.epicCreatedAt into every record that lacks it and can have it; returns how many were written. */
-export function applyStamps(repo: string): number {
+export function applyStamps(repo: string, onWrite?: RepairRecorder): number {
 	const { stamps } = stampsFor(readRawHeads(repo).heads);
 	for (const { head, at } of stamps) {
 		const json = head.json as Obj;
 		const next = { ...json, meta: { ...(json['meta'] as Obj), epicCreatedAt: at } };
 		writeAtomic(join(repo, ARTIFACTS_DIR, `${head.artifactId}.json`), JSON.stringify(next, null, 2) + '\n');
+		onWrite?.(head.artifactId, 'epicCreatedAt');
 	}
 	return stamps.length;
 }

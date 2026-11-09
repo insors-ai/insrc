@@ -25,7 +25,7 @@ import type { Head } from '../tracker/binding.js';
 import type { PlanRule, RulePlan } from './plan.js';
 import { readRawHeads } from './raw-heads.js';
 import { ConversionIncomplete } from './types.js';
-import type { ConversionChange, ConversionDeps, RawHead } from './types.js';
+import type { ConversionChange, ConversionDeps, RawHead, RepairRecorder } from './types.js';
 
 const text = (v: unknown): string | undefined => typeof v === 'string' && v.length > 0 ? v : undefined;
 const storyOf = (id: string): string => `s${Number(/\d+/.exec(id)?.[0] ?? '0')}`;
@@ -92,16 +92,17 @@ export interface UnitsResult {
 }
 
 /** Patch the envelope of an existing head with a meta-only write, so no revision, hash or log entry moves. */
-function patchEnvelope(repo: string, id: string, change: (envelope: Record<string, unknown>) => Record<string, unknown>): void {
+function patchEnvelope(repo: string, id: string, change: (envelope: Record<string, unknown>) => Record<string, unknown>, onWrite?: RepairRecorder): void {
 	const read = readHead(repo, id);
 	if (read === undefined) throw new ConversionIncomplete(`${id} has no head to patch`, [{ artifactId: id, reason: 'no head' }]);
 	const envelope = isObject(read.head.meta['envelope']) ? read.head.meta['envelope'] : {};
 	const next: Head = { ...read.head, meta: { ...read.head.meta, envelope: change({ ...envelope }) } };
 	writeArtifact(read.path, next, 'meta-only');
+	onWrite?.(id, 'envelope');
 }
 
 /** Move the binding and attachments of `from` to `to`. Answers whether anything moved. */
-function moveBinding(repo: string, from: string, to: string): boolean {
+function moveBinding(repo: string, from: string, to: string, onWrite?: RepairRecorder): boolean {
 	const source = readHead(repo, from);
 	if (source === undefined) return false;
 	const envelope = isObject(source.head.meta['envelope']) ? source.head.meta['envelope'] : {};
@@ -112,6 +113,7 @@ function moveBinding(repo: string, from: string, to: string): boolean {
 	if (binding !== undefined) {
 		const bound = bindArtifact(repo, to, binding.reference.entityId);
 		if (!bound.ok) throw new ConversionIncomplete(`the binding of ${from} could not move to ${to}: ${bound.reason}`, [{ artifactId: from, reason: bound.reason }]);
+		onWrite?.(to, 'binding');
 		for (const p of binding.posted) recordPosted(repo, to, p.kind, (p as { externalId?: string }).externalId, () => p.at);
 		if (binding.pendingLink !== undefined && !setPendingLink(repo, to, binding.pendingLink)) {
 			throw new ConversionIncomplete(`the pending link of ${from} could not move to ${to}`, [{ artifactId: from, reason: 'pending link' }]);
@@ -122,14 +124,14 @@ function moveBinding(repo: string, from: string, to: string): boolean {
 			const have = Array.isArray(env['attachments']) ? env['attachments'] as Attachment[] : [];
 			const fresh = attachments.filter(a => !have.some(h => JSON.stringify(h) === JSON.stringify(a)));
 			return fresh.length === 0 ? env : { ...env, attachments: [...have, ...fresh] };
-		});
+		}, onWrite);
 	}
-	patchEnvelope(repo, from, env => { const { binding: _b, attachments: _a, ...rest } = env; return rest; });
+	patchEnvelope(repo, from, env => { const { binding: _b, attachments: _a, ...rest } = env; return rest; }, onWrite);
 	return true;
 }
 
 /** Create the EPIC and STORY heads, point each LLD at its STORY, and move the bindings. Safe to run again. */
-export async function applyUnits(repo: string, deps: ConversionDeps): Promise<UnitsResult> {
+export async function applyUnits(repo: string, deps: ConversionDeps, onWrite?: RepairRecorder): Promise<UnitsResult> {
 	const created: string[] = [];
 	const moved: { from: string; to: string }[] = [];
 	const ensure = async (id: string, description: string, parent?: string): Promise<void> => {
@@ -144,14 +146,14 @@ export async function applyUnits(repo: string, deps: ConversionDeps): Promise<Un
 	for (const epic of epicsOf(heads)) {
 		const eid = epicId(epic.hash);
 		await ensure(eid, '');
-		if (moveBinding(repo, `DEF-${epic.hash}`, eid)) moved.push({ from: `DEF-${epic.hash}`, to: eid });
+		if (moveBinding(repo, `DEF-${epic.hash}`, eid, onWrite)) moved.push({ from: `DEF-${epic.hash}`, to: eid });
 		for (const story of epic.stories) {
 			const sid = storyId(epic.hash, story.id);
 			await ensure(sid, story.title, eid);
 			const lld = lldOf(heads, epic.hash, story.id);
 			if (lld === undefined) continue;
-			if (moveBinding(repo, lld.artifactId, sid)) moved.push({ from: lld.artifactId, to: sid });
-			patchEnvelope(repo, lld.artifactId, env => ({ ...env, parent: { entityId: sid, type: 'STORY', relation: 'derived-from' } }));
+			if (moveBinding(repo, lld.artifactId, sid, onWrite)) moved.push({ from: lld.artifactId, to: sid });
+			patchEnvelope(repo, lld.artifactId, env => ({ ...env, parent: { entityId: sid, type: 'STORY', relation: 'derived-from' } }), onWrite);
 		}
 	}
 	return { created, moved };

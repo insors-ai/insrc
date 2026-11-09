@@ -48,6 +48,8 @@ export interface ArtifactStoreDeps {
 	readonly now?:      (() => Date) | undefined;
 	/** Replaces the head file; defaults to the atomic writer. Injected by tests to fail a replace. */
 	readonly writeHead?: ((path: string, bytes: string) => void) | undefined;
+	/** Told each time a head file has been replaced, as it happens. */
+	readonly headReplaced?: ((path: string) => void) | undefined;
 }
 
 /** What `update`'s mutate hands back: the artifact to store and the options of its log entry. */
@@ -374,6 +376,7 @@ export class ArtifactStore {
    if (options.expectedHeadHash !== undefined && headHashOf(existsSync(path)?readFileSync(path,'utf8'):undefined) !== options.expectedHeadHash) throw new LifecycleConflictError(a.id,'head-changed-after-stage','Head changed during journal/log awaits; pending publication retained');
    this.checkDocument(a.id,options.expectedDocument);
    (this.deps.writeHead ?? writeAtomic)(path, prepared.bytes);
+   this.deps.headReplaced?.(path);
   }
 		catch (err) {
 			log.warn({ id: a.id, operationId, err: (err as Error).message }, 'the head replace failed; the staged operation is finished by the next write');
@@ -440,7 +443,7 @@ export class ArtifactStore {
 		if (replace) {
    const latest=existsSync(path)?readFileSync(path,'utf8'):undefined;
    if(latest!==op.bytes&&headHashOf(latest)!==op.priorHeadHash)throw new LifecycleConflictError(id,'head-changed-after-stage','Head changed during journal recovery; pending operation retained');
-   if(latest!==op.bytes){this.checkDocument(id,op.expectedDocument);(this.deps.writeHead ?? writeAtomic)(path, op.bytes);}
+   if(latest!==op.bytes){this.checkDocument(id,op.expectedDocument);(this.deps.writeHead ?? writeAtomic)(path, op.bytes);this.deps.headReplaced?.(path);}
   }
 		await this.clearQuietly(id, op.operationId);
 	}

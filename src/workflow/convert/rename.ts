@@ -21,7 +21,7 @@ import { join, relative } from 'node:path';
 import { ArtifactIds } from '../artifact-ids.js';
 import { ARTIFACTS_DIR, writeAtomic } from '../storage.js';
 import type { PlanRule, RulePlan } from './plan.js';
-import type { ConversionChange, ConversionProblem, ProseReference } from './types.js';
+import type { ConversionChange, ConversionProblem, ProseReference, RepairRecorder } from './types.js';
 
 const KINDS = 'DEF|HLD|LLD|PLAN|BUILD|CR|TESTS|ISSUE|SPEC|EXT|AMD';
 const STEM = new RegExp(`\\b((?:${KINDS})-[0-9a-f]{16})-[Ss](\\d+)\\b`, 'g');
@@ -47,6 +47,21 @@ export function rewriteValue(v: unknown): unknown {
 	if (Array.isArray(v)) return v.map(rewriteValue);
 	if (typeof v === 'object' && v !== null) return Object.fromEntries(Object.entries(v as Record<string, unknown>).map(([k, x]) => [k, rewriteValue(x)]));
 	return v;
+}
+
+/**
+ * A stored head with its references rewritten. A head whose lifecycle holds a content hash keeps its description, body and
+ * citations as they are: changing them would make the head disagree with its own hash and log, and un-approve what a person approved.
+ */
+export function rewrittenHead(json: unknown): unknown {
+	const next = rewriteValue(json);
+	if (typeof json !== 'object' || json === null) return next;
+	const stored = json as { meta?: { envelope?: { description?: unknown }; lifecycle?: { revision?: { contentHash?: unknown } } }; body?: unknown; citations?: unknown };
+	const hash = stored.meta?.lifecycle?.revision?.contentHash;
+	if (typeof hash !== 'string' || hash.length === 0) return next;
+	const out = next as { meta: Record<string, unknown>; body?: unknown; citations?: unknown };
+	const envelope = stored.meta?.envelope === undefined ? {} : { envelope: { ...(out.meta['envelope'] as object), description: stored.meta.envelope.description } };
+	return { ...out, meta: { ...out.meta, ...envelope }, ...('body' in stored ? { body: stored.body } : {}), ...('citations' in stored ? { citations: stored.citations } : {}) };
 }
 
 /** The bare story ids that stand inside a longer string and so cannot be rewritten (a path component is not one). */
@@ -92,7 +107,7 @@ export const renameRule: PlanRule = (ctx): RulePlan => {
 
 	for (const head of ctx.heads) {
 		const to = newStemOf(head.artifactId);
-		const rewritten = JSON.stringify(rewriteValue(head.json));
+		const rewritten = JSON.stringify(rewrittenHead(head.json));
 		const changesContent = rewritten !== JSON.stringify(head.json);
 		if (to !== undefined) {
 			if (ArtifactIds.parse(to) === undefined) { problems.push({ file: jsonPath(head.artifactId), reason: `${to} is not an artifact id the model accepts` }); continue; }
@@ -132,7 +147,7 @@ export interface RenameResult {
  * references rewritten and then removed, every other head and markdown file is rewritten when it still holds a reference.
  * Throws when a target name is taken by a different file (no rename is then applied).
  */
-export function applyRenames(repo: string): RenameResult {
+export function applyRenames(repo: string, onWrite?: RepairRecorder): RenameResult {
 	const dir = join(repo, ARTIFACTS_DIR);
 	const names = existsSync(dir) ? readdirSync(dir).filter(n => n.endsWith('.json')).sort() : [];
 	const todo = names.map(n => ({ name: n, to: newStemOf(n.slice(0, -'.json'.length)) })).filter(x => x.to !== undefined);
@@ -140,32 +155,33 @@ export function applyRenames(repo: string): RenameResult {
 	for (const { name, to } of todo) {
 		const target = join(dir, `${to}.json`);
 		if (existsSync(target)) {
-			const rewritten = JSON.stringify(rewriteValue(JSON.parse(readFileSync(join(dir, name), 'utf8'))), null, 2) + '\n';
+			const rewritten = JSON.stringify(rewrittenHead(JSON.parse(readFileSync(join(dir, name), 'utf8'))), null, 2) + '\n';
 			if (readFileSync(target, 'utf8') !== rewritten) throw new Error(`${to}.json already exists and differs from the renamed ${name}`);
 		}
 	}
 	let renamed = 0;
 	let rewrittenFiles = 0;
 	for (const { name, to } of todo) {
-		const rewritten = JSON.stringify(rewriteValue(JSON.parse(readFileSync(join(dir, name), 'utf8'))), null, 2) + '\n';
+		const rewritten = JSON.stringify(rewrittenHead(JSON.parse(readFileSync(join(dir, name), 'utf8'))), null, 2) + '\n';
 		const target = join(dir, `${to}.json`);
-		if (!existsSync(target)) { writeAtomic(target, rewritten); rewrittenFiles += 1; }
+		if (!existsSync(target)) { writeAtomic(target, rewritten); rewrittenFiles += 1; onWrite?.(to as string, 'head'); }
 		unlinkSync(join(dir, name));
 		renamed += 1;
+		onWrite?.(name.slice(0, -'.json'.length), 'renamed');
 	}
 	for (const name of existsSync(dir) ? readdirSync(dir).filter(n => n.endsWith('.json')).sort() : []) {
 		const path = join(dir, name);
 		const text = readFileSync(path, 'utf8');
 		let json: unknown;
 		try { json = JSON.parse(text); } catch { continue; }
-		const next = JSON.stringify(rewriteValue(json), null, 2) + '\n';
-		if (next !== text && JSON.stringify(rewriteValue(json)) !== JSON.stringify(json)) { writeAtomic(path, next); rewrittenFiles += 1; }
+		const next = JSON.stringify(rewrittenHead(json), null, 2) + '\n';
+		if (next !== text && JSON.stringify(rewrittenHead(json)) !== JSON.stringify(json)) { writeAtomic(path, next); rewrittenFiles += 1; onWrite?.(name.slice(0, -'.json'.length), 'references'); }
 	}
 	for (const file of markdownFiles(repo)) {
 		const path = join(repo, file);
 		const text = readFileSync(path, 'utf8');
 		const next = text.replace(STEM, (_m, b: string, n: string) => `${b}-${newStoryId(n)}`);
-		if (next !== text) { writeAtomic(path, next); rewrittenFiles += 1; }
+		if (next !== text) { writeAtomic(path, next); rewrittenFiles += 1; onWrite?.(file, 'references'); }
 	}
 	return { renamed, rewritten: rewrittenFiles };
 }

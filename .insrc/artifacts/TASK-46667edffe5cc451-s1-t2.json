@@ -22,7 +22,7 @@
           "entityId": "PLAN-46667edffe5cc451-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 1"
+          "fragment": "revision 3"
         },
         {
           "entityId": "TASK-46667edffe5cc451-s1-t1",
@@ -33,11 +33,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "c87b74d1c5c12adad347ace26619b5f094f6c0a26aaf6aa287ce09058bd65549",
-        "at": "2026-11-08T18:32:29.869Z",
+        "number": 2,
+        "contentHash": "52f5c39ce9e596f3243ba15493f4a6570ecef00bd7ef7dd901debf08bbfa12b2",
+        "at": "2026-11-08T19:39:37.621Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -55,7 +55,7 @@
         "at": "2026-11-08T18:32:29.871Z"
       }
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
     "title": "Patch SMTP and database driver dependencies",
@@ -64,7 +64,7 @@
     "order": 2,
     "acceptanceChecks": [
       "Confirm every batch 2 resolved dependency is outside the mapped affected ranges.",
-      "Verify authenticated STARTTLS, recipient handling and attachments, plus existing Cassandra, etcd, MySQL and SQL Server configuration, connection, schema and read paths. Record each unavailable live service and what fixtures covered.",
+      "Verify authenticated STARTTLS, recipient handling and attachments. Run live saved-configuration connection, schema and bounded-read checks for Cassandra, etcd and MySQL. Verify SQL Server saved configuration, schema and bounded reads at the Tedious SDK boundary with the existing fixture. Record live SQL Server qualification as deferred at the user's direction, outside this build gate.",
       "Prove the overwrite-enabled destination symlink fixture detects baseline behavior and passes on the selected adm-zip release for synchronous, asynchronous and single-entry extraction."
     ],
     "tests": [
@@ -78,7 +78,11 @@
       },
       {
         "level": "live",
-        "name": "Load saved Cassandra, etcd, MySQL and SQL Server settings through daemon registration, then connect, read schema and perform a bounded read"
+        "name": "Load saved Cassandra, etcd and MySQL settings through the daemon registry, then connect, read schema and perform a bounded read"
+      },
+      {
+        "level": "integration",
+        "name": "Verify saved SQL Server configuration, schema and bounded reads at the Tedious SDK boundary using the fixture"
       }
     ],
     "planTaskId": "t2"

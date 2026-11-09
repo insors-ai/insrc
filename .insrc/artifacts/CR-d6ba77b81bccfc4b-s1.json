@@ -1,0 +1,328 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "store-9af4f363-1ab5-4b0f-b76f-8f068934e1df",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-09T10:27:50.072Z",
+    "epicCreatedAt": "2026-11-09T10:17:04.018Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 2,
+    "epicHash": "d6ba77b81bccfc4b",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicSlug": "register-analyze-templates-runtimes-each-session",
+    "standalone": true,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "8613f7b7f013bbfb5e323af865a0c8882ca650b4699de6e2be821d1dcf57a0c9",
+        "at": "2026-11-09T10:27:50.073Z",
+        "by": {
+          "id": "insrc:code-review",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "kind": "code-review",
+    "format": "task-based",
+    "storyId": "s1",
+    "status": "passed",
+    "reviews": [
+      {
+        "reviewId": "worker-registry-r1",
+        "attempt": 1,
+        "storyId": "s1",
+        "reviewer": "daemon",
+        "status": "passed",
+        "finalScopeIdentity": "e3e89874d8b4e1d83fba996d154dc9c267209778fb91a96b0e72096702faf72e",
+        "attributionIdentity": "60fd75c3f68dfec7a57f7d43ebe8d4a0092ae06c19c0ba387ddd89916e6e86ab",
+        "taskScopeIdentities": [
+          {
+            "taskId": "s1",
+            "identity": "9705cc4736f6e818a3df3a7949985eb6a45cb0ae52adfb25bb766daafc1c5a5b"
+          }
+        ],
+        "scope": {
+          "reviewRevision": "100aba694b7cf310d1bc2e8c89366345878d9972",
+          "finalScope": {
+            "revision": "100aba694b7cf310d1bc2e8c89366345878d9972",
+            "identity": "e3e89874d8b4e1d83fba996d154dc9c267209778fb91a96b0e72096702faf72e",
+            "entries": [
+              {
+                "originChangeIndex": 0,
+                "path": "src/daemon/threads/__tests__/s3-acceptance.test.ts",
+                "blobOid": "12df89f67a677cf8c8cceef61d9487c0071cb31c",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      277,
+                      285
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 1,
+                "path": "src/daemon/threads/session-worker.ts",
+                "blobOid": "ba5c0b61e27d3790426d94c11d5024378ede2e74",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      51,
+                      52
+                    ]
+                  },
+                  {
+                    "after": [
+                      67,
+                      70
+                    ]
+                  },
+                  {
+                    "after": [
+                      159,
+                      164
+                    ]
+                  }
+                ]
+              }
+            ],
+            "dispositions": [
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    277,
+                    285
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      277,
+                      285
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    51,
+                    52
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      51,
+                      52
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    67,
+                    70
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      67,
+                      70
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    159,
+                    164
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      159,
+                      164
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              }
+            ],
+            "selectedTaskIds": [
+              "s1"
+            ],
+            "testCount": 1,
+            "attributionIdentity": "60fd75c3f68dfec7a57f7d43ebe8d4a0092ae06c19c0ba387ddd89916e6e86ab",
+            "attributionState": "accepted",
+            "tasks": [
+              {
+                "taskId": "s1",
+                "changeIndexes": [
+                  0,
+                  1
+                ],
+                "testIndexes": [
+                  0
+                ],
+                "decision": {
+                  "action": "initial"
+                },
+                "identity": "9705cc4736f6e818a3df3a7949985eb6a45cb0ae52adfb25bb766daafc1c5a5b"
+              }
+            ]
+          },
+          "storyId": "s1",
+          "documents": {
+            "issue": {
+              "path": ".insrc/artifacts/ISSUE-d6ba77b81bccfc4b.json",
+              "commit": "a9df0c9665eb693a2d7a950cd881f777502da8c6"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "100aba694b7cf310d1bc2e8c89366345878d9972",
+              "parent": "7c763ccce28a97a2a686ad22f25048cf76d3cd54",
+              "files": [
+                {
+                  "path": "src/daemon/threads/__tests__/s3-acceptance.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        277,
+                        285
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/daemon/threads/session-worker.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        51,
+                        52
+                      ]
+                    },
+                    {
+                      "after": [
+                        67,
+                        70
+                      ]
+                    },
+                    {
+                      "after": [
+                        159,
+                        164
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "s1",
+            "status": "passed",
+            "summary": "Inspected all submitted changed segments against the pinned ISSUE and acceptance check. The worker initializes both registries before serving requests, using the same idempotent registration functions as the main thread. No material defects found.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Reviewed the acceptance test body, daemon fixture, test-hook routing and registry accessors. The test starts a threaded daemon and queries a session worker over IPC, asserting a positive worker thread ID, at least 27 templates, at least 6 docs templates and non-empty runtimes. These assertions cover the required worker-local initialization. This assessment establishes coverage through inspection, not reviewer execution or end-to-end analyze success.",
+              "evidenceReferences": [
+                "a9df0c9665eb693a2d7a950cd881f777502da8c6:.insrc/artifacts/ISSUE-d6ba77b81bccfc4b.json",
+                "100aba694b7cf310d1bc2e8c89366345878d9972:src/daemon/threads/__tests__/s3-acceptance.test.ts",
+                "100aba694b7cf310d1bc2e8c89366345878d9972:src/daemon/threads/session-worker.ts",
+                "100aba694b7cf310d1bc2e8c89366345878d9972:src/daemon/index.ts",
+                "100aba694b7cf310d1bc2e8c89366345878d9972:src/daemon/threads/router.ts",
+                "100aba694b7cf310d1bc2e8c89366345878d9972:src/analyze/planner/templates/registry.ts",
+                "100aba694b7cf310d1bc2e8c89366345878d9972:src/analyze/executor/registry.ts"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: I did not run tests, integration checks, typechecks or builds. The recorded build-gate result is reported evidence, not my execution."
+            ],
+            "inspectedReferences": [
+              "a9df0c9665eb693a2d7a950cd881f777502da8c6:.insrc/artifacts/ISSUE-d6ba77b81bccfc4b.json",
+              "100aba694b7cf310d1bc2e8c89366345878d9972:src/daemon/threads/session-worker.ts",
+              "100aba694b7cf310d1bc2e8c89366345878d9972:src/daemon/threads/__tests__/s3-acceptance.test.ts",
+              "100aba694b7cf310d1bc2e8c89366345878d9972:src/daemon/threads/method-class.ts",
+              "100aba694b7cf310d1bc2e8c89366345878d9972:src/daemon/threads/router.ts",
+              "100aba694b7cf310d1bc2e8c89366345878d9972:src/daemon/index.ts",
+              "100aba694b7cf310d1bc2e8c89366345878d9972:src/daemon/analyze-rpc.ts",
+              "100aba694b7cf310d1bc2e8c89366345878d9972:src/analyze/planner/templates/bootstrap.ts",
+              "100aba694b7cf310d1bc2e8c89366345878d9972:src/analyze/runtimes/bootstrap.ts",
+              "100aba694b7cf310d1bc2e8c89366345878d9972:src/analyze/planner/templates/registry.ts",
+              "100aba694b7cf310d1bc2e8c89366345878d9972:src/analyze/executor/registry.ts",
+              "100aba694b7cf310d1bc2e8c89366345878d9972:src/analyze/planner/driver.ts",
+              "a9df0c9665eb693a2d7a950cd881f777502da8c6:docs/standalone/register-analyze-templates-runtimes-each-session-E20261109d6ba77b8/S001/TESTS.md"
+            ],
+            "executedTests": [
+              {
+                "file": "src/daemon/threads/__tests__/s3-acceptance.test.ts",
+                "cases": [
+                  "a session worker thread has the analyze template catalog and the task runtimes, as the main thread has"
+                ],
+                "command": "npx tsx --test src/daemon/threads/__tests__/s3-acceptance.test.ts",
+                "result": "pass",
+                "executionDetails": "Reported build-gate execution, not reviewer-run. The committed TESTS.md records commit 100aba694, exit code 0, 9 titles and 43.1 seconds.",
+                "evidenceReferences": [
+                  "a9df0c9665eb693a2d7a950cd881f777502da8c6:docs/standalone/register-analyze-templates-runtimes-each-session-E20261109d6ba77b8/S001/TESTS.md"
+                ]
+              }
+            ]
+          }
+        ],
+        "summary": "1 selected task assessment(s): passed.",
+        "completedAt": "2026-11-09T10:27:46.560Z",
+        "buildFingerprint": "9d213e4dc5410249f0dcf3b4392796b5b172ceed130ab0e2388a37303a8402e4"
+      }
+    ]
+  },
+  "citations": []
+}

@@ -468,7 +468,7 @@ export class ProgressCoordinator<D extends Details> {
           this.notify(runtime.task);
         }
       };
-      await this.store.commit(next, record.revision, ended ? publish : undefined);
+      await this.store.commit(next, record.revision, publish);
       publish();
       return 'recorded';
     });

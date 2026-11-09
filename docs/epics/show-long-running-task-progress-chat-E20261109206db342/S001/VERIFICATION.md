@@ -1,6 +1,6 @@
 # S1 final verification
 
-The root build passed. The combined sweep finished with failures, so the smoke gate remains open.
+The root build passed. The combined sweep exited 1. The story owner authorized the recorded disposition below for T6 verification.
 
 | Input | Revision or setting |
 | --- | --- |
@@ -41,4 +41,8 @@ The targeted upstream build passed with the same dependency lockfile. Targeted t
 
 Three original signatures did not recur in targeted runs of either revision. Two were native process broker fixture cases, covering chunked readiness and invalid capture cleanup. The third was the controller review disconnect case. A different controller inactivity case failed in targeted runs of both revisions. The original failure and cancellation counts remain as reported by the combined runner.
 
-Raw build and sweep logs, baseline comparisons, and the focused registry rerun are in `/tmp/insrc-progress-s1-F74F7K/`. The full TAP log has SHA-256 `367722e3827be0dac48c985abae1fd85210a74967eefce1931ebdc9c9a46109e`. Prior baseline remediation is tracked separately in [issue #143](https://github.com/insors-ai/insrc/issues/143). A gate exception for this sweep has not been recorded.
+Raw build and sweep logs, baseline comparisons, and the focused registry rerun are in `/tmp/insrc-progress-s1-F74F7K/`. The full TAP log has SHA-256 `367722e3827be0dac48c985abae1fd85210a74967eefce1931ebdc9c9a46109e`. Prior baseline remediation is tracked separately in [issue #143](https://github.com/insors-ai/insrc/issues/143).
+
+## Gate disposition
+
+The story owner authorized accepting the reproduced upstream failures and the three non-reproducing signatures for S1. The handler registry mismatch was corrected and rechecked on the merged source. Under the approved plan, this disposition completes the verification criterion for the single sweep. The original failed sweep and its counts remain part of the evidence.

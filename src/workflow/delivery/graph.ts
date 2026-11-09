@@ -25,8 +25,10 @@ import type {
 	ArtifactRecordSet,
 	CorrectsRef,
 	DeliveryNotice,
+	UnitStatus,
 	WorkItemGraph,
 	WorkItemNode,
+	WorkItemUnit,
 } from './types.js';
 
 // ---------------------------------------------------------------------------
@@ -119,6 +121,20 @@ function byTaskOrdinal(a: string, b: string): number {
 	return a.localeCompare(b);
 }
 
+/** The records that describe a unit rather than decide it: no one approves one, none is a work item's head, and none is evidence. */
+const UNIT_KINDS: ReadonlySet<ArtifactRecord['kind']> = new Set(['EPIC', 'STORY', 'TASK', 'TASKS', 'DIAG']);
+
+/** A record a person reads as evidence of a work item; a unit's own head is shown as its status instead. */
+const isEvidence = (r: ArtifactRecord): boolean => !UNIT_KINDS.has(r.kind);
+
+/** The unit whose head is `id`: its status, `unmigrated` when the head has no lifecycle, null when there is no head. */
+function unitOf(byId: ReadonlyMap<string, ArtifactRecord>, id: string): WorkItemUnit {
+	const head = byId.get(id);
+	if (head === undefined) return null;
+	const status = asString(asObject(head.meta['lifecycle'])?.['status']);
+	return { artifactId: id, status: (status ?? 'unmigrated') as UnitStatus };
+}
+
 /** A story named by an epic's records: by DEF entry, approved EXT or its own group. */
 interface StorySeed {
 	readonly storyKey: string;
@@ -140,6 +156,7 @@ interface Draft {
 	plannedTaskIds: string[];
 	correctsRef: CorrectsRef | null;
 	seededFromSpecId: string | null;
+	unit: WorkItemUnit;
 }
 
 function freeze(d: Draft): WorkItemNode {
@@ -156,13 +173,14 @@ function freeze(d: Draft): WorkItemNode {
 		plannedTaskIds:      [...new Set(d.plannedTaskIds)].sort(byTaskOrdinal),
 		correctsRef:         d.correctsRef,
 		seededFromSpecId:    d.seededFromSpecId,
+		unit:                d.unit,
 	};
 }
 
 function draftOf(fields: Pick<Draft, 'id' | 'kind' | 'title' | 'workItemHash' | 'standalone'> & Partial<Draft>): Draft {
 	return {
 		sourceIds: [], parentId: null, childIds: [], evidenceArtifactIds: [], plannedTaskIds: [],
-		correctsRef: null, seededFromSpecId: null,
+		correctsRef: null, seededFromSpecId: null, unit: null,
 		...fields,
 	};
 }
@@ -190,6 +208,7 @@ interface HashInfo {
 /** Build the work-item graph from one record set. Pure and order-stable; never throws. */
 export function buildWorkItemGraph(recordSet: ArtifactRecordSet): WorkItemGraph {
 	const groups = groupRecordsByWorkItem(recordSet);
+	const byId = new Map(recordSet.records.map(r => [r.artifactId, r] as const));
 	const notices: DeliveryNotice[] = [];
 	const drafts = new Map<string, Draft>();
 	const hashes = new Map<string, HashInfo>();
@@ -226,15 +245,16 @@ export function buildWorkItemGraph(recordSet: ArtifactRecordSet): WorkItemGraph 
 				title:               head.kind === 'DEF' ? str(head.meta['epicSlug']) : str(obj(head.body)['title']),
 				workItemHash:        hash,
 				standalone:          head.meta['standalone'] === true,
-				evidenceArtifactIds: epicLevel.map(r => r.artifactId),
+				evidenceArtifactIds: epicLevel.filter(isEvidence).map(r => r.artifactId),
 			});
+			if (head.kind === 'DEF') headDraft.unit = unitOf(byId, `EPIC-${hash}`);
 			drafts.set(id, headDraft);
 			if (def !== null && issue !== null) {
 				notices.push(makeNotice('identity-ambiguous',
 					`work-item hash ${hash} has both a Define and an issue record; the Define is used as the work item`,
 					{ itemIds: [id], artifactIds: [def.artifactId, issue.artifactId] }));
 			}
-		} else if (epicLevel.length > 0) {
+		} else if (epicLevel.some(r => !UNIT_KINDS.has(r.kind))) {
 			notices.push(makeNotice('unresolved-parent',
 				`records under work-item hash ${hash} name a work item with no Define or issue record in the store`,
 				{ artifactIds: epicLevel.map(r => r.artifactId) }));
@@ -315,8 +335,9 @@ export function buildWorkItemGraph(recordSet: ArtifactRecordSet): WorkItemGraph 
 				sourceIds:           s.sourceIds,
 				// A DEF's stories are its members; an issue's are its fix stories.
 				parentId:            headDraft?.id ?? null,
-				evidenceArtifactIds: records.map(r => r.artifactId),
+				evidenceArtifactIds: records.filter(isEvidence).map(r => r.artifactId),
 			});
+			draft.unit = ordinal === null ? null : unitOf(byId, `STORY-${hash}-s${ordinal}`);
 			drafts.set(id, draft);
 			const info: StoryInfo = { draft, hash, ordinal, anchor, records };
 			stories.push(info);
@@ -340,7 +361,7 @@ export function buildWorkItemGraph(recordSet: ArtifactRecordSet): WorkItemGraph 
 	}
 
 	for (const info of hashes.values()) {
-		for (const story of info.stories) addTasks(story, drafts);
+		for (const story of info.stories) addTasks(story, drafts, byId);
 	}
 	resolveCorrectedParents(recordSet, hashes, notices);
 	attachSpecs(recordSet, drafts, notices);
@@ -369,7 +390,7 @@ export function buildWorkItemGraph(recordSet: ArtifactRecordSet): WorkItemGraph 
  * or trivial build) is not a task but the story-level result the gate pass
  * reads; any other non-t<n> id is ignored there too.
  */
-function addTasks(story: StoryInfo, drafts: Map<string, Draft>): void {
+function addTasks(story: StoryInfo, drafts: Map<string, Draft>, byId: ReadonlyMap<string, ArtifactRecord>): void {
 	const tasks = new Map<string, { title: string | null; evidence: string[] }>();
 	const planned: string[] = [];
 	const note = (taskId: string, title: string | null, artifactId: string): void => {
@@ -412,6 +433,7 @@ function addTasks(story: StoryInfo, drafts: Map<string, Draft>): void {
 			sourceIds:           [taskId],
 			parentId:            story.draft.id,
 			evidenceArtifactIds: t.evidence,
+			unit:                ordinal === null ? null : unitOf(byId, `TASK-${story.hash}-s${ordinal}-${taskId}`),
 		}));
 		story.draft.childIds.push(id);
 	}

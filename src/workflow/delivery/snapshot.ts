@@ -143,6 +143,7 @@ export function assembleSnapshot(
 			validation:       story === undefined ? null : story.validation,
 			storyLevelResult: story === undefined ? null : story.storyLevelResult,
 			conflict:         story === undefined ? null : story.conflict,
+			unit:             node.unit,
 			correctsRef:      node.correctsRef,
 			amendments:       node.kind === 'epic' ? [...(currency.amendments.get(node.id) ?? [])] : [],
 			notices,

@@ -217,7 +217,7 @@ const CHAINS: Readonly<Partial<Record<WorkItemNode['kind'], readonly DeliveryArt
 	story: ['SPEC', 'LLD', 'PLAN', 'BUILD'],
 };
 
-const REASON_ORDER: readonly AttentionReason[] = ['pending-decision', 'rejected', 'review-blocked', 'validation-failed', 'validation-conflict'];
+const REASON_ORDER: readonly AttentionReason[] = ['pending-decision', 'rejected', 'review-blocked', 'validation-failed', 'validation-conflict', 'needs-migration'];
 
 const ATTENTION_RULE = 'A pending record stops counting toward Needs attention once a later gate on the same item is approved '
 	+ '(epic: SPEC < DEF < HLD; story: SPEC < LLD < PLAN < BUILD); ISSUE, EXT and AMD records are never superseded.';
@@ -356,6 +356,8 @@ function itemGates(
 	}
 	if (validation.tasks.some(t => t.result === 'failed') || validation.storyLevelResult === 'failed') reasons.add('validation-failed');
 	if (validation.conflict !== null) reasons.add('validation-conflict');
+	const migration = needsMigration(item, counted, graph);
+	if (migration.length > 0) reasons.add('needs-migration');
 
 	const gates: ItemGates = {
 		itemId:           item.id,
@@ -371,7 +373,26 @@ function itemGates(
 		attentionReasons: REASON_ORDER.filter(r => reasons.has(r)),
 		attentionRule:    `${ATTENTION_RULE} Excluded here: ${superseded.length === 0 ? 'none' : superseded.join(', ')}.`,
 	};
-	return { gates, notices: validation.notices };
+	const migrationNotice = migration.length === 0 ? [] : [makeNotice('needs-migration', `${item.id} needs a repair: ${migration.join(', ')}`, { itemIds: [item.id], artifactIds: counted.filter(r => r.approval.state === 'unmigrated').map(r => r.artifactId) })];
+	return { gates, notices: [...validation.notices, ...migrationNotice] };
+}
+
+const isUnmigrated = (unit: WorkItemNode['unit']): boolean => unit === null || unit.status === 'unmigrated';
+
+/**
+ * What about an item is still to be brought into the common model, in words: its records with no lifecycle, its own head if an epic or a
+ * story has none or an unmigrated one, and its planned Tasks if its plan is approved and they have none.
+ */
+function needsMigration(item: WorkItemNode, counted: readonly ArtifactRecord[], graph: WorkItemGraph): string[] {
+	const out = counted.filter(r => r.approval.state === 'unmigrated').map(r => `${r.artifactId} has no lifecycle`);
+	if ((item.kind === 'epic' || item.kind === 'story') && isUnmigrated(item.unit)) out.push(item.unit === null ? `the ${item.kind} has no head` : `${item.unit.artifactId} has no lifecycle`);
+	if (item.kind === 'story' && counted.some(r => r.kind === 'PLAN' && r.approval.state === 'approved')) {
+		for (const childId of item.childIds) {
+			const child = graph.items.get(childId);
+			if (child?.kind === 'task' && child.sourceIds.some(s => item.plannedTaskIds.includes(s)) && isUnmigrated(child.unit)) out.push(`task ${childId} has no head`);
+		}
+	}
+	return out;
 }
 
 /** The gate pass over one record set and its graph. */

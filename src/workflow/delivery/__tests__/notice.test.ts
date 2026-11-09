@@ -11,10 +11,10 @@ import assert from 'node:assert/strict';
 import { NOTICE_ATTENTION, makeNotice, sortNotices } from '../notice.js';
 import type { NoticeCode } from '../types.js';
 
-test('NOTICE_ATTENTION is true for exactly record-unreadable, identity-ambiguous, unresolved-parent and validation-conflict', () => {
+test('NOTICE_ATTENTION is true for exactly record-unreadable, identity-ambiguous, unresolved-parent, validation-conflict and needs-migration', () => {
 	const attention = (Object.keys(NOTICE_ATTENTION) as NoticeCode[]).filter(c => NOTICE_ATTENTION[c]).sort();
-	assert.deepEqual(attention, ['identity-ambiguous', 'record-unreadable', 'unresolved-parent', 'validation-conflict']);
-	assert.equal(Object.keys(NOTICE_ATTENTION).length, 12);
+	assert.deepEqual(attention, ['identity-ambiguous', 'needs-migration', 'record-unreadable', 'unresolved-parent', 'validation-conflict']);
+	assert.equal(Object.keys(NOTICE_ATTENTION).length, 13);
 });
 
 test('makeNotice sorts and de-duplicates ids and takes attention from the table', () => {

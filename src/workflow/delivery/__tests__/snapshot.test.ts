@@ -29,13 +29,14 @@ import {
 	recordFromFile,
 	recordSet,
 	REAL_STORE,
-	specRecord,
-} from './fixtures.js';
+	specRecord, withUnitHeads } from './fixtures.js';
 
 const EPIC  = 'aaaaaaaaaaaaaaaa';
 const ISSUE = 'bbbbbbbbbbbbbbbb';
 const SOLO  = 'cccccccccccccccc';
 const APPROVED = { approvedAt: CREATED };
+/** The Stories these fixtures hold as completed: a repaired store's STORY head says so. */
+const COMPLETED_STORIES = [`${EPIC}-s1`];
 
 /** A port that reports every LLD under docs/ with its marker, and nothing else. */
 const PORT: DeliveryMarkdownPort = {
@@ -43,7 +44,7 @@ const PORT: DeliveryMarkdownPort = {
 };
 
 function snapshotOf(records: readonly ArtifactRecord[], port: DeliveryMarkdownPort = PORT): DeliverySnapshot {
-	const set = recordSet(records);
+	const set = recordSet(withUnitHeads(records, COMPLETED_STORIES));
 	const graph = buildWorkItemGraph(set);
 	return assembleSnapshot(set, graph, deriveStages(graph, set), deriveGates(graph, set), deriveCurrency(graph, set), port);
 }
@@ -78,7 +79,7 @@ test('every work item is joined with its stage, evidence, gates, currency and no
 	assert.equal(s.schemaVersion, 1);
 	assert.equal(s.repo, '/repo');
 	assert.equal(s.takenAt, '2026-10-07T00:00:00.000Z', 'the record set read time');
-	assert.equal(s.recordCount, STORE.length);
+	assert.equal(s.recordCount, withUnitHeads(STORE, COMPLETED_STORIES).length);
 	assert.equal(s.unreadableCount, 0);
 	assert.deepEqual(s.items.map(i => i.id), [...s.items.map(i => i.id)].sort(), 'sorted by id');
 	assert.deepEqual(s.counts.items, { epic: 1, story: 2, task: 1, issue: 0 });

@@ -27,6 +27,7 @@ export const NOTICE_ATTENTION: Readonly<Record<NoticeCode, boolean>> = {
 	'incomplete-evidence':     false,
 	'review-currency-unknown': false,
 	'base-predates-extension': false,
+	'needs-migration':         true,
 };
 
 export interface NoticeRefs {

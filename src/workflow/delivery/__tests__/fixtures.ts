@@ -421,6 +421,43 @@ function fabricate(kind: DeliveryArtifactKind, hash: string, storyId: string | u
 	return recordFromFile(fileFor(kind, hash, storyId), { meta: fullMeta, body });
 }
 
+const unitLifecycle = (status: string) => ({ status, revision: { number: 1, contentHash: '', at: CREATED, by: { id: 'insrc:system', kind: 'system', properties: {} } }, signoffs: [] });
+
+/** An EPIC, STORY or TASK head with the given status (a TASK's `storyId` is its story and task, 's1-t1'). */
+export function unitHead(kind: 'EPIC' | 'STORY' | 'TASK', hash: string, storyId: string | undefined, status: string): ArtifactRecord {
+	const story = storyId?.split('-')[0];
+	return recordFromFile(fileFor(kind, hash, storyId), { meta: { createdAt: CREATED, epicCreatedAt: CREATED, epicHash: hash, ...(story !== undefined ? { storyId: story } : {}), lifecycle: unitLifecycle(status) }, body: {} });
+}
+
+/** A head exactly as stored with no lifecycle: lifted directly, because `recordFromFile` gives a fixture the lifecycle the conversion would. */
+export function unmigratedRecord(fileName: string, meta: Meta): ArtifactRecord {
+	const lifted = liftStoreFile(fileName, { meta: { createdAt: CREATED, epicCreatedAt: CREATED, ...meta }, body: {} });
+	if ('reason' in lifted) throw new Error(`fixtures: '${fileName}' does not lift: ${lifted.reason}`);
+	return lifted;
+}
+
+/**
+ * The records with the unit heads a repaired repository holds: an EPIC per Define, a STORY per story, a TASK per row of an approved plan,
+ * so a test about something else is not also about migration. A STORY named in `completed` is completed, the others are drafts.
+ */
+export function withUnitHeads(records: readonly ArtifactRecord[], completed: readonly string[] = []): ArtifactRecord[] {
+	const heads = new Map<string, ArtifactRecord>();
+	const add = (r: ArtifactRecord): void => { if (!heads.has(r.artifactId) && !records.some(x => x.artifactId === r.artifactId)) heads.set(r.artifactId, r); };
+	for (const r of records) {
+		const hash = r.workItemHash;
+		if (hash === null) continue;
+		if (r.kind === 'DEF') add(unitHead('EPIC', hash, undefined, 'draft'));
+		if (r.storyOrdinal === null) continue;
+		const story = `s${r.storyOrdinal}`;
+		add(unitHead('STORY', hash, story, completed.includes(`${hash}-${story}`) ? 'completed' : 'draft'));
+		if (r.kind === 'PLAN') {
+			const rows = (r.body as { tasks?: readonly { id?: unknown }[] } | null)?.tasks ?? [];
+			for (const row of rows) if (typeof row.id === 'string') add(unitHead('TASK', hash, `${story}-${row.id}`, 'approved'));
+		}
+	}
+	return [...records, ...heads.values()];
+}
+
 /** Extra body fields a fixture merges into the record's body (descriptive values, feedback). */
 type Body = Readonly<Record<string, unknown>>;
 

@@ -11,7 +11,7 @@
  * so IDE clients can import the shapes without pulling in node:fs.
  */
 
-import type { Feedback } from '../artifact-core/types.js';
+import type { Feedback, Status } from '../artifact-core/types.js';
 import type { StoredReviewRecord } from '../review/report-log.js';
 import type { ReviewVerdict } from '../review/types.js';
 import type { SignoffView } from '../team/signoff.js';
@@ -24,6 +24,12 @@ export type { ReviewVerdict };
 // ---------------------------------------------------------------------------
 
 export type DeliveryArtifactKind = 'SPEC' | 'DEF' | 'HLD' | 'LLD' | 'PLAN' | 'BUILD' | 'CR' | 'ISSUE' | 'EXT' | 'AMD' | 'EPIC' | 'STORY' | 'TASK' | 'TASKS' | 'DIAG';
+
+/** A unit's status as its head records it; `unmigrated` when the head has no lifecycle. */
+export type UnitStatus = Status | 'unmigrated';
+
+/** An Epic's, Story's or Task's own head and its status; null on a node only when it has no head. */
+export type WorkItemUnit = { readonly artifactId: string; readonly status: UnitStatus } | null;
 
 /** `unmigrated`: the head has no lifecycle, so nothing about its approval can be read until a repair has given it one. */
 export type ApprovalState = 'approved' | 'rejected' | 'pending' | 'unmigrated';
@@ -105,6 +111,8 @@ export interface WorkItemNode {
 	readonly evidenceArtifactIds: readonly string[];
 	/** Stories only: task ids from the PLAN. */
 	readonly plannedTaskIds:      readonly string[];
+	/** Set for epics, stories and tasks; null only when there is no head. */
+	readonly unit:                WorkItemUnit;
 	/** Issues only, from meta.parentRef; null otherwise or when the issue names only itself. */
 	readonly correctsRef:         CorrectsRef | null;
 	/** 'SPEC-' + meta.seededFromSpec when the item was seeded from a spec. */
@@ -135,7 +143,8 @@ export type NoticeCode =
 	| 'validation-conflict'        // s3: completion approved while a task failed
 	| 'incomplete-evidence'        // s4 / s5: expected evidence absent
 	| 'review-currency-unknown'    // s4: no recorded field settles whether a review is current
-	| 'base-predates-extension';   // s4: an accepted extension is newer than the epic framing
+	| 'base-predates-extension'    // s4: an accepted extension is newer than the epic framing
+	| 'needs-migration';           // a record with no lifecycle, or a unit with no head or an unmigrated one: a repair brings it in
 
 export interface DeliveryNotice {
 	readonly code:        NoticeCode;
@@ -216,7 +225,7 @@ export interface TaskValidation {
 }
 
 /** 'validation-failed' is raised by a failed task result or a failed storyLevelResult alike. */
-export type AttentionReason = 'pending-decision' | 'rejected' | 'review-blocked' | 'validation-failed' | 'validation-conflict';
+export type AttentionReason = 'pending-decision' | 'rejected' | 'review-blocked' | 'validation-failed' | 'validation-conflict' | 'needs-migration';
 
 export interface ItemGates {
 	readonly itemId:           string;
@@ -347,6 +356,8 @@ export interface DeliveryItem {
 	readonly notices:          readonly DeliveryNotice[];
 	readonly needsAttention:   boolean;
 	readonly attentionReasons: readonly (AttentionReason | NoticeCode)[];
+	/** The item's own head and its status; null when it has none (and always on an issue). */
+	readonly unit:             WorkItemUnit;
 	/** What the item is about, from its own records; see DeliveryItemDescription. */
 	readonly description:      DeliveryItemDescription;
 	/** The feedback recorded on the item's own design records (an epic's DEF and HLD, a story's LLD and PLAN); never inherited. */

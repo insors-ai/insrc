@@ -34,8 +34,7 @@ import {
 	planRecord,
 	realRecords,
 	recordSet,
-	specRecord,
-} from './fixtures.js';
+	specRecord, withUnitHeads, recordFromFile, unitHead, unmigratedRecord } from './fixtures.js';
 
 const EPIC  = 'aaaaaaaaaaaaaaaa';
 const ISSUE = 'bbbbbbbbbbbbbbbb';
@@ -46,7 +45,7 @@ const APPROVED = { approvedAt: CREATED };
 const REVIEWED = '2026-10-08T10:00:00.000Z';
 
 function run(records: readonly ArtifactRecord[]): { graph: WorkItemGraph; result: GatePassResult } {
-	const set = recordSet(records);
+	const set = recordSet(withUnitHeads(records));
 	const graph = buildWorkItemGraph(set);
 	return { graph, result: deriveGates(graph, set) };
 }
@@ -85,6 +84,44 @@ function recordWith(record: ArtifactRecord, body: unknown): ArtifactRecord {
 
 const MED = (claimId: string): Record<string, unknown> => ({ claimId, severity: 'MED', claim: 'c', evidence: 'e' });
 
+test('a missing or unmigrated unit raises needs-migration and not pending-decision', () => {
+	const H = '1111111111111111';
+	const plain = (name: string, storyId?: string): ArtifactRecord => unmigratedRecord(name, { epicHash: H, ...(storyId !== undefined ? { storyId } : {}) });
+	const reasons = (records: readonly ArtifactRecord[], kind: WorkItemNode['kind']): readonly string[] => {
+		const set = recordSet(records);
+		const graph = buildWorkItemGraph(set);
+		const item = [...graph.items.values()].find(i => i.kind === kind);
+		assert.ok(item !== undefined, kind);
+		return deriveGates(graph, set).items.get(item.id)?.attentionReasons ?? [];
+	};
+	const approved = { approvedAt: CREATED };
+	const decided = [defRecord(H, ['s1'], approved)];
+
+	// a missing head, on the Epic and on the Story
+	assert.deepEqual(reasons(decided, 'epic'), ['needs-migration']);
+	assert.deepEqual(reasons(decided, 'story'), ['needs-migration']);
+	// an unmigrated head
+	const unmigratedEpic = [...decided, plain(`EPIC-${H}.json`), unitHead('STORY', H, 's1', 'draft')];
+	assert.deepEqual(reasons(unmigratedEpic, 'epic'), ['needs-migration']);
+	assert.deepEqual(reasons(unmigratedEpic, 'story'), [], 'control: the Story has a head with a lifecycle, and a draft unit head is no decision');
+	// an unmigrated record: not a pending decision, even though nobody has approved it
+	const lld = plain(`LLD-${H}-s1.json`, 's1');
+	assert.equal(lld.approval.state, 'unmigrated');
+	assert.deepEqual(reasons([...decided, unitHead('EPIC', H, undefined, 'draft'), unitHead('STORY', H, 's1', 'draft'), lld], 'story'), ['needs-migration']);
+	// the control: a real pending record is still a pending decision
+	assert.deepEqual(reasons([...decided, unitHead('EPIC', H, undefined, 'draft'), unitHead('STORY', H, 's1', 'draft'), lldRecord(H, 's1')], 'story'), ['pending-decision']);
+	// an approved plan whose Task has no head names it; a plan still in draft does not, because its Tasks come with its approval
+	const units = [...decided, unitHead('EPIC', H, undefined, 'draft'), unitHead('STORY', H, 's1', 'draft')];
+	assert.ok(reasons([...units, planRecord(H, 's1', ['t1'], approved)], 'story').includes('needs-migration'));
+	assert.deepEqual(reasons([...units, planRecord(H, 's1', ['t1'], approved), unitHead('TASK', H, 's1-t1', 'approved')], 'story'), []);
+	assert.deepEqual(reasons([...units, planRecord(H, 's1', ['t1'])], 'story'), ['pending-decision'], 'a draft plan is a decision to make, not a migration');
+	// the attention is a notice too, naming the record
+	const set = recordSet([...decided, plain(`LLD-${H}-s1.json`, 's1')]);
+	const notices = deriveGates(buildWorkItemGraph(set), set).notices.filter(n => n.code === 'needs-migration');
+	assert.ok(notices.some(n => n.artifactIds.includes(`LLD-${H}-s1`)), JSON.stringify(notices));
+	assert.ok(notices.every(n => n.attention));
+});
+
 test('approved, rejected and unstamped artifacts read approved, rejected and pending', () => {
 	const { result } = run([
 		defRecord(EPIC, ['s1', 's2', 's3']),
@@ -96,7 +133,7 @@ test('approved, rejected and unstamped artifacts read approved, rejected and pen
 	assert.deepEqual(gateOf(result, `LLD-${EPIC}-s2`).approval, { state: 'rejected', at: null });
 	assert.deepEqual(gateOf(result, `LLD-${EPIC}-s3`).approval, { state: 'pending', at: null });
 	assert.equal(gateOf(result, `LLD-${EPIC}-s3`).review, null, 'no lifecycle review, no review');
-	assert.equal(result.artifacts.size, 4, 'every record gets a gate');
+	assert.equal(result.artifacts.size, 8, 'every record gets a gate: the Define, three LLDs, and the Epic and Story heads');
 });
 
 test('an approved historical block and an overridden block do not block and still show the verdict and the override', () => {
@@ -253,7 +290,7 @@ test('an approved build with a failed task is a validation conflict and keeps bo
 	assert.deepEqual(notice.itemIds, [story.id, ...failed].sort());
 
 	const set = recordSet(records);
-	assert.equal(deriveStages(buildWorkItemGraph(set), set).stages.get(story.id)?.stage, 'complete');
+	assert.equal(deriveStages(buildWorkItemGraph(set), set).stages.get(story.id)?.stage, 'build-recorded', 'an approved BUILD alone no longer completes it');
 });
 
 test('a failed story-level result on an approved build raises the conflict (BUILD-0855311b6b32eb72-s1 shape)', () => {
@@ -345,7 +382,7 @@ test('every epic, story and issue in the real-shape fixtures gets item gates, de
 	const expected = [...first.graph.items.values()].filter(n => n.kind !== 'task').map(n => n.id).sort();
 
 	assert.deepEqual([...first.result.items.keys()].sort(), expected);
-	assert.equal(first.result.artifacts.size, realRecords().length);
+	assert.equal(first.result.artifacts.size, withUnitHeads(realRecords()).length);
 	assert.deepEqual([...first.result.items.entries()], [...second.result.items.entries()]);
 	assert.deepEqual([...first.result.artifacts.entries()], [...second.result.artifacts.entries()]);
 	assert.deepEqual(first.result.notices, second.result.notices);

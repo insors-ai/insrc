@@ -37,6 +37,51 @@ function taskedSnapshot() {
   ]);
 }
 
+test('taskShortIdOf shows R004 for a row id', () => {
+  assert.equal(taskShortIdOf('E20261011aaaaaaaa:S001:R004'), 'R004');
+});
+
+test('board-details joins on planRowId, falling back to sourceIds only when it is null', () => {
+  const task = (id: string, planRowId: string | null, sourceIds: string[]) => item({ id: `E1:S001:${id}`, kind: 'task', parentId: 'E1:S001', title: id, planRowId, sourceIds });
+  const snap = snapshot([
+    item({
+      id: 'E1:S001', stage: 'build-recorded', childIds: ['E1:S001:T004', 'E1:S001:R004', 'E1:S001:T007'],
+      tasks: [
+        { taskItemId: 'E1:S001:T004', result: 'passed', planned: true, taskOrder: 1 },
+        { taskItemId: 'E1:S001:R004', result: 'failed', planned: true, taskOrder: 2 },
+        { taskItemId: 'E1:S001:T007', result: 'passed', planned: false, taskOrder: null },
+      ],
+      validation: { passed: 2, failed: 1, unrecorded: 0, unplanned: 1 },
+    }),
+    // Task t4 stands for row t9, and a stray source id t4 must not pull it onto row t4
+    task('T004', 't9', ['t4', 't9']),
+    task('R004', 't4', ['t4']),
+    task('T007', null, ['t7']),
+  ]);
+  const plan: PlanRead = { state: 'ok', tasks: [{ id: 't9', dependsOn: ['t4'], acceptanceChecks: ['nine'] }, { id: 't4', dependsOn: [], acceptanceChecks: ['four'] }, { id: 't7', dependsOn: ['t9'], acceptanceChecks: ['seven'] }] };
+  const rows = buildItemDetails(snap, 'E1:S001', plan, null, DISPLAY_LABELS)!.tasks;
+  assert.deepEqual(rows.map(r => r.acceptanceChecks), [['nine'], ['four'], ['seven']], 'each item finds its own row; with no planRowId, by sourceIds');
+  assert.deepEqual(rows[0]!.dependsOn, [{ shortId: 'R004', title: 'R004' }], 'a dependency on row t4 is the item standing for row t4');
+  assert.deepEqual(rows[2]!.dependsOn, [{ shortId: 'T004', title: 'T004' }]);
+  assert.deepEqual(rows.map(r => r.shortId), ['T004', 'R004', 'T007'], 'rendered in the order given');
+});
+
+test('TaskRowView carries a Task\'s unit status, including unmigrated', () => {
+  const task = (id: string, unit: { artifactId: string; status: string } | null) => item({ id: `E1:S001:${id}`, kind: 'task', parentId: 'E1:S001', title: id, unit: unit as never });
+  const snap = snapshot([
+    item({
+      id: 'E1:S001', stage: 'build-recorded', childIds: ['E1:S001:T001', 'E1:S001:T002', 'E1:S001:T003'],
+      tasks: [{ taskItemId: 'E1:S001:T001', result: 'passed', planned: true }, { taskItemId: 'E1:S001:T002', result: 'failed', planned: true }, { taskItemId: 'E1:S001:T003', result: 'passed', planned: false }],
+      validation: { passed: 2, failed: 1, unrecorded: 0, unplanned: 1 },
+    }),
+    task('T001', { artifactId: 'TASK-1', status: 'completed' }),
+    task('T002', { artifactId: 'TASK-2', status: 'unmigrated' }),
+    task('T003', null),
+  ]);
+  const rows = buildItemDetails(snap, 'E1:S001', { state: 'none' }, null, DISPLAY_LABELS)!.tasks;
+  assert.deepEqual(rows.map(r => [r.resultLabel, r.unitLabel, r.unitTone]), [['Passed', 'Completed', 'success'], ['Failed', 'Not migrated', 'warning'], ['Unplanned', null, 'neutral']]);
+});
+
 test('planned tasks show their dependencies and checks with Passed, Failed or Unrecorded, a build-only task is unplanned, and unrecorded tasks are counted apart', () => {
   const plan: PlanRead = { state: 'ok', tasks: [
     { id: 't1', dependsOn: [], acceptanceChecks: ['types compile'] },

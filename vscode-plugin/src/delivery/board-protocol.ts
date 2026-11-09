@@ -138,6 +138,9 @@ export interface TaskRowView {
   readonly acceptanceChecks: readonly string[] | null;
   /** Passed success, Failed danger, Unrecorded and Unplanned neutral. */
   readonly resultTone: BadgeView['tone'];
+  /** The status of the Task's own head, 'Not migrated' when it has no lifecycle; null when the row has no Task. */
+  readonly unitLabel: string | null;
+  readonly unitTone: BadgeView['tone'];
 }
 
 /**

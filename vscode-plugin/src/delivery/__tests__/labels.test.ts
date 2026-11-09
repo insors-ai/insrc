@@ -15,6 +15,7 @@ import type {
   NoticeCode,
   ReviewVerdict,
   TaskResult,
+  UnitStatus,
 } from '../delivery-contract.js';
 import { DISPLAY_LABELS, msBetween, plural, readableTime, STAGE_ORDER } from '../labels.js';
 
@@ -25,16 +26,20 @@ const STAGES: Record<DeliveryStage, true> = {
 };
 const ATTENTION: Record<AttentionReason, true> = {
   'pending-decision': true, 'rejected': true, 'review-blocked': true,
-  'validation-failed': true, 'validation-conflict': true,
+  'validation-failed': true, 'validation-conflict': true, 'needs-migration': true,
 };
 const NOTICES: Record<NoticeCode, true> = {
   'record-unreadable': true, 'identity-ambiguous': true, 'unresolved-parent': true,
   'identity-anchor-missing': true, 'unattached-spec': true, 'unknown-route': true,
   'review-without-build': true, 'unplanned-task': true, 'validation-conflict': true,
-  'incomplete-evidence': true, 'review-currency-unknown': true, 'base-predates-extension': true,
+  'incomplete-evidence': true, 'review-currency-unknown': true, 'base-predates-extension': true, 'needs-migration': true,
 };
 const RESULTS: Record<TaskResult, true> = { 'passed': true, 'failed': true, 'unrecorded': true };
-const APPROVALS: Record<ApprovalState, true> = { 'approved': true, 'rejected': true, 'pending': true };
+const APPROVALS: Record<ApprovalState, true> = { 'approved': true, 'rejected': true, 'pending': true, 'unmigrated': true };
+const UNIT_STATUSES: Record<UnitStatus, true> = {
+  'draft': true, 'pending-review': true, 'approved': true, 'in-signoff': true, 'changes-requested': true, 'signed-off': true,
+  'rejected': true, 'completed': true, 'withdrawn': true, 'superseded': true, 'unmigrated': true,
+};
 const VERDICTS: Record<ReviewVerdict, true> = { 'pass': true, 'warn': true, 'block': true };
 
 function assertLabelled(name: string, members: Record<string, true>, labels: Readonly<Record<string, string>>): void {
@@ -50,6 +55,7 @@ test('every stage, attention reason, notice code, task result, approval state an
   assertLabelled('notice', NOTICES, DISPLAY_LABELS.notice);
   assertLabelled('taskResult', RESULTS, DISPLAY_LABELS.taskResult);
   assertLabelled('approval', APPROVALS, DISPLAY_LABELS.approval);
+  assertLabelled('unitStatus', UNIT_STATUSES, DISPLAY_LABELS.unitStatus);
   assertLabelled('reviewVerdict', VERDICTS, DISPLAY_LABELS.reviewVerdict);
   assert.equal(DISPLAY_LABELS.unplanned, 'Unplanned');
 });

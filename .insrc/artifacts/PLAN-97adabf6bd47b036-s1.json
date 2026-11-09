@@ -1,0 +1,354 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1794244730728-goossr",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T17:20:42.198Z",
+    "epicCreatedAt": "2026-11-09T16:34:12.401Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 111223,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "97adabf6bd47b036",
+    "epicSlug": "apply-catalog-model-effort-choices-daemon",
+    "storyId": "s1",
+    "lldRunId": "wf-1794244063610-bypsg8",
+    "lldEffectiveHash": "ea720fa2f14ee366b49dc1b5d2354ada136b63cf386def20d0fb3f2fa459fede",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "042adef6509e92ffbbc1d31200619cfdff257754098dd049d4ac60831ebc6a99",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T17:21:07.274Z"
+      }
+    },
+    "rangeBase": "578df7ef7f5b3f07216e26cb40aaaae23220d92f"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Share verified Vibe session selection between the daemon and the VS Code adapter. Guard retry boundaries against duplicate prompts and update the chat picker in place when catalog definitions recover. Validate each task with focused tests, then qualify the installed CLI and run the full sweep."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Verify Vibe session settings before dispatch",
+        "summary": "Add the shared local app-server handshake and open or resume a session without a prompt. Resolve the catalog alias and effort, apply session-only settings and verify runtime read-back. Release a failed preflight process and preserve the headless default path.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Unsupported or mismatched selections stop before a prompt is sent",
+          "New and resumed sessions confirm the effective model and effort",
+          "Cancellation or error during setup releases the local child"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Scripted Vibe handshake, new and resumed preflight, unsupported aliases and settings read-back"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Own Vibe turn dispatch, events and cleanup",
+        "summary": "Extend the verified session path with bounded turn dispatch and events. Track not-sent, possibly-sent and accepted states before writes and preserve them through loss, timeouts, cancellation and child cleanup. Preserve text, reasoning, tool events, native identity and terminal outcome for both adapters.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "The verified session submits turn/start once",
+          "Lost acknowledgement and accepted failures preserve dispatch certainty",
+          "Cancellation closes the owned turn and child and keeps partial output and identity"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Scripted Vibe turn acknowledgement loss, bounded events, cancellation and cleanup"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Apply verified selection in daemon execution",
+        "summary": "Wire the existing daemon completion, structured completion, edit and review callers to shared explicit selection. Preserve prompt, policy, working directory, limits and output shape. Propagate possibly-sent and accepted failures through transient and structured retry paths. Keep schema correction for received invalid output.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "Each daemon entry point dispatches at most once on lost acknowledgement or post-acceptance transport failure",
+          "Structured completion still corrects invalid responses and honors cancellation and retry budgets",
+          "Default runs and non-Vibe providers retain current behavior"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Daemon CliProvider Vibe completion, edit, review and structured retries never replay uncertain turns"
+          },
+          {
+            "level": "integration",
+            "name": "Vibe structured schema correction remains enabled for received invalid output"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Apply verified selection in VS Code Vibe turns",
+        "summary": "Wire the existing Vibe adapter to shared explicit selection. Preserve native resume identity, working directory, attachments, approvals, text and reasoning events, cancellation, terminal state and lease cleanup. Ensure the shared module is included in the extension bundle.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "New and resumed turns confirm the requested selection and retain chat event behavior",
+          "Unsupported selection or uncertain dispatch releases the lease without automatic replay",
+          "The normal extension bundle includes the shared Vibe code"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "VS Code Vibe adapter preserves resume identity, attachments, permissions, streaming and cancellation"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Reconcile model and effort together",
+        "summary": "Use the selected provider's catalog models and efforts for new chat, updates, restores and pre-turn validation. Persist one compatible selection. Preserve stored values while definitions are unavailable, and keep provider and model changes consistent with the existing session rules.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Switching to an incompatible model or provider resets effort to default",
+          "An unavailable catalog preserves restored choices and prevents unsupported edits",
+          "A validated run receives one coherent provider, model and effort selection"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Provider and model changes, history restore and turn dispatch reconcile effort"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Recover the chat catalog without reloading",
+        "summary": "Add host-owned single-flight refresh, cache, generation, reachability recovery and picker-open intent. Publish the catalog snapshot after the ready handshake and update controls in place. Preserve the transcript, selection and active turn and stop recovery on success or disposal.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Initial failure and reconnect recover through actual host and webview messages",
+          "Concurrent and stale responses cannot replace newer picker state",
+          "The view and in-flight turn survive catalog updates without a reload"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Drive the actual webview picker intent and ready handshake through catalog failure and recovery"
+          },
+          {
+            "level": "unit",
+            "name": "Catalog cache, refresh coalescing, disposal and stale-generation handling"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Qualify installed Vibe and verify the integrated build",
+        "summary": "Run the isolated no-prompt Vibe smoke probe and retain sanitized effective selection and unchanged-config evidence. After all tasks pass their focused tests, run the affected builds and full sweep. Record release instructions and manual VS Code checks, including native resume and catalog recovery. Use two local fixture aliases to verify a model change as well as an effort change.",
+        "size": "S",
+        "order": 7,
+        "dependsOn": [
+          "t2",
+          "t3",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "The installed CLI confirms a different fixture alias and effort without a config rewrite or cloud prompt",
+          "The daemon and VS Code artifacts build and the full sweep runs only after task validation",
+          "Evidence distinguishes fixture verification from end-to-end manual checks"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "Installed Vibe changes fixture alias and effort for one isolated session with config bytes unchanged"
+          },
+          {
+            "level": "smoke",
+            "name": "Daemon build and extension packaging include the shared Vibe execution path"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "Chat recovers from a failed catalog request without losing session state",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Chat validates effort on model switch and session restore",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Daemon and chat apply verified Vibe model and effort to new and resumed turns",
+        "coveredByTaskIds": [
+          "t1",
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Vibe preflight failures never submit or replay the prompt",
+        "coveredByTaskIds": [
+          "t1",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "Vibe protocol path preserves caller permissions, attachments, and terminal output",
+        "coveredByTaskIds": [
+          "t7",
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Lost turn/start acknowledgement and post-acknowledgement transport errors each dispatch once through daemon complete, structured completion, edit and review",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Real picker intent and ready handshake recover from initial catalog failure and reconnect without replacing the view or interrupting the turn",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Structured Vibe completion retains schema correction when a received response fails validation",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Installed Vibe confirms a session-only model and effort without changing saved configuration",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/apply-catalog-model-effort-choices-daemon-E2026110997adabf6/S001/LLD.md#2-contract-details"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/apply-catalog-model-effort-choices-daemon-E2026110997adabf6/S001/LLD.md#5-error-paths"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/apply-catalog-model-effort-choices-daemon-E2026110997adabf6/S001/LLD.md#6-test-strategy"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/apply-catalog-model-effort-choices-daemon-E2026110997adabf6/S001/LLD.md#21-vibe-session-launch"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/apply-catalog-model-effort-choices-daemon-E2026110997adabf6/S001/LLD.md#22-chat-catalog-refresh-and-selection"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/apply-catalog-model-effort-choices-daemon-E2026110997adabf6/S001/LLD.md#32-vs-code-chat-run-configuration--invariant-change"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/apply-catalog-model-effort-choices-daemon-E2026110997adabf6/S001/LLD.md#7-migration"
+    }
+  ]
+}

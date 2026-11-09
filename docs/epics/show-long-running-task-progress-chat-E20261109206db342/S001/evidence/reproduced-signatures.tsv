@@ -1,0 +1,487 @@
+src/analyze/context/__tests__/provider-bypass-audit.test.ts	the allowlisted seam files still exist (guards against a stale allowlist)	1
+src/analyze/context/__tests__/role-router-global-tiers.test.ts	role-router-global-tiers.test.ts: the RoleResolution keeps role, tier, runner, model, effort, clampedByFloor and adds fallback; workflow-rpc and workflow-review-rpc labels unchanged for a CLI and an Ollama tier	1
+src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts	Control script refuses reused identity, replacement files and orphan guards	1
+src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts	Control script retains the original target across run-file removal	1
+src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts	Disposable clean and forced script restart paths preserve commands	1
+src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts	Fresh HOME shell stop and start work without a pre-existing insrc directory	1
+src/cli/services/__tests__/daemon-stop-forced.test.ts	Backward wall-clock adjustment cannot extend CLI readiness timeout	1
+src/cli/services/__tests__/daemon-stop-forced.test.ts	Backward wall-clock adjustment cannot postpone CLI forced stop of an unresponsive original	1
+src/cli/services/__tests__/daemon-stop-forced.test.ts	Clean stop has one completion boundary and never cleans a later publication twice	1
+src/cli/services/__tests__/daemon-stop-forced.test.ts	Real orphaned guard owner death prevents maintenance restart	1
+src/cli/services/__tests__/daemon-stop-forced.test.ts	Real ownership and guard conflicts prevent maintenance restart	1
+src/cli/services/__tests__/daemon-stop-forced.test.ts	Retained stop target survives run-file removal and RPC failure	1
+src/cli/services/__tests__/daemon-stop-forced.test.ts	Retained waitForStop ignores path disappearance until original exit and preserves handle ownership	1
+src/cli/services/__tests__/daemon-stop-forced.test.ts	Retained waitForStop verifies run-file ownership and guards before reporting success	1
+src/cli/services/__tests__/daemon-stop-forced.test.ts	Verified forced termination preserves StopOutcome and never targets reused PIDs	1
+src/cli/services/__tests__/daemon-stop-forced.test.ts	forced stop, silent daemon: a child that accepts the connection and never replies is ended	1
+src/cli/services/__tests__/daemon-stop-forced.test.ts	forced stop: a child that ignores the request and SIGTERM is ended by stopDaemon	1
+src/config/__tests__/retired-roles.test.ts	the scope picker's role is gone from the role taxonomy and from the VS Code extension's declared settings, the two agree in both directions, and the reconcile drops a value stored for the role under `models.tasks` and under a repo's `models.byRepo.<repo>.tasks`, where the key holds dots (mutation: retire it as a dotted path)	1
+src/config/__tests__/review.test.ts	configured review JSON limit reaches decoders checkpoint writers readers projection and CR store	1
+src/daemon/__tests__/code-review-freshness-request.test.ts	src/daemon/__tests__/code-review-freshness-request.test.ts	1
+src/daemon/__tests__/code-review-rpc-fallback.test.ts	src/daemon/__tests__/code-review-rpc-fallback.test.ts	1
+src/daemon/__tests__/code-review-rpc.test.ts	src/daemon/__tests__/code-review-rpc.test.ts	1
+src/daemon/__tests__/daemon-doc-repo-table.test.ts	daemon-doc-repo-table.test.ts: docs/daemon.md lists the methods of the table and the refusal codes	1
+src/daemon/__tests__/handler-runtime.test.ts	the runtime function builds the handler tables with stub indexing dependencies and their key sets equal the recorded single-thread key sets plus the methods added since	1
+src/daemon/__tests__/lifecycle-wiring.test.ts	the daemon approve handler, the review-decision step and workflowReviewStart use the repository's durable LifecycleService, refuse a head ahead of its log, use the request's person actor or insrc:approval, and a repository whose registry entry cannot be created is refused	1
+src/daemon/__tests__/model-literal-scan.test.ts	model-literal-scan.test.ts: the scan passes on the tree and fails on an injected literal; exclusions name their owning Story	1
+src/daemon/__tests__/repo-completeness.test.ts	repo.list, repo.stats and daemon.status carry completeness beside the unchanged status: a complete repository reads complete, one whose full index is running reads not complete while its status is indexing; daemon.status carries unattributedUnwritable	1
+src/daemon/__tests__/review-resolve-daemon.test.ts	review-resolve-daemon.test.ts: with claims enforced, reviewArtifact and resolveFinding run through the daemon methods and return the old results and refusals	1
+src/daemon/__tests__/search-filter.test.ts	src/daemon/__tests__/search-filter.test.ts	1
+src/daemon/__tests__/search-guard.test.ts	src/daemon/__tests__/search-guard.test.ts	1
+src/daemon/__tests__/shutdown-bounded.test.ts	Bounded shutdown preserves lock-loss, fatal and normal cleanup behavior	1
+src/daemon/__tests__/shutdown-bounded.test.ts	Repeated signals and guarded async close preserve ownership	1
+src/daemon/__tests__/shutdown-lifecycle-evidence.test.ts	Guard-owner death prevents restart while the healthy control restarts normally	1
+src/daemon/__tests__/shutdown-store-failure.test.ts	Store-child fixture exercises owned publication watchdog readiness and guarded close	1
+src/daemon/__tests__/shutdown-store-failure.test.ts	healthy shutdown is unchanged: queue drained, connections closed in order, normal exit	1
+src/daemon/__tests__/shutdown-store-failure.test.ts	store failure to stop: exit within 5 seconds, pid file and socket gone, second start succeeds, last log line names the skipped close	1
+src/daemon/__tests__/shutdown-watchdog.test.ts	Backward wall-clock adjustment cannot extend the independent monotonic shutdown duration	1
+src/daemon/__tests__/shutdown-watchdog.test.ts	IPC transport loss never disarms the deadline for a blocked parent or blocked exit hook	1
+src/daemon/__tests__/shutdown-watchdog.test.ts	Independent watchdog bounds a disposable blocked parent and disarms after healthy exit	1
+src/daemon/__tests__/shutdown-watchdog.test.ts	Watchdog IPC disconnect during readiness releases its shared broker session without signalling the parent	1
+src/daemon/__tests__/shutdown-watchdog.test.ts	Watchdog never signals after reparenting and imports only Node built-ins	1
+src/daemon/__tests__/task-review-plan-path.test.ts	src/daemon/__tests__/task-review-plan-path.test.ts: the plan-path identity check rejects a wrong plan document and is skipped when the packet has none	1
+src/daemon/__tests__/team-settle.test.ts	the team.settle operation runs settleSignoff for the unit, so a BUILD's completed request is recorded as signed-off and the held Story completes, and teamSettle prints what was recorded or why nothing was	1
+src/daemon/__tests__/workflow-review-rpc.test.ts	failed daemon design reviews retain paired canonical call outcomes	1
+src/daemon/db/__tests__/duckdb-file-driver.test.ts	DuckDBFileDriver -- pool path-escape guard	1
+src/daemon/db/__tests__/removal-production-affinity.test.ts	CM-S4-AFFINITY: production single-thread daemon advertises default features but refuses unregistered roots and private consumers before use	1
+src/daemon/db/__tests__/removal-production-affinity.test.ts	CM-S4-AFFINITY: production threaded daemon advertises default features but refuses unregistered roots and private consumers before use	1
+src/daemon/db/__tests__/session-cleanup.test.ts	CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles	1
+src/daemon/db/__tests__/session-cleanup.test.ts	CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work	1
+src/daemon/db/__tests__/session-release-gate.test.ts	CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and release stays disabled	1
+src/daemon/db/__tests__/session-source-inventory.test.ts	CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline	1
+src/daemon/db/__tests__/session-source-inventory.test.ts	CM-S4-GATE: reviewed removal sources include pure helpers owner boundaries and pending global affinity	1
+src/daemon/steps/__tests__/analyze-step-handler.test.ts	bundle phase with awaiting_plan state returns wrong-stage error	1
+src/daemon/steps/__tests__/analyze-step-handler.test.ts	start returns emit_plan with a state blob + a real prompt	1
+src/daemon/steps/__tests__/analyze-step-narrow.test.ts	handler rejects phase=narrow when state stage is awaiting_plan	1
+src/daemon/steps/__tests__/in-daemon-client.test.ts	in-daemon client: a done frame resolves with its data and progress reaches onFrame; grounding, freshness and the cwd lookup are shaped as the socket client shapes them	1
+src/daemon/steps/__tests__/in-daemon-client.test.ts	in-daemon client: a stream handler that throws synchronously settles the request as daemon-error and releases its wait	1
+src/daemon/steps/__tests__/in-daemon-client.test.ts	in-daemon review client: the codeReview.freshness reply keeps inFlight and pendingCodeIndexJobs (ISSUE-1102dc71)	1
+src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts	src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts	1
+src/daemon/steps/__tests__/provider-diagnostics.test.ts	CM-S3-CONSUMER-LOGS: actual provider prompt/retry/late-stream trace sink and saved control	1
+src/daemon/steps/__tests__/provider-diagnostics.test.ts	CM-S3-PROVIDER: structured retry inner authority guard and nonretryable refusal	1
+src/daemon/steps/__tests__/rpc-diagnostics.test.ts	CM-S3-CONSUMER-LOGS: tool/RPC/progress/error/throwing-delivery envelopes and normal sink, saved concurrent marker	1
+src/daemon/steps/__tests__/step-host.test.ts	equivalence: each of the seven tools through step.call returns the same envelope as the handler called directly on the same temporary store	1
+src/daemon/steps/__tests__/step-host.test.ts	insrc_review_step through step.call relays every daemon progress frame, heartbeats included, as a 'progress' frame before 'done'	1
+src/daemon/steps/__tests__/task-persistence.test.ts	CM-S3-CACHE: task/report/checkpoint/history/trace/Lance canaries, error repair, saved positive persistence	1
+src/daemon/steps/build-step/__tests__/build-start.test.ts	T33: approval arrives MID-BUILD (two-task Story, BUILD approved after task 1) — the change log is EXACTLY both tasks' files	1
+src/daemon/steps/build-step/__tests__/build-start.test.ts	T35: a REBUILD of a finished, approved Story lists EXACTLY the rebuild's files	1
+src/daemon/steps/build-step/__tests__/build-step.test.ts	validate[standalone]: the persisted record is approvable by the completion gate	1
+src/daemon/steps/workflow-step/__tests__/amendments-e2e.test.ts	Approving amendment marks existing LLD stale via effective-hash mismatch	1
+src/daemon/steps/workflow-step/__tests__/amendments-e2e.test.ts	Bad amendment proposal is dropped; the LLD still synthesizes	1
+src/daemon/steps/workflow-step/__tests__/amendments-e2e.test.ts	LLD s4 amendment proposal lands as pending AmendmentRecord	1
+src/daemon/steps/workflow-step/__tests__/amendments-e2e.test.ts	ack-stale records the acknowledgement in the LLD's log	1
+src/daemon/steps/workflow-step/__tests__/define-extend-e2e.test.ts	define EXTEND: a Define that carries a stamp but no creation time fails with no Epic anchor and appends nothing	1
+src/daemon/steps/workflow-step/__tests__/define-extend-e2e.test.ts	define EXTEND: s4 scope-boundary hard-fail refuses synthesize (no Story appended)	1
+src/daemon/steps/workflow-step/__tests__/define-extend-e2e.test.ts	define EXTEND: scope=extend → skip frame/compose → append Story + pending amendment + ExtendArtifact	1
+src/daemon/threads/__tests__/indexing-port.test.ts	codeReview.freshness on the main thread gets the code-indexing worker's codeIndexWorkFor result	1
+src/daemon/threads/__tests__/module-state-inventory.test.ts	module-state inventory: every module-scope mutable value the session worker can load is classified (full guard over the repo)	1
+src/daemon/threads/__tests__/review-owner-lifecycle.test.ts	real worker connection request and exit cancellation hooks bind and invalidate trusted owners	1
+src/daemon/threads/__tests__/s4-acceptance.test.ts	s4 ac3: SIGTERM and daemon.shutdown exit 0 after 'bye' with every worker, session-pool workers included, terminated	1
+src/daemon/threads/__tests__/threads-boot.test.ts	SIGTERM during an indexing pass: workers stop, the queue drains, the main thread closes the stores after the workers exit, 'bye' is logged	1
+src/daemon/threads/__tests__/threads-boot.test.ts	boot: threads disabled runs every session method on the main thread as today	1
+src/daemon/threads/__tests__/threads-boot.test.ts	boot: threads enabled serves a session method from a session worker over the socket, and SIGTERM drains and exits 0	1
+src/daemon/threads/__tests__/threads-boot.test.ts	daemon.shutdown during maintenance is refused with the activity and reason; SIGTERM during maintenance waits for the compaction and then shuts down	1
+src/daemon/tools/__tests__/approval-class-mapping.test.ts	approval-class-mapping.test.ts: the tool ids and input schemas match the snapshot taken before the rewrite	1
+src/daemon/tools/__tests__/shell-helper-tree-kill.test.ts	shell-helper-tree-kill.test.ts: a descendant that left the group and holds the pipes cannot keep the call open past the bound	1
+src/daemon/tools/__tests__/typecheck-config.test.ts	typecheck-config.test.ts: tsconfig.typecheck.json includes the fixtures with noEmit, the script runs it, and the build chain runs the script after tsc	1
+src/daemon/tools/builtins/file/__tests__/live-store-file-refusal.test.ts	file tools: each tool's own execute refuses the store file and its lock file, by direct path and through a symbolic link	1
+src/daemon/tools/builtins/gh/__tests__/gh-coverage.test.ts	gh-coverage.test.ts: every installed gh command has a GH_COVERAGE row, covered rows name registered tools and ops, excluded rows have a reason, and all 69 tools are registered (68 that serve a gh command and gh_tracker)	1
+src/daemon/tools/builtins/gh/__tests__/gh-inputs.test.ts	gh-inputs.test.ts: every flag and positional has a GH_INPUTS row and every schema field is accounted for by a flag, positional or synthetic row	1
+src/daemon/tools/builtins/gh/__tests__/gh-inputs.test.ts	gh-inputs.test.ts: prompt sweep reads the prompt cases from the installed gh help and requires each argument in the schema or always passed	1
+src/daemon/tools/builtins/git/__tests__/git-abort.test.ts	git-abort.test.ts: git_show starts no command after an abort between its header, diff and stat commands	1
+src/daemon/tools/builtins/git/__tests__/git-approval.test.ts	every typebox input schema serialises to the same JSON as the schema it replaced	1
+src/daemon/tools/builtins/git/__tests__/git-approval.test.ts	git_log limit 0 and 501, git_diff maxBytes 100 and git_diff context 51 are rejected, git_show maxBytes 100 is clamped, and the schemas are unchanged	1
+src/daemon/tools/builtins/git/__tests__/git-cat-file-tree-kill.test.ts	git-cat-file-tree-kill.test.ts: an abort kills the stand-in git and its descendant and returns a rejected failure within the bound	1
+src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts	every covered row's case runs through executeTool and matches its assertion	1
+src/daemon/tools/builtins/git/__tests__/git-shared-deadline.test.ts	git-shared-deadline.test.ts: one deadline signal shared by successive calls kills the running command at the deadline and later calls never spawn	1
+src/db/graph/__tests__/no-live-store-in-tests.test.ts	the MCP step and review tests, found by the full audit, create nothing at the default path	1
+src/db/graph/__tests__/no-live-store-in-tests.test.ts	the review probe test, found by the same search, creates nothing at the default path either	1
+src/db/graph/__tests__/no-live-store-in-tests.test.ts	three daemon request tests, found by the same search, create nothing at the default path	1
+src/indexer/__tests__/subsystem-pass.test.ts	src/indexer/__tests__/subsystem-pass.test.ts	1
+src/indexer/__tests__/watcher-new-directories.test.ts	src/indexer/__tests__/watcher-new-directories.test.ts: a per-directory subscribe that throws is logged, does not throw out of the handler, and the files present in the new directory are still reported once	1
+src/mcp/__tests__/daemon-stream-utf8.test.ts	MCP review streams preserve split UTF-8 in done frames	1
+src/mcp/__tests__/design-review.test.ts	compiled both-party publication retry mutation invalidation and truthful approval gates preserve feedback	1
+src/mcp/__tests__/design-review.test.ts	compiled registered MCP and daemon qualify both parties across DEF HLD LLD publication approval cleanup and history restart	1
+src/mcp/__tests__/design-review.test.ts	normal MCP and main-owned unary recovery preserve partial native work while independent subjects progress	1
+src/mcp/__tests__/design-review.test.ts	normal impact schema and IPC routing preserve authority and fresh-only coverage progress	1
+src/mcp/__tests__/design-review.test.ts	normal stdio MCP and Unix IPC preserve native background work and controller connection authority	1
+src/mcp/__tests__/design-review.test.ts	normal stdio controller failure and explicit recovery retain actual connection authority and generations	1
+src/mcp/__tests__/forward-step.test.ts	MCP tool surface: the thirteen tools keep their names, descriptions and input schemas	1
+src/mcp/__tests__/import-graph.test.ts	import graph (ac4): the MCP server reaches nothing under src/db, src/analyze or src/daemon/steps; a fixture import makes it fail	1
+src/mcp/__tests__/mcp-process-e2e.test.ts	ac3: with no daemon every moved tool returns DaemonUnreachableError through a real MCP process, which opens no store; against a daemon without step.call, DaemonTooOldError	1
+src/mcp/__tests__/mcp-process-e2e.test.ts	ac5 pass-through: emit_plan and emit_step prompts, schemas and state are byte-identical to the in-process replies	1
+src/mcp/__tests__/present-steering.test.ts	the steering block, the steering template and the guide tell the controller to call insrc_present before it asks for approval	1
+src/mcp/__tests__/repo-schema-guard.test.ts	repo-schema-guard.test.ts: the MCP artifact tools refuse an unconverted repository	1
+src/mcp/__tests__/review-stream.test.ts	T11 codeReviewStream: a plain unknown-method line with the socket kept open fails AT ONCE, not at the timer	1
+src/mcp/__tests__/review-stream.test.ts	T11 codeReviewStream: an invalid line is a protocol error; an abort rejects	1
+src/mcp/__tests__/review-stream.test.ts	T11 codeReviewStream: any other plain error line is a final daemon error; a plain result is a protocol error	1
+src/mcp/__tests__/review-stream.test.ts	T11 codeReviewStream: rejects on an error frame and carries the daemon's reason	1
+src/mcp/__tests__/review-stream.test.ts	T11 codeReviewStream: rejects when the connection closes before a final frame	1
+src/mcp/__tests__/review-stream.test.ts	T11 codeReviewStream: rejects when the daemon is not running	1
+src/mcp/__tests__/review-stream.test.ts	T11 codeReviewStream: sends one stream request, forwards progress, resolves on done	1
+src/mcp/__tests__/review-stream.test.ts	T11 codeReviewStream: with a daemon that never answers, it fails at its wait limit and drops the connection	1
+src/mcp/__tests__/review-stream.test.ts	T11 reviewArtifactStream: a plain unknown-method line with the socket kept open fails AT ONCE, not at the timer	1
+src/mcp/__tests__/review-stream.test.ts	T11 reviewArtifactStream: an invalid line is a protocol error; an abort rejects	1
+src/mcp/__tests__/review-stream.test.ts	T11 reviewArtifactStream: any other plain error line is a final daemon error; a plain result is a protocol error	1
+src/mcp/__tests__/review-stream.test.ts	T11 reviewArtifactStream: rejects on an error frame and carries the daemon's reason	1
+src/mcp/__tests__/review-stream.test.ts	T11 reviewArtifactStream: rejects when the connection closes before a final frame	1
+src/mcp/__tests__/review-stream.test.ts	T11 reviewArtifactStream: rejects when the daemon is not running	1
+src/mcp/__tests__/review-stream.test.ts	T11 reviewArtifactStream: sends one stream request, forwards progress, resolves on done	1
+src/mcp/__tests__/review-stream.test.ts	T11 reviewArtifactStream: with a daemon that never answers, it fails at its wait limit and drops the connection	1
+src/mcp/__tests__/schema-registry.test.ts	each multi-turn record phases[] equals its handler accepted set (lockstep)	1
+src/mcp/__tests__/task-review.test.ts	Normal MCP start/progress/publication use committed packets and reject retired or inferred scopes	1
+src/mcp/__tests__/workflow-run-dispatch.test.ts	handleWorkflowRun: START returns runId + next:poll + guidance	1
+src/shared/__tests__/connection-manager-compatibility.test.ts	CM-S5-COMPAT: both clients old/missing/malformed capability refusal, no legacy mutation fallback and unchanged legacy projections	1
+src/shared/__tests__/connection-manager-corpus.test.ts	CM-S5-SYNC-FIXTURES: JUnit reads the identical packaged corpus and rejects digest/version drift	1
+src/shared/__tests__/connection-manager-isolation.test.ts	CM-S5-WINDOW: two real project owners, same roots/IDs, overlapping RPC IDs and isolated replies/disposal	1
+src/shared/__tests__/connection-manager-kotlin-draft.test.ts	CM-S5-FORM-KT: Kotlin descriptor/credential serialization and dirty navigation parity without Settings persistence	1
+src/shared/__tests__/connection-manager-kotlin-entry.test.ts	CM-S5-ENTRY-KT: native Settings and AnAction actual Project selection, chooser cancel/no-project and global Apply/reset independence	1
+src/shared/__tests__/connection-manager-kotlin-model.test.ts	CM-S5-STATE-KT: Kotlin sc7 model matches common state/effect transcripts without platform I/O	1
+src/shared/__tests__/connection-manager-kotlin-mutation.test.ts	CM-S5-OUTCOME-KT: project-memory unknown-operation retention and scope-lane recovery with no repeated create	1
+src/shared/__tests__/connection-manager-kotlin-owner.test.ts	CM-S5-OWNER-KT: actual PROJECT Disposable owner independent from APP gateway and manager views	1
+src/shared/__tests__/connection-manager-kotlin-removal.test.ts	CM-S5-REMOVE-KT: S004 snapshots plus actual Kotlin effect paths preserve old-generation cleanup and source-data guarantee	1
+src/shared/__tests__/connection-manager-kotlin-render.test.ts	CM-S5-RENDER-KT: native Swing manager event wiring, EDT/disposal guards, labels/password controls and immediate-action separation	1
+src/shared/__tests__/connection-manager-kotlin-test.test.ts	CM-S5-TEST-KT: Kotlin test identity/cancel parity, disposed-view and EDT delivery guards	1
+src/shared/__tests__/connection-manager-kotlin-transport.test.ts	CM-S5-TRANSPORT-KT: actual Kotlin socket UTF8 framing, partial writes, multiplexing, bounded limits, disposal and one-shot compatibility	1
+src/shared/__tests__/connection-manager-kotlin-wire.test.ts	CM-S5-WIRE-KT: Kotlin v2 DTO decoding matches common corpus and preserves legacy gateway types	1
+src/shared/__tests__/connection-manager-packaging.test.ts	CM-S5-PACKAGING: fresh targeted Node22 typecheck/bundle/runtime and JDK21 compile/assemble smoke; no early full suite	1
+src/shared/__tests__/connection-manager-parity.test.ts	CM-S5-SYNC: actual client bundle inputs exclude daemon storage and provider implementations	1
+src/shared/__tests__/connection-manager-parity.test.ts	CM-S5-SYNC: complete TypeScript and Kotlin wire/sc7 outputs match and divergent consumer controls fail	1
+src/shared/__tests__/connection-manager-parity.test.ts	CM-S5-SYNC: native signed-operation recovery matrix preserves original attempts revisions and cleanup targets	1
+src/shared/__tests__/connection-manager-privacy.test.ts	CM-S5-PRIVACY: actual client adapters poison/count persistence/log/telemetry/artifact sinks and verify zero temporary leakage	1
+src/shared/__tests__/connection-manager-release.test.ts	CM-S5-GATE: default runtime policy preserves authorization and independent release-audit evidence	1
+src/shared/__tests__/project-memory-platform-evidence.test.ts	store-macos-apfs-linux-ext4-production-evidence-matches-current-source	1
+src/shared/__tests__/project-memory-resource-evidence.test.ts	project-memory-resource-study-has-current-source-complete-corpora-and-honest-bounds	1
+src/shared/__tests__/review-stream-freshness.test.ts	freshnessFromReply keeps inFlight and pendingCodeIndexJobs from a current reply and maps an older reply to inFlight=isProcessing, pendingCodeIndexJobs=0	1
+src/shared/__tests__/review-stream.test.ts	codeReviewRequestParams forwards fallbackReason exactly and omits the key when absent (fails if serialization drops it)	1
+src/shared/__tests__/review-stream.test.ts	runReviewStream with idleMs: frames more often than idleMs keep the request alive past idleMs; it resolves on its final frame	1
+src/shared/__tests__/review-stream.test.ts	runReviewStream with idleMs: no frame for idleMs fails 'timeout' naming the idle limit and cancels the transport	1
+src/shared/__tests__/review-stream.test.ts	runReviewStream without idleMs (or with an out-of-range idleMs): today's single wait	1
+src/shared/__tests__/review-stream.test.ts	runReviewStream: frames do not extend timeoutMs; past it the request fails 'timeout' naming the ceiling	1
+src/shared/__tests__/review-stream.test.ts	shared review request: a transport that fails while it is still starting is cancelled once it has started	1
+src/shared/__tests__/review-stream.test.ts	shared review request: a transport that throws while opening settles unreachable and releases its wait timer and abort listener	1
+src/shared/__tests__/review-stream.test.ts	shared review request: an error frame is daemon-error with its reason; a transport failure, the wait limit and an abort cancel the transport	1
+src/shared/__tests__/review-stream.test.ts	shared review request: done resolves and ends the transport; progress and delta reach onFrame; frames after settling are ignored	1
+src/shared/__tests__/review-stream.test.ts	shared review request: the two requests' parameters, and neither client interprets frames on its own	1
+src/workflow/__tests__/approve-attach.test.ts	approve() attaches the approved HLD, LLD and plan documents after its commit so the files are clean and the links name that commit, commits the attachment records in a second commit, skips attachment with a stated reason when commitArtifacts is false, and tracker.attach attaches a diagram companion or any target refused as uncommitted once it is committed	1
+src/workflow/__tests__/approve-build-completion.test.ts	ac1: epic-batch sweep includes a pending BUILD; excludes an already-approved BUILD	1
+src/workflow/__tests__/approve-build-completion.test.ts	ac2: single BUILD + enforce ON + CR pass => completes, codeReview[] pass	1
+src/workflow/__tests__/approve-build-completion.test.ts	ac5: BUILD + enforce ON + CR block => withheld into skipped[], codeReview[] blocked	1
+src/workflow/__tests__/approve-build-completion.test.ts	ac6: BUILD + enforce OFF + a BLOCKING CR => completes: enforcement off still demotes a blocking verdict to advisory	1
+src/workflow/__tests__/approve-build-completion.test.ts	ac6: non-BUILD LLD + enforce ON + absent CR => completes (the withhold is BUILD-scoped)	1
+src/workflow/__tests__/approve-build-completion.test.ts	ac7: epic batch withheld-BUILD + clean-LLD => BUILD skipped, LLD approved (non-lossy)	1
+src/workflow/__tests__/approve-build-freshness.test.ts	a stale BUILD review does not prevent approval of a new PLAN	1
+src/workflow/__tests__/approve-build-freshness.test.ts	a stale review can be explicitly overridden in both completion gates	1
+src/workflow/__tests__/approve-build-freshness.test.ts	an existing structurally invalid BUILD cannot satisfy completion with a passing review	1
+src/workflow/__tests__/approve-build-freshness.test.ts	completion refuses a malformed review even when an empty BUILD has no file coverage to check	1
+src/workflow/__tests__/approve-build-freshness.test.ts	legacy review is refused until a fresh bound review covers the latest build	1
+src/workflow/__tests__/approve-build-record-completion.test.ts	non-BUILD (LLD) target => no BUILD json is written (the hook is BUILD-scoped)	1
+src/workflow/__tests__/approve-build-record-completion.test.ts	single BUILD target with no prior json creates the record, but completes only after its code review	1
+src/workflow/__tests__/approve-codereview-gate.test.ts	ac1: enforce on + CR block + no override → skipped, not approved, codeReview[] blocked	1
+src/workflow/__tests__/approve-codereview-gate.test.ts	ac2: enforce on + CR block + overrideReview → approved, codeReview[] overridden + overrideReason	1
+src/workflow/__tests__/approve-codereview-gate.test.ts	ac3: CR pass → approved, codeReview[] pass + counts	1
+src/workflow/__tests__/approve-codereview-gate.test.ts	ac3: CR warn → approved, codeReview[] warn + counts	1
+src/workflow/__tests__/approve-codereview-gate.test.ts	ac5: DEF/HLD artifact (no storyId) → gate never runs, codeReview empty, approved	1
+src/workflow/__tests__/approve-codereview-gate.test.ts	ac5: absent CR record (non-BUILD) → approved byte-identical, codeReview[] no-review	1
+src/workflow/__tests__/approve-codereview-gate.test.ts	ac5: enforce OFF + CR block → approved (demoted advisory), codeReview[] warn/advisory	1
+src/workflow/__tests__/approve-codereview-gate.test.ts	ac6: clean meta.review + CR block → withheld ONLY by the code-review gate	1
+src/workflow/__tests__/approve-codereview-gate.test.ts	ac6: corrupt CR record (non-BUILD) → no-review fail-open, approved	1
+src/workflow/__tests__/approve-codereview-gate.test.ts	batch: story A CR block + story B CR pass (enforce on) → A skipped, B approved	1
+src/workflow/__tests__/approve-task-review.test.ts	both approval routes reject coverage task review without mutating BUILD	1
+src/workflow/__tests__/approve-task-review.test.ts	both approval routes reject foreign task review without mutating BUILD	1
+src/workflow/__tests__/approve-task-review.test.ts	both approval routes reject incomplete task review without mutating BUILD	1
+src/workflow/__tests__/approve-task-review.test.ts	both approval routes reject same-party task review without mutating BUILD	1
+src/workflow/__tests__/approve-task-review.test.ts	both approval routes reject stale task review without mutating BUILD	1
+src/workflow/__tests__/approve-task-review.test.ts	both approval routes reject task-only task review without mutating BUILD	1
+src/workflow/__tests__/approve-task-review.test.ts	both approval routes reject unknown-version task review without mutating BUILD	1
+src/workflow/__tests__/approve-task-review.test.ts	task review approval via batch preserves reviewed BUILD content	1
+src/workflow/__tests__/approve-task-review.test.ts	task review approval via direct preserves reviewed BUILD content	1
+src/workflow/__tests__/approve-task-review.test.ts	task review approval via target preserves reviewed BUILD content	1
+src/workflow/__tests__/approve-workflow-target.test.ts	batch: a mixed epic splits into approved[] + skipped[] — nothing dropped	1
+src/workflow/__tests__/approve-workflow-target.test.ts	batch: only NOT-yet-approved artifacts are swept (already-approved excluded)	1
+src/workflow/__tests__/approve-workflow-target.test.ts	single: a review-clean artifact is approved (in its lifecycle)	1
+src/workflow/__tests__/artifact-kinds.test.ts	approval of a TESTS record by its md path and by its json path through the approval tool's route comes back in skipped[] with a reason that begins 'not-approvable:' and with no code-review outcome, also for a Story whose code review blocks with enforcement on; the TUI service's approve and reject throw NotApprovableError; the batch for its Epic does not stamp it; and the record is unchanged (mutations: put the kind check in the approval tool's route only; make it after the code-review gate)	1
+src/workflow/__tests__/artifact-write-inventory.test.ts	every writer file is inventoried, annotated and classified as the design says	1
+src/workflow/__tests__/bugfix-orchestration.test.ts	ac3: a bugfix BUILD + enforce + CR pass -> completes via approveWorkflowTarget (reused gate)	1
+src/workflow/__tests__/bugfix-orchestration.test.ts	ac3: a bugfix BUILD + enforce OFF + absent CR -> withheld too (no separate path for a bugfix)	1
+src/workflow/__tests__/define-extend-gate.test.ts	a repo with no team policy makes no tracker call and the extend is written as today	1
+src/workflow/__tests__/define-extend-gate.test.ts	an unapproved Epic fails before the gate is asked, and a denied tracker call in the gate stops the run	1
+src/workflow/__tests__/define-extend-gate.test.ts	the define extend path refuses a non-holder while the Define is in signoff and writes nothing, and the holder's extend is written as today	1
+src/workflow/__tests__/gate-guarded-entry-points.test.ts	the inventory of guarded entry points (daemon step phases, approveArtifactByJsonPath, approveWorkflowTarget, resolveReviewFinding apply) is complete, and the analyze and code-review steps are not on it	1
+src/workflow/__tests__/gates-lifecycle-guard.test.ts	approveArtifactByJsonPath and reviewArtifactFile refuse a conflicted head before any stamp and an unhashed head is unchanged	1
+src/workflow/__tests__/gates-lifecycle-guard.test.ts	approveWorkflowTarget refuses a conflicted BUILD target in both branches before ensureBuildRecordOnCompletion rewrites it	1
+src/workflow/__tests__/gates-lifecycle-service.test.ts	with a service, an explicit override over an advisory-blocked code review completes the Story through a real approval and the reason is on the complete entry	1
+src/workflow/__tests__/gates-revision.test.ts	appendStoryToDefine mints a revision and an approved Define returns to draft	1
+src/workflow/__tests__/gates-revision.test.ts	approve through the lifecycle leaves the revision and the body unchanged	1
+src/workflow/__tests__/gates.test.ts	gates.test.ts: approval goes through LifecycleService and stamps none of the removed fields	1
+src/workflow/__tests__/gates.test.ts	requireApprovedEpic returns the Define artifact after approval	1
+src/workflow/__tests__/gates.test.ts	t5: a STANDALONE design.story LLD IS stamped (the only upstream the no-plan route has), an EPIC-route LLD is NOT	1
+src/workflow/__tests__/gates.test.ts	t5: the GENERIC stamp site is GATED — DEF, HLD, AMD and BUILD each stamp NO rangeBase	1
+src/workflow/__tests__/other-party-review-gate.test.ts	T18 a BUILD fixture (author: controller) stamped with the shared helper is approved with no override	1
+src/workflow/__tests__/other-party-review-gate.test.ts	T18 a BUILD fixture (author: daemon) stamped with the shared helper is approved with no override	1
+src/workflow/__tests__/other-party-review-gate.test.ts	T18 a BUILD fixture (author: none) stamped with the shared helper is approved with no override	1
+src/workflow/__tests__/other-party-review-gate.test.ts	T7 a BUILD record written AND code-reviewed by the controller is withheld; reviewed by the daemon it completes (enforcement off)	1
+src/workflow/__tests__/other-party-review-gate.test.ts	T7 a BUILD record written AND code-reviewed by the controller is withheld; reviewed by the daemon it completes (enforcement on)	1
+src/workflow/__tests__/other-party-review-gate.test.ts	T7 a BUILD record written AND code-reviewed by the daemon is withheld; reviewed by the controller it completes (enforcement off)	1
+src/workflow/__tests__/other-party-review-gate.test.ts	T7 a BUILD record written AND code-reviewed by the daemon is withheld; reviewed by the controller it completes (enforcement on)	1
+src/workflow/__tests__/other-party-review-gate.test.ts	T7 a code review that cannot be read is no code review	1
+src/workflow/__tests__/other-party-review-gate.test.ts	T7 for a BUILD record too, an unknown author or reviewer does not withhold, and an older code review is read by its model label	1
+src/workflow/__tests__/other-party-review-gate.test.ts	T7 the TUI approve service applies the same rules: it calls the same function	1
+src/workflow/__tests__/other-party-review-gate.test.ts	T7 the party of a code review is its lifecycle review's when it has one	1
+src/workflow/__tests__/plan-gate.test.ts	readPlanUpstream: assembles { lld, hldSlice, storyDependsOn } from approved artifacts	1
+src/workflow/__tests__/plan-gate.test.ts	requireApprovedLld: returns the LLD when approved + non-stale	1
+src/workflow/__tests__/plan-gate.test.ts	requireApprovedLld: returns the LLD when stale but stale-acked	1
+src/workflow/__tests__/plan-gate.test.ts	requireApprovedLld: throws ArtifactMissingError when no LLD exists	1
+src/workflow/__tests__/plan-gate.test.ts	requireApprovedLld: throws ArtifactNotApprovedError when the lifecycle is not approved	1
+src/workflow/__tests__/plan-gate.test.ts	requireApprovedLld: throws when effective hash differs and no stale-ack	1
+src/workflow/__tests__/plan-gate.test.ts	requireApprovedLld: throws when the lifecycle is rejected	1
+src/workflow/__tests__/review-decision.test.ts	handleReviewDecision stores its comments as Feedback entries by the request's actor or the current actor, with kind revision-request for send-feedback and one batchId, and still reports commentsError when saving fails after the decision	1
+src/workflow/__tests__/review-decision.test.ts	review decision: a decision with no comments writes no feedback entry	1
+src/workflow/__tests__/review-decision.test.ts	review decision: a failing comment write after the decision took effect reports the outcome with commentsError	1
+src/workflow/__tests__/review-decision.test.ts	review decision: approve approves first and then saves the comments with decision approve; a withheld approval saves them as feedback and reports the reason	1
+src/workflow/__tests__/review-decision.test.ts	review-decision.test.ts: a review decision records its resolution as a log entry	1
+src/workflow/__tests__/review-gate.test.ts	review-gate.test.ts: a blocking lifecycle review withholds approval	1
+src/workflow/__tests__/signoff-hold.test.ts	completeThroughService leaves a Story approved-not-completed while its listed BUILD awaits signoff	1
+src/workflow/__tests__/signoff-hold.test.ts	settleSignoff completes a Story whose BUILD was approved over a blocking code review under enforcement: the override the approval stored is read back	1
+src/workflow/__tests__/signoff-hold.test.ts	settleSignoff completes the Story and its Epic once signed-off is recorded, with the members cascaded	1
+src/workflow/artifact-core/__tests__/automated-writers-addresses.test.ts	src/workflow/artifact-core/__tests__/automated-writers-addresses.test.ts	1
+src/workflow/artifact-core/__tests__/completion-evidence.test.ts	createCompletionEvidence	1
+src/workflow/artifact-core/__tests__/design-history-storage.test.ts	design history alone receives a bounded UTF-8 allowance in sync and async readers	1
+src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts	both native adapters preserve feedback queued before expiry and never accept a failed checkpoint write	1
+src/workflow/code-review/task-review/__tests__/activity-execution.test.ts	accepted feedback is durable before receipt and survives CLI failure or conflicting duplicates	1
+src/workflow/code-review/task-review/__tests__/activity-execution.test.ts	daemon review progresses beyond old deadlines and expires only after 30 quiet minutes without retry	1
+src/workflow/code-review/task-review/__tests__/activity-execution.test.ts	unsaved or invalid feedback never passes and persistence failure preserves the last durable checkpoint	1
+src/workflow/code-review/task-review/__tests__/admission-history.test.ts	failed admission survives successful next attempt publication and post-cleanup reads	1
+src/workflow/code-review/task-review/__tests__/admission.test.ts	attempt schema compatibility: optional origins and old checkpoint/CR meaning	1
+src/workflow/code-review/task-review/__tests__/admission.test.ts	interrupted unpinned attempts remain readable but cannot execute on resume	1
+src/workflow/code-review/task-review/__tests__/admission.test.ts	recovery admission: saved pins, latest-only resume, contiguous attempts and immutable prior sections	1
+src/workflow/code-review/task-review/__tests__/admission.test.ts	zero-segment fresh admission rejects before history source work, checkpoint replacement or provider dispatch on both routes	1
+src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts	both routes durably accept direct/model mapping before acknowledgement or assessment without diagnostics	1
+src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts	changed evidence names the affected reuse task and both routes accept corrected reassessment without losing eligible reuse	1
+src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts	fresh native/controller resume restores exact mixed decisions and summary before a planned reuse completes	1
+src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts	offline binding rejects index-only, decision-only, selected task, state and test count tampering	1
+src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts	task identity binds relevant code requirements documents and full tests but excludes unrelated revision movement	1
+src/workflow/code-review/task-review/__tests__/attribution-scope.test.ts	single-task re-review uses the same constrained attribution on daemon and controller routes and preserves prior attempts	1
+src/workflow/code-review/task-review/__tests__/capacity.test.ts	terminal capacity: both actual routes refuse oversized results and preserve publishable remaining outcomes	1
+src/workflow/code-review/task-review/__tests__/capacity.test.ts	terminal capacity: both routes persist late diagnostics and every outcome at the qualified boundary	1
+src/workflow/code-review/task-review/__tests__/capacity.test.ts	terminal capacity: boundary failures publish and raising configured capacity admits the next attempt on both routes	1
+src/workflow/code-review/task-review/__tests__/capacity.test.ts	terminal capacity: diagnostic-bearing attribution failure and timeout publish unmapped outcomes at the boundary on both routes	1
+src/workflow/code-review/task-review/__tests__/capacity.test.ts	terminal capacity: real serializers account for all outcomes prior history accepted decisions and exact fit	1
+src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts	a proven prior pending checkpoint may re-attribute only after explicit resume, as the approved LLD permits	1
+src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts	both routes fence failed acceptance, reconcile exact visible state and require successful explicit re-acknowledgement	1
+src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts	failed mixed-plan acceptance dispatches neither an immediate reuse nor a fresh assessment	1
+src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts	later explicit resume rejects a valid conflicting checkpoint until the exact candidate is restored	1
+src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts	same coordinator refreshes its fence after repeated visible resume acknowledgement failure on both routes	1
+src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts	unreadable or conflicting acceptance readback stays fenced without overwrite or model work	1
+src/workflow/code-review/task-review/__tests__/cleanup.test.ts	Cleanup defers for active admission/execution/publication and excludes concurrent starts under story fence	1
+src/workflow/code-review/task-review/__tests__/cleanup.test.ts	Cleanup retains malformed/symlink/foreign/future/unrepresented history and reports filesystem failures	1
+src/workflow/code-review/task-review/__tests__/cleanup.test.ts	Rejected approval, task validation and CR publication never clean checkpoints; repeated approval retries partial cleanup	1
+src/workflow/code-review/task-review/__tests__/cleanup.test.ts	Successful story BUILD approval removes only matching fully preserved task/story checkpoints	1
+src/workflow/code-review/task-review/__tests__/cleanup.test.ts	daemon cleanup owner requires approved lifecycle and preserves pointed native diagnostics	1
+src/workflow/code-review/task-review/__tests__/compatibility.test.ts	migration compatibility: preserve origin-bearing history and reject unsupported downgrade readers	1
+src/workflow/code-review/task-review/__tests__/compatibility.test.ts	old checkpoint and CR compatibility: absent origin fields mean containing-attempt assessment	1
+src/workflow/code-review/task-review/__tests__/compatibility.test.ts	recovery end-to-end: real IPC/Git, both adapters, interruption boundaries and correct attempt metadata	1
+src/workflow/code-review/task-review/__tests__/compatibility.test.ts	unavailable pinned source rejects recovery without mutation or provider use and releases reservation	1
+src/workflow/code-review/task-review/__tests__/controller-activity.test.ts	controller and daemon share inactivity outcomes; controller write failure never returns accepted feedback	1
+src/workflow/code-review/task-review/__tests__/controller-activity.test.ts	controller feedback queued before expiry commits before a later inactivity callback	1
+src/workflow/code-review/task-review/__tests__/controller.test.ts	controller inactivity remains task-local and accepted replays cannot reset the next grace	1
+src/workflow/code-review/task-review/__tests__/coordinator.test.ts	attribution repair persistence failure stops dispatch without fabricating task failures	1
+src/workflow/code-review/task-review/__tests__/coordinator.test.ts	checkpoint write failure stops scheduling and retains the last complete JSON	1
+src/workflow/code-review/task-review/__tests__/coordinator.test.ts	controller attribution budget survives disconnect and explicit resume, then exhausts	1
+src/workflow/code-review/task-review/__tests__/coordinator.test.ts	controller attribution returns pointed correction frames then accepts complete mapping with replay protection	1
+src/workflow/code-review/task-review/__tests__/coordinator.test.ts	malformed provider result is saved as failed without retrying the task	1
+src/workflow/code-review/task-review/__tests__/coordinator.test.ts	native attribution handles the real host-candidate rejection wrapper and preserves diagnostics	1
+src/workflow/code-review/task-review/__tests__/coordinator.test.ts	native provider timeout is incomplete even when it returns just before the host timer	1
+src/workflow/code-review/task-review/__tests__/coordinator.test.ts	optimistic native status with limitations retains the assessment as incomplete instead of failed	1
+src/workflow/code-review/task-review/__tests__/coordinator.test.ts	shared attribution corrects omitted unchanged regression evidence before any assessment	1
+src/workflow/code-review/task-review/__tests__/coordinator.test.ts	shared attribution exhausts three submissions without running assessments or resetting on resume	1
+src/workflow/code-review/task-review/__tests__/coordinator.test.ts	shared attribution provider failure remains failed for every remaining task without retry	1
+src/workflow/code-review/task-review/__tests__/coordinator.test.ts	shared attribution timeout remains incomplete for every remaining task without retry	1
+src/workflow/code-review/task-review/__tests__/coordinator.test.ts	task execution: checkpoint before next task, one inactivity grace, failure continuation and no automatic retry	1
+src/workflow/code-review/task-review/__tests__/coordinator.test.ts	task review admission: short acknowledgement, initial atomic JSON and same-id exclusion	1
+src/workflow/code-review/task-review/__tests__/diagnostic-persistence.test.ts	Controller diagnostic exchange preserves ownership/sequence replay and never renews inactivity	1
+src/workflow/code-review/task-review/__tests__/diagnostic-persistence.test.ts	Shared attribution diagnostics stored once and projected only to applicable selected scope	1
+src/workflow/code-review/task-review/__tests__/diagnostic-persistence.test.ts	Writer failure does not falsely acknowledge diagnostics; accepted feedback survives later wrapper failure	1
+src/workflow/code-review/task-review/__tests__/diagnostic-persistence.test.ts	controller rejects a late scope diagnostic after valid attribution and retains resolved evidence	1
+src/workflow/code-review/task-review/__tests__/effective-scope.test.ts	both reviewer routes reject invalid locations and preserve mandatory coverage omissions	1
+src/workflow/code-review/task-review/__tests__/effective-scope.test.ts	native and controller routes share final scope and reject historical findings without suppressing final defects	1
+src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts	final history: completed no-pin records retain byte-identical read-only coordinates	1
+src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts	final history: fresh native and controller attribution failures publish all tasks and allow only the next attempt	1
+src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts	final history: missing bindings partitions witnesses task subsets and foreign locations reject offline	1
+src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts	final history: replacement witness closure and graph are checked independently of recomputed digests	1
+src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts	final history: source-verified shifted renamed per-task scope roundtrips offline and idempotently	1
+src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts	final history: unmapped attribution preserves bounded true failure without fabricated scopes or accepted downgrade	1
+src/workflow/code-review/task-review/__tests__/historical-regression.test.ts	historical reproduction: both reviewer routes inspect asserted final code and tests, suppress stale root finding and retain genuine requiredReferences defect	1
+src/workflow/code-review/task-review/__tests__/history.test.ts	CR provenance: exact retained outcomes, origin labels, latest aggregation and replay conflict handling	1
+src/workflow/code-review/task-review/__tests__/history.test.ts	all-reuse attempts and invalid attribution preserve route parity without extra task calls	1
+src/workflow/code-review/task-review/__tests__/history.test.ts	failed accepted reuse publishes truthful failure without invented provenance on both routes	1
+src/workflow/code-review/task-review/__tests__/history.test.ts	history prompts: actual fresh-task reviewers can consult relevant prior feedback and complete attempt history	1
+src/workflow/code-review/task-review/__tests__/history.test.ts	reuse decisions: source task/attempt/party validation, acyclic ancestry and unchanged result/evidence strength	1
+src/workflow/code-review/task-review/__tests__/history.test.ts	sequential re-review: full history in attribution, fresh pins and reasoned reassess/reuse across both actual reviewer adapters	1
+src/workflow/code-review/task-review/__tests__/ownership.test.ts	Cross-session and worker/direct duplicate review-id admission starts exactly one execution	1
+src/workflow/code-review/task-review/__tests__/ownership.test.ts	Different review ids overlap with serial per-review provider calls and merged CR history	1
+src/workflow/code-review/task-review/__tests__/ownership.test.ts	story fence accounts for admission and publication and releases after failures	1
+src/workflow/code-review/task-review/__tests__/policy.test.ts	review policy parity: common prompt/result classification across supported routes without coding/build-validation changes	1
+src/workflow/code-review/task-review/__tests__/previous-round-feedback.test.ts	Fake Claude/Codex failure persists on daemon route and appears in subsequent input	1
+src/workflow/code-review/task-review/__tests__/previous-round-feedback.test.ts	Saved diagnostics survive disconnect/restart; later valid feedback does not rewrite failed attempt	1
+src/workflow/code-review/task-review/__tests__/previous-round-feedback.test.ts	Writer failure does not falsely acknowledge diagnostics; accepted feedback survives later wrapper failure	1
+src/workflow/code-review/task-review/__tests__/progress-client.test.ts	Inactive execution stops polling without rewriting saved task status or restarting review	1
+src/workflow/code-review/task-review/__tests__/progress-client.test.ts	Read-only progress IPC validates scope and never invokes providers	1
+src/workflow/code-review/task-review/__tests__/progress-e2e.test.ts	A new daemon attempt never exposes retired controller progress	1
+src/workflow/code-review/task-review/__tests__/progress-e2e.test.ts	Progress write failure restart and terminal races preserve authoritative task outcomes	1
+src/workflow/code-review/task-review/__tests__/progress-execution.test.ts	Daemon and controller produce equivalent progress without renewing inactivity on heartbeat	1
+src/workflow/code-review/task-review/__tests__/progress-execution.test.ts	Terminal task result supersedes pending progress and stops timers	1
+src/workflow/code-review/task-review/__tests__/publication.test.ts	CR publication: a stored review of a Story with a Plan (LLD and Plan, no story document) publishes	1
+src/workflow/code-review/task-review/__tests__/publication.test.ts	CR publication: idempotent scoped summary and retained checkpoint on publication failure	1
+src/workflow/code-review/task-review/__tests__/publication.test.ts	CR readers: partial task scope, incomplete/failed results and unknown versions cannot satisfy story review	1
+src/workflow/code-review/task-review/__tests__/publication.test.ts	canonical story aliases retain original submitted scope while using one CR identity	1
+src/workflow/code-review/task-review/__tests__/publication.test.ts	concurrent canonical publications preserve both summaries and the latest readable projection	1
+src/workflow/code-review/task-review/__tests__/publication.test.ts	coordinator marks an attempt terminal only after canonical CR publication is durable	1
+src/workflow/code-review/task-review/__tests__/publication.test.ts	publication refuses an unknown stored CR version without overwriting future data	1
+src/workflow/code-review/task-review/__tests__/publication.test.ts	task-based CR: version-2 validation/rendering and no retired-format fallback	1
+src/workflow/code-review/task-review/__tests__/qualification.test.ts	qualification: canonical appended reviews requalify while altered baseline history or metadata is an explicit conflict	1
+src/workflow/code-review/task-review/__tests__/qualification.test.ts	qualification: fresh publication restores distinct assigned tests and full identities on both routes without attribution calls	1
+src/workflow/code-review/task-review/__tests__/qualification.test.ts	qualification: independent IDs and final pins publish concurrently on both routes without changing each others feedback	1
+src/workflow/code-review/task-review/__tests__/recovery.test.ts	controller recovery preserves every terminal outcome and selects missing task IDs	1
+src/workflow/code-review/task-review/__tests__/recovery.test.ts	controller recovery: new trusted connection, old-owner refusal, disconnect retention and daemon lifetime distinction	1
+src/workflow/code-review/task-review/__tests__/recovery.test.ts	interrupted recovery: only absent tasks rerun and terminal failed/incomplete tasks are skipped	1
+src/workflow/code-review/task-review/__tests__/recovery.test.ts	publication recovery: saved feedback projects once with zero provider calls and conflict-free replay	1
+src/workflow/code-review/task-review/__tests__/recovery.test.ts	retrigger metadata: resume and sequential attempts return the pinned attempt/status and preserved task IDs	1
+src/workflow/code-review/task-review/__tests__/resource-preservation.test.ts	guard-only updates preserve report identity while reviewed-input or result mutations do not	1
+src/workflow/code-review/task-review/__tests__/review-scope-policy.test.ts	optional execution notes remain nonblocking on daemon and controller routes and in CR publication	1
+src/workflow/code-review/task-review/__tests__/selected-code.test.ts	immutable historical before/after packets remain resumable but cannot be submitted as new attempts	1
+src/workflow/code-review/task-review/__tests__/transition.test.ts	transition: interrupted unpinned work is read-only on both reviewer routes without mutation	1
+src/workflow/convert/__tests__/convert-preview.test.ts	src/workflow/convert/__tests__/convert-preview.test.ts	1
+src/workflow/review/design-review/__tests__/activity-monitor.test.ts	a truly idle controller expires through the shared bounded retry policy and ends paused	1
+src/workflow/review/design-review/__tests__/activity-monitor.test.ts	native and controller reviews survive a two-hour tool then complete under the same activity policy	1
+src/workflow/review/design-review/__tests__/admission-checkpoint.test.ts	historical design attempts and unverified admission retain separate semantics	1
+src/workflow/review/design-review/__tests__/admission-history.test.ts	technical admission diagnostics remain non-review evidence across publication	1
+src/workflow/review/design-review/__tests__/approval.test.ts	ISSUE SPEC and PLAN remain human-only approval gates through ordinary and direct routes	1
+src/workflow/review/design-review/__tests__/approval.test.ts	MED overrides retain the original blocked review and repeated normal approval remains idempotent	1
+src/workflow/review/design-review/__tests__/approval.test.ts	active reviewer ownership excludes approval and approval fence excludes new review ownership	1
+src/workflow/review/design-review/__tests__/approval.test.ts	both approval routes refuse missing or unapproved actual required ancestors	1
+src/workflow/review/design-review/__tests__/approval.test.ts	changed authorship and workflow provenance cannot reuse independent evidence	1
+src/workflow/review/design-review/__tests__/approval.test.ts	document changes, missing evidence and a later failed review admission cannot approve an older pass	1
+src/workflow/review/design-review/__tests__/approval.test.ts	normal and direct design approval share permanent independent evidence and preserve idempotent approval	1
+src/workflow/review/design-review/__tests__/approval.test.ts	ordinary daemon and direct lifecycle approvals honor actual epic standalone and issue ancestors	1
+src/workflow/review/design-review/__tests__/approval.test.ts	unfinished checkpoint states and missing referenced history fail closed without altering the head	1
+src/workflow/review/design-review/__tests__/assignment-schema.test.ts	impact final schema retains nullable transport decoding and historical final decisions without mutating broad schemas	1
+src/workflow/review/design-review/__tests__/assignment-schema.test.ts	live chunk schemas and trailing prompt schemas expose decisions only on the designated impact final	1
+src/workflow/review/design-review/__tests__/assignment-schema.test.ts	ordinary chunk schemas reject absent-permission fields even when empty or null while valid results still pass	1
+src/workflow/review/design-review/__tests__/capacity.test.ts	automatic retry and explicit recovery reserve capacity before charging dispatch counters	1
+src/workflow/review/design-review/__tests__/capacity.test.ts	capacity refusal is durable before provider construction and does not spend retries	1
+src/workflow/review/design-review/__tests__/capacity.test.ts	coordinator dispatches maximum feedback at the real ceiling and durably refuses one byte over	1
+src/workflow/review/design-review/__tests__/capacity.test.ts	encoded dispatch reservation accepts exact bound and refuses one byte below without expanding the ceiling	1
+src/workflow/review/design-review/__tests__/capacity.test.ts	real checkpoint ceiling reserves maximum byte-valid feedback through consolidation and restart	1
+src/workflow/review/design-review/__tests__/checkpoint-progress.test.ts	accepted feedback cannot be rewritten and oversized stored results cannot bypass paging limits	1
+src/workflow/review/design-review/__tests__/checkpoint-progress.test.ts	atomic checkpoint failure preserves the last accepted snapshot and cleans its own temporary file	1
+src/workflow/review/design-review/__tests__/checkpoint-progress.test.ts	bounded no-follow checkpoint loading retains corrupt foreign and oversized state	1
+src/workflow/review/design-review/__tests__/checkpoint-progress.test.ts	progress pages expose one result without baseline and polling does not renew activity	1
+src/workflow/review/design-review/__tests__/checkpoint-progress.test.ts	serialized resource and progress updates cannot lose open intents	1
+src/workflow/review/design-review/__tests__/cleanup.test.ts	FIFO checkpoints and claim metadata are retained without blocking the daemon	1
+src/workflow/review/design-review/__tests__/cleanup.test.ts	active and busy artifacts retain promptly while independent artifacts clean up	1
+src/workflow/review/design-review/__tests__/cleanup.test.ts	actual active model work retains its artifact while another artifact in the same project progresses	1
+src/workflow/review/design-review/__tests__/cleanup.test.ts	approval deletes only fully preserved private claims and fresh history remains readable	1
+src/workflow/review/design-review/__tests__/cleanup.test.ts	cleanup verifies older failed attempt history as well as the final publication	1
+src/workflow/review/design-review/__tests__/cleanup.test.ts	crashes after claim and before deletion recover exact claims without touching replacements	1
+src/workflow/review/design-review/__tests__/cleanup.test.ts	explicit override approval retains unfinished checkpoint state truthfully	1
+src/workflow/review/design-review/__tests__/cleanup.test.ts	foreign corrupt symlink unpreserved and unfinished override checkpoints are retained	1
+src/workflow/review/design-review/__tests__/cleanup.test.ts	public replacements after claim and at deletion remain untouched and retain replay ownership	1
+src/workflow/review/design-review/__tests__/cleanup.test.ts	real coordinator start correction and publication contend with cleanup without acquiring the store queue recursively	1
+src/workflow/review/design-review/__tests__/cleanup.test.ts	replacement immediately before claim is quarantined and restored without loss	1
+src/workflow/review/design-review/__tests__/cleanup.test.ts	unverified claims never clobber a replacement during no-clobber restore	1
+src/workflow/review/design-review/__tests__/consolidation-recovery.test.ts	failed consolidation recovers durable accepted chunks without provider calls and remains replay safe	1
+src/workflow/review/design-review/__tests__/consolidation-recovery.test.ts	failed consolidation recovery refuses changed subjects unrelated failures and missing accepted work	1
+src/workflow/review/design-review/__tests__/controller.test.ts	controller disconnect preserves accepted chunks and never reassigns interrupted work	1
+src/workflow/review/design-review/__tests__/controller.test.ts	controller results use the common schema and produce deterministic complete counts	1
+src/workflow/review/design-review/__tests__/controller.test.ts	failed controller activity persistence fences a concurrently submitted valid plan	1
+src/workflow/review/design-review/__tests__/controller.test.ts	observed controller subject changes invalidate every exchange boundary and cannot be restored into acceptance	1
+src/workflow/review/design-review/__tests__/controller.test.ts	trusted controller authority, execution sequence and durable exact replay are enforced	1
+src/workflow/review/design-review/__tests__/coordinator.test.ts	a native provider returning after inactivity cannot publish a late valid plan	1
+src/workflow/review/design-review/__tests__/coordinator.test.ts	contradictory native status retries only the failed unit and pauses with pointed details	1
+src/workflow/review/design-review/__tests__/coordinator.test.ts	findings and verification gaps continue chunks, while failed durability and mutation stop advancement	1
+src/workflow/review/design-review/__tests__/coordinator.test.ts	native acknowledgement is durable and duplicate start does not dispatch another review	1
+src/workflow/review/design-review/__tests__/coordinator.test.ts	native execution has request-independent activity options and model-free observations	1
+src/workflow/review/design-review/__tests__/coordinator.test.ts	native inactivity is supervised by the owner and observation never renews its grace	1
+src/workflow/review/design-review/__tests__/coordinator.test.ts	native schema failures retain pointed diagnostic corrections without raw output and pause after three retries	1
+src/workflow/review/design-review/__tests__/coordinator.test.ts	slow progress persistence coalesces activity instead of accumulating checkpoint writes	1
+src/workflow/review/design-review/__tests__/correction-admission.test.ts	checkpoint evolution freezes preparation and prior prefixes and rejects partial plan-impact pairs	1
+src/workflow/review/design-review/__tests__/correction-admission.test.ts	correction admission rejects unfinished statuses, skipped ordinals, missing reports and failed saves	1
+src/workflow/review/design-review/__tests__/correction-admission.test.ts	sequential admission and replay preserve immutable initial submission and complete prior attempts	1
+src/workflow/review/design-review/__tests__/coverage-progress.test.ts	fresh-only progress and pagination report retained scope without masking incomplete status	1
+src/workflow/review/design-review/__tests__/coverage-progress.test.ts	pre-plan and old full progress derive counts and impact tools return to impact phase	1
+src/workflow/review/design-review/__tests__/history-aggregate.test.ts	full and impact consolidation preserve 8194 limitations across checkpoint restart	1
+src/workflow/review/design-review/__tests__/history-aggregate.test.ts	host coverage diagnostics remain bounded without expanding model limitations	1
+src/workflow/review/design-review/__tests__/history-aggregate.test.ts	impact consolidation carries more than 256 origins without weakening per-chunk findings	1
+src/workflow/review/design-review/__tests__/history-aggregate.test.ts	permanent history validates unfinished full prefixes before any report exists	1
+src/workflow/review/design-review/__tests__/history-aggregate.test.ts	permanent history validates unfinished impact selection provenance and accepted prefixes	1
+src/workflow/review/design-review/__tests__/history-aggregate.test.ts	permanent payload validates exact history, party, binding, digest and version	1
+src/workflow/review/design-review/__tests__/impact-consolidation.test.ts	checkpoint report projection is derived and cannot be persisted with invented counts or origins	1
+src/workflow/review/design-review/__tests__/impact-consolidation.test.ts	exact fresh-retained partition counts carried blockers and derives decisions only from the accepted final result	1
+src/workflow/review/design-review/__tests__/impact-consolidation.test.ts	invalid dispositions cannot close retained-only concerns or cite unknown duplicate or uninspected sources	1
+src/workflow/review/design-review/__tests__/impact-consolidation.test.ts	missing reconciliation is accepted incomplete with conservative carry and supersession references a real current finding	1
+src/workflow/review/design-review/__tests__/impact-consolidation.test.ts	partial reconciliation with final self-inspection is idempotent and preserves omitted blockers	1
+src/workflow/review/design-review/__tests__/impact-consolidation.test.ts	stored impact reports enforce the same document and checkpoint references as live acceptance	1
+src/workflow/review/design-review/__tests__/impact-contracts.test.ts	old full checkpoints decode and new attempt metadata remains bounded and strict	1
+src/workflow/review/design-review/__tests__/impact-execution.test.ts	controller impact uses the same schema and validator with fenced exchange and durable exact replay	1
+src/workflow/review/design-review/__tests__/impact-execution.test.ts	impact acceptance save failure preserves prior bytes and dispatches no selected chunk	1
+src/workflow/review/design-review/__tests__/impact-execution.test.ts	native impact persists one plan-selection pair and dispatches only selected chunks before mutation invalidation	1
+src/workflow/review/design-review/__tests__/impact-qualification.test.ts	correction after an invalidated first attempt and full restart can retain the restarted coverage	1
+src/workflow/review/design-review/__tests__/impact-qualification.test.ts	stored initial reports cannot invent impact projections or nonimpact finding decisions	1
+src/workflow/review/design-review/__tests__/impact-selection.test.ts	explicit full fallback consumes no retry while unsafe selective output is classified invalid_output	1
+src/workflow/review/design-review/__tests__/impact-selection.test.ts	impact carries canonical effective finding tuples and rejects missing or invented origins	1
+src/workflow/review/design-review/__tests__/impact-selection.test.ts	impact validates complete partition and safe equivalent retention with fresh consistency	1
+src/workflow/review/design-review/__tests__/persistence-fence.test.ts	FIFO document replacements refuse publication approval and recovery without blocking	1
+src/workflow/review/design-review/__tests__/persistence-fence.test.ts	document edits during publication and approval persistence fail closed through journal restart	1
+src/workflow/review/design-review/__tests__/provenance.test.ts	backward provenance resolves eligible chains and preserves findings without copying historical bodies	1
+src/workflow/review/design-review/__tests__/provenance.test.ts	retained origin rejection matrix prevents foreign forward cyclic missing invalidated and incomplete reuse	1
+src/workflow/review/design-review/__tests__/provenance.test.ts	retained source comparison rejects an older valid result when newer mapped coverage is also valid	1
+src/workflow/review/design-review/__tests__/publication.test.ts	canonical edits during journal staging or log append are preserved and refuse publication	1
+src/workflow/review/design-review/__tests__/publication.test.ts	journalled publication and lost-receipt recovery preserve one exact full history without model calls	1
+src/workflow/review/design-review/__tests__/publication.test.ts	known permanent-history minimum refuses before model work and explicitly resumes after the allowance is raised	1
+src/workflow/review/design-review/__tests__/publication.test.ts	native review waits for durable publication and recovers failed receipt persistence without rerunning models	1
+src/workflow/review/design-review/__tests__/publication.test.ts	publication append and head-replace crashes replay the same complete history entry	1
+src/workflow/review/design-review/__tests__/publication.test.ts	publication capacity stays pending and a raised history allowance retries persistence only	1
+src/workflow/review/design-review/__tests__/publication.test.ts	publication refuses changed subject before write and additional edits after its exact owned delta	1
+src/workflow/review/design-review/__tests__/readers.test.ts	fresh coordinator retrieves permanent pages without checkpoint, scan or provider and requires an exact artifact locator	1
+src/workflow/review/design-review/__tests__/readers.test.ts	legacy display stays unchanged and read-only across artifact content delivery and CLI	1
+src/workflow/review/design-review/__tests__/readers.test.ts	versioned readers preserve legacy shape and expose real chunk feedback through current common fields	1
+src/workflow/review/design-review/__tests__/recovery-checkpoint.test.ts	checkpoint I/O errors are normalized while domain and corruption codes survive without replacing accepted bytes	1
+src/workflow/review/design-review/__tests__/recovery-checkpoint.test.ts	checkpoint recovery counters actions outcomes and completed-unit summaries are monotonic and prior attempts freeze	1
+src/workflow/review/design-review/__tests__/recovery-checkpoint.test.ts	completed-unit summary guards reject duplicates unknown actions and missing accepted work without changing saved bytes	1
+src/workflow/review/design-review/__tests__/recovery-checkpoint.test.ts	coordinator commit preserves domain errors and fences every failed save before provider dispatch	1
+src/workflow/review/design-review/__tests__/recovery-contracts.test.ts	S1 checkpoints remain readable and bounded recovery metadata round-trips without content or transcripts	1
+src/workflow/review/design-review/__tests__/recovery.test.ts	changed subject recovery latches invalidation and approved full restart refreshes party without reusing old work	1
+src/workflow/review/design-review/__tests__/recovery.test.ts	controller recovery rebinds only after disconnect and rejects stale generations without repeating completed chunks	1
+src/workflow/review/design-review/__tests__/recovery.test.ts	explicit native recovery preserves accepted prefixes and durable replay reserves only unfinished work	1
+src/workflow/review/design-review/__tests__/recovery.test.ts	recovery refuses missing checkpoints stale attempts and unavailable publication without invoking a provider	1
+src/workflow/review/design-review/__tests__/recovery.test.ts	report-only recovery rebuilds the checkpoint report with zero provider construction or calls	1
+src/workflow/review/design-review/__tests__/retry.test.ts	controller technical failures use the same budget and invalid review output rotates generation without accepting it	1
+src/workflow/review/design-review/__tests__/retry.test.ts	exhausted native retries pause and each approved recovery grants one execution without resetting the budget	1
+src/workflow/review/design-review/__tests__/retry.test.ts	failed retry reservation stops execution and an orphan exhausted reservation cannot reset its budget	1
+src/workflow/review/design-review/__tests__/retry.test.ts	four controller execution failures pause remaining work with no reassignment or automatic budget reset	1
+src/workflow/review/design-review/__tests__/retry.test.ts	native retries only the failed unit with pointed feedback and preserves substantive findings and prior summaries	1
+src/workflow/review/design-review/__tests__/retry.test.ts	recovery seals an orphaned directed execution as interrupted before reserving a fresh approved execution	1
+src/workflow/review/design-review/__tests__/selected-recovery.test.ts	accepted selection corruption stays terminal and all-fresh checkpoints retain recovery behavior	1
+src/workflow/review/design-review/__tests__/selected-recovery.test.ts	impact reservation kinds preserve retry counters and reject mismatches without mutation	1
+src/workflow/review/design-review/__tests__/selected-recovery.test.ts	interleaved retained coverage schedules only the selected prefix and fresh final consistency	1
+src/workflow/review/design-review/__tests__/subject-monitor.test.ts	an opened watcher error closes and rearms it while fingerprint checks still invalidate a changed subject	1
+src/workflow/review/design-review/__tests__/subject-monitor.test.ts	blocked native work is durably invalidated before return and restored bytes cannot accept late output	1
+src/workflow/review/design-review/__tests__/subject-monitor.test.ts	failed invalidation persistence stays visibly failed and never retries native work	1
+src/workflow/review/design-review/__tests__/subject-monitor.test.ts	subject change during final report save preserves historical feedback but never exposes a valid report	1
+src/workflow/review/design-review/__tests__/subject-monitor.test.ts	subject invalidation rejects controller feedback queued behind a delayed activity save	1
+src/workflow/review/design-review/__tests__/subject-monitor.test.ts	subject monitor filters unrelated events rearms renamed watches and disposes without treating polling as activity	1
+src/workflow/review/design-review/__tests__/subject-monitor.test.ts	subject polling invalidates deletion symlink replacement and atomic rename for either subject representation	1
+src/workflow/review/design-review/__tests__/subject.test.ts	native and controller correction reviews preserve Epic standalone and ISSUE workflow requirements	1
+src/workflow/review/design-review/__tests__/subject.test.ts	subject identity, containment and party are validated and only subject changes invalidate	1
+src/workflow/review/design-review/__tests__/subject.test.ts	workflow matrix resolves Epic designs, standalone LLD and ISSUE LLD without future artifacts	1
+src/workflow/review/design-review/__tests__/subject.test.ts	workflow requirements do not downgrade broken Epics or turn correction links into ancestors	1
+src/workflow/runners/build/__tests__/build-record.test.ts	approveWorkflowTarget completes the persisted plan-driven BUILD record (keys on the BUILD- prefix)	1
+src/workflow/runners/build/__tests__/build-record.test.ts	build-record.test.ts: the completion record needs no legacy stamp	1
+src/workflow/runners/build/__tests__/range-base.test.ts	src/workflow/runners/build/__tests__/range-base.test.ts	1
+src/workflow/team/__tests__/deadline.test.ts	deadline.test.ts: createDeadline aborts its signal at the budget and dispose clears the timer	1
+src/workflow/team/__tests__/signoff-e2e.test.ts	claim, submit, refused next stage while open, completion settled at the next-stage attempt, all artifacts signed off together, claim released, deferred Story completion run by team.settle for a BUILD, and an unlisted stage unaffected	1
+src/workflow/team/__tests__/signoff-revise-e2e.test.ts	changes requested on a two-artifact request, both re-authored through writeArtifact or one left unchanged, approved again and resubmitted to the same request, settled signed-off for the new revisions only, a lingering old decision not cancelling it, a merged request not carried over, and a non-holder and an unassigned user refused	1
+src/workflow/team/__tests__/team-gate-callers.test.ts	team-gate-callers.test.ts: each listed caller awaits its gate call and returns the same outcome; handler.test.ts and handler-runtime.test.ts still pass	1
+src/workflow/team/__tests__/team-policy-parity.test.ts	team-policy-parity.test.ts: policyReader and findAnchor equal the old functions on the same repositories	1
+src/workflow/tracker/__tests__/github-adapter.test.ts	each issueOps operation runs the expected gh argv and fails with the kind and message of the gh failure	1

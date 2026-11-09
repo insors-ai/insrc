@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8a3db5b8-1a71-4358-b21b-27ccc536d0ee",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T12:31:24.043Z",
+    "epicCreatedAt": "2026-11-09T06:00:04.355Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "206db3426ffd4428",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Wire scoped observation controls and qualify end-to-end behavior",
+      "parent": {
+        "entityId": "STORY-206db3426ffd4428-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-206db3426ffd4428-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-206db3426ffd4428-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-206db3426ffd4428-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#152",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fe2a0c746981caa1875e7e65ef388b0bceb89a532d93ea02634377a02cf1d1a4",
+        "at": "2026-11-09T12:31:24.043Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T12:31:24.045Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire scoped observation controls and qualify end-to-end behavior",
+    "summary": "Finish the daemon foundation over normal entry points and verify cross-task recovery and predecessor traceability.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Expose authorized stop-observation and explicit cancellation through normal daemon entry points. Stop detaches only its observer. Persist cancel-pending, suppress duplicate requests, and keep verified terminal outcomes immutable.",
+      "With a full subscriber queue, coalesce progress, give explicit resync and preserve terminal delivery. Exercise fail-open execution at observation admission limits and file failure.",
+      "Verify July S001/#42 maps to s1–s2, S002/#43 to s6, and S003/#44 to s5 using the predecessor story records and current scope. Leave tracker disposition separate."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Check stop, cancel replay and verified completion races"
+      },
+      {
+        "level": "integration",
+        "name": "Saturate per-project active/inactive and global reservations, coalesce full observer queues, and preserve terminal delivery and running execution"
+      },
+      {
+        "level": "integration",
+        "name": "Verify S001/#42 to s1–s2, S002/#43 to s6 and S003/#44 to s5 from local predecessor records and successor scope"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

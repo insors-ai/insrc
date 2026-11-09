@@ -1,0 +1,3 @@
+src/shared/__tests__/daemon-process-client.test.ts	chunked readiness and out-of-order replies preserve one immutable identity and request correlation	1
+src/shared/__tests__/daemon-process-client.test.ts	spawn, readiness, malformed identity and native permission failures refuse capture and clean helpers	1
+src/workflow/code-review/task-review/__tests__/controller.test.ts	review disconnect: stop controller work and retain completed tasks while daemon reviewer outlives submitter	1

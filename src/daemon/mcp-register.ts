@@ -31,6 +31,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { getLogger } from '../shared/logger.js';
+import { moveInlineListToTables } from '../shared/toml-inline-list.js';
 import type { McpClient, McpClientOutcome, SteeringSelection } from '../shared/types.js';
 import { readSteeringBlock, upsertMarkedSection } from './steering-inject.js';
 
@@ -163,7 +164,9 @@ function defaultVibeProjectConfigText(repoPath: string): string | undefined {
 /**
  * Idempotently ensure the repo's own .vibe/config.toml declares the insrc MCP
  * server. Returns 'unchanged' when the entry is already there, else appends the
- * block and writes (creating .vibe/). IO errors propagate — the caller guards.
+ * block and writes (creating .vibe/). An inline `mcp_servers` list is first moved
+ * to tables, because TOML cannot hold both forms. IO errors, and a config that
+ * cannot be brought to a valid form (left untouched), propagate — the caller guards.
  */
 export function upsertVibeProjectServer(
 	repoPath: string,
@@ -171,10 +174,15 @@ export function upsertVibeProjectServer(
 	deps: McpRegisterDeps = {},
 ): 'unchanged' | 'registered' {
 	const readText = deps.vibeProjectConfigText ?? defaultVibeProjectConfigText;
-	const text = readText(repoPath);
-	if (text !== undefined && vibeConfigHasServer(text, 'insrc')) return 'unchanged';
-	const ensureDir = deps.ensureVibeProjectDir ?? ((p: string) => mkdirSync(join(p, '.vibe'), { recursive: true }));
+	const found = readText(repoPath);
+	const text = found === undefined ? undefined : moveInlineListToTables(found, 'mcp_servers');
 	const writeText = deps.writeVibeProjectConfig ?? ((p: string, t: string) => writeFileSync(vibeProjectConfigPath(p), t, 'utf8'));
+	if (text !== undefined && vibeConfigHasServer(text, 'insrc')) {
+		if (text === found) return 'unchanged';
+		writeText(repoPath, text); // repairs a config that held both forms
+		return 'registered';
+	}
+	const ensureDir = deps.ensureVibeProjectDir ?? ((p: string) => mkdirSync(join(p, '.vibe'), { recursive: true }));
 	ensureDir(repoPath);
 	const base = text === undefined || text.trim() === '' ? '' : text.endsWith('\n') ? text : text + '\n';
 	writeText(repoPath, base + vibeServerTomlBlock(mcpJs));
@@ -214,7 +222,7 @@ export function upsertVibeAgentsSteering(deps: McpRegisterDeps = {}): 'unchanged
 
 export function vibeConfigHasServer(configText: string, name: string): boolean {
 	const chunks = configText.split(/^\[\[/m);
-	const nameLine = new RegExp(`^\\s*name\\s*=\\s*["']${name}["']`, 'm');
+	const nameLine = new RegExp(`^\\s*(?:name|"name"|'name')\\s*=\\s*["']${name}["']`, 'm');
 	return chunks.some(c => c.startsWith('mcp_servers]]') && nameLine.test(c));
 }
 

@@ -440,3 +440,46 @@ test('upsertVibeProjectServer on a real temp dir: creates .vibe/config.toml, ide
 	assert.match(text, /args = \[\n {4}"\/x\/insrc-mcp\.js",\n\]/);
 	assert.equal(upsertVibeProjectServer(repo, '/x/insrc-mcp.js'), 'unchanged', 'second call is a no-op');
 });
+
+test('upsertVibeProjectServer moves an inline mcp_servers list to tables, keeping its servers', async () => {
+	const { upsertVibeProjectServer, vibeServerTomlBlock } = await import('../mcp-register.js');
+	const files = new Map([['/r', 'theme = "x"\nmcp_servers = [\n    { name = "docs", command = "d" },\n]\n']]);
+	const deps = { vibeProjectConfigText: (p: string) => files.get(p), ensureVibeProjectDir: () => {}, writeVibeProjectConfig: (p: string, t: string) => { files.set(p, t); } };
+	assert.equal(upsertVibeProjectServer('/r', '/x/m.js', deps), 'registered');
+	assert.equal(files.get('/r'), 'theme = "x"\n\n[[mcp_servers]]\nname = "docs"\ncommand = "d"\n' + vibeServerTomlBlock('/x/m.js'));
+	assert.equal(upsertVibeProjectServer('/r', '/x/m.js', deps), 'unchanged', 'second call is a no-op');
+});
+
+test('upsertVibeProjectServer removes an empty inline list before adding the server', async () => {
+	const { upsertVibeProjectServer, vibeServerTomlBlock } = await import('../mcp-register.js');
+	const files = new Map([['/r', 'mcp_servers = []\ntheme = "x"\n']]);
+	const deps = { vibeProjectConfigText: (p: string) => files.get(p), ensureVibeProjectDir: () => {}, writeVibeProjectConfig: (p: string, t: string) => { files.set(p, t); } };
+	assert.equal(upsertVibeProjectServer('/r', '/x/m.js', deps), 'registered');
+	assert.equal(files.get('/r'), 'theme = "x"\n' + vibeServerTomlBlock('/x/m.js'));
+});
+
+test('upsertVibeProjectServer repairs a config holding both forms, and adds no second insrc entry', async () => {
+	const { upsertVibeProjectServer } = await import('../mcp-register.js');
+	const files = new Map([['/r', 'mcp_servers = []\n\n[[mcp_servers]]\nname = "insrc"\n']]);
+	const deps = { vibeProjectConfigText: (p: string) => files.get(p), ensureVibeProjectDir: () => {}, writeVibeProjectConfig: (p: string, t: string) => { files.set(p, t); } };
+	assert.equal(upsertVibeProjectServer('/r', '/x/m.js', deps), 'registered');
+	assert.equal(files.get('/r'), '\n[[mcp_servers]]\nname = "insrc"\n');
+	assert.equal(upsertVibeProjectServer('/r', '/x/m.js', deps), 'unchanged');
+});
+
+test('upsertVibeProjectServer recognises an inline insrc entry with a quoted name key and adds no second one', async () => {
+	const { upsertVibeProjectServer } = await import('../mcp-register.js');
+	const files = new Map([['/r', 'mcp_servers = [{ "name" = "insrc", command = "node" }]\n']]);
+	const deps = { vibeProjectConfigText: (p: string) => files.get(p), ensureVibeProjectDir: () => {}, writeVibeProjectConfig: (p: string, t: string) => { files.set(p, t); } };
+	assert.equal(upsertVibeProjectServer('/r', '/x/m.js', deps), 'registered');
+	assert.equal(files.get('/r'), '[[mcp_servers]]\n"name" = "insrc"\ncommand = "node"\n');
+	assert.equal(upsertVibeProjectServer('/r', '/x/m.js', deps), 'unchanged');
+});
+
+test('upsertVibeProjectServer leaves a config it cannot fix untouched and reports the failure', async () => {
+	const { upsertVibeProjectServer } = await import('../mcp-register.js');
+	let wrote = false;
+	const deps = { vibeProjectConfigText: () => 'mcp_servers = "x"\n', ensureVibeProjectDir: () => {}, writeVibeProjectConfig: () => { wrote = true; } };
+	assert.throws(() => upsertVibeProjectServer('/r', '/x/m.js', deps), /is not a list/);
+	assert.equal(wrote, false);
+});

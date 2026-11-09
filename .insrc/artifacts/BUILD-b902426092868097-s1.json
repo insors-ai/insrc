@@ -1,0 +1,140 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 5,
+        "contentHash": "8847d296a3d78da5abc128d815b74e4c8e96fcc2e485dbfae707626f96417db3",
+        "at": "2026-11-09T07:56:29.919Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 5,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T09:36:48.525Z",
+        "override": {
+          "reason": "Approved by the user in chat on 2026-11-09 after all three code review rounds. The final round was changes_requested with two MED findings on inputs Vibe does not write: a sub-table header with # or ] inside quotes, and a server name containing the other quote character. The build gate also remains failed: the shared helper and its one-path import allowance have no LLD, and the writers' existing line-by-line reading can misread section-like text inside a multi-line string. The user accepted these limits; a follow-up is to move the writers to a real TOML parser."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-c98607e8-852c-467c-82eb-7354df4d9c94",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T05:13:39.589Z",
+    "epicCreatedAt": "2026-11-09T05:12:49.979Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b902426092868097",
+    "storyId": "s1",
+    "revision": 5,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "Small bugfix ISSUE-b902426092868097: two writers append a server section without accounting for the inline list that Vibe saves.",
+    "epicSlug": "keep-vibe-configs-valid-when-registering",
+    "updatedAt": "2026-11-09T07:55:33.108Z"
+  },
+  "body": {
+    "focus": "Registering the insrc server in a Vibe config that holds a top-level inline mcp_servers list produces a valid TOML file, from both the VS Code plugin (vscode-plugin/src/hosts/toml-mcp-writer.ts) and the daemon (upsertVibeProjectServer in src/daemon/mcp-register.ts). Every server already in the inline list and every other setting is kept, and insrc is registered once. Registering again changes nothing. Where a writer cannot safely bring a config into a valid form, it leaves the file untouched and reports the failure instead of writing an invalid file.",
+    "producesLld": false,
+    "commit": "621464563",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": false
+      }
+    ],
+    "summary": "Both Vibe config writers now move an inline mcp_servers list into [[mcp_servers]] tables before adding the insrc server, through one shared helper, and leave a config they cannot fix untouched. An inline entry whose name is not a plain quoted string, whose keys use escapes, or which spans lines is refused rather than converted. The user chose to keep the shared helper.",
+    "testRecord": {
+      "md": "docs/standalone/keep-vibe-configs-valid-when-registering-E20261109b9024260/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/__tests__/mcp-register.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T07:55:33.108Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/mcp-register.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T07:55:33.108Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/__tests__/toml-inline-list.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T07:55:33.108Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/toml-inline-list.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T07:55:33.108Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/hosts/__tests__/commands.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T07:55:33.108Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/hosts/__tests__/writers.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T07:55:33.108Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/hosts/toml-mcp-writer.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T07:55:33.108Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-b902426092868097.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T07:55:33.108Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-b902426092868097.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T07:55:33.108Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/keep-vibe-configs-valid-when-registering-E20261109b9024260/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T07:55:33.108Z"
+      }
+    ]
+  },
+  "citations": []
+}

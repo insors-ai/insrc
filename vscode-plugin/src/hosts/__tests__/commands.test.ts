@@ -126,6 +126,8 @@ test('no supported host present → the command sets a "no hosts detected" statu
 
 test('source-scan: vscode-plugin/src/hosts/ imports only node builtins + the s1 surfaces (+ shared local modules) — no daemon internals/indexer/storage, no cloud/HTTP (k5)', () => {
   const allowedNode = new Set(['node:fs', 'node:os', 'node:path', 'node:url']);
+  // A pure text helper with no imports of its own, shared with the daemon's Vibe writer.
+  const allowedShared = new Set(['../../../src/shared/toml-inline-list.js']);
   for (const f of readdirSync(HOSTS_SRC)) {
     if (!f.endsWith('.ts')) continue;
     const src = readFileSync(join(HOSTS_SRC, f), 'utf8');
@@ -135,7 +137,7 @@ test('source-scan: vscode-plugin/src/hosts/ imports only node builtins + the s1 
       const m = line.match(/from '([^']+)'/);
       if (!m) continue;
       const spec = m[1]!;
-      const ok = allowedNode.has(spec) || spec.startsWith('./') || spec.startsWith('../surfaces/');
+      const ok = allowedNode.has(spec) || allowedShared.has(spec) || spec.startsWith('./') || spec.startsWith('../surfaces/');
       assert.ok(ok, `${f}: unexpected import ${spec} (k5 thin boundary — no daemon internals/indexer/storage/vscode)`);
     }
   }

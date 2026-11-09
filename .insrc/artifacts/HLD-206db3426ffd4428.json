@@ -1,0 +1,1051 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "wf-1794211533808-ghbhlu",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T08:06:42.556Z",
+    "epicCreatedAt": "2026-11-09T06:00:04.355Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 68335,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "206db3426ffd4428",
+    "epicSlug": "show-long-running-task-progress-chat",
+    "authoredBy": "controller",
+    "revision": 2,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "1e882eebac1103af36d4bbd7a3182abb0a804ca62a2f3e298cdb68b329def096",
+        "at": "2026-11-09T08:37:04.735Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 2,
+        "reviewer": {
+          "id": "agent:design-review-daemon",
+          "kind": "agent",
+          "properties": {
+            "party": "daemon"
+          }
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "HIGH": 0,
+          "MED": 0,
+          "LOW": 0
+        },
+        "at": "2026-11-09T08:50:32.032Z",
+        "report": {
+          "entityId": "HLD-206db3426ffd4428",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "034f488407513b9170628fe7e598e5009a49c3d6b0c6dc08a57ac8a80bf31f46"
+        }
+      },
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T09:25:21.958Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Executor delegates measure progress and the daemon coordinates how it is stored and delivered. VS Code keeps the progress message in its originating chat, and supported native clients receive the same verified state through MCP. Execution owners remain responsible for results, cancellation and activity."
+    },
+    "frameworkSummary": "Use executor delegates with a shared daemon coordinator. Preserve legacy workflow and analyze IPC frames and existing execution authority. The coordinator feeds a typed VS Code adapter, request-scoped MCP notifications and one optional fallback observation schedule.",
+    "architectureShape": "The execution owner registers a trusted project, invocation, optional chat binding, task and attempt before detach. Delegates expose progress() without side effects and signal refresh when measurements change. The daemon verifies owner epoch and monotonic source sequence, separates meaningful revision from heartbeat/freshness, persists bounded state, then publishes sanitized snapshots. Project-scoped history supports read or subscribe from an opaque cursor. A lagging observer receives the latest snapshot and explicit resync instead of replaying ticks. A failed delegate refresh preserves last verified details with their original age. Stop-observation never cancels execution. Explicit cancellation is idempotent and pending until the executor confirms termination.\n\nThe Unix socket carries authorized typed observations additively beside existing progress/delta traffic. VS Code updates one row per task in its originating chat and shows attempt changes without stale finalization. A read-only details action resolves bounded result/log references in the owning project. The current session owner projects waiting-input before working before done across all live turns, unresolved decisions and owned tasks. Runtime lease renewal is independent of observers, meaningful measurement and repository locks. Closing a view detaches. Removing a conversation releases its retention and leaves authorized project results recoverable.\n\nNative MCP binds notifications to the valid caller token for that request. Use a monotonic delivery count without a total unless the total uses the same unit, and put trustworthy measurements in the sanitized label. Disconnect drops the observer, not the execution. For authorized opt-in fallback, a single fenced observer lease issues an initial snapshot then cadence slots anchored every 60 seconds. Host timers wait when available. Additional observers attach to the same schedule. Overlapping calls are suppressed, missed slots never burst, transport loss or rate limiting is visible, and healthy recovery restores the fixed interval. Unchanged responses still include bounded details and never generate duplicate narration. Third-party background lifetime and user-visible rendering are live-qualified separately.\n\nProducer-specific detail validation is registered by each adapter through the generic foundation contract. Bind fallback to a single renewable, fenced scheduler lease for each task across attempts. On observer transfer retain the cadence anchor and cursor, expire the old lease, and reject old in-flight replies. A runtime status tool reports one concise line or bounded structured delta per scheduled poll. It performs no model invocation and exposes no detailed logs in the polling payload.\n\nBrowser captures of the generated ER, sequence, component and VS Code companions are available for review. [[c23]]",
+    "sharedContracts": [
+      {
+        "id": "sc1",
+        "name": "Task identity and delegate observation",
+        "purpose": "One verified owner binds each task attempt to one project and originating invocation. An insrc chat may own many invocations, and an invocation may launch many tasks. Each task has one current attempt, with at most one active owner epoch. External host, daemon session and extension chat identities are optional distinct bindings, never inferred from one another. Both delivery paths use this delegate snapshot. The foundation is parameterized by producer-owned detail types, so it has no type dependency on later stories.",
+        "interfaceSketch": "interface TaskRef {\n  readonly projectId: string;\n  readonly invocationId: string;\n  readonly taskId: string;\n  readonly attempt: number;\n}\ninterface TaskOwnerFence {\n  readonly ownerId: string;\n  readonly ownerEpoch: string;\n  readonly ownerSequence: number;\n}\ninterface TaskOrigin {\n  readonly extensionChatId?: string;\n  readonly daemonSessionId?: string;\n  readonly nativeSessionId?: string;\n  readonly turnId?: string;\n}\ntype ProgressKind = 'workflow' | 'analysis' | 'design-review' | 'code-review' | 'test';\ninterface MeasuredCount {\n  readonly unit: string;\n  readonly completed: number;\n  readonly total: number | null;\n}\ninterface DelegateMeasurement<Details extends { readonly kind: ProgressKind }> {\n  readonly task: TaskRef;\n  readonly owner: TaskOwnerFence;\n  readonly kind: ProgressKind;\n  readonly measuredAt: string;\n  readonly meaningfulRevision: number;\n  readonly lastMeaningfulAt: string | null;\n  readonly phase: string;\n  readonly activeUnit: string | null;\n  readonly counts: readonly MeasuredCount[];\n  readonly milestones: readonly string[];\n  readonly controls: readonly ('cancel')[];\n  readonly details: Details;\n}\ninterface TaskProgressDelegate<Details extends { readonly kind: ProgressKind }> {\n  progress(task: TaskRef): Promise<DelegateMeasurement<Details> | null>;\n}",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3",
+          "s4",
+          "s5",
+          "s6"
+        ],
+        "assumptions": [
+          "c3",
+          "c4",
+          "c5",
+          "c7"
+        ]
+      },
+      {
+        "id": "sc2",
+        "name": "Scoped snapshots, subscriptions and observation control",
+        "purpose": "The daemon authorizes every operation against server-verified caller/project/origin bindings, including logs and controls. A read yields a compact snapshot, meaningful-change indicator and revision cursor. Observer loss, executor state and session retention are independent. The shared coordinator arbitrates one optional fallback schedule per task, independent of all native subscriptions. Owner credentials, internal session identifiers and fencing fields remain server-side. A structured fallback lease governs the scheduler, without granting execution authority.",
+        "interfaceSketch": "type TaskState = 'queued' | 'running' | 'waiting' | 'paused' | 'completed' | 'failed' | 'cancelled' | 'interrupted' | 'unknown';\ntype ProgressFreshness = 'live' | 'stale' | 'unavailable';\ntype DeliveredMeasurement<Details extends { readonly kind: ProgressKind }> = Omit<DelegateMeasurement<Details>, 'owner'>;\ninterface ProgressSnapshot<Details extends { readonly kind: ProgressKind }> {\n  readonly task: TaskRef;\n  readonly cursor: string;\n  readonly state: TaskState;\n  readonly freshness: ProgressFreshness;\n  readonly measurement: DeliveredMeasurement<Details> | null;\n  readonly lastOwnerActivityAt: string | null;\n  readonly workerHealth: 'alive' | 'lost' | 'unknown';\n  readonly cancellation: 'none' | 'pending';\n  readonly resultRef?: string;\n}\ninterface ObservationReply<Details extends { readonly kind: ProgressKind }> {\n  readonly snapshot: ProgressSnapshot<Details>;\n  readonly disposition: 'changed' | 'unchanged' | 'resync';\n  readonly schedule: 'native' | 'scheduled' | 'suspended' | 'stopped';\n  readonly nextPollNotBefore?: string;\n}\ninterface ObservationControl {\n  readonly task: TaskRef;\n  readonly action: 'stop-observation' | 'cancel-execution';\n  readonly requestId: string;\n}",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3",
+          "s4",
+          "s5",
+          "s6"
+        ],
+        "assumptions": [
+          "c3",
+          "c6",
+          "c7"
+        ]
+      },
+      {
+        "id": "sc3",
+        "name": "Execution-owned activity and chat retention",
+        "purpose": "One current owned attempt may hold at most one active association for its originating insrc conversation. Each chat may have many associations. The coordinator renews through verified executor activity, and the actual session owner consumes the lease or a runtime renewal. View closure does not release a retained conversation. Removing a conversation releases only its association and retains project-scoped authorized task results.",
+        "interfaceSketch": "interface TaskActivityLease {\n  readonly task: TaskRef;\n  readonly origin: TaskOrigin;\n  readonly fence: TaskOwnerFence;\n  readonly renewedAt: string;\n  readonly expiresAt: string;\n}\ninterface ChatTaskRetention {\n  readonly originatingChatId: string;\n  readonly retainedTasks: readonly { task: TaskRef; expiresAt: string }[];\n}",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3",
+          "s4",
+          "s5"
+        ],
+        "assumptions": [
+          "c3"
+        ]
+      },
+      {
+        "id": "sc4",
+        "name": "Workflow and analysis measurements",
+        "purpose": "Maps supported existing stage/delta data into task details while preserving the old frame and result channel. Use measured output production only when a producer supports it, retaining its declared unit. No text enters progress. The two delivery stories consume the mapped details.",
+        "interfaceSketch": "interface WorkflowDetails {\n  readonly kind: 'workflow';\n  readonly stageId: string;\n  readonly stagePosition: MeasuredCount | null;\n  readonly production: MeasuredCount | null;\n}\ninterface AnalysisDetails {\n  readonly kind: 'analysis';\n  readonly stageId: string;\n  readonly stagePosition: MeasuredCount | null;\n  readonly production: MeasuredCount | null;\n}",
+        "ownedByStory": "s2",
+        "consumedByStories": [
+          "s5",
+          "s6"
+        ],
+        "assumptions": [
+          "c4",
+          "c5"
+        ]
+      },
+      {
+        "id": "sc5",
+        "name": "Review measurements",
+        "purpose": "Observe canonical design and task-review progress rather than infer from output. Separate retained review coverage from fresh chunks, initial units from follow-up work, and publication from review assessment. A code-review implementation exposes task counts or other verified units that its executor can actually report.",
+        "interfaceSketch": "interface DesignReviewDetails {\n  readonly kind: 'design-review';\n  readonly target: string;\n  readonly checks: MeasuredCount | null;\n  readonly freshChunks: MeasuredCount | null;\n  readonly retainedChunks: number | null;\n  readonly retries: number | null;\n}\ninterface CodeReviewDetails {\n  readonly kind: 'code-review';\n  readonly target: string;\n  readonly initial: MeasuredCount | null;\n  readonly followUp: MeasuredCount | null;\n  readonly retries: number | null;\n  readonly publication: 'pending' | 'complete' | 'failed' | 'unknown';\n}",
+        "ownedByStory": "s3",
+        "consumedByStories": [
+          "s5",
+          "s6"
+        ],
+        "assumptions": [
+          "c3",
+          "c7"
+        ]
+      },
+      {
+        "id": "sc6",
+        "name": "Managed test measurements",
+        "purpose": "Reports disjoint latest leaf-case outcomes by stable suite/case identity, with retries and discovery counted separately. Suite count and active suite are separate measurements. Process exit, reporter completeness and executor result establish terminal truth. The report reference stays separate from the progress payload.",
+        "interfaceSketch": "interface ManagedTestDetails {\n  readonly kind: 'test';\n  readonly stage: 'discovery' | 'execution' | 'finalization';\n  readonly suites: MeasuredCount | null;\n  readonly cases: MeasuredCount | null;\n  readonly passed: number | null;\n  readonly failed: number | null;\n  readonly skipped: number | null;\n  readonly cancelled: number | null;\n  readonly retries: number | null;\n  readonly elapsedMs: number;\n  readonly logRef?: string;\n}",
+        "ownedByStory": "s4",
+        "consumedByStories": [
+          "s5",
+          "s6"
+        ],
+        "assumptions": [
+          "c3"
+        ]
+      }
+    ],
+    "storyBoundaries": [
+      {
+        "storyId": "s1",
+        "owns": [
+          "sc1",
+          "sc2",
+          "sc3"
+        ],
+        "depends": [],
+        "internal": "Own daemon coordination, verified registration, cursors, normalization, scoped read/subscribe/control, durable state, owner fencing and fallback schedule arbitration. Keep storage, fencing and expiry implementation private."
+      },
+      {
+        "storyId": "s2",
+        "owns": [
+          "sc4"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3"
+        ],
+        "internal": "Own adapters for existing workflow and analyze producer signals and terminal/owner evidence. Existing stream shape and command semantics remain compatible."
+      },
+      {
+        "storyId": "s3",
+        "owns": [
+          "sc5"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3"
+        ],
+        "internal": "Own DesignReviewDelegate and CodeReviewDelegate and mappings from checkpoint progress and execution ownership. Review results, admission, retries and publication remain under the existing engines."
+      },
+      {
+        "storyId": "s4",
+        "owns": [
+          "sc6"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3"
+        ],
+        "internal": "Own TestDelegate and managed reporter interpretation, including suite/case identity, provisional counts and abnormal exit. Keep test orchestration and exit semantics unchanged."
+      },
+      {
+        "storyId": "s5",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc5",
+          "sc6"
+        ],
+        "internal": "Own typed VS Code reader and transcript row, current status projection and bindings to the session owner. Render durable snapshots by origin across turns and multiple windows without executing or polling models."
+      },
+      {
+        "storyId": "s6",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc4",
+          "sc5",
+          "sc6"
+        ],
+        "internal": "Own MCP adapter, capability qualification, explicit opt-in disclosure and connection to the coordinator's fallback lease. No vendor-specific process changes or assumptions about session identity."
+      }
+    ],
+    "nonFunctional": {
+      "performance": "Proposed caps for qualification are one coalesced active snapshot per second per task, 8 KiB per snapshot, 32 retained meaningful milestones, 16 queued observer updates and a reserved terminal state. Enforce per-project limits of 128 tracked active observations and 1,024 retained terminal observations, plus a global disk budget of 128 MiB. Exceeding observation capacity must report degradation without refusing, cancelling or slowing work. Terminal updates bypass normal coalescing. Reserve the observation terminal slot and bounded storage on admission. Evict only older terminal entries by policy, and refuse new observation with a capacity state when no reservation is possible. Do not evict active owners to admit new observations.",
+      "security": "Authenticate observations via existing daemon caller identity and verify project, conversation/invocation and task attempt before returning any snapshot, detail or control. Opaque cursors and task IDs do not grant authorization. Persist and expose sanitized structured measurements only. Detailed logs remain authorized, bounded references. No direct database access in MCP or VS Code.",
+      "observability": "Measure emitted and coalesced progress, cursor gaps, scheduler degradation, stale source age, rejected owner fences and retention transitions separately. Qualify each producer end to end, verify zero extra model invocations for native paths, and live-qualify CLI token, rendering, background lifetime and scheduling per version/session. Never log raw prompts, output or credentials as progress.",
+      "durability": "Use daemon-owned atomic per-task snapshots on local storage, with bounded milestone records and terminal result pointers. Persist terminal state before delivery. Refresh verified owner activity every 30 seconds with a 120-second lease, qualifying the margin against the actual session owner's idle threshold. After daemon restart recover persisted observations before accepting new owner events. Hold stale owner retention at most through its bounded grace and show interrupted or unknown until authority is reverified. Terminal retention is seven days subject to bounded capacity, after which separately available executor results remain authoritative. For executors without durable result history, expiry is explicit and is never rendered as a success, cancellation or new execution."
+    },
+    "erDefinition": {
+      "id": "progress-task-ownership",
+      "narrative": "Shows the ownership of an invocation, its optional conversation binding, and a task’s one-or-more attempts. Each task has exactly one current attempt and may retain prior attempts. Only the current attempt may hold an activity lease.",
+      "classes": {
+        "Project": {
+          "description": "Authorized scope for task observation and retained results.",
+          "attributes": {
+            "id": {
+              "range": "string",
+              "identifier": true,
+              "required": true,
+              "description": "Canonical project identity."
+            },
+            "invocations": {
+              "range": "Invocation",
+              "multivalued": true,
+              "description": "Each invocation belongs to exactly one project."
+            }
+          }
+        },
+        "Conversation": {
+          "description": "Originating insrc conversation, when one exists.",
+          "attributes": {
+            "id": {
+              "range": "string",
+              "identifier": true,
+              "required": true,
+              "description": "Extension conversation identifier."
+            },
+            "leases": {
+              "range": "ActivityLease",
+              "multivalued": true,
+              "description": "Zero or more current task associations owned by this conversation."
+            },
+            "invocationBindings": {
+              "range": "ConversationBinding",
+              "description": "A conversation has zero or more invocation bindings. Each binding identifies exactly one originating conversation.",
+              "multivalued": true
+            }
+          }
+        },
+        "Invocation": {
+          "description": "Trusted tool invocation that launches zero or more tasks.",
+          "attributes": {
+            "id": {
+              "range": "string",
+              "identifier": true,
+              "required": true,
+              "description": "Server-verified invocation identity within the project."
+            },
+            "tasks": {
+              "range": "Task",
+              "multivalued": true,
+              "description": "Tasks launched by the invocation."
+            },
+            "chatBinding": {
+              "range": "ConversationBinding",
+              "description": "An invocation has zero or one originating chat binding. Each binding belongs to one invocation."
+            }
+          }
+        },
+        "Task": {
+          "description": "Stable observation identity spanning explicitly owned attempts.",
+          "attributes": {
+            "id": {
+              "range": "string",
+              "identifier": true,
+              "required": true,
+              "description": "Task identity within its invocation."
+            },
+            "attemptHistory": {
+              "range": "AttemptHistory",
+              "description": "Each admitted task has exactly one history and its history belongs to that task.",
+              "required": true
+            }
+          }
+        },
+        "ActivityLease": {
+          "description": "Time-bounded association protecting a conversation with verified owned work.",
+          "attributes": {
+            "expiresAt": {
+              "range": "datetime",
+              "required": true,
+              "description": "Expiry based on runtime owner activity, independent of progress delivery."
+            },
+            "attemptKey": {
+              "range": "string",
+              "required": true,
+              "identifier": true,
+              "description": "The current task and attempt identity owning this lease."
+            }
+          }
+        },
+        "ConversationBinding": {
+          "description": "Logical association for an invocation with a verified originating insrc chat. Invocations without a chat have no binding.",
+          "attributes": {
+            "invocationId": {
+              "range": "string",
+              "required": true,
+              "identifier": true,
+              "description": "Unique invocation identity for this optional binding."
+            }
+          }
+        },
+        "AttemptHistory": {
+          "description": "Logical partition of a task’s one-or-more attempts into exactly one current attempt and zero or more prior attempts. This is a diagram view, not a separate store or executor.",
+          "attributes": {
+            "taskId": {
+              "range": "string",
+              "required": true,
+              "identifier": true,
+              "description": "Unique task identity owning this attempt history."
+            },
+            "current": {
+              "range": "CurrentAttempt",
+              "description": "Exactly one current attempt, including a current terminal attempt if no later attempt was admitted.",
+              "required": true
+            },
+            "prior": {
+              "range": "PriorAttempt",
+              "description": "Zero or more earlier attempts. These attempts cannot acquire current-owner activity or publish newer state.",
+              "multivalued": true
+            }
+          }
+        },
+        "CurrentAttempt": {
+          "description": "The single current attempt for an admitted task. Its owner epoch fences producer updates.",
+          "attributes": {
+            "number": {
+              "range": "integer",
+              "required": true,
+              "description": "Attempt number within this task, paired with its history identity.",
+              "identifier": true
+            },
+            "ownerEpoch": {
+              "range": "string",
+              "required": true,
+              "description": "Verified owner generation fencing old callbacks."
+            },
+            "lease": {
+              "range": "ActivityLease",
+              "description": "At most one active conversation association for this attempt."
+            }
+          }
+        },
+        "PriorAttempt": {
+          "description": "An earlier attempt in the same history, with no active activity lease.",
+          "attributes": {
+            "number": {
+              "range": "integer",
+              "required": true,
+              "identifier": true,
+              "description": "Attempt number within this task, paired with its history identity."
+            }
+          }
+        }
+      }
+    },
+    "rolloutOverview": {
+      "phases": [
+        {
+          "name": "Phase A — daemon observation foundation",
+          "includesStories": [
+            "s1"
+          ],
+          "rationale": "Land shared identity, owner fences, storage, authorized subscriptions, activity leases and fallback arbitration first.",
+          "backwardCompat": "Keep all existing executor paths and progress streams intact when observation is unavailable or unused.",
+          "featureFlag": null
+        },
+        {
+          "name": "Phase B — executor measurement adapters",
+          "includesStories": [
+            "s2",
+            "s3",
+            "s4"
+          ],
+          "rationale": "Connect workflow/analyze, review and managed test measurements independently against the common contracts.",
+          "backwardCompat": "Retain current progress/delta frames, review checkpoints and gate behavior, test exit codes and process ownership. A missing measurement degrades observation only.",
+          "featureFlag": null
+        },
+        {
+          "name": "Phase C — client delivery and qualification",
+          "includesStories": [
+            "s5",
+            "s6"
+          ],
+          "rationale": "Connect VS Code lifecycle and native MCP adapters after the measurement shapes stabilize. Each delivery adapter qualifies independently.",
+          "backwardCompat": "VS Code keeps existing chat rendering and active-list rules. A missing or expired MCP token stays silent, and fallback is opt-in with capability evidence.",
+          "featureFlag": null
+        }
+      ],
+      "orderingRationale": "s1 owns shared contracts needed by all producers and consumers. s2–s4 own their measurement contracts and each depends only on s1. s5 and s6 consume all producer details and share no client dependency. Link the approved successor to the July scope separately from rollout.",
+      "riskyBits": [
+        {
+          "area": "Owner or attempt loss",
+          "why": "Delayed callbacks or stale associations could make an ended chat appear live or overwrite newer task state.",
+          "mitigation": "Persist verified snapshots, fence writes by owner epoch and attempt, bound retention leases, and test daemon restart and multiple-window races."
+        },
+        {
+          "area": "Native client delivery and fallback drift",
+          "why": "MCP acceptance, visible progress and scheduling are independent capabilities.",
+          "mitigation": "Qualify each client/version/session separately. Use one coordinator schedule with a fake-clock cadence test, and report unsupported or suspended observation visibly."
+        },
+        {
+          "area": "Counter and result truth",
+          "why": "Tool frames and test reporters can omit totals, duplicate events or end before a verified result.",
+          "mitigation": "Keep producer units explicit, count only verified supported measurements, preserve raw outcomes, and cover unknown totals, nested suites, retries, reporter failure and nonzero exit."
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Executor delegates with a shared daemon coordinator",
+        "oneLineSummary": "Normalize authorized executor measurements once and deliver typed snapshots through existing transports.",
+        "approach": "Each executor remains authoritative for lifecycle and exposes a bounded, read-only delegate snapshot. A daemon coordinator orders and retains task observations, deduplicates delivery, and bridges execution-owner activity to scoped session retention.\n\nVS Code subscribes over the existing Unix IPC seam and projects snapshots into the originating chat. MCP maps those snapshots to request-scoped progress or a separate opted-in observation response. Existing workflow/analyze frames remain compatible.",
+        "pros": [
+          "One observation model keeps replay, loss and attempt handling consistent across VS Code and MCP.",
+          "Native observation requires zero model calls and separates retention renewal from delivery."
+        ],
+        "cons": [
+          "A daemon-owned snapshot store and owner epoch checks need restart and expiry qualification.",
+          "Each executor needs a narrowly scoped observation bridge."
+        ],
+        "costEstimate": "L",
+        "assumptionsRelied": [
+          "c4",
+          "c5",
+          "c6",
+          "c7"
+        ]
+      },
+      {
+        "id": "a2",
+        "name": "Client-local adapters over executor-specific streams",
+        "oneLineSummary": "Let each client track and interpret progress directly from the source stream.",
+        "approach": "Each executor exposes its own progress messages and the client adapts them to transcript or CLI updates. Existing streams remain the primary source.\n\nEach client maintains its own reconnect state and derives activity from the channels it can observe. Coordination across windows and tool lifetimes requires agreement between clients.",
+        "pros": [
+          "One active client can render existing stream events with few daemon changes."
+        ],
+        "cons": [
+          "Disconnected observers cannot establish execution ownership or keep the correct chat active independently.",
+          "Multiple clients can duplicate observation schedules and disagree on terminal state."
+        ],
+        "costEstimate": "M",
+        "assumptionsRelied": [
+          "c4",
+          "c5",
+          "c6",
+          "c7"
+        ],
+        "reasonRejected": "Reuses transport but loses consistent shared ownership, replay and fallback scheduling."
+      },
+      {
+        "id": "a3",
+        "name": "Central job scheduler and progress event log",
+        "oneLineSummary": "Move execution and replay into a central job platform.",
+        "approach": "A common scheduler would dispatch workflow, review, analysis and test jobs and record each execution event. The scheduler would own retries, task state and replay.\n\nClients would receive progress from job subscriptions. Migration would move authority away from existing workflow and review executors.",
+        "pros": [
+          "A single scheduler could provide a uniform execution identity and lifecycle for migrated jobs."
+        ],
+        "cons": [
+          "Changes current executor ownership and introduces retry and scheduling behavior outside this epic.",
+          "An event per output fragment would expand storage unless separately bounded."
+        ],
+        "costEstimate": "L",
+        "assumptionsRelied": [
+          "c4",
+          "c7"
+        ],
+        "reasonRejected": "Centralizes execution and therefore conflicts with the approved ownership boundary."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "id": "observe-progress-across-chat-turns",
+      "narrative": "The executor registers before detaching. Subsequent measurement and retention updates remain independent of the chat view and MCP request lifetime, and terminal state is persisted before delivery.",
+      "participants": [
+        {
+          "id": "executor",
+          "label": "Execution owner",
+          "description": "Owns execution, lifecycle and cancellation confirmation."
+        },
+        {
+          "id": "delegate",
+          "label": "Task delegate",
+          "description": "Reads verified producer measurements without side effects."
+        },
+        {
+          "id": "daemon",
+          "label": "Progress coordinator",
+          "description": "Authorizes observations, fences attempts and publishes bounded snapshots."
+        },
+        {
+          "id": "store",
+          "label": "Snapshot store",
+          "description": "Persists latest verified state and bounded milestones."
+        },
+        {
+          "id": "session",
+          "label": "Session owner",
+          "description": "Maintains the existing chat status and active retention."
+        },
+        {
+          "id": "vs",
+          "label": "VS Code chat",
+          "description": "Typed observer that updates a row in the owning conversation."
+        },
+        {
+          "id": "mcp",
+          "label": "MCP adapter",
+          "description": "Request-scoped native delivery or optional observation."
+        }
+      ],
+      "messages": [
+        {
+          "from": "executor",
+          "to": "daemon",
+          "label": "Register task before detach",
+          "description": "Binds project, invocation, optional conversation and executor epoch.",
+          "kind": "call"
+        },
+        {
+          "from": "daemon",
+          "to": "session",
+          "label": "Register task activity association",
+          "description": "The verified owner lease protects the correct conversation.",
+          "kind": "call"
+        },
+        {
+          "from": "vs",
+          "to": "daemon",
+          "label": "Subscribe with authorized task cursor",
+          "description": "A view observes the task without acquiring execution ownership.",
+          "kind": "call"
+        },
+        {
+          "from": "daemon",
+          "to": "vs",
+          "label": "Latest snapshot or explicit resync",
+          "description": "Reattachment updates the existing chat row.",
+          "kind": "return"
+        },
+        {
+          "from": "mcp",
+          "to": "daemon",
+          "label": "Observe within valid request lifetime",
+          "description": "Optional caller token stays with this request.",
+          "kind": "call"
+        },
+        {
+          "from": "executor",
+          "to": "daemon",
+          "label": "Signal new measurement",
+          "description": "A change triggers a read of the producer’s structured state.",
+          "kind": "call"
+        },
+        {
+          "from": "daemon",
+          "to": "delegate",
+          "label": "Read progress()",
+          "description": "No model calls, scheduling or execution side effects.",
+          "kind": "call"
+        },
+        {
+          "from": "delegate",
+          "to": "daemon",
+          "label": "Return measured phase and counters",
+          "description": "Owner fence and measurement revision are verified.",
+          "kind": "return"
+        },
+        {
+          "from": "daemon",
+          "to": "store",
+          "label": "Persist bounded snapshot",
+          "description": "Store the verified measurement and coalesced milestones.",
+          "kind": "call"
+        },
+        {
+          "from": "daemon",
+          "to": "vs",
+          "label": "Update originating chat row",
+          "description": "Routing uses origin and attempt identity, including after chat switching.",
+          "kind": "call"
+        },
+        {
+          "from": "daemon",
+          "to": "mcp",
+          "label": "Forward sanitized native update",
+          "description": "The adapter uses the caller token only while valid.",
+          "kind": "call"
+        },
+        {
+          "from": "executor",
+          "to": "daemon",
+          "label": "Renew owner activity",
+          "description": "Heartbeat may renew retention without changing measured progress.",
+          "kind": "call"
+        },
+        {
+          "from": "daemon",
+          "to": "session",
+          "label": "Renew the bounded association",
+          "description": "The session owner preserves waiting-input and other live obligations.",
+          "kind": "call"
+        },
+        {
+          "from": "executor",
+          "to": "daemon",
+          "label": "Confirm terminal outcome",
+          "description": "Only verified owner evidence closes the attempt.",
+          "kind": "call"
+        },
+        {
+          "from": "daemon",
+          "to": "store",
+          "label": "Persist terminal snapshot",
+          "description": "Commit the terminal result before final delivery.",
+          "kind": "call"
+        },
+        {
+          "from": "daemon",
+          "to": "session",
+          "label": "Release this task association",
+          "description": "Other attempts, tasks and unresolved decisions remain independent.",
+          "kind": "call"
+        },
+        {
+          "from": "daemon",
+          "to": "vs",
+          "label": "Retain one terminal message",
+          "description": "The task row records a compact outcome and authorized details.",
+          "kind": "call"
+        },
+        {
+          "from": "daemon",
+          "to": "mcp",
+          "label": "Deliver outcome while request is valid",
+          "description": "If native request ended, only authorized reattachment reads the retained result.",
+          "kind": "call"
+        }
+      ]
+    },
+    "componentDependencyDefinition": {
+      "id": "progress-module-boundaries",
+      "narrative": "Executor adapters depend on the common daemon observation contract. VS Code and MCP consume the authorized stream or snapshot over the existing socket, with no dependency on producer internals or snapshot storage.",
+      "components": [
+        {
+          "id": "executors",
+          "label": "Existing executors",
+          "description": "Workflow, analyze, design/code review and managed tests retain execution authority."
+        },
+        {
+          "id": "delegates",
+          "label": "Executor delegates",
+          "description": "Map current producer measurements into typed detail contracts."
+        },
+        {
+          "id": "coordinator",
+          "label": "Daemon observation coordinator",
+          "description": "Owns task routing, scopes, revisions and schedule arbitration."
+        },
+        {
+          "id": "durability",
+          "label": "Daemon snapshot store",
+          "description": "Persists scoped bounded state for reconnect and restart."
+        },
+        {
+          "id": "session",
+          "label": "Existing session owners",
+          "description": "Project task associations into chat retention and status."
+        },
+        {
+          "id": "vscode",
+          "label": "VS Code adapter",
+          "description": "Consumes typed updates and renders one row per task."
+        },
+        {
+          "id": "mcp",
+          "label": "MCP adapter",
+          "description": "Consumes verified snapshots and qualifies native or optional fallback delivery."
+        }
+      ],
+      "dependencies": [
+        {
+          "from": "delegates",
+          "to": "executors",
+          "label": "Read measured state and terminal evidence"
+        },
+        {
+          "from": "delegates",
+          "to": "coordinator",
+          "label": "Register detail contract and report observation changes"
+        },
+        {
+          "from": "coordinator",
+          "to": "durability",
+          "label": "Persist snapshots and recover authorized history"
+        },
+        {
+          "from": "session",
+          "to": "coordinator",
+          "label": "Consume verified activity for the owning conversation"
+        },
+        {
+          "from": "vscode",
+          "to": "coordinator",
+          "label": "Subscribe to authorized typed observations over Unix IPC"
+        },
+        {
+          "from": "mcp",
+          "to": "coordinator",
+          "label": "Read/subscribe over Unix IPC and arbitrate fallback observation"
+        }
+      ]
+    },
+    "uxDefinition": {
+      "type": "AdaptiveCard",
+      "version": "1.5",
+      "narrative": "Three views of the same inline review row in its originating VS Code transcript. Running, stale observation and terminal outcome are different states. The examples are sequential and the live UI keeps one row.",
+      "body": [
+        {
+          "type": "TextBlock",
+          "text": "Chat A · Review progress",
+          "description": "The task belongs to the chat that launched the review.",
+          "wrap": true,
+          "weight": "bolder",
+          "size": "medium",
+          "color": "accent"
+        },
+        {
+          "type": "Container",
+          "description": "Running row with verified stage and available controls.",
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "Code review · Running",
+              "description": "Task title and verified execution state.",
+              "wrap": true,
+              "weight": "bolder",
+              "color": "accent"
+            },
+            {
+              "type": "TextBlock",
+              "text": "Assessing task 3 of 6 · 2 tasks completed",
+              "description": "Measured active task and completed units.",
+              "wrap": true,
+              "isSubtle": true
+            },
+            {
+              "type": "TextBlock",
+              "text": "Last progress 20 seconds ago · Worker active",
+              "description": "Shows progress freshness separately from worker health.",
+              "wrap": true,
+              "isSubtle": true
+            },
+            {
+              "type": "ActionSet",
+              "description": "Controls available in this observation state.",
+              "actions": [
+                {
+                  "type": "Action.Submit",
+                  "title": "View details",
+                  "description": "Opens authorized review progress and results."
+                },
+                {
+                  "type": "Action.Submit",
+                  "title": "Stop updates",
+                  "description": "Detaches observation only."
+                },
+                {
+                  "type": "Action.Submit",
+                  "title": "Cancel review",
+                  "description": "Requests cancellation and remains pending until the executor confirms termination."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Container",
+          "description": "Same row while observation is unavailable.",
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "Code review · Updates unavailable",
+              "description": "Observation loss leaves the last verified execution state intact.",
+              "wrap": true,
+              "weight": "bolder",
+              "color": "warning"
+            },
+            {
+              "type": "TextBlock",
+              "text": "Last verified 4 minutes ago · Task 3 of 6 · 2 tasks completed",
+              "description": "Shows the last verified measurements and their original age during observation loss.",
+              "wrap": true,
+              "isSubtle": true
+            },
+            {
+              "type": "ActionSet",
+              "description": "Controls available in this observation state.",
+              "actions": [
+                {
+                  "type": "Action.Submit",
+                  "title": "Reconnect updates",
+                  "description": "Attempts authorized observation recovery without relaunching execution."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Container",
+          "description": "Same row after the verified terminal outcome.",
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "Code review · Completed",
+              "description": "Displays the authoritative review outcome.",
+              "wrap": true,
+              "weight": "bolder",
+              "color": "good"
+            },
+            {
+              "type": "TextBlock",
+              "text": "6 tasks reviewed · Result available",
+              "description": "Compact terminal milestone with access to details.",
+              "wrap": true,
+              "isSubtle": true
+            },
+            {
+              "type": "ActionSet",
+              "description": "Controls available in this observation state.",
+              "actions": [
+                {
+                  "type": "Action.Submit",
+                  "title": "View result",
+                  "description": "Opens the authorized saved review result."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/er-model.html",
+        "title": "ER model"
+      },
+      {
+        "kind": "ux-mock",
+        "relPath": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/ux-mock.html",
+        "title": "UX mock"
+      },
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/sequence-diagram.html",
+        "title": "Sequence diagram"
+      },
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/component-dependency.html",
+        "title": "Component dependencies"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/stream-incremental-progress-from-daemon-calling-E202607196d6cfaf9/DEF.md"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/stream-incremental-progress-from-daemon-calling-E202607196d6cfaf9/HLD.md"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/show-background-task-progress-chat-E2026110407024f1d/SPEC.md"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/__tests__/workflow-progress-map.test.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/daemon/__tests__/analyze-progress.test.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/mcp/__tests__/progress-forward.test.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/progress.ts"
+    },
+    {
+      "id": "c8",
+      "kind": "convention",
+      "ref": "AGENTS.md"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/stream-incremental-progress-from-daemon-calling-E202607196d6cfaf9/DEF.md"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/DEF.md"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/daemon/workflow-rpc.ts"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "src/daemon/analyze-rpc.ts"
+    },
+    {
+      "id": "c13",
+      "kind": "code",
+      "ref": "src/shared/types.ts"
+    },
+    {
+      "id": "c14",
+      "kind": "code",
+      "ref": "src/mcp/progress-forward.ts"
+    },
+    {
+      "id": "c15",
+      "kind": "code",
+      "ref": "src/mcp/server.ts"
+    },
+    {
+      "id": "c16",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/progress.ts"
+    },
+    {
+      "id": "c17",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/progress.ts"
+    },
+    {
+      "id": "c18",
+      "kind": "code",
+      "ref": "src/daemon/steps/build-step/validation-checks.ts"
+    },
+    {
+      "id": "c19",
+      "kind": "code",
+      "ref": "src/daemon/chat-sessions.ts"
+    },
+    {
+      "id": "c20",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/protocol.ts"
+    },
+    {
+      "id": "c21",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/session-file-store.ts"
+    },
+    {
+      "id": "c22",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts"
+    },
+    {
+      "id": "c23",
+      "kind": "doc",
+      "ref": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/review-evidence/visual-verification.md"
+    }
+  ]
+}

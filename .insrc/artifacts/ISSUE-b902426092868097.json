@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1794201138080-srkh88",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T05:12:49.979Z",
+    "epicCreatedAt": "2026-11-09T05:12:49.979Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "claude-opus-5-5"
+        }
+      ]
+    },
+    "elapsedMs": 31897,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "b902426092868097",
+    "epicSlug": "keep-vibe-configs-valid-when-registering",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2abdd853f970209621721390c7cec3a149fef97ac32a4aeaafe0356f5c146951",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T05:13:27.102Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "b902426092868097",
+      "slug": "EPIC-b902426092868097"
+    }
+  },
+  "body": {
+    "title": "Keep Vibe configs valid when registering the insrc server",
+    "reproduction": "1. Have a Vibe config (`~/.vibe/config.toml`) that holds `mcp_servers = []` as a top-level setting and no `[[mcp_servers]]` section for insrc.\n2. Let the VS Code plugin register the insrc server with Vibe.\n3. Start Vibe.\n\nObserved on 2026-11-09: Vibe 3.0.4 exits with code 1 and `Cannot load the Vibe config. Layer 'user-toml': _build_config_snapshot() failed: Cannot mutate immutable namespace ('mcp_servers',) (at line 91, column 14)`. The file held `mcp_servers = []` at line 9 and `[[mcp_servers]]` at line 91. Python's `tomllib` reports the same error for that file, and the file parses with line 9 removed.\n\nExpected: registering the server leaves a valid config, Vibe starts, and insrc is listed among its MCP servers.",
+    "rootCause": "TOML does not allow a key assigned an inline list to be extended later with an array-of-tables header, so a file cannot hold both `mcp_servers = []` and `[[mcp_servers]]`.\n\nVibe writes its whole config when it saves, so a config with no MCP servers can hold the inline form. `createTomlMcpConfigWriter` in `vscode-plugin/src/hosts/toml-mcp-writer.ts` recognises only table headers: when no `[[mcp_servers]]` section is named insrc it appends a new one at the end of the file, without looking for a top-level `mcp_servers` key.\n\n`upsertVibeProjectServer` in `src/daemon/mcp-register.ts` has the same gap for a repository's `.vibe/config.toml`: `vibeConfigHasServer` looks only at `[[mcp_servers]]` chunks, and the function then appends the block produced by `vibeServerTomlBlock`.\n\nOn the affected machine, line 91's block matches the plugin writer's format and the config shares its last-modified minute with `~/.vibe/AGENTS.md`, which the plugin also writes. That attributes this occurrence to the plugin but does not prove it. Why the insrc entry had been absent before that write is not established.",
+    "fixIntent": "Registering the insrc server in a Vibe config that holds a top-level inline `mcp_servers` list produces a valid TOML file, from both the VS Code plugin and the daemon. Every server already in the inline list and every other setting is kept, and insrc is registered once. Registering again changes nothing. Where a writer cannot safely bring a config into a valid form, it leaves the file untouched and reports the failure instead of writing an invalid file."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/hosts/toml-mcp-writer.ts",
+      "quotedText": "next = [...lines, ...(needsBlank ? [''] : []), '[[mcp_servers]]', ...body];"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/mcp-register.ts",
+      "quotedText": "writeText(repoPath, base + vibeServerTomlBlock(mcpJs));"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "insrc_analyze_step: vscode-plugin/src/hosts/toml-mcp-writer.ts, callers and tests of the Vibe TOML config writers"
+    },
+    {
+      "id": "c4",
+      "kind": "stakeholder",
+      "ref": "User report on 2026-11-09 of the Vibe exit code 1 and its error message"
+    }
+  ]
+}

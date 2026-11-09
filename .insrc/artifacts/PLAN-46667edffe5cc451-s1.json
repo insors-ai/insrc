@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1794165920582-ylvflq",
+    "runId": "wf-1794198539250-edhel3",
     "repoPath": "/private/tmp/insrc-dependabot-build.VhhDqJ",
-    "createdAt": "2026-11-08T19:26:19.667Z",
+    "createdAt": "2026-11-09T04:29:58.004Z",
     "epicCreatedAt": "2026-11-08T16:46:43.683Z",
     "standalone": true,
     "attribution": {
@@ -16,7 +16,7 @@
         }
       ]
     },
-    "elapsedMs": 58504,
+    "elapsedMs": 58157,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "46667edffe5cc451",
@@ -30,12 +30,12 @@
       "references": [],
       "attachments": []
     },
-    "revision": 2,
+    "revision": 3,
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 2,
-        "contentHash": "7686f60d906f4d52124434c952dc9e5e7914b2bd98057621280c2158b0d9f8f6",
+        "number": 3,
+        "contentHash": "9e16af8a1825550fb849b0f743a40804d49bee704af22e31db03b7e841daa097",
         "at": "",
         "by": {
           "id": "insrc:system",
@@ -45,16 +45,16 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 2,
+        "revision": 3,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-08T19:39:35.991Z"
+        "at": "2026-11-09T04:36:03.621Z"
       }
     },
-    "rangeBase": "9bea092af59f118da3ba957c958e0f952d7c537b"
+    "rangeBase": "166764991427e8238ca6a803711bbecd571e731c"
   },
   "body": {
     "summary": {
@@ -228,9 +228,9 @@
           "t5"
         ],
         "title": "Run the full sweep and record release verification",
-        "summary": "Once all implementation tasks pass targeted checks, perform the combined build and single full sweep. Reconcile all in-scope root ranges, archived evidence and live-service coverage. Define the authenticated GitHub reconciliation procedure for after the default-branch scan.",
+        "summary": "Once all implementation tasks pass targeted checks, perform the combined build and single full sweep. Reconcile all in-scope root ranges, archived evidence and live-service coverage. Define the authenticated GitHub reconciliation procedure for after the default-branch scan. Record the failed sweep and reconcile its signatures against the unchanged baseline. The user deferred reproduced baseline failures to GitHub #143.",
         "acceptanceChecks": [
-          "Record one full sweep after all implementation tasks pass targeted validation. Report pass, skip and failure counts and exact commands.",
+          "Verify the root build passed and record the single completed full sweep after targeted task validation, with exact commands, revision, exit status and pass, failure, cancellation and skip counts. Preserve the failed result. Identify baseline-reproduced failures tracked in GitHub #143 and show that story-specific failures are corrected with passing targeted validation.",
           "Check every captured in-scope root alert against every matching resolved dependency instance and preserve all four archived lockfiles byte-for-byte.",
           "Keep eight low alerts outside the gate. Keep live alert reconciliation explicitly pending until a fresh authenticated default-branch scan check can verify each scoped alert.",
           "Record each evidence-only alert and any ZIP advisory metadata discrepancy separately. Do not dismiss tracker alerts as a build side effect."
@@ -242,8 +242,8 @@
         ],
         "tests": [
           {
-            "level": "integration",
-            "name": "Run root build and one combined repository test sweep after targeted task validation"
+            "level": "smoke",
+            "name": "Verify root build, completed full sweep evidence and baseline failure deferral to GitHub #143"
           },
           {
             "level": "unit",

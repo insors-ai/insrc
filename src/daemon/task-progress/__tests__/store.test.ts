@@ -112,6 +112,20 @@ test('Progress storage reserves active and terminal capacity without evicting ac
   assert.deepEqual(store.get(third.task), third);
 });
 
+test('Inactive retention evicts only the oldest record for the saturated project', async t => {
+  const store = await ProgressStore.open(await stateDir(t), validate, limits);
+  const oldest = active('oldest');
+  const recent = active('recent');
+  const other = active('other', 'other-project');
+  for (const record of [oldest, recent, other]) await store.commit(record, null);
+  await store.commit(terminal(other, 1), 0);
+  await store.commit(terminal(oldest, 2), 0);
+  await store.commit(terminal(recent, 3), 0);
+  assert.equal(store.get(oldest.task), undefined);
+  assert.equal(store.get(recent.task)?.retention, 'terminal');
+  assert.equal(store.get(other.task)?.retention, 'terminal');
+});
+
 test('Progress storage quarantines bounded corrupt records and rejects path substitution', async t => {
   const dir = await stateDir(t);
   const options = { ...limits, quarantineRecords: 1 };

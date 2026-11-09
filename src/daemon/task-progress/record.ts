@@ -31,8 +31,10 @@ const RecordSchema = progressObject({
     attempt: Type.Integer({ minimum: 1, maximum: Number.MAX_SAFE_INTEGER }),
     state: TaskStateSchema,
     updatedAt: ProgressTime,
+    cancelRequestId: Type.Optional(ProgressId),
   }), { maxItems: MAX_PROGRESS_MILESTONES }),
   resultRef: Type.Optional(ProgressId),
+  cancelRequestId: Type.Optional(ProgressId),
   originDigest: Type.Optional(Type.String({ pattern: '^[a-f0-9]{64}$' })),
   grants: Type.Optional(progressObject({
     conversation: Type.Optional(progressObject({

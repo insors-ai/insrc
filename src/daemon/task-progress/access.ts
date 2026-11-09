@@ -52,8 +52,8 @@ function serializeOrigin<T>(origin: Origin, work: () => Promise<T>): Promise<T> 
   return result;
 }
 
-export function progressProjectId(canonicalPath: string): string {
-  return digest(canonicalPath);
+export function progressProjectId(canonicalPath: string, registration: number): string {
+  return digest(JSON.stringify([canonicalPath, registration]));
 }
 
 /** Authority and live bindings are confined to the daemon's socket-owning thread. */
@@ -61,23 +61,26 @@ export class ProgressAccess<D extends Details> {
   private readonly origins = new Map<string, Origin>();
   private readonly boundOrigins = new Map<string, Set<string>>();
   private readonly observers = new Map<string, Binding>();
+  private readonly subscriptions = new Map<string, AbortController>();
+  private readonly stopped = new Map<string, { connection: string; requestId: string }>();
 
   constructor(
     private readonly store: ProgressStore<D>,
     private readonly coordinator: ProgressCoordinator<D>,
     private readonly mint: ReturnType<typeof createProgressAuthority>['mint'],
-    private readonly projects: () => Promise<ReadonlySet<string>>,
+    private readonly projects: () => Promise<ReadonlyMap<string, number>>,
     private readonly fallback: FallbackScheduler<D>,
     private readonly now: () => number = Date.now,
   ) {}
 
   private async project(path: string): Promise<string> {
-    if (!(await this.projects()).has(path)) throw unavailable();
-    return progressProjectId(path);
+    const registration = (await this.projects()).get(path);
+    if (registration === undefined) throw unavailable();
+    return progressProjectId(path, registration);
   }
 
   private async registered(projectId: string): Promise<boolean> {
-    for (const path of await this.projects()) if (progressProjectId(path) === projectId) return true;
+    for (const [path, registration] of await this.projects()) if (progressProjectId(path, registration) === projectId) return true;
     return false;
   }
 
@@ -209,6 +212,39 @@ export class ProgressAccess<D extends Details> {
     return snapshot;
   }
 
+  async subscribe(id: string, context: TrustedRpcContext | undefined) {
+    const task = await this.authorize(id, 'observe', context);
+    if (this.subscriptions.has(id)) throw new Error('progress-subscription-already-open');
+    const controller = new AbortController();
+    this.subscriptions.set(id, controller);
+    return {
+      task, signal: controller.signal,
+      close: () => { if (this.subscriptions.get(id) === controller) this.subscriptions.delete(id); },
+    };
+  }
+
+  async control(id: string, action: 'stop-observation' | 'cancel-execution', requestId: string,
+    context: TrustedRpcContext | undefined) {
+    const connectionId = connection(context);
+    const prior = this.stopped.get(id);
+    if (prior?.connection === connectionId && prior.requestId === requestId) {
+      if (action !== 'stop-observation') throw new Error('conflicting-request');
+      return 'stopped' as const;
+    }
+    const permission = action === 'stop-observation' ? 'observe' : 'cancel';
+    const authorize = () => this.authorize(id, permission, context);
+    const task = await authorize();
+    if (action === 'cancel-execution') return this.coordinator.cancel(task, requestId, authorize);
+    if (this.coordinator.isCancellationRequest(task, requestId)) throw new Error('conflicting-request');
+    this.detach(id, context);
+    if (this.stopped.size >= maxLiveBindings) {
+      const oldest = this.stopped.keys().next().value;
+      if (oldest !== undefined) this.stopped.delete(oldest);
+    }
+    this.stopped.set(id, { connection: connectionId, requestId });
+    return 'stopped' as const;
+  }
+
   async activityFor(id: string, context: TrustedRpcContext) {
     const origin = this.origins.get(id);
     if (origin === undefined || origin.revoked || origin.expiresAt <= this.now() ||
@@ -239,15 +275,18 @@ export class ProgressAccess<D extends Details> {
     const binding = this.observers.get(id);
     if (binding === undefined || binding.connection !== connection(context)) throw unavailable();
     this.observers.delete(id);
+    this.subscriptions.get(id)?.abort();
     this.fallback.detach(id);
     this.coordinator.notify(binding.task);
   }
 
   disconnect(context: TrustedRpcContext): void {
     this.boundOrigins.delete(context.connectionIdentity);
+    for (const [id, receipt] of this.stopped) if (receipt.connection === context.connectionIdentity) this.stopped.delete(id);
     for (const [id, binding] of this.observers) {
       if (binding.connection !== context.connectionIdentity) continue;
       this.observers.delete(id);
+      this.subscriptions.get(id)?.abort();
       this.fallback.detach(id);
       this.coordinator.notify(binding.task);
     }

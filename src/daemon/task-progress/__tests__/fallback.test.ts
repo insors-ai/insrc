@@ -49,7 +49,7 @@ test('Verify monotonic 60-second fallback, transfer, suspension and unchanged su
   assert.throws(() => f.scheduler.claim(task, 'a'), /schedule-suspended/);
   f.owner(true);
   const first = f.scheduler.claim(task, 'a');
-  assert.equal(first.observation.nextEligibleAt, new Date(61_000).toISOString());
+  assert.equal(first.observation.nextPollNotBefore, new Date(61_000).toISOString());
   assert.equal(f.reads(), 0);
   f.at(59_999, 5);
   await assert.rejects(f.scheduler.poll(task, 'a', first.lease, '0', authorize), /too-early/);

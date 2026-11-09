@@ -32,6 +32,7 @@ const TABLE: readonly (readonly [string, MethodClass, boolean])[] = [
 	['progress.attach', 'session', false],
 	['progress.read', 'session', false],
 	['progress.detach', 'session', false],
+	['progress.control', 'session', false],
 	['progress.subscribe', 'session', true],
 	// Admin: liveness, status and control, answered from the status board.
 	['daemon.status', 'admin', false],
@@ -371,7 +372,7 @@ export function inDaemonTarget(method: string, view: InDaemonRouteView): { reado
 /** Served on the main thread, which owns their state and pushes it to every worker (Story 5d393a4b): the IDE's tool settings. */
 export const MAIN_THREAD_STATE_METHODS: ReadonlySet<string> = new Set([
 	'tools.config.set', 'progress.origin.open', 'progress.origin.bind', 'progress.origin.revoke',
-	'progress.attach', 'progress.read', 'progress.detach', 'progress.subscribe',
+	'progress.attach', 'progress.read', 'progress.detach', 'progress.control', 'progress.subscribe',
 ]);
 
 /** These operations own process-local admission and transport lifetimes. */

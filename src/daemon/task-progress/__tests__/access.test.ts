@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { createInterface } from 'node:readline';
 import test from 'node:test';
 import type { TestContext } from 'node:test';
-import type { ProgressSnapshot, TaskRef } from '../../../shared/task-progress.js';
+import type { ProgressSnapshot, TaskOwnerFence, TaskRef } from '../../../shared/task-progress.js';
 import { directDispatch, IpcServer } from '../../server.js';
 import { progressProjectId } from '../access.js';
 import { createProgressRoutes } from '../rpc.js';
@@ -23,10 +23,12 @@ const validate = (kind: string, input: unknown): input is Details =>
   kind === 'test' && input !== null && typeof input === 'object' &&
   'kind' in input && input.kind === 'test' && Object.keys(input).length === 1;
 
-async function fixture(t: TestContext) {
+async function fixture(t: TestContext, holdProgressWrites = false) {
   const root = await mkdtemp(join(tmpdir(), 'insrc-progress-access-'));
   const path = join(root, 'rpc.sock');
-  const projects = new Set([project, otherProject]);
+  const projects = new Map([[project, 1], [otherProject, 2]]);
+  const cancellations: string[] = [];
+  let drainWrite = () => {};
   let server: IpcServer | undefined;
   let runtime: Awaited<ReturnType<typeof openProgressRuntime<Details>>> | undefined;
   const sockets = new Set<ReturnType<typeof createConnection>>();
@@ -44,13 +46,15 @@ async function fixture(t: TestContext) {
     runtime = opened;
     const { access, coordinator } = opened;
     const producer = coordinator.registerProducer('test', () => ({ kind: 'test' }));
+    const owners = new Map<string, Extract<Awaited<ReturnType<typeof producer.register>>, { kind: 'admitted' }>>();
     const { rpc, streams } = createProgressRoutes(async () => opened);
     rpc['test.launch'] = async (params, context) => {
       assert.ok(context);
       const { repo, originId } = params as { repo: string; originId: string };
       const launch = await access.launch(repo, originId, 'fixture-executor', context);
-      let identity: { task: TaskRef; fence: import('../../../shared/task-progress.js').TaskOwnerFence } | undefined;
+      let identity: { task: TaskRef; fence: TaskOwnerFence } | undefined;
       const admission = await producer.register(launch.authorization, 'suite', {
+        cancel: async (_task, requestId) => { cancellations.push(requestId); },
         progress: async () => identity === undefined ? null : {
           task: identity.task, owner: { ...identity.fence, ownerSequence: 1 }, kind: 'test',
           meaningfulRevision: 1, measuredAt: new Date().toISOString(), lastMeaningfulAt: null,
@@ -60,6 +64,7 @@ async function fixture(t: TestContext) {
       });
       assert.equal(admission.kind, 'admitted');
       identity = admission;
+      owners.set(admission.task.invocationId, admission);
       await producer.signalMeasurement(admission.owner, 1);
       const grants = await launch.grants(admission.task);
       return { task: admission.task, ...grants };
@@ -73,7 +78,22 @@ async function fixture(t: TestContext) {
       assert.ok(context);
       return access.activityFor((params as { originId: string }).originId, context);
     };
-    server = new IpcServer(directDispatch(rpc, streams), Date.now, path);
+    rpc['test.record'] = async params => {
+      const { task, sequence, state } = params as { task: TaskRef; sequence: number; state: 'completed' | 'running' };
+      const owner = owners.get(task.invocationId);
+      assert.ok(owner);
+      return producer.recordLifecycle(owner.owner, state === 'completed'
+        ? { sequence, state, resultRef: 'verified-result' }
+        : { sequence, state });
+    };
+    const dispatch = directDispatch(rpc, streams);
+    const blocked = new Promise<boolean>(resolve => { drainWrite = () => resolve(true); });
+    server = new IpcServer((request, deliver) => {
+      if (holdProgressWrites && request.method === 'progress.subscribe' && request.trustedContext !== undefined) {
+        return dispatch({ ...request, trustedContext: { ...request.trustedContext, awaitProgressWrite: () => blocked } }, deliver);
+      }
+      return dispatch(request, deliver);
+    }, Date.now, path);
     server.onConnectionClose(context => access.disconnect(context));
     await server.listen();
   }
@@ -81,7 +101,20 @@ async function fixture(t: TestContext) {
   function client() {
     const socket = createConnection(path);
     sockets.add(socket);
-    const lines = createInterface({ input: socket })[Symbol.asyncIterator]();
+    const pending = new Map<number, (frame: Frame) => void>();
+    const queued = new Map<number, Frame[]>();
+    createInterface({ input: socket }).on('line', line => {
+      const frame = JSON.parse(line) as Frame;
+      const resolve = pending.get(frame.id);
+      if (resolve !== undefined) {
+        pending.delete(frame.id);
+        resolve(frame);
+      } else {
+        const queue = queued.get(frame.id) ?? [];
+        queue.push(frame);
+        queued.set(frame.id, queue);
+      }
+    });
     let sequence = 0;
     const send = (method: string, params: object, stream = false) => {
       const id = ++sequence;
@@ -89,11 +122,10 @@ async function fixture(t: TestContext) {
       return id;
     };
     const next = async (id: number): Promise<Frame> => {
-      const line = await lines.next();
-      assert.equal(line.done, false);
-      const frame = JSON.parse(line.value as string) as Frame;
-      assert.equal(frame.id, id);
-      return frame;
+      const queue = queued.get(id);
+      const frame = queue?.shift();
+      if (queue?.length === 0) queued.delete(id);
+      return frame ?? new Promise(resolve => pending.set(id, resolve));
     };
     const request = async <T>(method: string, params: object): Promise<T> => {
       const frame = await next(send(method, params));
@@ -115,7 +147,7 @@ async function fixture(t: TestContext) {
   }
 
   await start();
-  return { client, start, projects };
+  return { client, start, projects, cancellations, drain: () => drainWrite() };
 }
 
 test('Reject cross-project and cross-conversation reads, controls and raw details', { timeout: 5000 }, async t => {
@@ -135,7 +167,7 @@ test('Reject cross-project and cross-conversation reads, controls and raw detail
   await assert.rejects(beta.read(observer, snapshot.cursor), /task-unavailable/);
   const deniedStream = beta.send('progress.subscribe', { observerId: observer }, true);
   assert.equal((await beta.next(deniedStream)).stream, 'error');
-  await assert.rejects(beta.attach({ ...a, task: { ...a.task, projectId: progressProjectId(otherProject) } }), /task-unavailable/);
+  await assert.rejects(beta.attach({ ...a, task: { ...a.task, projectId: progressProjectId(otherProject, 2) } }), /task-unavailable/);
   await assert.rejects(beta.attach({ ...sameProject, conversation: a.conversation }), /task-unavailable/);
   const otherObserver = await beta.attach(b);
   assert.equal((await beta.read(otherObserver, snapshot.cursor)).disposition, 'resync');
@@ -143,6 +175,8 @@ test('Reject cross-project and cross-conversation reads, controls and raw detail
   await assert.rejects(beta.request('test.permission', { observerId: observer, permission: 'cancel' }), /task-unavailable/);
   f.projects.delete(project);
   await assert.rejects(alpha.read(observer), /task-unavailable/);
+  f.projects.set(project, 3);
+  await assert.rejects(alpha.attach(a), /task-unavailable/);
 });
 
 test('Verify trusted launch, denial of forged ordinary IPC scopes, grants across reconnect and restart, revocation and scoped project-history access after removal', { timeout: 5000 }, async t => {
@@ -219,4 +253,72 @@ test('Removing one conversation releases its activity without stopping its tasks
     const history = await owner.attach(launch, 'history');
     assert.equal((await owner.read(history)).snapshot.workerHealth, 'alive');
   }
+});
+
+test('Check stop, cancel replay and verified completion races', { timeout: 5000 }, async t => {
+  const f = await fixture(t);
+  const owner = f.client();
+  const launch = await owner.launch((await owner.open()).originId);
+  const observer = await owner.attach(launch);
+  const second = await owner.attach(launch);
+  const stream = owner.send('progress.subscribe', { observerId: observer }, true);
+  assert.equal((await owner.next(stream)).stream, 'progress');
+  const other = f.client();
+  const history = await other.attach(launch, 'history');
+  await assert.rejects(other.request('progress.control', {
+    observerId: history, action: 'cancel-execution', requestId: 'blocked',
+  }), /task-unavailable/);
+  const stop = { observerId: observer, action: 'stop-observation', requestId: 'stop-1' };
+  assert.deepEqual(await owner.request('progress.control', stop), { outcome: 'stopped' });
+  assert.deepEqual(await owner.request('progress.control', stop), { outcome: 'stopped' });
+  assert.deepEqual((await owner.next(stream)).data, { outcome: 'stopped' });
+  await assert.rejects(owner.read(observer), /task-unavailable/);
+  assert.equal((await owner.read(second)).snapshot.workerHealth, 'alive');
+
+  const request = { observerId: second, action: 'cancel-execution', requestId: 'cancel-1' };
+  assert.deepEqual(await owner.request('progress.control', request), { outcome: 'pending' });
+  assert.deepEqual(await owner.request('progress.control', request), { outcome: 'pending' });
+  await assert.rejects(owner.request('progress.control', { ...request, action: 'stop-observation' }), /conflicting-request/);
+  assert.equal((await owner.read(second)).snapshot.cancellation, 'pending');
+  assert.deepEqual(f.cancellations, ['cancel-1']);
+  assert.equal(await owner.request('test.record', { task: launch.task, sequence: 2, state: 'completed' }), 'recorded');
+  assert.deepEqual(await owner.request('progress.control', request), { outcome: 'completed' });
+  assert.equal((await owner.read(second)).snapshot.resultRef, 'verified-result');
+
+  const otherLaunch = await owner.launch((await owner.open()).originId);
+  const third = await owner.attach(otherLaunch);
+  assert.deepEqual(await owner.request('progress.control', {
+    ...request, observerId: third, requestId: 'cancel-2',
+  }), { outcome: 'pending' });
+  await f.start();
+  const reconnected = f.client();
+  const resumed = await reconnected.attach(otherLaunch);
+  assert.deepEqual(await reconnected.request('progress.control', {
+    ...request, observerId: resumed, requestId: 'cancel-2',
+  }), { outcome: 'pending' });
+  const pending = (await reconnected.read(resumed)).snapshot;
+  assert.equal(pending.state, 'interrupted');
+  assert.equal(pending.cancellation, 'pending');
+  assert.deepEqual(f.cancellations, ['cancel-1', 'cancel-2']);
+});
+
+test('A full observer queue coalesces progress and reserves the verified terminal frame', { timeout: 5000 }, async t => {
+  const f = await fixture(t, true);
+  const owner = f.client();
+  const launch = await owner.launch((await owner.open()).originId);
+  const binding = await owner.attach(launch);
+  const stream = owner.send('progress.subscribe', { observerId: binding }, true);
+  assert.equal((await owner.next(stream)).stream, 'progress');
+  const duplicate = owner.send('progress.subscribe', { observerId: binding }, true);
+  assert.match(JSON.stringify((await owner.next(duplicate)).data), /progress-subscription-already-open/);
+  for (let sequence = 2; sequence <= 20; sequence++) {
+    assert.equal(await owner.request('test.record', { task: launch.task, sequence, state: 'running' }), 'recorded');
+  }
+  assert.equal(await owner.request('test.record', { task: launch.task, sequence: 21, state: 'completed' }), 'recorded');
+  f.drain();
+  const terminal = await owner.next(stream);
+  assert.equal(terminal.stream, 'done');
+  assert.equal((terminal.data as Observation).disposition, 'resync');
+  assert.equal((terminal.data as Observation).snapshot.state, 'completed');
+  assert.equal((terminal.data as Observation).snapshot.resultRef, 'verified-result');
 });

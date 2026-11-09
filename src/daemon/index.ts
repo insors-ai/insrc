@@ -39,7 +39,7 @@ process.on('unhandledRejection', (reason) => reportFatal('unhandledRejection', r
 
 import { getDb, initDb, closeDb } from '../db/client.js';
 import { closeDuckDB } from './db/duckdb-pool.js';
-import { listRepos } from '../db/repos.js';
+import { listRepos, workspaceRepoIds } from '../db/repos.js';
 import { Watcher } from '../indexer/watcher.js';
 import { IndexQueue } from './queue.js';
 import { cheapTierIgnoreModel } from '../indexer/ignore-proposal-model.js';
@@ -475,7 +475,7 @@ async function main(): Promise<void> {
 	let progressRuntime: Promise<ProgressRuntime<{ readonly kind: ProgressKind }>> | undefined;
 	const getProgressRuntime = (): Promise<ProgressRuntime<{ readonly kind: ProgressKind }>> => {
 		return progressRuntime ??= openProgressRuntime(PATHS.insrc,
-			async () => new Set((await listRepos(db)).map(repo => repo.path)),
+			workspaceRepoIds,
 			(_kind, details): details is { readonly kind: ProgressKind } => false,
 		).catch(error => { progressRuntime = undefined; throw error; });
 	};

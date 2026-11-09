@@ -244,3 +244,43 @@ test('Restart repeatedly without owners, preserve the recovery deadline, release
   await coordinator.sweep();
   assert.equal(coordinator.read(a.task), undefined);
 });
+
+test('Observation refusal at project and global capacity or on file failure leaves execution running', async t => {
+  const f = await fixture(t);
+  const limits = { activePerProject: 1, inactivePerProject: 1, globalBytes: 256 * 1024, quarantineRecords: 0 };
+  let fail = false;
+  const store = await ProgressStore.open(f.path, validate, limits, {
+    open,
+    rename: async (source, target) => {
+      if (fail) throw new Error('injected observation write failure');
+      await rename(source, target);
+    },
+  });
+  const coordinator = new ProgressCoordinator(store, f.authority.inspect, f.clock);
+  const producer = coordinator.registerProducer('test', () => details);
+  const executions: string[] = [];
+  async function launch(projectId: string, invocationId: string) {
+    const attempt = await producer.register(f.authority.mint({
+      action: 'launch', projectId, invocationId, ownerId: 'executor', origin: {},
+    }), 'suite', { progress: async () => null });
+    executions.push(invocationId);
+    return attempt;
+  }
+  const first = await launch('one', 'a');
+  assert.equal(first.kind, 'admitted');
+  assert.deepEqual(await launch('one', 'blocked-project'), { kind: 'refused', reason: 'capacity' });
+  const second = await launch('two', 'b');
+  assert.equal(second.kind, 'admitted');
+  assert.deepEqual(await launch('three', 'blocked-global'), { kind: 'refused', reason: 'capacity' });
+  assert.equal(await producer.recordLifecycle(first.owner, { sequence: 1, state: 'completed' }), 'recorded');
+  const replacement = await launch('one', 'c');
+  assert.equal(replacement.kind, 'admitted');
+  assert.equal(coordinator.read(first.task), undefined);
+  assert.equal(await producer.recordLifecycle(replacement.owner, { sequence: 1, state: 'completed' }), 'recorded');
+  fail = true;
+  assert.deepEqual(await launch('one', 'disk-failed'), { kind: 'refused', reason: 'unavailable' });
+  fail = false;
+  await store.settle();
+  assert.equal(coordinator.read(second.task)?.workerHealth, 'alive');
+  assert.deepEqual(executions, ['a', 'blocked-project', 'b', 'blocked-global', 'c', 'disk-failed']);
+});

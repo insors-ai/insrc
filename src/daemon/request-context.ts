@@ -22,6 +22,8 @@ export interface TrustedRpcContext {
 	readonly signal?: AbortSignal | undefined;
 	readonly assertRequestActive?: (() => void) | undefined;
 	readonly registerDrain?: ((work: PromiseLike<unknown>) => void) | undefined;
+	/** Completion of the last frame written by this main-thread progress subscription. */
+	readonly awaitProgressWrite?: (() => Promise<boolean>) | undefined;
 }
 /** A response can finish while admitted work is still being disposed. */
 export class RequestLifetime {

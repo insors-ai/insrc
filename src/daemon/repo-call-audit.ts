@@ -31,6 +31,7 @@ export const RPC_AUDIT: Readonly<Record<string, AuditEntry>> = {
 	'progress.attach': { kind: 'daemon-store', evidence: 'task-progress/rpc.ts binds an observer to the authenticated socket' },
 	'progress.read': { kind: 'read-only', evidence: 'task-progress/rpc.ts reads a scoped progress snapshot' },
 	'progress.detach': { kind: 'daemon-store', evidence: 'task-progress/rpc.ts drops an in-memory observer binding' },
+	'progress.control': { kind: 'daemon-store', evidence: 'task-progress/rpc.ts dispatches scoped stop and durable cancellation controls' },
 	'progress.subscribe': { kind: 'read-only', evidence: 'task-progress/rpc.ts subscribes to scoped progress snapshots' },
 	'agent.discard': { kind: 'daemon-store', evidence: 'writes the daemon\'s own stores (LMDB graph, Lance, session, config, keys, todos or connection stores under ~/.insrc), not files of a user repository (handler group agent)' },
 	'agent.list': { kind: 'daemon-store', evidence: 'writes the daemon\'s own stores (LMDB graph, Lance, session, config, keys, todos or connection stores under ~/.insrc), not files of a user repository (handler group agent)' },

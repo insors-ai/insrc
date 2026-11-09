@@ -67,6 +67,7 @@ interface VibeTransport {
 	request(method: string, params: RecordValue): Promise<unknown>;
 	notify(method: string, params: RecordValue): void;
 	observe(onEvent: (method: string, params: RecordValue) => void, onFailure: (error: Error) => void): void;
+	releaseSetupAbort(): void;
 	close(): Promise<void>;
 }
 
@@ -186,6 +187,7 @@ function startTransport(options: VibeSessionOptions): VibeTransport {
 			failureListener = onFailure;
 			if (failure !== undefined) onFailure(failure);
 		},
+		releaseSetupAbort() { options.signal?.removeEventListener('abort', abort); },
 		close() {
 			stop(new Error('Vibe app server closed'));
 			return closed;
@@ -224,13 +226,33 @@ export async function runVerifiedVibeTurn(options: VibeTurnOptions): Promise<Vib
 	try {
 		session = await openVerifiedVibeSession(options);
 		const { id, transport } = session;
+		transport.releaseSetupAbort();
 		options.onSession?.(id);
 		return await new Promise<VibeTurnResult>((resolve, reject) => {
 			let turnId: string | undefined;
 			let settled = false;
-			function fail(error: unknown): void {
+			let interruptTimer: ReturnType<typeof setTimeout> | undefined;
+			let cancellation: Error | undefined;
+			function settle(): void {
 				settled = true;
-				reject(error);
+				clearTimeout(interruptTimer);
+				options.signal?.removeEventListener('abort', abort);
+			}
+			function fail(error: unknown): void {
+				if (settled) return;
+				settle();
+				reject(cancellation ?? error);
+			}
+			function abort(): void {
+				cancellation = new Error('Vibe turn aborted', { cause: options.signal?.reason });
+				if (turnId === undefined) {
+					fail(cancellation);
+					return;
+				}
+				// The interrupt acknowledgement is not a terminal event. Give the
+				// owned turn a bounded opportunity to confirm it before child cleanup.
+				interruptTimer = setTimeout(() => fail(cancellation), 1_000);
+				void transport.request('turn/interrupt', { sessionId: id, expectedTurnId: turnId }).catch(fail);
 			}
 			function accept(turn: RecordValue | undefined): void {
 				const receivedId = turn?.['id'];
@@ -238,10 +260,14 @@ export async function runVerifiedVibeTurn(options: VibeTurnOptions): Promise<Vib
 					|| (turnId !== undefined && receivedId !== turnId)) return;
 				turnId = receivedId;
 				dispatchState = 'accepted';
+				if (cancellation !== undefined && turn['status'] !== 'in_progress') {
+					fail(cancellation);
+					return;
+				}
 				switch (turn['status']) {
 					case 'completed': {
 						const reason = turn['stopReason'];
-						settled = true;
+						settle();
 						resolve({ sessionId: id, stopReason: typeof reason === 'string' ? reason : undefined });
 						break;
 					}
@@ -262,7 +288,11 @@ export async function runVerifiedVibeTurn(options: VibeTurnOptions): Promise<Vib
 					&& turnId !== undefined && params['turnId'] === turnId) options.onHistory?.(method, params);
 			}, fail);
 			if (settled) return;
-			options.signal?.throwIfAborted();
+			options.signal?.addEventListener('abort', abort, { once: true });
+			if (options.signal?.aborted === true) {
+				abort();
+				return;
+			}
 			dispatchState = 'possibly-sent';
 			void transport.request('turn/start', { sessionId: id, message: [{ type: 'text', text: options.prompt }] }).then(reply => {
 				if (settled) return;

@@ -4,6 +4,9 @@
  *--------------------------------------------------------------------------------------------*/
 
 import assert from 'node:assert/strict';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { test } from 'node:test';
 
 import { openVerifiedVibeSession, runVerifiedVibeTurn, VibeSelectionError, VibeTurnError } from '../vibe-session.js';
@@ -11,6 +14,7 @@ import type { VibeSessionOptions } from '../vibe-session.js';
 
 const fixture = String.raw`
 const assert = require('node:assert/strict');
+const { writeFileSync } = require('node:fs');
 const { createInterface } = require('node:readline');
 const mode = process.argv[1];
 const choices = [
@@ -67,11 +71,25 @@ createInterface({ input: process.stdin }).on('line', line => {
 			}
 			send(id, { turn });
 			event('turn/started', { sessionId, turn });
-			event('history/entryAdded', { sessionId, turnId: turn.id, entry: { type: 'reasoning', text: 'working' } });
+			event('history/entryAdded', { sessionId: 'other', turnId: turn.id, entry: { type: 'ignored' } });
+			event('history/entryAdded', { sessionId, turnId: 'other', entry: { type: 'ignored' } });
+			event('history/entryAdded', { sessionId, turnId: turn.id, entry: { type: 'reasoning', text: 'working' }, pid: process.pid });
+			if (mode === 'turn-hang') return;
+			event('history/entryAdded', { sessionId, turnId: turn.id, entry: { type: 'message', role: 'assistant', content: [{ type: 'text', text: 'hello' }] } });
+			event('history/entryAdded', { sessionId, turnId: turn.id, entry: { type: 'effect', detail: { kind: 'tool_call' } } });
 			event('history/entryUpdated', { sessionId, turnId: turn.id, entryId: 'entry-id', patch: [] });
 			if (mode === 'accepted-failure') return process.stdout.write('', () => process.exit(1));
-			if (mode === 'turn-hang') return;
+			if (mode === 'oversized') return process.stdout.write('x'.repeat(8 * 1024 * 1024 + 1) + '\n');
 			event('turn/completed', { sessionId, turn: { ...turn, status: 'completed' } });
+			return;
+		}
+		case 'turn/interrupt': {
+			assert.equal(mode, 'turn-hang');
+			assert.equal(params.expectedTurnId, 'turn-id');
+			const turn = { id: params.expectedTurnId, sessionId: params.sessionId, status: 'interrupted' };
+			writeFileSync(process.argv[2], JSON.stringify(turn));
+			send(id, { accepted: true });
+			event('turn/completed', { sessionId: params.sessionId, turn });
 			return;
 		}
 		default:
@@ -136,10 +154,12 @@ test('Vibe dispatch sends one verified turn and forwards matching bounded events
 	const result = await runVerifiedVibeTurn({
 		...setup('turn'), prompt: 'work once',
 		onSession: id => events.push(id),
-		onHistory: method => events.push(method),
+		onHistory: (method, params) => events.push(method === 'history/entryUpdated' ? method : (params['entry'] as { type: string }).type),
 	});
 	assert.deepEqual(result, { sessionId: 'new-id', stopReason: undefined });
-	assert.deepEqual(events, ['new-id', 'history/entryAdded', 'history/entryUpdated']);
+	assert.deepEqual(events, ['new-id', 'reasoning', 'message', 'effect', 'history/entryUpdated']);
+	await assert.rejects(runVerifiedVibeTurn({ ...setup('oversized'), prompt: 'work once' }), error =>
+		error instanceof VibeTurnError && error.dispatchState === 'accepted' && /frame limit/.test(error.message));
 });
 
 test('Vibe dispatch retains uncertainty across acknowledgement loss and accepted failure', async () => {
@@ -152,12 +172,23 @@ test('Vibe dispatch retains uncertainty across acknowledgement loss and accepted
 test('Vibe dispatch cancellation preserves partial events and the native session ID', async () => {
 	const controller = new AbortController();
 	const received: unknown[] = [];
-	await assert.rejects(runVerifiedVibeTurn({
-		...setup('turn-hang', { signal: controller.signal }), prompt: 'work once',
-		onHistory: (_method, params) => {
-			received.push(params['entry']);
-			controller.abort();
-		},
-	}), error => error instanceof VibeTurnError && error.dispatchState === 'accepted' && error.sessionId === 'new-id');
-	assert.deepEqual(received, [{ type: 'reasoning', text: 'working' }]);
+	const dir = await mkdtemp(join(tmpdir(), 'insrc-vibe-turn-'));
+	const terminal = join(dir, 'terminal.json');
+	let pid: number | undefined;
+	try {
+		await assert.rejects(runVerifiedVibeTurn({
+			...setup('turn-hang', { args: ['-e', fixture, 'turn-hang', terminal], signal: controller.signal }), prompt: 'work once',
+			onHistory: (_method, params) => {
+				received.push(params['entry']);
+				pid = params['pid'] as number;
+				controller.abort();
+			},
+		}), error => error instanceof VibeTurnError && error.dispatchState === 'accepted' && error.sessionId === 'new-id');
+		assert.deepEqual(received, [{ type: 'reasoning', text: 'working' }]);
+		assert.deepEqual(JSON.parse(await readFile(terminal, 'utf8')), { id: 'turn-id', sessionId: 'new-id', status: 'interrupted' });
+		assert.ok(pid);
+		assert.throws(() => process.kill(pid, 0), { code: 'ESRCH' });
+	} finally {
+		await rm(dir, { recursive: true, force: true });
+	}
 });

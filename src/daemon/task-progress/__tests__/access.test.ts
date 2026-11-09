@@ -45,8 +45,18 @@ async function fixture(t: TestContext) {
       assert.ok(context);
       const { repo, originId } = params as { repo: string; originId: string };
       const launch = await runtime.access.launch(repo, originId, 'fixture-executor', context);
-      const admission = await producer.register(launch.authorization, 'suite', { progress: async () => null });
+      let identity: { task: TaskRef; fence: import('../../../shared/task-progress.js').TaskOwnerFence } | undefined;
+      const admission = await producer.register(launch.authorization, 'suite', {
+        progress: async () => identity === undefined ? null : {
+          task: identity.task, owner: { ...identity.fence, ownerSequence: 1 }, kind: 'test',
+          meaningfulRevision: 1, measuredAt: new Date().toISOString(), lastMeaningfulAt: null,
+          phase: 'execution', activeUnit: null, counts: [], milestones: [], controls: ['cancel'],
+          details: { kind: 'test', rawOutput: 'internal-worker-output' },
+        },
+      });
       assert.equal(admission.kind, 'admitted');
+      identity = admission;
+      await producer.signalMeasurement(admission.owner, 1);
       const grants = await launch.grants(admission.task);
       return { task: admission.task, ...grants };
     };
@@ -110,8 +120,10 @@ test('Reject cross-project and cross-conversation reads, controls and raw detail
   const observer = await alpha.attach(a);
   const snapshot = (await alpha.read(observer)).snapshot;
   assert.deepEqual(snapshot.task, a.task);
+  assert.deepEqual(snapshot.measurement?.details, { kind: 'test' });
   for (const key of ['owner', 'origin', 'originDigest', 'grants', 'rawDetails']) assert.equal(Object.hasOwn(snapshot, key), false);
   assert.equal(JSON.stringify(snapshot).includes(a.conversation), false);
+  assert.equal(JSON.stringify(snapshot).includes('internal-worker-output'), false);
   await assert.rejects(beta.read(observer, snapshot.cursor), /task-unavailable/);
   const deniedStream = beta.send('progress.subscribe', { observerId: observer }, true);
   assert.equal((await beta.next(deniedStream)).stream, 'error');
@@ -156,6 +168,7 @@ test('Verify trusted launch, denial of forged ordinary IPC scopes, grants across
   await assert.rejects(restarted.read(third), /task-unavailable/);
   const history = await restarted.attach(launch, 'history');
   assert.deepEqual((await restarted.read(history)).snapshot.task, launch.task);
+  assert.deepEqual((await restarted.read(history)).snapshot.measurement?.controls, []);
   await assert.rejects(restarted.request('test.permission', { observerId: history, permission: 'cancel' }), /task-unavailable/);
   await assert.rejects(restarted.request('test.permission', { observerId: history, permission: 'fallback' }), /task-unavailable/);
 

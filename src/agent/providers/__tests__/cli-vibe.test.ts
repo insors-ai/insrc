@@ -20,6 +20,7 @@ import { test } from 'node:test';
 
 import { CliProvider, vibeLastAssistantText } from '../cli-provider.js';
 import { ModelResponseShapeError } from '../model-call-error.js';
+import { VibeTurnError } from '../../../shared/vibe-session.js';
 
 /**
  * A fake `vibe`: records every invocation (args, VIBE_ACTIVE_MODEL, stdin) as
@@ -105,16 +106,16 @@ test('vibeLastAssistantText: bare array, wrapped messages, string content, no as
 	assert.throws(() => vibeLastAssistantText(JSON.stringify({ nope: 1 })), /did not print a message array/);
 });
 
-test('complete() runs `vibe -p --output text` with the prompt on stdin and the model pinned via VIBE_ACTIVE_MODEL', async () => {
+test('complete() runs default `vibe -p --output text` with the prompt on stdin', async () => {
 	const f = fakeVibe('text');
 	try {
-		const p = new CliProvider({ kind: 'vibe', binPath: f.bin, model: 'mistral-large-latest', timeoutMs: 10_000 });
+		const p = new CliProvider({ kind: 'vibe', binPath: f.bin, timeoutMs: 10_000 });
 		const r = await p.complete([{ role: 'system', content: 'be terse' }, { role: 'user', content: 'hi there' }]);
 		assert.equal(r.text, 'the final answer');
 		const calls = f.calls();
 		assert.equal(calls.length, 1);
 		assert.deepEqual(calls[0]!.args, ['-p', '--output', 'text']);
-		assert.equal(calls[0]!.model, 'mistral-large-latest');
+		assert.equal(calls[0]!.model, null);
 		assert.match(calls[0]!.stdin, /## System\nbe terse/);
 		assert.match(calls[0]!.stdin, /hi there/);
 	} finally { f.cleanup(); }
@@ -132,7 +133,7 @@ test('complete() without a model leaves VIBE_ACTIVE_MODEL unset (the CLI default
 test('completeStructured() parses the last assistant message of the json output and validates it against the schema', async () => {
 	const f = fakeVibe('json', JSON.stringify({ answer: 42 }));
 	try {
-		const p = new CliProvider({ kind: 'vibe', binPath: f.bin, model: 'mistral-small-latest', timeoutMs: 10_000 });
+		const p = new CliProvider({ kind: 'vibe', binPath: f.bin, timeoutMs: 10_000 });
 		const out = await p.completeStructured<{ answer: number }>([{ role: 'user', content: 'give a number' }], SCHEMA);
 		assert.deepEqual(out, { answer: 42 });
 		const calls = f.calls();
@@ -217,4 +218,129 @@ test('Vibe reviewer responses retain strict original nullable semantics without 
    else await assert.rejects(call(),(error:unknown)=>error instanceof ModelResponseShapeError&&error.reasons.some(reason=>reason.includes('/error: must be string')));
   }finally{f.cleanup();rmSync(cwd,{recursive:true,force:true});}
  }
+});
+
+const APP_SERVER = String.raw`#!/usr/bin/env node
+import assert from 'node:assert/strict';
+import { appendFileSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { createInterface } from 'node:readline';
+
+const callsFile = fileURLToPath(new URL('./calls.jsonl', import.meta.url));
+const mode = readFileSync(new URL('./mode', import.meta.url), 'utf8');
+const model = { name: 'mistral-vibe-cli-latest', alias: 'mistral-medium-3.5', thinking: 'low', thinkingLevels: ['low', 'high'] };
+let policy;
+let activeModel = model;
+const sessionId = 'native-session';
+const reply = (id, result) => process.stdout.write(JSON.stringify({ jsonrpc: '2.0', id, result }) + '\n');
+const event = (method, params) => process.stdout.write(JSON.stringify({ jsonrpc: '2.0', method, params: { ...params, sessionId } }) + '\n');
+createInterface({ input: process.stdin }).on('line', line => {
+	const { method, params, id } = JSON.parse(line);
+	switch (method) {
+		case 'initialize': reply(id, {}); return;
+		case 'initialized': return;
+		case 'session/start':
+			assert.equal(params.agentConfig.headless, true);
+			assert.equal(params.agentConfig.cwd, process.cwd());
+			policy = params.agentConfig;
+			reply(id, { state: { session: { id: sessionId } } });
+			return;
+		case 'runtime/read':
+			reply(id, { runtime: {
+				config: { activeModel, models: [model] },
+				tools: (mode === 'unsafe' ? ['write_file'] : ['read_file', 'mcp_insrc_analyze']).map(name => ({ name })),
+				bypassToolPermissions: policy.autoApprove,
+			} });
+			return;
+		case 'config/model/write':
+			assert.deepEqual(params, { sessionId, modelAlias: model.alias, reasoningEffort: 'high', sessionOnly: true });
+			activeModel = { ...model, thinking: params.reasoningEffort };
+			reply(id, { status: 'applied' });
+			return;
+		case 'turn/start': {
+			assert.equal(activeModel.thinking, 'high');
+			appendFileSync(callsFile, JSON.stringify({ policy, prompt: params.message[0].text }) + '\n');
+			const turn = { id: 'turn-id', sessionId, status: 'in_progress' };
+			if (mode === 'lost') {
+				process.exit(1);
+				return;
+			}
+			reply(id, { turn });
+			event('turn/started', { turn });
+			if (mode === 'accepted') {
+				event('turn/completed', { turn: { ...turn, status: 'failed', error: { message: '429 rate limit exceeded' } } });
+				return;
+			}
+			const count = readFileSync(callsFile, 'utf8').trim().split('\n').length;
+			const text = mode === 'flaky' && count === 1 ? 'not JSON' : '{"answer":';
+			event('history/entryAdded', { turnId: turn.id, entry: { type: 'message', role: 'assistant', id: 'answer', content: [{ type: 'text', text }] } });
+			if (text !== 'not JSON') event('history/entryUpdated', { turnId: turn.id, entryId: 'answer', patch: [{ op: 'append', path: '/content/0/text', value: '42}' }] });
+			event('turn/completed', { turn: { ...turn, status: 'completed' } });
+			return;
+		}
+		default: throw new Error('unexpected method ' + method);
+	}
+});
+`;
+
+function fakeAppServer(mode: string) {
+	const cwd = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-vibe-server-')));
+	const bin = join(cwd, 'app-server.mjs');
+	const callsPath = join(cwd, 'calls.jsonl');
+	writeFileSync(bin, APP_SERVER, { mode: 0o755 });
+	writeFileSync(join(cwd, 'mode'), mode);
+	writeFileSync(callsPath, '');
+	return {
+		cwd,
+		provider: new CliProvider({ kind: 'vibe', vibeAppServerPath: bin, model: 'mistral-vibe-cli-latest', effort: 'high', timeoutMs: 10_000 }),
+		calls: () => readFileSync(callsPath, 'utf8').trim().split('\n').filter(Boolean)
+			.map(line => JSON.parse(line) as { policy: { autoApprove: boolean; enabledTools?: string[] }; prompt: string }),
+		cleanup: () => rmSync(cwd, { recursive: true, force: true }),
+	};
+}
+
+const USER_MESSAGES = [{ role: 'user', content: 'do the work' }] as const;
+
+test('explicit Vibe selections do not replay an uncertain turn through any daemon entry point', async () => {
+	for (const [mode, dispatchState] of [['lost', 'possibly-sent'], ['accepted', 'accepted']] as const) {
+		const fixture = fakeAppServer(mode);
+		const { provider, cwd } = fixture;
+		try {
+			const calls = [
+				() => provider.complete([...USER_MESSAGES], { cwd }),
+				() => provider.completeStructured([...USER_MESSAGES], SCHEMA, { cwd }),
+				() => provider.runEditSession('edit', { cwd }),
+				() => provider.runReviewSession('review', SCHEMA, { cwd, deadlineMs: 10_000 }),
+			];
+			for (const [index, run] of calls.entries()) {
+				await assert.rejects(run, error => error instanceof VibeTurnError && error.dispatchState === dispatchState);
+				assert.equal(fixture.calls().length, index + 1);
+			}
+			assert.equal(fixture.calls()[2]?.policy.autoApprove, true);
+			assert.deepEqual(fixture.calls()[3]?.policy.enabledTools, ['read_file', 'mcp_insrc_*']);
+		} finally { fixture.cleanup(); }
+	}
+});
+
+test('explicit Vibe structured completion repairs received schema output and honors its attempt budget', async () => {
+	const retry = fakeAppServer('flaky');
+	const oneAttempt = fakeAppServer('flaky');
+	try {
+		assert.deepEqual(await retry.provider.completeStructured([...USER_MESSAGES], SCHEMA, { cwd: retry.cwd }), { answer: 42 });
+		assert.equal(retry.calls().length, 2);
+		assert.match(retry.calls()[1]!.prompt, /not JSON|Unexpected token/);
+		await assert.rejects(oneAttempt.provider.completeStructured([...USER_MESSAGES], SCHEMA, { cwd: oneAttempt.cwd, internalRetry: false }), /failed after 1 attempts/);
+		assert.equal(oneAttempt.calls().length, 1);
+		const signal = AbortSignal.abort();
+		await assert.rejects(retry.provider.completeStructured([...USER_MESSAGES], SCHEMA, { cwd: retry.cwd, signal }), /abort/i);
+		assert.equal(retry.calls().length, 2);
+	} finally { retry.cleanup(); oneAttempt.cleanup(); }
+});
+
+test('explicit Vibe review refuses unverified tool policy before dispatch', async () => {
+	const fixture = fakeAppServer('unsafe');
+	try {
+		await assert.rejects(fixture.provider.runReviewSession('review', SCHEMA, { cwd: fixture.cwd, deadlineMs: 10_000 }), /did not verify the review tool policy/);
+		assert.equal(fixture.calls().length, 0);
+	} finally { fixture.cleanup(); }
 });

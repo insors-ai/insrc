@@ -30,8 +30,8 @@ import { assertNoSessionProvider as assertNoSessionEmbedding, assertNoSessionPro
  *     headless mode: `-p` with no text reads the prompt from stdin.
  *     `text` prints the final answer; `json` prints the session
  *     messages as a JSON array, from which we take the last
- *     assistant message. The model is pinned per invocation with the
- *     VIBE_ACTIVE_MODEL env var (vibe has no --model flag).
+ *     assistant message. Explicit model and effort choices use the local
+ *     Vibe app server and are verified before dispatch.
  *
  * Embeddings are delegated to whatever `embedDelegate` is provided
  * (typically an Ollama provider) since neither CLI exposes embeddings.
@@ -76,6 +76,8 @@ import { codexStrictSchema, rootUnionKey, validateCodexReply, validateNativeRepl
 import { buildRetryNote, validateAgainstSchema, withStructuredRetry } from './structured-output.js';
 import { ModelResponseShapeError } from './model-call-error.js';
 import { checkOllamaTarget, OllamaTargetError } from './ollama-target.js';
+import { getModelRegistry } from '../../daemon/model-registry.js';
+import { runVerifiedVibeTurn, vibeAssistantOutput, VibeTurnError } from '../../shared/vibe-session.js';
 
 const log = getLogger('cli-provider');
 
@@ -169,6 +171,8 @@ export interface CliProviderOpts {
 	readonly model?: string | undefined;
 	/** Override the binary path. Production paths look up the bin on PATH. */
 	readonly binPath?: string | undefined;
+	/** Override the local Vibe app-server executable for explicit selections. */
+	readonly vibeAppServerPath?: string | undefined;
 	/** Hard cap on per-invocation wall-clock. Default 120s. */
 	readonly timeoutMs?: number | undefined;
 	/** Provider that handles `embed()`. Usually an Ollama provider. */
@@ -229,6 +233,7 @@ export class CliProvider implements LLMProvider {
 	/** The reasoning effort this provider forwards to the CLI, if any. */
 	readonly effort: TierEffort | undefined;
 	private readonly binPath: string;
+	private readonly vibeAppServerPath: string;
 	private readonly timeoutMs: number;
 	private readonly codexFirstOutputMs: number;
 	private readonly embedDelegate: Pick<LLMProvider, 'embed' | 'capabilities'> | undefined;
@@ -250,6 +255,7 @@ export class CliProvider implements LLMProvider {
 		this.defaultModel = opts.model;
 		this.effort = opts.effort;
 		this.binPath = opts.binPath ?? opts.kind;
+		this.vibeAppServerPath = opts.vibeAppServerPath ?? 'vibe-app-server';
 		// 10 min default: agentic `claude`/`codex --print` calls that generate a
 		// full artifact or a deep analyze bundle routinely exceed the old 120 s
 		// (which SIGKILLed legit-but-slow syntheses). Callers can still tighten it.
@@ -316,6 +322,7 @@ export class CliProvider implements LLMProvider {
 				assertConnectionProviderAdmission(execution);
 				return result;
 			} catch (err) {
+				if (err instanceof VibeTurnError && err.dispatchState !== 'not-sent') throw err;
 				assertConnectionProviderAdmission(execution);
 				lastErr = err;
 				// A size refusal is never resent, whatever its text looks like (ISSUE-aef82b03).
@@ -570,6 +577,7 @@ export class CliProvider implements LLMProvider {
 					...(opts.signal !== undefined ? { signal: opts.signal } : {}),
 				});
 			} catch (err) {
+				if (err instanceof VibeTurnError && err.dispatchState !== 'not-sent') throw err;
 				if (isAbortError(err)) throw err;
 				const msg = err instanceof Error ? err.message : String(err);
 				// A run that never started answering (or, with stallMs, went silent) is
@@ -712,28 +720,56 @@ export class CliProvider implements LLMProvider {
 		// default at construction time (which the model-class router on the
 		// caller side resolves before constructing the provider).
 		void opts;
-		// vibe has no --model/--effort flags: the model is pinned per invocation
-		// through VIBE_ACTIVE_MODEL (see envForModel), and the thinking level is
-		// the model's own `thinking` setting in the user's vibe config.
+		// Vibe selections are applied and verified in its app-server session.
 		if (this.kind === 'vibe') return [];
 		const modelArgs = model === undefined || model.length === 0 ? [] : ['--model', model];
 		if (this.effort === undefined) return modelArgs;
 		return [...modelArgs, ...(this.kind === 'claude' ? ['--effort', this.effort] : ['-c', `model_reasoning_effort=${this.effort}`])];
 	}
 
-	/** vibe pins the model per invocation with the VIBE_ACTIVE_MODEL env var (it
-	 *  has no --model flag). The child keeps the daemon's environment so HOME /
-	 *  PATH and the user's ~/.vibe auth resolve exactly as in an interactive run. */
-	private envForModel(): NodeJS.ProcessEnv | undefined {
-		if (this.defaultModel === undefined || this.defaultModel.length === 0) return undefined;
-		return { ...process.env, VIBE_ACTIVE_MODEL: this.defaultModel };
-	}
-
 	private async runVibe(args: readonly string[], prompt: string, exec?: ExecOverride): Promise<SubprocessResult> {
+		if (this.defaultModel || this.effort !== undefined) {
+			const start = Date.now();
+			const output = vibeAssistantOutput();
+			const allowed = args.includes('--enabled-tools') ? ['read_file', 'mcp_insrc_*'] : undefined;
+			const registry = getModelRegistry();
+			const rejected = new Set(registry.rejected('cli-vibe'));
+			const result = await runVerifiedVibeTurn({
+				command: resolveBin(this.vibeAppServerPath),
+				cwd: exec?.cwd,
+				env: exec?.env,
+				signal: exec?.signal,
+				timeoutMs: exec?.timeoutMs ?? this.timeoutMs,
+				model: this.defaultModel || undefined,
+				effort: this.effort,
+				catalog: registry.models('cli-vibe').filter(model => !rejected.has(model.id)),
+				agentConfig: {
+					cwd: exec?.cwd ?? process.cwd(),
+					headless: true,
+					autoApprove: args.includes('--auto-approve'),
+					...(allowed === undefined ? {} : { enabledTools: allowed }),
+				},
+				verifyRuntime: allowed === undefined ? undefined : runtime => {
+					const tools = runtime['tools'];
+					if (runtime['bypassToolPermissions'] !== false || !Array.isArray(tools) || tools.some(tool => {
+						const name = isRecord(tool) ? tool['name'] : undefined;
+						return typeof name !== 'string' || (name !== 'read_file' && !name.startsWith('mcp_insrc_'));
+					})) throw new Error('Vibe app server did not verify the review tool policy');
+				},
+				prompt,
+				onHistory: output.accept,
+			});
+			if (result.stopReason !== undefined) {
+				throw new VibeTurnError('accepted', result.sessionId, new Error(`Vibe turn stopped early (${result.stopReason})`));
+			}
+			const text = output.last();
+			const stdout = args[2] === 'json' ? JSON.stringify([{ role: 'assistant', content: text }]) : text;
+			return { stdout, stderr: '', exitCode: 0, durationMs: Date.now() - start };
+		}
 		const out = await runSubprocess(
 			this.binPath, args, prompt,
 			exec?.timeoutMs ?? this.timeoutMs, exec?.cwd, undefined, exec?.signal,
-			exec?.env ?? this.envForModel(),
+			exec?.env,
 		);
 		// vibe exit codes: 0 finished, 1 could not start, 2 model API/runtime
 		// failure, 3 stopped before finishing. Transience is judged on the

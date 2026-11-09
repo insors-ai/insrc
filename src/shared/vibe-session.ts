@@ -61,6 +61,7 @@ export interface VibeSessionOptions {
 	readonly model?: string | undefined;
 	readonly effort?: string | undefined;
 	readonly catalog: readonly VibeCatalogModel[];
+	readonly verifyRuntime?: ((runtime: Readonly<RecordValue>) => void) | undefined;
 }
 
 interface VibeTransport {
@@ -214,6 +215,38 @@ export interface VibeTurnOptions extends VibeSessionOptions {
 	readonly onHistory?: ((method: 'history/entryAdded' | 'history/entryUpdated', params: RecordValue) => void) | undefined;
 }
 
+/** Accumulate Vibe's streamed assistant entries for callers that need its final answer. */
+export function vibeAssistantOutput(): {
+	accept: NonNullable<VibeTurnOptions['onHistory']>;
+	last: () => string;
+} {
+	let currentId: string | undefined;
+	let text = '';
+	return {
+		accept(method, params) {
+			if (method === 'history/entryAdded') {
+				const entry = record(params['entry']);
+				if (entry?.['type'] !== 'message' || entry['role'] !== 'assistant' || typeof entry['id'] !== 'string'
+					|| !Array.isArray(entry['content'])) return;
+				currentId = entry['id'];
+				text = entry['content'].flatMap(block => {
+					const item = record(block);
+					return item?.['type'] === 'text' && typeof item['text'] === 'string' ? [item['text']] : [];
+				}).join('\n');
+			} else if (currentId !== undefined && params['entryId'] === currentId && Array.isArray(params['patch'])) {
+				for (const item of params['patch']) {
+					const patch = record(item);
+					if (patch?.['path'] !== '/content/0/text' || typeof patch['value'] !== 'string') continue;
+					if (patch['op'] === 'append') text += patch['value'];
+					else if (patch['op'] === 'replace') text = patch['value'];
+				}
+			}
+			if (text.length > MAX_FRAME_CHARS) throw new Error('Vibe assistant output exceeded the output limit');
+		},
+		last: () => text,
+	};
+}
+
 export interface VibeTurnResult {
 	readonly sessionId: string;
 	readonly stopReason: string | undefined;
@@ -361,10 +394,16 @@ export async function openVerifiedVibeSession(options: VibeSessionOptions): Prom
 			throw unsupported('the session rejected its selection');
 		}
 
-		const effective = modelChoice(runtimeConfig(await transport.request('runtime/read', params))?.['activeModel']);
+		const readBack = await transport.request('runtime/read', params);
+		const effective = modelChoice(runtimeConfig(readBack)?.['activeModel']);
 		if (effective === undefined || effective.alias !== choice.alias || !matchesCatalog(target, effective.name)
 			|| (options.effort !== undefined && effective.thinking !== options.effort)) {
 			throw unsupported('the runtime did not confirm the requested settings');
+		}
+		if (options.verifyRuntime !== undefined) {
+			const runtime = record(record(readBack)?.['runtime']);
+			if (runtime === undefined) throw unsupported('the runtime did not confirm the requested tool policy');
+			options.verifyRuntime(runtime);
 		}
 		return { id, model: target.id, effort: effective.thinking, transport };
 	} catch (error) {

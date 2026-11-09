@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 5,
-        "contentHash": "86c6697b78d89d51fa1e46400e8a5f7f8170990b34314c35f5b385a757ba9992",
-        "at": "2026-11-09T09:08:06.377Z",
+        "number": 6,
+        "contentHash": "81d733ac91742e50c6e4af76f63d6ef9fd08e7ae64bb6fa03ae6afe2ac36f5db",
+        "at": "2026-11-09T10:00:23.677Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "e4af63128c7cbec2",
     "storyId": "s1",
     "createdAt": "2026-11-09T07:52:13.312Z",
-    "updatedAt": "2026-11-09T09:08:06.224Z",
+    "updatedAt": "2026-11-09T10:00:23.617Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-09T04:29:20.389Z",
     "epicSlug": "isolate-each-code-design-review-its",
-    "revision": 5
+    "revision": 6
   },
   "body": {
     "tasks": [
@@ -252,6 +252,59 @@
             "titles": [
               {
                 "title": "technical admission diagnostics remain non-review evidence across publication",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "9f8c8c660",
+        "ranAt": "2026-11-09T10:00:23.617Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/threads/__tests__/review-processes.test.ts: host leases precede spawn and enforce owner-bound replay and disposal",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-processes.test.ts",
+                "title": "host leases precede spawn and enforce owner-bound replay and disposal",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/threads/__tests__/review-processes.test.ts: worker loss and unknown child cleanup fence only the owning review",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-processes.test.ts",
+                "title": "worker loss and unknown child cleanup fence only the owning review",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/review-processes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 968,
+            "titles": [
+              {
+                "title": "host leases precede spawn and enforce owner-bound replay and disposal",
+                "result": "pass"
+              },
+              {
+                "title": "worker loss and unknown child cleanup fence only the owning review",
                 "result": "pass"
               }
             ],

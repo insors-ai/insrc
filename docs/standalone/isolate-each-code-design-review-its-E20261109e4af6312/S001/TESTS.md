@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -81,3 +81,25 @@ Run at 2026-11-09T09:08:06.224Z on commit `35c9f815f`. Tests check: **passed**. 
 | `src/workflow/code-review/task-review/__tests__/admission-history.test.ts` | 0 | 1 | 1.2 s |  |
 | `src/workflow/code-review/task-review/__tests__/resource-preservation.test.ts` | 0 | 1 | 1 s |  |
 | `src/workflow/review/design-review/__tests__/admission-history.test.ts` | 0 | 1 | 0.9 s |  |
+
+## t4
+
+Run at 2026-11-09T10:00:23.617Z on commit `9f8c8c660`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/daemon/threads/__tests__/review-processes.test.ts: host leases precede spawn and enforce owner-bound replay and disposal**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | host leases precede spawn and enforce owner-bound replay and disposal | `src/daemon/threads/__tests__/review-processes.test.ts` |
+
+**integration: src/daemon/threads/__tests__/review-processes.test.ts: worker loss and unknown child cleanup fence only the owning review**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | worker loss and unknown child cleanup fence only the owning review | `src/daemon/threads/__tests__/review-processes.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/review-processes.test.ts` | 0 | 2 | 1 s |  |

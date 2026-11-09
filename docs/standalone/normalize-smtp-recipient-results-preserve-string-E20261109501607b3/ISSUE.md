@@ -1,0 +1,21 @@
+<!-- insrc:artifact ISSUE-501607b3d54fdfe2 -->
+
+# Normalize SMTP recipient results to preserve string response fields
+
+## Reproduction
+
+Using the current dependencies on Node 22, run `node node_modules/typescript/bin/tsc --noEmit` from the repository root. Compilation reports TS2322 at `src/daemon/tools/builtins/notify/index.ts:558` and `src/daemon/tools/builtins/notify/index.ts:559`: `(string | Address)[]` is not assignable to `readonly string[]`. Expected: the global build passes and email_send continues returning mailbox-address strings in accepted/rejected. This currently blocks validation of review-worker isolation Task `e4af63128c7cbec2/s1/t3`. Evidence is captured in `/tmp/review-worker-t3-typecheck.log`. [[c1]] [[c2]]
+
+## Root cause
+
+The email tool assigns `info.accepted` and `info.rejected` directly to the string-array fields of EmailSendData. The installed SMTP transport declarations permit each result entry to be either a string or a Nodemailer Mail.Address object, so these assignments no longer satisfy the established response contract. The mismatch is in provider-result adaptation; no mail delivery failure is required to reproduce it. [[c1]] [[c2]]
+
+## Fix intent
+
+Normalize provider recipient results to their actual mailbox-address strings before constructing EmailSendData. Preserve the existing accepted/rejected response shape and partial-delivery success semantics. Cover mixed string/object entries and empty results with deterministic tests, retain existing SMTP integration coverage, and restore the global typecheck. Do not widen the public output contract, hide the problem with a cast, change delivery/authentication, or send real email. [[c1]] [[c2]]
+
+## Citations
+
+- **[[c1]]** `code` `src/daemon/tools/builtins/notify/index.ts` — "EmailSendData requires readonly string[] accepted/rejected; result construction assigns info.accepted and info.rejected directly."
+- **[[c2]]** `doc` `node_modules/@types/nodemailer/lib/smtp-transport/index.d.ts:53-54` — "accepted: Array<string | Mail.Address>; rejected: Array<string | Mail.Address>;"
+- **[[c3]]** `doc` `/tmp/review-worker-t3-typecheck.log` — "TS2322 at src/daemon/tools/builtins/notify/index.ts(558,9) and (559,9)."

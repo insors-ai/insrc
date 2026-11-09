@@ -18,18 +18,19 @@ import { createRepoLifecycle } from '../artifact-core/repo-lifecycle.js';
 import type { RepoWriteObserver } from '../artifact-core/repo-lifecycle.js';
 import type { Actor } from '../artifact-core/types.js';
 import { TaskSets } from '../tasks/task-set.js';
-import { applyAmendments } from './amendments.js';
-import { CONVERSION_RULES, migrateHeads } from './apply.js';
-import { applyFeedback } from './feedback-rule.js';
+import { amendmentRule, applyAmendments } from './amendments.js';
+import { migrateHeads } from './apply.js';
+import { applyFeedback, feedbackRule } from './feedback-rule.js';
 import type { MigratedHeadSeams } from './migrated-head.js';
 import { planConversion } from './plan.js';
-import { applyRenames } from './rename.js';
-import { applyStamps } from './stamps.js';
-import { applyStoryHistory } from './story-history.js';
-import { applyTasks } from './tasks.js';
+import { applyRenames, renameRule } from './rename.js';
+import { applyStamps, stampRule } from './stamps.js';
+import { applyStoryHistory, storyHistoryRule } from './story-history.js';
+import { applyTasks, repairTasksRule } from './tasks.js';
+import type { TasksResult } from './tasks.js';
 import { ConversionRefused } from './types.js';
-import type { ConversionChange, ConversionDeps, ConversionPlan, RepairRecorder, RepairReport, RepairStep, RepairWrite } from './types.js';
-import { applyUnits } from './units.js';
+import type { ConversionChange, ConversionDeps, ConversionPlan, RepairRecorder, RepairReport, RepairStep, RepairWrite, UnitOutcome } from './types.js';
+import { applyUnits, knownEpicsOf, repairUnitsRule } from './units.js';
 
 export type RepairMode = 'repair-preview' | 'repair';
 
@@ -41,11 +42,15 @@ export interface RepairOptions {
 	/** Test seams. `writeHead` replaces the head file of the repair's store; `headSeams` reach into the head migration. */
 	readonly writeHead?: ((path: string, bytes: string) => void) | undefined;
 	readonly headSeams?: MigratedHeadSeams | undefined;
+	readonly beforeRound?: ((taskId: string) => void) | undefined;
 }
+
+/** The conversion's rules, with the units and Tasks found from any record: a repair also serves a Story with no Define and a plan past approved. */
+const REPAIR_RULES = [renameRule, stampRule, amendmentRule, feedbackRule, repairUnitsRule, repairTasksRule, storyHistoryRule];
 
 /** The plan of a repair: the conversion's rules at any schema version, with no requirement that the tree be clean. */
 export function planRepair(repo: string): Promise<ConversionPlan> {
-	return planConversion(repo, { rules: CONVERSION_RULES, resume: true, anySchema: true });
+	return planConversion(repo, { rules: REPAIR_RULES, resume: true, anySchema: true });
 }
 
 /** The store, history and Task sets a repair writes through, each commit reported as it happens. They share the daemon's per-artifact queue. */
@@ -60,15 +65,15 @@ function repairDeps(repo: string, record: RepairRecorder, options: RepairOptions
 }
 
 /** The steps in the order they have to run: renames first because History refuses an uppercase Story id, amendments before migration because it skips a record with no meta. */
-function stepsOf(repo: string, deps: ConversionDeps, record: RepairRecorder, options: RepairOptions): readonly { readonly step: RepairStep; readonly run: () => unknown }[] {
+function stepsOf(repo: string, deps: ConversionDeps, record: RepairRecorder, options: RepairOptions, failed: UnitOutcome[]): readonly { readonly step: RepairStep; readonly run: () => unknown }[] {
 	return [
 		{ step: 'rename',        run: () => applyRenames(repo, record) },
 		{ step: 'stamp',         run: () => applyStamps(repo, record) },
 		{ step: 'amendments',    run: () => applyAmendments(repo, record) },
 		{ step: 'feedback',      run: () => applyFeedback(repo, deps) },
 		{ step: 'migrate',       run: () => migrateHeads(repo, deps, { ...options.headSeams, headWritten: id => record(id, 'head') }) },
-		{ step: 'units',         run: () => applyUnits(repo, deps, record) },
-		{ step: 'tasks',         run: () => applyTasks(repo, deps) },
+		{ step: 'units',         run: () => applyUnits(repo, deps, record, knownEpicsOf) },
+		{ step: 'tasks',         run: async () => { const done: TasksResult = await applyTasks(repo, deps, { repair: true, beforeRound: options.beforeRound }); failed.push(...(done.failed ?? [])); } },
 		{ step: 'story-history', run: () => applyStoryHistory(repo, deps) },
 	];
 }
@@ -91,14 +96,15 @@ export async function runRepair(repo: string, mode: RepairMode, options: RepairO
 	let current: RepairStep = 'rename';
 	const record: RepairRecorder = (artifactId, action) => { written.push({ step: current, artifactId, action }); };
 	const deps = repairDeps(repo, record, options);
+	const failed: UnitOutcome[] = [];
 	let stoppedAt: { readonly step: RepairStep; readonly reason: string } | undefined;
-	for (const { step, run } of stepsOf(repo, deps, record, options)) {
+	for (const { step, run } of stepsOf(repo, deps, record, options, failed)) {
 		current = step;
 		try { await run(); }
 		catch (err) { stoppedAt = { step, reason: err instanceof Error ? err.message : String(err) }; break; }
 	}
 	return {
 		mode, plan,
-		result: { written, remaining: await remainingAfter(repo, plan), ...(stoppedAt !== undefined ? { stoppedAt } : {}), held: [], failed: [] },
+		result: { written, remaining: await remainingAfter(repo, plan), ...(stoppedAt !== undefined ? { stoppedAt } : {}), held: [], failed },
 	};
 }

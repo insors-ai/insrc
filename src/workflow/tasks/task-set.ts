@@ -25,6 +25,7 @@ import { emptyLifecycle } from '../artifact-core/decode.js';
 import type { Actor, Artifact, Reference } from '../artifact-core/types.js';
 import { bindArtifact, readBinding, setPendingLink } from '../tracker/binding.js';
 import type { BindingWritten } from '../tracker/binding.js';
+import { APPROVED_OR_BEYOND } from '../artifact-core/approval-view.js';
 import { readTrackerMeta } from '../tracker/refs.js';
 import { isToolDenied, TaskSyncDenied } from '../tracker/tool-denied.js';
 import { unitKey } from '../tracker/unit-issue.js';
@@ -57,6 +58,11 @@ export interface TaskSetsDeps {
 	readonly now?:     (() => Date) | undefined;
 	/** Told when a Task record's binding has been written to its head; those writes do not go through the store. */
 	readonly bindingWritten?: BindingWritten | undefined;
+}
+
+/** `acceptLaterStatus`: a repair's plan may have moved past approved; every live caller, and reconcile, leaves it unset. */
+export interface CreateFromPlanOptions {
+	readonly acceptLaterStatus?: boolean | undefined;
 }
 
 /** What a re-plan did to the Task set. `closeFailed` lists the issues of withdrawn Tasks that could not be closed; the next call retries them. */
@@ -110,7 +116,7 @@ export class TaskSets {
 	constructor(private readonly deps: TaskSetsDeps) {}
 
 	/** The Task ids and the plan's row order, read from the plan; refuses a plan that is absent, not approved, or whose rows cannot become Tasks. */
-	protected async readPlan(planId: string): Promise<PlanRead> {
+	protected async readPlan(planId: string, options: CreateFromPlanOptions = {}): Promise<PlanRead> {
 		const key = ArtifactIds.parse(planId);
 		if (key?.kind !== 'PLAN' || key.story === undefined) throw new TaskSetError(`'${planId}' is not a plan id`);
 		let plan: Artifact<HeadPayload>;
@@ -119,7 +125,7 @@ export class TaskSets {
 			if (err instanceof ArtifactNotFoundError) throw new TaskSetError(`${planId} has no head`);
 			throw err;
 		}
-		if (plan.lifecycle.status !== 'approved') throw new TaskSetError(`${planId} is ${plan.lifecycle.status}, not approved: the Tasks are made from an approved plan`);
+		if (plan.lifecycle.status !== 'approved' && !(options.acceptLaterStatus === true && APPROVED_OR_BEYOND.includes(plan.lifecycle.status))) throw new TaskSetError(`${planId} is ${plan.lifecycle.status}, not approved: the Tasks are made from an approved plan`);
 		const body = plan.payload.body as unknown as Partial<PlanBody>;
 		if (!Array.isArray(body.tasks)) throw new TaskSetError(`${planId} has no Task rows`);
 		const rows = [...body.tasks].sort((a, b) => a.order - b.order);
@@ -154,8 +160,8 @@ export class TaskSets {
 	 * moved onto its head's binding. A repeat for the same plan revision writes nothing; a part-way failure is finished by
 	 * repeating the call, because the TASKS head that marks the set done is written last and heads already made are kept.
 	 */
-	async createFromPlan(planId: string, by: Actor): Promise<TaskSet> {
-		const plan = await this.readPlan(planId);
+	async createFromPlan(planId: string, by: Actor, options: CreateFromPlanOptions = {}): Promise<TaskSet> {
+		const plan = await this.readPlan(planId, options);
 		const tasksId = this.tasksId(plan);
 		const done = await this.readTasksHead(tasksId);
 		if (done !== undefined) {

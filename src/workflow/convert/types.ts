@@ -26,7 +26,7 @@ export interface RawHead {
 /** The rules of the conversion, in the order the applier runs them. */
 export type ConversionRule =
 	| 'rename-id' | 'stamp-epic-created-at' | 'convert-amendment' | 'convert-feedback' | 'migrate-head'
-	| 'create-epic' | 'create-story' | 'create-tasks' | 'move-binding' | 'move-story-history' | 'relabel-issue';
+	| 'create-epic' | 'create-story' | 'create-tasks' | 'backfill-round' | 'move-binding' | 'move-story-history' | 'relabel-issue';
 
 /** One change the plan would make: the rule, the artifact and the stored state that makes the rule apply. */
 export interface ConversionChange {

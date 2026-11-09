@@ -47,6 +47,24 @@ export function epicsOf(heads: readonly RawHead[]): Epic[] {
 	return epics.sort((a, b) => (a.hash < b.hash ? -1 : 1));
 }
 
+const STORY_RECORD = /^(?:LLD|PLAN|BUILD|CR)-([0-9a-f]{16})-([sS]\d+)$/;
+
+/**
+ * The Epics a repair knows: those of the Defines, with every Story any LLD, PLAN, BUILD or CR head names, so a standalone Story with no
+ * Define gets its units too. An ISSUE alone names no Story, so it creates nothing.
+ */
+export function knownEpicsOf(heads: readonly RawHead[]): Epic[] {
+	const epics = new Map(epicsOf(heads).map(e => [e.hash, new Map(e.stories.map(s => [s.id, s.title]))]));
+	for (const head of heads) {
+		const m = STORY_RECORD.exec(head.artifactId);
+		if (m === null) continue;
+		const stories = epics.get(m[1]!) ?? new Map<string, string>();
+		if (!stories.has(storyOf(m[2]!))) stories.set(storyOf(m[2]!), '');
+		epics.set(m[1]!, stories);
+	}
+	return [...epics].sort(([a], [b]) => (a < b ? -1 : 1)).map(([hash, stories]) => ({ hash, stories: [...stories].sort(([a], [b]) => (a < b ? -1 : 1)).map(([id, title]) => ({ id, title })) }));
+}
+
 /** The id of the LLD of a Story as stored, or undefined: either id form (S001 before the rename, s1 after) matches. */
 export function lldOf(heads: readonly RawHead[], hash: string, story: string): RawHead | undefined {
 	return heads.find(h => { const m = /^LLD-([0-9a-f]{16})-([sS]\d+)$/.exec(h.artifactId); return m !== null && m[1] === hash && storyOf(m[2]!) === story; });
@@ -66,23 +84,26 @@ const holdsBinding = (head: RawHead | undefined): boolean => {
 export const epicId = (hash: string): string => ArtifactIds.make({ kind: 'EPIC', epicHash: hash });
 export const storyId = (hash: string, story: string): string => ArtifactIds.make({ kind: 'STORY', epicHash: hash, story });
 
-/** The plan rule: which EPIC and STORY heads are missing and which bindings would move. */
-export const unitsRule: PlanRule = (ctx): RulePlan => {
+/** The plan rule over the Epics `epics` finds: which EPIC and STORY heads are missing and which bindings would move. */
+const unitsRuleOver = (epics: (heads: readonly RawHead[]) => Epic[]): PlanRule => (ctx): RulePlan => {
 	const have = new Set(ctx.heads.map(h => h.artifactId));
 	const changes: ConversionChange[] = [];
-	for (const epic of epicsOf(ctx.heads)) {
+	for (const epic of epics(ctx.heads)) {
 		const def = ctx.heads.find(h => h.artifactId === `DEF-${epic.hash}`);
-		if (!have.has(epicId(epic.hash))) changes.push({ rule: 'create-epic', artifactId: epicId(epic.hash), detail: `from DEF-${epic.hash}, ${epic.stories.length} stories` });
+		if (!have.has(epicId(epic.hash))) changes.push({ rule: 'create-epic', artifactId: epicId(epic.hash), detail: `from ${have.has(`DEF-${epic.hash}`) ? `DEF-${epic.hash}` : 'its records'}, ${epic.stories.length} stories` });
 		if (holdsBinding(def)) changes.push({ rule: 'move-binding', artifactId: `DEF-${epic.hash}`, detail: `to ${epicId(epic.hash)}` });
 		for (const story of epic.stories) {
 			const id = storyId(epic.hash, story.id);
-			if (!have.has(id)) changes.push({ rule: 'create-story', artifactId: id, detail: `from DEF-${epic.hash}` });
+			if (!have.has(id)) changes.push({ rule: 'create-story', artifactId: id, detail: `from ${have.has(`DEF-${epic.hash}`) ? `DEF-${epic.hash}` : 'its records'}` });
 			const lld = lldOf(ctx.heads, epic.hash, story.id);
 			if (holdsBinding(lld)) changes.push({ rule: 'move-binding', artifactId: lld!.artifactId, detail: `to ${id}` });
 		}
 	}
 	return { changes };
 };
+
+export const unitsRule: PlanRule = unitsRuleOver(epicsOf);
+export const repairUnitsRule: PlanRule = unitsRuleOver(knownEpicsOf);
 
 export interface UnitsResult {
 	/** The heads created, in creation order. */
@@ -133,7 +154,7 @@ function moveBinding(repo: string, from: string, to: string, onWrite?: RepairRec
 }
 
 /** Create the EPIC and STORY heads, point each LLD at its STORY, and move the bindings. Safe to run again. */
-export async function applyUnits(repo: string, deps: ConversionDeps, onWrite?: RepairRecorder): Promise<UnitsResult> {
+export async function applyUnits(repo: string, deps: ConversionDeps, onWrite?: RepairRecorder, epics: (heads: readonly RawHead[]) => Epic[] = epicsOf): Promise<UnitsResult> {
 	const created: string[] = [];
 	const moved: { from: string; to: string }[] = [];
 	const ensure = async (id: string, description: string, parent?: string): Promise<void> => {
@@ -145,7 +166,7 @@ export async function applyUnits(repo: string, deps: ConversionDeps, onWrite?: R
 		created.push(id);
 	};
 	const heads = readRawHeads(repo).heads;
-	for (const epic of epicsOf(heads)) {
+	for (const epic of epics(heads)) {
 		const eid = epicId(epic.hash);
 		await ensure(eid, '');
 		if (moveBinding(repo, `DEF-${epic.hash}`, eid, onWrite)) moved.push({ from: `DEF-${epic.hash}`, to: eid });

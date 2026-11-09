@@ -96,7 +96,9 @@ function patchEnvelope(repo: string, id: string, change: (envelope: Record<strin
 	const read = readHead(repo, id);
 	if (read === undefined) throw new ConversionIncomplete(`${id} has no head to patch`, [{ artifactId: id, reason: 'no head' }]);
 	const envelope = isObject(read.head.meta['envelope']) ? read.head.meta['envelope'] : {};
-	const next: Head = { ...read.head, meta: { ...read.head.meta, envelope: change({ ...envelope }) } };
+	const changed = change({ ...envelope });
+	if (JSON.stringify(changed) === JSON.stringify(envelope)) return;   // nothing to write, so nothing to report
+	const next: Head = { ...read.head, meta: { ...read.head.meta, envelope: changed } };
 	writeArtifact(read.path, next, 'meta-only');
 	onWrite?.(id, 'envelope');
 }
@@ -111,11 +113,11 @@ function moveBinding(repo: string, from: string, to: string, onWrite?: RepairRec
 	if (binding === undefined && attachments.length === 0) return false;
 
 	if (binding !== undefined) {
-		const bound = bindArtifact(repo, to, binding.reference.entityId);
+		const written = (id: string): void => onWrite?.(id, 'binding');
+		const bound = bindArtifact(repo, to, binding.reference.entityId, undefined, written);
 		if (!bound.ok) throw new ConversionIncomplete(`the binding of ${from} could not move to ${to}: ${bound.reason}`, [{ artifactId: from, reason: bound.reason }]);
-		onWrite?.(to, 'binding');
-		for (const p of binding.posted) recordPosted(repo, to, p.kind, (p as { externalId?: string }).externalId, () => p.at);
-		if (binding.pendingLink !== undefined && !setPendingLink(repo, to, binding.pendingLink)) {
+		for (const p of binding.posted) recordPosted(repo, to, p.kind, (p as { externalId?: string }).externalId, () => p.at, written);
+		if (binding.pendingLink !== undefined && !setPendingLink(repo, to, binding.pendingLink, written)) {
 			throw new ConversionIncomplete(`the pending link of ${from} could not move to ${to}`, [{ artifactId: from, reason: 'pending link' }]);
 		}
 	}

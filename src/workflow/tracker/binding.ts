@@ -87,10 +87,14 @@ export function readBinding(repoPath: string, artifactId: string): TrackerBindin
 	return read === undefined ? undefined : bindingOf(artifactId, read.head);
 }
 
+/** Told only when a binding change has actually been written to the head. */
+export type BindingWritten = (artifactId: string) => void;
+
 /** Patch the binding of an existing, bound-or-not artifact with `change`; `change` returns the next binding or undefined for no change. */
 function patchBinding(
 	repoPath: string, artifactId: string,
 	change: (current: TrackerBinding | undefined, head: Head) => { readonly next: TrackerBinding; readonly created: boolean } | { readonly fail: BindResult & { readonly ok: false } },
+	written?: BindingWritten,
 ): BindResult {
 	if (hasStagedWrite(repoPath, artifactId)) {
 		return { ok: false, kind: 'staged', reason: `a store write is staged for ${artifactId}; the binding is recorded by the next call` };
@@ -108,6 +112,7 @@ function patchBinding(
 	try {
 		const envelope = isObject(read.head.meta['envelope']) ? read.head.meta['envelope'] : {};
 		writeArtifact(read.path, { ...read.head, meta: { ...read.head.meta, envelope: { ...envelope, binding: changed.next } } }, 'meta-only');
+		written?.(artifactId);
 		return { ok: true, binding: changed.next, created: changed.created };
 	} catch (err) {
 		return { ok: false, kind: 'write', reason: `the binding of ${artifactId} could not be written: ${(err as Error).message}` };
@@ -118,7 +123,7 @@ function patchBinding(
  * Bind the artifact to its one issue: { reference, createdAtRevision, posted: [] }. Idempotent for the same issue; refuses a
  * different one (a unit has exactly one issue). The revision number and content hash do not move.
  */
-export function bindArtifact(repoPath: string, artifactId: string, issue: IssueRef, now: () => string = () => new Date().toISOString()): BindResult {
+export function bindArtifact(repoPath: string, artifactId: string, issue: IssueRef, now: () => string = () => new Date().toISOString(), written?: BindingWritten): BindResult {
 	void now;   // a binding carries the revision it was created at, not a time
 	return patchBinding(repoPath, artifactId, (current, head) => {
 		if (current !== undefined) {
@@ -126,22 +131,22 @@ export function bindArtifact(repoPath: string, artifactId: string, issue: IssueR
 			return { fail: { ok: false, kind: 'conflict', reason: `${artifactId} is bound to ${current.reference.entityId}; it cannot also be bound to ${issue} (a unit has exactly one issue)` } };
 		}
 		return { next: { reference: { entityId: issue, type: TRACKER_ISSUE_TYPE, relation: 'tracked-by' }, createdAtRevision: revisionOf(head), posted: [] }, created: true };
-	});
+	}, written);
 }
 
 /** Record that `kind` was posted to the unit's issue (once; a kind already recorded stays as it was). False when it could not be recorded. */
-export function recordPosted(repoPath: string, artifactId: string, kind: PostedKind, externalId?: string, now: () => string = () => new Date().toISOString()): boolean {
+export function recordPosted(repoPath: string, artifactId: string, kind: PostedKind, externalId?: string, now: () => string = () => new Date().toISOString(), written?: BindingWritten): boolean {
 	const result = patchBinding(repoPath, artifactId, current => {
 		if (current === undefined) return { fail: { ok: false, kind: 'unreadable', reason: `${artifactId} has no binding to record a post on` } };
 		if (current.posted.some(p => p.kind === kind)) return { next: current, created: false };
 		return { next: { ...current, posted: [...current.posted, { kind, at: now(), ...(externalId !== undefined ? { externalId } : {}) }] }, created: false };
-	});
+	}, written);
 	if (!result.ok) log.warn({ artifactId, kind, why: result.kind, reason: result.reason }, 'binding: the post was not recorded');
 	return result.ok;
 }
 
 /** Keep the link under the parent that failed (it needs a child ref or a child id), or clear it with undefined. False when not written. */
-export function setPendingLink(repoPath: string, artifactId: string, link: TrackerBinding['pendingLink']): boolean {
+export function setPendingLink(repoPath: string, artifactId: string, link: TrackerBinding['pendingLink'], written?: BindingWritten): boolean {
 	if (link !== undefined && link.child === undefined && link.childId === undefined) {
 		log.warn({ artifactId }, 'binding: a pending link has to name a child ref or a child id');
 		return false;
@@ -151,7 +156,7 @@ export function setPendingLink(repoPath: string, artifactId: string, link: Track
 		const { pendingLink: _old, ...rest } = current;
 		const next: TrackerBinding = link === undefined ? rest : { ...rest, pendingLink: link };
 		return JSON.stringify(next) === JSON.stringify(current) ? { next: current, created: false } : { next, created: false };
-	});
+	}, written);
 	if (!result.ok) log.warn({ artifactId, why: result.kind, reason: result.reason }, 'binding: the pending link was not written');
 	return result.ok;
 }

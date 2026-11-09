@@ -125,6 +125,43 @@ test('a failure injected in the head migration step answers a RepairReport whose
 	} finally { l.done(); }
 });
 
+test('moving a binding reports each write it made, including a failed pending link, and a later run reports none for it', async () => {
+	const story = `STORY-${H}-s1`;
+	const withBinding = (repo: string, link: unknown): void => {
+		const stored = head(repo, OLD_LLD);
+		const envelope = stored.meta['envelope'];
+		put(repo, OLD_LLD, { ...stored, citations: [], meta: { ...stored.meta, envelope: { ...envelope, binding: { ...envelope.binding, posted: [{ kind: 'design', at: 't', externalId: 'c1' }, { kind: 'plan', at: 't', externalId: 'c2' }], ...(link !== undefined ? { pendingLink: link } : {}) } } } });
+	};
+	const bindingWrites = (r: RepairResult) => r.written.filter(w => w.artifactId === story && w.action === 'binding').length;
+
+	// the reference, the two posts and the pending link are each their own write
+	const l = legacyRepo();
+	try {
+		withBinding(l.repo, { parent: { entityId: story, type: 'STORY', relation: 'derived-from' }, childId: 'x' });
+		const first = result(await runRepair(l.repo, 'repair'));
+		assert.equal(first.stoppedAt, undefined, JSON.stringify(first.stoppedAt));
+		assert.equal(bindingWrites(first), 4, JSON.stringify(first.written.filter(w => w.artifactId === story)));
+		assert.equal(head(l.repo, story).meta['envelope'].binding.posted.length, 2);
+
+		// the next run has other work to do, and moves no binding: nothing is reported for what it did not write
+		put(l.repo, `LLD-${H}-S009`, { meta: { workflow: 'design.story', epicHash: H, storyId: 'S009', createdAt: 't', epicCreatedAt: 't', revision: 1 }, body: { goal: 'g' }, citations: [] });
+		const again = result(await runRepair(l.repo, 'repair'));
+		assert.ok(again.written.length > 0, 'control: this run did write');
+		assert.deepEqual(again.written.filter(w => w.artifactId === story || w.artifactId === LLD), []);
+	} finally { l.done(); }
+
+	// a pending link that cannot be written stops the step with the writes before it listed
+	const bad = legacyRepo();
+	try {
+		withBinding(bad.repo, { parent: { entityId: story, type: 'STORY', relation: 'derived-from' } });
+		const r = result(await runRepair(bad.repo, 'repair'));
+		assert.equal(r.stoppedAt?.step, 'units', JSON.stringify(r.stoppedAt));
+		assert.match(r.stoppedAt?.reason ?? '', /pending link/);
+		assert.equal(bindingWrites(r), 3, 'the reference and both posts were committed');
+		assert.equal(head(bad.repo, story).meta['envelope'].binding.posted.length, 2);
+	} finally { bad.done(); }
+});
+
 test('a plan with a rename collision answers an error and writes nothing', async () => {
 	const l = legacyRepo();
 	try {

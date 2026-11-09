@@ -48,16 +48,6 @@ function lineKey(line: string): string | undefined {
 }
 
 /**
- * True when the entry names a candidate module: its whole path, or the whole path followed by an annotation in
- * brackets or after a dash. A longer path that merely begins with a candidate's (`src/a b` for `src/a`) is another module.
- */
-function isExcluded(key: string, excluded: ReadonlySet<string>): boolean {
-	if (excluded.has(key)) return true;
-	for (const p of excluded) if (key.startsWith(`${p} (`) || key.startsWith(`${p} — `) || key.startsWith(`${p} - `) || key.startsWith(`${p}: `)) return true;
-	return false;
-}
-
-/**
  * Lists a prompt dedupes (Related docs by file, Related modules by path, the
  * surface by file or path) are listed once in the concatenation of the parts,
  * the first occurrence winning. A `surface` entry covers the whole layer; any
@@ -85,6 +75,16 @@ export function dedupeLayer(text: string, layer: string, target: SynthesizerProm
 		out.push(line);
 	}
 	return out.join('\n');
+}
+
+/**
+ * True when the entry names a candidate module: its whole path, or the whole path followed by an annotation in
+ * brackets or after a dash. A longer path that merely begins with a candidate's (`src/a b` for `src/a`) is another module.
+ */
+function isExcluded(key: string, excluded: ReadonlySet<string>): boolean {
+	if (excluded.has(key)) return true;
+	for (const p of excluded) if (key.startsWith(`${p} (`) || key.startsWith(`${p} — `) || key.startsWith(`${p} - `) || key.startsWith(`${p}: `)) return true;
+	return false;
 }
 
 /** The bundle layers of a divided answer. */

@@ -273,8 +273,12 @@ createInterface({ input: process.stdin }).on('line', line => {
 			}
 			const count = readFileSync(callsFile, 'utf8').trim().split('\n').length;
 			const text = mode === 'flaky' && count === 1 ? 'not JSON' : '{"answer":';
-			event('history/entryAdded', { turnId: turn.id, entry: { type: 'message', role: 'assistant', id: 'answer', content: [{ type: 'text', text }] } });
-			if (text !== 'not JSON') event('history/entryUpdated', { turnId: turn.id, entryId: 'answer', patch: [{ op: 'append', path: '/content/0/text', value: '42}' }] });
+			const content = [{ type: 'text', text }, ...(text === 'not JSON' ? [] : [{ type: 'text', text: '3}' }])];
+			event('history/entryAdded', { turnId: turn.id, entry: { type: 'message', role: 'assistant', id: 'answer', content } });
+			if (text !== 'not JSON') event('history/entryUpdated', { turnId: turn.id, entryId: 'answer', patch: [
+				{ op: 'append', path: '/content/0/text', value: '4' },
+				{ op: 'replace', path: '/content/1/text', value: '2}' },
+			] });
 			event('turn/completed', { turn: { ...turn, status: 'completed' } });
 			return;
 		}

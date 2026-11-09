@@ -224,7 +224,8 @@ export function vibeAssistantOutput(): {
 	last: () => string;
 } {
 	let currentId: string | undefined;
-	let text = '';
+	let blocks: Array<string | undefined> = [];
+	let length = 0;
 	return {
 		accept(method, params) {
 			if (method === 'history/entryAdded') {
@@ -232,21 +233,28 @@ export function vibeAssistantOutput(): {
 				if (entry?.['type'] !== 'message' || entry['role'] !== 'assistant' || typeof entry['id'] !== 'string'
 					|| !Array.isArray(entry['content'])) return;
 				currentId = entry['id'];
-				text = entry['content'].flatMap(block => {
+				blocks = entry['content'].map(block => {
 					const item = record(block);
-					return item?.['type'] === 'text' && typeof item['text'] === 'string' ? [item['text']] : [];
-				}).join('\n');
+					return item?.['type'] === 'text' && typeof item['text'] === 'string' ? item['text'] : undefined;
+				});
+				length = blocks.reduce<number>((total, text) => total + (text?.length ?? 0), 0);
 			} else if (currentId !== undefined && params['entryId'] === currentId && Array.isArray(params['patch'])) {
 				for (const item of params['patch']) {
 					const patch = record(item);
-					if (patch?.['path'] !== '/content/0/text' || typeof patch['value'] !== 'string') continue;
-					if (patch['op'] === 'append') text += patch['value'];
-					else if (patch['op'] === 'replace') text = patch['value'];
+					const path = patch?.['path'];
+					const index = typeof path === 'string' ? /^\/content\/(\d+)\/text$/.exec(path)?.[1] : undefined;
+					if (index === undefined || typeof patch?.['value'] !== 'string') continue;
+					const i = Number(index);
+					const old = blocks[i];
+					if (old === undefined) continue;
+					const next = patch['op'] === 'append' ? old + patch['value'] : patch['op'] === 'replace' ? patch['value'] : old;
+					blocks[i] = next;
+					length += next.length - old.length;
 				}
 			}
-			if (text.length > MAX_FRAME_CHARS) throw new Error('Vibe assistant output exceeded the output limit');
+			if (length > MAX_FRAME_CHARS) throw new Error('Vibe assistant output exceeded the output limit');
 		},
-		last: () => text,
+		last: () => blocks.join(''),
 	};
 }
 

@@ -9,19 +9,23 @@ import { checkSidecarEntrySize, designHistoryLimit } from '../../artifact-core/s
 import { reviewReference } from '../report-log.js';
 import { authorPartyOf } from '../party.js';
 import { readDesignFile, assertDesignSubjectUnchanged } from './subject.js';
-import { designCheckpointPath } from './checkpoint.js';
+import { designCheckpointPath, qualifiedDesignProjection } from './checkpoint.js';
 import { designPreservationDigest, designWorkflowDigest, validatePermanentDesignReview } from './history.js';
 import type { PermanentDesignReview } from './history.js';
-import { requireDesign, DesignReviewError } from './contracts.js';
-import type { DesignReviewCheckpoint, DesignPublication } from './contracts.js';
+import { requireDesign, DesignReviewError, isDesignAdmission } from './contracts.js';
+import type { DesignReviewCheckpoint, DesignPublication, StoredDesignCheckpoint } from './contracts.js';
+import { persistReviewResourceAudit } from '../resource-audit.js';
 
 const sha=(raw:string)=>createHash('sha256').update(raw).digest('hex');
 export interface DesignPublicationDeps { readonly store?:ArtifactStore; readonly historyLimit?:(()=>number); }
 /** Refuse a known impossible minimum before spending provider work. Growth is
  * checked again by the exact frame/journal writer and remains persistence-only.
  */
-export function preflightDesignPublication(cp:DesignReviewCheckpoint,limit:number=designHistoryLimit()):void {
- const minimum=Buffer.byteLength(JSON.stringify(cp.attempts.map(({progress:_p,current:_c,publication:_r,...a})=>a)));
+export function preflightDesignPublication(cp:StoredDesignCheckpoint,limit:number=designHistoryLimit()):void {
+ const minimum=Buffer.byteLength(JSON.stringify(cp.attempts.map(a=>{
+  if(isDesignAdmission(a)){const {progress:_p,...evidence}=a;return evidence;}
+  const {progress:_p,current:_c,publication:_r,...evidence}=a;return evidence;
+ })));
  requireDesign(limit<=designHistoryLimit()&&minimum<=limit,'publication_capacity','Known review history exceeds permanent publication capacity before dispatch');
 }
 /** Observer fields have a canonical stored projection. They are not review evidence.
@@ -36,10 +40,13 @@ function historyCheckpoint(cp:DesignReviewCheckpoint):DesignReviewCheckpoint {
  }))};
 }
 /** Atomic journalled publication under the artifact store's existing queue; never calls a provider. */
-export async function publishDesignReview(cp:DesignReviewCheckpoint,deps:DesignPublicationDeps={}):Promise<DesignPublication> {
+export async function publishDesignReview(input:StoredDesignCheckpoint,deps:DesignPublicationDeps={}):Promise<DesignPublication> {
+ const cp=qualifiedDesignProjection(input);
+ requireDesign(cp&&input.attempts.at(-1)?.number===cp.attempts.at(-1)?.number&&!isDesignAdmission(input.attempts.at(-1)!),'publication_incomplete','Unverified admission has no consolidated report');
  const store=deps.store??createRepoLifecycle(cp.project).store,attempt=cp.attempts.at(-1)!;
  requireDesign(attempt.report,'publication_incomplete','No consolidated report to publish');
- const preservation=designPreservationDigest(cp),id=sha(`design-review-v1\0${cp.project}\0${cp.artifactId}\0${cp.reviewId}\0${attempt.number}\0${preservation}`);
+ const preservation=designPreservationDigest(input),id=sha(`design-review-v1\0${cp.project}\0${cp.artifactId}\0${cp.reviewId}\0${attempt.number}\0${preservation}`);
+ await persistReviewResourceAudit(store,cp.artifactId,{project:cp.project,family:'design',reviewId:cp.reviewId},input.attempts.flatMap(a=>'resourceGuard' in a&&a.resourceGuard?[{attempt:a.number,resourceGuard:a.resourceGuard}]:[]));
  const author=authorPartyOf(JSON.parse(attempt.baseline.reviewedContent.canonical).meta);
  requireDesign(author!=='unknown'&&author!==cp.subject.reviewer,'publication_party','Unknown or non-independent author');
  const actor:Actor={id:`agent:design-review-${cp.subject.reviewer}`,kind:'agent',properties:{party:cp.subject.reviewer}};
@@ -55,12 +62,17 @@ export async function publishDesignReview(cp:DesignReviewCheckpoint,deps:DesignP
   }
   assertDesignSubjectUnchanged(cp.subject,attempt.baseline);
   requireDesign(checkHeadIntegrity({description:current.description,payload:current.payload,lifecycle:current.lifecycle}).ok,'artifact_changed','Reviewed head integrity changed');
-  const normalized=historyCheckpoint(cp),record:PermanentDesignReview={kind:'design-chunk-review',schemaVersion:1,
-   reviewId:cp.reviewId,project:cp.project,artifactId:cp.artifactId,subject:cp.subject,submitted:cp.submitted,
-   reviewer:cp.subject.reviewer,attempts:normalized.attempts,applicableAttempt:attempt.number,status:attempt.report!.status,
+  const normalized=historyCheckpoint(cp),common={kind:'design-chunk-review' as const,
+   reviewId:cp.reviewId,project:cp.project,artifactId:cp.artifactId,subject:cp.subject,
+   reviewer:cp.subject.reviewer,applicableAttempt:attempt.number,status:attempt.report!.status,
    binding:{sourceRevision:{number:current.lifecycle.revision.number,contentHash:current.lifecycle.revision.contentHash||contentHash(current.description,current.payload)},
     reviewedContentIdentity:attempt.baseline.contentIdentity,documentDigest:attempt.baseline.subjectFingerprints.document,
     workflowDigest:designWorkflowDigest(cp.subject.workflow),author},preservationDigest:preservation};
+  const record:PermanentDesignReview=input.schemaVersion===1
+   ?{...common,schemaVersion:1,submitted:cp.submitted,attempts:normalized.attempts}
+   :{...common,schemaVersion:2,...(input.submitted?{submitted:input.submitted}:{}),
+     attempts:input.attempts.filter(a=>!isDesignAdmission(a)).map(a=>{const clean=normalized.attempts.find(n=>n.number===a.number)!;return{...a,...clean};}),
+     admissionFailures:input.attempts.filter(isDesignAdmission).map(a=>({...a,progress:{...a.progress,freshness:'stored' as const,sequence:0}}))};
   validatePermanentDesignReview(record,{project:cp.project,artifactId:cp.artifactId});
   const verdict=attempt.report!.status==='passed'?'pass':'block',at=attempt.finishedAt??attempt.startedAt;
   const lifecycle=nextLifecycle({id:current.id,lifecycle:current.lifecycle},'review',actor,at,

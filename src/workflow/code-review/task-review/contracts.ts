@@ -106,6 +106,7 @@ export function parsePacket(input: unknown, historical = false): ReviewPacket {
 export interface ReviewAttempt {
  resourceGuard?: ReviewResourceGuard;
  acceptedAt?: string;
+ operation?: ReviewOperation;
  progress?: ReviewProgress;
  header: { attempt: number; reviewer: ReviewerParty; status: ReviewStatus; createdAt: string; completedAt?: string; activeTaskId?: string; interrupted?: boolean; selectedTaskIds: readonly string[]; derived?: StoredDerived | undefined; buildFingerprint?: string; attributionRepair?: { rejections: number; feedback: string }; reassessmentSummary?: string;
  finalScopeIdentity?: string; attributionState?: 'pending' | 'accepted' | 'failed'; acceptedAttribution?: readonly AcceptedTaskAttribution[]; taskScopeIdentities?: readonly { taskId: string; identity: string }[]; attributionIdentity?: string; attributionFailure?: { code: string; summary: string } };
@@ -120,8 +121,8 @@ export interface CompletedReviewSummary {
 }
 /** Publication is deliberately distinct from the legacy dimension-shaped version-1 CR. */
 export interface TaskBasedCodeReviewRecord {
- meta: { workflow: 'code-review'; schemaVersion: 2 };
- body: { kind: 'code-review'; format: 'task-based'; storyId: string; status: TaskReviewResult['status']; reviews: readonly CompletedReviewSummary[] };
+ meta: { workflow: 'code-review'; schemaVersion: 2 | 3 };
+ body: { kind: 'code-review'; format: 'task-based'; storyId: string; status: TaskReviewResult['status']; reviews: readonly CompletedReviewSummary[]; admissionFailures?: readonly { reviewId: string; attempt: CodeAdmissionAttempt }[] };
 }
 
 export const CheckpointSchema = Type.Object({ schemaVersion:Type.Literal(1), reviewId:text, project:text, storyId:text, taskId:Type.Optional(text), attempts:Type.Array(Type.Object({
@@ -148,7 +149,7 @@ export const CodeAdmissionAttemptSchema = object({
 export type CodeAdmissionAttempt = Static<typeof CodeAdmissionAttemptSchema>;
 const QualifiedAttemptSchema = object({
  ...cloneFields(CheckpointSchema.properties.attempts.items.properties),
- acceptedAt: Type.Optional(text), resourceGuard: Type.Optional(ReviewResourceGuardSchema),
+ acceptedAt: Type.Optional(text), operation: Type.Optional(Type.Union([Type.Literal('start'), Type.Literal('resume')])), resourceGuard: Type.Optional(ReviewResourceGuardSchema),
 });
 export const AdmissionCheckpointSchema = object({
  ...cloneFields(CheckpointSchema.properties), schemaVersion: Type.Literal(2),

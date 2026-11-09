@@ -64,7 +64,7 @@ export function qualifyCodeAdmission(checkpoint: AdmissionCheckpoint, qualified:
  requireReview(qualified.header.attempt === saved.header.attempt && qualified.header.reviewer === saved.header.reviewer && isDeepStrictEqual(qualified.submitted, saved.submitted), 'packet', 'Qualified input is pinned');
  requireReview(qualified.header.createdAt === saved.header.createdAt, 'admission', 'Admission creation time is pinned');
  requireReview(qualified.header.status === 'pending' && qualified['review-response'].crPublication === 'pending' && qualified['review-response'].tasks.length === 0, 'admission', 'Qualification cannot supply completed review results');
- const next = { ...qualified, acceptedAt: saved.acceptedAt, ...(saved.resourceGuard ? { resourceGuard: saved.resourceGuard } : {}) };
+ const next = { ...qualified, acceptedAt: saved.acceptedAt, operation: saved.operation, ...(saved.resourceGuard ? { resourceGuard: saved.resourceGuard } : {}) };
  requireReview(!qualified.resourceGuard || isDeepStrictEqual(qualified.resourceGuard, saved.resourceGuard), 'resourceGuard', 'Qualification cannot replace unresolved resources');
  return decodeStoredCheckpoint({ ...checkpoint, attempts: [...checkpoint.attempts.slice(0, -1), next] }) as AdmissionCheckpoint;
 }

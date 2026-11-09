@@ -53,14 +53,14 @@ function checkEvolution(previous:DesignReviewCheckpoint,next:DesignReviewCheckpo
    added.preparationKind==='impact'&&previous.attempts.every((a,i)=>same(a,next.attempts[i]));
   const restart=old.status==='invalidated'&&source?.status==='invalidated'&&
    (added.preparationKind??'planning')==='planning'&&!added.impact&&
-   source.actions?.some(a=>a.operation==='restart_full'&&a.userDecision?.action==='restart_full'&&a.resultAttempt===next.attempts.length);
+   source.actions?.some(a=>a.operation==='restart_full'&&a.userDecision?.action==='restart_full'&&a.resultAttempt===added.number);
   requireDesign(correction||restart,'immutable_history','New attempt requires a complete terminal correction or approved full restart of invalidated work');
  }
  if(next.attempts.length===previous.attempts.length)requireDesign(same(previous.subject,next.subject),'immutable_history','Cannot replace an active subject');
- for(const old of previous.attempts){
-  const current=next.attempts[old.number-1];
+ for(const [index,old] of previous.attempts.entries()){
+  const current=next.attempts.find(a=>a.number===old.number);
   requireDesign(current,'immutable_history','Cannot remove an admitted attempt');
-  if(old.number<previous.attempts.length){requireDesign(same(old,current),'immutable_history','Cannot change a prior attempt');continue;}
+  if(index<previous.attempts.length-1){requireDesign(same(old,current),'immutable_history','Cannot change a prior attempt');continue;}
   requireDesign(same(current.baseline,old.baseline)&&same(current.inventory,old.inventory),'immutable_history','Cannot replace an admitted baseline/inventory');
   requireDesign(same(current.preparationKind,old.preparationKind),'immutable_history','Cannot replace preparation kind');
   requireDesign(!old.impact||same(current.impact,old.impact),'immutable_history','Cannot replace accepted impact');
@@ -106,20 +106,21 @@ async function checkDirectories(project: string, create: boolean): Promise<boole
  }
  return true;
 }
-export function validateDesignCheckpointIdentity(project: string, id: string, checkpoint: DesignReviewCheckpoint): void {
+export function validateDesignCheckpointIdentity(project: string, id: string, checkpoint: DesignReviewCheckpoint, admissionNumbers: readonly number[] = []): void {
  const key=ArtifactIds.parse(checkpoint.artifactId);
  requireDesign(checkpoint.reviewId===id&&checkpoint.project===project&&checkpoint.subject.project===project&&checkpoint.subject.artifactId===checkpoint.artifactId,'foreign_checkpoint','Checkpoint identity does not match request');
  requireDesign(key&&['DEF','HLD','LLD'].includes(key.kind)&&key.kind===checkpoint.subject.kind,'foreign_checkpoint','Invalid checkpoint subject');
  requireDesign(checkpoint.subject.canonicalPath===artifactJsonPath(project,checkpoint.artifactId),'foreign_checkpoint','Noncanonical subject in checkpoint');
  const doc=relative(join(project,'docs'),checkpoint.subject.documentPath);
  requireDesign(doc!==''&&!doc.startsWith('..')&&!isAbsolute(doc),'foreign_checkpoint','Subject document must remain in project docs');
- requireDesign(checkpoint.attempts.every((a,i)=>a.number===i+1),'invalid_checkpoint','Attempt sequence is not contiguous');
+ const numbers=[...checkpoint.attempts.map(a=>a.number),...admissionNumbers].sort((a,b)=>a-b);
+ requireDesign(numbers.every((number,i)=>number===i+1),'invalid_checkpoint','Attempt sequence is not contiguous');
  const actionIds=checkpoint.attempts.flatMap(a=>(a.actions??[]).map(action=>action.actionId));
  requireDesign(new Set(actionIds).size===actionIds.length,'invalid_checkpoint','Duplicate recovery action identity');
  for(const attempt of checkpoint.attempts) {
   checkRecovery(attempt);
   requireDesign((attempt.preparationKind??'planning')==='impact'?!!attempt.plan===!!attempt.impact:!attempt.impact,'invalid_checkpoint','Impact preparation requires an atomic plan/impact pair; full planning cannot retain coverage');
-  requireDesign((attempt.actions??[]).every(a=>a.resultAttempt<=checkpoint.attempts.length),'invalid_checkpoint','Recovery action names an absent attempt');
+  requireDesign((attempt.actions??[]).every(a=>a.resultAttempt<=numbers.length),'invalid_checkpoint','Recovery action names an absent attempt');
   requireDesign(attempt.progress.checkpointPath===designCheckpointPath(project,id),'foreign_checkpoint','Progress names another checkpoint');
   requireDesign(attempt.completedChunks.every(r=>Buffer.byteLength(JSON.stringify(r))<=DESIGN_LIMITS.resultBytes),'result_too_large','Stored chunk result exceeds page limit');
   const ids=new Set(attempt.completedChunks.map(r=>r.chunkId));
@@ -195,29 +196,27 @@ async function writeDesignCheckpointBytes(path: string, raw: string): Promise<vo
  }
 }
 
-/** Qualified prefix only until the history readers in the following task
- * support failed-admission gaps. Refuse an ambiguous conversion explicitly. */
-function qualifiedDesignProjection(cp: StoredDesignCheckpoint): DesignReviewCheckpoint | undefined {
+/** A view for existing evidence validators; original attempt numbers remain
+ * intact. Admission failures never become synthetic chunk assessments. */
+export function qualifiedDesignProjection(cp: StoredDesignCheckpoint): DesignReviewCheckpoint | undefined {
  if (cp.schemaVersion === 1) return cp;
  const attempts: DesignAttempt[] = [];
- let admissionSeen = false;
  for (const attempt of cp.attempts) {
-  if (isDesignAdmission(attempt)) { admissionSeen = true; continue; }
-  requireDesign(!admissionSeen, 'unsupported_checkpoint', 'Qualified history after admission gaps requires admission-aware history readers');
-  const { resourceGuard: _guard, acceptedAt: _at, submitted: _input, ...qualified } = attempt;
+  if (isDesignAdmission(attempt)) continue;
+  const { resourceGuard: _guard, acceptedAt: _at, submitted: _input, actionId: _action, operation: _operation, ...qualified } = attempt;
   attempts.push(qualified);
  }
  if (!attempts.length) {
   requireDesign(!cp.subject && !cp.artifactId && !cp.submitted, 'invalid_checkpoint', 'Unverified admission cannot carry accepted subject authority');
   return undefined;
  }
- requireDesign(cp.subject && cp.artifactId && cp.submitted, 'invalid_checkpoint', 'Qualified history needs its original subject and submission');
- return { schemaVersion: 1, reviewId: cp.reviewId, project: cp.project, artifactId: cp.artifactId, subject: cp.subject, submitted: cp.submitted, attempts };
+ requireDesign(cp.subject && cp.artifactId, 'invalid_checkpoint', 'Qualified history needs its verified subject');
+ return { schemaVersion: 1, reviewId: cp.reviewId, project: cp.project, artifactId: cp.artifactId, subject: cp.subject, submitted: cp.submitted ?? { artifactPath: cp.subject.canonicalPath, attempt: attempts[0]!.number }, attempts };
 }
-function validateStoredDesignIdentity(project: string, id: string, cp: StoredDesignCheckpoint): void {
+export function validateStoredDesignIdentity(project: string, id: string, cp: StoredDesignCheckpoint): void {
  requireDesign(cp.project === project && cp.reviewId === id, 'foreign_checkpoint', 'Checkpoint identity does not match request');
  const prefix = qualifiedDesignProjection(cp);
- if (prefix) validateDesignCheckpointIdentity(project, id, prefix);
+ if (prefix) validateDesignCheckpointIdentity(project, id, prefix, cp.schemaVersion === 2 ? cp.attempts.filter(isDesignAdmission).map(a=>a.number) : []);
  if (cp.schemaVersion === 2) for (const attempt of cp.attempts) if (isDesignAdmission(attempt)) {
   requireDesign(attempt.progress.checkpointPath === designCheckpointPath(project, id), 'foreign_checkpoint', 'Progress names another checkpoint');
   // The requested file is not resolved or treated as a verified subject yet.

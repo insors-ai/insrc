@@ -235,7 +235,8 @@ export const DesignAdmissionAttemptSchema = object({
 });
 export type DesignAdmissionAttempt = Static<typeof DesignAdmissionAttemptSchema>;
 export const ResourceDesignAttemptSchema = object({ ...DesignAttemptSchema.properties,
- submitted: Type.Optional(DesignCheckpointSchema.properties.submitted),
+ submitted: Type.Optional(DesignAdmissionAttemptSchema.properties.submitted),
+ actionId: Type.Optional(id), operation: Type.Optional(enumeration(['start','recover'])),
  acceptedAt: Type.Optional(timestamp), resourceGuard: Type.Optional(ReviewResourceGuardSchema),
 });
 export type ResourceDesignAttempt = Static<typeof ResourceDesignAttemptSchema>;

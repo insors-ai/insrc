@@ -41,11 +41,16 @@ export function checkDesignAdmissionEvolution(previous: StoredDesignCheckpoint, 
  for (const [i, old] of previous.attempts.entries()) {
   const current = next.attempts[i]!;
   if (isDesignAdmission(old)) {
-   requireDesign(isDesignAdmission(current), 'invalid_checkpoint', 'Admission qualification requires the family qualification transition');
-   requireDesign(same(old.submitted, current.submitted) && old.actionId === current.actionId && old.operation === current.operation && old.reviewer === current.reviewer && old.acceptedAt === current.acceptedAt && old.startedAt === current.startedAt, 'immutable_history', 'Cannot replace pinned admission input/action');
-   if (old.status === 'failed' || old.status === 'interrupted') requireDesign(same({ ...old, resourceGuard: undefined }, { ...current, resourceGuard: undefined }), 'immutable_history', 'Terminal admission requires explicit recovery or next attempt');
+   if (isDesignAdmission(current)) {
+    requireDesign(same(old.submitted, current.submitted) && old.actionId === current.actionId && old.operation === current.operation && old.reviewer === current.reviewer && old.acceptedAt === current.acceptedAt && old.startedAt === current.startedAt, 'immutable_history', 'Cannot replace pinned admission input/action');
+    if (old.status === 'failed' || old.status === 'interrupted') requireDesign(same({ ...old, resourceGuard: undefined }, { ...current, resourceGuard: undefined }), 'immutable_history', 'Terminal admission requires explicit recovery or next attempt');
+   } else {
+    requireDesign(['pending','running'].includes(old.status) && same(old.submitted, current.submitted) && current.actionId === old.actionId && current.operation === old.operation && current.acceptedAt === old.acceptedAt && current.startedAt === old.startedAt && current.reviewer === old.reviewer, 'immutable_history', 'Qualification must preserve the active pinned admission');
+    requireDesign(current.status === 'pending' && !current.plan && !current.impact && !current.report && !current.completedChunks.length && !current.current && !current.unit && !current.publication, 'invalid_checkpoint', 'Qualification cannot supply review results or dispatch authority');
+   }
   } else {
    requireDesign(!isDesignAdmission(current), 'immutable_history', 'Cannot downgrade qualified history');
+   for (const field of ['submitted','acceptedAt','actionId','operation']) requireDesign(same(Reflect.get(old,field),Reflect.get(current,field)), 'immutable_history', 'Cannot replace qualified admission identity');
    // The disk writer checks the qualified projection with the existing
    // execution evolution validator, including all accepted feedback.
    if (i < previous.attempts.length - 1) requireDesign(same({ ...old, resourceGuard: undefined }, { ...current, resourceGuard: undefined }), 'immutable_history', 'Cannot rewrite prior qualified history');
@@ -57,6 +62,7 @@ export function checkDesignAdmissionEvolution(previous: StoredDesignCheckpoint, 
  }
  if (next.attempts.length > previous.attempts.length) {
   const last = previous.attempts.at(-1)!;
+  requireDesign(isDesignAdmission(next.attempts.at(-1)!), 'invalid_checkpoint', 'New attempts must first persist unverified admission');
   requireDesign(isDesignAdmission(last) ? last.status === 'failed' || last.status === 'interrupted' : ['passed','changes_requested','incomplete'].includes(last.status) && last.report?.status === last.status && last.publication?.state === 'complete', 'invalid_checkpoint', 'New admission requires an explicit terminal predecessor');
  }
 }

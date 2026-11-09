@@ -153,7 +153,7 @@ full walk-through.
 ## Build & test (from source)
 
 ```bash
-npm install        # runtime + dev deps
+CXXFLAGS=-std=c++17 npm install        # runtime + dev deps; fs-ext needs the C++ standard set
 npm run build      # tsc + copy-assets.mjs
 
 npx tsx --test 'src/**/__tests__/*.test.ts'    # full sweep

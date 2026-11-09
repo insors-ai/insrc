@@ -79,7 +79,7 @@ binary registered with Claude Code / Codex is `out/bin/insrc-mcp.js`.
 ## Build and run
 
 ```bash
-npm install                           # installs runtime + dev deps
+CXXFLAGS=-std=c++17 npm install       # installs runtime + dev deps; fs-ext needs the C++ standard set
 npm run build                         # tsc + copy-assets.mjs
 npx tsx --test 'src/**/__tests__/*.test.ts'   # full test sweep
 ```

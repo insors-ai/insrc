@@ -73,7 +73,7 @@ export interface VibeChatJob {
   readonly catalog: readonly VibeCatalogModel[];
 }
 
-export async function runVibeChatJob(job: VibeChatJob, signal: AbortSignal, write: (line: string) => void): Promise<number> {
+export async function runVibeChatJob(job: VibeChatJob, signal: AbortSignal, write: (line: string) => void, ownedGroup: boolean): Promise<number> {
   const { command, request, catalog } = job;
   let sessionId = request.resume?.nativeSessionId;
   const emit = (row: Row): void => {
@@ -81,7 +81,7 @@ export async function runVibeChatJob(job: VibeChatJob, signal: AbortSignal, writ
   };
   try {
     const result = await runVerifiedVibeTurn({
-      command, cwd: request.cwd, timeoutMs: 600_000, signal, inheritProcessGroup: true,
+      command, cwd: request.cwd, timeoutMs: 600_000, signal, inheritProcessGroup: ownedGroup,
       agentConfig: {
         cwd: request.cwd,
         headless: true,

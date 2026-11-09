@@ -1971,7 +1971,8 @@ test('vibe: title generation uses the same explicit programmatic prompt transpor
 
 const VERIFIED_VIBE_CHAT = String.raw`#!/usr/bin/env node
 import assert from 'node:assert/strict';
-import { appendFileSync, existsSync, readFileSync } from 'node:fs';
+import { spawn } from 'node:child_process';
+import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 const mode = readFileSync(new URL('./mode', import.meta.url), 'utf8');
 const log = new URL('./requests', import.meta.url);
@@ -2005,6 +2006,13 @@ createInterface({ input: process.stdin }).on('line', line => {
       return;
     case 'turn/start':
       if (mode === 'lost') process.exit(1);
+      if (mode.startsWith('pipe-')) {
+        const descendant = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], {
+          stdio: ['ignore', 'inherit', 'inherit'],
+        });
+        writeFileSync(new URL('./descendant', import.meta.url), String(descendant.pid));
+        descendant.unref();
+      }
       assert.equal(activeModel.thinking, 'high');
       reply(id, { turn: turn('in_progress') });
       event('turn/started', { turn: turn('in_progress') });
@@ -2012,6 +2020,7 @@ createInterface({ input: process.stdin }).on('line', line => {
       history({ type: 'message', role: 'assistant', id: 'msg', generationStatus: 'in_progress', content: [{ type: 'text', text: 'hello ' }] });
       event('history/entryUpdated', { turnId, entryId: 'msg', patch: [{ op: 'append', path: '/content/0/text', value: 'world' }] });
       history({ type: 'effect', id: 'tool', generationStatus: 'completed', detail: { toolName: 'bash', input: { command: 'ls' } }, state: { status: 'completed', outputText: 'file' } });
+      if (mode === 'pipe-exit') return process.stdout.write('', () => process.exit(1));
       if (mode === 'detach') {
         const timer = setInterval(() => {
           if (!existsSync(new URL('./release', import.meta.url))) return;
@@ -2019,7 +2028,7 @@ createInterface({ input: process.stdin }).on('line', line => {
           history({ type: 'message', role: 'assistant', id: 'later', generationStatus: 'completed', content: [{ type: 'text', text: ' after host exit' }] });
           event('turn/completed', { turn: turn('completed') });
         }, 10);
-      } else if (mode !== 'hang') event('turn/completed', { turn: turn('completed') });
+      } else if (mode !== 'hang' && mode !== 'pipe-hang') event('turn/completed', { turn: turn('completed') });
       return;
     case 'turn/interrupt':
       assert.equal(params.expectedTurnId, turnId);
@@ -2083,6 +2092,8 @@ test('explicit Vibe chat preserves resume, attachments, permissions and live eve
   } finally { fixture.cleanup(); }
 });
 
+const vibeWorkerFailureExit = process.platform === 'win32' ? { code: 1, signal: null } : { code: null, signal: 'SIGKILL' };
+
 test('explicit Vibe chat refuses mismatch and marks uncertain dispatch as unsafe to replay', async () => {
   for (const [mode, dispatches] of [['mismatch', 0], ['lost', 1]] as const) {
     const fixture = verifiedVibeChat(mode);
@@ -2093,9 +2104,48 @@ test('explicit Vibe chat refuses mismatch and marks uncertain dispatch as unsafe
       assert.equal(done?.ok, false);
       assert.equal(done?.replayUnsafe, mode === 'lost' ? true : undefined);
       assert.equal(fixture.calls().filter(call => call.method === 'turn/start').length, dispatches);
-      assert.equal((await process?.exit)?.code, 1);
+      assert.deepEqual(await process?.exit, vibeWorkerFailureExit);
       assert.equal(await fixture.adapter.stopTurnVerified?.(done!.turnId), undefined);
     } finally { fixture.cleanup(); }
+  }
+});
+
+test('explicit Vibe worker settles and stops descendants holding app-server output pipes', {
+  skip: process.platform === 'win32', timeout: 10_000,
+}, async ({ signal }) => {
+  for (const mode of ['pipe-complete', 'pipe-exit', 'pipe-hang']) {
+    const fixture = verifiedVibeChat(mode);
+    const pidFile = join(fixture.request.cwd, 'descendant');
+    let worker: TurnProcess | undefined;
+    const forceStop = () => worker?.kill('SIGKILL');
+    signal.addEventListener('abort', forceStop, { once: true });
+    const readPid = () => existsSync(pidFile) ? Number(readFileSync(pidFile, 'utf8')) : undefined;
+    try {
+      const events: TurnEvent[] = [];
+      for await (const event of fixture.adapter.run(fixture.request, { onSpawn: child => { worker = child; } })) {
+        events.push(event);
+        if (mode === 'pipe-hang' && event.kind === 'assistant-delta') forceStop();
+      }
+      const terminal = events.find(event => event.kind === 'done');
+      assert.equal(terminal?.ok, mode === 'pipe-complete');
+      assert.equal(terminal?.replayUnsafe, mode === 'pipe-complete' ? undefined : true);
+      assert.equal(terminal?.sessionId, 'new-vibe');
+      assert.equal(await worker?.exit.then(result => result.signal), 'SIGKILL');
+      const pid = readPid();
+      assert.ok(pid && pid > 0);
+      await waitFor(() => {
+        try { process.kill(pid, 0); } catch (error) { return (error as NodeJS.ErrnoException).code === 'ESRCH'; }
+        // Some Linux test hosts delay reaping adopted zombies.
+        if (process.platform === 'linux') {
+          try { return /\) Z /.test(readFileSync(`/proc/${pid}/stat`, 'utf8')); } catch { return true; }
+        }
+        return false;
+      }, 3_000);
+    } finally {
+      signal.removeEventListener('abort', forceStop);
+      await worker?.stop();
+      fixture.cleanup();
+    }
   }
 });
 
@@ -2115,7 +2165,7 @@ test('explicit Vibe chat cancellation interrupts the leased child and preserves 
     assert.equal(done?.sessionId, 'new-vibe');
     assert.equal(done?.replayUnsafe, true);
     assert.ok(child?.pid);
-    assert.equal((await child.exit).code, 1);
+    assert.deepEqual(await child.exit, vibeWorkerFailureExit);
     assert.throws(() => process.kill(child!.pid!, 0), { code: 'ESRCH' });
     assert.equal(fixture.calls().filter(call => call.method === 'turn/interrupt').length, 1);
   } finally { fixture.cleanup(); }
@@ -2149,7 +2199,7 @@ test('explicit Vibe worker writes a live turn after its launching host exits', a
     const { openSync, closeSync } = require('node:fs');
     const [worker, out, cwd, job] = process.argv.slice(1);
     const fd = openSync(out, 'a');
-    const child = spawn(process.execPath, [worker], { cwd, detached: true, stdio: ['pipe', fd, 'ignore'] });
+    const child = spawn(process.execPath, [worker, '--owned-process-group'], { cwd, detached: true, stdio: ['pipe', fd, 'ignore'] });
     closeSync(fd);
     child.stdin.end(job, () => { child.unref(); console.log(child.pid); });
   `;

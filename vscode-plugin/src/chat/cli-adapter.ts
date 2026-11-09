@@ -1231,7 +1231,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     let proc: SpawnedProcess;
     try {
       proc = vibeCatalog !== undefined
-        ? deps.spawn(process.execPath, [deps.vibeWorkerPath ?? fileURLToPath(new URL('./vibe-session-worker.js', import.meta.url))], {
+        ? deps.spawn(process.execPath, [deps.vibeWorkerPath ?? fileURLToPath(new URL('./vibe-session-worker.js', import.meta.url)), '--owned-process-group'], {
           cwd: effectiveReq.cwd, output, gracefulLeader: true, env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' },
         })
         : deps.spawn(BINARY[mapper.id], mapper.buildArgs(effectiveReq), {
@@ -1380,6 +1380,10 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       // stdout closed without a terminal event: the process is ending; report how.
       const { code, signal } = await proc.exit;
       terminal = true;
+      if (vibeCatalog !== undefined) {
+        yield doneEvent(false, 'Vibe worker exited without a terminal result', true);
+        return;
+      }
       if (signal !== null) {
         // Killed (e.g. via cancel()) without a terminal event from the stream.
         yield doneEvent(false);
@@ -1403,7 +1407,8 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       if (!terminal) {
         terminal = true;
         proc.kill('SIGTERM');
-        yield { kind: 'error', turnId, message: failureMessage(mapper.id, err) };
+        if (vibeCatalog !== undefined) yield doneEvent(false, failureMessage(mapper.id, err), true);
+        else yield { kind: 'error', turnId, message: failureMessage(mapper.id, err) };
       }
     } finally {
       // A correlated Claude turn waits for more input after its answer, so a reader that is

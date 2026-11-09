@@ -62,7 +62,7 @@ export interface VibeSessionOptions {
 	readonly effort?: string | undefined;
 	readonly catalog: readonly VibeCatalogModel[];
 	readonly verifyRuntime?: ((runtime: Readonly<RecordValue>) => void) | undefined;
-	/** A supervising process already owns the group and its final hard stop. */
+	/** A dedicated supervisor will sweep its own group after writing the result. */
 	readonly inheritProcessGroup?: boolean | undefined;
 }
 
@@ -88,6 +88,8 @@ interface PendingRequest {
 }
 
 const MAX_FRAME_CHARS = 8 * 1024 * 1024;
+const EXIT_DRAIN_MS = 250;
+const CLOSE_GRACE_MS = 1_000;
 
 function startTransport(options: VibeSessionOptions): VibeTransport {
 	options.signal?.throwIfAborted();
@@ -99,7 +101,10 @@ function startTransport(options: VibeSessionOptions): VibeTransport {
 		env: options.env,
 	});
 	const pending = new Map<string, PendingRequest>();
-	const closed = new Promise<void>(resolve => child.once('close', () => resolve()));
+	let finishClose!: () => void;
+	const closed = new Promise<void>(resolve => { finishClose = resolve; });
+	let drainTimer: ReturnType<typeof setTimeout> | undefined;
+	let closeTimer: ReturnType<typeof setTimeout> | undefined;
 	let failure: Error | undefined;
 	let eventListener: ((method: string, params: RecordValue) => void) | undefined;
 	let failureListener: ((error: Error) => void) | undefined;
@@ -110,12 +115,21 @@ function startTransport(options: VibeSessionOptions): VibeTransport {
 		if (failure !== undefined) return;
 		failure = error;
 		clearTimeout(deadline);
+		clearTimeout(drainTimer);
 		options.signal?.removeEventListener('abort', abort);
 		for (const request of pending.values()) request.reject(error);
 		pending.clear();
 		failureListener?.(error);
-		if (ownGroup && child.pid !== undefined) killProcessGroup(child.pid);
-		else child.kill('SIGKILL');
+		if (child.exitCode === null && child.signalCode === null) {
+			if (ownGroup && child.pid !== undefined) killProcessGroup(child.pid);
+			else child.kill('SIGKILL');
+		}
+		// A descendant can still own the other ends of these pipes. Once the
+		// transport has stopped, they are no longer a source of turn events.
+		child.stdin.destroy();
+		child.stdout.destroy();
+		child.stderr.destroy();
+		closeTimer = setTimeout(finishClose, CLOSE_GRACE_MS);
 	}
 
 	function abort(): void {
@@ -135,8 +149,17 @@ function startTransport(options: VibeSessionOptions): VibeTransport {
 	child.once('error', error => stop(new Error('Could not launch the Vibe app server', { cause: error })));
 	child.once('exit', () => {
 		if (ownGroup && child.pid !== undefined) killProcessGroup(child.pid);
+		// Let buffered terminal frames arrive, but don't let inherited pipe
+		// writers hide an unexpected exit until the whole turn times out.
+		if (failure === undefined) {
+			drainTimer = setTimeout(() => stop(new Error('Vibe app server exited')), EXIT_DRAIN_MS);
+		}
 	});
-	child.once('close', () => stop(new Error('Vibe app server exited')));
+	child.once('close', () => {
+		stop(new Error('Vibe app server exited'));
+		clearTimeout(closeTimer);
+		finishClose();
+	});
 	onUtf8Data(child.stdout, chunk => {
 		buffer += chunk;
 		let newline = buffer.indexOf('\n');

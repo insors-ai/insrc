@@ -395,7 +395,9 @@ function needsMigration(item: WorkItemNode, counted: readonly ArtifactRecord[], 
 	if ((item.kind === 'epic' || item.kind === 'story') && isUnmigrated(item.unit)) out.push(item.unit === null ? `the ${item.kind} has no head` : `${item.unit.artifactId} has no lifecycle`);
 	if (item.kind === 'story') {
 		// a draft plan's Tasks come with its approval; with no plan at all a Task with no head is one a TASKS head lists
-		const draftPlan = counted.some(r => r.kind === 'PLAN') && !counted.some(r => r.kind === 'PLAN' && r.approval.state === 'approved');
+		// read from all the evidence: a later approved gate takes a draft plan out of the counted records, and its rows still have no Tasks
+		const plans = item.evidenceArtifactIds.flatMap(id => { const r = byId.get(id); return r?.kind === 'PLAN' ? [r] : []; });
+		const draftPlan = plans.length > 0 && !plans.some(r => r.approval.state === 'approved');
 		const tasksHead = unmigratedTasksHead(item, byId);
 		if (tasksHead !== undefined) out.push(`${tasksHead.artifactId} has no lifecycle`);
 		for (const childId of item.childIds) {

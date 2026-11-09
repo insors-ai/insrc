@@ -130,6 +130,9 @@ test('a missing or unmigrated unit raises needs-migration and not pending-decisi
 	assert.ok(reasons(withUnmigratedTasks, 'story').includes('needs-migration'));
 	const tasksSet = recordSet(withUnmigratedTasks);
 	assert.ok(deriveGates(buildWorkItemGraph(tasksSet), tasksSet).notices.some(n => n.code === 'needs-migration' && n.artifactIds.includes(`TASKS-${H}-s1`)));
+	// a later approved BUILD takes the draft plan out of the counted records: its rows are still no migration
+	const superseded = [...units, planRecord(H, 's1', ['t1']), buildRecord(H, 's1', [{ id: 't1', passed: true }], approved)];
+	assert.ok(!reasons(superseded, 'story').includes('needs-migration'), JSON.stringify(reasons(superseded, 'story')));
 	// the attention is a notice too, naming the record
 	const set = recordSet([...decided, plain(`LLD-${H}-s1.json`, 's1')]);
 	const notices = deriveGates(buildWorkItemGraph(set), set).notices.filter(n => n.code === 'needs-migration');

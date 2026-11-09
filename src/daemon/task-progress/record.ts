@@ -32,6 +32,15 @@ const RecordSchema = progressObject({
     updatedAt: ProgressTime,
   }), { maxItems: MAX_PROGRESS_MILESTONES }),
   resultRef: Type.Optional(ProgressId),
+  originDigest: Type.Optional(Type.String({ pattern: '^[a-f0-9]{64}$' })),
+  grants: Type.Optional(progressObject({
+    conversation: Type.Optional(progressObject({
+      digest: Type.String({ pattern: '^[a-f0-9]{64}$' }), expiresAt: ProgressTime,
+    })),
+    history: Type.Optional(progressObject({
+      digest: Type.String({ pattern: '^[a-f0-9]{64}$' }), expiresAt: ProgressTime,
+    })),
+  })),
 });
 
 export type ProgressRecord<D> = Readonly<Omit<Static<typeof RecordSchema>, 'measurement'> & {

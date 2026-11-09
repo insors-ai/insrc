@@ -26,6 +26,13 @@ export interface MethodClassRegistry {
 
 /** [method, class, stream] for every served method. */
 const TABLE: readonly (readonly [string, MethodClass, boolean])[] = [
+	['progress.origin.open', 'session', false],
+	['progress.origin.bind', 'session', false],
+	['progress.origin.revoke', 'session', false],
+	['progress.attach', 'session', false],
+	['progress.read', 'session', false],
+	['progress.detach', 'session', false],
+	['progress.subscribe', 'session', true],
 	// Admin: liveness, status and control, answered from the status board.
 	['daemon.status', 'admin', false],
 	['daemon.debug-status', 'admin', false],
@@ -362,7 +369,10 @@ export function inDaemonTarget(method: string, view: InDaemonRouteView): { reado
 }
 
 /** Served on the main thread, which owns their state and pushes it to every worker (Story 5d393a4b): the IDE's tool settings. */
-export const MAIN_THREAD_STATE_METHODS: ReadonlySet<string> = new Set(['tools.config.set']);
+export const MAIN_THREAD_STATE_METHODS: ReadonlySet<string> = new Set([
+	'tools.config.set', 'progress.origin.open', 'progress.origin.bind', 'progress.origin.revoke',
+	'progress.attach', 'progress.read', 'progress.detach', 'progress.subscribe',
+]);
 
 /** These operations own process-local admission and transport lifetimes. */
 export const MAIN_DAEMON_CONNECTION_METHODS:ReadonlySet<string>=new Set([

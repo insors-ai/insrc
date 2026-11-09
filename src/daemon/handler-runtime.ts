@@ -29,6 +29,9 @@ import { gateHandlers, gateRepoCall } from './repo-call-gate.js';
 /** The methods gated inside their own handlers (the approval family): the table-wide wrapper leaves them alone. */
 const APPROVAL_FAMILY: ReadonlySet<string> = new Set(['workflow.approve', 'workflow.approvePipeline']);
 import { listRepos, addRepo, removeRepo, repoContainingCwd, InvalidRepoPathError, validateRepoPath } from '../db/repos.js';
+import type { ProgressKind } from '../shared/task-progress.js';
+import { createProgressRoutes } from './task-progress/rpc.js';
+import type { ProgressRuntime } from './task-progress/rpc.js';
 import { deleteEntitiesForRepo, findEntitiesByFile, getEntity } from '../db/entities.js';
 import { deleteUnresolvedForRepo } from '../db/relations.js';
 import { collectRepoStats } from './repo-stats.js';
@@ -140,6 +143,7 @@ export interface RuntimeIndexer {
 }
 
 export interface HandlerRuntimeDeps {
+  readonly progressRuntime?: (() => Promise<ProgressRuntime<{ readonly kind: ProgressKind }>>) | undefined;
  readonly stepCallHandler?: StreamHandler | undefined;
 	/** Test seam: the registered repositories' paths (default: the registry in `db`). */
 	readonly registeredRepos?: (() => Promise<ReadonlySet<string>>) | undefined;
@@ -1865,6 +1869,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 	});
 	Object.assign(rpcHandlers, understandingRoutes.rpc);
 	Object.assign(streamHandlers, understandingRoutes.streams);
+	const progressRoutes = createProgressRoutes(deps.progressRuntime ?? (async () => { throw new Error('progress-unavailable'); }));
+	Object.assign(rpcHandlers, progressRoutes.rpc);
+	Object.assign(streamHandlers, progressRoutes.streams);
 	// Every other file-modifying call goes through the repo gate too (the approval family is gated inside its handlers above).
 	gateHandlers(rpcHandlers as never, 'rpc', registeredRepos, APPROVAL_FAMILY);
 	gateHandlers(streamHandlers as never, 'stream', registeredRepos);

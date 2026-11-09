@@ -5,8 +5,8 @@
 ## Summary
 
 **Epic:** `isolate-each-code-design-review-its`
-**HLD base run:** `wf-1794203291825-5y2ryj`
-**HLD effective hash:** `3c0299debca0...`
+**HLD base run:** `wf-1794204515305-6q9wbt`
+**HLD effective hash:** `ccc8515f61bd...`
 
 Each code or design review runs in a dedicated daemon-owned worker, independent of chat-session threads and other reviews. Submission is durably acknowledged before expensive scope/subject admission, with progress and technical failures visible throughout. Existing review coordinators, judging policies, trusted controller ownership and human approval gates remain authoritative; this change relocates execution and adds the missing admission lifecycle.
 
@@ -334,4 +334,4 @@ Main-daemon routing launches a code-only or design-only worker for each review i
 - **[[c8]]** `code` `src/daemon/tools/shell-helper.ts`
 - **[[c9]]** `code` `src/agent/providers/cli-provider.ts`
 - **[[c10]]** `code` `src/daemon/approval-broker.ts` — "Existing broker accepts the first unexpired answer for a pending requestId; no human-versus-automation provenance."
-- **[[c11]]** `stakeholder` `User chose simplify: use the existing local-operator authorization model instead of adding human-only clearance authentication.`
+- **[[c11]]** `doc` `.insrc/artifacts/LLD-e4af63128c7cbec2-s1.feedback.jsonl` — "Entry user-decision-resource-clearance-local-trust-20261109, recorded by the daemon feedback service at 2026-11-09T06:07:48.212Z on revision 4, quotes the user's exact reply 'simplify' and records the"

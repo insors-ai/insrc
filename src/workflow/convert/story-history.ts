@@ -18,7 +18,8 @@ import { History } from '../artifact-core/history.js';
 import type { ChangeLogEntry, Feedback } from '../artifact-core/types.js';
 import type { PlanRule, RulePlan } from './plan.js';
 import { readRawHeads } from './raw-heads.js';
-import { epicsOf, lldOf, storyId } from './units.js';
+import { epicsOf, knownEpicsOf, lldOf, storyId } from './units.js';
+import type { Epic } from './units.js';
 import type { ConversionChange, ConversionDeps, LegacyAttachComment, RawHead } from './types.js';
 
 type Obj = Record<string, unknown>;
@@ -54,7 +55,7 @@ const bindingIssue = (head: RawHead | undefined): string | undefined => {
 	return isObj(reference) && typeof reference['entityId'] === 'string' ? reference['entityId'] : undefined;
 };
 
-export const storyHistoryRule: PlanRule = async (ctx): Promise<RulePlan> => {
+const storyHistoryRuleOver = (epics: (heads: readonly RawHead[]) => Epic[]): PlanRule => async (ctx): Promise<RulePlan> => {
 	const history = new History(new FileSidecarStore(ctx.repo));
 	const changes: ConversionChange[] = [];
 	const legacy: LegacyAttachComment[] = [];
@@ -66,7 +67,7 @@ export const storyHistoryRule: PlanRule = async (ctx): Promise<RulePlan> => {
 		if (!listed.ok) return; // never blocks the conversion
 		for (const c of listed.value) if (isLegacyAttach(c.text)) legacy.push({ issue, commentId: c.externalId });
 	};
-	for (const epic of epicsOf(ctx.heads)) {
+	for (const epic of epics(ctx.heads)) {
 		await listLegacy(bindingIssue(ctx.heads.find(h => h.artifactId === `DEF-${epic.hash}`)));
 		for (const story of epic.stories) {
 			const lld = lldOf(ctx.heads, epic.hash, story.id);
@@ -80,16 +81,20 @@ export const storyHistoryRule: PlanRule = async (ctx): Promise<RulePlan> => {
 	return { changes, legacyAttachComments: legacy };
 };
 
+export const storyHistoryRule: PlanRule = storyHistoryRuleOver(epicsOf);
+/** A repair moves the history of every Story it discovers, as it does their bindings. */
+export const repairStoryHistoryRule: PlanRule = storyHistoryRuleOver(knownEpicsOf);
+
 export interface StoryHistoryResult {
 	readonly lines:    number;
 	readonly receipts: number;
 }
 
 /** Copy each LLD's tracker lines and receipts to its STORY head, under the STORY's lock. Safe to run again. */
-export async function applyStoryHistory(repo: string, deps: ConversionDeps): Promise<StoryHistoryResult> {
+export async function applyStoryHistory(repo: string, deps: ConversionDeps, epics: (heads: readonly RawHead[]) => Epic[] = epicsOf): Promise<StoryHistoryResult> {
 	let lines = 0, receipts = 0;
 	const heads = readRawHeads(repo).heads;
-	for (const epic of epicsOf(heads)) {
+	for (const epic of epics(heads)) {
 		for (const story of epic.stories) {
 			const lld = lldOf(heads, epic.hash, story.id);
 			if (lld === undefined) continue;

@@ -29,7 +29,7 @@ import type {
 
 /** The order the applier runs the rules in, which is also the order a plan lists its changes. */
 export const RULE_ORDER: readonly ConversionRule[] = [
-	'rename-id', 'stamp-epic-created-at', 'convert-amendment', 'convert-feedback', 'migrate-head',
+	'repo-rules', 'rename-id', 'stamp-epic-created-at', 'convert-amendment', 'convert-feedback', 'migrate-head',
 	'create-epic', 'create-story', 'create-tasks', 'backfill-round', 'move-binding', 'set-parent', 'move-story-history', 'settle-unit', 'relabel-issue',
 ];
 

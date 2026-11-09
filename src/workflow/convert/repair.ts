@@ -16,6 +16,7 @@ import { basename } from 'node:path';
 
 import { createRepoLifecycle } from '../artifact-core/repo-lifecycle.js';
 import type { RepoWriteObserver } from '../artifact-core/repo-lifecycle.js';
+import { missingSidecarRepoRules } from '../artifact-core/sidecar-store.js';
 import type { LifecycleService } from '../artifact-core/lifecycle-service.js';
 import type { Actor } from '../artifact-core/types.js';
 import { TaskSets } from '../tasks/task-set.js';
@@ -24,9 +25,10 @@ import { migrateHeads } from './apply.js';
 import { applyFeedback, feedbackRule } from './feedback-rule.js';
 import type { MigratedHeadSeams } from './migrated-head.js';
 import { planConversion } from './plan.js';
+import type { PlanRule, RulePlan } from './plan.js';
 import { applyRenames, renameRule } from './rename.js';
 import { applyStamps, stampRule } from './stamps.js';
-import { applyStoryHistory, storyHistoryRule } from './story-history.js';
+import { applyStoryHistory, repairStoryHistoryRule } from './story-history.js';
 import { readRawHeads } from './raw-heads.js';
 import { applySettle, repairSettleRule } from './settle.js';
 import { applyTasks, repairTasksRule } from './tasks.js';
@@ -48,8 +50,11 @@ export interface RepairOptions {
 	readonly beforeRound?: ((taskId: string) => void) | undefined;
 }
 
+/** A repair opens the repository's store, which adds the merge rules and the journal ignore entry it lacks: those are changes too. */
+const repoRulesRule: PlanRule = (ctx): RulePlan => (ctx.heads.length === 0 ? {} : { changes: missingSidecarRepoRules(ctx.repo).map(file => ({ rule: 'repo-rules' as const, artifactId: file, detail: 'add the sidecar merge and journal rules' })) });
+
 /** The conversion's rules, with the units and Tasks found from any record: a repair also serves a Story with no Define and a plan past approved. */
-const REPAIR_RULES = [renameRule, stampRule, amendmentRule, feedbackRule, repairUnitsRule, repairTasksRule, storyHistoryRule, repairSettleRule];
+const REPAIR_RULES: readonly PlanRule[] = [repoRulesRule, renameRule, stampRule, amendmentRule, feedbackRule, repairUnitsRule, repairTasksRule, repairStoryHistoryRule, repairSettleRule];
 
 /** The plan of a repair: the conversion's rules at any schema version, with no requirement that the tree be clean. */
 export function planRepair(repo: string): Promise<ConversionPlan> {
@@ -63,7 +68,9 @@ function repairDeps(repo: string, record: RepairRecorder, options: RepairOptions
 		headReplaced: path => record(basename(path, '.json'), 'head'),
 		...(options.writeHead !== undefined ? { writeHead: options.writeHead } : {}),
 	};
+	const rules = missingSidecarRepoRules(repo);
 	const { store, history, service } = createRepoLifecycle(repo, observer);
+	for (const file of rules) record(file, 'repo-rules');
 	return { service, store, history, now: () => new Date(), actor: MIGRATION_ACTOR, taskSets: new TaskSets({ repoPath: repo, store, service, history, bindingWritten: id => record(id, 'binding') }) };
 }
 
@@ -77,7 +84,7 @@ function stepsOf(repo: string, deps: ConversionDeps & { readonly service: Lifecy
 		{ step: 'migrate',       run: () => migrateHeads(repo, deps, { ...options.headSeams, headWritten: id => record(id, 'head') }) },
 		{ step: 'units',         run: () => applyUnits(repo, deps, record, knownEpicsOf) },
 		{ step: 'tasks',         run: async () => { const done: TasksResult = await applyTasks(repo, deps, { repair: true, beforeRound: options.beforeRound }); failed.push(...(done.failed ?? [])); } },
-		{ step: 'story-history', run: () => applyStoryHistory(repo, deps) },
+		{ step: 'story-history', run: () => applyStoryHistory(repo, deps, knownEpicsOf) },
 		{ step: 'settle',        run: () => applySettle(repo, deps, deps.service, failed, held) },
 	];
 }

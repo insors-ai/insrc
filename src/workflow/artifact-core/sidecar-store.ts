@@ -202,6 +202,17 @@ export function ensureSidecarRepoRules(repoPath: string, store: SidecarStore): v
 	ensureLines(join(repoPath, '.gitignore'), [`${JOURNAL_DIR}/`]);
 }
 
+/** The repository rule files a store's first opening would still change. Reads only. */
+export function missingSidecarRepoRules(repoPath: string): readonly string[] {
+	const store = new FileSidecarStore(repoPath);
+	const lacks = (name: string, wanted: readonly string[]): boolean => {
+		const file = join(repoPath, name);
+		const have = new Set((existsSync(file) ? readFileSync(file, 'utf8') : '').split('\n').map(l => l.trim()));
+		return wanted.some(l => !have.has(l));
+	};
+	return [...(lacks('.gitattributes', store.mergeAttributes()) ? ['.gitattributes'] : []), ...(lacks('.gitignore', [`${JOURNAL_DIR}/`]) ? ['.gitignore'] : [])];
+}
+
 /** A file sidecar store whose repository carries the merge rules and the journal ignore entry. The way production creates one. */
 export function createFileSidecarStore(repoPath: string): FileSidecarStore {
 	const store = new FileSidecarStore(repoPath);

@@ -190,6 +190,41 @@ test('verifyConversion keeps passing on a converted fixture with the changed loa
 	} finally { l.done(); }
 });
 
+test('the repository rules a repair adds are in its preview and its report, and a later run has none to add', async () => {
+	const l = legacyRepo();
+	try {
+		const before = { attributes: existsSync(join(l.repo, '.gitattributes')), ignore: existsSync(join(l.repo, '.gitignore')) };
+		assert.deepEqual(before, { attributes: false, ignore: false }, 'control: the repository has neither');
+		const preview = await runRepair(l.repo, 'repair-preview');
+		assert.deepEqual(preview.plan.changes.filter(c => c.rule === 'repo-rules').map(c => c.artifactId), ['.gitattributes', '.gitignore']);
+		assert.equal(existsSync(join(l.repo, '.gitignore')), false, 'the preview adds nothing');
+		const out = result(await runRepair(l.repo, 'repair'));
+		assert.deepEqual(out.written.filter(w => w.action === 'repo-rules').map(w => w.artifactId), ['.gitattributes', '.gitignore']);
+		assert.ok(existsSync(join(l.repo, '.gitignore')));
+		assert.deepEqual((await runRepair(l.repo, 'repair-preview')).plan.changes.filter(c => c.rule === 'repo-rules'), []);
+	} finally { l.done(); }
+});
+
+test('a Story found only from its records has its tracker history moved with its binding', async () => {
+	const l = legacyRepo();
+	try {
+		const standalone = 'fedcba9876543210';
+		const lld = `LLD-${standalone}-s1`;
+		const story = `STORY-${standalone}-s1`;
+		put(l.repo, lld, { meta: { workflow: 'design.story', epicHash: standalone, storyId: 's1', standalone: true, createdAt: 't', epicCreatedAt: '2026-10-10T00:00:00.000Z', revision: 1, envelope: { description: '', references: [], binding: { reference: { entityId: 'o/r#7', type: 'github:issue', relation: 'tracked-by' }, createdAtRevision: 1, posted: [] } } }, body: { goal: 'g' }, citations: [] });
+		const history = new History(createFileSidecarStore(l.repo));
+		const by = { id: 'github:alice', kind: 'person' as const, properties: {} };
+		await history.appendFeedback(lld, { id: 'tracker:1', text: 'from the issue', actor: by, timestamp: '2026-10-11T00:00:00.000Z', feedback: [], kind: 'comment' } as never);
+
+		const preview = await runRepair(l.repo, 'repair-preview');
+		assert.ok(preview.plan.changes.some(c => c.rule === 'move-story-history' && c.artifactId === lld), 'the preview lists the move');
+		const out = result(await runRepair(l.repo, 'repair'));
+		assert.equal(out.stoppedAt, undefined, JSON.stringify(out.stoppedAt));
+		assert.deepEqual((await history.feedback(story)).map(f => f.id), ['tracker:1']);
+		assert.equal(head(l.repo, story).meta['envelope'].binding.reference.entityId, 'o/r#7');
+	} finally { l.done(); }
+});
+
 test('a plan with a rename collision answers an error and writes nothing', async () => {
 	const l = legacyRepo();
 	try {

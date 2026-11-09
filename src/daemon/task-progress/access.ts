@@ -29,6 +29,8 @@ interface Binding {
   readonly task: TaskRef;
   readonly purpose: Purpose;
   readonly digest: string;
+  readonly originId: string | undefined;
+  readonly expiresAt: number;
 }
 
 function digest(secret: string): string {
@@ -182,9 +184,15 @@ export class ProgressAccess<D extends Details> {
   async attach(task: TaskRef, capability: string, purpose: Purpose, context: TrustedRpcContext | undefined): Promise<string> {
     const connectionId = connection(context);
     if (!secretPattern.test(capability)) throw unavailable();
-    const binding: Binding = { connection: connectionId, task, purpose, digest: digest(capability) };
-    await this.check(binding, 'observe');
+    if (!(await this.registered(task.projectId))) throw unavailable();
     connection(context);
+    const record = this.store.get(task);
+    const grant = record?.grants?.[purpose];
+    const capabilityDigest = digest(capability);
+    if (grant === undefined || grant.expiresAt <= this.now() || !matches(grant.digest, capabilityDigest) ||
+        (purpose === 'conversation' && this.origins.get(record?.origin.extensionChatId ?? '')?.revoked === true)) throw unavailable();
+    const binding: Binding = { connection: connectionId, task, purpose, digest: capabilityDigest,
+      originId: record?.origin.extensionChatId, expiresAt: grant.expiresAt };
     if (this.observers.size >= maxLiveBindings) throw new Error('progress-capacity');
     const id = randomUUID();
     this.observers.set(id, binding);
@@ -192,17 +200,24 @@ export class ProgressAccess<D extends Details> {
   }
 
   async authorize(id: string, permission: Permission, context: TrustedRpcContext | undefined): Promise<TaskRef> {
+    const binding = await this.authorizedBinding(id, context);
+    this.check(binding, permission);
+    return { ...binding.task };
+  }
+
+  private async authorizedBinding(id: string, context: TrustedRpcContext | undefined): Promise<Binding> {
     const binding = this.observers.get(id);
-    if (binding === undefined || binding.connection !== connection(context)) throw unavailable();
-    await this.check(binding, permission);
+    if (binding === undefined || binding.connection !== connection(context) ||
+        !(await this.registered(binding.task.projectId))) throw unavailable();
     connection(context);
     if (this.observers.get(id) !== binding) throw unavailable();
-    return { ...binding.task };
+    return binding;
   }
 
   async read(id: string, context: TrustedRpcContext | undefined) {
     const task = await this.authorize(id, 'observe', context);
-    const binding = this.observers.get(id)!;
+    const binding = this.observers.get(id);
+    if (binding === undefined) throw unavailable();
     const snapshot = this.coordinator.read(task);
     if (snapshot === undefined) throw unavailable();
     // The scoped result identifier may be resolved only by the owner of the actual result surface.
@@ -214,6 +229,7 @@ export class ProgressAccess<D extends Details> {
 
   async subscribe(id: string, context: TrustedRpcContext | undefined) {
     const task = await this.authorize(id, 'observe', context);
+    if (!this.observers.has(id)) throw unavailable();
     if (this.subscriptions.has(id)) throw new Error('progress-subscription-already-open');
     const controller = new AbortController();
     this.subscriptions.set(id, controller);
@@ -274,10 +290,7 @@ export class ProgressAccess<D extends Details> {
   detach(id: string, context: TrustedRpcContext | undefined): void {
     const binding = this.observers.get(id);
     if (binding === undefined || binding.connection !== connection(context)) throw unavailable();
-    this.observers.delete(id);
-    this.subscriptions.get(id)?.abort();
-    this.fallback.detach(id);
-    this.coordinator.notify(binding.task);
+    this.releaseObserver(id, 'stopped');
   }
 
   disconnect(context: TrustedRpcContext): void {
@@ -285,10 +298,7 @@ export class ProgressAccess<D extends Details> {
     for (const [id, receipt] of this.stopped) if (receipt.connection === context.connectionIdentity) this.stopped.delete(id);
     for (const [id, binding] of this.observers) {
       if (binding.connection !== context.connectionIdentity) continue;
-      this.observers.delete(id);
-      this.subscriptions.get(id)?.abort();
-      this.fallback.detach(id);
-      this.coordinator.notify(binding.task);
+      this.releaseObserver(id, 'disconnected');
     }
   }
 
@@ -297,8 +307,8 @@ export class ProgressAccess<D extends Details> {
     if (origin === undefined || this.boundOrigins.get(connection(context))?.has(id) !== true) throw unavailable();
     origin.revoked = true;
     for (const [observerId, binding] of this.observers) {
-      if (binding.purpose === 'conversation' && this.store.get(binding.task)?.origin.extensionChatId === id) {
-        this.fallback.detach(observerId);
+      if (binding.purpose === 'conversation' && binding.originId === id) {
+        this.releaseObserver(observerId, 'revoked');
       }
     }
     await serializeOrigin(origin, async () => {
@@ -334,8 +344,14 @@ export class ProgressAccess<D extends Details> {
     }
   }
 
-  private async check(binding: Binding, permission: Permission): Promise<void> {
-    if (!(await this.registered(binding.task.projectId))) throw unavailable();
+  private releaseObserver(id: string, reason: 'stopped' | 'disconnected' | 'revoked'): void {
+    this.observers.delete(id);
+    this.subscriptions.get(id)?.abort(reason);
+    this.subscriptions.delete(id);
+    this.fallback.detach(id);
+  }
+
+  private check(binding: Binding, permission: Permission): void {
     const record = this.store.get(binding.task);
     const grant = record?.grants?.[binding.purpose];
     if (grant === undefined || grant.expiresAt <= this.now() || !matches(grant.digest, binding.digest) ||

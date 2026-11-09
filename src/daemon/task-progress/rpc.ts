@@ -99,10 +99,12 @@ export function createProgressRoutes<D extends Details>(runtime: () => Promise<P
           }
           if (changed !== 'unchanged') {
             send({ id: 0, stream: 'progress', data: { snapshot, disposition: changed, schedule: 'native' } });
-            if (context?.awaitProgressWrite !== undefined && !(await context.awaitProgressWrite())) return;
+            if (context?.awaitProgressWrite !== undefined &&
+                !(await waitForWrite(context.awaitProgressWrite(), signalOrStop)) && !signalOrStop.aborted) return;
           }
         }
         if (subscription.signal.aborted && !signal.aborted) {
+          if (subscription.signal.reason === 'revoked') throw new Error('task-unavailable');
           send({ id: 0, stream: 'done', data: { outcome: 'stopped' } });
         }
       } finally {
@@ -111,6 +113,15 @@ export function createProgressRoutes<D extends Details>(runtime: () => Promise<P
       }
     },
   } };
+}
+
+async function waitForWrite(write: Promise<boolean>, signal: AbortSignal): Promise<boolean> {
+  if (signal.aborted) return false;
+  let abort!: () => void;
+  const cancelled = new Promise<false>(resolve => { abort = () => resolve(false); });
+  signal.addEventListener('abort', abort, { once: true });
+  try { return await Promise.race([write, cancelled]); }
+  finally { signal.removeEventListener('abort', abort); }
 }
 
 /** Only one dirty bit is retained, so a lagging consumer rereads the latest authorized snapshot. */

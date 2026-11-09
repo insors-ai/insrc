@@ -57,7 +57,7 @@ createInterface({ input: process.stdin }).on('line', line => {
 				return;
 			}
 			if (mode !== 'mismatch') {
-				activeModel = { ...(mode === 'effort-only' ? choices[0] : choices[1]), thinking: 'high' };
+				activeModel = { ...(mode === 'effort-only' ? choices[0] : choices[1]), thinking: mode === 'effort-mismatch' ? 'low' : 'high' };
 			}
 			send(id, { status: 'applied' });
 			return;
@@ -139,6 +139,8 @@ test('Vibe preflight rejects unavailable aliases, effort, mutation and mismatche
 	await assert.rejects(openVerifiedVibeSession(setup('new', { effort: 'max' })), /effort is unavailable/);
 	await assert.rejects(openVerifiedVibeSession(setup('reject')), /session rejected/);
 	await assert.rejects(openVerifiedVibeSession(setup('mismatch')), VibeSelectionError);
+	await assert.rejects(openVerifiedVibeSession(setup('effort-mismatch')), error =>
+		error instanceof VibeSelectionError && /runtime did not confirm the requested settings/.test(error.message));
 });
 
 test('Vibe preflight releases the child on cancellation and timeout', async () => {

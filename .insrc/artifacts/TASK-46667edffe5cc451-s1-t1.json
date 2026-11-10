@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-abc16333-0c29-4795-8caa-5ad2e203dcda",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T18:32:29.864Z",
+    "epicCreatedAt": "2026-11-08T16:46:43.683Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "46667edffe5cc451",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Patch daemon transport, parsers, and shared tooling",
+      "parent": {
+        "entityId": "STORY-46667edffe5cc451-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-46667edffe5cc451-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cee4c8a95050a59f085e0c0204fa50bc6483d3f0212b0f18d21da950b5b15798",
+        "at": "2026-11-08T18:32:29.864Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T18:32:29.866Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Patch daemon transport, parsers, and shared tooling",
+    "summary": "Select an isolated build baseline and verify its dependency inputs against the reviewed snapshot. Apply batch 1 direct and parent-scoped dependency updates to the root manifest and lockfile. Remove PDF.js and csv-parse after the caller and packed entry-point checks.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Verify the selected baseline with no unrelated edits and identify any dependency drift before applying reviewed changes.",
+      "Confirm every batch 1 dependency path falls outside affected ranges, including MCP SDK to Express to proxy-addr 2.0.8. Review overrides and lock churn.",
+      "Verify MCP stdio, HTTP/TLS and WebSockets, Ollama streaming, YAML, and the saved DuckDB CSV path. Confirm removed packages are absent."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "MCP structural-schema, YAML merge and CSV reader regression suites"
+      },
+      {
+        "level": "integration",
+        "name": "MCP stdio list and call plus HTTP TLS, redirect, abort, WebSocket and Ollama stream checks"
+      },
+      {
+        "level": "smoke",
+        "name": "Build and inspect packed backend entry points and resolved packages after unused dependency removal"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

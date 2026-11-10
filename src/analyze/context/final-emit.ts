@@ -26,6 +26,62 @@ import type { EvidenceBlock } from './sections.js';
 
 const SUMMARY_CAP = 2_000;
 
+/**
+ * A tool result larger than this many bytes is cut into blocks at line breaks, so a `path:line: text` entry is never cut
+ * in two. It is below the least room a section is given (the minimum section room), so a chunk always fits whole next to
+ * its envelope and is never cut again mid-line by the sectioning.
+ */
+const RESULT_CHUNK = 3_000;
+
+const bytesOf = (text: string): number => Buffer.byteLength(text, 'utf8');
+
+/**
+ * The citation a line opens with: `path:line:` (a search hit, the path may hold spaces) or the padded line number and
+ * tab of a file read. The rest of the line is the content.
+ */
+function citationOf(line: string): { readonly prefix: string; readonly content: string } {
+	const hit = /^(.+?:\d+:)(\s.*)$/s.exec(line);
+	if (hit !== null) return { prefix: hit[1] as string, content: hit[2] as string };
+	const numbered = /^(\s*\d+\t)(.*)$/s.exec(line);
+	if (numbered !== null) return { prefix: numbered[1] as string, content: numbered[2] as string };
+	return { prefix: '', content: line };
+}
+
+/**
+ * The pieces of one over-long line, each at most `size` bytes at a code-point boundary. The citation is cut off first
+ * and the content alone is split, so every piece opens with the whole citation (the later ones marked as continued).
+ */
+function splitLongLine(line: string, size: number): readonly string[] {
+	const { prefix, content } = citationOf(line);
+	const lead = prefix === '' ? '' : `${prefix} (continued) `;
+	// A citation that leaves no room is rare; the content then gets a floor so the split still ends.
+	const room = Math.max(512, size - bytesOf(lead));
+	const pieces: string[] = [];
+	let current = '';
+	for (const ch of content) {
+		if (bytesOf(current) + bytesOf(ch) > room) { pieces.push(current); current = ''; }
+		current += ch;
+	}
+	if (current.length > 0) pieces.push(current);
+	return pieces.map((piece, i) => (i === 0 ? `${prefix}${piece}` : `${lead}${piece}`));
+}
+
+/** The text in chunks of at most `size` bytes that end at a line break; a longer line is split with its citation kept on every piece. */
+export function chunkAtLines(text: string, size = RESULT_CHUNK): readonly string[] {
+	if (bytesOf(text) <= size) return [text];
+	const chunks: string[] = [];
+	let current = '';
+	const flush = (): void => { if (current.length > 0) chunks.push(current); current = ''; };
+	for (const line of text.split('\n')) {
+		for (const piece of bytesOf(line) > size ? splitLongLine(line, size) : [line]) {
+			const next = current.length === 0 ? piece : `${current}\n${piece}`;
+			if (current.length > 0 && bytesOf(next) > size) { flush(); current = piece; } else current = next;
+		}
+	}
+	flush();
+	return chunks;
+}
+
 const textOf = (content: LLMMessage['content']): string => (typeof content === 'string' ? content : JSON.stringify(content));
 
 /** The tool results of a conversation as blocks, named after the tool call that produced each. */
@@ -38,11 +94,14 @@ export function conversationBlocks(messages: readonly LLMMessage[]): readonly Ev
 			if (block.type === 'tool_use') calls.set(block.id, { name: block.name, input: block.input });
 			if (block.type === 'tool_result') {
 				const call = calls.get(block.tool_use_id);
-				blocks.push({
-					key: `${call?.name ?? 'tool'}#${blocks.length + 1}`,
+				const text = typeof block.content === 'string' ? block.content : JSON.stringify(block.content);
+				const chunks = chunkAtLines(text);
+				const ordinal = new Set(blocks.map(b => b.key.split('.')[0])).size + 1;
+				chunks.forEach((chunk, j) => blocks.push({
+					key: `${call?.name ?? 'tool'}#${ordinal}${chunks.length > 1 ? `.${j + 1}` : ''}`,
 					envelope: { tool: call?.name ?? 'tool', input: call?.input ?? {} },
-					text: typeof block.content === 'string' ? block.content : JSON.stringify(block.content),
-				});
+					text: chunk,
+				}));
 			}
 		}
 	}

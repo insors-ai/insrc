@@ -80,6 +80,7 @@ export {
 	PlanBuilderPromptMissingError,
 	PlanBuilderSchemaUnrecoverable,
 	MaxPlanDepthExceededError,
+	EmptyPlanCatalogError,
 } from './driver.js';
 export type { MaxPlanDepthMap } from './types.js';
 

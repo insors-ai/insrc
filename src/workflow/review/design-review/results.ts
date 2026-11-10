@@ -13,11 +13,11 @@ export function designRequiredReferences(subject:DesignReviewSubject,chunk:Desig
 /** Validate structural claims; semantic impact assessment belongs to the independent reviewer. */
 export function validateDesignImpact(input:unknown,current:DesignAttempt,history:readonly DesignAttempt[]):{plan:DesignChunkPlan;impact:DesignImpactAssessment}{
  requireDesign(current.preparationKind==='impact','invalid_checkpoint','Impact output requires an admitted impact attempt');
- requireDesign(history.length===current.number-1&&history.every((a,i)=>a.number===i+1),'invalid_checkpoint','Comparison history must be the immutable prior prefix');
+ requireDesign(history.length<=DESIGN_LIMITS.attempts&&history.every((a,i)=>Number.isSafeInteger(a.number)&&a.number>=1&&a.number<current.number&&(i===0||history[i-1]!.number<a.number)),'invalid_checkpoint','Comparison history must be the ordered qualified prior prefix');
  const baseline=history.at(-1);
  requireDesign(baseline?.report&&['passed','changes_requested','incomplete'].includes(baseline.status)&&baseline.report.status===baseline.status,'invalid_checkpoint','Impact comparison requires the immediately preceding complete report');
  const candidate=decodeDesign(DesignImpactOutputSchema,input,DESIGN_LIMITS.requestBytes),plan=validateDesignPlan(candidate.plan,current.inventory),impact=candidate.impact;
- requireDesign(impact.baselineAttempt===baseline.number,'invalid_plan','Impact must compare the immediately preceding attempt');
+ requireDesign(impact.baselineAttempt===baseline.number,'invalid_plan','Impact must compare the immediately preceding qualified attempt');
  const full=!!impact.uncertainReason||!baseline.plan||!current.reviewer||baseline.reviewer!==current.reviewer;
  requireDesign(!full||impact.mode==='full','invalid_plan','Uncertainty or unusable comparison context requires explicit full mode');
  const chunks=new Map(plan.chunks.map(c=>[c.id,c])),prior=new Map(baseline.plan?.chunks.map(c=>[c.id,c])??[]);
@@ -135,7 +135,7 @@ export function consolidateDesignReview(reviewId: string, attempt: number, subje
 }
 
 function consolidateImpactReview(reviewId:string,attempt:number,subject:DesignReviewSubject,contentIdentity:string,plan:DesignChunkPlan,results:readonly DesignChunkResult[],context:{impact:DesignImpactAssessment;attempts:readonly DesignAttempt[]}):DesignReviewConsolidated{
- const current=context.attempts[attempt-1],history=context.attempts.slice(0,attempt-1);
+ const current=context.attempts.find(a=>a.number===attempt),history=context.attempts.filter(a=>a.number<attempt);
  requireDesign(current&&current.number===attempt&&current.reviewer===subject.reviewer&&current.baseline.contentIdentity===contentIdentity&&JSON.stringify(current.impact)===JSON.stringify(context.impact)&&JSON.stringify(current.plan)===JSON.stringify(plan)&&JSON.stringify(current.completedChunks)===JSON.stringify(results),'invalid_checkpoint','Consolidation context differs from accepted attempt');
  try{validateDesignImpact({plan,impact:context.impact},current,history);}catch{requireDesign(false,'invalid_checkpoint','Accepted impact/provenance is inconsistent');}
  const retained=new Set(context.impact.retainedCoverage.map(r=>r.chunkId)),selected=plan.chunks.filter(c=>!retained.has(c.id));
@@ -152,7 +152,7 @@ function consolidateImpactReview(reviewId:string,attempt:number,subject:DesignRe
  const effective:DesignFindingOrigin[]=[...carried,...results.flatMap(r=>r.findings.map(f=>({attempt,chunkId:r.chunkId,findingId:f.id})))];
  requireDesign(effective.length<=DESIGN_AGGREGATE_LIMITS.findings&&new Set(effective.map(designFindingKey)).size===effective.length,'result_too_large','Effective findings exceed bounds or contain duplicate origins');
  const counts={HIGH:0,MED:0,LOW:0};
- for(const origin of effective){const source=context.attempts[origin.attempt-1]?.completedChunks.find(r=>r.chunkId===origin.chunkId)?.findings.find(f=>f.id===origin.findingId);requireDesign(source,'invalid_checkpoint','Effective finding origin is missing');counts[source.severity]++;}
+ for(const origin of effective){const source=context.attempts.find(a=>a.number===origin.attempt)?.completedChunks.find(r=>r.chunkId===origin.chunkId)?.findings.find(f=>f.id===origin.findingId);requireDesign(source,'invalid_checkpoint','Effective finding origin is missing');counts[source.severity]++;}
  const impact:DesignReportImpact={baselineAttempt:context.impact.baselineAttempt,mode:context.impact.mode,
   coverageOrigins:plan.chunks.map(c=>{const ref=context.impact.retainedCoverage.find(r=>r.chunkId===c.id);return ref?{...ref,kind:'retained'}:{chunkId:c.id,kind:'fresh'};}),
   findingDecisions:decisions,effectiveFindingOrigins:effective};

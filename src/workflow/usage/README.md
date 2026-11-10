@@ -32,14 +32,16 @@ provide bounded groups plus matching binding/source/closure evidence. The curren
 module neither discovers roots nor installs capture hooks. Hierarchical delivery
 board aggregation remains outside this story.
 
-Validation on 2026-10-26: `npm run build` completed successfully, including tsc,
-native process broker/watchdog helpers, model-definition checks and asset copying
-(`/tmp/tu1-s1-t11-build.log`). The focused usage plus canonical identity suite
-passed 38 tests (`/tmp/tu1-s1-t11-focused-tests.log`); isolated schema tests also
-passed on Node 22.22.1 (`/tmp/tu1-s1-t11-node22-packaging.log`). The prior full
-backend sweep failed outside usage: 51 of its 58 failed titles reproduced on the
-baseline, while seven remain unverified; see
-`/tmp/tu1-s1-full-suite-comparison.json`. This is not a full-suite green claim.
+Validation refreshed on 2026-11-08 (Node 22.22.1): `npm run build`
+completed successfully, including typechecks, native helpers, model-definition
+checks and asset copying (`/tmp/tu1-s1-resume-build.log`). All 40 usage tests
+passed (`/tmp/tu1-s1-resume-tests.log`), including isolated compiled-output
+schema imports; all six canonical identity tests passed
+(`/tmp/tu1-s1-resume-identity-tests.log`). The daemon also reran the mapped
+final-task tests and typecheck; its case results are in the Story's TESTS.md.
+The full backend sweep was not rerun. Earlier baseline-comparison logs from
+October are no longer available, so their specific failure counts are not
+claimed as current verified evidence. This is not a full-suite green claim.
 
 User-approved adjustment, 2026-10-27: v1 complete-leaf reconciliation cannot
 replace an aggregate. A source capability declaration, observed-record closure

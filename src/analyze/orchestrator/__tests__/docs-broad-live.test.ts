@@ -43,11 +43,16 @@ test('the broad docs request on this repository runs to a final report and the r
 		const handle = openStream(
 			'analyze.run.start',
 			{
+				runId: `docs-broad-live-${Date.now().toString(36)}`,
 				userPrompt: 'What do the documents of this repository say about the daemon, the workflow framework, the analyzers, the storage layer and the clients? Cover every area.',
 				scopeRef: { kind: 'repo', value: ROOT },
 				targetHint: 'docs',
 			},
-			frame => { if (frame.stream === 'analyze.result') result = frame.data as Terminal; },
+			frame => {
+				// The daemon sends the result and then `done`, and keeps the socket open: the test settles on the result
+				// itself and closes the stream, instead of waiting for a close that does not come.
+				if (frame.stream === 'analyze.result') { result = frame.data as Terminal; handle.close(); resolveRun(result); }
+			},
 			err => { handle.close(); if (result !== undefined) resolveRun(result); else reject(err ?? new Error('the stream ended with no result')); },
 		);
 	});

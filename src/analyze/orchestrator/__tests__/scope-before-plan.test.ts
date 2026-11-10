@@ -27,6 +27,7 @@ import type { AnalyzeScopeRef, AnalyzeTarget } from '../../../shared/analyze-typ
 import type { Entity, LLMProvider } from '../../../shared/types.js';
 import { runWithRoutingContext } from '../../context/shaper-provider.js';
 import type { RoutingSeamContext } from '../../context/shaper-provider.js';
+import { registerBuiltinTemplates } from '../../planner/templates/bootstrap.js';
 import { runAnalyze } from '../driver.js';
 import { purgeRunForTests, readRunRecord } from '../persistence.js';
 import type { AnalyzeRunEvent, RunRecord } from '../types.js';
@@ -37,6 +38,8 @@ let unregistered: string;
 /** A registered repo with stored entities. */
 let indexed: string;
 
+// The planner refuses an empty template catalog, as the daemon's boot fills it: the runs here plan against the real one.
+test.before(() => { registerBuiltinTemplates(); });
 test.beforeEach(async () => {
 	await closeGraphStore();
 	sandbox = mkdtempSync(join(tmpdir(), 'analyze-scope-before-plan-'));

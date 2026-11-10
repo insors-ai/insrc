@@ -132,8 +132,14 @@ export async function handleBundle(
 					const token = await reencodeState(input.state, { ...state, answer: progress }, execution);
 					return turnOutput(prepared, undefined, token, { attempt: progress.retries, reason: said });
 				}
+				// The failure is final, and it keeps what the lookups found and how the answer was handled.
+				const message = temporary ? said : `emitted bundle failed schema validation after ${bound} attempts: ${said}.`;
+				const data: StepErrorData = {
+					results: state.executed.results,
+					report: { ...reportFromLookups(state.executed.results), answerFailure: message, handling: handlingOf(answer) },
+				};
 				await releaseState(input.state, execution);
-				return errorResult('bundle-schema', temporary ? said : `emitted bundle failed schema validation after ${bound} attempts: ${said}.`, false);
+				return errorResult('bundle-schema', message, false, temporary ? undefined : data);
 			}
 			if (temporary) return errorResult('bundle-schema', said, true);
 			return errorResult(

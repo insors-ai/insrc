@@ -13,11 +13,11 @@ import { ReviewActivityMonitor, ReviewInactivityError, REVIEW_INACTIVITY_MS, req
 import { ReviewSessionTimeoutError } from '../../../agent/providers/cli-provider.js';
 import { getLogger } from '../../../shared/logger.js';
 import type { LLMProvider, ReviewSessionOpts } from '../../../shared/types.js';
-import { requireReview, TaskReviewInputError } from './contracts.js';
+import { requireReview, TaskReviewInputError, isCodeAdmission } from './contracts.js';
 import type { ReviewAttempt, ReviewCheckpoint, TaskReviewResult, ReviewOperation, ReviewStatus, TaskResultOrigin } from './contracts.js';
 import type { PreparedReviewPacket, TaskAssignment } from './packet.js';
 import type { ReviewSources } from './sources.js';
-import { checkpointPath, saveCheckpoint, loadCheckpoint } from './checkpoint.js';
+import { checkpointPath, saveCheckpoint, loadCheckpoint, loadStoredCheckpoint } from './checkpoint.js';
 import { assignmentPrompt, codeTaskCommands } from './policy.js';
 import { canonicalReviewStory, prepareReviewAdmission } from './admission.js';
 import { assignmentResultSchema } from './result-schema.js';
@@ -112,9 +112,12 @@ export class TaskReviewCoordinator {
  /** Read-only: saved feedback is authoritative; live observations never imply a durable result. */
  async progress(project:string,id:string,attempt:number):Promise<ReviewProgressView>{
   requireReview(Number.isSafeInteger(attempt)&&attempt>0,'attempt','Expected positive safe attempt');
-  const path=checkpointPath(project,id),saved=await loadCheckpoint(path);
+  const path=checkpointPath(project,id),saved=await loadStoredCheckpoint(path);
   requireReview(saved&&saved.project===project&&saved.reviewId===id,'checkpoint','Missing or mismatched checkpoint');
   const entry=saved.attempts.find(value=>value.header.attempt===attempt);requireReview(entry,'attempt','Missing attempt');
+  if(isCodeAdmission(entry))return{reviewId:id,attempt,status:entry.header.status,crPublication:'pending',executionState:'inactive',
+   completedTasks:0,totalTasks:0,interrupted:entry.header.status==='interrupted'||['pending','running'].includes(entry.header.status),hasError:!!entry.error,
+   freshness:'stale',progress:entry.progress,admission:{validation:'unverified',...(entry.error?{error:entry.error}:{})}};
   const active=this.active.get(path),owned=active?.attempt.header.attempt===attempt;
   const controller=owned&&active?.attempt.header.reviewer==='controller'?this.controllers.get(path):undefined;
   const tracker=owned?(controller?.progress??active?.progress):undefined;

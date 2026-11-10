@@ -1,0 +1,238 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "store-bdfe6b64-1fa8-43d7-ad92-60b8b97a2349",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-09T09:07:10.430Z",
+    "epicCreatedAt": "2026-11-09T08:39:14.931Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 2,
+    "epicHash": "501607b3d54fdfe2",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicSlug": "normalize-smtp-recipient-results-preserve-string",
+    "standalone": true,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "d05894dc41bce7a4005441a757e68e3eeb78feef1b2aa3c27932f4ffdd027eb3",
+        "at": "2026-11-09T09:07:10.431Z",
+        "by": {
+          "id": "insrc:code-review",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "kind": "code-review",
+    "format": "task-based",
+    "storyId": "s1",
+    "status": "passed",
+    "reviews": [
+      {
+        "reviewId": "smtp-recipient-results-20261109",
+        "attempt": 1,
+        "storyId": "s1",
+        "reviewer": "daemon",
+        "status": "passed",
+        "finalScopeIdentity": "d8c1a0fcaea5e541f958810930680d9500d3083797757230f9fc434880c3b001",
+        "attributionIdentity": "e4245528cefeea4e9b60933c5d0defc45e46265fb38d897850e6b6e3d4b8e3e2",
+        "taskScopeIdentities": [
+          {
+            "taskId": "s1",
+            "identity": "02dfc0305cd6a52007c5fd153159007487789af6702743550eb75620ec60d157"
+          }
+        ],
+        "scope": {
+          "reviewRevision": "35c9f815f4f0b14c25274343988e941329ef9285",
+          "finalScope": {
+            "revision": "35c9f815f4f0b14c25274343988e941329ef9285",
+            "identity": "d8c1a0fcaea5e541f958810930680d9500d3083797757230f9fc434880c3b001",
+            "entries": [
+              {
+                "originChangeIndex": 0,
+                "path": "src/daemon/tools/builtins/notify/index.ts",
+                "blobOid": "4035f2c3e25fa12a6fedaa9105814b6f2071b5c5",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      558,
+                      559
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 1,
+                "path": "src/daemon/tools/builtins/notify/__tests__/recipient-results.test.ts",
+                "blobOid": "d77a7fae598db6c3040dd9f08ff3feafc16fab6b",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      25
+                    ]
+                  }
+                ]
+              }
+            ],
+            "dispositions": [
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    558,
+                    559
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      558,
+                      559
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    1,
+                    25
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      1,
+                      25
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              }
+            ],
+            "selectedTaskIds": [
+              "s1"
+            ],
+            "testCount": 2,
+            "attributionIdentity": "e4245528cefeea4e9b60933c5d0defc45e46265fb38d897850e6b6e3d4b8e3e2",
+            "attributionState": "accepted",
+            "tasks": [
+              {
+                "taskId": "s1",
+                "changeIndexes": [
+                  0,
+                  1
+                ],
+                "testIndexes": [
+                  0,
+                  1
+                ],
+                "decision": {
+                  "action": "initial"
+                },
+                "identity": "02dfc0305cd6a52007c5fd153159007487789af6702743550eb75620ec60d157"
+              }
+            ]
+          },
+          "storyId": "s1",
+          "documents": {
+            "issue": {
+              "path": ".insrc/artifacts/ISSUE-501607b3d54fdfe2.json",
+              "commit": "35c9f815f4f0b14c25274343988e941329ef9285"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "35c9f815f4f0b14c25274343988e941329ef9285",
+              "parent": "d6331139b7e6b51d05fdffa9f54ff1416146648f",
+              "files": [
+                {
+                  "path": "src/daemon/tools/builtins/notify/index.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        558,
+                        559
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/daemon/tools/builtins/notify/__tests__/recipient-results.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        25
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "s1",
+            "status": "passed",
+            "summary": "Reviewed all selected changes at 35c9f815f4f0b14c25274343988e941329ef9285 against the approved issue and every acceptance check. Both mappings preserve strings, extract Address.address, and retain empty-array defaults without casts or public-contract changes. Delivery, authentication, and partial-delivery semantics remain unchanged. No material defects found.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Inspected both test bodies and their assertions. The focused regression invokes the actual tool with mixed strings/Address objects in both arrays, empty arrays, and absent arrays; it asserts exact mailbox results, success semantics, absence of object stringification, and transport cleanup. The unchanged SMTP fixture asserts successful delivery, accepted/rejected mailbox arrays, partial rejection, attachment contents, and authentication/TLS refusals using localhost. Together these cover the required behavior. Global typecheck success is builder-reported, not independently executed.",
+              "evidenceReferences": [
+                "35c9f815f4f0b14c25274343988e941329ef9285:.insrc/artifacts/ISSUE-501607b3d54fdfe2.json",
+                "35c9f815f4f0b14c25274343988e941329ef9285:src/daemon/tools/builtins/notify/index.ts",
+                "35c9f815f4f0b14c25274343988e941329ef9285:src/daemon/tools/builtins/notify/__tests__/recipient-results.test.ts",
+                "35c9f815f4f0b14c25274343988e941329ef9285:src/daemon/tools/builtins/notify/__tests__/smtp-dependencies.test.ts"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: I did not rerun tests, typecheck, or build. Supplied passing results remain builder-reported and were not independently authenticated.",
+              "The supplementary analyzer returned incomplete and off-topic graph context; the assessment relies on pinned source, diff, and test-body inspection.",
+              "Optional readability improvement: format the regression test with the surrounding two-space indentation and split its long fixture/mock declarations. Its camelCase names follow local examples such as strList, parseAttachments, and resolveSecretRef."
+            ],
+            "inspectedReferences": [
+              "35c9f815f4f0b14c25274343988e941329ef9285:.insrc/artifacts/ISSUE-501607b3d54fdfe2.json",
+              "35c9f815f4f0b14c25274343988e941329ef9285:src/daemon/tools/builtins/notify/index.ts",
+              "35c9f815f4f0b14c25274343988e941329ef9285:src/daemon/tools/builtins/notify/__tests__/recipient-results.test.ts",
+              "35c9f815f4f0b14c25274343988e941329ef9285:src/daemon/tools/builtins/notify/__tests__/smtp-dependencies.test.ts"
+            ],
+            "executedTests": []
+          }
+        ],
+        "summary": "1 selected task assessment(s): passed.",
+        "completedAt": "2026-11-09T09:07:07.307Z",
+        "buildFingerprint": "4818a4ffcc7bd5bafec063435eca8093f65ba1a5f25b5b7beb8baee837249e45"
+      }
+    ]
+  },
+  "citations": []
+}

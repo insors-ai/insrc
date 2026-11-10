@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a5221dfc-5cad-412a-8f6c-8e57862acf6e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-09T07:42:48.073Z",
+    "epicCreatedAt": "2026-11-09T04:29:20.389Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e4af63128c7cbec2",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Preserve admission failures in reports and approval readers",
+      "parent": {
+        "entityId": "STORY-e4af63128c7cbec2-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e4af63128c7cbec2-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e4af63128c7cbec2-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e4af63128c7cbec2-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e8a61e634b246680ac29e8cf073546106665109ed08cea6630ec654d5fae65f8",
+        "at": "2026-11-09T07:42:48.073Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T07:42:48.074Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Preserve admission failures in reports and approval readers",
+    "summary": "Extend current code/design history, publication, completion and approval-preservation readers to represent technical admission failures without fabricated task/chunk assessments. Normalize mutable resourceGuard metadata consistently for publication preservation identity while retaining durable audit receipts and unchanged reviewed-content/approval bindings.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Technical admission failures remain visible across failed admission, next successful attempt, permanent publication and post-cleanup history reads for both families.",
+      "Only independently passed, qualified current whole-story/artifact evidence permits approval; unverified admission or clearance cannot satisfy a gate.",
+      "Resource-only lease/receipt changes do not invalidate published review identity or lose prior approval evidence; lost-publication-receipt replay is idempotent.",
+      "No history reader replays models or silently drops unsupported records.",
+      "Changing reviewed input/source/result fields still invalidates preservation identity; normalization excludes only explicitly mutable operational guard metadata while retaining its audit record."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/task-review/__tests__/admission-history.test.ts: failed admission survives successful next attempt publication and post-cleanup reads"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/review/design-review/__tests__/admission-history.test.ts: technical admission diagnostics remain non-review evidence across publication"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/task-review/__tests__/resource-preservation.test.ts: guard-only updates preserve report identity while reviewed-input or result mutations do not"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

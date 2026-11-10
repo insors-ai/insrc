@@ -32,7 +32,7 @@ import { fileURLToPath } from 'node:url';
 
 import { isModelCallFailure, modelCallFailureDetail } from './model-failure.js';
 import type { HandlingReport } from '../completeness.js';
-import { evidenceBlocks, ruleFacts, selectSharedContext } from './dependency.js';
+import { candidatePaths, evidenceBlocks, ruleFacts, selectSharedContext } from './dependency.js';
 import { ShaperAnswerStepFailedError } from './answer-step-error.js';
 import type { AnswerStepFound } from './driver.js';
 import type { AdmissionTarget } from './handling.js';
@@ -227,7 +227,7 @@ export async function synthesizeHandled(args: SynthesizeArgs): Promise<{ readonl
 		if (handled.kind === 'single') {
 			layers = handled.reply;
 		} else {
-			layers = assembleBundle(args.target, handled.covered, handled.combine, ruleFacts(args.executed));
+			layers = assembleBundle(args.target, handled.covered, handled.combine, ruleFacts(args.executed), candidatePaths(args.executed));
 		}
 		handling = handled.handling;
 	} catch (err) {

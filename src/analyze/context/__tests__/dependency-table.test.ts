@@ -83,7 +83,11 @@ function layersProvider(): { provider: LLMProvider; prompts: string[] } {
 		completeStructured: async (messages: LLMMessage[], schema: unknown) => {
 			const prompt = String(messages[0]?.content);
 			prompts.push(prompt);
-			if ((schema as { kind: string }).kind === 'combine') return { system: 'S', focus: 'F', summary: 'combined' };
+			// The combine call writes the narrative of the whole answer from the reference it is given, anchor included.
+			if ((schema as { kind: string }).kind === 'combine') {
+				const anchoredHere = /"anchor":\{"path":"src\/anchor"/.test(prompt.slice(prompt.indexOf('REF:')));
+				return { system: anchoredHere ? 'code-shaper: structural map anchored on src/anchor.' : 'S', focus: 'F', summary: 'combined' };
+			}
 			const candidates = new Set([...prompt.matchAll(/candidates[^\n]*?"path":"([^"]+)"/g)].map(m => m[1] as string));
 			const refText = prompt.slice(prompt.indexOf('REF:'), prompt.indexOf('EVIDENCE:'));
 			for (const m of refText.matchAll(/"path":"([^"]+)"/g)) candidates.add(m[1] as string);
@@ -128,6 +132,8 @@ test('capability and code regressions with forced partitions and deduped Related
 	assert.ok(code.result.covered.length >= 2);
 	for (const p of code.prompts) assert.ok(p.includes('"anchor":{"path":"src/anchor"'), 'the anchor is in every call');
 	assert.ok(code.result.covered.every(c => c.reply.system.includes('anchored on src/anchor')));
+	assert.ok(code.result.combine !== undefined, 'the parts are combined');
+	assert.ok(code.layers.system.includes('anchored on src/anchor'), `the delivered bundle stays centred on the anchor: ${code.layers.system}`);
 	assert.equal(code.layers.surface.split('docs/shared.md').length - 1, 1, 'a file in the surface of two parts is listed once');
 });
 

@@ -1,0 +1,265 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 5,
+        "contentHash": "86c6697b78d89d51fa1e46400e8a5f7f8170990b34314c35f5b385a757ba9992",
+        "at": "2026-11-09T09:08:06.377Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "e4af63128c7cbec2",
+    "storyId": "s1",
+    "createdAt": "2026-11-09T07:52:13.312Z",
+    "updatedAt": "2026-11-09T09:08:06.224Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-09T04:29:20.389Z",
+    "epicSlug": "isolate-each-code-design-review-its",
+    "revision": 5
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "1191a5352",
+        "ranAt": "2026-11-09T07:52:13.312Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/admission-checkpoint.test.ts: unverified admission and resource guards preserve pinned code history and refuse approval",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/admission-checkpoint.test.ts",
+                "title": "unverified admission and resource guards preserve pinned code history and refuse approval",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/shared/__tests__/review-resources.test.ts: bounded exact review lease and clearance receipt contracts reject invalid input",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/review-resources.test.ts",
+                "title": "bounded exact review lease and clearance receipt contracts reject invalid input",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/review-resources.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 561,
+            "titles": [
+              {
+                "title": "bounded exact review lease and clearance receipt contracts reject invalid input",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/admission-checkpoint.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 992,
+            "titles": [
+              {
+                "title": "unverified admission and resource guards preserve pinned code history and refuse approval",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "81edc5d07",
+        "ranAt": "2026-11-09T08:05:19.987Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review/design-review/__tests__/admission-checkpoint.test.ts: historical design attempts and unverified admission retain separate semantics",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/admission-checkpoint.test.ts",
+                "title": "historical design attempts and unverified admission retain separate semantics",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review/design-review/__tests__/checkpoint-progress.test.ts: serialized resource and progress updates cannot lose open intents",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/checkpoint-progress.test.ts",
+                "title": "serialized resource and progress updates cannot lose open intents",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/admission-checkpoint.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 812,
+            "titles": [
+              {
+                "title": "historical design attempts and unverified admission retain separate semantics",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/design-review/__tests__/checkpoint-progress.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 842,
+            "titles": [
+              {
+                "title": "atomic checkpoint failure preserves the last accepted snapshot and cleans its own temporary file",
+                "result": "pass"
+              },
+              {
+                "title": "bounded no-follow checkpoint loading retains corrupt foreign and oversized state",
+                "result": "pass"
+              },
+              {
+                "title": "progress pages expose one result without baseline and polling does not renew activity",
+                "result": "pass"
+              },
+              {
+                "title": "accepted feedback cannot be rewritten and oversized stored results cannot bypass paging limits",
+                "result": "pass"
+              },
+              {
+                "title": "serialized resource and progress updates cannot lose open intents",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "35c9f815f",
+        "ranAt": "2026-11-09T09:08:06.224Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/admission-history.test.ts: failed admission survives successful next attempt publication and post-cleanup reads",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/admission-history.test.ts",
+                "title": "failed admission survives successful next attempt publication and post-cleanup reads",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review/design-review/__tests__/admission-history.test.ts: technical admission diagnostics remain non-review evidence across publication",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/admission-history.test.ts",
+                "title": "technical admission diagnostics remain non-review evidence across publication",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/resource-preservation.test.ts: guard-only updates preserve report identity while reviewed-input or result mutations do not",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/resource-preservation.test.ts",
+                "title": "guard-only updates preserve report identity while reviewed-input or result mutations do not",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/admission-history.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1157,
+            "titles": [
+              {
+                "title": "failed admission survives successful next attempt publication and post-cleanup reads",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/resource-preservation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 960,
+            "titles": [
+              {
+                "title": "guard-only updates preserve report identity while reviewed-input or result mutations do not",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/design-review/__tests__/admission-history.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 874,
+            "titles": [
+              {
+                "title": "technical admission diagnostics remain non-review evidence across publication",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

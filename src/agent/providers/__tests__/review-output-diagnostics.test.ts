@@ -103,3 +103,18 @@ test('diagnostic callback options are validated before native execution',()=>{
  assert.throws(()=>validateReviewSessionOptions({...h.opts,onDiagnostic:'not a callback'} as never),/Invalid activity/);
  assert.throws(()=>validateReviewSessionOptions({mode:'bounded',cwd:'/tmp',deadlineMs:1000,onDiagnostic:()=>{}} as never),/Invalid bounded/);
 });
+
+test('T12-failure-diagnostic-carries-backend-detail: a vibe-kind failure snapshot names the provider and retains the backend error detail',async()=>{
+ const snapshots:ReviewDiagnosticSnapshot[]=[];
+ const opts:ActivityReviewSessionOpts={mode:'activity',cwd:'/tmp',signal:new AbortController().signal,inactivityMs:1800000,internalRetry:false,onActivity:()=>{},onDiagnostic:s=>{snapshots.push(s);},onCandidate:async()=>{return{accepted:true};}};
+ const parser=new ReviewActivityStream('vibe',schema,opts,()=>{});
+ await parser.start();
+ await parser.feed(line({method:'turn/completed',params:{sessionId:'s',turn:{id:'t1',sessionId:'s',status:'failed',error:{message:'401 invalid api key for mistral'}}}}));
+ const d=parser.diagnosticSnapshot();
+ assert.equal(d.provider,'vibe','the widened provider type flows through the snapshot');
+ assert.equal(d.terminal?.reason,'turn.failed');
+ assert.equal(d.terminal?.message,'401 invalid api key for mistral','the real backend error line is retained, not a bare generic');
+ assert.ok(d.issues.some(i=>i.code==='NATIVE_CLI_FAILURE'&&i.message==='401 invalid api key for mistral'));
+ assert.ok(snapshots.length>0&&snapshots.every(s=>s.provider==='vibe'));
+ for(const kind of ['claude','codex','vibe'] as const)assert.equal(new ReviewDiagnosticCollector(kind).snapshot().provider,kind);
+});

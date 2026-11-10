@@ -163,6 +163,7 @@ sealed interface ApproveResult {
 class DaemonUnavailableException(
     message: String,
     cause: Throwable? = null,
+    val requestWritten: Boolean = false,
 ) : RuntimeException(message, cause)
 
 /**
@@ -574,10 +575,10 @@ sealed interface DebugStatusResult {
  */
 sealed interface DaemonActionResult {
     /** The action succeeded; [message] is an optional human summary. */
-    data class Ok(val message: String? = null) : DaemonActionResult
+    data class Ok(val message: String? = null, val updateId: String? = null) : DaemonActionResult
 
     /** The action did not succeed; [reason] is a user-facing explanation. */
-    data class Failed(val reason: String) : DaemonActionResult
+    data class Failed(val reason: String, val acknowledgementLost: Boolean = false) : DaemonActionResult
 }
 
 /**
@@ -588,12 +589,12 @@ sealed interface DaemonActionResult {
  * completion time); [None] when the daemon has no outcome record yet (still
  * restarting — the reconnect loop keeps polling); [Unavailable] when the socket is
  * unreachable or the reply is malformed. Never throws. The freshness flow treats a
- * [Loaded] outcome as authoritative only when [finishedAt] is at/after the update
- * started (a stale prior record is ignored).
+ * [Loaded] outcome as authoritative for the acknowledged update ID, or for a
+ * legacy reply whose timestamp is at or after the launch.
  */
 sealed interface DaemonUpdateOutcomeResult {
     /** The daemon has a persisted terminal outcome. */
-    data class Loaded(val state: String, val error: String?, val finishedAt: String) : DaemonUpdateOutcomeResult
+    data class Loaded(val state: String, val error: String?, val finishedAt: String, val updateId: String? = null) : DaemonUpdateOutcomeResult
 
     /** No outcome record exists yet (the daemon is still restarting). */
     data object None : DaemonUpdateOutcomeResult
@@ -1165,7 +1166,7 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
             )
             when {
                 !r.ok || r.error != null -> SaveResult.Rejected(r.error ?: "the daemon rejected the setting")
-                r.data["ok"] == true -> SaveResult.Saved
+                r.data["ok"] == true -> SaveResult.Saved()
                 else -> SaveResult.Rejected(repoSettingsErrorMessage(r.data))
             }
         } catch (e: DaemonUnavailableException) {
@@ -1424,14 +1425,14 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
     ): DaemonActionResult =
         try {
             val r = rpc.call(method, params)
-            if (!r.ok || r.error != null) {
+            if (!r.ok || r.error != null || (method == METHOD_UPDATE && r.data["launched"] == false)) {
                 DaemonActionResult.Failed(r.error ?: "$method returned an error")
             } else {
-                DaemonActionResult.Ok(okMessage)
+                DaemonActionResult.Ok(okMessage, if (method == METHOD_UPDATE) r.data["updateId"] as? String else null)
             }
         } catch (e: DaemonUnavailableException) {
             if (unreachableAsOk) DaemonActionResult.Ok(okMessage)
-            else DaemonActionResult.Failed(e.message ?: "the daemon is not running")
+            else DaemonActionResult.Failed(e.message ?: "the daemon is not running", method == METHOD_UPDATE && e.requestWritten)
         } catch (e: RuntimeException) {
             DaemonActionResult.Failed(e.message ?: "unexpected daemon fault")
         }
@@ -1729,12 +1730,13 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
          * shape mismatch.
          */
         internal fun parseUpdateOutcome(data: Map<String, Any?>): DaemonUpdateOutcomeResult {
-            val state = (data["state"] as? String)?.takeIf { it.isNotEmpty() }
+            val state = (data["state"] as? String)?.takeIf { it == "succeeded" || it == "failed" }
                 ?: return DaemonUpdateOutcomeResult.None
             return DaemonUpdateOutcomeResult.Loaded(
                 state = state,
                 error = (data["error"] as? String),
                 finishedAt = (data["finishedAt"] as? String) ?: "",
+                updateId = data["updateId"] as? String,
             )
         }
 

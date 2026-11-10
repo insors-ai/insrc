@@ -12,6 +12,8 @@ import java.net.UnixDomainSocketAddress
 import java.net.SocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.SocketChannel
+import java.nio.channels.SelectionKey
+import java.nio.channels.Selector
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicLong
@@ -58,15 +60,22 @@ class UnixSocketDaemonRpc(
         }
         val line = gson.toJson(request) + "\n"
 
+        var requestWritten = false
         val reply =
             try {
                 SocketChannel.open(StandardProtocolFamily.UNIX).use { channel ->
                     channel.connect(UnixDomainSocketAddress.of(socketPath))
-                    channel.write(ByteBuffer.wrap(line.toByteArray(StandardCharsets.UTF_8)))
-                    readLine(channel)
+                    val outbound = ByteBuffer.wrap(line.toByteArray(StandardCharsets.UTF_8))
+                    while (outbound.hasRemaining()) channel.write(outbound)
+                    requestWritten = true
+                    when (method) {
+                        "daemon.update" -> readBoundedUpdateReply(channel, 20_000)
+                        "daemon.updateOutcome" -> readBoundedUpdateReply(channel, 4_000)
+                        else -> readLine(channel)
+                    }
                 }
             } catch (e: IOException) {
-                throw DaemonUnavailableException("daemon socket unreachable at $socketPath", e)
+                throw DaemonUnavailableException("daemon socket unreachable at $socketPath", e, requestWritten)
             } catch (e: UnsupportedOperationException) {
                 // Platform without AF_UNIX support — treat as unreachable rather than crash.
                 throw DaemonUnavailableException("unix domain sockets unsupported on this platform", e)
@@ -75,13 +84,33 @@ class UnixSocketDaemonRpc(
         return parse(reply, resultErrorIsFailure)
     }
 
-    private fun readLine(channel: SocketChannel): String {
+    private fun readBoundedUpdateReply(channel: SocketChannel, timeoutMs: Long): String {
+        channel.configureBlocking(false)
+        return Selector.open().use { selector ->
+            channel.register(selector, SelectionKey.OP_READ)
+            readLine(channel, selector, System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeoutMs))
+        }
+    }
+
+    private fun readLine(channel: SocketChannel, selector: Selector? = null, deadline: Long = 0): String {
         val buf = ByteBuffer.allocate(64 * 1024)
         val sb = StringBuilder()
         while (true) {
             buf.clear()
             val n = channel.read(buf)
-            if (n < 0) break
+            if (n < 0) {
+                if (selector != null) throw java.io.EOFException("daemon closed before completing its update reply")
+                break
+            }
+            if (selector != null) {
+                val remaining = deadline - System.nanoTime()
+                if (remaining <= 0) throw java.net.SocketTimeoutException("daemon update reply timed out")
+                if (n == 0) {
+                    selector.select(TimeUnit.NANOSECONDS.toMillis(remaining).coerceAtLeast(1))
+                    selector.selectedKeys().clear()
+                    continue
+                }
+            }
             buf.flip()
             val chunk = StandardCharsets.UTF_8.decode(buf).toString()
             val newline = chunk.indexOf('\n')

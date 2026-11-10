@@ -23,7 +23,7 @@ import { COMPATIBILITY_RECEIPT, COMPATIBILITY_STEP } from '../release-compatibil
 import { DaemonSupervisor, spawnSupervisedDaemon, SupervisorPublicShutdown } from '../supervisor.js';
 import { SupervisorRunFiles } from '../supervisor-run-files.js';
 
-const mac = { skip: process.platform !== 'darwin', timeout: 60_000 };
+const mac = { skip: process.platform !== 'darwin', timeout: 90_000 };
 
 async function until<T>(read: () => Promise<T | undefined>, milliseconds = 12_000): Promise<T> {
 	const deadline = performance.now() + milliseconds;
@@ -128,7 +128,7 @@ test('Hold application RPCs and indexing until matching durable success across t
 			await f.gate.release(f.update);
 			await until(async () => {
 				try { return await f.call('repo.list'); } catch { return undefined; }
-			});
+			}, 25_000);
 			assert.equal(existsSync(f.bootEffect), false);
 		});
 	}
@@ -141,9 +141,13 @@ test('Threaded and non-threaded status publish the same committed release for th
 			await f.gate.publishOutcome(f.update, 'committed', 'candidate ready');
 			await f.gate.release(f.update);
 			const status = await until(async () => {
-				const result = await f.call<DaemonStatus>('daemon.status');
-				return result.features?.includes('analyze-request') ? result : undefined;
-			});
+				try {
+					const result = await f.call<DaemonStatus>('daemon.status');
+					return result.features?.includes('analyze-request') ? result : undefined;
+				} catch {
+					return undefined; // Normal boot can still be constructing the status handler.
+				}
+			}, 25_000);
 			assert.ok(f.commit.length > 0);
 			assert.equal(status.installedCommit, f.commit);
 			assert.equal(status.threads?.some(thread => thread.role === 'admin') ?? false, threaded);

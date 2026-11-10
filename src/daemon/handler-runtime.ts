@@ -154,7 +154,7 @@ export interface HandlerRuntimeDeps {
 	/** When the daemon started, for daemon.status's uptime. */
 	readonly startedAt: number;
 	/** Called by daemon.shutdown and daemon.update; the shutdown is created after the tables. */
-	readonly shutdown: (reason: string) => void;
+	readonly shutdown: (reason: string) => void | Promise<void>;
 	/** The socket server's attached clients, for daemon.debug-status; the server is created after the tables. */
 	readonly attachedClients: () => AttachedClient[];
 	/** The understanding service once it has opened (after the server listens), else undefined. */

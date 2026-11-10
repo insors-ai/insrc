@@ -22,6 +22,7 @@ import { validateRepoPath } from '../db/repos.js';
 import type { RpcHandlers } from './server.js';
 import { readSteeringBlock } from './steering-inject.js';
 import { launchUpdate, makeUpdateHandlers, readUpdateOutcome } from './update-runner.js';
+import { isManagedDaemon } from './managed-daemon-lifecycle.js';
 
 const log = getLogger('daemon');
 
@@ -38,7 +39,7 @@ export const UPDATE_SHUTDOWN_DELAY_MS = 250;
  * daemon.update and daemon.updateOutcome, as the daemon has always served
  * them; `shutdown` starts the daemon's shutdown with a reason.
  */
-export function sharedAdminHandlers(shutdown: (reason: string) => void): RpcHandlers {
+export function sharedAdminHandlers(shutdown: (reason: string) => void | Promise<void>): RpcHandlers {
 	return {
 		'config.show': async () => {
 			try {
@@ -94,7 +95,7 @@ export function sharedAdminHandlers(shutdown: (reason: string) => void): RpcHand
 
 		'daemon.shutdown': async () => {
 			log.info('shutdown requested');
-			shutdown('daemon.shutdown RPC');
+			await shutdown('daemon.shutdown RPC');
 			return { ok: true };
 		},
 
@@ -104,10 +105,15 @@ export function sharedAdminHandlers(shutdown: (reason: string) => void): RpcHand
 		// clean — the caller's socket drops and it reconnects to the fresh daemon.
 		// `daemon.updateOutcome` reads back the terminal result the helper persists.
 		...makeUpdateHandlers({
-			launch:      launchUpdate,
+			launch:      () => {
+				if (isManagedDaemon()) throw new Error('managed daemon update is not available yet');
+				return launchUpdate();
+			},
 			readOutcome: readUpdateOutcome,
 			scheduleShutdown: () => {
-				const t = setTimeout(() => shutdown('daemon.update RPC'), UPDATE_SHUTDOWN_DELAY_MS);
+				const t = setTimeout(() => {
+					void Promise.resolve(shutdown('daemon.update RPC')).catch(error => log.error({ error }, 'daemon update shutdown failed'));
+				}, UPDATE_SHUTDOWN_DELAY_MS);
 				t.unref();
 			},
 		}),
@@ -116,7 +122,7 @@ export function sharedAdminHandlers(shutdown: (reason: string) => void): RpcHand
 
 /** What the admin worker's own three methods read. */
 export interface AdminWorkerDeps {
-	readonly shutdown: (reason: string) => void;
+	readonly shutdown: (reason: string) => void | Promise<void>;
 	readonly status: () => Promise<DaemonStatus>;
 	readonly clients: () => Promise<readonly AttachedClient[]>;
 	readonly repoList: () => Promise<unknown>;

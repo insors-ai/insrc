@@ -154,7 +154,7 @@ export class ThreadServices {
 	private readonly handlers: HubHandlers;
 	private embedderBackend: EmbedderBackend | undefined;
 	private toolSettings: ToolSettings | undefined;
-	private shutdown: ((reason: string) => void) | undefined;
+	private shutdown: ((reason: string) => void | Promise<void>) | undefined;
 	private maintenance: (() => Promise<unknown>) | undefined;
 	private route: ((request: RouteRequest) => Promise<unknown>) | undefined;
 
@@ -171,7 +171,7 @@ export class ThreadServices {
 			...wireMainStoreHealth(() => this.ports),
 			[DAEMON_INFO_OP]: () => this.info(),
 			[KEYSTORE_OP]: call => serveKeystoreCall(call),
-			[SHUTDOWN_OP]: reason => { this.shutdown?.(String(reason)); },
+			[SHUTDOWN_OP]: reason => this.shutdown?.(String(reason)),
 			[ROUTE_OP]: a => {
 				if (this.route === undefined) throw new Error('the daemon cannot route a nested call yet');
 				return this.route(a as RouteRequest);
@@ -184,7 +184,7 @@ export class ThreadServices {
 	}
 
 	/** The daemon's shutdown, which a worker's SHUTDOWN_OP starts with its reason. */
-	onShutdown(shutdown: (reason: string) => void): void {
+	onShutdown(shutdown: (reason: string) => void | Promise<void>): void {
 		this.shutdown = shutdown;
 	}
 

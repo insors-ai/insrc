@@ -109,6 +109,37 @@ export interface SupervisorOptions {
 	readonly reapMs?: number;
 }
 
+/** Keeps a public shutdown admitted until the exact child has been reconciled. */
+export class SupervisorPublicShutdown {
+	private readonly stops = new Map<string, Promise<MutationReservation>>();
+
+	constructor(
+		private readonly installation: Pick<InstallationMutationGate, 'reserve' | 'release'>,
+		private readonly owner: DarwinIncarnation,
+	) {}
+
+	async admit(generation: string): Promise<void> {
+		let pending = this.stops.get(generation);
+		if (pending === undefined) {
+			pending = this.installation.reserve({ kind: 'stop', owner: this.owner });
+			this.stops.set(generation, pending);
+		}
+		try { await pending; }
+		catch (error) {
+			if (this.stops.get(generation) === pending) this.stops.delete(generation);
+			throw error;
+		}
+	}
+
+	async reconciled(generation: string): Promise<void> {
+		const pending = this.stops.get(generation);
+		if (pending === undefined) return;
+		const reservation = await pending.catch(() => undefined);
+		if (reservation !== undefined) await this.installation.release(reservation);
+		this.stops.delete(generation);
+	}
+}
+
 const fail = (code: SupervisorLifecycleError['code'], message: string, generation: string | null = null): never => {
 	throw new SupervisorLifecycleError(code, message, generation);
 };
@@ -269,7 +300,7 @@ export class DaemonSupervisor {
 		if (active.failure !== undefined) return fail(active.failure, 'generation is fenced');
 		if (active.state !== 'draining') {
 			active.state = 'draining';
-			this.arm(active, request.deadlineMs ?? this.options.shutdownMs ?? 30_000);
+			this.arm(active, request.deadlineMs ?? this.options.shutdownMs ?? 20_000);
 			active.drain = { v: 1, id: randomUUID(), op: 'drain', generation: active.id };
 			active.child.send(active.drain);
 		}
@@ -324,7 +355,7 @@ export class DaemonSupervisor {
 				if (this.active !== active || active.reaped || active.forceAttempted) return;
 				if (active.state !== 'draining') {
 					active.state = 'draining';
-					this.arm(active, request.deadlineMs ?? this.options.shutdownMs ?? 30_000);
+					this.arm(active, request.deadlineMs ?? this.options.shutdownMs ?? 20_000);
 				}
 			} else if (request.op === 'guard-acquire' && this.options.runFiles !== undefined && active.state !== 'running') {
 				const leaseToken = await this.options.runFiles.grant(active.id);

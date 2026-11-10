@@ -609,6 +609,10 @@ export class CliProvider implements LLMProvider {
 
  private async activityReview<T>(prompt:string,schema:StructuredSchema,opts:ActivityReviewSessionOpts):Promise<T>{
   if(this.kind==='vibe')throw new Error('review activity is not supported for the vibe CLI');
+  // Same Ollama preflight + per-child env as the bounded claude path (ISSUE-738d62b848fd173f):
+  // a rejected check throws OllamaTargetError before any child is spawned.
+  await this.checkOllama();
+  const childEnv=this.withOllama(process.env);
   const acceptedStop=new AbortController();
   const signal=AbortSignal.any([opts.signal,acceptedStop.signal]);
   const parser=new ReviewActivityStream<T>(this.kind,schema,opts,()=>acceptedStop.abort());
@@ -624,7 +628,7 @@ export class CliProvider implements LLMProvider {
     args=codexReviewSessionArgs(path,opts.cwd,this.modelArgs());
    }
    await parser.start();
-   const result=await runInProcessGroup(resolveBin(this.binPath),args,{mode:'activity',cwd:opts.cwd,stdin:prompt,signal,onStdoutChunk:chunk=>parser.feed(chunk)});
+   const result=await runInProcessGroup(resolveBin(this.binPath),args,{mode:'activity',cwd:opts.cwd,stdin:prompt,signal,onStdoutChunk:chunk=>parser.feed(chunk),...childEnv?{env:childEnv}:{}});
    await parser.end();
    const accepted=parser.result();if(accepted.accepted)return accepted.value;
    if(result.aborted)throw abortError();

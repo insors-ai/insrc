@@ -8,8 +8,18 @@ What the build validation gate ran for each Task of this Story, and what each te
 
 ## s1
 
-Run at 2026-11-10T18:35:55.194Z on commit `4c795020b`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-10T18:48:15.497Z on commit `da2436824`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
-no tests named for a trivial build
+**src/daemon/__tests__/model-catalog-asset.test.ts**
 
-No tests were named for this Task.
+Run by file: the build commit touched this test file.
+
+| Result | File | Titles |
+| :--- | :--- | :--- |
+| pass | `src/daemon/__tests__/model-catalog-asset.test.ts` | 5 |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/__tests__/model-catalog-asset.test.ts` | 0 | 5 | 1.4 s |  |

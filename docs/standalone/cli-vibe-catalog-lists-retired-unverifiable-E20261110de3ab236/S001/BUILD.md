@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story s1
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-11-10T18:33:26.950Z  ·  **Updated:** 2026-11-10T18:35:55.194Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-11-10T18:33:26.950Z  ·  **Updated:** 2026-11-10T18:48:15.497Z
 
-**Commit:** 4c795020b
+**Commit:** 61dba0cb8
 
 ## Scope
 
@@ -12,11 +12,11 @@ Approved ISSUE-de3ab23659bc21fd (bugfix, small): rewrite only the cli-vibe famil
 
 ## Triage rationale
 
-bugfix (small) routed issue -> build with no LLD (triage route producesLld=false): single shipped JSON asset; no production code changes.
+bugfix (small) routed issue -> build with no LLD (triage route producesLld=false): single shipped JSON asset plus one pinning test; no production code changes.
 
 ## Summary
 
-Rewrote the cli-vibe family of src/assets/models/cloud-model-catalog.json to the runtime-verified values from approved ISSUE-de3ab23659bc21fd: mistral-large-4-0 (aliases mistral-large-4-0-3, mistral-large-4; efforts low/medium/high) replaces mistral-large-latest; mistral-vibe-cli-latest efforts narrowed to off/high; devstral-latest and mistral-small-latest removed; zai-glm-5-3(-flash) kept at low/high/max; tierDefaults and summariserModel repointed to the large-4 / vibe-cli / glm-5-3-flash entries. Single-file change, committed as 4c795020b with the Insrc-Story trailer; check-model-definitions gate, model-catalog/config/cli-vibe/chat-panel/cli-adapter suites (436 tests) and tsc --noEmit all pass.
+Final validate after the CR-driven test addition (61dba0cb8): cli-vibe family rewritten to runtime-verified values in 4c795020b and pinned by a new assertion in model-catalog-asset.test.ts; code review attempt 2 passed with verified coverage and no findings. 66/66 model-related tests, 371/371 chat/CLI suites, check-model-definitions gate and tsc --noEmit all pass.
 
 ## Tasks validated
 
@@ -26,4 +26,5 @@ Rewrote the cli-vibe family of src/assets/models/cloud-model-catalog.json to the
 
 ## Changes
 
-- `src/assets/models/cloud-model-catalog.json` — **insrc-build** (2026-11-10T18:35:55.194Z)
+- `src/assets/models/cloud-model-catalog.json` — **insrc-build** (2026-11-10T18:48:15.497Z)
+- `src/daemon/__tests__/model-catalog-asset.test.ts` — **insrc-build** (2026-11-10T18:48:15.497Z)

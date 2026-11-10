@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "1e12455de65da6f7a217d828e824fc33b3f2722fc636d80d0f71054cbad05be5",
-        "at": "2026-11-10T18:35:55.212Z",
+        "number": 2,
+        "contentHash": "9879be55678e0110644671394798da037504195d02a7a04f31c72e228add846f",
+        "at": "2026-11-10T18:48:15.521Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,22 +23,60 @@
     "epicHash": "de3ab23659bc21fd",
     "storyId": "s1",
     "createdAt": "2026-11-10T18:35:55.194Z",
-    "updatedAt": "2026-11-10T18:35:55.194Z",
+    "updatedAt": "2026-11-10T18:48:15.497Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-10T18:28:40.625Z",
     "epicSlug": "cli-vibe-catalog-lists-retired-unverifiable",
-    "revision": 1
+    "revision": 2
   },
   "body": {
     "tasks": [
       {
         "taskId": "s1",
-        "commit": "4c795020b",
-        "ranAt": "2026-11-10T18:35:55.194Z",
+        "commit": "da2436824",
+        "ranAt": "2026-11-10T18:48:15.497Z",
         "testsPassed": true,
-        "tests": [],
-        "files": [],
-        "note": "no tests named for a trivial build"
+        "tests": [
+          {
+            "name": "src/daemon/__tests__/model-catalog-asset.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/daemon/__tests__/model-catalog-asset.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/model-catalog-asset.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1403,
+            "titles": [
+              {
+                "title": "model-catalog-asset.test.ts: shipped asset validates, ships via copy-assets, lists today's models and aliases; its tier defaults equal DEFAULT_TIERS; the installer reads its defaults from the file; the summariser comes from summariserModel",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog-asset.test.ts: Codex models carry the 1048576-char inputLimit",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog-asset.test.ts: every shipped Ollama model has memoryMb and the build gate passes",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog-asset.test.ts: the shipped file validates, lists ollama-claude after the existing families, and every host-family model has hosting 'cloud' with its efforts",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog-asset.test.ts: the shipped cli-vibe family pins the runtime-verified Mistral models and tier defaults (ISSUE-de3ab23659bc21fd)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
       }
     ]
   },

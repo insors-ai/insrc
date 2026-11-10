@@ -21,9 +21,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "228dec8d4a434b2b762e32e04fe8a8bad1326cff7c374519fe3b14ad161af601",
-        "at": "2026-11-10T18:41:39.305Z",
+        "number": 3,
+        "contentHash": "84e910008d3300d925ed68c58d115dd3f5ae1daf13f33531b64b6670d1929232",
+        "at": "2026-11-10T18:58:01.664Z",
         "by": {
           "id": "insrc:code-review",
           "kind": "system",
@@ -32,13 +32,13 @@
       },
       "signoffs": []
     },
-    "revision": 1
+    "revision": 3
   },
   "body": {
     "kind": "code-review",
     "format": "task-based",
     "storyId": "s1",
-    "status": "incomplete",
+    "status": "passed",
     "reviews": [
       {
         "reviewId": "cr-de3ab23659bc21fd-s1-a1",
@@ -339,6 +339,701 @@
         ],
         "summary": "1 selected task assessment(s): incomplete.\nNative output diagnostics: [{\"phase\":\"assessment\",\"taskId\":\"s1\",\"provider\":\"claude\",\"resolved\":true,\"errors\":[{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"taskId\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"status\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"summary\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"findings\",\"correction\":\"Return findings as a top-level JSON array.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"testCoverage\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"limitations\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"advice\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"inspectedReferences\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1}]}]",
         "completedAt": "2026-11-10T18:41:38.352Z"
+      },
+      {
+        "reassessmentSummary": "Task s1 covers both the cli-vibe catalog rewrite (change 0) and the new regression test added in this attempt (change 1) that pins the exact shipped ids/aliases/efforts/tierDefaults/summariserModel, directly addressing attempt 1's LOW coverage finding. All six supplied tests (the new pinning test plus the five existing regression suites covering the catalog validator, build gate, and consumers) verify this task's behavior and compatibility. Reassessing rather than reusing because the change set now includes the new test file not present in attempt 1's scope.",
+        "reviewId": "cr-de3ab23659bc21fd-s1-a1",
+        "attempt": 2,
+        "storyId": "s1",
+        "taskId": "s1",
+        "reviewer": "daemon",
+        "status": "passed",
+        "finalScopeIdentity": "11bebc7e96948163a0271fc958f6cedcc1fa2e20b11404e5af54be5a68896843",
+        "attributionIdentity": "2e7528989bccda65caa3acaf40610cafa78af1247cd0fa9cf71a9c2060f822e7",
+        "taskScopeIdentities": [
+          {
+            "taskId": "s1",
+            "identity": "c2356545abd9061cdb10b22d6f64ca1e74c1cb2fa62efeab036e4d320eb78878"
+          }
+        ],
+        "scope": {
+          "reviewRevision": "c7305e3375bb7f5cc6034115b7028b997f33fd2c",
+          "finalScope": {
+            "revision": "c7305e3375bb7f5cc6034115b7028b997f33fd2c",
+            "identity": "11bebc7e96948163a0271fc958f6cedcc1fa2e20b11404e5af54be5a68896843",
+            "entries": [
+              {
+                "originChangeIndex": 0,
+                "path": "src/assets/models/cloud-model-catalog.json",
+                "blobOid": "4a09291bef9b7fc5a07fbacaabdecde2d75f08d6",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      47,
+                      48
+                    ]
+                  },
+                  {
+                    "after": [
+                      50,
+                      50
+                    ]
+                  },
+                  {
+                    "after": [
+                      53,
+                      53
+                    ]
+                  },
+                  {
+                    "after": [
+                      55,
+                      55
+                    ]
+                  },
+                  {
+                    "after": [
+                      57,
+                      57
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 1,
+                "path": "src/daemon/__tests__/model-catalog-asset.test.ts",
+                "blobOid": "4ca43630273601a88b2dff737d34837adbf50af9",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      128,
+                      153
+                    ]
+                  }
+                ]
+              }
+            ],
+            "dispositions": [
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    47,
+                    48
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      47,
+                      48
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    50,
+                    50
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      50,
+                      50
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    53,
+                    53
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      53,
+                      53
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    55,
+                    55
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      55,
+                      55
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    57,
+                    57
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      57,
+                      57
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    128,
+                    153
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      128,
+                      153
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              }
+            ],
+            "selectedTaskIds": [
+              "s1"
+            ],
+            "testCount": 6,
+            "attributionIdentity": "2e7528989bccda65caa3acaf40610cafa78af1247cd0fa9cf71a9c2060f822e7",
+            "attributionState": "accepted",
+            "tasks": [
+              {
+                "taskId": "s1",
+                "changeIndexes": [
+                  0,
+                  1
+                ],
+                "testIndexes": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "decision": {
+                  "action": "reassess",
+                  "reason": "Attempt 1 (incomplete) attributed only the catalog JSON change (index 0) and flagged a LOW finding for missing regression coverage pinning the exact cli-vibe values. This attempt adds a second change (index 1: the new test in model-catalog-asset.test.ts) that directly addresses that finding by asserting the shipped ids/aliases/efforts/tierDefaults/summariserModel and the absence of retired ids. Since the change scope expanded beyond attempt 1's accepted attribution, this must be reassessed rather than reused. All six supplied tests verify s1's behavior: test 0 is the new pinning test, tests 1-4 are existing regression suites (validator, build gate, consumers) confirming no compatibility regressions, and test 5 is the whole-repo typecheck confirming the test addition compiles cleanly."
+                },
+                "identity": "c2356545abd9061cdb10b22d6f64ca1e74c1cb2fa62efeab036e4d320eb78878"
+              }
+            ]
+          },
+          "storyId": "s1",
+          "taskId": "s1",
+          "documents": {
+            "issue": {
+              "path": "docs/standalone/cli-vibe-catalog-lists-retired-unverifiable-E20261110de3ab236/ISSUE.md",
+              "commit": "c7305e3375bb7f5cc6034115b7028b997f33fd2c"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "4c795020be3bac3a3b4d2e3c58cd4e251dd68fe2",
+              "parent": "fcba0bc4dd93def5f23734bfe7a2b71f39b72bbf",
+              "files": [
+                {
+                  "path": "src/assets/models/cloud-model-catalog.json",
+                  "segments": [
+                    {
+                      "after": [
+                        47,
+                        48
+                      ]
+                    },
+                    {
+                      "after": [
+                        50,
+                        50
+                      ]
+                    },
+                    {
+                      "after": [
+                        53,
+                        53
+                      ]
+                    },
+                    {
+                      "after": [
+                        55,
+                        55
+                      ]
+                    },
+                    {
+                      "after": [
+                        57,
+                        57
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "61dba0cb80c824a4091100989c44123c647e4544",
+              "parent": "e12b62e193e414ee7c160e34cc917838acb9522d",
+              "files": [
+                {
+                  "path": "src/daemon/__tests__/model-catalog-asset.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        128,
+                        153
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "s1",
+            "status": "passed",
+            "summary": "Reassessed with the expanded scope (catalog JSON unchanged since attempt 1, plus the new pinning test added in src/daemon/__tests__/model-catalog-asset.test.ts). The cli-vibe family rewrite still exactly matches all stated acceptance checks (mistral-large-4-0 with its aliases/efforts, mistral-vibe-cli-latest off/high, zai-glm-5-3/-flash unchanged, tierDefaults and summariserModel repointed, devstral-latest/mistral-small-latest/mistral-large-latest absent). The new test directly resolves attempt 1's LOW coverage finding: it asserts the exact shipped ids/aliases/displayNames/efforts via assert.deepEqual, asserts the three retired ids are absent, asserts tierDefaults and summariserModel exactly, and cross-checks buildModelRegistry's resolved tierDefault/summariserModel for cli-vibe. I ran the mapped test file directly (src/daemon/__tests__/model-catalog-asset.test.ts) at the reviewed revision: 5/5 pass, including the new pinning test and the build-gate test (which spawns scripts/check-model-definitions.mjs and asserts exit 0). I also diffed the scoped files against their origin commits to confirm the catalog JSON has zero further changes since 4c795020 (attempt-1-reviewed state) and that the test file's only change versus 61dba0cb8 is the one new test block (+26 lines) already shown in the task's blocks. No production code was touched by this task's scope (confirmed by diffing the two scoped files; unrelated review-activity-stream.ts/review-diagnostics.ts changes visible in the wider commit range belong to a different, unrelated story and are out of this task's reviewSet). No findings remain.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "The new test (model-catalog-asset.test.ts: 'the shipped cli-vibe family pins the runtime-verified Mistral models and tier defaults (ISSUE-de3ab23659bc21fd)') directly covers the fix: it asserts the exact ids/aliases/displayNames/efforts of all four cli-vibe models via assert.deepEqual against the literal expected array, asserts the three retired/incorrect ids (devstral-latest, mistral-small-latest, mistral-large-latest) are absent from the ids+aliases set, asserts tierDefaults and summariserModel exactly, and additionally exercises buildModelRegistry's resolved tierDefault('cli-vibe', ...) and summariserModel('cli-vibe') to confirm the registry layer resolves the same corrected values. Combined with the existing 'shipped asset validates ... lists today's models and aliases' test and the build-gate test (spawns scripts/check-model-definitions.mjs, asserts exit 0), coverage now closes the gap attempt 1 flagged (LOW, src/daemon/__tests__/model-catalog-asset.test.ts:128-153 is the added test). I executed src/daemon/__tests__/model-catalog-asset.test.ts myself at the reviewed revision (HEAD c7305e337) and all 5 tests, including the new one, passed.",
+              "evidenceReferences": [
+                "c7305e3375bb7f5cc6034115b7028b997f33fd2c:src/daemon/__tests__/model-catalog-asset.test.ts",
+                "61dba0cb80c824a4091100989c44123c647e4544:src/daemon/__tests__/model-catalog-asset.test.ts",
+                "c7305e3375bb7f5cc6034115b7028b997f33fd2c:src/assets/models/cloud-model-catalog.json"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: I ran `npx tsx --test src/daemon/__tests__/model-catalog-asset.test.ts` myself at the reviewed revision (5/5 pass, 695ms) rather than relying solely on the builder's report. I did not re-run `npx tsc --noEmit`, the wider model-catalog.test.ts / list-models.test.ts / chat-panel.test.ts suites, or the full repo sweep myself; I rely on the builder-reported pass results for those, which is reasonable given the directly-mapped test already confirms the fix and the diffs show no code outside the two scoped files and the two scoped JSON/.ts files changed."
+            ],
+            "inspectedReferences": [
+              "c7305e3375bb7f5cc6034115b7028b997f33fd2c:docs/standalone/cli-vibe-catalog-lists-retired-unverifiable-E20261110de3ab236/ISSUE.md",
+              "4c795020be3bac3a3b4d2e3c58cd4e251dd68fe2:src/assets/models/cloud-model-catalog.json",
+              "c7305e3375bb7f5cc6034115b7028b997f33fd2c:src/assets/models/cloud-model-catalog.json",
+              "fcba0bc4dd93def5f23734bfe7a2b71f39b72bbf:src/assets/models/cloud-model-catalog.json",
+              "61dba0cb80c824a4091100989c44123c647e4544:src/daemon/__tests__/model-catalog-asset.test.ts",
+              "c7305e3375bb7f5cc6034115b7028b997f33fd2c:src/daemon/__tests__/model-catalog-asset.test.ts",
+              "e12b62e193e414ee7c160e34cc917838acb9522d:src/daemon/__tests__/model-catalog-asset.test.ts",
+              "c7305e3375bb7f5cc6034115b7028b997f33fd2c:scripts/check-model-definitions.mjs"
+            ],
+            "executedTests": [
+              {
+                "file": "src/daemon/__tests__/model-catalog-asset.test.ts",
+                "cases": [
+                  "model-catalog-asset.test.ts: the shipped cli-vibe family pins the runtime-verified Mistral models and tier defaults (ISSUE-de3ab23659bc21fd)",
+                  "model-catalog-asset.test.ts: shipped asset validates, ships via copy-assets, lists today's models and aliases; its tier defaults equal DEFAULT_TIERS; the installer reads its defaults from the file; the summariser comes from summariserModel",
+                  "model-catalog-asset.test.ts: every shipped Ollama model has memoryMb and the build gate passes",
+                  "model-catalog-asset.test.ts: Codex models carry the 1048576-char inputLimit",
+                  "model-catalog-asset.test.ts: the shipped file validates, lists ollama-claude after the existing families, and every host-family model has hosting 'cloud' with its efforts"
+                ],
+                "command": "npx tsx --test src/daemon/__tests__/model-catalog-asset.test.ts",
+                "result": "pass",
+                "evidenceReferences": [
+                  "c7305e3375bb7f5cc6034115b7028b997f33fd2c:src/daemon/__tests__/model-catalog-asset.test.ts"
+                ],
+                "executionDetails": "Ran directly at reviewed revision c7305e337 (HEAD). 5/5 pass, 695.33ms total; includes the new pinning test and the build-gate subtest which spawns scripts/check-model-definitions.mjs and asserts exit 0."
+              }
+            ]
+          }
+        ],
+        "summary": "1 selected task assessment(s): passed.",
+        "completedAt": "2026-11-10T18:47:21.935Z"
+      },
+      {
+        "reviewId": "cr-de3ab23659bc21fd-s1-full",
+        "attempt": 1,
+        "storyId": "s1",
+        "reviewer": "daemon",
+        "status": "passed",
+        "finalScopeIdentity": "a61c77308b9206f5596952c73cca187852f8816b186deabde5f7bdd7c994724c",
+        "attributionIdentity": "fd82560b7e50d3327ea8d09169584a27df859262261eec8b580287d2f6739180",
+        "taskScopeIdentities": [
+          {
+            "taskId": "s1",
+            "identity": "7c9c31f9ec32cd52d17641a47818fa13e11967644f567a2667d41ed537abe836"
+          }
+        ],
+        "scope": {
+          "reviewRevision": "da24368243552780b6fcb0b282c765bd35e2f94b",
+          "finalScope": {
+            "revision": "da24368243552780b6fcb0b282c765bd35e2f94b",
+            "identity": "a61c77308b9206f5596952c73cca187852f8816b186deabde5f7bdd7c994724c",
+            "entries": [
+              {
+                "originChangeIndex": 0,
+                "path": "src/assets/models/cloud-model-catalog.json",
+                "blobOid": "4a09291bef9b7fc5a07fbacaabdecde2d75f08d6",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      47,
+                      48
+                    ]
+                  },
+                  {
+                    "after": [
+                      50,
+                      50
+                    ]
+                  },
+                  {
+                    "after": [
+                      53,
+                      53
+                    ]
+                  },
+                  {
+                    "after": [
+                      55,
+                      55
+                    ]
+                  },
+                  {
+                    "after": [
+                      57,
+                      57
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 1,
+                "path": "src/daemon/__tests__/model-catalog-asset.test.ts",
+                "blobOid": "4ca43630273601a88b2dff737d34837adbf50af9",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      128,
+                      153
+                    ]
+                  }
+                ]
+              }
+            ],
+            "dispositions": [
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    47,
+                    48
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      47,
+                      48
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    50,
+                    50
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      50,
+                      50
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    53,
+                    53
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      53,
+                      53
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    55,
+                    55
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      55,
+                      55
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    57,
+                    57
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      57,
+                      57
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    128,
+                    153
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      128,
+                      153
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              }
+            ],
+            "selectedTaskIds": [
+              "s1"
+            ],
+            "testCount": 6,
+            "attributionIdentity": "fd82560b7e50d3327ea8d09169584a27df859262261eec8b580287d2f6739180",
+            "attributionState": "accepted",
+            "tasks": [
+              {
+                "taskId": "s1",
+                "changeIndexes": [
+                  0,
+                  1
+                ],
+                "testIndexes": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "decision": {
+                  "action": "initial"
+                },
+                "identity": "7c9c31f9ec32cd52d17641a47818fa13e11967644f567a2667d41ed537abe836"
+              }
+            ]
+          },
+          "storyId": "s1",
+          "documents": {
+            "issue": {
+              "path": "docs/standalone/cli-vibe-catalog-lists-retired-unverifiable-E20261110de3ab236/ISSUE.md",
+              "commit": "da24368243552780b6fcb0b282c765bd35e2f94b"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "4c795020be3bac3a3b4d2e3c58cd4e251dd68fe2",
+              "parent": "fcba0bc4dd93def5f23734bfe7a2b71f39b72bbf",
+              "files": [
+                {
+                  "path": "src/assets/models/cloud-model-catalog.json",
+                  "segments": [
+                    {
+                      "after": [
+                        47,
+                        48
+                      ]
+                    },
+                    {
+                      "after": [
+                        50,
+                        50
+                      ]
+                    },
+                    {
+                      "after": [
+                        53,
+                        53
+                      ]
+                    },
+                    {
+                      "after": [
+                        55,
+                        55
+                      ]
+                    },
+                    {
+                      "after": [
+                        57,
+                        57
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "61dba0cb80c824a4091100989c44123c647e4544",
+              "parent": "e12b62e193e414ee7c160e34cc917838acb9522d",
+              "files": [
+                {
+                  "path": "src/daemon/__tests__/model-catalog-asset.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        128,
+                        153
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "s1",
+            "status": "passed",
+            "summary": "The cli-vibe catalog rewrite in src/assets/models/cloud-model-catalog.json exactly matches the ISSUE's fix intent and the runtime-verified citations: devstral-latest and mistral-small-latest removed, mistral-large-latest replaced by mistral-large-4-0 (aliases mistral-large-4-0-3/mistral-large-4, efforts low/medium/high), mistral-vibe-cli-latest efforts narrowed to off/high, zai-glm-5-3/-flash unchanged at low/high/max, tierDefaults and summariserModel repointed to the new ids. The added regression test in model-catalog-asset.test.ts pins these exact model entries, asserts the retired ids are absent, and exercises both FamilyDefinition.tierDefaults/summariserModel and the ModelRegistry wrappers (tierDefault/summariserModel), which is adequate coverage for a pure-data fix. No production code was touched, matching the ISSUE's \"no production code changes\" requirement.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "The added test deep-equals the full cli-vibe models array (id/aliases/displayName/efforts) against the exact values specified in the ISSUE's fix intent, explicitly asserts the three retired ids are absent from both ids and aliases, deep-equals tierDefaults, and checks summariserModel both at the FamilyDefinition level and through buildModelRegistry's tierDefault/summariserModel accessors (the code path that actually drives model selection). This covers every acceptance check in the task and ISSUE with behavior-level assertions, not just presence checks.",
+              "evidenceReferences": [
+                "da24368243552780b6fcb0b282c765bd35e2f94b:src/daemon/__tests__/model-catalog-asset.test.ts",
+                "da24368243552780b6fcb0b282c765bd35e2f94b:src/assets/models/cloud-model-catalog.json"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: I did not re-run `npx tsx --test src/daemon/__tests__/model-catalog-asset.test.ts` or the broader suites myself — the sandbox denied invoking node/npx directly in this session. I instead confirmed the working tree at HEAD (869aa1d8) has zero diff against the pinned revision da2436824 for both changed files, so the builder-reported pass results for this exact source are reliable evidence.",
+              "A pre-existing, out-of-scope mock file (mocks/chat-provider-model-effort.html) still lists the retired mistral-large-latest/mistral-small-latest ids; it wasn't touched by this change and isn't wired to the runtime catalog, so it's not a defect of this fix, just worth a follow-up cleanup if that mock is ever used to demo the model picker."
+            ],
+            "inspectedReferences": [
+              "da24368243552780b6fcb0b282c765bd35e2f94b:docs/standalone/cli-vibe-catalog-lists-retired-unverifiable-E20261110de3ab236/ISSUE.md",
+              "4c795020be3bac3a3b4d2e3c58cd4e251dd68fe2:src/assets/models/cloud-model-catalog.json",
+              "da24368243552780b6fcb0b282c765bd35e2f94b:src/assets/models/cloud-model-catalog.json",
+              "61dba0cb80c824a4091100989c44123c647e4544:src/daemon/__tests__/model-catalog-asset.test.ts",
+              "da24368243552780b6fcb0b282c765bd35e2f94b:src/daemon/__tests__/model-catalog-asset.test.ts"
+            ],
+            "executedTests": []
+          }
+        ],
+        "summary": "1 selected task assessment(s): passed.",
+        "completedAt": "2026-11-10T18:58:01.065Z",
+        "buildFingerprint": "b3c4555336e93a063b93ae52a4b1c3350039c10b489d5aa7bc420c125b4c8d81"
       }
     ]
   },

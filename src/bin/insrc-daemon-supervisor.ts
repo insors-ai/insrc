@@ -13,6 +13,7 @@ import { PATHS } from '../shared/paths.js';
 import { DaemonSupervisor, SupervisorPublicShutdown } from '../daemon/supervisor.js';
 import { SupervisorRunFiles } from '../daemon/supervisor-run-files.js';
 import { listenForSupervisorControllers } from '../daemon/supervisor-socket.js';
+import { qualifiedPairFromReservation } from '../daemon/release-compatibility.js';
 
 async function verifyReady(socketPath: string, pid: number, uid: number): Promise<void> {
 	let resolvePeer!: (peer: DarwinPeerCredentials) => void;
@@ -51,6 +52,19 @@ async function main(): Promise<void> {
 		daemon: {
 			runtime: installation.runtime, entry: join(installation.releaseRoot, 'out/daemon/index.js'), cwd: installation.releaseRoot,
 			env: { ...process.env, INSRC_MODE: 'daemon', INSRC_DAEMON_ROOT: installation.releaseRoot, PATH: installation.pathEnv },
+		},
+		configureLaunch(daemon, reservation) {
+			const env = { ...daemon.env };
+			delete env['INSRC_PROBATION_UPDATE'];
+			delete env['INSRC_PROBATION_RELEASE'];
+			if (reservation.kind === 'update' && installation.releaseId === reservation.predecessor.candidateRelease) {
+				const { candidate } = qualifiedPairFromReservation(reservation);
+				env['INSRC_PROBATION_UPDATE'] = reservation.id;
+				env['INSRC_PROBATION_RELEASE'] = candidate.releaseId;
+			} else if (reservation.kind === 'update' && installation.releaseId !== reservation.predecessor.priorRelease) {
+				throw new Error('pinned release does not belong to this update');
+			}
+			return { ...daemon, env };
 		},
 		runFiles: new SupervisorRunFiles({ guardPath: paths.runGuard, pidFile: paths.daemonPid, socketFile: paths.daemonSocket },
 			{ ...owner, commandLine: owner.executable }, owner.uid),

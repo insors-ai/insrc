@@ -46,6 +46,7 @@ import { cheapTierIgnoreModel } from '../indexer/ignore-proposal-model.js';
 import { IndexerService } from '../indexer/index.js';
 import { IpcServer, directDispatch } from './server.js';
 import { declareLiveStoreOwner } from '../db/graph/store.js';
+import { startManagedDaemonProbation } from './managed-daemon-probation.js';
 import { installStoreFileOpenDiagnostic } from './store-file-open-diagnostic.js';
 import { reportFatal } from './fatal.js';
 import { createShutdown, exitRespectingStoreHealth, realEndDeps } from './shutdown.js';
@@ -116,6 +117,15 @@ async function main(): Promise<void> {
 		log.error('already running — exiting');
 		startupRunFiles.release(); startupRunFiles = undefined;
 		process.exit(1);
+	}
+	const probation = managed === undefined ? undefined : await startManagedDaemonProbation(managed);
+	if (probation !== undefined && managed !== undefined && startupGrant !== undefined) {
+		startupServer = probation.server;
+		managed.setShutdownHandler(() => realEndDeps.killSelf());
+		await startupGrant.returnGrant();
+		startupRunFiles = undefined;
+		await managed.ready();
+		await probation.waitForCommit();
 	}
 
 	// 2. Ensure directories
@@ -392,7 +402,7 @@ async function main(): Promise<void> {
 	const queueDone = startQueue();
 
 	// 6. Write PID
-	writePid();
+	if (probation === undefined) writePid();
 	const startedAt = Date.now();
 
 	// 6b. Register the unified tool set (docs/plans/tools.md stage 5). Covers
@@ -516,7 +526,8 @@ async function main(): Promise<void> {
 	// s2): routed classes go to their workers, everything else runs here.
 	const local = router !== undefined ? lazyForward(buildRuntime).forward : buildRuntime();
 	localForward = local;
-	const server = new IpcServer(connectionSessionRuntime.forward(router?.forward ?? local));
+	const forward = connectionSessionRuntime.forward(router?.forward ?? local);
+	const server = probation?.server ?? new IpcServer(forward);
 	server.onConnectionClose(context => {
 		connectionSessionRuntime.disconnect(context);
 		void progressRuntime?.then(runtime => runtime.access.disconnect(context)).catch(() => {});
@@ -550,10 +561,11 @@ async function main(): Promise<void> {
 	const hostsSharedState = !routed.has('session');
 	if (hostsSharedState) initChatHandlers();
 
-	await server.listen();
+	if (probation === undefined) await server.listen();
+	else probation.activate(forward);
 	void getProgressRuntime().catch(() => { log.warn('could not initialize task progress storage'); });
-	if (startupGrant !== undefined) await startupGrant.returnGrant();
-	else startupRunFiles.release();
+	if (probation === undefined && startupGrant !== undefined) await startupGrant.returnGrant();
+	else startupRunFiles?.release();
 	startupRunFiles = undefined;
 	startupServer = undefined;
 	// The shared-state worker starts now, after the socket listens (its understanding service is a client
@@ -683,7 +695,7 @@ async function main(): Promise<void> {
 		managed.setShutdownHandler(shutdown);
 		process.on('SIGTERM', () => managed.signal('SIGTERM', realEndDeps.killSelf));
 		process.on('SIGINT', () => managed.signal('SIGINT', realEndDeps.killSelf));
-		if (!managed.draining) {
+		if (probation === undefined && !managed.draining) {
 			try { await managed.ready(); }
 			catch (error) { if (!managed.draining) throw error; }
 		}

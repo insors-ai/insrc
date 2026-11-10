@@ -54,6 +54,13 @@ export class ManagedDaemonLifecycle {
 
 	get draining(): boolean { return this.drain !== undefined || this.shutdownStarted || this.publicDrain !== undefined; }
 
+	assertProbationActive(): void {
+		if (this.failure !== undefined) throw this.failure;
+		if (this.draining || this.channel.destroyed || process.ppid !== this.parentPid) {
+			throw new SupervisorLifecycleError('watchdog-channel', 'probation lost its supervising generation');
+		}
+	}
+
 	setShutdownHandler(start: (reason: string) => void): void {
 		this.startShutdown = start;
 		if (this.drain !== undefined) this.applyDrain(this.drain);

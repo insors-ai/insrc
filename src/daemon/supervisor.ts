@@ -97,6 +97,7 @@ interface ConfirmedExit {
 export interface SupervisorOptions {
 	readonly installation: Pick<InstallationMutationGate, 'read' | 'admit'>;
 	readonly daemon: PinnedDaemon;
+	readonly configureLaunch?: (daemon: PinnedDaemon, reservation: MutationReservation) => PinnedDaemon;
 	readonly verifyReady: (generation: string, pid: number) => Promise<void>;
 	readonly reconcileExit: (generation: string, pid: number | undefined) => Promise<void>;
 	readonly allowInitialStart: () => Promise<boolean>;
@@ -232,6 +233,7 @@ export class DaemonSupervisor {
 	private async spawnGeneration(
 		request: SupervisorRequest, reservation: MutationReservation, owner: DarwinIncarnation, generation: string,
 	): Promise<SupervisorReply> {
+		const daemon = this.options.configureLaunch?.(this.options.daemon, reservation) ?? this.options.daemon;
 		await this.options.runFiles?.prepare(generation);
 		let child: ManagedChild;
 		try {
@@ -241,7 +243,7 @@ export class DaemonSupervisor {
 			throw error;
 		}
 		try {
-			child = (this.options.spawnChild ?? spawnSupervisedDaemon)(this.options.daemon, generation, {
+			child = (this.options.spawnChild ?? spawnSupervisedDaemon)(daemon, generation, {
 				frame: frame => this.childFrame(generation, frame),
 				exit: (code, signal) => { void this.reap(generation, code, signal); },
 				spawnFailed: () => { void this.spawnFailed(generation); },

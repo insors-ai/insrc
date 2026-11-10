@@ -20,6 +20,7 @@
 #   scripts/daemon-ctl.sh restart    # stop then start
 #   scripts/daemon-ctl.sh update     # sync + install + build (no start)
 #   scripts/daemon-ctl.sh status     # daemon status over the socket
+#   scripts/daemon-ctl.sh recover    # reconcile a verified stopped managed reservation
 #   scripts/daemon-ctl.sh --help
 #
 # Flags:
@@ -254,16 +255,35 @@ socket_status() {
 # Commands
 # ---------------------------------------------------------------------------
 
-cmd_start() {
+# Exit 10 is the bridge's explicit "unmanaged" result. Any other error is
+# terminal so a stale managed installation can never fall back to spawning.
+supervised_lifecycle() {
+	[ "$(uname -s)" = "Darwin" ] || return 10
+	local manifest="$HOME/.insrc/managed-lifecycle/installation.json"
+	[ -e "$manifest" ] || [ -L "$manifest" ] || return 10
+	local helper="$DAEMON_ROOT/out/bin/insrc-daemon-control.js" result rc
+	[ -f "$helper" ] || { log "ERROR: managed lifecycle helper missing at $helper"; return 4; }
+	if result=$(node "$helper" "$1" "$STOP_WAIT_SECS" 2>&1); then
+		log "$result"
+		return 0
+	else
+		rc=$?
+		[ "$rc" -eq 10 ] && return 10
+		log "ERROR: $result"
+		return 4
+	fi
+}
+
+prepare_daemon() {
 	require_daemon_dir
 	local branch="${BRANCH:-$(git -C "$DAEMON_ROOT" rev-parse --abbrev-ref HEAD)}"
 
 	[ "$SKIP_SYNC"    -eq 1 ] || sync_repo "$branch"
 	[ "$SKIP_INSTALL" -eq 1 ] || npm_install_if_needed
 	[ "$SKIP_BUILD"   -eq 1 ] || npm_build
+}
 
-	# Stop/clean through the retained-target contract even when paths look stale.
-	stop_managed_daemon || return $?
+start_prepared_daemon() {
 	spawn_daemon || return $?
 
 	local pid
@@ -274,17 +294,38 @@ cmd_start() {
 	log "ctl-log: $LOG_FILE"
 }
 
+cmd_start() {
+	local rc
+	if supervised_lifecycle start; then return 0; else rc=$?; fi
+	[ "$rc" -eq 10 ] || return "$rc"
+	prepare_daemon || return $?
+	# Stop/clean through the retained-target contract even when paths look stale.
+	stop_managed_daemon || return $?
+	start_prepared_daemon
+}
+
 cmd_stop() {
+	local rc
+	if supervised_lifecycle stop; then return 0; else rc=$?; fi
+	[ "$rc" -eq 10 ] || return "$rc"
 	log "stopping daemon"
 	stop_managed_daemon || return $?
 }
 
 cmd_restart() {
-	cmd_stop || return $?
-	cmd_start || return $?
+	local rc
+	if supervised_lifecycle restart; then return 0; else rc=$?; fi
+	[ "$rc" -eq 10 ] || return "$rc"
+	log "stopping daemon"
+	stop_managed_daemon || return $?
+	prepare_daemon || return $?
+	start_prepared_daemon
 }
 
 cmd_update() {
+	local rc
+	if supervised_lifecycle update; then return 0; else rc=$?; fi
+	[ "$rc" -eq 10 ] || return "$rc"
 	require_daemon_dir
 	local branch="${BRANCH:-$(git -C "$DAEMON_ROOT" rev-parse --abbrev-ref HEAD)}"
 
@@ -295,11 +336,21 @@ cmd_update() {
 }
 
 cmd_status() {
+	local rc
+	if supervised_lifecycle status; then return 0; else rc=$?; fi
+	[ "$rc" -eq 10 ] || return "$rc"
 	require_daemon_dir
 	log "daemon dir: $DAEMON_ROOT"
 	log "branch:     $(git -C "$DAEMON_ROOT" rev-parse --abbrev-ref HEAD)"
 	log "HEAD:       $(git -C "$DAEMON_ROOT" log --oneline -1)"
 	socket_status 2>&1 | tee -a "$LOG_FILE"
+}
+
+cmd_recover() {
+	local rc
+	if supervised_lifecycle recover; then return 0; else rc=$?; fi
+	[ "$rc" -ne 10 ] || die "no enabled managed installation"
+	return "$rc"
 }
 
 # ---------------------------------------------------------------------------
@@ -315,7 +366,7 @@ CMD=""
 
 while [ $# -gt 0 ]; do
 	case "$1" in
-		start|stop|restart|update|status) CMD="$1" ;;
+		start|stop|restart|update|status|recover) CMD="$1" ;;
 		--skip-sync)    SKIP_SYNC=1 ;;
 		--skip-install) SKIP_INSTALL=1 ;;
 		--skip-build)   SKIP_BUILD=1 ;;
@@ -336,4 +387,5 @@ case "$CMD" in
 	restart) cmd_restart ;;
 	update)  cmd_update ;;
 	status)  cmd_status ;;
+	recover) cmd_recover ;;
 esac

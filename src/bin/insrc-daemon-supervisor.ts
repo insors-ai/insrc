@@ -1,0 +1,69 @@
+/* Copyright (c) Procix Software India. Licensed under the MIT License. */
+
+import { realpath } from 'node:fs/promises';
+import { createConnection } from 'node:net';
+import type { Socket } from 'node:net';
+import { join } from 'node:path';
+import { readDarwinIncarnation, readDarwinPeerCredentials } from '../shared/darwin-lifecycle.js';
+import type { DarwinPeerCredentials } from '../shared/darwin-lifecycle.js';
+import { InstallationMutationGate } from '../shared/installation-mutation-gate.js';
+import { rpc } from '../shared/ipc-client.js';
+import { installationPaths, readManagedInstallation, requireQuiescentInstallation } from '../shared/managed-daemon-installation.js';
+import { PATHS } from '../shared/paths.js';
+import { DaemonSupervisor, SupervisorPublicShutdown } from '../daemon/supervisor.js';
+import { SupervisorRunFiles } from '../daemon/supervisor-run-files.js';
+import { listenForSupervisorControllers } from '../daemon/supervisor-socket.js';
+
+async function verifyReady(socketPath: string, pid: number, uid: number): Promise<void> {
+	let resolvePeer!: (peer: DarwinPeerCredentials) => void;
+	let rejectPeer!: (error: unknown) => void;
+	const peer = new Promise<DarwinPeerCredentials>((resolve, reject) => { resolvePeer = resolve; rejectPeer = reject; });
+	const result = rpc('daemon.status', {}, () => {
+		const socket = createConnection(socketPath);
+		socket.once('error', rejectPeer);
+		const closedBeforeConnect = () => rejectPeer(new Error('daemon readiness socket closed before connecting'));
+		socket.once('close', closedBeforeConnect);
+		socket.once('connect', () => {
+			socket.removeListener('close', closedBeforeConnect);
+			const fd = (socket as Socket & { _handle?: { fd?: number } })._handle?.fd;
+			if (fd === undefined) rejectPeer(new Error('daemon readiness socket has no Unix descriptor'));
+			else void readDarwinPeerCredentials(fd).then(resolvePeer, rejectPeer);
+		});
+		return socket;
+	}, { timeoutMs: 2_000 });
+	const [status, credentials] = await Promise.all([result, peer]);
+	if (status === null || typeof status !== 'object' || credentials.pid !== pid || credentials.uid !== uid) {
+		throw new Error('status socket does not belong to the managed child');
+	}
+}
+
+async function main(): Promise<void> {
+	const root = await realpath(PATHS.insrc);
+	if (root !== process.argv[2]) throw new Error('supervisor root does not match this installation');
+	const installation = await readManagedInstallation(root);
+	if (installation === undefined) throw new Error('managed daemon rollout is not enabled');
+	const paths = installationPaths(root);
+	const gate = new InstallationMutationGate(root);
+	const owner = await readDarwinIncarnation(process.pid);
+	const publicShutdown = new SupervisorPublicShutdown(gate, owner);
+	const supervisor = new DaemonSupervisor({
+		installation: gate,
+		daemon: {
+			runtime: installation.runtime, entry: join(installation.releaseRoot, 'out/daemon/index.js'), cwd: installation.releaseRoot,
+			env: { ...process.env, INSRC_MODE: 'daemon', INSRC_DAEMON_ROOT: installation.releaseRoot, PATH: installation.pathEnv },
+		},
+		runFiles: new SupervisorRunFiles({ guardPath: paths.runGuard, pidFile: paths.daemonPid, socketFile: paths.daemonSocket },
+			{ ...owner, commandLine: owner.executable }, owner.uid),
+		verifyReady: (_generation, pid) => verifyReady(paths.daemonSocket, pid, owner.uid),
+		reconcileExit: generation => publicShutdown.reconciled(generation),
+		allowInitialStart: async () => { await requireQuiescentInstallation(installation); return true; },
+		publicArm: generation => publicShutdown.admit(generation),
+	});
+	await listenForSupervisorControllers(paths.socket, { installationRoot: root, releaseId: installation.releaseId }, supervisor);
+}
+
+try { await main(); }
+catch (error) {
+	process.stderr.write(`daemon supervisor refused startup: ${error instanceof Error ? error.message : String(error)}\n`);
+	process.exitCode = 4;
+}

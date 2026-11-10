@@ -1,0 +1,590 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1794331973678-kkqo4t",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T17:43:51.648Z",
+    "epicCreatedAt": "2026-11-10T17:43:51.648Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 657546,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3ec4189b758be646",
+    "epicSlug": "fix-claude-ollama-mistral-vibe-streaming",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1794331973678-kkqo4t",
+    "hldEffectiveHash": "3ec4189b758be6460445ee96339bc96f514ec64ec18c713ce9e55010f100ac0e",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Fix Claude on Ollama and Mistral Vibe streaming reviews",
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "d26efc279406c42a5f20d8f1e08048a08d13540bbefd9aa32c2a116ed55b31f2",
+        "at": "2026-11-10T18:05:00.000Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-10T17:57:39.586Z",
+        "override": {
+          "reason": "Daemon design review is the broken component this LLD fixes (ISSUE-738d62b848fd173f); two controller self-review rounds were run instead — round 1: 1 LOW cosmetic (surfaceLevel dropped by synthesize schema); round 2: 1 MED (ReviewDiagnosticCollector/Snapshot provider type not widened) fixed in revision 2 (contentHash d26efc27... verified). No HIGH findings; round 3 not run per user decision."
+        }
+      }
+    },
+    "revision": 2,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "e61e99da9ff2785ecbcd23410d99ee030a2532ac"
+  },
+  "body": {
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Unified activity spawn with provider preflight/env (in-provider fix)",
+        "oneLineSummary": "Move Ollama preflight + per-child env inside activityReview for all CLI kinds, add a Vibe activity branch reusing ReviewActivityStream, and add the versioned Large 4 catalog entry.",
+        "approach": "In CliProvider.activityReview, run the same checkOllama() preflight before building args (so a failed check starts no process) and compute env = this.withOllama(process.env) when this.ollama is set, passing it as opts.env to runInProcessGroup; leave the vibe rejection removed only as far as needed for alternative a3/a4. For the Vibe half, add a vibe branch that drives ReviewActivityStream with kind 'vibe' from the Vibe app-server transport instead of runInProcessGroup, reusing the bounded vibe tool policy. One shared private helper spawnActivityReview(args, env, parser) keeps claude/codex/vibe on the same preflight+env path.",
+        "pros": [
+          "Smallest diff at the exact root cause; both coordinators (design + code review) get the fix for free because they both call runReviewSession.",
+          "Reuses existing withOllama/checkOllama/OllamaTargetError semantics verbatim — preflight rejection never spawns, vendor login stripped.",
+          "One place to test env inheritance and no-spawn-after-rejection."
+        ],
+        "cons": [
+          "Touches the single hottest provider file; needs careful shared-helper extraction so bounded behavior is byte-identical.",
+          "Vibe transport differs (app-server frames vs CLI stdout), so the helper must accept a frame feeder, not a raw child process."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Caller-supplied env/opts plumbing",
+        "oneLineSummary": "Push Ollama env responsibility up to the review coordinators via new opts fields.",
+        "approach": "Extend ReviewSessionOpts (types.ts:250) with optional ollama target/env fields and have both coordinators (design-review/coordinator.ts:379, task-review/coordinator.ts:223) resolve the Ollama env from provider config and pass it; runInProcessGroup already accepts env. Vibe activity would still need a provider-side branch.",
+        "pros": [
+          "Provider stays untouched for claude/codex spawn logic."
+        ],
+        "cons": [
+          "Duplicates provider knowledge (Ollama host/auth/vendor-strip rules) at every caller — the exact drift that caused the bug.",
+          "Every new review caller must remember to pass env; the default remains insecure-by-default.",
+          "Does not solve the Vibe branch any better than a1."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Moves the fix to callers and leaves it insecure-by-default; the Ollama knowledge (host, token, vendor keys) would be duplicated in coordinators."
+      },
+      {
+        "id": "a3",
+        "name": "Shared prepare-helper + vibe frame adapter",
+        "oneLineSummary": "Split the fix into a spawn-prep helper plus a separate Vibe frame adapter module.",
+        "approach": "Keep activityReview claude/codex-only but wrap runInProcessGroup's spawn in a shared 'prepareActivityChild' that applies preflight+env for any kind including vibe, and add a thin VibeActivityStream adapter that normalizes Vibe app-server frames into the ReviewActivityStream decoder interface.",
+        "pros": [
+          "Cleaner separation of env concern from frame decoding."
+        ],
+        "cons": [
+          "Two abstraction layers (prepare + adapter) for what is really one branch each; more surface to keep in sync.",
+          "Adapter for Vibe frames is unavoidable work either way; splitting it from the env fix adds a seam nobody else uses."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Functionally equivalent to a1 but with an extra abstraction layer with no second consumer."
+      },
+      {
+        "id": "a4",
+        "name": "Ollama-env fix only, defer Vibe",
+        "oneLineSummary": "Ship only the activity-child env/preflight fix; catalog entry added, Vibe activity deferred.",
+        "approach": "Only fix the Ollama env gap in activityReview (claude/codex) and defer Vibe streaming review to a follow-up story; add the catalog entry now so explicit selection is at least resolvable.",
+        "pros": [
+          "Smallest possible diff."
+        ],
+        "cons": [
+          "Leaves the ISSUE's second fix-intent bullet (Vibe streaming review) unimplemented — the ISSUE explicitly says 'Deliver Vibe streaming review in the same change'.",
+          "Splitting it violates the approved fix intent and would need its own issue + triage anyway."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Cheapest but rejects the approved fix intent; Vibe streaming review would still be impossible."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "contractDetails": {
+      "api": [
+        {
+          "errors": [
+            {
+              "condition": "this.ollama is set and checkOllamaTarget fails (unreachable / model unavailable / not signed in / account unavailable)",
+              "type": "OllamaTargetError — thrown before any child process is spawned; propagates un-retried through runReviewSession:601"
+            },
+            {
+              "condition": "this.kind === 'vibe' and the model/effort is not in the catalog or not verified by the installed Vibe runtime",
+              "type": "VibeSelectionError — thrown before dispatch"
+            },
+            {
+              "condition": "child spawn fails or exits non-zero",
+              "type": "ReviewOutputFailureError via parser.failure('spawn_failed'|'cli_exit', ...) with diagnostic snapshot"
+            },
+            {
+              "condition": "no accepted/final structured result",
+              "type": "ReviewOutputFailureError via parser.failure('no_valid_final', ...)"
+            }
+          ],
+          "name": "CliProvider.activityReview",
+          "parameters": [
+            {
+              "name": "prompt",
+              "optional": false,
+              "purpose": "Review assignment prompt fed as stdin / session input",
+              "type": "string"
+            },
+            {
+              "name": "schema",
+              "optional": false,
+              "purpose": "Structured output schema validated via onCandidate / validateNativeReply",
+              "type": "StructuredSchema"
+            },
+            {
+              "name": "opts",
+              "optional": false,
+              "purpose": "ActivityReviewSessionOpts: cwd, signal, inactivityMs, onActivity, onCandidate, codeTaskCommands",
+              "type": "ActivityReviewSessionOpts"
+            }
+          ],
+          "postconditions": [
+            "For ollama-targeted providers the child env contains ANTHROPIC_BASE_URL/ANTHROPIC_AUTH_TOKEN from this.ollama, ANTHROPIC_API_KEY='', and none of CLAUDE_CODE_OAUTH_TOKEN / CLAUDE_CODE_USE_BEDROCK / CLAUDE_CODE_USE_VERTEX",
+            "The child is never spawned when preflight rejected",
+            "ReviewActivityStream lifecycle (start/feed/failure/result/completed), activity events, cancellation and structured validation behave exactly as today for claude/codex; vibe uses the same lifecycle via the Vibe transport"
+          ],
+          "preconditions": [
+            "opts.mode === 'activity'; validateReviewSessionOptions(opts) passed",
+            "provider admits connection execution (assertConnectionProviderAdmission)"
+          ],
+          "returns": {
+            "meaning": "The accepted structured review output matching schema",
+            "type": "Promise<T>"
+          },
+          "signature": "private async activityReview<T>(prompt: string, schema: StructuredSchema, opts: ActivityReviewSessionOpts): Promise<T> — now with, at the top: await this.checkOllama(); const childEnv = this.withOllama(process.env) ?? undefined; and the vibe guard replaced by a vibe branch"
+        },
+        {
+          "errors": [
+            {
+              "condition": "spawn kills the process group on timeout/abort",
+              "type": "abortError() when result.aborted"
+            },
+            {
+              "condition": "runInProcessGroup reports spawnError or exitCode!==0",
+              "type": "parser.failure('spawn_failed'|'cli_exit', 'Review activity CLI failed', exitCode, detail)"
+            }
+          ],
+          "name": "runInProcessGroup (activity mode) call site in activityReview",
+          "parameters": [
+            {
+              "name": "command",
+              "optional": false,
+              "purpose": "resolveBin(this.binPath)",
+              "type": "string"
+            },
+            {
+              "name": "args",
+              "optional": false,
+              "purpose": "claudeReviewSessionArgs + stream-json/--verbose/--include-partial-messages, or codexReviewSessionArgs, or vibe activity args",
+              "type": "readonly string[]"
+            },
+            {
+              "name": "opts",
+              "optional": false,
+              "purpose": "mode:'activity', cwd, stdin:prompt, signal, onStdoutChunk; PLUS env: childEnv when the provider has an Ollama target",
+              "type": "ProcessGroupOpts & { env?: NodeJS.ProcessEnv }"
+            }
+          ],
+          "postconditions": [
+            "process-group.ts:136 spreads opts.env over the daemon env when set, so the Ollama env reaches the child; when unset behavior is unchanged"
+          ],
+          "preconditions": [
+            "checkOllama() already passed for ollama-targeted providers"
+          ],
+          "returns": {
+            "meaning": "ProcessGroupResult { spawnError?, exitCode, stderr, aborted, durationMs }",
+            "type": "Promise<ProcessGroupResult>"
+          },
+          "signature": "runInProcessGroup(command, args, { mode:'activity', cwd:opts.cwd, stdin:prompt, signal, onStdoutChunk, ...(childEnv ? { env: childEnv } : {}) })"
+        },
+        {
+          "errors": [
+            {
+              "condition": "kind 'vibe' previously threw 'review activity is not supported for the vibe CLI'",
+              "type": "removed — vibe now runs through startVibeActivitySession / the Vibe app-server transport feeding ReviewActivityStream kind 'vibe'"
+            }
+          ],
+          "name": "ReviewActivityStream (kind 'vibe')",
+          "parameters": [
+            {
+              "name": "kind",
+              "optional": false,
+              "purpose": "'claude' | 'codex' | 'vibe' frame decoder selection",
+              "type": "string"
+            },
+            {
+              "name": "schema",
+              "optional": false,
+              "purpose": "structured output contract",
+              "type": "StructuredSchema"
+            },
+            {
+              "name": "opts",
+              "optional": false,
+              "purpose": "activity opts incl. onActivity/onCandidate",
+              "type": "ActivityReviewSessionOpts"
+            },
+            {
+              "name": "abort",
+              "optional": false,
+              "purpose": "acceptedStop abort callback",
+              "type": "() => void"
+            }
+          ],
+          "postconditions": [
+            "Vibe session is read-only like the bounded vibe path (--enabled-tools read_file + mcp_insrc_* equivalent policy on the app-server side); structured feedback validated through the same onCandidate path; activity events emitted via onActivity; cancellation honored via the shared signal; checkpoint resume semantics unchanged (coordinator-side)"
+          ],
+          "preconditions": [
+            "model present in cli-vibe catalog and verified by the installed Vibe runtime (vibe-session.ts:384-404)"
+          ],
+          "returns": {
+            "meaning": "Same lifecycle as claude/codex: start/feed/failure/result/completed over Vibe app-server frames",
+            "type": "ReviewActivityStream<T>"
+          },
+          "signature": "new ReviewActivityStream<T>('vibe', schema, opts, () => acceptedStop.abort())"
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "callSites": [
+          "src/agent/providers/cli-provider.ts:610",
+          "src/agent/providers/cli-provider.ts:627",
+          "src/workflow/review/design-review/coordinator.ts:379",
+          "src/workflow/code-review/task-review/coordinator.ts:223"
+        ],
+        "change": "field-add",
+        "details": "ProcessGroupOpts gains an explicit env passthrough at the activityReview call site: env = this.withOllama(process.env) when this.ollama is set (ANTHROPIC_BASE_URL=this.ollama.host, ANTHROPIC_AUTH_TOKEN='ollama', ANTHROPIC_API_KEY='', vendor login keys removed — see src/agent/providers/cli-provider.ts:803-811). src/shared/process-group.ts:68,136 already supports opts.env; only the activity call site starts passing it.",
+        "entity": "activity-mode child process environment",
+        "schemaDiff": "ProcessGroupOpts.env?: NodeJS.ProcessEnv — already declared (src/shared/process-group.ts:68); now populated for activity spawns of Ollama-targeted providers"
+      },
+      {
+        "callSites": [
+          "src/agent/providers/cli-provider.ts:611",
+          "src/shared/vibe-session.ts:384",
+          "src/shared/vibe-session.ts:403"
+        ],
+        "change": "field-add",
+        "details": "cli-vibe catalog family gains a versioned Mistral Large 4 model entry (id matching the versioned name Mistral documents, e.g. mistral-large-4, with displayName 'Mistral Large 4') whose efforts array lists ONLY efforts verified present in the installed Vibe runtime's thinkingLevels for that model. Explicit selection of an uncatalogued model or unverified effort still throws VibeSelectionError before any turn (vibe-session.ts:385, :403-404).",
+        "entity": "cloud-model-catalog.json cli-vibe family models[]",
+        "schemaDiff": "models[] += { id: 'mistral-large-4', displayName: 'Mistral Large 4', efforts: [<verified only>] } — validated by model-catalog.ts cliKind check"
+      },
+      {
+        "callSites": [
+          "src/agent/providers/review-activity-stream.ts:14",
+          "src/agent/providers/cli-provider.ts:615"
+        ],
+        "change": "field-modify",
+        "details": "ReviewActivityStream.kind widened from 'claude'|'codex' to include 'vibe'; the decode() frame handling gains a vibe branch that maps Vibe app-server frames onto the same tool_started/tool_completed/result/feedback events, so failure() NATIVE_CLI_FAILURE diagnostics, accepted-result and completed() semantics are identical across kinds.",
+        "entity": "ReviewActivityStream kind + vibe frame mapping",
+        "schemaDiff": "kind: 'claude' | 'codex' | 'vibe'"
+      },
+      {
+        "callSites": [
+          "src/shared/review-diagnostics.ts:9",
+          "src/shared/review-diagnostics.ts:33",
+          "src/shared/review-diagnostics.ts:35",
+          "src/agent/providers/review-activity-stream.ts:28"
+        ],
+        "change": "field-modify",
+        "details": "ReviewActivityStream's constructor already does `this.diagnostics = new ReviewDiagnosticCollector(kind)` with the same `kind` it widens to 'vibe'; ReviewDiagnosticCollector's constructor parameter and ReviewDiagnosticSnapshot.provider are currently hard-typed 'claude' | 'codex' and must widen in lockstep, or the vibe branch does not type-check and invariant c3 (NATIVE_CLI_FAILURE diagnostics identical for all kinds including vibe) cannot hold. Found during the LLD self-review's round 2 (CliProvider.kind is already CliKind = 'claude'|'codex'|'vibe' at cli-provider.ts:89,169,229, so this.kind flowing into both constructors forces the widening).",
+        "entity": "ReviewDiagnosticCollector.provider / ReviewDiagnosticSnapshot.provider",
+        "schemaDiff": "provider: 'claude' | 'codex' | 'vibe' (both the constructor parameter and the ReviewDiagnosticSnapshot.provider field)"
+      }
+    ],
+    "errorPaths": {
+      "edgeCases": [
+        {
+          "expected": "childEnv is undefined and runInProcessGroup is called without env — byte-identical to today's behavior (src/shared/process-group.ts:136 spreads only when set)",
+          "input": "provider without an Ollama target (plain cli-claude / cli-codex) running an activity review"
+        },
+        {
+          "expected": "withOllama output still deletes CLAUDE_CODE_OAUTH_TOKEN / CLAUDE_CODE_USE_BEDROCK / CLAUDE_CODE_USE_VERTEX even if the daemon env carries them; ANTHROPIC_API_KEY is blanked, not inherited",
+          "input": "ollama-claude activity review while the daemon env holds a vendor login token"
+        },
+        {
+          "expected": "checkOllama() runs BEFORE args are built and before parser.start(); a rejected check throws OllamaTargetError and no parser/pgroup exists yet; runReviewSession rethrows it without the transient retry",
+          "input": "ollama-claude activity review with the Ollama server unreachable or the model missing"
+        },
+        {
+          "expected": "vibe branch validates model against the cli-vibe catalog and the installed runtime's thinkingLevels (src/shared/vibe-session.ts:384-404) before the Vibe app server starts; VibeSelectionError precedes any dispatch",
+          "input": "core/mid tier set to cli-vibe with mistral-large-4 but an effort the runtime does not list"
+        },
+        {
+          "expected": "diagnostic snapshot records the real backend detail (stderr error line / OllamaTargetError cause) alongside or instead of the bare NATIVE_CLI_FAILURE generic, so the checkpoint no longer loses the backend response",
+          "input": "activity child fails after spawn (cli_exit / spawn_failed)"
+        }
+      ],
+      "errorCases": [
+        {
+          "detection": "checkOllamaTarget (src/agent/providers/ollama-target.ts:51) fails its reachable/model-present/signed-in probes; checkOllama (cli-provider.ts:813) catches, logs cause, and rethrows OllamaTargetError",
+          "recoverable": true,
+          "response": "activityReview awaits this.checkOllama() first and lets OllamaTargetError propagate before any spawn; runReviewSession rethrows it un-retried; the review unit pauses with a resumable checkpoint and the diagnostic carries the OllamaTargetError cause so the backend response is no longer lost",
+          "scenario": "Ollama-targeted provider (ollama-claude) but the Ollama server is unreachable, the model is missing, or the account is not signed in",
+          "userImpact": "Review planning pauses with a precise preflight cause instead of a generic NATIVE_CLI_FAILURE after 1 dispatch + 3 retries; no child process is ever spawned into the wrong backend"
+        },
+        {
+          "detection": "runInProcessGroup returns spawnError or exitCode !== 0; stderr is filtered to bounded Error/Fatal/... lines",
+          "recoverable": true,
+          "response": "parser.failure('spawn_failed'|'cli_exit', 'Review activity CLI failed', exitCode, detail) — detail now includes the real stderr error line in the diagnostic, not only the generic NATIVE_CLI_FAILURE",
+          "scenario": "Activity child crashes or exits non-zero (e.g. wrong endpoint because env was missing — the pre-fix behavior)",
+          "userImpact": "Checkpoint diagnostic names the actual backend error, so the failure is debuggable and the daemon retry policy sees the real class"
+        },
+        {
+          "detection": "parser.result() not accepted and parser.completed() throws; or acceptedStop aborted",
+          "recoverable": true,
+          "response": "parser.failure('no_valid_final', ...) or abortError(); coordinator records the unit as failed and the checkpoint stays resumable — unchanged from today",
+          "scenario": "No valid structured final answer within the activity session",
+          "userImpact": "Same as today: bounded retry budget in the coordinator, resumable checkpoint"
+        },
+        {
+          "detection": "vibe-session.ts:384-404: explicit model absent from catalog or active runtime model/thinkingLevels mismatch throws VibeSelectionError",
+          "recoverable": false,
+          "response": "Vibe activity branch resolves the model via the same catalog+runtime verification BEFORE starting the Vibe app server; unsupported model/effort fails before dispatch and no Vibe turn starts",
+          "scenario": "cli-vibe tier configured with a model/effort the installed Vibe runtime does not verify (including the previously-missing versioned Large 4)",
+          "userImpact": "Configuration error surfaces immediately at session start with the exact model/effort named, instead of a mid-review rejection"
+        },
+        {
+          "detection": "signal aborted (coordinator cancellation) → runInProcessGroup / Vibe transport abort → result.aborted",
+          "recoverable": true,
+          "response": "throw abortError(); acceptedStop wiring unchanged; checkpoint resumable for a later attempt",
+          "scenario": "Review cancelled mid-activity (controller disconnect, inactivity timeout, user cancel)",
+          "userImpact": "Unchanged: cancellation is immediate and the checkpoint resumes cleanly"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "source": "c1",
+          "text": "Bounded review path semantics are untouched: runReviewSession's bounded branch, retry-once-on-stall, OllamaTargetError passthrough, and VibeTurnError dispatchState handling stay exactly as they are — the fix only adds preflight+env to the activity branch."
+        },
+        {
+          "source": "c2",
+          "text": "Claude/codex activity arg construction is verbatim: claudeReviewSessionArgs + stream-json/--verbose/--include-partial-messages mapping and codexReviewSessionArgs tmp-schema flow are unchanged; only opts.env is added to the runInProcessGroup call."
+        },
+        {
+          "source": "c3",
+          "text": "ReviewActivityStream lifecycle contract (start/feed/failure/result/completed, tool start/complete tracking with the 128-tool cap, NATIVE_CLI_FAILURE diagnostic on failure, HOST_VALIDATION_ERROR on host rejection) is identical for all kinds including vibe — src/agent/providers/review-activity-stream.ts:31-145."
+        },
+        {
+          "source": "c4",
+          "text": "Read-only review tool policy holds for vibe activity exactly as for bounded vibe: the bounded path passes --enabled-tools read_file + mcp_insrc_*; the vibe activity branch must expose the same read-only + insrc MCP tools and no write/execute tools."
+        },
+        {
+          "source": "c5",
+          "text": "Catalog validation discipline: model-catalog.ts still validates cliKind and family shape, and vibe-session still refuses uncatalogued explicit models and unverified active models — the new Large 4 entry only widens what is selectable, never weakens verification."
+        }
+      ]
+    },
+    "hldContextSlice": {
+      "adjacentBoundaries": [],
+      "boundary": {
+        "depends": [],
+        "internal": "Fix Claude on Ollama and Mistral Vibe streaming reviews",
+        "owns": [],
+        "storyId": "s1"
+      },
+      "consumedContracts": [],
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "nonFunctional": {},
+      "ownedContracts": [],
+      "rolloutPhase": "standalone"
+    },
+    "interactionWithShared": [],
+    "migration": {
+      "backwardCompat": "Fully backward compatible: no persisted artifact schema changes, no IPC shape changes. The activityReview signature is unchanged (private method); runInProcessGroup's opts.env already existed and is only populated when the provider has an Ollama target. The catalog change is additive (one new model entry in the cli-vibe family) and validated by the existing model-catalog checks; configs that do not name mistral-large-4 behave identically. Rolling back = revert the code commit and remove the catalog entry; no data rewrite.",
+      "dataRewriteRequired": false,
+      "migrationSteps": [
+        {
+          "action": "No data migration — bugfix, not enhancement. stateBefore (s1 bundle c1): activity-mode review children of ollama-claude providers inherit the daemon env with no Ollama endpoint and possibly a vendor login, and cli-vibe selectable models exclude the versioned Mistral Large 4. stateAfter: activity children run checkOllama preflight first and receive withOllama env via runInProcessGroup opts.env; a vibe activity branch drives ReviewActivityStream kind 'vibe'; the catalog carries mistral-large-4 with verified efforts only.",
+          "order": 1,
+          "rollbackable": true
+        }
+      ],
+      "stateAfter": "Activity-mode review children of Ollama-targeted providers are preflighted (checkOllama) and spawned with the Ollama endpoint/auth env and vendor login stripped (withOllama via runInProcessGroup opts.env); a failed preflight never spawns a child. Vibe gets a streaming activity branch on the same ReviewActivityStream lifecycle with read-only tool policy. The cli-vibe catalog includes the versioned Mistral Large 4 entry with only runtime-verified efforts; unsupported model/effort still throws VibeSelectionError before dispatch.",
+      "stateBefore": "Activity-mode (streaming) review for an ollama-claude core tier spawns the Claude CLI with the daemon's env — no ANTHROPIC_BASE_URL/ANTHROPIC_AUTH_TOKEN pointing at Ollama, vendor login possibly present — and planning ends NATIVE_CLI_FAILURE after initial dispatch + 3 retries with only a generic checkpoint diagnostic (s1 bundle c1). The cli-vibe family in src/assets/models/cloud-model-catalog.json has no versioned mistral-large-4 entry, so explicit selection is refused, and activityReview rejects vibe outright (src/agent/providers/cli-provider.ts:611).",
+      "zeroDowntime": true
+    },
+    "openQuestions": [],
+    "summary": {
+      "audience": "technical",
+      "prose": "This story fixes the activity-mode (streaming) review path in the CLI provider in two halves. First, CliProvider.activityReview now runs the same Ollama preflight (checkOllama) and per-child environment (withOllama) as the bounded claude path, passing the result as env to runInProcessGroup — an Ollama-targeted review child is bound to the Ollama endpoint with vendor login stripped, and a rejected preflight spawns nothing. Second, a vibe branch drives the existing ReviewActivityStream lifecycle from the Vibe app-server transport, and the shared cloud model catalog gains the versioned Mistral Large 4 entry with only runtime-verified efforts, so explicit model/effort selection still fails before dispatch when unsupported."
+    },
+    "testStrategy": {
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "T1-ollama-activity-child-env",
+            "T2-ollama-activity-no-vendor-inherit",
+            "T3-ollama-activity-preflight-rejects-before-spawn"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "T4-plain-provider-activity-env-unchanged",
+            "T5-claude-codex-activity-args-unchanged"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "T6-vibe-activity-stream-lifecycle",
+            "T7-vibe-activity-readonly-tool-policy",
+            "T8-vibe-activity-structured-validation-cancellation"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "T9-catalog-large4-entry-verified-efforts",
+            "T10-vibe-session-readback-core-mid",
+            "T11-unsupported-model-effort-fails-before-dispatch"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "T12-failure-diagnostic-carries-backend-detail"
+          ]
+        }
+      ],
+      "testFramework": "node:test via `npx tsx --test` (repo convention; Node 22 via PATH=/opt/homebrew/opt/node@22/bin:$PATH for src/ suites), colocated __tests__ beside the touched files: src/agent/providers/__tests__/cli-provider*.test.ts, src/agent/providers/__tests__/review-activity-stream.test.ts, src/shared/__tests__/vibe-session.test.ts, src/daemon/__tests__/model-catalog.test.ts",
+      "testLevels": [
+        {
+          "fixturesNeeded": [
+            "stub ollamaCheck that resolves or throws OllamaTargetError",
+            "fake CLI binary / injected runInProcessGroup seam capturing opts.env",
+            "fake Vibe app-server transport emitting canned frames",
+            "catalog fixture with the new mistral-large-4 entry + runtime model list with thinkingLevels"
+          ],
+          "level": "unit",
+          "purpose": "Prove each fix-intent bullet at the provider/stream/catalog level: env contents, no-spawn-after-rejection, vendor stripping, vibe frame decoding, catalog verification, and unchanged claude/codex behavior",
+          "subjects": [
+            "CliProvider.activityReview (src/agent/providers/cli-provider.ts:610)",
+            "withOllama / checkOllama reuse (src/agent/providers/cli-provider.ts:803-811)",
+            "runInProcessGroup env passthrough (src/shared/process-group.ts:68-136)",
+            "ReviewActivityStream kind 'vibe' decode path (src/agent/providers/review-activity-stream.ts)",
+            "vibe-session catalog+runtime verification (src/shared/vibe-session.ts:384-404)",
+            "model-catalog validation of the new cli-vibe entry (src/daemon/model-catalog.ts)",
+            "cloud-model-catalog.json cli-vibe family schema"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Exercise both provider paths through the real review dispatch: design-review coordinator mode:'activity' call with an ollama-claude provider and with a cli-vibe provider, asserting the spawned child received the expected env (via a fake binary that records its env) and that an unsupported vibe model/effort fails before any Vibe session starts",
+          "subjects": [
+            "src/workflow/review/design-review/coordinator.ts:379",
+            "src/workflow/code-review/task-review/coordinator.ts:223"
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "Manual/live verification only (INSRC_LIVE_TESTS-style, not run in CI): an actual independent review with core tier ollama-claude glm-5.3:cloud high effort completes planning without NATIVE_CLI_FAILURE, and a cli-vibe core/mid config with mistral-large-4 runs an activity review and reads back the native session model/effort",
+          "subjects": [
+            "real Ollama cloud endpoint + real installed Vibe runtime"
+          ]
+        }
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts:567-634"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/agent/providers/review-activity-stream.ts:14-145"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/shared/vibe-session.ts:384-404"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/shared/process-group.ts:68-136"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/daemon/model-catalog.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/assets/models/cloud-model-catalog.json"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/coordinator.ts:379"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/coordinator.ts:223"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/agent/providers/ollama-target.ts:51"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts:803-828"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/ISSUE-738d62b848fd173f.json"
+    },
+    {
+      "id": "c12",
+      "kind": "doc",
+      "ref": "https://docs.mistral.ai/vibe/code/cli/configuration"
+    },
+    {
+      "id": "c13",
+      "kind": "code",
+      "ref": "src/shared/review-diagnostics.ts:1-20"
+    }
+  ]
+}

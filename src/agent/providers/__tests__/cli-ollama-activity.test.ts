@@ -165,3 +165,27 @@ test('T4-plain-provider-activity-env-unchanged: without an Ollama target the act
 	assert.equal(env['CLAUDE_CODE_USE_BEDROCK'], '1');
 	assert.equal(env['INSRC_ACTIVITY_SENTINEL'], 'daemon-env');
 });
+
+test('T1-ollama-activity-coordinator-dispatch-env-capture: the coordinator mode:\'activity\' envelope reaches the ollama-claude activity child with the endpoint env', async () => {
+	// design-review/coordinator.ts:379 and task-review/coordinator.ts:223 both call
+	// provider.runReviewSession(prompt, schema, { mode:'activity', cwd, inactivityMs,
+	// signal, internalRetry:false, onActivity, onCandidate }). This test drives
+	// exactly that envelope through a real ollama-claude CliProvider against the
+	// fake binary, which records the child's endpoint/vendor env per spawn.
+	rmSync(callsPath, { force: true });
+	const p = new CliProvider({ kind: 'claude', binPath: bin, model: 'glm-5.3:cloud', effort: 'high', ollama: TARGET, ollamaCheck: passing, timeoutMs: 20_000 });
+	const activities: string[] = [];
+	const value = await p.runReviewSession('review the artifact', SCHEMA, {
+		mode: 'activity', cwd: dir, signal: new AbortController().signal, inactivityMs: 1_800_000, internalRetry: false,
+		onActivity: e => { activities.push(e.kind); },
+		onDiagnostic: () => {},
+		onCandidate: async v => ({ accepted: (v as { ok?: boolean }).ok === true }),
+	});
+	assert.deepEqual(value, { ok: true }, 'the accepted candidate returns through the coordinator envelope');
+	const runs = calls();
+	assert.equal(runs.length, 1, 'exactly one activity child spawned through the coordinator envelope');
+	assert.equal(runs[0]!.env['ANTHROPIC_BASE_URL'], TARGET.host, 'the coordinator-dispatched child points at Ollama');
+	assert.equal(runs[0]!.env['ANTHROPIC_AUTH_TOKEN'], 'ollama');
+	assert.equal(runs[0]!.env['CLAUDE_CODE_OAUTH_TOKEN'], null, 'vendor login stripped on the coordinator path too');
+	assert.ok(activities.includes('session_started') && activities.includes('model_output'), 'activity events flow through onActivity');
+});

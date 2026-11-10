@@ -82,8 +82,8 @@
     },
     "src/daemon/threads/method-class.ts": {
       "classification": "removal-admission-routing",
-      "rationale": "S004: additive exact endpoint classifications and main-daemon method-set membership keep removal/state/retry with existing owners. No process-local driver/authority crosses worker envelopes; all-consumer Saved affinity remains release-blocking.",
-      "sourceDigest": "4ec94492e01bb91fa884fb891dbbfde1d405113aed39bc5dc1f746f2bbd8be71"
+      "rationale": "S004: additive exact endpoint classifications and main-daemon method-set membership keep removal/state/retry with existing owners. No process-local driver/authority crosses worker envelopes; all-consumer Saved affinity remains release-blocking. The new progress routes have main-thread state ownership and the approval FIFO exemptions affect scheduling only. The removal methods still use their existing process-local owner routing.",
+      "sourceDigest": "fb600b3766f2ec2b237bda704f019bef8ed6fdbabe7161bb4e0bf71d78b4d7e0"
     },
     "src/daemon/db/management-enablement.ts": {
       "classification": "deployment-code-evidence",
@@ -291,7 +291,7 @@
     },
     "src/agent/providers/cli-provider.ts": {
       "classification": "provider-admission",
-      "rationale": "Shared provider/tool-loop path: temporary callers need identity-bound local privacy proof, per-attempt authority and quiet diagnostics; CLI and unsupported modes refuse before input use.",
+      "rationale": "Shared provider/tool-loop path: temporary callers need identity-bound local privacy proof, per-attempt authority and quiet diagnostics; CLI and unsupported modes refuse before input use. Activity streaming adds provider readiness, structured reply decoding and Vibe subprocess routing after the existing connection provider admission. The new transport and schema helpers do not grant a temporary execution mode.",
       "sites": [
         [
           "provider-adapter",
@@ -300,6 +300,14 @@
         [
           "provider-adapter",
           "abortError"
+        ],
+        [
+          "provider-adapter",
+          "abortError"
+        ],
+        [
+          "serialization",
+          "Buffer.from"
         ],
         [
           "provider-adapter",
@@ -431,7 +439,11 @@
         ],
         [
           "provider-adapter",
-          "isTransientCliError"
+          "isRecord"
+        ],
+        [
+          "provider-adapter",
+          "isRecord"
         ],
         [
           "provider-adapter",
@@ -442,8 +454,8 @@
           "isTransientCliError"
         ],
         [
-          "serialization",
-          "JSON.parse"
+          "provider-adapter",
+          "isTransientCliError"
         ],
         [
           "serialization",
@@ -472,6 +484,22 @@
         [
           "serialization",
           "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
         ],
         [
           "serialization",
@@ -591,6 +619,14 @@
         ],
         [
           "provider-adapter",
+          "outputContractNote"
+        ],
+        [
+          "provider-adapter",
+          "parser.completed"
+        ],
+        [
+          "provider-adapter",
           "parser.completed"
         ],
         [
@@ -607,11 +643,31 @@
         ],
         [
           "provider-adapter",
+          "parser.failure"
+        ],
+        [
+          "provider-adapter",
+          "parser.failure"
+        ],
+        [
+          "provider-adapter",
+          "parser.feed"
+        ],
+        [
+          "provider-adapter",
           "parser.feed"
         ],
         [
           "provider-adapter",
           "parser.result"
+        ],
+        [
+          "provider-adapter",
+          "parser.result"
+        ],
+        [
+          "provider-adapter",
+          "parser.start"
         ],
         [
           "provider-adapter",
@@ -652,6 +708,18 @@
         [
           "provider-adapter",
           "resolveBin"
+        ],
+        [
+          "provider-adapter",
+          "resolveBin"
+        ],
+        [
+          "provider-adapter",
+          "resolveBin"
+        ],
+        [
+          "provider-adapter",
+          "ReviewActivityStream"
         ],
         [
           "provider-adapter",
@@ -735,6 +803,10 @@
         ],
         [
           "provider-adapter",
+          "schemaKeywordSummary"
+        ],
+        [
+          "provider-adapter",
           "self.complete"
         ],
         [
@@ -752,6 +824,14 @@
         [
           "provider-adapter",
           "serialiseMessages"
+        ],
+        [
+          "provider-adapter",
+          "settleWait"
+        ],
+        [
+          "provider-adapter",
+          "settleWait"
         ],
         [
           "provider-adapter",
@@ -794,6 +874,14 @@
           "this.checkOllama"
         ],
         [
+          "provider-adapter",
+          "this.checkOllama"
+        ],
+        [
+          "provider-use",
+          "this.checkOllama"
+        ],
+        [
           "provider-use",
           "this.checkOllama"
         ],
@@ -819,14 +907,6 @@
         ],
         [
           "provider-adapter",
-          "this.envForModel"
-        ],
-        [
-          "provider-use",
-          "this.envForModel"
-        ],
-        [
-          "provider-adapter",
           "this.execIn"
         ],
         [
@@ -1099,6 +1179,38 @@
         ],
         [
           "provider-adapter",
+          "this.vibeActivityCatalog"
+        ],
+        [
+          "provider-use",
+          "this.vibeActivityCatalog"
+        ],
+        [
+          "provider-adapter",
+          "this.vibeActivityReview"
+        ],
+        [
+          "provider-use",
+          "this.vibeActivityReview"
+        ],
+        [
+          "provider-adapter",
+          "this.vibeActivityVerifyRuntime"
+        ],
+        [
+          "provider-use",
+          "this.vibeActivityVerifyRuntime"
+        ],
+        [
+          "provider-adapter",
+          "this.withOllama"
+        ],
+        [
+          "provider-adapter",
+          "this.withOllama"
+        ],
+        [
+          "provider-use",
           "this.withOllama"
         ],
         [
@@ -1147,7 +1259,7 @@
         ],
         [
           "provider-adapter",
-          "validateCodexReply"
+          "validateNativeReply"
         ],
         [
           "provider-adapter",
@@ -1218,9 +1330,9 @@
           "writeFileSync"
         ]
       ],
-      "siteCount": 231,
-      "sitesDigest": "18ae099bb29f61667a33be95327c3ff3e59348080350bdb7eebb20d24ef28d09",
-      "sourceDigest": "6b694a08263178c7d8e58d58cdd0f44f70eb0b523dd0a68e9e1f779b37d38973"
+      "siteCount": 259,
+      "sitesDigest": "cf5fab4c6cc181b80572d6801fb631900054b179bcf0ed71864e96068bb2904a",
+      "sourceDigest": "89f7571a464a0f9ce935e2858a5cfffa7d75a97bd43bb4d6144790a724aa77ad"
     },
     "src/agent/providers/ollama-target.ts": {
       "classification": "provider-admission",
@@ -1831,8 +1943,16 @@
     },
     "src/agent/providers/review-activity-stream.ts": {
       "classification": "provider-admission",
-      "rationale": "Shared provider/tool-loop path: temporary callers need identity-bound local privacy proof, per-attempt authority and quiet diagnostics; CLI and unsupported modes refuse before input use.",
+      "rationale": "Shared provider/tool-loop path: temporary callers need identity-bound local privacy proof, per-attempt authority and quiet diagnostics; CLI and unsupported modes refuse before input use. Parses provider activity and validates candidate review replies in the review stream. Review projections and diagnostic snapshots belong to the review invocation, separate from temporary data session dispatch.",
       "sites": [
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
         [
           "serialization",
           "JSON.parse"
@@ -1907,6 +2027,22 @@
         ],
         [
           "provider-adapter",
+          "this.activity"
+        ],
+        [
+          "provider-adapter",
+          "this.activity"
+        ],
+        [
+          "provider-adapter",
+          "this.activity"
+        ],
+        [
+          "provider-adapter",
+          "this.candidate"
+        ],
+        [
+          "provider-adapter",
           "this.candidate"
         ],
         [
@@ -1927,6 +2063,10 @@
         ],
         [
           "provider-adapter",
+          "this.completedClaudeCodex"
+        ],
+        [
+          "provider-adapter",
           "this.decode"
         ],
         [
@@ -1944,6 +2084,18 @@
         [
           "serialization",
           "this.decoder.write"
+        ],
+        [
+          "provider-adapter",
+          "this.diagnosticSnapshot"
+        ],
+        [
+          "provider-adapter",
+          "this.diagnosticSnapshot"
+        ],
+        [
+          "provider-adapter",
+          "this.diagnosticSnapshot"
         ],
         [
           "provider-adapter",
@@ -2011,6 +2163,14 @@
         ],
         [
           "provider-adapter",
+          "this.note"
+        ],
+        [
+          "provider-adapter",
+          "this.note"
+        ],
+        [
+          "provider-adapter",
           "this.report"
         ],
         [
@@ -2047,16 +2207,40 @@
         ],
         [
           "provider-adapter",
+          "this.tool"
+        ],
+        [
+          "provider-adapter",
+          "this.tool"
+        ],
+        [
+          "provider-adapter",
+          "this.vibe"
+        ],
+        [
+          "provider-adapter",
           "validateAgainstSchema"
         ],
         [
           "provider-adapter",
           "validateAgainstSchema"
+        ],
+        [
+          "provider-adapter",
+          "validateAgainstSchema"
+        ],
+        [
+          "provider-adapter",
+          "validateCodexReply"
+        ],
+        [
+          "provider-adapter",
+          "validateCodexReply"
         ]
       ],
-      "siteCount": 55,
-      "sitesDigest": "5b5b6bf97dd9a8a87df4052897d95e51be727d72242a72153c531f5e13e5dd7f",
-      "sourceDigest": "8cf18059ee84471100aefb7e77a9e6a946460034e6137bfe603b9d6f8f989c00"
+      "siteCount": 73,
+      "sitesDigest": "346b392d0cf611947fb1a4ee4c7e7b2115f7d08d222a753915871b4fb676ca80",
+      "sourceDigest": "8a3893c516abb52bbe79c005f33918aebdb0e3f5e255accb47faf4340d30c2e8"
     },
     "src/agent/providers/review-budget.ts": {
       "classification": "provider-admission",
@@ -2185,7 +2369,7 @@
     },
     "src/agent/providers/structured-output.ts": {
       "classification": "provider-admission",
-      "rationale": "Shared provider/tool-loop path: temporary callers need identity-bound local privacy proof, per-attempt authority and quiet diagnostics; CLI and unsupported modes refuse before input use.",
+      "rationale": "Shared provider/tool-loop path: temporary callers need identity-bound local privacy proof, per-attempt authority and quiet diagnostics; CLI and unsupported modes refuse before input use. The structured-output wrapper delegates schema checks through the shared validator. The removed direct call does not remove temporary admission or diagnostic suppression from the provider path.",
       "sites": [
         [
           "provider-adapter",
@@ -2206,10 +2390,6 @@
         [
           "provider-adapter",
           "call"
-        ],
-        [
-          "provider-adapter",
-          "formatAjvError"
         ],
         [
           "diagnostic",
@@ -2244,17 +2424,57 @@
           "validate"
         ]
       ],
-      "siteCount": 14,
-      "sitesDigest": "0c52cf39711803a9b20bda05b61a64013f3090054660e6082c341ca46ae29033",
-      "sourceDigest": "b0ff7336f9e042b474ad1c0c092f3113d1fedeac854d623717bbd99bef694bb1"
+      "siteCount": 13,
+      "sitesDigest": "9c988403bd33915621f0c9cbf98d32aac7719429e1f66a19610442b6c532bde4",
+      "sourceDigest": "008f0c009368819cfae13298335fb50b067826272d13be9d983fe52d6ed4edc2"
     },
     "src/agent/providers/structured-schema.ts": {
       "classification": "provider-admission",
-      "rationale": "Pure schema normalization and full-schema reply validation extracted unchanged from structured-output. This module constructs no provider or Session authority; CLI denial and the local adapter byte attestation remain mandatory.",
+      "rationale": "Pure schema normalization and full-schema reply validation extracted unchanged from structured-output. This module constructs no provider or Session authority; CLI denial and the local adapter byte attestation remain mandatory. The Codex reply adapters resolve optional fields and validate structured JSON in memory. These codecs do not authorize provider access or write data.",
       "sites": [
         [
           "provider-adapter",
-          "danglingRef"
+          "ambiguous"
+        ],
+        [
+          "provider-adapter",
+          "ambiguous"
+        ],
+        [
+          "provider-adapter",
+          "checkedNativeReply"
+        ],
+        [
+          "provider-adapter",
+          "checkedNativeReply"
+        ],
+        [
+          "provider-adapter",
+          "codexReplyContext"
+        ],
+        [
+          "provider-adapter",
+          "codexReplyContext"
+        ],
+        [
+          "provider-adapter",
+          "consider"
+        ],
+        [
+          "provider-adapter",
+          "consider"
+        ],
+        [
+          "provider-adapter",
+          "context.at"
+        ],
+        [
+          "provider-adapter",
+          "context.at"
+        ],
+        [
+          "provider-adapter",
+          "context.at"
         ],
         [
           "provider-adapter",
@@ -2267,10 +2487,174 @@
         [
           "provider-adapter",
           "danglingRef"
+        ],
+        [
+          "provider-adapter",
+          "danglingRef"
+        ],
+        [
+          "provider-adapter",
+          "decode"
+        ],
+        [
+          "provider-adapter",
+          "decode"
+        ],
+        [
+          "provider-adapter",
+          "decode"
+        ],
+        [
+          "provider-adapter",
+          "decode"
+        ],
+        [
+          "provider-adapter",
+          "decode"
+        ],
+        [
+          "provider-adapter",
+          "decode"
+        ],
+        [
+          "provider-adapter",
+          "decode"
+        ],
+        [
+          "provider-adapter",
+          "decode"
+        ],
+        [
+          "provider-adapter",
+          "decode"
+        ],
+        [
+          "serialization",
+          "decode"
+        ],
+        [
+          "serialization",
+          "decode"
+        ],
+        [
+          "serialization",
+          "decode"
+        ],
+        [
+          "serialization",
+          "decode"
+        ],
+        [
+          "serialization",
+          "decode"
+        ],
+        [
+          "serialization",
+          "decode"
+        ],
+        [
+          "serialization",
+          "decode"
+        ],
+        [
+          "serialization",
+          "decode"
+        ],
+        [
+          "serialization",
+          "decode"
+        ],
+        [
+          "provider-adapter",
+          "decodeCodexOptionals"
+        ],
+        [
+          "serialization",
+          "decodeCodexOptionals"
         ],
         [
           "serialization",
           "decodeURIComponent"
+        ],
+        [
+          "serialization",
+          "decodeURIComponent"
+        ],
+        [
+          "serialization",
+          "encodeURIComponent"
+        ],
+        [
+          "provider-adapter",
+          "escape"
+        ],
+        [
+          "provider-adapter",
+          "escape"
+        ],
+        [
+          "provider-adapter",
+          "escape"
+        ],
+        [
+          "provider-adapter",
+          "factories[index]!"
+        ],
+        [
+          "provider-adapter",
+          "factories[index]!"
+        ],
+        [
+          "provider-adapter",
+          "formatAjvError"
+        ],
+        [
+          "provider-adapter",
+          "guardHolds"
+        ],
+        [
+          "provider-adapter",
+          "guardHolds"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
         ],
         [
           "provider-adapter",
@@ -2321,6 +2705,22 @@
           "JSON.stringify"
         ],
         [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "provider-adapter",
+          "keepCodexKeywords"
+        ],
+        [
           "provider-adapter",
           "keepCodexKeywords"
         ],
@@ -2330,7 +2730,43 @@
         ],
         [
           "provider-adapter",
-          "keepCodexKeywords"
+          "plain"
+        ],
+        [
+          "provider-adapter",
+          "plain"
+        ],
+        [
+          "provider-adapter",
+          "plain"
+        ],
+        [
+          "provider-adapter",
+          "plain"
+        ],
+        [
+          "provider-adapter",
+          "plain"
+        ],
+        [
+          "provider-adapter",
+          "possible"
+        ],
+        [
+          "provider-adapter",
+          "possible"
+        ],
+        [
+          "provider-adapter",
+          "possible"
+        ],
+        [
+          "provider-adapter",
+          "possible"
+        ],
+        [
+          "provider-adapter",
+          "possible"
         ],
         [
           "provider-adapter",
@@ -2358,11 +2794,51 @@
         ],
         [
           "provider-adapter",
+          "reconsider"
+        ],
+        [
+          "provider-adapter",
+          "reconsider"
+        ],
+        [
+          "provider-adapter",
+          "replyChoices"
+        ],
+        [
+          "provider-adapter",
+          "replyChoices"
+        ],
+        [
+          "provider-adapter",
+          "resolve"
+        ],
+        [
+          "provider-adapter",
+          "resolve"
+        ],
+        [
+          "provider-adapter",
           "resolvesIn"
         ],
         [
           "provider-adapter",
-          "uncheckedFormat"
+          "sequence"
+        ],
+        [
+          "provider-adapter",
+          "sequence"
+        ],
+        [
+          "provider-adapter",
+          "sequence"
+        ],
+        [
+          "provider-adapter",
+          "steps[index]!"
+        ],
+        [
+          "provider-adapter",
+          "structural"
         ],
         [
           "provider-adapter",
@@ -2375,11 +2851,31 @@
         [
           "provider-adapter",
           "uncheckedFormat"
+        ],
+        [
+          "provider-adapter",
+          "uncheckedFormat"
+        ],
+        [
+          "provider-adapter",
+          "unique"
+        ],
+        [
+          "provider-adapter",
+          "walk"
+        ],
+        [
+          "provider-adapter",
+          "walk"
+        ],
+        [
+          "provider-adapter",
+          "walk"
         ]
       ],
-      "siteCount": 31,
-      "sitesDigest": "7c5a13549a1f03f521b01d4eb0254f5c47ee242d8d3edee8dfe80dbfc22d7de7",
-      "sourceDigest": "c62b7455bb5741f19a10f84120956c626659d54f84ed1f9e84d9a4fe1529313f"
+      "siteCount": 110,
+      "sitesDigest": "e5ac359e5025709b0ca9c86a9e3b7713bedb3f6b5556be74de3418760e903ef3",
+      "sourceDigest": "1e8cfe967b8732df5875c23961977aa634b8c455d61da94a8ccd75797032bbe5"
     },
     "src/agent/read-only-tool-loop.ts": {
       "classification": "provider-admission",
@@ -2476,7 +2972,7 @@
       ],
       "siteCount": 22,
       "sitesDigest": "d20197415aaed818077da1ca4c8f39e13ac664521ce1cc854e24fb03d3d3a486",
-      "sourceDigest": "e0e66b461c2464533d0e182626a3870b704a039b4a0bf49b41ff756efc920ae3"
+      "sourceDigest": "f356181ab1e8642f317999d2e42256929b4da135188881faab40414b4498c8bb"
     },
     "src/analyze/classifier/driver.ts": {
       "classification": "session-invocation",
@@ -2565,6 +3061,19 @@
       "siteCount": 2,
       "sitesDigest": "e0d48fb0472dc1e29792ef3f6ff1876e792d2402bbf531e5041c8e147f6e520c",
       "sourceDigest": "afca34cfa84cd8a9e586d4e670ea358c049103443428802ec90e2e8a52a42e49"
+    },
+    "src/analyze/context/answer-progress.ts": {
+      "classification": "session-invocation",
+      "rationale": "Answer progress validates each model reply with the supplied execution context and retains turn and part state in the invocation. It acquires no driver or durable writer.",
+      "sites": [
+        [
+          "provider-adapter",
+          "validateAgainstSchema"
+        ]
+      ],
+      "siteCount": 1,
+      "sitesDigest": "873b16b71bf1d1e80542132db5efdea5753feffb5fd6a32560e920b2d7cd68f5",
+      "sourceDigest": "67a72a8003154b1d4e95d835af235005701eefc2ac057194306cbe8fb7fce08a"
     },
     "src/analyze/context/boot-validator.ts": {
       "classification": "session-invocation",
@@ -2735,11 +3244,24 @@
       ],
       "siteCount": 7,
       "sitesDigest": "d35a58cbfbf241c8b2c0893b11cedef6160a23d9ce5cd69ffefe38620cbdde91",
-      "sourceDigest": "743aaf51f3346e3fb2bd1515eaadd7d1139c4048acb6707ff83f3e73f0fa732f"
+      "sourceDigest": "06206a010fcc2f65e491d052ca0e976fb573f7ba45ca37c30b814ae8a8a81dcc"
+    },
+    "src/analyze/context/dependency.ts": {
+      "classification": "session-invocation",
+      "rationale": "Selects evidence blocks, deduplicates facts and renders the anchor extract into prompt text. Serialized evidence stays in the analysis call and has no direct file or log sink here.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.stringify"
+        ]
+      ],
+      "siteCount": 1,
+      "sitesDigest": "49c808225dcbb468f30b9de8ee6e36660c15df39d13f088aef9b6e9a11dbd17b",
+      "sourceDigest": "1322780dc3cb5a6bce98f922365493bc59065e60d3f8b380d124c95551a77932"
     },
     "src/analyze/context/driver.ts": {
       "classification": "session-invocation",
-      "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
+      "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory. The new sizing and divided-answer paths forward the same execution carrier. The existing session-only cache bypass and guarded diagnostic paths still govern temporary evidence.",
       "sites": [
         [
           "provider-factory",
@@ -2846,6 +3368,10 @@
           "JSON.stringify"
         ],
         [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
           "storage-call",
           "listRepos"
         ],
@@ -2922,9 +3448,81 @@
           "writeFileSync"
         ]
       ],
-      "siteCount": 45,
-      "sitesDigest": "806014a2a2beb938ab3ff4811911001bc75886d3ea6bc54c8c06bb864c85ae5e",
-      "sourceDigest": "2d4b853391e74a092632650cf5f4e42652c95847d25ba489d8bf8e7a48d1316d"
+      "siteCount": 46,
+      "sitesDigest": "e58bb54b2b8cae460ec4d6cdad29dd5dfc6627d2af8699d292774184bb1643c4",
+      "sourceDigest": "0630db579415f8eb8a6bc98c16674b4d6e0dd1bdfd8885f446c6f3f302c243bf"
+    },
+    "src/analyze/context/failure-data.ts": {
+      "classification": "session-invocation",
+      "rationale": "Shapes nested analysis failures and inputs into JSON-safe values. This helper is not a redaction boundary; callers handling temporary execution must keep failure content out of durable records.",
+      "sites": [
+        [
+          "serialization",
+          "v.toString"
+        ]
+      ],
+      "siteCount": 1,
+      "sitesDigest": "6e82d101433ad03332e79ab81436b69c711db250b222433437f0a226ba225e10",
+      "sourceDigest": "562c454e9f66cd39141bd026e22fe46464a033d503424e7394296187643025cb"
+    },
+    "src/analyze/context/final-emit.ts": {
+      "classification": "session-invocation",
+      "rationale": "Splits assembled analysis messages into evidence blocks for final synthesis. The divided call receives the same connection execution context and the rendered blocks have no direct persistence path here.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ]
+      ],
+      "siteCount": 2,
+      "sitesDigest": "57a92e99052fba2f3b998f16b13a150e0870dfb2e3e23bc70fb04bb7b79d23d0",
+      "sourceDigest": "9e2e968ae4f50b1280cd3cc5ed6ba9f5118d5e5ccac929962fa0647acf7a88d9"
+    },
+    "src/analyze/context/handling-call.ts": {
+      "classification": "session-invocation",
+      "rationale": "Bounds structured model calls and forwards the connection execution context on every repair attempt. Sizing uses in-memory message text; temporary input remains subject to provider admission.",
+      "sites": [
+        [
+          "provider-adapter",
+          "buildRetryNote"
+        ],
+        [
+          "provider-adapter",
+          "buildRetryNote"
+        ],
+        [
+          "provider-adapter",
+          "buildRetryNote"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "provider-use",
+          "provider.completeStructured"
+        ]
+      ],
+      "siteCount": 5,
+      "sitesDigest": "7c05f062e62e3d231304efa7d3bc170ddc3c9e351c8b0bc41dc49710aae63aa1",
+      "sourceDigest": "b71b212f6b3e171d07beb6840163b74d5402435fe8bfa1e89f5fee37825ee44e"
+    },
+    "src/analyze/context/handling-parts.ts": {
+      "classification": "session-invocation",
+      "rationale": "Partitions and combines analysis evidence and passes the same connection execution context into part and synthesis calls. Prompt size calculation has no independent durable sink.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.stringify"
+        ]
+      ],
+      "siteCount": 1,
+      "sitesDigest": "e8b363f391f9f4121f1715ad7143c57b96f266692a668418eec05eb8f826f7d1",
+      "sourceDigest": "9024e88d447a8795d1750eccb1a37a285fb3c71208e40c5ab183390cfed8224a"
     },
     "src/analyze/context/invariants.ts": {
       "classification": "session-invocation",
@@ -2973,7 +3571,7 @@
       ],
       "siteCount": 10,
       "sitesDigest": "1b0ee0d7115785e1226191ae0178d4eb3ea7b863205bb39af94535338bac19bc",
-      "sourceDigest": "ba4f70833f27d8b12a3e83009fa6aca8782e80055104b13fc3460b16d92d4a03"
+      "sourceDigest": "f55e187fba46b206d4ea7e2ae4bc346ebc4fc5c81f3230604e65b44ff2ced5bf"
     },
     "src/analyze/context/live-project-context.ts": {
       "classification": "session-invocation",
@@ -3016,6 +3614,23 @@
       "siteCount": 2,
       "sitesDigest": "2633e9eb55ea52a85d992120a57bae0a60515534d5b356067edbe82103cdd263",
       "sourceDigest": "a20bb8bd5b4ad85847f6463581f8ab69d43570317898868420d7e3ffb4ffbd9b"
+    },
+    "src/analyze/context/request.ts": {
+      "classification": "session-invocation",
+      "rationale": "Validates and normalizes caller-supplied scope and question fields. The conflicting-question diagnostic renders request inputs before exploration, without reading or serializing driver results.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ]
+      ],
+      "siteCount": 2,
+      "sitesDigest": "c9e94c08baf7ac7c6dad8e67002af4ab71262e15f71c5f4384fc21963cda2f48",
+      "sourceDigest": "662c6524565549b579c861a4efc4fa1b211055c9482a0797951797ae06955eb4"
     },
     "src/analyze/context/role-router.ts": {
       "classification": "session-invocation",
@@ -3066,11 +3681,11 @@
       ],
       "siteCount": 3,
       "sitesDigest": "925c095ce24d910faa9ec54b91061efdbd39a5f213f01fd311326f1c224f454f",
-      "sourceDigest": "9a91764d672b22ad9dc0cffd6a1d15843dda36c5192a02193d2004c8a46f69e0"
+      "sourceDigest": "1353e444bc4b9cc97a152c887c9999ab29913cd5eafa22b32061f8eec7f5badc"
     },
     "src/analyze/context/scope.ts": {
       "classification": "session-invocation",
-      "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
+      "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory. Added filesystem metadata checks resolve file and module scope. Temporary connection identity remains governed by the bound execution context, independent of path existence.",
       "sites": [
         [
           "serialization",
@@ -3123,11 +3738,36 @@
         [
           "acquisition:symbol:savedConnectionResolver",
           "savedConnectionResolver"
+        ],
+        [
+          "filesystem-read",
+          "stat"
         ]
       ],
-      "siteCount": 13,
-      "sitesDigest": "5e243cd51ddfc3a58db9fa84c75054312bc281af17a9e7f1c15c5c2f325b4901",
-      "sourceDigest": "43634f9e05e6ee5db7114aa040a692bf6490b42caafd4c76bb9e9b90c38e9638"
+      "siteCount": 14,
+      "sitesDigest": "df68a35fa949354c038abe6bfb3876644afcd8be94956fd2b7aa2d3c97c410dd",
+      "sourceDigest": "b66c718751b3fe10b9b08140e0c92d234977aef3b689095bff85c9203eee7c38"
+    },
+    "src/analyze/context/sections.ts": {
+      "classification": "session-invocation",
+      "rationale": "Formats and bounds in-memory prompt sections from records and upstream evidence. Formatting does not itself authorize provider dispatch, diagnostic publication or persistence.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ]
+      ],
+      "siteCount": 3,
+      "sitesDigest": "f477da4f15c4943cec83e5b44070f6c9ee9f203747daedcd3e64707272aeb7bd",
+      "sourceDigest": "e090c46cf8694489bc0be7a16ae806bb90a81e32d29f27b2d71881fd7ec93791"
     },
     "src/analyze/context/shaper-provider.ts": {
       "classification": "session-invocation",
@@ -3241,7 +3881,7 @@
     },
     "src/analyze/context/synthesizer.ts": {
       "classification": "session-invocation",
-      "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
+      "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory. The changed serialization sizes structured synthesis input and divides oversized prompts. Part and combine calls carry the original execution context through provider admission.",
       "sites": [
         [
           "serialization",
@@ -3260,8 +3900,8 @@
           "JSON.stringify"
         ],
         [
-          "provider-use",
-          "provider.completeStructured"
+          "serialization",
+          "JSON.stringify"
         ],
         [
           "filesystem-read",
@@ -3277,8 +3917,8 @@
         ]
       ],
       "siteCount": 8,
-      "sitesDigest": "e231e3a0cac5fb4bb67ca8b5f6b2bb0362a9dd8aea5d7780c632b6ee85f427bf",
-      "sourceDigest": "a7426ca4befb6210c796a1e00f51a3f2850c49e0f5e21d4ee298c6a1f006eb92"
+      "sitesDigest": "a5fc8087abdc7a5216342b0a665050723147ed58de9a0da27067e66f4772f338",
+      "sourceDigest": "8ee907df57bf59425ce255e97a2c7bb6d7685f767d77dbad75c4e5b408d4f975"
     },
     "src/analyze/docs-retrieval.ts": {
       "classification": "session-invocation",
@@ -3522,11 +4162,11 @@
       ],
       "siteCount": 21,
       "sitesDigest": "7a63ebcdefcecad2b192f72ee097a8bd208650ab5ab0959e42067084d274c8d9",
-      "sourceDigest": "2f00dc91c30cfc9ee35ec0228b31fbfbc8bf513c3319025f4971fda4e2cf1c07"
+      "sourceDigest": "8c72c6a81322045bfd011693e5fe994d8c4b14583cab1c8c1c653dcd07fdb9f8"
     },
     "src/analyze/explore/capability-reuse-check.ts": {
       "classification": "session-invocation",
-      "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
+      "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory. The added graph entity lookup enriches code capability discovery. Temporary data execution still uses the scoped analysis path and does not acquire connection authority from a graph match.",
       "sites": [
         [
           "serialization",
@@ -3545,6 +4185,10 @@
           "captureAnalysisDiagnostics(log).emit"
         ],
         [
+          "storage-call",
+          "getEntity"
+        ],
+        [
           "diagnostic",
           "getLogger"
         ],
@@ -3561,9 +4205,9 @@
           "resolveRoleProvider"
         ]
       ],
-      "siteCount": 8,
-      "sitesDigest": "f3889a9b0e6d2fd013ed5449445195c3c77773e3600420c11acc73cff5e607b2",
-      "sourceDigest": "725c24bb929ea31037eef4148c71c69d17219750200b2fa47f328339478e515b"
+      "siteCount": 9,
+      "sitesDigest": "5869e7e8ee0dfd35189017881600a00a078c9616bffa49133f81747c7e8e6275",
+      "sourceDigest": "fce0ce71e02c1d9df7149fcc7478337a42462b66959b43f2ecb4a7d90966b0da"
     },
     "src/analyze/explore/class-hierarchy.ts": {
       "classification": "session-invocation",
@@ -3677,7 +4321,7 @@
       ],
       "siteCount": 8,
       "sitesDigest": "b2db2a52c817f7d98ea4b29c295c25fa02e3be55688f92f7024ffcddd3607269",
-      "sourceDigest": "b4a754782d4ad73b58c4a4ae74001932de5531ac341ce0c9842a757f193ead98"
+      "sourceDigest": "56b3adb31dfcb940a3cdd02ac10e6ed78b4430f6275f097f014d2605769afced"
     },
     "src/analyze/explore/config-trace.ts": {
       "classification": "session-invocation",
@@ -4024,7 +4668,7 @@
       ],
       "siteCount": 8,
       "sitesDigest": "dcf5ed7ce94f537d3ab7eb020b4d69c6d870e3e9e8c5992fabb8535e8b2b4c72",
-      "sourceDigest": "a0375e2f71efb6e517b204773b3c6abed709f9910b1ed2e4659dd9d671cefe6c"
+      "sourceDigest": "21f78e94bc0349a3f81199f788aeb9825fd72d0aaaa84ae06a58bd9b9a7e80d8"
     },
     "src/analyze/explore/doc-decision-trace.ts": {
       "classification": "session-invocation",
@@ -4077,7 +4721,7 @@
       ],
       "siteCount": 11,
       "sitesDigest": "1b2eaba63e7bf997d40d46058186266e906172e708e8936ea387f7c94138adf9",
-      "sourceDigest": "80a9bf5a430e219934fa319e205bc838dd25a1c3b1cb54b81ac2533c5bc96469"
+      "sourceDigest": "b951224bb875f796cc8f2a46c6d437d43d604a47931de59ce6a5ebe9bf8062eb"
     },
     "src/analyze/explore/doc-mention.ts": {
       "classification": "session-invocation",
@@ -4102,7 +4746,7 @@
       ],
       "siteCount": 4,
       "sitesDigest": "d254655c20dbef508817e8c72797a7dbf00852c635f1c40817952469299bd6bc",
-      "sourceDigest": "5c5051f7e24aec18b13b701c261ff90df86dc539dc223c51cb3d503504dd7a2f"
+      "sourceDigest": "aafbed009923ce1c86832e81a166cac47681cbe581428e6eecbc40a4ddf5303a"
     },
     "src/analyze/explore/doc-relations-attach.ts": {
       "classification": "session-invocation",
@@ -4208,7 +4852,7 @@
       ],
       "siteCount": 19,
       "sitesDigest": "8014bad785d66de44d6627284510d0020932afab50e374b28ed4890e4a8f264d",
-      "sourceDigest": "2d8499c7a00dcdc966cb62661412abfb642dec9d2051d5faf165b605a252902e"
+      "sourceDigest": "be61d6c98c775db7d7518ca77deb71f4224fadb7613c9c7d41015fb2c12907eb"
     },
     "src/analyze/explore/freeform-probe.ts": {
       "classification": "session-invocation",
@@ -4229,7 +4873,7 @@
       ],
       "siteCount": 3,
       "sitesDigest": "b1718303f1b144a81e1960981bc6604af2b212771dfe985e8ee25ff382ecce35",
-      "sourceDigest": "7116756ff6822ee627bfa5e8b41183172fbdb7ba8545fa751c6a3f0802e9e852"
+      "sourceDigest": "f33b121ca7980805deac07980de6e02466a917d4dafbdb27a2ae919b2bce961b"
     },
     "src/analyze/explore/import-graph.ts": {
       "classification": "session-invocation",
@@ -4888,7 +5532,7 @@
       ],
       "siteCount": 49,
       "sitesDigest": "4a07af6b1740c3ddc27b65a9510406a4228ce64985c32391cd441570d0fceb21",
-      "sourceDigest": "bb4c479e0ee152d2d58280291ed97ad43dcca2c1f3d2df5c4b803584f0a4c3ce"
+      "sourceDigest": "395a6730d4a1c3e430dc6278b988ec4b4b175f5b3eec8e13b97cc6e227b020d6"
     },
     "src/analyze/orchestrator/persistence.ts": {
       "classification": "session-invocation",
@@ -5307,7 +5951,7 @@
       ],
       "siteCount": 20,
       "sitesDigest": "119c788fab5803696f28fd4b8808de3d8cddf2206ea7607225b1fb0a8163c30e",
-      "sourceDigest": "8a5361dfd477106e29850f61f038c842c793ab41886030425d39a50d131d2b28"
+      "sourceDigest": "88e7088914f8e7d5069bc0d6adbf83455252615f6e2899f8fd9762ed8a81eaab"
     },
     "src/analyze/planner/recursive.ts": {
       "classification": "session-invocation",
@@ -6307,7 +6951,7 @@
     },
     "src/analyze/runtimes/shared/aggregator.ts": {
       "classification": "session-invocation",
-      "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
+      "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory. The divided aggregator delegates structured submission to the shared handling helper with the original execution carrier. Removing the local call does not change the data-session provider policy.",
       "sites": [
         [
           "serialization",
@@ -6322,10 +6966,6 @@
           "JSON.stringify"
         ],
         [
-          "provider-use",
-          "provider.completeStructured"
-        ],
-        [
           "filesystem-read",
           "readFileSync"
         ],
@@ -6334,9 +6974,9 @@
           "resolveRoleProvider"
         ]
       ],
-      "siteCount": 6,
-      "sitesDigest": "aac81a44883421a8ee20f16e1ad0b60ebd66f0dc69b12db2d4f5241668645ae1",
-      "sourceDigest": "987b9f23a8b6bbd0218ce10cdfe4c083fe888f2be043f8098f04e6c95877c24d"
+      "siteCount": 5,
+      "sitesDigest": "6af09e35605fa7e2a1258991e8b6e9fa2c2fc91dbbe90e9e2be113e1fa0cf534",
+      "sourceDigest": "c473142f414f44685536175a77351e2cacef6cadd2cf73382026a44eaaff9371"
     },
     "src/analyze/session-reuse.ts": {
       "classification": "session-invocation",
@@ -6605,44 +7245,198 @@
     },
     "src/bin/insrc-daemon-control.ts": {
       "classification": "client-process-boundary",
-      "rationale": "Client/process entry is outside daemon storage ownership. Only dedicated private bootstrap and S002 isolated worker protocol may carry transient authority/config; no persistence in argv/settings/environment/logs.",
+      "rationale": "Client/process entry is outside daemon storage ownership. Only dedicated private bootstrap and S002 isolated worker protocol may carry transient authority/config; no persistence in argv/settings/environment/logs. New installed lifecycle control paths read installation metadata and print generation or command outcomes. They do not expose temporary connection registry or query payloads.",
+      "sites": [
+        [
+          "filesystem-read",
+          "access"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "diagnostic",
+          "process.stderr.write"
+        ],
+        [
+          "serialization",
+          "process.stderr.write"
+        ],
+        [
+          "diagnostic",
+          "process.stdout.write"
+        ],
+        [
+          "diagnostic",
+          "process.stdout.write"
+        ],
+        [
+          "diagnostic",
+          "process.stdout.write"
+        ],
+        [
+          "diagnostic",
+          "process.stdout.write"
+        ],
+        [
+          "diagnostic",
+          "process.stdout.write"
+        ],
+        [
+          "diagnostic",
+          "process.stdout.write"
+        ],
+        [
+          "diagnostic",
+          "process.stdout.write"
+        ],
+        [
+          "diagnostic",
+          "process.stdout.write"
+        ],
+        [
+          "diagnostic",
+          "process.stdout.write"
+        ],
+        [
+          "diagnostic",
+          "process.stdout.write"
+        ],
+        [
+          "diagnostic",
+          "process.stdout.write"
+        ],
+        [
+          "diagnostic",
+          "process.stdout.write"
+        ],
+        [
+          "serialization",
+          "process.stdout.write"
+        ],
+        [
+          "serialization",
+          "process.stdout.write"
+        ],
+        [
+          "serialization",
+          "process.stdout.write"
+        ],
+        [
+          "serialization",
+          "process.stdout.write"
+        ],
+        [
+          "serialization",
+          "process.stdout.write"
+        ],
+        [
+          "serialization",
+          "process.stdout.write"
+        ],
+        [
+          "serialization",
+          "process.stdout.write"
+        ],
+        [
+          "serialization",
+          "process.stdout.write"
+        ],
+        [
+          "serialization",
+          "process.stdout.write"
+        ],
+        [
+          "serialization",
+          "process.stdout.write"
+        ],
+        [
+          "serialization",
+          "process.stdout.write"
+        ],
+        [
+          "serialization",
+          "process.stdout.write"
+        ],
+        [
+          "filesystem-read",
+          "realpath"
+        ],
+        [
+          "filesystem-read",
+          "realpath"
+        ],
+        [
+          "filesystem-read",
+          "realpath"
+        ],
+        [
+          "filesystem-read",
+          "realpath"
+        ],
+        [
+          "filesystem-read",
+          "realpath"
+        ],
+        [
+          "filesystem-read",
+          "realpath"
+        ]
+      ],
+      "siteCount": 35,
+      "sitesDigest": "71ef324fd84dfbdb76bbd91666dccbf47cfaa4aaf26f91aa02d95f17632e1a5d",
+      "sourceDigest": "6e833d09da43f33eac01afd54b49509c32fd4a6cc224802942892286b347c3a9"
+    },
+    "src/bin/insrc-daemon-supervisor.ts": {
+      "classification": "client-process-boundary",
+      "rationale": "The supervisor entrypoint reads recovery receipts for stopped and registered jobs and reports startup failure on stderr. It starts installation control with release and process metadata, outside connection RPC dispatch.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "diagnostic",
+          "process.stderr.write"
+        ],
+        [
+          "serialization",
+          "process.stderr.write"
+        ],
+        [
+          "filesystem-read",
+          "realpath"
+        ]
+      ],
+      "siteCount": 5,
+      "sitesDigest": "3fb31e41b715213f0fd674fefb001e944adc8c74dce072bde6631d278a7a2ee7",
+      "sourceDigest": "450ac712c2b46587414997b9c4c34768dddfa0f1f2b6de42a9cd214dd01e3e27"
+    },
+    "src/bin/insrc-daemon-update.ts": {
+      "classification": "client-process-boundary",
+      "rationale": "Runs the detached installation update and prints failures from that lifecycle operation. It has no driver request input, connection binding or authority to create one.",
       "sites": [
         [
           "diagnostic",
           "process.stderr.write"
         ],
         [
-          "diagnostic",
-          "process.stderr.write"
-        ],
-        [
           "serialization",
           "process.stderr.write"
-        ],
-        [
-          "serialization",
-          "process.stderr.write"
-        ],
-        [
-          "diagnostic",
-          "process.stdout.write"
-        ],
-        [
-          "diagnostic",
-          "process.stdout.write"
-        ],
-        [
-          "serialization",
-          "process.stdout.write"
-        ],
-        [
-          "serialization",
-          "process.stdout.write"
         ]
       ],
-      "siteCount": 8,
-      "sitesDigest": "ee1f9598541570a34b998eafdd944a08488c1fce39e66e6bc5abef4b522ed333",
-      "sourceDigest": "42f6c894e1319a520d1cdddb94e86795b2a090ad7e35fd9fcc7c14f599d841b6"
+      "siteCount": 2,
+      "sitesDigest": "0d7541c1809bcaafcfaa218a522c0e538990f017bdcd05fb3d5a7ef781bc9dd0",
+      "sourceDigest": "c18897aad3984105f4ceb8b84affb21323042a4e3968e519fe0e3167c4f3b5a5"
     },
     "src/bin/insrc-mcp.ts": {
       "classification": "client-process-boundary",
@@ -6745,7 +7539,7 @@
       ],
       "siteCount": 8,
       "sitesDigest": "bd55207ff364d332c205993df243c0845ca84ff1a22f68b3c06fc9323a909100",
-      "sourceDigest": "368604e629a013e25a66cd2e1e1833665b56051d193b607a8007f06d132fe585"
+      "sourceDigest": "94d5a3d657d17dd4ff8649a077f0419ecb46b81401d4ad1d67647486498ffd9b"
     },
     "src/cli/index.tsx": {
       "classification": "client-process-boundary",
@@ -6867,7 +7661,7 @@
       ],
       "siteCount": 2,
       "sitesDigest": "f3ad4ba752d15fcb97db2f3a33bf3888de876a6458c9eae72354ccf188702886",
-      "sourceDigest": "fcc2db24cfa241e81a89c6c1035cd2d7d9f427dc9b7c73edc67810bc6c4a90c5"
+      "sourceDigest": "e127ce3a8f727e2f31a8f4068d9ddb23fdf0cf73ecae03be92391ebb5b6a21bf"
     },
     "src/cli/services/debug.ts": {
       "classification": "client-process-boundary",
@@ -6949,7 +7743,7 @@
     },
     "src/cli/services/maintenance.ts": {
       "classification": "client-process-boundary",
-      "rationale": "Client/process entry is outside daemon storage ownership. Only dedicated private bootstrap and S002 isolated worker protocol may carry transient authority/config; no persistence in argv/settings/environment/logs.",
+      "rationale": "Client/process entry is outside daemon storage ownership. Only dedicated private bootstrap and S002 isolated worker protocol may carry transient authority/config; no persistence in argv/settings/environment/logs. The added callback emits an installed supervisor restart progress message. It reports daemon lifecycle status, not connection state or result data.",
       "sites": [
         [
           "serialization",
@@ -6978,6 +7772,10 @@
         [
           "filesystem-write",
           "mkdirSync"
+        ],
+        [
+          "diagnostic",
+          "onLog"
         ],
         [
           "diagnostic",
@@ -7128,9 +7926,42 @@
           "writeFileSync"
         ]
       ],
-      "siteCount": 44,
-      "sitesDigest": "d33b21af6b762f52e42749c8ca900de521c79baa56137a79f5f158d827cdbbc8",
-      "sourceDigest": "45162dcaec0a0174a2f0c9d2fddb04b7754ad2044727a29a8ff918c51be11015"
+      "siteCount": 45,
+      "sitesDigest": "d2b9b0f65ad5c62bafbaab9a176f9f4a8bf3b4d645724cf75798fc2c6c08cd6f",
+      "sourceDigest": "2f5055f2c12a18747ac5fdf125903938166b615113f2327de872393a89baf7dd"
+    },
+    "src/cli/services/managed-daemon-control.ts": {
+      "classification": "client-process-boundary",
+      "rationale": "Frames lifecycle commands and replies over the installed supervisor socket. Its serialized bodies describe the installation, generation and control command, outside the data connection RPC.",
+      "sites": [
+        [
+          "serialization",
+          "encodeSupervisorFrame"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "unresolved-call",
+          "SupervisorFrameReader"
+        ],
+        [
+          "serialization",
+          "this.socket.write"
+        ]
+      ],
+      "siteCount": 6,
+      "sitesDigest": "dccb04505b71430bf99577896987d3681c15a378fab50f389582452acc598979",
+      "sourceDigest": "af22c27feaa28b3889c454bcea9a6db4f9dceeb3687b3cd3282e1836820e3007"
     },
     "src/cli/services/setup.ts": {
       "classification": "client-process-boundary",
@@ -7205,7 +8036,7 @@
       ],
       "siteCount": 5,
       "sitesDigest": "4d9cad0d223f446481f1aae5b324362f58c9f5f2dd8738a72392a4ed9905cba5",
-      "sourceDigest": "bd568b5847c196b5e756edb59bd21ca4713b43e84b08ef00bf3888319474b209"
+      "sourceDigest": "a2e67e70d3157455fa63dc6a2a194808f5dc72636a5b12600a789b8417bdc412"
     },
     "src/cli/ui/ApprovalPrompt.tsx": {
       "classification": "client-process-boundary",
@@ -7478,6 +8309,23 @@
       "siteCount": 3,
       "sitesDigest": "fd51e15cb303fb4c616faf5763bf0126e1f9f83bfbb921643295a20f3aaab65a",
       "sourceDigest": "25bbbe8aca3c1d77b571585e0e6e16fa707bfc1c072076e473050a4b8a07d96a"
+    },
+    "src/config/review.ts": {
+      "classification": "configuration-boundary",
+      "rationale": "Reads the review JSON byte cap from daemon configuration and returns a numeric limit. The parser does not receive temporary connection state or expose the loaded configuration as a reply.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ]
+      ],
+      "siteCount": 2,
+      "sitesDigest": "f6631b3aa9ee4da054790b8de2a94819fb1c70a8b91c4e357b206c2b4f066e1c",
+      "sourceDigest": "fd80c25044e8024979fdb99c622e61647058536fd2d8742a4b354c4fa27d3d9a"
     },
     "src/config/search.ts": {
       "classification": "configuration-boundary",
@@ -7889,7 +8737,7 @@
     },
     "src/daemon/admin-handlers.ts": {
       "classification": "daemon-admission-boundary",
-      "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads.",
+      "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads. The new error diagnostic concerns a detached update handoff after the IPC acknowledgement. Its operation is installation control, independent of connection authorization and data.",
       "sites": [
         [
           "diagnostic",
@@ -7902,6 +8750,10 @@
         [
           "serialization",
           "JSON.parse"
+        ],
+        [
+          "diagnostic",
+          "log.error"
         ],
         [
           "diagnostic",
@@ -7920,9 +8772,9 @@
           "validateRepoPath"
         ]
       ],
-      "siteCount": 7,
-      "sitesDigest": "0d8a5de79548a40dc6b146ff822f0ece8dcc90c17dd3d7eaeed566a83b1adf20",
-      "sourceDigest": "66189489a15121503a47dbc3c36f612f1f8b02b63cfb27be69327c17eb258ef1"
+      "siteCount": 8,
+      "sitesDigest": "70d7f72427b53ce845b0300731be78a3f692e84e5ba600b43d5c0d324810061e",
+      "sourceDigest": "3069c106b9cbfbe1d1ed7b4c15f3c5ed63ac9d1352fc2506a00f59b1edbc5292"
     },
     "src/daemon/analyze-rpc.ts": {
       "classification": "owner-rpc-boundary",
@@ -8107,7 +8959,7 @@
       ],
       "siteCount": 44,
       "sitesDigest": "708b14c6182a30b4008bf3097a45b1539de60c5a54a85ea677fb820d43ffbb8c",
-      "sourceDigest": "3f5642ae84b28ee443df15a24a149cef3b7db772dc5cbf05e2000686c1a9ebf9"
+      "sourceDigest": "bbbf5e8aae7759dae153c357487e9a1df615468e23b280e978f5d5f005a76a3c"
     },
     "src/daemon/approval-broker.ts": {
       "classification": "daemon-admission-boundary",
@@ -13122,16 +13974,20 @@
     },
     "src/daemon/design-review-rpc.ts": {
       "classification": "daemon-admission-boundary",
-      "rationale": "Assigned during the 2026-11-03 merge of origin/main into v2 from the existing classification of its directory (daemon-admission-boundary); boundaries seen: filesystem-read. A mechanical assignment, not an independent review: revisit at the next review of the connection-management gate.",
+      "rationale": "Assigned during the 2026-11-03 merge of origin/main into v2 from the existing classification of its directory (daemon-admission-boundary); boundaries seen: filesystem-read. A mechanical assignment, not an independent review: revisit at the next review of the connection-management gate. The added checkpoint-forget operation targets authenticated design review state. It does not accept or resolve a temporary data connection.",
       "sites": [
+        [
+          "serialization",
+          "owner.forgetCheckpoint"
+        ],
         [
           "filesystem-read",
           "realpath"
         ]
       ],
-      "siteCount": 1,
-      "sitesDigest": "12cf8ee8960cf845da54486482a41ac7c65520c1e06cf728a9a7080381e16552",
-      "sourceDigest": "8594fa49c97253030950cba8144dc1868f85ce4bff1463fc29de926865921f30"
+      "siteCount": 2,
+      "sitesDigest": "b0d23cbb9fbe617bcf95bc70749a0b506b99d7772684ce49e59f6d7ef6b89eb5",
+      "sourceDigest": "11f3fbca843b0aeaea538e4df41570e0e28b50a8f1a210dadb3622899400391f"
     },
     "src/daemon/doc-relations-rpc.ts": {
       "classification": "daemon-admission-boundary",
@@ -14165,7 +15021,7 @@
       ],
       "siteCount": 226,
       "sitesDigest": "f95a307abc17c612f3d9df4980bf8d27464f99ea6a80c4a783014ff702405c54",
-      "sourceDigest": "88352a48eb47699dfe46923b65274c7a750e53c184a1bba2ec19c3ca150f20e2",
+      "sourceDigest": "e9713d2e2325ea5def5a3f20fefb433297fd436e2d95166155aea33f833fc72d",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -14180,7 +15036,7 @@
     },
     "src/daemon/index.ts": {
       "classification": "daemon-admission-boundary",
-      "rationale": "Default startup initializes fresh registered roots and reopens signed managed state through the existing owner checks. Shutdown includes all startup and lazily created Saved owners; session and driver ownership boundaries and transport authority remain unchanged.",
+      "rationale": "Default startup initializes fresh registered roots and reopens signed managed state through the existing owner checks. Shutdown includes all startup and lazily created Saved owners; session and driver ownership boundaries and transport authority remain unchanged. Startup warns on stale process-owner observations and wires managed lifecycle and task progress. The existing connection session runtime still owns connection forwarding and disconnect cleanup.",
       "sites": [
         [
           "storage-call",
@@ -14407,6 +15263,10 @@
           "log.warn"
         ],
         [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
           "filesystem-write",
           "mkdirSync"
         ],
@@ -14447,9 +15307,9 @@
           "writePid"
         ]
       ],
-      "siteCount": 66,
-      "sitesDigest": "26179eb865ebf467ae0ad2ee08ed5b868d73b8766942c7d53a6596f27ff7ac16",
-      "sourceDigest": "d09d6ac5d5a1227731dd9b802ed40c5c2b2de2988e5bc5ef3bebbb54d54533bc",
+      "siteCount": 67,
+      "sitesDigest": "c47ce5f473873416f61d250f588392fff495e593ce6ec4c7f69618e5eca682d6",
+      "sourceDigest": "aacbc03ff100167946e76736aec19624917a2c92ccfe6c1ed76e5c82a4fc4404",
       "boundaries": [
         "diagnostic",
         "filesystem-write",
@@ -14458,6 +15318,84 @@
         "storage-call",
         "unresolved-call"
       ]
+    },
+    "src/daemon/legacy-daemon-cutover.ts": {
+      "classification": "daemon-admission-boundary",
+      "rationale": "Validates legacy process and run-file identity before sending the cooperative shutdown RPC. The socket payload is a shutdown control frame; the read files provide process ownership and installation identity.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "filesystem-read",
+          "lstatSync"
+        ],
+        [
+          "filesystem-read",
+          "lstatSync"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "realpath"
+        ],
+        [
+          "filesystem-read",
+          "realpath"
+        ],
+        [
+          "filesystem-read",
+          "realpath"
+        ],
+        [
+          "serialization",
+          "socket!.write"
+        ]
+      ],
+      "siteCount": 8,
+      "sitesDigest": "2dbda3509bdf22831133ea156eccfe038a2c70f7d4fefa45cce2ab19a6d026f3",
+      "sourceDigest": "368953ea20999676faab83748a348dfd5fadfc5164e29d4fa4230b4602d413bf"
+    },
+    "src/daemon/legacy-launch-job.ts": {
+      "classification": "daemon-admission-boundary",
+      "rationale": "Inspects legacy LaunchAgent registration and parses the job descriptor to verify cutover ownership. The examined data describes the job and release paths, independent of connection registry and driver state.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-read",
+          "readFile"
+        ],
+        [
+          "filesystem-read",
+          "readFile"
+        ],
+        [
+          "filesystem-read",
+          "realpath"
+        ],
+        [
+          "filesystem-read",
+          "realpath"
+        ]
+      ],
+      "siteCount": 7,
+      "sitesDigest": "2576207706872f1128d3d8e48392657a831bcd4c035578a99fb93adcfe3ca2b8",
+      "sourceDigest": "f8d29d2e1a121cd25c6488791b22639738292cedd4d7da0b447116f08fc8a66c"
     },
     "src/daemon/lifecycle-registry.ts": {
       "classification": "daemon-admission-boundary",
@@ -14581,9 +15519,211 @@
       "sitesDigest": "ca5757b765ca5b35169a2d917547b3937a03fde5bbec5ac500168b6491cfd1ed",
       "sourceDigest": "883f2085fe89e30ac36d91033748c856e1a4503b0f14e073bbf9622e6f4ede05"
     },
+    "src/daemon/managed-daemon-lifecycle.ts": {
+      "classification": "daemon-admission-boundary",
+      "rationale": "The managed child sends lifecycle readiness and shutdown frames over its supervisor channel. This channel carries generation and process status, separate from public IPC and temporary connection transport.",
+      "sites": [
+        [
+          "serialization",
+          "encodeSupervisorFrame"
+        ],
+        [
+          "serialization",
+          "encodeSupervisorFrame"
+        ],
+        [
+          "unresolved-call",
+          "SupervisorFrameReader"
+        ],
+        [
+          "serialization",
+          "this.channel.write"
+        ],
+        [
+          "serialization",
+          "this.channel.write"
+        ]
+      ],
+      "siteCount": 5,
+      "sitesDigest": "a3836822e71847afc79e395b9770c17e345952309f269fb7dfc47a6864664c59",
+      "sourceDigest": "09cbf25837c1e48d46d592763a25f270c3d27b8d3dd92d9cbc2a59034f529dfc"
+    },
+    "src/daemon/managed-daemon-probation.ts": {
+      "classification": "daemon-admission-boundary",
+      "rationale": "Verifies the selected release and publishes the managed PID before opening the daemon index store during probation. Indexer readiness uses the daemon-owned store without acquiring a connection session or driver.",
+      "sites": [
+        [
+          "storage-call",
+          "getDb"
+        ],
+        [
+          "filesystem-read",
+          "realpath"
+        ],
+        [
+          "serialization",
+          "writePid"
+        ]
+      ],
+      "siteCount": 3,
+      "sitesDigest": "0b3703e585c34356da1425200880f2c65f184440383f0540239c442d1a20bc8c",
+      "sourceDigest": "97118b7b85c16fb177ce94ce9f9ccccaa2acc0bc50489e3c0c67a81d79e58c4a"
+    },
+    "src/daemon/managed-update-handoff.ts": {
+      "classification": "daemon-admission-boundary",
+      "rationale": "Records pinned releases, stop and launch outcomes, and generation receipts in the installation mutation journal. Those writes carry lifecycle ownership metadata, with store-owner handoff independent of connection leases.",
+      "sites": [
+        [
+          "storage-call",
+          "declareLiveStoreOwner"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ]
+      ],
+      "siteCount": 12,
+      "sitesDigest": "b33f8af8660f48518e8c9b5e5f4e8ef85fe8f60ff8e9a41705f1b3c7f2d212c6",
+      "sourceDigest": "db7228af45b9293360261f294d275309096a8d8e9af57b57f70fd09342abc936"
+    },
+    "src/daemon/managed-update-ipc.ts": {
+      "classification": "daemon-admission-boundary",
+      "rationale": "Projects installed commit and update outcome from the selected release and mutation journal. Its resolved paths and status values have no temporary connection configuration or result payload.",
+      "sites": [
+        [
+          "filesystem-read",
+          "realpath"
+        ]
+      ],
+      "siteCount": 1,
+      "sitesDigest": "de0342b58ecc17de4b55d5981306b2e1bf229edb5cff31ee9e25af7328d9b7a2",
+      "sourceDigest": "a5a0a368b0a4551bbe1462cd0b745d66d7b17405bd4be54c8eb5915b51405153"
+    },
+    "src/daemon/managed-update-launch.ts": {
+      "classification": "daemon-admission-boundary",
+      "rationale": "Reads release compatibility metadata, reserves the update and acknowledges the detached helper through process IPC. Its serialized values are release selector and handoff data, outside the connection runtime.",
+      "sites": [
+        [
+          "serialization",
+          "child.send"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "serialization",
+          "process.send!"
+        ],
+        [
+          "filesystem-read",
+          "readFile"
+        ],
+        [
+          "filesystem-read",
+          "realpath"
+        ]
+      ],
+      "siteCount": 8,
+      "sitesDigest": "f59cdda1dc67daed327c5d445c00f1befbf5fb17dded2cbad8dc542f8b47d44c",
+      "sourceDigest": "a29d675c3e7c85ee4fbdf8956542bb60c88323f65fba29440fdc22adbe145f7b"
+    },
+    "src/daemon/managed-update-recovery.ts": {
+      "classification": "daemon-admission-boundary",
+      "rationale": "Decodes mutation receipts and records restored job, process exit and generation status during rollback. Recovery journal writes concern installation state and do not reconstruct connection-session state.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ]
+      ],
+      "siteCount": 8,
+      "sitesDigest": "314bf12d148cbe273ac27c9ac50e691412df835efc6f4c05dfb0f1eb466b68ef",
+      "sourceDigest": "007ef127237bb103d45415ea571f6467f1d7c51383065eb0f2a8d82df86ef74c"
+    },
     "src/daemon/mcp-register.ts": {
       "classification": "daemon-admission-boundary",
-      "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads.",
+      "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads. The added text write updates MCP registration configuration. This setup path has no access to session-bound connection payloads.",
       "sites": [
         [
           "serialization",
@@ -14664,11 +15804,15 @@
         [
           "serialization",
           "writeText"
+        ],
+        [
+          "serialization",
+          "writeText"
         ]
       ],
-      "siteCount": 20,
-      "sitesDigest": "eb6ec28df94779080141028fc8f5dcbda737b47466ede42f250a9b7ca270c043",
-      "sourceDigest": "06273eb63b497bcb43750ea46e13990993ad51830f1fbb7fe7eee324b5040891"
+      "siteCount": 21,
+      "sitesDigest": "e280c2a6cf3dbee1f4cc82d9cc1b41146d4441a1f476d504a0552948f100bde2",
+      "sourceDigest": "b463ea8d13b35fcc038d0985e9661156a57e5b8cd3ecf2142236a7a16cb7fa1c"
     },
     "src/daemon/model-catalog.ts": {
       "classification": "daemon-admission-boundary",
@@ -14916,6 +16060,59 @@
       "sitesDigest": "222c57c4402fcd795fddbf35b7000985cf96368fc1e68305c66b52e4092f4fa8",
       "sourceDigest": "7d06c1b3b29195139c54fa5d70883bf6ec3fbb1d930033ebddb3448059f01c81"
     },
+    "src/daemon/release-compatibility.ts": {
+      "classification": "persistent-storage-boundary",
+      "rationale": "Probes the quiesced graph schema and Lance table schemas for release compatibility, then closes the inspection handles. It reads store metadata only and neither scans stored rows nor acquires a connection driver.",
+      "sites": [
+        [
+          "storage-call",
+          "connect"
+        ],
+        [
+          "storage-call",
+          "connection.close"
+        ],
+        [
+          "storage-call",
+          "connection.openTable"
+        ],
+        [
+          "storage-call",
+          "connection.tableNames"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "storage-call",
+          "inspectQuiescedGraphSchema"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "storage-call",
+          "table.close"
+        ],
+        [
+          "storage-call",
+          "table.schema"
+        ]
+      ],
+      "siteCount": 11,
+      "sitesDigest": "ab503be7330a5972c329af9ac98c75499e0c463a66772dc21ba92c8b8f917722",
+      "sourceDigest": "51239fa908ae0097585abf355621ad9ba07061a268600a35142e5ae8689c4f49"
+    },
     "src/daemon/repo-call-gate.ts": {
       "classification": "daemon-admission-boundary",
       "rationale": "Assigned during the 2026-11-03 merge of origin/main into v2 from the existing classification of its directory (daemon-admission-boundary); boundaries seen: filesystem-read. A mechanical assignment, not an independent review: revisit at the next review of the connection-management gate.",
@@ -14985,7 +16182,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "99019927369058589909dc322f1b515ec29a058e868edc6a31918f787e147c4e",
-      "sourceDigest": "ee0dbd436baae6ee4c5abcc5fd374c419735ff47dff6305dde7f14ed8c4d3f07"
+      "sourceDigest": "e0746f63bdea493492b7f58c248e8e1c44294d37ee81f5563cb19c66a1a2237e"
     },
     "src/daemon/repo-schema-guard.ts": {
       "classification": "daemon-admission-boundary",
@@ -15125,7 +16322,7 @@
       ],
       "siteCount": 11,
       "sitesDigest": "562b074fec50dfc8e9fb00551b4cc5813225b6a114f56bc6aa0e72dc5aa803d4",
-      "sourceDigest": "1d29aa34a76e16d9fea64698c6deb9429070c03612b2f89afc6d52c441739680"
+      "sourceDigest": "2f721b5ffef868b9f9cb16414f16dc688e65e19299aa299a0299edbe779ea6db"
     },
     "src/daemon/search-guard.ts": {
       "classification": "daemon-admission-boundary",
@@ -15231,7 +16428,7 @@
       ],
       "siteCount": 15,
       "sitesDigest": "336d555fe17123ef6ce9baad4d35be84b2e707d9c1fa7c2b6fa146f7c2bcbb18",
-      "sourceDigest": "3d486e660b2c0b63f799e9b99bf226060940e15dbe942748ee48e83a499c8065"
+      "sourceDigest": "68c17bfaddc6789c6b6bb0b0a169d83b60c8741a925c12cd58d8cc9e6f80295b"
     },
     "src/daemon/shutdown-watchdog.ts": {
       "classification": "daemon-admission-boundary",
@@ -15293,7 +16490,7 @@
       ],
       "siteCount": 8,
       "sitesDigest": "706b0ae72e9e75930a1848d2bd6082bbe1d38340380653c59b12a83c51c70960",
-      "sourceDigest": "8042456fd7c248caf458677519c4d40e3ac5865e42a41d4d3f7ecf494d797286"
+      "sourceDigest": "e23df74286f32923b682d3df9463436dcdce161ffbb713cbc9c3bb3be67027c6"
     },
     "src/daemon/source-roots-rpc.ts": {
       "classification": "daemon-admission-boundary",
@@ -15323,7 +16520,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "6fca26a42e42ecba5ef2d6a8381549249110a5bf01db6f2896057066b6b03398",
-      "sourceDigest": "4cc01e2a7a2952ac5708b2f1cd015a9a8a31a4b41407e67bdaf2b186f5d15dac"
+      "sourceDigest": "5f56106b3a19c387f74205af2cfab1468903fd008c7b693fc7f2be8ea0c63617"
     },
     "src/daemon/steering-inject.ts": {
       "classification": "daemon-admission-boundary",
@@ -15388,7 +16585,7 @@
       ],
       "siteCount": 14,
       "sitesDigest": "34d93cdb650e2989e1dac70ffac016eb4e60510d6dd1a9dbc1bc5ee19503b2d6",
-      "sourceDigest": "b9c64718fd65b287e87d007db0bea00ad27a4dfafcb22ed3591ad07289ed2d6a"
+      "sourceDigest": "f425df6276b0f4dd5e18035666da55ab5df9252167e20838d5554a7cae286341"
     },
     "src/daemon/steps/analysis-admission.ts": {
       "classification": "session-analysis-admission",
@@ -15426,7 +16623,7 @@
       ],
       "siteCount": 4,
       "sitesDigest": "7676a6f66e3001bad5830dbc5055023fbe068d0a7880b88ff0ca378d09024aa9",
-      "sourceDigest": "c423f9d04816821dc8dc9cd9cfac41ad1c237f968e8a67708fbc3cb457458291"
+      "sourceDigest": "312b051e47848fd50a13280311aa2eeccf9a2bec86cc3ea4606b39e894d6df60"
     },
     "src/daemon/steps/analyze-step/handler.ts": {
       "classification": "analysis-transport",
@@ -15476,7 +16673,7 @@
       ],
       "siteCount": 3,
       "sitesDigest": "16fef7be962364aa36b085fb586842fd512bfbf99d26a5664249085a265f9655",
-      "sourceDigest": "ff2d03043267b426a44920ba2c32524d6cad46f7656555c6df6cb22360033aa3"
+      "sourceDigest": "ad21663b5dbf7c5fa8e4e866e0a0a42f86d127cc2733e0c82ebb62de3972f788"
     },
     "src/daemon/steps/analyze-step/phases/narrow.ts": {
       "classification": "analysis-transport",
@@ -15521,7 +16718,7 @@
       ],
       "siteCount": 9,
       "sitesDigest": "d1157efba64999ff2f63210b896e2c2c192af09997294f87da70e7a1dd53680d",
-      "sourceDigest": "7550ae4ccfd9c3442fb9dc04fc0b195081ccc30a9032a6e2068ef089c73b9033"
+      "sourceDigest": "50bec356e150f49c1e0778ee27a366c3d54f1a6999e77e973476da469c43e9a3"
     },
     "src/daemon/steps/analyze-step/phases/plan.ts": {
       "classification": "analysis-transport",
@@ -15554,7 +16751,7 @@
       ],
       "siteCount": 6,
       "sitesDigest": "8bb5f6258e391626af6883c30cf908cc3b596261378a815f00a0f5190524d4f2",
-      "sourceDigest": "747320fc8053f530faac75508ecc52938c276cecba57b63e8902d289b18445c1"
+      "sourceDigest": "828a2b4f95438acbd3743d5f2461d0dd1021912b3f6eb7b7610acb08b6696721"
     },
     "src/daemon/steps/analyze-step/phases/start.ts": {
       "classification": "analysis-transport",
@@ -15583,7 +16780,7 @@
       ],
       "siteCount": 5,
       "sitesDigest": "cb2d9bcd9098840d82ade88b0046f89dea8720d7a014cc49c0e88aaedc6f40b7",
-      "sourceDigest": "a2a0f2ebd15709bfa9dba6c16e0c18a5b009c5b3ea0b184c947d5780144d44e2"
+      "sourceDigest": "e4cb7031d4d5043dc570bb2cab200fbddbea888c53190c031fa653777d2ff8d5"
     },
     "src/daemon/steps/analyze-step/state-store.ts": {
       "classification": "analysis-transport",
@@ -16164,7 +17361,7 @@
       ],
       "siteCount": 6,
       "sitesDigest": "7b840d946509fad31f5163519001478e2f8bad1595de8db943ac10a61105e9e3",
-      "sourceDigest": "7aa8e2e61ab6f616b49ce81214048626a87e3a4893b0b83760d1137ec2dcb24e"
+      "sourceDigest": "a459711eac11210555c59b1029709e405d0d1ffeb7a7d61b0c69ac1f51f87fac"
     },
     "src/daemon/steps/workflow-step/questions-gate.ts": {
       "classification": "forbidden-session-workflow",
@@ -16285,6 +17482,407 @@
       "sitesDigest": "5c1020f95856e3cbc1953d2f633eafba5ffe7c0a29c1bfd20a35fb1133e5805c",
       "sourceDigest": "de8250ad22085d46be68f3ce1c4e4c92b9a25596b85e9f64874813d0df60aef7"
     },
+    "src/daemon/supervisor-run-files.ts": {
+      "classification": "daemon-admission-boundary",
+      "rationale": "Reads and writes supervisor ownership records and removes only matching run-file publications. The persisted values are lifecycle process identity, owner and nonce, outside connection state.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-write",
+          "mkdir"
+        ],
+        [
+          "filesystem-write",
+          "mkdir"
+        ],
+        [
+          "filesystem-read",
+          "readFile"
+        ],
+        [
+          "filesystem-read",
+          "readFile"
+        ],
+        [
+          "filesystem-write",
+          "unlink"
+        ],
+        [
+          "filesystem-write",
+          "unlink"
+        ],
+        [
+          "filesystem-write",
+          "writeFile"
+        ],
+        [
+          "serialization",
+          "writeFile"
+        ]
+      ],
+      "siteCount": 10,
+      "sitesDigest": "9d1f9ace9e4a74ba16c71dd206ab75c92a648ebca76f0033a8338eaf77788aa8",
+      "sourceDigest": "9f99e1fe826a39f9a04222c05fe32be46b1092e19722f578391f15c3462cdb6d"
+    },
+    "src/daemon/supervisor-socket.ts": {
+      "classification": "daemon-admission-boundary",
+      "rationale": "Accepts typed lifecycle control frames on the supervisor socket and emits process state and operation replies. It has no connection route or generic payload forwarder.",
+      "sites": [
+        [
+          "serialization",
+          "encodeSupervisorFrame"
+        ],
+        [
+          "serialization",
+          "encodeSupervisorFrame"
+        ],
+        [
+          "serialization",
+          "encodeSupervisorFrame"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "serialization",
+          "send"
+        ],
+        [
+          "serialization",
+          "socket.write"
+        ],
+        [
+          "serialization",
+          "socket.write"
+        ],
+        [
+          "unresolved-call",
+          "SupervisorFrameReader"
+        ]
+      ],
+      "siteCount": 8,
+      "sitesDigest": "b89ac0a05a068c7c2be63831c433e5407d36c04afa3278bb30abe6e8a8756172",
+      "sourceDigest": "07211532d266c93ae92730a3a1d74433cded9743c5762200d6f0f28652bb9eab"
+    },
+    "src/daemon/supervisor.ts": {
+      "classification": "daemon-admission-boundary",
+      "rationale": "Owns child generation lifecycle and sends startup, readiness and exit control messages. Its child IPC and supervisor protocol frames track process state separately from the daemon's connection transport.",
+      "sites": [
+        [
+          "filesystem-read",
+          "access"
+        ],
+        [
+          "filesystem-read",
+          "access"
+        ],
+        [
+          "serialization",
+          "active.child.send"
+        ],
+        [
+          "serialization",
+          "active.child.send"
+        ],
+        [
+          "serialization",
+          "active.child.send"
+        ],
+        [
+          "serialization",
+          "active.child.send"
+        ],
+        [
+          "serialization",
+          "channel.write"
+        ],
+        [
+          "serialization",
+          "encodeSupervisorFrame"
+        ],
+        [
+          "filesystem-read",
+          "stat"
+        ],
+        [
+          "filesystem-read",
+          "stat"
+        ],
+        [
+          "filesystem-read",
+          "stat"
+        ],
+        [
+          "unresolved-call",
+          "SupervisorFrameReader"
+        ]
+      ],
+      "siteCount": 12,
+      "sitesDigest": "761b27c49d5203aa1d657f7296534b74e60097bfa4972a03ba965e7236c8adb6",
+      "sourceDigest": "d10bcfaa6e6903b3bb1d9d5e3cc1610505c666539e3368786bf569d1d9792dfa"
+    },
+    "src/daemon/task-progress/access.ts": {
+      "classification": "daemon-admission-boundary",
+      "rationale": "Authorizes progress origin and attachment with trusted socket identity and hashed capabilities. Its serialized project identity is based on canonical path and registration, with no data-source binding.",
+      "sites": [
+        [
+          "serialization",
+          "Buffer.from"
+        ],
+        [
+          "serialization",
+          "Buffer.from"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "randomBytes(32).toString"
+        ],
+        [
+          "serialization",
+          "randomBytes(32).toString"
+        ],
+        [
+          "serialization",
+          "randomBytes(32).toString"
+        ],
+        [
+          "serialization",
+          "serializeOrigin"
+        ],
+        [
+          "serialization",
+          "serializeOrigin"
+        ]
+      ],
+      "siteCount": 8,
+      "sitesDigest": "c8dac9fbfb1ca7dd0c0df0b9abf819037b70a9ce20f2fb88bc48571b153c353a",
+      "sourceDigest": "9b9b2526a62274b6cdd437c0c2c5c368c2ebc2d8f43097430625841eb3b8ecbe"
+    },
+    "src/daemon/task-progress/coordinator.ts": {
+      "classification": "daemon-admission-boundary",
+      "rationale": "Publishes bounded task measurements and uses hashed task and cursor keys. Progress details require producer authorization and validation; this coordinator is separate from connection-session admission.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "publish"
+        ]
+      ],
+      "siteCount": 4,
+      "sitesDigest": "602111ff248af6d571d339c0be901861395877ddbdfebd34963fd257838baaa7",
+      "sourceDigest": "6fba268c3a1681cdbd067570e5b75d7b51cf044864bd6ed47e2c2caaded9454c"
+    },
+    "src/daemon/task-progress/record.ts": {
+      "classification": "daemon-admission-boundary",
+      "rationale": "Decodes bounded progress records and delegates kind-specific measurement validation. The contract is task identity, progress, ownership and retention metadata, with no connection payload field.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ]
+      ],
+      "siteCount": 3,
+      "sitesDigest": "a4bd62c322e5223ee1466b29da57033b8612fd3e79e2fa6b70c3596622533214",
+      "sourceDigest": "b78fd798e16584fe6544cb9ad1b336cc3d0a82e5be0ff4b66bc29aaa01710fa2"
+    },
+    "src/daemon/task-progress/rpc.ts": {
+      "classification": "daemon-admission-boundary",
+      "rationale": "Decodes progress requests and streams scoped snapshots only after attachment authorization. The progress stream is independent of the temporary connection overlay and does not forward driver replies.",
+      "sites": [
+        [
+          "serialization",
+          "decode"
+        ],
+        [
+          "serialization",
+          "decode"
+        ],
+        [
+          "serialization",
+          "decode"
+        ],
+        [
+          "serialization",
+          "decode"
+        ],
+        [
+          "serialization",
+          "decode"
+        ],
+        [
+          "serialization",
+          "decode"
+        ],
+        [
+          "serialization",
+          "decode"
+        ],
+        [
+          "serialization",
+          "decode"
+        ],
+        [
+          "serialization",
+          "send"
+        ],
+        [
+          "serialization",
+          "send"
+        ],
+        [
+          "serialization",
+          "send"
+        ],
+        [
+          "serialization",
+          "send"
+        ]
+      ],
+      "siteCount": 12,
+      "sitesDigest": "18d220d7690b4f62b843c20b2ebc78be7215e7c3aef3402db472125df2011fdf",
+      "sourceDigest": "18e39b257a9de47821b31de79c986f6424f321d981ce97a7e694578be01cd759"
+    },
+    "src/daemon/task-progress/runtime.ts": {
+      "classification": "daemon-admission-boundary",
+      "rationale": "Opens the task progress store with its detail validator and schedules retention. Its warning is a fixed string and cannot format the failed record or temporary data.",
+      "sites": [
+        [
+          "diagnostic",
+          "getLogger"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ]
+      ],
+      "siteCount": 2,
+      "sitesDigest": "11b3118d03a6cc8e1150e02182f487d002ea26d86eff5525592cab621a5b7b0c",
+      "sourceDigest": "5cb7d7a566aac9e3604e1e3aac5f5809a35bafbfaef4bdefc31a9ec735568c12"
+    },
+    "src/daemon/task-progress/store.ts": {
+      "classification": "persistent-storage-boundary",
+      "rationale": "Reads and atomically writes bounded, validated task progress records under the daemon progress directory. This store persists progress producer metadata and has no connection lease or configuration input.",
+      "sites": [
+        [
+          "serialization",
+          "Buffer.alloc"
+        ],
+        [
+          "serialization",
+          "buffer.subarray(0, offset).toString"
+        ],
+        [
+          "serialization",
+          "decodeProgressRecord"
+        ],
+        [
+          "serialization",
+          "decodeProgressRecord"
+        ],
+        [
+          "filesystem-read",
+          "file.stat"
+        ],
+        [
+          "filesystem-write",
+          "file.writeFile"
+        ],
+        [
+          "serialization",
+          "file.writeFile"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-write",
+          "mkdir"
+        ],
+        [
+          "filesystem-open",
+          "this.io.open"
+        ],
+        [
+          "filesystem-open",
+          "this.io.open"
+        ],
+        [
+          "filesystem-open",
+          "this.io.open"
+        ],
+        [
+          "filesystem-write",
+          "this.io.rename"
+        ],
+        [
+          "filesystem-write",
+          "this.io.rename"
+        ],
+        [
+          "serialization",
+          "this.serialize"
+        ],
+        [
+          "serialization",
+          "this.serialize"
+        ],
+        [
+          "serialization",
+          "this.serialize"
+        ],
+        [
+          "serialization",
+          "this.write"
+        ],
+        [
+          "filesystem-write",
+          "unlink"
+        ]
+      ],
+      "siteCount": 21,
+      "sitesDigest": "fad559cb2e5133087e84828f9e293967238356e7526333697241b3a1bcf13e3f",
+      "sourceDigest": "b5469b63576cc5de73e32a4a3cbe8fa13b247fb80761277d903a2d9e58bf2154"
+    },
     "src/daemon/task-review-rpc.ts": {
       "classification": "daemon-admission-boundary",
       "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads.",
@@ -16348,7 +17946,7 @@
       ],
       "siteCount": 14,
       "sitesDigest": "320e333cc36caa6c3ed08c36be0295f1a8b2fc2bdd27d048607935869f0231ee",
-      "sourceDigest": "3701c3c239601a1fc7451e9b7edd1ece79a617be1179a6734305cb69f16e05ba"
+      "sourceDigest": "758926e5019857374476d3a8e5ca6774228f4db3bb2291b4536056c9b9ae04ab"
     },
     "src/daemon/tasks-sync.ts": {
       "classification": "daemon-admission-boundary",
@@ -16382,15 +17980,11 @@
     },
     "src/daemon/threads/admin-worker.ts": {
       "classification": "routing-background-boundary",
-      "rationale": "Thread infrastructure must route session and owner-mutating requests to main daemon; maintenance retains real completion/drain. Background indexing/summary workers receive no session payload or capability.",
+      "rationale": "Thread infrastructure must route session and owner-mutating requests to main daemon; maintenance retains real completion/drain. Background indexing/summary workers receive no session payload or capability. Managed update status now uses the installation outcome projection instead of the former worker-side serialization site. It carries release status and does not reroute connection requests.",
       "sites": [
         [
           "storage-call",
           "getDb"
-        ],
-        [
-          "serialization",
-          "hub.send"
         ],
         [
           "storage-call",
@@ -16401,9 +17995,9 @@
           "parentPort!.postMessage"
         ]
       ],
-      "siteCount": 4,
-      "sitesDigest": "c3112db9091dc7c5b69f03ddff583b9b65296b97b619e6f76c5a05865e54f57c",
-      "sourceDigest": "258dbd448b91dc0cd733a16ae5ad3b5a32c0b4fc45ab763365d6d8083192a8a2"
+      "siteCount": 3,
+      "sitesDigest": "83ae85819fb20de268c9851a510311b255a8fbaa740e671059b56f2fb54a7234",
+      "sourceDigest": "9bd6dd9024d443bde614aa07180054493648d03799754111d18332c8a73d2154"
     },
     "src/daemon/threads/channel.ts": {
       "classification": "routing-background-boundary",
@@ -16613,7 +18207,7 @@
       ],
       "siteCount": 12,
       "sitesDigest": "931d07e3458e3d656af5f0cdb2ac5df5523f3e6c59e9292b181eabcb8bfe6bef",
-      "sourceDigest": "c38c560df16293d95efce169ef8925821765efef0c09d05c6ce46d8e3a043954",
+      "sourceDigest": "c030d7e1fb7891f176d43391c393ca4ed196303c8519675cffd302215c65e7f3",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -16686,6 +18280,43 @@
       "siteCount": 14,
       "sitesDigest": "7b30c9ebca0497eeb929dd61b2062c0223fbfc1d30adcfb6c0de1445fc658c57",
       "sourceDigest": "604d3913d5bae4f7b279cfd9c1c68aafd8785e4b4d187f4428488db284c94f86"
+    },
+    "src/daemon/threads/review-processes.ts": {
+      "classification": "routing-background-boundary",
+      "rationale": "Review process leases pin command metadata and own child stdin and output for review invocations. This control path has no temporary connection admission or driver dispatch.",
+      "sites": [
+        [
+          "serialization",
+          "child.stdin?.write"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "stream.write"
+        ]
+      ],
+      "siteCount": 7,
+      "sitesDigest": "32cc8c525a09be7903a869a56af1ec9d47b0cff5eb5cb07a8e2f5410badff737",
+      "sourceDigest": "8595043e4ad2f90d0b4a264cecc83b7d4858c33f2df0bdd3d6b0cc73e3382480"
     },
     "src/daemon/threads/router.ts": {
       "classification": "routing-background-boundary",
@@ -19502,7 +21133,7 @@
       ],
       "siteCount": 4,
       "sitesDigest": "d51dcb28758bfd5eb2843d91d7b4367869439c60ad6c91a599920732f7bd755f",
-      "sourceDigest": "816ad57754b195e2b02cb36630aa74180feacb3fcd3fc49527bd9669a6ab0d7f"
+      "sourceDigest": "fe625337c518ddb890e9d0d31db57ee156fc8c21dadbc6de0d9ee5b1d8aa4438"
     },
     "src/daemon/tools/builtins/pkg/index.ts": {
       "classification": "tool-allowlist-boundary",
@@ -19973,7 +21604,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "042d2c7d17583bbafe775408b42ce28615ed95b038823917e7a7379e4594aee1",
-      "sourceDigest": "a31e563f8edeaee3ba19cce1c166b59e5a760d415296207b19979a52457186c5"
+      "sourceDigest": "6b9c3dc3b34c3fc99c9408c285cc13a44d7c3e4a5a202c7d6a2dc87754351c54"
     },
     "src/daemon/tools/tool-signal.ts": {
       "classification": "tool-allowlist-boundary",
@@ -20150,7 +21781,7 @@
       ],
       "siteCount": 20,
       "sitesDigest": "94a5f06833fed18dc64d400f6511315417d87774d761607017de383d08c3a365",
-      "sourceDigest": "f1fd7595ca464bc4081aac184757418075b00f60d689f8d78a9c0b6205066dbf"
+      "sourceDigest": "d879c5e709b1d3bb14cf5c6acaac8892e8962e3983f501621c672f6c32503111"
     },
     "src/daemon/workflow-rpc.ts": {
       "classification": "daemon-admission-boundary",
@@ -20263,7 +21894,7 @@
       ],
       "siteCount": 26,
       "sitesDigest": "c32d54cb293e3ad0a7a2d5174cbfe39e9ded7423ffe6e3d716d5da6fb83da012",
-      "sourceDigest": "6e3f0e1002355696c6690d5cb3e92427dab081214dc9572e0f09e0598c840444"
+      "sourceDigest": "283f0b0a32a8efb6b7794d5de88ffeb392d8076d5f2be6f2aa0d3bcf9ccffd9d"
     },
     "src/daemon/workflow-run-registry.ts": {
       "classification": "daemon-admission-boundary",
@@ -24615,7 +26246,7 @@
       ],
       "siteCount": 32,
       "sitesDigest": "cda5b88709079fe3a0f4aa2208aad7765f10a5f5437c24fef54976dc9a665145",
-      "sourceDigest": "92da902dc5a28c54bfc8e203b34095f36e8a8d9e9f72163bced51e095ba550cc"
+      "sourceDigest": "304c7763dd4d0ee27d76b25a9c669a5c5a296c4b9e2f0300a1f011ff7b77c275"
     },
     "src/db/export-names.ts": {
       "classification": "persistent-storage-boundary",
@@ -26275,7 +27906,7 @@
     },
     "src/db/graph/store.ts": {
       "classification": "persistent-storage-boundary",
-      "rationale": "Shared storage API: independent structural graph reads retain existing semantics, but session-derived cache/record/vector reads and all temporary-derived writes are denied at the invocation boundary before access.",
+      "rationale": "Shared storage API: independent structural graph reads retain existing semantics, but session-derived cache/record/vector reads and all temporary-derived writes are denied at the invocation boundary before access. The added compatibility probe opens the existing quiesced graph read-only, reads its schema version metadata and closes the handle. It does not query or persist temporary connection data.",
       "sites": [
         [
           "storage-call",
@@ -26296,6 +27927,10 @@
         [
           "storage-call",
           "(db as AnyDb).getStats"
+        ],
+        [
+          "storage-call",
+          "assertMayOpen"
         ],
         [
           "storage-call",
@@ -26356,6 +27991,10 @@
         [
           "storage-call",
           "classifyOpenError"
+        ],
+        [
+          "storage-call",
+          "compactionPaths"
         ],
         [
           "storage-call",
@@ -26806,6 +28445,18 @@
           "lstatSync"
         ],
         [
+          "filesystem-read",
+          "lstatSync"
+        ],
+        [
+          "filesystem-read",
+          "lstatSync"
+        ],
+        [
+          "storage-call",
+          "meta.get"
+        ],
+        [
           "filesystem-write",
           "mkdirSync"
         ],
@@ -26916,6 +28567,10 @@
         [
           "storage-call",
           "open_"
+        ],
+        [
+          "storage-call",
+          "open"
         ],
         [
           "storage-call",
@@ -27135,6 +28790,14 @@
         ],
         [
           "storage-call",
+          "root.close"
+        ],
+        [
+          "storage-call",
+          "root.openDB"
+        ],
+        [
+          "storage-call",
           "root.openDB"
         ],
         [
@@ -27306,9 +28969,9 @@
           "writeSchemaVersion"
         ]
       ],
-      "siteCount": 257,
-      "sitesDigest": "a8c94dfa068aad5a39f6760d127cfd24be774208e44bb7e9e66222bba8f7b1d5",
-      "sourceDigest": "669cf39589a68ff02af21e800adc179d6266d1dc80c6fdee5f67a39531f313a7"
+      "siteCount": 265,
+      "sitesDigest": "4b06a1a0c10681266f1e63c0fbf33005dd6be0caef87a90ccc720cc6ffcddd60",
+      "sourceDigest": "140dbdc2d02c61e703e3219e8d04b0c0bda0cb74f1439973e160a7613b683bd4"
     },
     "src/db/graph/traversal.ts": {
       "classification": "persistent-storage-boundary",
@@ -30044,7 +31707,7 @@
     },
     "src/db/repos.ts": {
       "classification": "persistent-storage-boundary",
-      "rationale": "Shared storage API: independent structural graph reads retain existing semantics, but session-derived cache/record/vector reads and all temporary-derived writes are denied at the invocation boundary before access.",
+      "rationale": "Shared storage API: independent structural graph reads retain existing semantics, but session-derived cache/record/vector reads and all temporary-derived writes are denied at the invocation boundary before access. The added range read projects registered workspace paths and IDs for progress identity. It reads repository registration rows and never loads a data source or temporary overlay.",
       "sites": [
         [
           "storage-call",
@@ -30072,6 +31735,14 @@
         ],
         [
           "serialization",
+          "decodeRepoRow"
+        ],
+        [
+          "serialization",
+          "decodeRepoRow"
+        ],
+        [
+          "storage-call",
           "decodeRepoRow"
         ],
         [
@@ -30207,6 +31878,10 @@
           "getGraphStore"
         ],
         [
+          "storage-call",
+          "getGraphStore"
+        ],
+        [
           "unresolved-call",
           "import"
         ],
@@ -30312,6 +31987,10 @@
         ],
         [
           "storage-call",
+          "store.repo.getRange"
+        ],
+        [
+          "storage-call",
           "validateRepoPathShape"
         ],
         [
@@ -30331,9 +32010,9 @@
           "withWriteTxn"
         ]
       ],
-      "siteCount": 71,
-      "sitesDigest": "20c4297e29994f8d8f8e6a8704bc429920bf5c040ba04e91963eaeb95a913aa1",
-      "sourceDigest": "9548ca62d660ba68bbf53db4249688a59d733c02cdb1c1573cb4e3c55d81dd25"
+      "siteCount": 75,
+      "sitesDigest": "1936fad125e1f722e4f8cc98a11d5671ce4a6a4e11b5adf2cba36cc4c5e63296",
+      "sourceDigest": "b90617db763367272dd58d3ede9231b8a61412adc578365486b38fb30158d334"
     },
     "src/db/search.ts": {
       "classification": "persistent-storage-boundary",
@@ -32653,7 +34332,7 @@
       ],
       "siteCount": 2,
       "sitesDigest": "578bdbc8aee99cd140dd68b63f0f4850d5bcfcce328abe2f9686720aa17bb2f0",
-      "sourceDigest": "a8ce2856cc166e8015921a07c9f0c7233395a74cf95170810d9c0a61fda0b5c5"
+      "sourceDigest": "af69a8045a4aa211fed2b75d8598c74b89e53eceabca6e054993099d9f4092be"
     },
     "src/docgen/render/shell.ts": {
       "classification": "forbidden-session-service",
@@ -32678,7 +34357,7 @@
       ],
       "siteCount": 4,
       "sitesDigest": "f1aae6a5f531cae3674bd3d8b7853d37b034ac13b5eecf24364c52edce7ae322",
-      "sourceDigest": "2b39d33bc7198e32b943db98c174a72c912ce39634bab33d02668c94e9b63632"
+      "sourceDigest": "150419f4038e8eb59298218d76c15d7691ce9a2441735cc2472d38453a8450b6"
     },
     "src/docgen/tool.ts": {
       "classification": "forbidden-session-service",
@@ -35016,7 +36695,7 @@
     },
     "src/mcp/forward-step.ts": {
       "classification": "mcp-client-boundary",
-      "rationale": "Unattached saved MCP remains compatible. Session bootstrap uses private root/audience data delegation and every socket attaches; unverified reasoning must receive fixed refusal before any data-bearing prompt/result/error.",
+      "rationale": "Unattached saved MCP remains compatible. Session bootstrap uses private root/audience data delegation and every socket attaches; unverified reasoning must receive fixed refusal before any data-bearing prompt/result/error. Structured analysis adds a daemon feature probe before forwarding the request. The feature frame is daemon status only, and the existing attach sequence still supplies the connection binding.",
       "sites": [
         [
           "diagnostic",
@@ -35039,6 +36718,14 @@
           "JSON.stringify"
         ],
         [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
           "diagnostic",
           "log.warn"
         ],
@@ -35049,11 +36736,15 @@
         [
           "serialization",
           "socket.write"
+        ],
+        [
+          "serialization",
+          "socket.write"
         ]
       ],
-      "siteCount": 8,
-      "sitesDigest": "e0cc3517c7a04cf149c5b91914b89b9a0e5da5738a884c868ad994cb8c97c6b6",
-      "sourceDigest": "e49f8c4439b8746ab4c651fb8690af6ade0699a3e1c239517b023add5a7dd73d"
+      "siteCount": 11,
+      "sitesDigest": "3a6923cf055f79545711eca4d09ffdd9d5ecdd33dbef1072dfe392f1e00c2666",
+      "sourceDigest": "417275a4df05e6544d42fb69140f2be205ccf1a6e01cf593cb55e4866b77681e"
     },
     "src/mcp/guide/handler.ts": {
       "classification": "mcp-client-boundary",
@@ -35132,7 +36823,7 @@
       ],
       "siteCount": 9,
       "sitesDigest": "a8ce25ee55e92f906c493216e179e3b5abc04a91e9e75964b94f8da3d38d913b",
-      "sourceDigest": "ea590880bcf610f31f454b66ff2770a8bdf0818c2f07cc8ef5a8d648f6228c26"
+      "sourceDigest": "191650381dc15b888a99d737ce827f078547fd33b410ec2814c66737ffa2e817"
     },
     "src/mcp/session-bootstrap.ts": {
       "classification": "private-mcp-bootstrap",
@@ -35158,7 +36849,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "7c78b66553cf21ded9c6f621948fbe264d11ad6153caf322d0e8bd1b879e32a8",
-      "sourceDigest": "4f31d583d9654ee2862853792b589942b45529206a1c17958ce1f12789865cf1"
+      "sourceDigest": "75d8cbc28b1acc63f07d92aae343b64faa05019878011b507e4c2026d55175b7"
     },
     "src/shared/common-approval.ts": {
       "classification": "shared-transport-foundation",
@@ -35604,7 +37295,53 @@
       ],
       "siteCount": 9,
       "sitesDigest": "0feb33aa60e20d00d69b37f4c82af0323889bb7a67ab3c580540ddb884ff0ea4",
-      "sourceDigest": "e69b2379a4068194fbd71f073874f5e84890dcadd1fa995cd4834e9ee0bae8ce"
+      "sourceDigest": "9bfc6c89f49a68ec9a4a31f5d03645c1f1b3358b96dc40e4725e46e7e499193c"
+    },
+    "src/shared/daemon-supervisor-protocol.ts": {
+      "classification": "shared-transport-foundation",
+      "rationale": "Encodes and decodes bounded, validated installation supervisor frames. The protocol describes operations, generations and process results and is separate from data connection IPC.",
+      "sites": [
+        [
+          "serialization",
+          "Buffer.alloc"
+        ],
+        [
+          "serialization",
+          "Buffer.from"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "this.utf8.decode"
+        ]
+      ],
+      "siteCount": 5,
+      "sitesDigest": "d62152298182427553365f268920988c47c445fbd887ad0ef2fd53e3db21c6ff",
+      "sourceDigest": "d8e8f7d6a58f9121cf8f22053597d306d57e1b58b90ad2fad9b58780fa519e99"
+    },
+    "src/shared/darwin-lifecycle.ts": {
+      "classification": "shared-transport-foundation",
+      "rationale": "Resolves canonical Darwin process and installation identity paths for lifecycle ownership checks. Its filesystem reads inspect process metadata, outside the temporary connection runtime.",
+      "sites": [
+        [
+          "filesystem-read",
+          "realpath"
+        ],
+        [
+          "filesystem-read",
+          "realpath"
+        ]
+      ],
+      "siteCount": 2,
+      "sitesDigest": "c1d5d0aab35d37111261935951a29c7644daf4cffd18254c7609fad4ee1ab50f",
+      "sourceDigest": "eed126b550ab0a0c40cf733b9affae342104c75643efe793a1cb4b0ea63c7609"
     },
     "src/shared/db-driver.ts": {
       "classification": "shared-transport-foundation",
@@ -35622,6 +37359,119 @@
       "siteCount": 2,
       "sitesDigest": "2a16263ae35f30fd9879ff994ea9a506163762ed615da5578f3beb1a5ad6b935",
       "sourceDigest": "bd13706157b9d8c74e82103be3e3c3a5b64cf5462fd0cffee9e59b280428334e"
+    },
+    "src/shared/installation-mutation-gate.ts": {
+      "classification": "shared-transport-foundation",
+      "rationale": "Persists validated installation reservations, progress intents and operation receipts with atomic writes and filesystem fencing. Its state is scoped to install and update ownership rather than a connection session.",
+      "sites": [
+        [
+          "serialization",
+          "Buffer.alloc"
+        ],
+        [
+          "serialization",
+          "bytes.subarray(0, bytesRead).toString"
+        ],
+        [
+          "filesystem-read",
+          "file.stat"
+        ],
+        [
+          "filesystem-read",
+          "file.stat"
+        ],
+        [
+          "filesystem-write",
+          "file.writeFile"
+        ],
+        [
+          "serialization",
+          "file.writeFile"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-write",
+          "mkdir"
+        ],
+        [
+          "filesystem-open",
+          "open"
+        ],
+        [
+          "filesystem-open",
+          "open"
+        ],
+        [
+          "filesystem-open",
+          "open"
+        ],
+        [
+          "filesystem-open",
+          "open"
+        ],
+        [
+          "filesystem-read",
+          "realpath"
+        ],
+        [
+          "filesystem-write",
+          "rename"
+        ],
+        [
+          "filesystem-write",
+          "rm"
+        ],
+        [
+          "serialization",
+          "this.write"
+        ],
+        [
+          "serialization",
+          "this.write"
+        ],
+        [
+          "serialization",
+          "this.write"
+        ],
+        [
+          "serialization",
+          "this.write"
+        ],
+        [
+          "serialization",
+          "this.write"
+        ],
+        [
+          "serialization",
+          "this.write"
+        ]
+      ],
+      "siteCount": 26,
+      "sitesDigest": "b34411b6a2d2696b9f731ea00fc7dded527b0731b027fd58d9cc66348fd54747",
+      "sourceDigest": "bee640a5f44151d872830392237bc1d2a363a2c973151ac3ab678da2b19fa8ab"
     },
     "src/shared/ipc-client.ts": {
       "classification": "shared-transport-foundation",
@@ -35714,7 +37564,7 @@
       ],
       "siteCount": 21,
       "sitesDigest": "d2326f93bf20bc63d3d419be65a35924d680e7f4961f69cafce813285dc23393",
-      "sourceDigest": "5d159c3b445acdd2d080c66ccec8dddf224dba07992e0319259bf6f531ad5e64"
+      "sourceDigest": "0f883a2be0309d6c4d7ef73e44f9321fac6e6e82a37d5a71d32b2ace55969dce"
     },
     "src/shared/keystore.ts": {
       "classification": "saved-foundation-boundary",
@@ -35912,6 +37762,143 @@
       "sitesDigest": "9f2975e08b900a2244c0da4cb0fdb2a2fe5da4326c52a38f8c6b1d64180a59fd",
       "sourceDigest": "4d37ca182c80dbec718286e3eb32c500997697df566d9fff1936a854ca8ce5e5"
     },
+    "src/shared/managed-daemon-installation.ts": {
+      "classification": "shared-transport-foundation",
+      "rationale": "Reads and writes selected release descriptors and installed LaunchAgent files. These filesystem and JSON operations cover installation metadata and do not access a connection store.",
+      "sites": [
+        [
+          "filesystem-read",
+          "access"
+        ],
+        [
+          "filesystem-read",
+          "access"
+        ],
+        [
+          "filesystem-read",
+          "access"
+        ],
+        [
+          "filesystem-read",
+          "access"
+        ],
+        [
+          "filesystem-write",
+          "file.writeFile"
+        ],
+        [
+          "serialization",
+          "file.writeFile"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-write",
+          "mkdir"
+        ],
+        [
+          "filesystem-open",
+          "open"
+        ],
+        [
+          "filesystem-open",
+          "open"
+        ],
+        [
+          "filesystem-read",
+          "readFile"
+        ],
+        [
+          "filesystem-read",
+          "readFile"
+        ],
+        [
+          "filesystem-read",
+          "readFile"
+        ],
+        [
+          "filesystem-read",
+          "readFile"
+        ],
+        [
+          "filesystem-read",
+          "realpath"
+        ],
+        [
+          "filesystem-read",
+          "realpath"
+        ],
+        [
+          "filesystem-read",
+          "realpath"
+        ],
+        [
+          "filesystem-write",
+          "rename"
+        ],
+        [
+          "filesystem-write",
+          "rm"
+        ],
+        [
+          "filesystem-write",
+          "unlink"
+        ],
+        [
+          "filesystem-write",
+          "writeFile"
+        ],
+        [
+          "filesystem-write",
+          "writeFile"
+        ],
+        [
+          "serialization",
+          "writeFile"
+        ],
+        [
+          "serialization",
+          "writeFile"
+        ]
+      ],
+      "siteCount": 32,
+      "sitesDigest": "624bec1ac6c019f692729001b233569e45e2f933a0322634837da60b402b8c71",
+      "sourceDigest": "d9b2cae3466e677b8ff89642a53465e82f6e2c1aaebbcbef8c1aa8cc90f9c4e9"
+    },
     "src/shared/process-group.ts": {
       "classification": "shared-transport-foundation",
       "rationale": "Shared serializer/logger/transport primitive is not an authorization boundary. Daemon callers must validate session tuple and use nonserializable authority plus execution-local quiet diagnostics; global logging stays enabled.",
@@ -35939,7 +37926,7 @@
       ],
       "siteCount": 5,
       "sitesDigest": "4f072455acbb89726beed717d618281038ba8dff93ed5564885bbf72e76c74ff",
-      "sourceDigest": "7dccf3016bda9c3fde8b3ee3b2728fa0778fb98e7a4c58c94bfe66e8d2ed30b5"
+      "sourceDigest": "5636f8a758e69058c366efabf7ba9ae3d6e21d85b90f9c65d8f18b8acc6783ba"
     },
     "src/shared/review-activity.ts": {
       "classification": "shared-transport-foundation",
@@ -35973,7 +37960,7 @@
       ],
       "siteCount": 3,
       "sitesDigest": "670e7283cec89c02714f94748c2dfb50e5566908a25b42462a84c0c7f21e28d1",
-      "sourceDigest": "7dfcbbc33854f5267dfc0155734b0acdbd5a0879f46f45ca14ef92d592a8044f"
+      "sourceDigest": "1ef9ef31f72253b16f7c8ff4f5bea52c8b15b77439111290a9ca0107631afde8"
     },
     "src/shared/step-context.ts": {
       "classification": "shared-transport-foundation",
@@ -36022,6 +38009,19 @@
       "sitesDigest": "cff34f7164be0c667b998352939bdc3270755247680319b4ff96d68679850a4f",
       "sourceDigest": "3c27334e2d736cee30335cb41092e77e58bc9d42f3274e11289c7b3bcdbd8ab9"
     },
+    "src/shared/toml-inline-list.ts": {
+      "classification": "configuration-boundary",
+      "rationale": "Parses quoted TOML keys when reshaping configuration arrays into tables. JSON parsing is local to string decoding; the helper opens no file and sends no diagnostic payload.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.parse"
+        ]
+      ],
+      "siteCount": 1,
+      "sitesDigest": "8f092209afa2198fa0f7b16ab4741d4b130bfecbab70d5a9b7b808a88c77b2ea",
+      "sourceDigest": "621f5d71f3cd32e98e6ad49505517adcbcf85092b90a26b5632e2586b54f1ff3"
+    },
     "src/shared/understanding.ts": {
       "classification": "shared-transport-foundation",
       "rationale": "Shared serializer/logger/transport primitive is not an authorization boundary. Daemon callers must validate session tuple and use nonserializable authority plus execution-local quiet diagnostics; global logging stays enabled.",
@@ -36068,6 +38068,35 @@
       "siteCount": 2,
       "sitesDigest": "50c0be7a8f6ff30b607571761c6fc30d3b5cee5b430b7fc4f2c5e0af00ccdf44",
       "sourceDigest": "163384738deadb2674f6487dedbfb6315a83c952a779d98b0f770baf75c8a6bc"
+    },
+    "src/shared/vibe-session.ts": {
+      "classification": "provider-admission",
+      "rationale": "Frames and decodes Vibe subprocess JSON-RPC after runtime and model selection. This is a provider transport; its caller must apply connection execution admission before supplying prompt data.",
+      "sites": [
+        [
+          "serialization",
+          "child.stdin.write"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "send"
+        ],
+        [
+          "serialization",
+          "send"
+        ]
+      ],
+      "siteCount": 5,
+      "sitesDigest": "53eb5be1e169536e7579e2d75b489fbbe1362ca3b83f289a61b3f2f8b01c7808",
+      "sourceDigest": "bf19065a0bb4d18d0de5dbda54e57e09da2555680be1954bb7da7d597c7f3305"
     },
     "src/understanding/identity-tools.ts": {
       "classification": "forbidden-session-service",
@@ -36532,7 +38561,7 @@
       ],
       "siteCount": 6,
       "sitesDigest": "4717c76bc3077b4fb7c5877d25a410230c5a7ef97069b023d5dcf254f6e81078",
-      "sourceDigest": "e0d266d55e33c5417dbd3169c01e03e6dbae28c7d0335693b6dba22d002f9b38"
+      "sourceDigest": "6cbd31996dd3a4c2d3986c44e720984cbc90b1f69fabd1b054d359d0683604bb"
     },
     "src/workflow/artifact-core/approval-actor.ts": {
       "classification": "forbidden-session-service",
@@ -36549,7 +38578,7 @@
     },
     "src/workflow/artifact-core/completion-evidence.ts": {
       "classification": "forbidden-session-service",
-      "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service.",
+      "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service. The new directory read enumerates review evidence when qualifying completion. This audit operates on workflow records and remains outside temporary data sessions.",
       "sites": [
         [
           "diagnostic",
@@ -36561,12 +38590,16 @@
         ],
         [
           "filesystem-read",
+          "readdirSync"
+        ],
+        [
+          "filesystem-read",
           "readFileSync"
         ]
       ],
-      "siteCount": 3,
-      "sitesDigest": "dbe34bf7fb00b385f23d9c768e2eac7859ecab286a6958e1479da6ca6bf3dc32",
-      "sourceDigest": "dda880d23c8ec6a7d618de73096be5390afde54735ee80ae075200b8213d0335"
+      "siteCount": 4,
+      "sitesDigest": "17052e586645966164d9bac74e3e05ff25f51e66e767fa08326ecfd275c16baa",
+      "sourceDigest": "02ed392ff680604076c2008ec1a367ee3e9acf4a802aa98b8af7569471142545"
     },
     "src/workflow/artifact-core/decode.ts": {
       "classification": "forbidden-session-service",
@@ -36600,11 +38633,11 @@
       ],
       "siteCount": 2,
       "sitesDigest": "83cd6f8e86b58eab2fa24566a7fac3928f11d328df88e6f275c6dd4e17dc0a64",
-      "sourceDigest": "36d0be8d5599a2e179312450e3d4de24f6b05a35285a1a5c6be23ca3c95be29d"
+      "sourceDigest": "0a1e67cf92aa26e36c2f4ec0648099dd0b0987fb2c11115aafc21ff03d3a4e22"
     },
     "src/workflow/artifact-core/journal.ts": {
       "classification": "forbidden-session-service",
-      "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service.",
+      "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service. The added stat check bounds workflow history reads before parsing. It operates on artifact journal files rather than on connection data.",
       "sites": [
         [
           "serialization",
@@ -36623,13 +38656,17 @@
           "rmSync"
         ],
         [
+          "filesystem-read",
+          "statSync"
+        ],
+        [
           "serialization",
           "writeAtomic"
         ]
       ],
-      "siteCount": 5,
-      "sitesDigest": "80263a56e3fb8937f56414d26dcf261e083406b54d6954f2aec88bf54837b7a0",
-      "sourceDigest": "a67423389a6eb8e7cab468828fafa91c1519a2817bf9f5d7c70ba6c94cc15195"
+      "siteCount": 6,
+      "sitesDigest": "fe2d56e9db762d38144e848f72355e11bb1c476344f4bd2f5f61237d1e666cad",
+      "sourceDigest": "82791367ea3172024a092dec6b402a35e54e774f417b74b89142bc6cfd90d3e7"
     },
     "src/workflow/artifact-core/lifecycle-service.ts": {
       "classification": "forbidden-session-service",
@@ -36654,7 +38691,7 @@
       ],
       "siteCount": 4,
       "sitesDigest": "70b389d9dedc6be51f396d246525beaef1afd7c5daf693a4ae5f3a20c08374f4",
-      "sourceDigest": "e670894cecc3ecf8ce03a8cf6bdafdfa65a28b73b178da64ae0739837b5ecb3e"
+      "sourceDigest": "236224c080b88f9b37b806c4d94ef808ac6c158853a3414f34edce370151fd8d"
     },
     "src/workflow/artifact-core/lifecycle.ts": {
       "classification": "forbidden-session-service",
@@ -36675,7 +38712,7 @@
       ],
       "siteCount": 3,
       "sitesDigest": "54fb12537cc5b0edcccb50160aa4e680d8e262116687d5ae29772d3ada8a30f9",
-      "sourceDigest": "5e7ac8beb9ddc95ac3201566c64a8c6e44575d5ab0440889fbbc10720b374adb"
+      "sourceDigest": "e07b31694b63e8f68938e37b9773d683c1a5c51197d15e9c3c3f78ea644f8f3f"
     },
     "src/workflow/artifact-core/repo-schema.ts": {
       "classification": "forbidden-session-service",
@@ -36704,11 +38741,35 @@
     },
     "src/workflow/artifact-core/sidecar-store.ts": {
       "classification": "forbidden-session-service",
-      "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service.",
+      "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service. The new bounded descriptor reader decodes stored workflow sidecars. Its buffers contain artifact data and it has no driver or connection overlay port.",
       "sites": [
         [
           "filesystem-write",
           "appendFileSync"
+        ],
+        [
+          "serialization",
+          "Buffer.alloc"
+        ],
+        [
+          "serialization",
+          "Buffer.concat"
+        ],
+        [
+          "serialization",
+          "Buffer.concat"
+        ],
+        [
+          "serialization",
+          "Buffer.concat(parts,size).toString"
+        ],
+        [
+          "serialization",
+          "Buffer.concat(parts,size).toString"
+        ],
+        [
+          "serialization",
+          "Buffer.from"
         ],
         [
           "serialization",
@@ -36735,6 +38796,10 @@
           "log.warn"
         ],
         [
+          "filesystem-open",
+          "openSync"
+        ],
+        [
           "filesystem-read",
           "readFileSync"
         ],
@@ -36743,9 +38808,9 @@
           "readFileSync"
         ]
       ],
-      "siteCount": 9,
-      "sitesDigest": "e7d3df0c23b23a76ba5aaa9dc6b4d3158bf945a6098b865e86d35e4ad86945fd",
-      "sourceDigest": "286a216444b4cdf555a5c3f79a17c3505b88c9c4f81a22d9b3b3cd9a51e35408"
+      "siteCount": 16,
+      "sitesDigest": "d306ccfde08da3271301990bab5fb8bb5274f984a317ebd578a0ca45f8b8a24f",
+      "sourceDigest": "3f361e3db2d16d315b06d6de037782c4cb37bda68cbba1326c2e48acc3587359"
     },
     "src/workflow/artifact-core/sidecar.ts": {
       "classification": "forbidden-session-service",
@@ -36774,11 +38839,11 @@
       ],
       "siteCount": 5,
       "sitesDigest": "e228ddba5caa9cd4828ec9e4529852b49c949c1afb6e8fa94b1bcff35c39a918",
-      "sourceDigest": "cc3e4ae6ee85c915bb89644edfa76b3a165f698f1e2a26e565407844f15366c6"
+      "sourceDigest": "6c524aaae59fc6750d940d66053659020856d4b47d70696e7cb4080ba507032d"
     },
     "src/workflow/artifact-core/store.ts": {
       "classification": "forbidden-session-service",
-      "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service.",
+      "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service. Added source reads, byte decoding and history events apply to anchored workflow artifact paths. This store is outside temporary connection dispatch.",
       "sites": [
         [
           "serialization",
@@ -36787,6 +38852,14 @@
         [
           "serialization",
           "(this.deps.writeHead ?? writeAtomic)"
+        ],
+        [
+          "serialization",
+          "Buffer.alloc"
+        ],
+        [
+          "serialization",
+          "bytes.subarray(0,size).toString"
         ],
         [
           "serialization",
@@ -36833,8 +38906,92 @@
           "JSON.stringify"
         ],
         [
-          "diagnostic",
-          "log.warn"
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
         ],
         [
           "diagnostic",
@@ -36855,6 +39012,14 @@
         [
           "diagnostic",
           "log.warn"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "filesystem-open",
+          "openSync"
         ],
         [
           "filesystem-read",
@@ -36877,6 +39042,30 @@
           "readFileSync"
         ],
         [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "realpathSync"
+        ],
+        [
+          "filesystem-read",
+          "realpathSync"
+        ],
+        [
+          "diagnostic",
+          "this.deps.history.log"
+        ],
+        [
           "diagnostic",
           "this.deps.history.log"
         ],
@@ -36901,9 +39090,9 @@
           "this.writeUnlocked"
         ]
       ],
-      "siteCount": 30,
-      "sitesDigest": "cf0a4fa875b1ceec2585b15f702b7c6241cdd7d037aa4740fb98f79c433e697d",
-      "sourceDigest": "a1669d52ebaa8641917e20315a7fbcd05228bcad9095f16ec68be9aeb81ea90a"
+      "siteCount": 61,
+      "sitesDigest": "1739626dcd8136e4a550a8efd82420c195fca8e29718b6556b004c452d652620",
+      "sourceDigest": "49cebb32c70e7b9c89f7e41468c2c8b0aebc5b69272e6246249c6f9e30caacb5"
     },
     "src/workflow/artifact-write-inventory.ts": {
       "classification": "forbidden-session-service",
@@ -36924,7 +39113,7 @@
       ],
       "siteCount": 3,
       "sitesDigest": "bb9a3e4c2e13892e1cca6ced5fbfcb8a7faf4aa083de16be9123cfe2c98f5be1",
-      "sourceDigest": "997fc786a36e9f0f91fe167016a145fe8195ffea30a5fa77ee36e388be47bb85"
+      "sourceDigest": "874b731beee71fabd2805b5f01291db614a4b8c76809257051a36412c2b1d0ce"
     },
     "src/workflow/artifacts/companion/adaptive-cards.ts": {
       "classification": "forbidden-session-service",
@@ -37147,7 +39336,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "41bd0311fa8ad23e7e9d405bbf91f8846f89a01b5301bbf6cac307b52d4701f9",
-      "sourceDigest": "6eef3ae1d199f84a6bffd604fc95ed56470f86adf5b0062e2636146312cca67b"
+      "sourceDigest": "30d2e05445c97870573a5886e7f7a8548b0df3a36296c01d820332d8f2149ff7"
     },
     "src/workflow/artifacts/companion/ux.ts": {
       "classification": "forbidden-session-service",
@@ -37160,7 +39349,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "e01d2a39238dfc9e9cd2000830a680ef1447e6e0c7a98cd99feb148b9dc28537",
-      "sourceDigest": "a7f11fd28013e7c0ec53ee69f36b9075df790b096da083504f80b43de66d159f"
+      "sourceDigest": "992ef429bfe6bb9d96824abc092d044b763c280ed8dd2b5a9097f3ae7c5fdcba"
     },
     "src/workflow/artifacts/format/template-loader.ts": {
       "classification": "forbidden-session-service",
@@ -37404,6 +39593,39 @@
       "sitesDigest": "6fc6c2cd430be6ea4053ab3ff4bbe37e1b89c7b005db8dead0d02b8913a8c515",
       "sourceDigest": "6a7f567636079e0dceeabaccabcb71c21d2b59860cb5130b3808f331c50f47fc"
     },
+    "src/workflow/code-review/task-review/admission-checkpoint.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Validates append-only code review admission attempts, including scope identity and sequence. This pure codec handles review metadata on the workflow route, outside supported connection-session methods.",
+      "sites": [
+        [
+          "serialization",
+          "decodeReview"
+        ],
+        [
+          "serialization",
+          "decodeStoredCheckpoint"
+        ],
+        [
+          "serialization",
+          "decodeStoredCheckpoint"
+        ],
+        [
+          "serialization",
+          "decodeStoredCheckpoint"
+        ],
+        [
+          "serialization",
+          "decodeStoredCheckpoint"
+        ],
+        [
+          "serialization",
+          "decodeStoredCheckpoint"
+        ]
+      ],
+      "siteCount": 6,
+      "sitesDigest": "450f675f0905d289b7feb57f8538e1fc520271dd5cb90c6cd9cefa0458d6c5ae",
+      "sourceDigest": "c7f2c442cbb3b7fdfd528c53d887b56aca33a67b02fb7f748adc1f29b99e4d2e"
+    },
     "src/workflow/code-review/task-review/admission.ts": {
       "classification": "forbidden-session-service",
       "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service.",
@@ -37447,7 +39669,7 @@
       ],
       "siteCount": 9,
       "sitesDigest": "e3ef1361566f3f2fb6788cbb47d4fd33dc8f6087768bb0a3f123ac37698a69da",
-      "sourceDigest": "77baedbb6f861e42db3d2c8b88948b448a043d0a6f939351450353f76b6b14fb"
+      "sourceDigest": "4f7487c34ba67a9255ce1f10cca68483af537b2467a6c43810dc2617d5a455a4"
     },
     "src/workflow/code-review/task-review/assessment.ts": {
       "classification": "forbidden-session-service",
@@ -37492,11 +39714,11 @@
       ],
       "siteCount": 9,
       "sitesDigest": "d2a193bd710651e262072c472952a7100984ef4121c22682d839b1debf8bb30f",
-      "sourceDigest": "2d9a3e567459794e2a8f7e5f14f957777cb383413b8387725b9dd12463ed5d08"
+      "sourceDigest": "12a7b1548a38a7c25875b6f28ced47f4bec064d710c566791df789d7bdee95e1"
     },
-    "src/workflow/code-review/task-review/checkpoint.ts": {
+    "src/workflow/code-review/task-review/attribution-binding.ts": {
       "classification": "forbidden-session-service",
-      "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service.",
+      "rationale": "Validates and binds code-review attribution to accepted tasks and review history. JSON comparisons cover review evidence and do not create a temporary connection route.",
       "sites": [
         [
           "serialization",
@@ -37507,8 +39729,102 @@
           "decodeReview"
         ],
         [
+          "serialization",
+          "decodeReview"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ]
+      ],
+      "siteCount": 8,
+      "sitesDigest": "3d184799883530b7e8d0945afb64535674d5fd250c2f006763c233afc1a0de83",
+      "sourceDigest": "1b570b5848f53cb4ffac30f5cbfef9895e3ca4529f8f57e7763ce657e9d0947e"
+    },
+    "src/workflow/code-review/task-review/capacity.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Reads review-budget settings and sizes serialized review checkpoints and results before admission. Its configuration and review records are separate from temporary connection admission.",
+      "sites": [
+        [
+          "serialization",
+          "checkpointBytes"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "filesystem-read",
+          "readFile"
+        ],
+        [
+          "filesystem-read",
+          "readFile"
+        ]
+      ],
+      "siteCount": 7,
+      "sitesDigest": "50234097a93838c2d6b818377cb46e84e4fc2ec7346a275b3e52d9410359d615",
+      "sourceDigest": "503b5dd2dd2dcdfce2b15e9bb3b23e4b9ace16dabd87a12f819b038fa04d5a25"
+    },
+    "src/workflow/code-review/task-review/checkpoint.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service. Added bounded reads and qualified atomic writes persist task-review checkpoint attempts. The records are review state rather than connection leases or driver output.",
+      "sites": [
+        [
+          "serialization",
+          "checkpointBytes"
+        ],
+        [
+          "serialization",
+          "CheckpointSaveError"
+        ],
+        [
+          "serialization",
+          "decodeReview"
+        ],
+        [
+          "serialization",
+          "decodeStoredCheckpoint"
+        ],
+        [
+          "serialization",
+          "decodeStoredCheckpoint"
+        ],
+        [
           "filesystem-read",
           "file.readFile"
+        ],
+        [
+          "filesystem-read",
+          "file.stat"
         ],
         [
           "filesystem-read",
@@ -37523,6 +39839,34 @@
           "file.writeFile"
         ],
         [
+          "filesystem-read",
+          "handle.stat"
+        ],
+        [
+          "filesystem-write",
+          "io.mkdir"
+        ],
+        [
+          "filesystem-open",
+          "io.open"
+        ],
+        [
+          "filesystem-open",
+          "io.open"
+        ],
+        [
+          "filesystem-open",
+          "io.open"
+        ],
+        [
+          "filesystem-write",
+          "io.rename"
+        ],
+        [
+          "filesystem-write",
+          "io.unlink"
+        ],
+        [
           "serialization",
           "JSON.parse"
         ],
@@ -37531,33 +39875,29 @@
           "JSON.stringify"
         ],
         [
-          "filesystem-write",
-          "mkdir"
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "loadStoredCheckpoint"
         ],
         [
           "filesystem-open",
           "open"
         ],
         [
-          "filesystem-open",
-          "open"
+          "serialization",
+          "writeCheckpoint"
         ],
         [
-          "filesystem-open",
-          "open"
-        ],
-        [
-          "filesystem-write",
-          "rename"
-        ],
-        [
-          "filesystem-write",
-          "unlink"
+          "serialization",
+          "writeCheckpoint"
         ]
       ],
-      "siteCount": 14,
-      "sitesDigest": "0369bae3081bcf0ac2f14d4960d17e628957bdb654cb312ba73524a562d65a7e",
-      "sourceDigest": "91e479bd2067927840e7680197eeb7a7751a181f9035ff12f91a9d7a605e0d42"
+      "siteCount": 24,
+      "sitesDigest": "9b6d42d9e192c1150b2621c9b4ceed96da52ae034843dbb111049d837ee5478c",
+      "sourceDigest": "1a7427d53446f2fd329654651654b46535ae7bcdff5ae41b5fee54d1fae1ecce"
     },
     "src/workflow/code-review/task-review/cleanup.ts": {
       "classification": "forbidden-session-service",
@@ -37631,11 +39971,11 @@
       ],
       "siteCount": 4,
       "sitesDigest": "a7ab2e4e795499c5e97584f0bc1c81f3dc903bcfa404062688bf3460c5157b25",
-      "sourceDigest": "7fda9f862abd4d96e2bbefdb04ca6a81843940d445119b8408bf2ba53e51b200"
+      "sourceDigest": "c17f6a9d69a0f906c0c7f4ce6ba786b56724d56f454fb64bfb42a99444c79e0e"
     },
     "src/workflow/code-review/task-review/controller.ts": {
       "classification": "forbidden-session-service",
-      "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service.",
+      "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service. Persists accepted attribution within the workflow review attempt. The added write concerns reviewer task assignment and scope evidence.",
       "sites": [
         [
           "filesystem-read",
@@ -37675,6 +40015,10 @@
         ],
         [
           "serialization",
+          "persistAcceptedAttribution"
+        ],
+        [
+          "serialization",
           "persistFailureDiagnostic"
         ],
         [
@@ -37734,17 +40078,17 @@
           "this.persist"
         ]
       ],
-      "siteCount": 24,
-      "sitesDigest": "241259208a2f3db3501e013311172248564c5035d18bdb7a1fb97d01c7da703c",
-      "sourceDigest": "9569e5de9e0ebe7dcd0ca55e37270d3474c33893a431d85496828154dda6911a"
+      "siteCount": 25,
+      "sitesDigest": "28de67569eb91fd4bfffd76342bbfd14e83cfd1120ef4046685d6f73a3f2b5b1",
+      "sourceDigest": "019e194578cecae3119b8281947c476d6ba62034714b3b9b35b0c9736714657e"
     },
     "src/workflow/code-review/task-review/coordinator.ts": {
       "classification": "forbidden-session-service",
-      "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service.",
+      "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service. Resolves a review provider and saves attribution and attempt checkpoints after review admission. These calls act on task-review evidence, outside connection-session dispatch.",
       "sites": [
         [
           "serialization",
-          "(async()=>{\n    const provider=resolveProvider();requireReviewActivity(provider);\n    if(!assignments){\n     if(attributionFailure)throw attributionFailure.error;\n     assignments=directReviewAssignments(review);\n     if(!assignments){\n      const acceptScope=(raw:unknown)=>serial(async()=>{\n       check();const priorDiagnostics=entry['review-response'].failureDiagnostics,priorSummary=entry.header.reassessmentSummary;\n       try { assignments=reviewAssignments(review,raw); }\n       catch (error) {\n        if (!(error instanceof TaskReviewInputError)) throw error;\n        try { await recordAttributionRejection(review,error,()=>save(path,checkpoint)); }\n        catch (failure) { persistenceError=failure; throw failure; }\n        throw error;\n       }\n       if(resolveFailureDiagnostics(entry,'attribution'))try{await save(path,checkpoint);}catch(error){\n        if(priorDiagnostics)entry['review-response'].failureDiagnostics=priorDiagnostics;else delete entry['review-response'].failureDiagnostics;\n        if(priorSummary!==undefined)entry.header.reassessmentSummary=priorSummary;else delete entry.header.reassessmentSummary;\n        assignments=undefined;persistenceError=error;throw error;\n       }\n       return{accepted:true};\n      });\n      for (;;) {\n       requireReview((entry.header.attributionRepair?.rejections ?? 0) < MAX_ATTRIBUTION_SUBMISSIONS,'attribution','Attribution correction budget exhausted');\n       const priorRejections=entry.header.attributionRepair?.rejections ?? 0;\n       try {\n        const raw=await provider.runReviewSession!(attributionPrompt(prepared,checkpoint.project,review),attributionSchema(review),options('attribution',acceptScope));\n        check();if(!assignments)await acceptScope(raw);\n        break;\n       } catch (error) {\n        check();if(persistenceError)throw persistenceError;\n        const cause=error instanceof ReviewOutputFailureError ? error.cause : error;\n        if (!(cause instanceof TaskReviewInputError) || !entry.header.attributionRepair || entry.header.attributionRepair.rejections <= priorRejections || entry.header.attributionRepair.rejections >= MAX_ATTRIBUTION_SUBMISSIONS) throw error;\n        if(error instanceof ReviewOutputFailureError)await serial(()=>persistFailureDiagnostic(review,'attribution',undefined,error.diagnostic,()=>save(path,checkpoint)));\n       }\n      }\n     }\n    }\n    tracker.phase('task_review');progress.request(true);\n    requireReview(assignments,'attribution','No accepted task mapping');\n    const assignment=assignments.find(a=>a.taskId===task.id)!;\n    const references=await taskReferences(this.deps.sources,prepared,assignment);check();\n    if(assignment.reassessment?.action==='reuse'){\n     const reused=await reuseAssessment(review,assignment,this.deps.sources,references);\n     await serial(async()=>{check();await commitResult(reused.result,reused.origin);});return;\n    }\n    nativePhase='assessment';\n    const acceptTask=(raw:unknown)=>serial(async()=>{\n     check();const assessed=await assessTaskResult(this.deps.sources,assignment,raw,references);\n     await commitResult(assessed);return{accepted:true};\n    });\n    const raw=await provider.runReviewSession!(assignmentPrompt(prepared,assignment,references,checkpoint.project,review),assignmentResultSchema(assignment),options('assessment',acceptTask));\n    if(!durable)await acceptTask(raw);\n   })"
+          "(async()=>{\n    if(!assignments){\n     if(attributionFailure)throw attributionFailure.error;\n     const direct=directReviewAssignments(review);\n     if(direct){\n      const prior=structuredClone(lastDurable);\n      const bound=await bindTaskFinalIdentities(review,assignmentsToRows(review,direct));\n      try{await persistAcceptedAttribution(review,{...this.deps,save,onAcceptanceFailure:fence=>this.storageFences.set(path,fence)},prior);}catch(error){persistenceError=error;cancellation.abort(error);throw error;}\n      assignments=bound;\n     }\n     if(!assignments){\n      const acceptScope=(raw:unknown)=>serial(async()=>{\n       check();const priorDiagnostics=entry['review-response'].failureDiagnostics,priorSummary=entry.header.reassessmentSummary,prior=structuredClone(lastDurable);\n       let bound:readonly TaskAssignment[];\n       try { bound=await bindTaskFinalIdentities(review,assignmentsToRows(review,reviewAssignments(review,raw))); }\n       catch (error) {\n        if(priorSummary!==undefined)entry.header.reassessmentSummary=priorSummary;else delete entry.header.reassessmentSummary;\n        if (!(error instanceof TaskReviewInputError)) throw error;\n        try { await recordAttributionRejection(review,error,()=>save(path,checkpoint)); }\n        catch (failure) { persistenceError=failure; throw failure; }\n        throw error;\n       }\n       resolveFailureDiagnostics(entry,'attribution');try{await persistAcceptedAttribution(review,{...this.deps,save,onAcceptanceFailure:fence=>this.storageFences.set(path,fence)},prior);}catch(error){\n        if(priorDiagnostics)entry['review-response'].failureDiagnostics=priorDiagnostics;else delete entry['review-response'].failureDiagnostics;\n        if(priorSummary!==undefined)entry.header.reassessmentSummary=priorSummary;else delete entry.header.reassessmentSummary;\n        assignments=undefined;persistenceError=error;cancellation.abort(error);throw error;\n       }\n       assignments=bound;\n       return{accepted:true};\n      });\n      const provider=resolveProvider();requireReviewActivity(provider);\n      for (;;) {\n       requireReview((entry.header.attributionRepair?.rejections ?? 0) < MAX_ATTRIBUTION_SUBMISSIONS,'attribution','Attribution correction budget exhausted');\n       const priorRejections=entry.header.attributionRepair?.rejections ?? 0;\n       try {\n        const raw=await provider.runReviewSession!(attributionPrompt(prepared,checkpoint.project,review),attributionSchema(review),options('attribution',acceptScope));\n        check();if(!assignments)await acceptScope(raw);\n        break;\n       } catch (error) {\n        check();if(persistenceError)throw persistenceError;\n        const cause=error instanceof ReviewOutputFailureError ? error.cause : error;\n        if (!(cause instanceof TaskReviewInputError) || !entry.header.attributionRepair || entry.header.attributionRepair.rejections <= priorRejections || entry.header.attributionRepair.rejections >= MAX_ATTRIBUTION_SUBMISSIONS) throw error;\n        if(error instanceof ReviewOutputFailureError)await serial(()=>persistFailureDiagnostic(review,'attribution',undefined,error.diagnostic,()=>save(path,checkpoint)));\n       }\n      }\n     }\n    }\n    tracker.phase('task_review');progress.request(true);\n    requireReview(assignments,'attribution','No accepted task mapping');\n    const assignment=assignments.find(a=>a.taskId===task.id)!;\n    const references=await taskReferences(this.deps.sources,prepared,assignment);check();\n    if(assignment.reassessment?.action==='reuse'){\n     const reused=await reuseAssessment(review,assignment,this.deps.sources,references);\n     await serial(async()=>{check();await commitResult(reused.result,reused.origin);});return;\n    }\n    nativePhase='assessment';\n    const acceptTask=(raw:unknown)=>serial(async()=>{\n     check();const assessed=await assessTaskResult(this.deps.sources,assignment,raw,references);\n     await commitResult(assessed);return{accepted:true};\n    });\n    const provider=resolveProvider();requireReviewActivity(provider);\n    const raw=await provider.runReviewSession!(assignmentPrompt(prepared,assignment,references,checkpoint.project,review),assignmentResultSchema(assignment),options('assessment',acceptTask));\n    if(!durable)await acceptTask(raw);\n   })"
         ],
         [
           "provider-factory",
@@ -37753,6 +40097,10 @@
         [
           "serialization",
           "(this.deps.save ?? saveCheckpoint)"
+        ],
+        [
+          "serialization",
+          "(this.deps.save??saveCheckpoint)"
         ],
         [
           "serialization",
@@ -37799,12 +40147,28 @@
           "loadCheckpoint"
         ],
         [
+          "serialization",
+          "loadStoredCheckpoint"
+        ],
+        [
           "diagnostic",
           "log.error"
         ],
         [
           "diagnostic",
           "log.warn"
+        ],
+        [
+          "serialization",
+          "persistAcceptedAttribution"
+        ],
+        [
+          "serialization",
+          "persistAcceptedAttribution"
+        ],
+        [
+          "serialization",
+          "persistAcceptedAttribution"
         ],
         [
           "serialization",
@@ -37829,6 +40193,10 @@
         [
           "provider-factory",
           "providerForReview"
+        ],
+        [
+          "provider-factory",
+          "resolveProvider"
         ],
         [
           "provider-factory",
@@ -37865,15 +40233,11 @@
         [
           "serialization",
           "save"
-        ],
-        [
-          "serialization",
-          "save"
         ]
       ],
-      "siteCount": 32,
-      "sitesDigest": "4e88e8faaa86d1c663e382ea1d25cf7a910b6378641c16179f75b1ebbb4b96e9",
-      "sourceDigest": "2803a350a4186260184265162d1fd641fecfe674ad7ea2f6f9f72879f8047bde"
+      "siteCount": 37,
+      "sitesDigest": "74afd8a2f370c3e808c0f900fef9576c02d2b663f964f1d22383eddffc10e173",
+      "sourceDigest": "ca640d552c8cce75d517c25d28be3afdad76049ad4e509864901f15f36543a64"
     },
     "src/workflow/code-review/task-review/diagnostics.ts": {
       "classification": "forbidden-session-service",
@@ -37902,11 +40266,19 @@
     },
     "src/workflow/code-review/task-review/execution.ts": {
       "classification": "forbidden-session-service",
-      "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service.",
+      "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service. Reloads task review state and persists assessed review output and checkpoint failure information. These sinks operate on qualified workflow review records.",
       "sites": [
         [
           "serialization",
+          "(deps.read ?? loadCheckpoint)"
+        ],
+        [
+          "serialization",
           "(deps.save??saveCheckpoint)"
+        ],
+        [
+          "serialization",
+          "CheckpointSaveError"
         ],
         [
           "serialization",
@@ -37929,13 +40301,63 @@
           "persistReview"
         ],
         [
+          "serialization",
+          "persistReview"
+        ],
+        [
           "filesystem-read",
           "readFile"
         ]
       ],
-      "siteCount": 7,
-      "sitesDigest": "255af82294c989808acd8df8d797136634cd5386b3ad4c71a28ad0e1ef846ae1",
-      "sourceDigest": "89f9009ad02e6278d44a682471318cf8f2bf36c0ec4ab009f65fdd3c2ea7a9de"
+      "siteCount": 10,
+      "sitesDigest": "ce5595c87182318f8b90874269f22c61f9e1aade7f238bd80d9f8be5870f7ea3",
+      "sourceDigest": "9de7616364b31e7e5b7b7fad9f940af10c7296c8bc87a8ea1af94863bcde2b10"
+    },
+    "src/workflow/code-review/task-review/final-scope-history.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Decodes and compares final-scope history and prior review decisions for reuse. Serialization concerns pinned review evidence, with no driver or connection overlay input.",
+      "sites": [
+        [
+          "serialization",
+          "decodeReview"
+        ],
+        [
+          "serialization",
+          "decodeReview"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ]
+      ],
+      "siteCount": 3,
+      "sitesDigest": "72c0556fcccf994b3185288b79fd28fd03bceec09e494ade67b73221b1a233c3",
+      "sourceDigest": "9d2f96d1f17f5786174b74195807dc6e380f700b4a9279eedd31bde4c9fe263a"
+    },
+    "src/workflow/code-review/task-review/history.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Opens and decodes bounded prior code-review artifact data under the workflow repository. The retained records describe earlier review attempts and are outside temporary session dispatch.",
+      "sites": [
+        [
+          "filesystem-read",
+          "file.readFile"
+        ],
+        [
+          "filesystem-read",
+          "file.stat"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "filesystem-open",
+          "open"
+        ]
+      ],
+      "siteCount": 4,
+      "sitesDigest": "67c4832e40134947d012b805bc9ece74af11f8cbc471304269cdc3f8011ff5fb",
+      "sourceDigest": "43d4021e5aa5760df22cb4cbb993ae9a17f5db5f7b3b924c251bfc86bfe34cce"
     },
     "src/workflow/code-review/task-review/packet.ts": {
       "classification": "forbidden-session-service",
@@ -37964,7 +40386,7 @@
       ],
       "siteCount": 5,
       "sitesDigest": "d6bbd4d09bc2df825f99530f049bba737f68005e203ad78e7a8567788aefaea1",
-      "sourceDigest": "7fd33f591c088916879db219dc47997ea6c0bb67d359af31b4c1edcd700102b0"
+      "sourceDigest": "5a17dfd9730943001109d6a91117116add1006f65f6fe5111474d7bf26152366"
     },
     "src/workflow/code-review/task-review/policy.ts": {
       "classification": "forbidden-session-service",
@@ -37997,12 +40419,16 @@
       ],
       "siteCount": 6,
       "sitesDigest": "cd0cea96438da7690fefae3adecb06401707c43d1230f14315874692c8ed6c4f",
-      "sourceDigest": "575171762d9a8e266c2f20d78d44c3e3f63c96afda33e69aaec85296b0b5d561"
+      "sourceDigest": "27ad556d422ccaa202263ac8eccc028ec88efa06afb9bffb39e8a9caef7478b4"
     },
     "src/workflow/code-review/task-review/previous-round-feedback.ts": {
       "classification": "forbidden-session-service",
-      "rationale": "Assigned during the 2026-11-03 merge of origin/main into v2 from the existing classification of its directory (forbidden-session-service); boundaries seen: serialization. A mechanical assignment, not an independent review: revisit at the next review of the connection-management gate.",
+      "rationale": "Assigned during the 2026-11-03 merge of origin/main into v2 from the existing classification of its directory (forbidden-session-service); boundaries seen: serialization. A mechanical assignment, not an independent review: revisit at the next review of the connection-management gate. Serializes previous review feedback for task re-review. This in-memory prompt section contains workflow findings and does not load temporary data.",
       "sites": [
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
         [
           "serialization",
           "JSON.stringify"
@@ -38012,9 +40438,9 @@
           "JSON.stringify"
         ]
       ],
-      "siteCount": 2,
-      "sitesDigest": "f0cea09f759cfaa06e8c1e8beb0cc53aa77f0055dd98dfdf1c5aa9a809a490fd",
-      "sourceDigest": "1216c152876bb2aef1f59872b5c1bd1adb077349416a4c3db0ae437f4a05e9e6"
+      "siteCount": 3,
+      "sitesDigest": "5430bb4f7b95c8f428dba30786e8ebbc8eb2c8df7a75c536dfa92341d91d54bf",
+      "sourceDigest": "7886e6e92fe628648776d135e97325a075e2541ac57f4fb0e27102dac9f1c078"
     },
     "src/workflow/code-review/task-review/progress-client.ts": {
       "classification": "forbidden-session-service",
@@ -38040,12 +40466,74 @@
       ],
       "siteCount": 1,
       "sitesDigest": "3e1dcfdc796f190aa2516eb3cc9e8f81ede12bad447fc883129b7007bc0c0c7b",
-      "sourceDigest": "49bcb30548e8a787c3f5cbe978ba29f16717b14b3cace08eb1a08374bf36b3f9"
+      "sourceDigest": "d8ebbc4a1ec23205a5f4012b42b96094f38e0b5673fe520d15eebddce446a8d0"
+    },
+    "src/workflow/code-review/task-review/projection-intervals.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Decodes bounded source byte intervals for review projection. This pure text operation acts on review evidence without opening a data source or persisting it.",
+      "sites": [
+        [
+          "serialization",
+          "new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode"
+        ]
+      ],
+      "siteCount": 1,
+      "sitesDigest": "bcfa739dc7e42e47c122cc15fcc7b49ce3b61a1451567a20fdbd721e6d9acf7a",
+      "sourceDigest": "402e6aa628d916b131eafeafc5a27f7d451aaddb56bf635d167f6eb8122bfdb1"
+    },
+    "src/workflow/code-review/task-review/projection.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Builds bounded projections of source and artifact evidence for task review. Its decoding and JSON sizing are on the workflow review path, outside temporary data sessions.",
+      "sites": [
+        [
+          "serialization",
+          "budget.decode"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ]
+      ],
+      "siteCount": 9,
+      "sitesDigest": "1e76f9e8d1bca54fbfa5eaa6ed73d04dfbb97a4de1a8a5911019391a8fc9a145",
+      "sourceDigest": "19551e711eae2e9d58c82cf9fd45026d88331c0f8c0704115e2b4a2c7c259f6f"
     },
     "src/workflow/code-review/task-review/publication.ts": {
       "classification": "forbidden-session-service",
-      "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service.",
+      "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service. Writes rendered review, accepted checkpoint and resource-audit events. These are workflow evidence files reached through review publication, outside temporary data dispatch.",
       "sites": [
+        [
+          "serialization",
+          "(deps.renderWrite ?? writeAtomic)"
+        ],
         [
           "serialization",
           "(deps.renderWrite??writeAtomic)"
@@ -38056,11 +40544,15 @@
         ],
         [
           "serialization",
+          "(deps.saveStored ?? saveStoredCheckpoint)"
+        ],
+        [
+          "serialization",
           "checkpointPath"
         ],
         [
           "serialization",
-          "decodeReview"
+          "decodeStoredCheckpoint"
         ],
         [
           "serialization",
@@ -38069,6 +40561,14 @@
         [
           "serialization",
           "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "persistReviewResourceAudit"
         ],
         [
           "filesystem-read",
@@ -38083,13 +40583,13 @@
           "realpath"
         ]
       ],
-      "siteCount": 9,
-      "sitesDigest": "fbe3e410a275fb4c6f708509133c111c0a16767dd6a63a30944c545d8cd908c3",
-      "sourceDigest": "7277b9d6a6222cd03aaa270a520a2e60f856c814a126ec063fa362bd87793758"
+      "siteCount": 13,
+      "sitesDigest": "010747ba733e804ec178ec67f93a29d4283e367a36351c6850121948e9bbb8fc",
+      "sourceDigest": "1d3f28b060ebef6cee1698a37a701fd6e8ada74d8962df93b9a1c0383023312a"
     },
     "src/workflow/code-review/task-review/record.ts": {
       "classification": "forbidden-session-service",
-      "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service.",
+      "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service. The added validation and serialization account for persisted task review records and their history. They operate on review findings and evidence, not connection session state.",
       "sites": [
         [
           "serialization",
@@ -38101,6 +40601,14 @@
         ],
         [
           "serialization",
+          "decodeReview"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
           "JSON.stringify"
         ],
         [
@@ -38108,9 +40616,22 @@
           "JSON.stringify"
         ]
       ],
-      "siteCount": 4,
-      "sitesDigest": "1c2f9207ebedb99e4cc84c2c93bbaa64d047d3bf7c7ae38d6acd62f74e00e679",
-      "sourceDigest": "65e979950d21ca5462b12a8294618e39c4dc722c2e900641561c6b88f19fcd72"
+      "siteCount": 6,
+      "sitesDigest": "dde634628e3ac981f26e27a10e5b47de958aff07d1210ca7e65d37fe8259eb00",
+      "sourceDigest": "35e9c814d1a368ed1a5051e066618e7b2a2b4cdc6cf45d0c66426123c076264f"
+    },
+    "src/workflow/code-review/task-review/result-schema.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Serializes review result schema fragments for the structured reviewer reply. The input is schema metadata, with no driver payload, file write or connection routing.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.stringify"
+        ]
+      ],
+      "siteCount": 1,
+      "sitesDigest": "b7511a79d33552d8e57f593dccc6e19ccae9375e2c35b894d8ec6c66230acc66",
+      "sourceDigest": "2e398389911604a1c8810b4dc0a2fb587f62b07c49c80a247196e1988b71553c"
     },
     "src/workflow/code-review/task-review/results.ts": {
       "classification": "forbidden-session-service",
@@ -38127,7 +40648,7 @@
       ],
       "siteCount": 2,
       "sitesDigest": "94334bb1514627e14eb766e925d198956afe20a7104518f63ab567c03c2121f0",
-      "sourceDigest": "21d406ed5957c2b75ad0fa1765c0f59b0b6db4dd61a5cdd216de63ccbaae8ac2"
+      "sourceDigest": "42cd5002b20b0bd70580324b6a6df9373d8b7696b1b08b939deb112c483d447f"
     },
     "src/workflow/code-review/task-review/route-source.ts": {
       "classification": "forbidden-session-service",
@@ -38173,7 +40694,7 @@
       ],
       "siteCount": 4,
       "sitesDigest": "4d589ed76011180b408082c9060aba1be58978af5e9b6d97eba47d9efca92793",
-      "sourceDigest": "24e240a05129865cd61da2976fcc57fe3f75ae4f05a56201a95d3250a27bb3bb"
+      "sourceDigest": "822c6e176fc056a45c36ce9bace0e1fc8dc8657dbf85eccaec4f2701536473ea"
     },
     "src/workflow/config/github-store.ts": {
       "classification": "forbidden-session-service",
@@ -38271,7 +40792,7 @@
       ],
       "siteCount": 4,
       "sitesDigest": "074e6e6947102653130f1164ee384b504e68094cdf25bfee43e43460e9b08bb7",
-      "sourceDigest": "a8d14429c4d31323ee38cc947347739bc5ecbdd4175df5964d90533939f5674e"
+      "sourceDigest": "9a037b3ddc3ee7b04f72f398c51e83f9d0050fb59aa3c1192e0b0763641df2e9"
     },
     "src/workflow/convert/amendments.ts": {
       "classification": "forbidden-session-service",
@@ -38288,7 +40809,7 @@
       ],
       "siteCount": 2,
       "sitesDigest": "95d70a3aa9674e4e344a654cb0c4a931b7201d3d02d7d3440e04f0941160e6f2",
-      "sourceDigest": "5e70c00537f71bb779ea90da841eee2170866649cc71344b233ba44d1afb3ed8"
+      "sourceDigest": "5e37943bd91cfb0eb8f3b84f212b34cd95fcbbfe777485d1d9568d411e9ba8b4"
     },
     "src/workflow/convert/apply.ts": {
       "classification": "forbidden-session-service",
@@ -38425,7 +40946,7 @@
       ],
       "siteCount": 6,
       "sitesDigest": "bdb8c1c2bc1e8c57fef6e3119a88ddb7ba88e3fc4fa7459d05cfe93290a6f150",
-      "sourceDigest": "f2dff33b7c6fe93a5fa428b6ecd1d3afcb666db4e3bca3894d09d9b56c29c733"
+      "sourceDigest": "e572ed0af65c292550fa145d7da5506fee18f9262ffce39ecde98e1a603573a2"
     },
     "src/workflow/convert/plan.ts": {
       "classification": "forbidden-session-service",
@@ -38446,7 +40967,7 @@
       ],
       "siteCount": 3,
       "sitesDigest": "5e36449c0229d54e6b00ff031745947614900088ce0613d6c98b9e9a415e5136",
-      "sourceDigest": "0614daabbbc5eccc92c537ac748e1fed74dc285b914e21008e7527d19f3d0bc3"
+      "sourceDigest": "b603b072781328299e3185bb5630f949058b4f45e30750e3519851a3e489d38b"
     },
     "src/workflow/convert/raw-heads.ts": {
       "classification": "forbidden-session-service",
@@ -38576,7 +41097,37 @@
       ],
       "siteCount": 25,
       "sitesDigest": "d50dab01016a87c47b2ae255ddaac96949b7e636e0c45da417f72b503a9c693f",
-      "sourceDigest": "116e3a945ad80f063bd904a16c6d1021ace552f602f2fb62ddb0f630cb73925d"
+      "sourceDigest": "3832ecb75295a8ab566bcaf03bcc83557cad120dd7c71e45f9467a1226e09ce2"
+    },
+    "src/workflow/convert/repair-amendments.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Repairs migration-time workflow amendment references and writes the converted artifact metadata atomically. Conversion has no temporary connection authority or driver input.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "writeAtomic"
+        ]
+      ],
+      "siteCount": 2,
+      "sitesDigest": "cb28ab9a9486905f7daba0432875f0c3dc9d32f68bb6316891e5641e08d86d0f",
+      "sourceDigest": "9b700aabc9f5c9842e1d27f28234740863c1498327443004e8d657410c716116"
+    },
+    "src/workflow/convert/settle.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Settles converted workflow state and appends lifecycle history via the workflow sidecar. The history records concern artifact conversion and are outside connection-session dispatch.",
+      "sites": [
+        [
+          "diagnostic",
+          "new History(new FileSidecarStore(repo)).log"
+        ]
+      ],
+      "siteCount": 1,
+      "sitesDigest": "a43a371ca3832b8c60ffe519c846336b83f2a2e7b27047d8d9d04af786442e39",
+      "sourceDigest": "6feb0a9f4b23d426ef39ab554a5e0bfe20ed68d0c6713e1b23307402f292addf"
     },
     "src/workflow/convert/stamps.ts": {
       "classification": "forbidden-session-service",
@@ -38593,7 +41144,7 @@
       ],
       "siteCount": 2,
       "sitesDigest": "26e7add605c3278329ad8661df4a615eb1a2d1701226aae6c527d1852d82e9b2",
-      "sourceDigest": "7eb7752c15359b5b28c1390e3ad9ff6e97b43d696cc163ae5787c64679f9d09e"
+      "sourceDigest": "de23b5ac3890567727fb11ce121c4fc8b01047149fc0a89b6cac73c38c2225c8"
     },
     "src/workflow/convert/story-history.ts": {
       "classification": "forbidden-session-service",
@@ -38610,7 +41161,7 @@
       ],
       "siteCount": 2,
       "sitesDigest": "428aad8d781fd8b71a85f1461d9c9d06cb7cedea02dbc6dc23cd7555d6b1db8d",
-      "sourceDigest": "e319ea121385d3db351793390343846c21c73a2c149b57bc9b2c6a7e5e4e60ad"
+      "sourceDigest": "04d31fef161bed035030b7c6788ae08ed0a9ccbb3bd0ad5f562b1f4c3e8c754f"
     },
     "src/workflow/convert/sweep.ts": {
       "classification": "forbidden-session-service",
@@ -38639,20 +41190,24 @@
     },
     "src/workflow/convert/tasks.ts": {
       "classification": "forbidden-session-service",
-      "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service.",
+      "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service. The added lifecycle log records conversion of task-set history. Its inputs come from workflow migration records and do not include temporary connection data.",
       "sites": [
         [
           "diagnostic",
           "deps.history.log"
+        ],
+        [
+          "diagnostic",
+          "history.log"
         ]
       ],
-      "siteCount": 1,
-      "sitesDigest": "9e43820a9544bf43908f8f5e24b1253367cb1f916abb1d2ecbd44e83bd71f8ce",
-      "sourceDigest": "eeec1483ffb0a30f59ca15d836161358e76aa67b24b8615294f260900e113469"
+      "siteCount": 2,
+      "sitesDigest": "f69fc3f70866fafeeebf158a9e83620ec7149bab5863b024a04f1b458bf65e67",
+      "sourceDigest": "ba8246828d2d232a7a94a476e0357ed3ca7a0ea561e03fd3c14f8323dce84d5d"
     },
     "src/workflow/convert/units.ts": {
       "classification": "forbidden-session-service",
-      "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service.",
+      "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service. The added JSON projections encode converted workflow unit identities and data for migration. Conversion does not acquire a temporary driver.",
       "sites": [
         [
           "serialization",
@@ -38668,12 +41223,20 @@
         ],
         [
           "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
           "writeArtifact"
         ]
       ],
-      "siteCount": 4,
-      "sitesDigest": "cafdc94029f7237afcac712c7e08a70963b68d57e41ef86df4b4303e28125f99",
-      "sourceDigest": "9519ef94fa48db115f2c1a9bbded53af03f2c1564fc57323d53178e538a6684e"
+      "siteCount": 6,
+      "sitesDigest": "6d95676c3fe2a553eb94b5beee32a7451f36e6813cab6dbeb40801e150c32811",
+      "sourceDigest": "45a5740b3c7301032c67c76ba6ec4515b8c4fc4efa389409ba84d9edea1b8992"
     },
     "src/workflow/convert/verify.ts": {
       "classification": "forbidden-session-service",
@@ -38719,7 +41282,7 @@
       ],
       "siteCount": 5,
       "sitesDigest": "358814fe00701c471beb92f481a602a41edbdec1b2c6104a14a3b6e7124c3b2d",
-      "sourceDigest": "d62d84fde0d3c5a6a14b34bafbf9f63daf4db278c582fa361a37274f493c20ca"
+      "sourceDigest": "17023ce66403b4161c6fb8298e00981a5b7134df6af09edd656d2fbb9618297f"
     },
     "src/workflow/delivery/load.ts": {
       "classification": "forbidden-session-service",
@@ -38760,7 +41323,7 @@
       ],
       "siteCount": 8,
       "sitesDigest": "f1e993506aed947ccb1f71d3ac0d28cfa53b7ba06d15a731e1ac3cd2fcc0e068",
-      "sourceDigest": "a672a44c9f65ac923933728d1673611a009943921b49a9cefdcf4ca233918350"
+      "sourceDigest": "8f5bcffc90e8cbdda328cc976285e20f09584969037a2ad277b8034505f41620"
     },
     "src/workflow/delivery/markdown.ts": {
       "classification": "forbidden-session-service",
@@ -38848,7 +41411,7 @@
     },
     "src/workflow/gates.ts": {
       "classification": "forbidden-session-service",
-      "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service.",
+      "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service. The added write reconciles workflow lifecycle signoff and artifact state. This is a workflow artifact write, outside supported temporary data methods.",
       "sites": [
         [
           "serialization",
@@ -38893,6 +41456,10 @@
         [
           "serialization",
           "JSON.parse"
+        ],
+        [
+          "serialization",
+          "lifecycle.store.write"
         ],
         [
           "filesystem-read",
@@ -38963,9 +41530,9 @@
           "writeAtomic"
         ]
       ],
-      "siteCount": 28,
-      "sitesDigest": "b75d9c1905f00b9fec64dc5e2bfd04062455da2fbfb00e8f1be1536b265aaa0f",
-      "sourceDigest": "a5d17f3aad2e34755ec83897a34db43c7f168102a97bfec8eb5bf6e338b3a5a1"
+      "siteCount": 29,
+      "sitesDigest": "bb4cf586d364e84a6b35551a7948bb18e919ab26aa38d781e1cd8f21089e649c",
+      "sourceDigest": "6f67e24132bd9d8537c199c078c1006d5ee5f8e17ec6111195f8f4d177742532"
     },
     "src/workflow/identity/identity-service.ts": {
       "classification": "forbidden-session-service",
@@ -39294,7 +41861,7 @@
       ],
       "siteCount": 47,
       "sitesDigest": "499b862f0c93c1bd67b76c77144e5db58008e7591bda1258e300f10a47dc2836",
-      "sourceDigest": "cf0bb316493187ab5f372053f82824e425bfc2ff7407fb0a12dcdfa9d18b8e03"
+      "sourceDigest": "4a0dde67a2ede42fa26a5e4a923a90732d4848b479d60d2bbdd5d46b1b136582"
     },
     "src/workflow/path-scheme.ts": {
       "classification": "forbidden-session-service",
@@ -39319,7 +41886,7 @@
       ],
       "siteCount": 4,
       "sitesDigest": "79e0981a0e7d8e3c49b582603b2796ad50518013522f4272dfbed3485b50e7a7",
-      "sourceDigest": "46d4b58019f3bd693567232663571338758bdb9bd7a14068f4c6745a3a6fad64"
+      "sourceDigest": "b66325fc32aadb295c2e7c6ff01075c9ba2e8a0b2baaa364c48dc13566512058"
     },
     "src/workflow/pending.ts": {
       "classification": "forbidden-session-service",
@@ -39493,9 +42060,80 @@
       "sitesDigest": "4455e280895af81ce58ee0358ad6d0082664ea835096535c520cf0dbe49e1cea",
       "sourceDigest": "c647363cc99c22cf198c80acedde351a522f5ccdb6adb157627c3a10a17260c2"
     },
+    "src/workflow/review/design-review/admission-checkpoint.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Validates and updates design-review admission attempt metadata and identity. This review checkpoint codec has no connection execution authority.",
+      "sites": [
+        [
+          "serialization",
+          "decodeDesign"
+        ]
+      ],
+      "siteCount": 1,
+      "sitesDigest": "3d89789fe85ff1b94356e6e323847cc413c26678180cf7897f06ea8a8bb97aff",
+      "sourceDigest": "0db2df22bcb5b58d0c63a82a0b0161f2c38562104d95cfa573d438debcf872d3"
+    },
+    "src/workflow/review/design-review/approval.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Loads validated design review checkpoint data and records approval decisions and review resource audit. These writes concern workflow artifacts, with no temporary connection route.",
+      "sites": [
+        [
+          "serialization",
+          "decodeDesign"
+        ],
+        [
+          "serialization",
+          "decodeDesign"
+        ],
+        [
+          "serialization",
+          "loadStoredDesignCheckpoint"
+        ],
+        [
+          "serialization",
+          "persistReviewResourceAudit"
+        ],
+        [
+          "filesystem-read",
+          "realpathSync"
+        ],
+        [
+          "diagnostic",
+          "store.history.log"
+        ],
+        [
+          "diagnostic",
+          "store.history.log"
+        ]
+      ],
+      "siteCount": 7,
+      "sitesDigest": "4c1914ce5e4a466f9b19194805e69e3081e2f73c5ce408c987427fafb352c962",
+      "sourceDigest": "ac9c55d80a7858ab9246e197b64961cc2d944bad33ef085c0dd7eef50eb26463"
+    },
+    "src/workflow/review/design-review/capacity.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Serializes bounded design-review state to calculate storage capacity before checkpoint writes. The inputs are review attempt and evidence records, outside data connection sessions.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "serializeDesignCheckpoint"
+        ]
+      ],
+      "siteCount": 3,
+      "sitesDigest": "080247c08c1fec3f3d7a28aa60301eaa9a57d9a89751bf22584a853815666e91",
+      "sourceDigest": "85d6c1fb26162b0c1a6eda50dae2796ac73bb4cec119cdc85ebc2987f9a8354d"
+    },
     "src/workflow/review/design-review/checkpoint.ts": {
       "classification": "forbidden-session-service",
-      "rationale": "Assigned during the 2026-11-03 merge of origin/main into v2 from the existing classification of its directory (forbidden-session-service); boundaries seen: serialization, filesystem-read, filesystem-write, filesystem-open. A mechanical assignment, not an independent review: revisit at the next review of the connection-management gate.",
+      "rationale": "Assigned during the 2026-11-03 merge of origin/main into v2 from the existing classification of its directory (forbidden-session-service); boundaries seen: serialization, filesystem-read, filesystem-write, filesystem-open. A mechanical assignment, not an independent review: revisit at the next review of the connection-management gate. Added checkpoint qualification and serialization fence writes to admitted review identities and bounded records. These writes target design review state, independent of connection ownership.",
       "sites": [
         [
           "serialization",
@@ -39515,6 +42153,18 @@
         ],
         [
           "serialization",
+          "decodeStoredDesignCheckpoint"
+        ],
+        [
+          "serialization",
+          "decodeStoredDesignCheckpoint"
+        ],
+        [
+          "serialization",
+          "designCheckpointPath"
+        ],
+        [
+          "serialization",
           "designCheckpointPath"
         ],
         [
@@ -39524,6 +42174,18 @@
         [
           "serialization",
           "designCheckpointPath"
+        ],
+        [
+          "serialization",
+          "designCheckpointPath"
+        ],
+        [
+          "serialization",
+          "designCheckpointPath"
+        ],
+        [
+          "serialization",
+          "DesignReviewPersistenceError"
         ],
         [
           "serialization",
@@ -39612,11 +42274,188 @@
         [
           "serialization",
           "loadDesignCheckpoint"
+        ],
+        [
+          "serialization",
+          "loadStoredDesignCheckpoint"
+        ],
+        [
+          "serialization",
+          "loadStoredDesignCheckpoint"
+        ],
+        [
+          "serialization",
+          "saveQualifiedDesignCheckpoint"
+        ],
+        [
+          "serialization",
+          "saveQualifiedDesignCheckpoint"
+        ],
+        [
+          "serialization",
+          "serializeDesignCheckpoint"
+        ],
+        [
+          "serialization",
+          "serializeDesignWrite"
+        ],
+        [
+          "serialization",
+          "serializeDesignWrite"
+        ],
+        [
+          "serialization",
+          "validateDesignCheckpointIdentity"
+        ],
+        [
+          "serialization",
+          "validateDesignCheckpointIdentity"
+        ],
+        [
+          "serialization",
+          "writeDesignCheckpointBytes"
+        ],
+        [
+          "serialization",
+          "writeDesignCheckpointBytes"
         ]
       ],
-      "siteCount": 29,
-      "sitesDigest": "07b3c53a82b47fc7ed753af0503efe6b4d05f332f6c6873eb0d04d0790b6c1a1",
-      "sourceDigest": "b1588ae04900a66dcf8e9e6d1dc67b59e1b2b3e00481f45c615c37d342b6ed75"
+      "siteCount": 46,
+      "sitesDigest": "f131667f393de1e9ceb57eec1258ff0a96b05f6a44c8a07c1ed81754dd6f2f6d",
+      "sourceDigest": "10601100fd2736da2da3d6d1f154449d07871f92ce4c75f7a8ea58317912c27c"
+    },
+    "src/workflow/review/design-review/cleanup.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Uses bounded reads, claim records and exact-path cleanup to retire design-review checkpoints. Its file operations target review artifacts and lease metadata, outside connection-session resource cleanup.",
+      "sites": [
+        [
+          "serialization",
+          "bounded(join(path,'claim.json'),8192).bytes.toString"
+        ],
+        [
+          "serialization",
+          "Buffer.alloc"
+        ],
+        [
+          "serialization",
+          "bytes.toString"
+        ],
+        [
+          "serialization",
+          "decode"
+        ],
+        [
+          "serialization",
+          "decode"
+        ],
+        [
+          "serialization",
+          "decodeDesign"
+        ],
+        [
+          "serialization",
+          "designCheckpointPath"
+        ],
+        [
+          "serialization",
+          "designCheckpointPath"
+        ],
+        [
+          "serialization",
+          "got.bytes.toString"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "filesystem-read",
+          "lstatSync"
+        ],
+        [
+          "filesystem-read",
+          "lstatSync"
+        ],
+        [
+          "filesystem-read",
+          "lstatSync"
+        ],
+        [
+          "filesystem-read",
+          "lstatSync"
+        ],
+        [
+          "filesystem-open",
+          "mkdtempSync"
+        ],
+        [
+          "filesystem-open",
+          "openSync"
+        ],
+        [
+          "filesystem-open",
+          "openSync"
+        ],
+        [
+          "filesystem-open",
+          "openSync"
+        ],
+        [
+          "filesystem-read",
+          "readdirSync"
+        ],
+        [
+          "filesystem-read",
+          "realpathSync"
+        ],
+        [
+          "filesystem-read",
+          "realpathSync"
+        ],
+        [
+          "filesystem-read",
+          "realpathSync"
+        ],
+        [
+          "filesystem-write",
+          "renameSync"
+        ],
+        [
+          "filesystem-write",
+          "unlinkSync"
+        ],
+        [
+          "filesystem-write",
+          "unlinkSync"
+        ],
+        [
+          "serialization",
+          "validateDesignCheckpointIdentity"
+        ],
+        [
+          "filesystem-write",
+          "writeFileSync"
+        ],
+        [
+          "serialization",
+          "writeFileSync"
+        ]
+      ],
+      "siteCount": 31,
+      "sitesDigest": "6c1aaa2eeed716636eb3627ed32fa797e788a04ecc9c3e77d745426bd6f5f297",
+      "sourceDigest": "994a5760e264498ffd7e432c065fe26d14e18adcf8a0e735406704bb97f58896"
     },
     "src/workflow/review/design-review/contracts.ts": {
       "classification": "forbidden-session-service",
@@ -39641,11 +42480,11 @@
       ],
       "siteCount": 4,
       "sitesDigest": "3c60367312131d6d2fd891a0177998defb376ef3a6e66f1bd9a4b6eb2422ce7c",
-      "sourceDigest": "d1f5ee9f4ec6ba6a1c80357ec1fa328ae0827acf017ddbbbed8ca90fc01fdce4"
+      "sourceDigest": "882f311663ffa53b2dcc0c1c0ed2187d01724d0796b3c2215e3a47f2304d48fc"
     },
     "src/workflow/review/design-review/coordinator.ts": {
       "classification": "forbidden-session-service",
-      "rationale": "Assigned during the 2026-11-03 merge of origin/main into v2 from the existing classification of its directory (forbidden-session-service); boundaries seen: serialization, diagnostic, provider-use, filesystem-read. A mechanical assignment, not an independent review: revisit at the next review of the connection-management gate.",
+      "rationale": "Assigned during the 2026-11-03 merge of origin/main into v2 from the existing classification of its directory (forbidden-session-service); boundaries seen: serialization, diagnostic, provider-use, filesystem-read. A mechanical assignment, not an independent review: revisit at the next review of the connection-management gate. The added reads and checkpoint observations use stored or permanent design review state for admission and recovery. They operate on artifact review identities.",
       "sites": [
         [
           "serialization",
@@ -39661,7 +42500,7 @@
         ],
         [
           "serialization",
-          "(this.deps.save??saveDesignCheckpoint)"
+          "(this.deps.load??loadStoredDesignCheckpoint)"
         ],
         [
           "serialization",
@@ -39682,6 +42521,26 @@
         [
           "serialization",
           "(this.deps.save??saveDesignCheckpoint)"
+        ],
+        [
+          "serialization",
+          "(this.deps.save??saveDesignCheckpoint)"
+        ],
+        [
+          "serialization",
+          "(this.deps.save??saveDesignCheckpoint)"
+        ],
+        [
+          "serialization",
+          "(this.deps.save??saveDesignCheckpoint)"
+        ],
+        [
+          "serialization",
+          "(this.deps.save??saveDesignCheckpoint)"
+        ],
+        [
+          "serialization",
+          "designCheckpointPath"
         ],
         [
           "serialization",
@@ -39736,8 +42595,24 @@
           "log.warn"
         ],
         [
+          "filesystem-read",
+          "lstatSync"
+        ],
+        [
           "serialization",
           "observeDesignCheckpoint"
+        ],
+        [
+          "serialization",
+          "observeStoredDesignCheckpoint"
+        ],
+        [
+          "serialization",
+          "observeStoredDesignCheckpoint"
+        ],
+        [
+          "serialization",
+          "permanentStoredDesignCheckpoint"
         ],
         [
           "provider-use",
@@ -39764,9 +42639,55 @@
           "realpath"
         ]
       ],
-      "siteCount": 29,
-      "sitesDigest": "ad8239170ca5383abdea000c1261dd7deb0ff0e873c9ca57ba6f1993b3a35d10",
-      "sourceDigest": "1f49e7f202f2bc9634291465a25585ecf7d512d28336517496c73a185f0bbfa6"
+      "siteCount": 38,
+      "sitesDigest": "b39068084e9dfe11bccf4627b7a56a71592057d43fc2c99c086cf8fc13a9a9a1",
+      "sourceDigest": "e76168828828891f81f9168e5de5bbe9e5cf489c9ad7a87ae2a5f9300a10a9f2"
+    },
+    "src/workflow/review/design-review/fence.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Canonicalizes the project path to scope review concurrency fencing. It fences workflow-review identities and has no connection binding, persistence or provider dispatch.",
+      "sites": [
+        [
+          "filesystem-read",
+          "realpathSync"
+        ]
+      ],
+      "siteCount": 1,
+      "sitesDigest": "e7e0a05d1be4c7d0d7844ce9eb0d267f63c202fb3436ce4d42594f036837eef4",
+      "sourceDigest": "05ab11f5e0456e4d5977b134ea2ecf55671af30549e5b2b893a66c85909a8291"
+    },
+    "src/workflow/review/design-review/history.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Validates and projects permanent design-review attempt history and checkpoint identities. Serialization and decoding are limited to workflow review records.",
+      "sites": [
+        [
+          "serialization",
+          "decodeDesign"
+        ],
+        [
+          "serialization",
+          "decodeStoredDesignCheckpoint"
+        ],
+        [
+          "serialization",
+          "designCheckpointPath"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "storedDesignCheckpointFromRecord"
+        ]
+      ],
+      "siteCount": 6,
+      "sitesDigest": "caecea7125f533497660443e126dfbe2a0d89ab8dee83c9f30ed85e1467e032e",
+      "sourceDigest": "d33e10110be1195f9a265c5c1dbfb5fbf60442c4f4ff5f1399dd6407f52a7e4b"
     },
     "src/workflow/review/design-review/policy.ts": {
       "classification": "forbidden-session-service",
@@ -39803,56 +42724,77 @@
       ],
       "siteCount": 7,
       "sitesDigest": "855f61bfbd4ffc66f9894bc93a7c480079fe368cb501da6cfaebec119d8765b9",
-      "sourceDigest": "2e36b24dd0d5195eb6f80be225cc4f86462c4b74cb71f4d10faa1ad4bd2f7220"
+      "sourceDigest": "36a86e02272043ccc378047dc41635a122cf117e2b9deb68e57c8a359d9fad39"
     },
     "src/workflow/review/design-review/progress.ts": {
       "classification": "forbidden-session-service",
-      "rationale": "Assigned during the 2026-11-03 merge of origin/main into v2 from the existing classification of its directory (forbidden-session-service); boundaries seen: serialization. A mechanical assignment, not an independent review: revisit at the next review of the connection-management gate.",
+      "rationale": "Assigned during the 2026-11-03 merge of origin/main into v2 from the existing classification of its directory (forbidden-session-service); boundaries seen: serialization. A mechanical assignment, not an independent review: revisit at the next review of the connection-management gate. The added observation reads review checkpoint progress, projecting a review status view. This does not read connection-driver state.",
       "sites": [
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "observeDesignCheckpoint"
+        ]
+      ],
+      "siteCount": 2,
+      "sitesDigest": "dba54a46f4a24a4ce0c2bd23c45c44562bb985b7dab37e883705908271f1e6d6",
+      "sourceDigest": "dce48ab5243ab25677af0893be76370326e8e529212b93f0b712b5307df67667"
+    },
+    "src/workflow/review/design-review/provenance.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Validates provenance and stable identity for design-review outcomes using decoded review records. It handles artifact review attribution and does not admit temporary connection data.",
+      "sites": [
+        [
+          "serialization",
+          "decodeDesign"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
         [
           "serialization",
           "JSON.stringify"
         ]
       ],
-      "siteCount": 1,
-      "sitesDigest": "47c29482a457cd120afd2bce89b5a64ad917585cd70e17fe308fa325a3a50622",
-      "sourceDigest": "faff7f49b6c1f690cb829c1609222a059053a2951eac76fcff9413cea2c16fd1"
+      "siteCount": 3,
+      "sitesDigest": "d07af9542aa3c79c125c0e63c6ea5cfebe4887fc6569c07c76c29d79f98cc8d4",
+      "sourceDigest": "5a8cde1ab36cba1809a5e9f5c03de3f6853d6a477a872d6ffcdf9013e0651d37"
     },
-    "src/workflow/review/design-review/results.ts": {
+    "src/workflow/review/design-review/publication.ts": {
       "classification": "forbidden-session-service",
-      "rationale": "Assigned during the 2026-11-03 merge of origin/main into v2 from the existing classification of its directory (forbidden-session-service); boundaries seen: serialization. A mechanical assignment, not an independent review: revisit at the next review of the connection-management gate.",
+      "rationale": "Publishes reviewed design evidence, attempt history and resource-audit events to workflow artifacts. Its durable writes are on the design-review route outside temporary session dispatch.",
       "sites": [
         [
           "serialization",
-          "decodeDesign"
+          "decodeArtifactHead"
         ],
         [
           "serialization",
-          "decodeDesign"
+          "designCheckpointPath"
         ],
         [
           "serialization",
-          "decodeDesign"
+          "historyCheckpoint"
         ],
         [
           "serialization",
-          "decodeDesign"
+          "JSON.parse"
         ],
         [
           "serialization",
-          "decodeDesign"
+          "JSON.parse"
         ],
         [
           "serialization",
-          "JSON.stringify"
+          "JSON.parse"
         ],
         [
           "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
+          "JSON.parse"
         ],
         [
           "serialization",
@@ -39872,12 +42814,98 @@
         ],
         [
           "serialization",
-          "JSON.stringify"
+          "persistReviewResourceAudit"
+        ],
+        [
+          "diagnostic",
+          "store.history.log"
         ]
       ],
       "siteCount": 13,
-      "sitesDigest": "6630fb7f3abba6fef9799f5e4b4a50983a16993629b12213aa9e15f51bc729f2",
-      "sourceDigest": "0e72b1f6f3ecf515b1faaad165c2578c88f75a18f639d71dd0add9fc23a6a91c"
+      "sitesDigest": "cb4ea73a2c0fd307eceb042607bc67d5d0361be3088d47d0e6e233e13d7fa9a3",
+      "sourceDigest": "067c6ae88672a7fe47e348ca90800f2ceecff56d529a3e27e9def35e4263a5d4"
+    },
+    "src/workflow/review/design-review/read.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Loads verified permanent design-review state and reconstructs the review checkpoint view. Its readers are scoped to workflow evidence, independent of temporary connection storage.",
+      "sites": [
+        [
+          "serialization",
+          "permanentStoredDesignCheckpoint"
+        ],
+        [
+          "serialization",
+          "storedDesignCheckpointFromRecord"
+        ]
+      ],
+      "siteCount": 2,
+      "sitesDigest": "61d5c65a92e03df844d1bee98596198bdc761162b117d8ab421c4ab4eb5dc27d",
+      "sourceDigest": "ca40a8882bf06dc2f6259160b893de63ce80cfdeb68969b5edb1f8911ceb4908"
+    },
+    "src/workflow/review/design-review/results.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Assigned during the 2026-11-03 merge of origin/main into v2 from the existing classification of its directory (forbidden-session-service); boundaries seen: serialization. A mechanical assignment, not an independent review: revisit at the next review of the connection-management gate. The added decoder validates design review result data before publication. It applies to workflow evidence and does not widen temporary session dispatch.",
+      "sites": [
+        [
+          "serialization",
+          "decodeDesign"
+        ],
+        [
+          "serialization",
+          "decodeDesign"
+        ],
+        [
+          "serialization",
+          "decodeDesign"
+        ],
+        [
+          "serialization",
+          "decodeDesign"
+        ],
+        [
+          "serialization",
+          "decodeDesign"
+        ],
+        [
+          "serialization",
+          "decodeDesign"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ]
+      ],
+      "siteCount": 14,
+      "sitesDigest": "03c0b37557d0b9e983a7cb7c022b3a396e8f7824a2398075d8f28ca2fb61cf02",
+      "sourceDigest": "5ac9bd3c4bd021bcd24ddaa4c49764cd51d832bbd1a3d4f856bc83f472fb7b16"
     },
     "src/workflow/review/design-review/subject-monitor.ts": {
       "classification": "forbidden-session-service",
@@ -39931,7 +42959,7 @@
       ],
       "siteCount": 8,
       "sitesDigest": "6e5a7b5b6849f000e41a1ea42c9188e5d1c44dc5f1adced8a44bda1e988c2bbe",
-      "sourceDigest": "497677c40d222d3f1f17f2c49ddaee43217e2db475e7f6ef09098275c0ef3970"
+      "sourceDigest": "e013ae68180dd3efb90d96a992d4f84d9987853cd06f48a6539fc97923e1e02d"
     },
     "src/workflow/review/report-file.ts": {
       "classification": "forbidden-session-service",
@@ -39948,7 +42976,7 @@
       ],
       "siteCount": 2,
       "sitesDigest": "fcc4cf9342d3e517d013e1de4d996979a6b5841f72934b39f5fb5d08d19692cf",
-      "sourceDigest": "3814ab075e842a2a83ed4932e6adca055da2e28aa7cef36f436a2eb58b9d92b1"
+      "sourceDigest": "256064f8cd2b42c7feb57b20acf8767e566421e9f240a4ffdad3be12ba92f437"
     },
     "src/workflow/review/report-log.ts": {
       "classification": "forbidden-session-service",
@@ -39961,7 +42989,32 @@
       ],
       "siteCount": 1,
       "sitesDigest": "93bf27d4d136c844d7e19e0201d4b9549be2b7a46bd7c93e65dc0ea2af78ac4c",
-      "sourceDigest": "4272024f2f0195a2cfc41751cf89865f70f9d4c67ea50e3a39d573ad388e3a38"
+      "sourceDigest": "926ceb29b11222ea6ba11100152814a0e4eb95d431e2c74dd6514eeca426e4ca"
+    },
+    "src/workflow/review/resource-audit.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Records review resource accounting in the workflow history after identity checks. The event is review metering and attribution rather than temporary connection configuration or data.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "diagnostic",
+          "store.history.log"
+        ]
+      ],
+      "siteCount": 4,
+      "sitesDigest": "bf6e60e55dcfa2c36ac694db910625e4c42dcbba6a3bb8d4afebeee3f7879a74",
+      "sourceDigest": "020cbf3cee9b49fddc7d5ec4a8174e72f610f8ebccbe35c27f0b7b101ad012fd"
     },
     "src/workflow/runners/brainstorm/index.ts": {
       "classification": "forbidden-session-service",
@@ -40754,7 +43807,7 @@
       ],
       "siteCount": 22,
       "sitesDigest": "b925be2037f0b0e4a0e3f8d213fe1e271609c625e5ae59be098959dbc9faae06",
-      "sourceDigest": "6de97772599626c641d029b1ae0487f5b5e67f12ed772ab18222d941f73eeaea"
+      "sourceDigest": "9b84d8e4196fb7eef833cf265785450341a65bcfee86d5cfe660a325667d31d4"
     },
     "src/workflow/tasks/lookup.ts": {
       "classification": "forbidden-session-service",
@@ -40865,7 +43918,7 @@
       ],
       "siteCount": 16,
       "sitesDigest": "8bd6a84ac56833b5675139c25129e297ed3bca0604d10718c3cc57a4679a2c03",
-      "sourceDigest": "baac5245c4bb5c16a95dd3c2802eb473ea0a477ff053af1a444f782c02c91690"
+      "sourceDigest": "4086663fe199bc5fe16645cf5c83101ce658e9e0ced71797ae1fb28ce0da9655"
     },
     "src/workflow/team/approval-gate.ts": {
       "classification": "forbidden-session-service",
@@ -41337,7 +44390,7 @@
       ],
       "siteCount": 8,
       "sitesDigest": "8a8a1cf1baf479ab64e6d46b0620b22feb27bc8ef414cfe3d58c03c9243356be",
-      "sourceDigest": "9f3c5a364ac011914d321f6c68da37cc16eaa5d6e901c1d73a819d82d3f484b3"
+      "sourceDigest": "104c2c7bf0bbc7ffe34cc8c8926e769307b4380b6c715b4d641393896b22bcf6"
     },
     "src/workflow/tracker/attach-unit.ts": {
       "classification": "forbidden-session-service",
@@ -41440,7 +44493,7 @@
       ],
       "siteCount": 9,
       "sitesDigest": "f6cf38383a2f1bc4db1d047a6954dcdedc948ec612000dd713bc281f242fab6b",
-      "sourceDigest": "35e154f2f37028a52073cdcdaaf7fb04e6b21aebeea68110a3a435e427b62d1a"
+      "sourceDigest": "042cd185fcd298e32c76c370c7c322c421bdf0128045a10cb03169e6c041a3e4"
     },
     "src/workflow/tracker/comment-sync.ts": {
       "classification": "forbidden-session-service",

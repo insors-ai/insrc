@@ -64,3 +64,18 @@ the public IPC endpoint.
 T13 remains open because the full regression sweep failed. Completion review
 and release qualification remain pending. The live daemon was left on its
 existing route.
+
+## Privacy inventory follow-up
+
+[ISSUE-08427e19db14ae7b](../../../restore-connection-manager-privacy-source-inventory-E2026111008427e19/ISSUE.md)
+tracks the inventory correction for T13. The audit pinned production source to
+`5c2931360ef59344233c567db31cab97df97ad89`. It classified 57 new files,
+reviewed site changes in 37 entries and source-only changes in 81 entries, and
+reviewed the removal-routing digest separately. The fixture retains the
+existing scanner, design source pins and release gate.
+
+The focused run passed all 12 tests, including both inventory assertions,
+analysis authority and revision-lease checks, and the composed log and
+no-persistence canaries. TypeScript typechecking passed on the same snapshot.
+This follow-up records focused verification. The sweep above remains the
+recorded full-run result.

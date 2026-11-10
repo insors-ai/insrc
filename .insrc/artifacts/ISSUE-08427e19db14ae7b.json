@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1794337118272-4gw8di",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T18:59:15.538Z",
+    "epicCreatedAt": "2026-11-10T18:59:15.538Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 37256,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "08427e19db14ae7b",
+    "epicSlug": "restore-connection-manager-privacy-source-inventory",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "87743008be3aaaca784ef861f5ae3259232bb9a3e6b6e751132a3e9b5ae8d90f",
+        "at": "2026-11-10T18:59:15.550Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-10T19:05:22.877Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "parentRef": {
+      "epicHash": "08427e19db14ae7b",
+      "slug": "EPIC-08427e19db14ae7b"
+    }
+  },
+  "body": {
+    "title": "Restore the connection-manager privacy source inventory",
+    "reproduction": "Run the source inventory suite at src/daemon/db/__tests__/session-source-inventory.test.ts. The temporary-session inventory rejects the candidate file set, and the removal-source check rejects a stale digest. A read-only scan of the current checkout found 57 unlisted production files, 122 existing entries with source or site drift, no removed entries, and one stale removal-source digest. The counts include active working-tree changes and must be refreshed against the source selected for the fix. The macOS restart story T13 sweep first recorded this failure in the rollout evidence. [[c1]]",
+    "rootCause": "The checked-in test manifest has fallen behind production changes across the restart, review, analyzer and task-progress code. The compiler-backed audit compares candidate file membership, reviewed operation sites and source digests. The removal-source gate separately pins reviewed source digests. Added files and changed sites need review before those records can be updated. [[c1]]",
+    "fixIntent": "Reconcile the entire temporary-session and removal-source inventory against a pinned source revision. Inspect each new or changed boundary and its data flow, record specific classifications and rationale, retain the exact file/site, digest, design-source and readiness checks, and verify with the focused source inventory and connection privacy regressions. Track any runtime data-flow defect found during classification separately. Record the result as a dependency of macOS restart story T13. [[c1]]"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/standalone/restore-reliable-daemon-restart-macos-E202611103992d2e1/S001/test-evidence/t13-backend-sweep.md"
+    }
+  ]
+}

@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1794319559058-ddxhri",
+    "runId": "wf-1794322741020-5p52i9",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-10T14:07:06.523Z",
+    "createdAt": "2026-11-10T14:59:26.044Z",
     "epicCreatedAt": "2026-11-10T04:52:20.369Z",
     "standalone": true,
     "attribution": {
@@ -16,7 +16,7 @@
         }
       ]
     },
-    "elapsedMs": 67109,
+    "elapsedMs": 24639,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "3992d2e1e26124dc",
@@ -28,9 +28,9 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 2,
-        "contentHash": "5db7fa5172eb889a6d7f7eb928985138eccc101d3e04941265006f3259427f85",
-        "at": "2026-11-10T14:07:06.645Z",
+        "number": 3,
+        "contentHash": "a92659df120fac0808bf1261cd81314612d13d971c2f15ad56350fcaa5907b45",
+        "at": "2026-11-10T14:59:26.148Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -39,13 +39,13 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 2,
+        "revision": 3,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-10T14:07:37.048Z"
+        "at": "2026-11-10T15:00:23.622Z"
       }
     },
     "envelope": {
@@ -53,8 +53,8 @@
       "references": [],
       "attachments": []
     },
-    "revision": 2,
-    "rangeBase": "c97073de224ba09ff98ed29059a7888f3f2c9220"
+    "revision": 3,
+    "rangeBase": "cff400b05ea3fa0a01fdcbcee117732828e1ebe1"
   },
   "body": {
     "summary": {
@@ -326,7 +326,7 @@
             "name": "Hung before shutdown reply and hung native close after watchdog readiness"
           },
           {
-            "level": "integration",
+            "level": "smoke",
             "name": "Linux existing pidfd and watchdog suites"
           },
           {

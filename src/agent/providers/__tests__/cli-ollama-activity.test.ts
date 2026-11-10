@@ -22,7 +22,7 @@ import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { CliProvider, type OllamaTarget } from '../cli-provider.js';
+import { CliProvider, claudeReviewSessionArgs, type OllamaTarget } from '../cli-provider.js';
 import { OllamaTargetError } from '../ollama-target.js';
 
 const VARS = ['ANTHROPIC_BASE_URL', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_API_KEY', 'CLAUDE_CODE_OAUTH_TOKEN', 'CLAUDE_CODE_USE_BEDROCK', 'CLAUDE_CODE_USE_VERTEX', 'INSRC_ACTIVITY_SENTINEL'] as const;
@@ -110,6 +110,39 @@ test('T2-ollama-activity-no-vendor-inherit: the activity env carries the Ollama 
 	assert.equal(env['CLAUDE_CODE_USE_BEDROCK'], null, 'Bedrock stripped even though the daemon env sets it');
 	assert.equal(env['CLAUDE_CODE_USE_VERTEX'], null, 'Vertex stripped even though the daemon env sets it');
 	assert.equal(env['INSRC_ACTIVITY_SENTINEL'], 'daemon-env', 'non-vendor daemon env survives');
+});
+
+test('T5-claude-codex-activity-args-unchanged: activity argv matches the documented arg construction for both kinds, only opts.env was added', async () => {
+	const commands = ['npm run build'];
+	// claude: claudeReviewSessionArgs with stream-json substituted for json, then --verbose --include-partial-messages.
+	rmSync(callsPath, { force: true });
+	const claude = new CliProvider({ kind: 'claude', binPath: bin, model: 'claude-sonnet-5', effort: 'high', timeoutMs: 20_000 });
+	const opts = { ...activityOpts(), codeTaskCommands: commands };
+	await claude.runReviewSession('review the repo', SCHEMA, opts);
+	const claudeOriginal = claudeReviewSessionArgs(SCHEMA, ['--model', 'claude-sonnet-5', '--effort', 'high'], commands);
+	const expectedClaude = [...claudeOriginal.map((v, i) => i > 0 && claudeOriginal[i - 1] === '--output-format' ? 'stream-json' : v), '--verbose', '--include-partial-messages'];
+	assert.deepEqual(calls()[0]!.args, expectedClaude);
+	// codex: exec --output-schema <tmp>/schema.json --json --sandbox read-only -C <cwd> + model args; the tmp path is the only variable.
+	rmSync(callsPath, { force: true });
+	const codexBin = join(dir, 'codex.mjs');
+	writeFileSync(codexBin, `#!/usr/bin/env node
+import { appendFileSync } from 'node:fs';
+let stdin = ''; for await (const c of process.stdin) stdin += c;
+appendFileSync(${JSON.stringify(callsPath)}, JSON.stringify({ args: process.argv.slice(2), env: {}, hasEnvKey: true }) + '\\n');
+const frames = [
+  { type: 'item.completed', item: { type: 'agent_message', text: JSON.stringify({ ok: true }) } },
+  { type: 'turn.completed' },
+];
+for (const f of frames) process.stdout.write(JSON.stringify(f) + '\\n');
+`);
+	chmodSync(codexBin, 0o755);
+	const codex = new CliProvider({ kind: 'codex', binPath: codexBin, model: 'gpt-6.1', effort: 'low', timeoutMs: 20_000 });
+	await codex.runReviewSession('review the repo', SCHEMA, opts);
+	const codexArgs = calls()[0]!.args;
+	const expectedPrefix = ['exec', '--output-schema'];
+	assert.deepEqual(codexArgs.slice(0, 2), expectedPrefix);
+	assert.match(codexArgs[2]!, /^.*codex-activity-schema-.*schema\.json$/, 'the schema is written to the session tmp dir');
+	assert.deepEqual(codexArgs.slice(3), ['--json', '--sandbox', 'read-only', '-C', dir, '--model', 'gpt-6.1', '-c', 'model_reasoning_effort=low']);
 });
 
 test('T3-ollama-activity-preflight-rejects-before-spawn: a failed checkOllama throws OllamaTargetError and spawns no child', async () => {

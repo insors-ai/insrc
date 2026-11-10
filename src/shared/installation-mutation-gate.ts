@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { matchesDarwinPeer, readDarwinIncarnation } from './darwin-lifecycle.js';
 import type { DarwinIncarnation } from './darwin-lifecycle.js';
 import { SupervisorLifecycleError } from './daemon-supervisor-protocol.js';
+import type { ManagedInstallation } from './managed-daemon-installation.js';
 
 const HELPER = fileURLToPath(new URL('../../out/bin/insrc-darwin-lifecycle', import.meta.url));
 const MAX_BYTES = 128 * 1024;
@@ -20,6 +21,8 @@ export interface UpdatePredecessor {
 	readonly candidateRelease: string;
 	readonly priorCommit: string;
 	readonly wasRunning: boolean;
+	readonly generation?: string | null;
+	readonly pins?: { readonly prior: ManagedInstallation; readonly candidate: ManagedInstallation };
 }
 
 export type MutationRequest =
@@ -95,8 +98,17 @@ function validOwner(value: unknown): value is DarwinIncarnation {
 }
 
 function validPredecessor(value: unknown): value is UpdatePredecessor {
-	return object(value) && text(value.priorRelease) && text(value.candidateRelease)
-		&& typeof value.priorCommit === 'string' && typeof value.wasRunning === 'boolean';
+	if (!object(value) || !text(value.priorRelease) || !text(value.candidateRelease)
+		|| typeof value.priorCommit !== 'string' || typeof value.wasRunning !== 'boolean'
+		|| (value.generation !== undefined && value.generation !== null && !text(value.generation))) return false;
+	if (value.pins === undefined) return true;
+	if (!object(value.pins)) return false;
+	const { prior, candidate } = value.pins;
+	const pin = (item: unknown, releaseId: string): item is ManagedInstallation =>
+		object(item) && item.releaseId === releaseId && item.version === 1 && item.enabled === true
+		&& text(item.stateRoot) && isAbsolute(item.stateRoot) && text(item.releaseRoot) && isAbsolute(item.releaseRoot)
+		&& text(item.runtime) && isAbsolute(item.runtime) && typeof item.pathEnv === 'string';
+	return pin(prior, value.priorRelease) && pin(candidate, value.candidateRelease) && prior.stateRoot === candidate.stateRoot;
 }
 
 function validRequest(value: unknown): value is MutationRequest {
@@ -324,6 +336,17 @@ export class InstallationMutationGate {
 			if ((last !== undefined && last.receipt === undefined) || (active.kind === 'update'
 				&& (state.outcome?.id !== active.id || (state.outcome.decision === 'operator-recovery' && !active.recovery)))) {
 				conflict('installation reservation has unresolved work');
+			}
+			await this.write({ ...state, active: null });
+		});
+	}
+
+	/** A helper whose private launch channel closed may cancel its untouched reservation. */
+	async cancelUnstartedUpdate(authority: MutationAuthority): Promise<void> {
+		await this.arbitrate(async state => {
+			const active = this.admitted(state, authority);
+			if (active.kind !== 'update' || active.entries.length !== 0 || state.outcome?.id === active.id) {
+				conflict('cannot cancel an update that has started');
 			}
 			await this.write({ ...state, active: null });
 		});

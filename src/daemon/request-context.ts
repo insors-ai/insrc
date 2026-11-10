@@ -24,6 +24,8 @@ export interface TrustedRpcContext {
 	readonly registerDrain?: ((work: PromiseLike<unknown>) => void) | undefined;
 	/** Completion of the last frame written by this main-thread progress subscription. */
 	readonly awaitProgressWrite?: (() => Promise<boolean>) | undefined;
+	/** True only after the main-thread socket writes this update acknowledgement. */
+	readonly awaitUpdateReply?: (() => Promise<boolean>) | undefined;
 }
 /** A response can finish while admitted work is still being disposed. */
 export class RequestLifetime {

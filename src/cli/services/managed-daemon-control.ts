@@ -17,7 +17,7 @@ import type { MutationReservation } from '../../shared/installation-mutation-gat
 import { ensureManagedJob, inspectManagedJob, installationPaths, requireQuiescentInstallation, supervisorJob } from '../../shared/managed-daemon-installation.js';
 import type { ManagedInstallation } from '../../shared/managed-daemon-installation.js';
 
-type Request = Pick<SupervisorRequest, 'op' | 'generation' | 'deadlineMs'>;
+type Request = Pick<SupervisorRequest, 'op' | 'generation' | 'deadlineMs' | 'updateId'>;
 type Reply = Extract<SupervisorReply, { ok: true }>;
 const CALL_TIMEOUT_MS = 3_500;
 const START_TIMEOUT_MS = 70_000;
@@ -123,7 +123,7 @@ export async function openManagedSupervisorLink(
 	}
 }
 
-function accepted(reply: SupervisorReply): Reply {
+export function accepted(reply: SupervisorReply): Reply {
 	if (!reply.ok) throw new SupervisorLifecycleError(reply.error, `supervisor refused lifecycle operation: ${reply.error}`, reply.generation, reply.exit);
 	return reply;
 }

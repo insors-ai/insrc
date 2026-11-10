@@ -1,12 +1,14 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 
 import { execFile } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import { constants } from 'node:fs';
-import { access, lstat, mkdir, readFile, realpath, writeFile } from 'node:fs/promises';
-import { isAbsolute, join } from 'node:path';
+import { access, lstat, mkdir, open, readFile, realpath, rename, rm, unlink, writeFile } from 'node:fs/promises';
+import { dirname, isAbsolute, join } from 'node:path';
+import { setTimeout as delay } from 'node:timers/promises';
 import { promisify } from 'node:util';
-import { darwinLaunchLabel, verifyDarwinLaunchJob } from './darwin-lifecycle.js';
-import type { DarwinLaunchJob, VerifiedDarwinLaunchJob } from './darwin-lifecycle.js';
+import { darwinLaunchLabel, observeDarwinExit, readDarwinIncarnation, verifyDarwinJobProcess, verifyDarwinLaunchJob } from './darwin-lifecycle.js';
+import type { DarwinIncarnation, DarwinLaunchJob, VerifiedDarwinLaunchJob } from './darwin-lifecycle.js';
 import { PATHS } from './paths.js';
 import { SupervisorLifecycleError } from './daemon-supervisor-protocol.js';
 
@@ -22,6 +24,10 @@ export interface ManagedInstallation {
 	readonly runtime: string;
 	readonly pathEnv: string;
 	readonly enabled: boolean;
+}
+
+export interface RegisteredManagedJob extends VerifiedDarwinLaunchJob {
+	readonly incarnation?: DarwinIncarnation;
 }
 
 export function installationPaths(root: string) {
@@ -86,6 +92,25 @@ export async function readManagedInstallation(root = PATHS.insrc): Promise<Manag
 	return installation.enabled ? installation : undefined;
 }
 
+/** Deployment stages these inputs outside either mutable installation selector. */
+export async function readManagedUpdateInputs(root: string): Promise<{ candidate: ManagedInstallation; qualifications: unknown }> {
+	const { directory } = installationPaths(root);
+	await privateDirectory(directory);
+	const candidate = await parseInstallation(join(directory, 'update-candidate.json'), root);
+	const path = join(directory, 'update-qualifications.json');
+	await privateFile(path);
+	return { candidate, qualifications: JSON.parse(await readFile(path, 'utf8')) as unknown };
+}
+
+export async function verifyManagedReleaseRuntime(installation: ManagedInstallation): Promise<void> {
+	const job = supervisorJob(installation);
+	await access(installation.runtime, constants.X_OK);
+	for (const file of [installation.runtime, job.args[1]!, join(installation.releaseRoot, 'out/daemon/index.js')]) {
+		await access(file, constants.R_OK);
+		if (!(await lstat(file)).isFile()) failure('pinned release runtime file is unavailable');
+	}
+}
+
 export function supervisorJob(installation: ManagedInstallation): DarwinLaunchJob {
 	const paths = installationPaths(installation.stateRoot);
 	return {
@@ -146,6 +171,72 @@ function descriptor(job: DarwinLaunchJob, installation: ManagedInstallation): st
 `;
 }
 
+async function publishPrivateFile(path: string, contents: string): Promise<void> {
+	const temporary = `${path}.${randomUUID()}`;
+	try {
+		const file = await open(temporary, 'wx', 0o600);
+		try { await file.writeFile(contents); await file.sync(); } finally { await file.close(); }
+		await rename(temporary, path);
+		const directory = await open(dirname(path), 'r');
+		try { await directory.sync(); } finally { await directory.close(); }
+	} finally {
+		await rm(temporary, { force: true });
+	}
+}
+
+/** Replace the selector only while a durable transaction fences ordinary lifecycle operations. */
+export async function publishManagedSelector(installation: ManagedInstallation, revalidate: () => Promise<void>): Promise<void> {
+	const paths = installationPaths(installation.stateRoot);
+	await privateDirectory(paths.directory);
+	await privateFile(paths.descriptor);
+	await privateFile(paths.manifest);
+	await revalidate();
+	await publishPrivateFile(paths.descriptor, descriptor(supervisorJob(installation), installation));
+	await revalidate();
+	await publishPrivateFile(paths.manifest, JSON.stringify(installation) + '\n');
+	if (JSON.stringify(await readManagedInstallation(installation.stateRoot)) !== JSON.stringify(installation)
+		|| await readFile(paths.descriptor, 'utf8') !== descriptor(supervisorJob(installation), installation)) {
+		failure('provisional selector does not match the pinned release');
+	}
+}
+
+/** Unload the pinned job after its child has exited and retain exact proof of the job's own exit. */
+export async function removeManagedJob(installation: ManagedInstallation, revalidate: () => Promise<void>): Promise<{
+	job: VerifiedDarwinLaunchJob;
+	startedAt: string | null;
+} | undefined> {
+	const job = await inspectManagedJob(installation);
+	if (job === undefined) return;
+	const socket = installationPaths(installation.stateRoot).socket;
+	const priorSocket = await lstat(socket).catch((error: NodeJS.ErrnoException) => {
+		if (error.code !== 'ENOENT') throw error;
+	});
+	if (priorSocket !== undefined && (!priorSocket.isSocket() || priorSocket.uid !== uid())) failure('unexpected supervisor socket');
+	if (job.pid === null && priorSocket !== undefined) failure('inactive job has an unverifiable socket');
+	const target = job.pid === null ? undefined : await readDarwinIncarnation(job.pid);
+	const observer = target === undefined ? undefined : await observeDarwinExit(target, 10_000);
+	try {
+		await revalidate();
+		if (target !== undefined) await verifyDarwinJobProcess(supervisorJob(installation), target);
+		else if ((await inspectManagedJob(installation))?.pid !== null) failure('inactive job changed before removal');
+		try { await launchctl(['bootout', job.target]); }
+		catch { /* Verify removal and exact exit even if launchctl lost its acknowledgement. */ }
+		if (observer !== undefined && !await observer.exited) failure('supervisor exit is unconfirmed');
+		if (await inspectManagedJob(installation) !== undefined) failure('supervisor job removal is unconfirmed');
+		if (priorSocket !== undefined) {
+			const current = await lstat(socket).catch((error: NodeJS.ErrnoException) => {
+				if (error.code !== 'ENOENT') throw error;
+			});
+			if (current !== undefined) {
+				if (current.dev !== priorSocket.dev || current.ino !== priorSocket.ino) failure('supervisor socket changed during unload');
+				await revalidate();
+				await unlink(socket);
+			}
+		}
+	} finally { await observer?.close(); }
+	return { job, startedAt: target?.startedAt ?? null };
+}
+
 /** Stage a private launch descriptor. The supported rollout must explicitly enable it later. */
 export async function stageManagedInstallation(installation: ManagedInstallation, revalidate: () => Promise<void>): Promise<void> {
 	if (installation.enabled) failure('staging cannot enable installed rollout');
@@ -172,11 +263,11 @@ export async function ensureManagedJob(
 	await requireQuiescentInstallation(installation);
 	const job = supervisorJob(installation);
 	if (current === undefined) {
-		await privateFile(job.descriptor);
-		if (await readFile(job.descriptor, 'utf8') !== descriptor(job, installation)) failure('staged launch descriptor changed');
 		await journal.intent(`register ${job.label}`);
-		await revalidate();
-		await launchctl(['bootstrap', `gui/${job.uid}`, job.descriptor]);
+		const admitted = await registerManagedJob(installation, revalidate);
+		if (admitted === undefined) failure('launch job registration is unconfirmed');
+		await journal.receipt(admitted.target);
+		return;
 	} else {
 		await journal.intent(`start ${current.target}`);
 		await revalidate();
@@ -185,4 +276,31 @@ export async function ensureManagedJob(
 	const verified = await inspectManagedJob(installation);
 	if (verified === undefined) failure('launch job registration is unconfirmed');
 	await journal.receipt(verified.target);
+}
+
+/** A failed bootstrap may still have registered this job. Resolve its pinned identity within a bounded window. */
+export async function registerManagedJob(
+	installation: ManagedInstallation, revalidate: () => Promise<void>,
+): Promise<RegisteredManagedJob | undefined> {
+	const job = supervisorJob(installation);
+	await privateFile(job.descriptor);
+	if (await readFile(job.descriptor, 'utf8') !== descriptor(job, installation)) failure('staged launch descriptor changed');
+	if (await inspectManagedJob(installation) !== undefined) failure('a job already occupies the requested launch label');
+	await revalidate();
+	try { await launchctl(['bootstrap', `gui/${job.uid}`, job.descriptor]); }
+	catch { /* Inspect registration even when launchctl did not confirm bootstrap. */ }
+	const deadline = performance.now() + 4_000;
+	for (;;) {
+		try {
+			const result = await inspectManagedJob(installation);
+			if (result?.pid != null) {
+				const incarnation = await readDarwinIncarnation(result.pid);
+				return { ...await verifyDarwinJobProcess(job, incarnation), incarnation };
+			}
+			if (performance.now() >= deadline) return result;
+		} catch (error) {
+			if ((error as NodeJS.ErrnoException).code !== 'launch-job-starting' || performance.now() >= deadline) throw error;
+		}
+		await delay(100);
+	}
 }

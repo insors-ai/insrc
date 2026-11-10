@@ -4,11 +4,12 @@ import { realpath } from 'node:fs/promises';
 import { createConnection } from 'node:net';
 import type { Socket } from 'node:net';
 import { join } from 'node:path';
-import { readDarwinIncarnation, readDarwinPeerCredentials } from '../shared/darwin-lifecycle.js';
+import { matchesDarwinPeer, readDarwinIncarnation, readDarwinPeerCredentials } from '../shared/darwin-lifecycle.js';
 import type { DarwinPeerCredentials } from '../shared/darwin-lifecycle.js';
 import { InstallationMutationGate } from '../shared/installation-mutation-gate.js';
 import { rpc } from '../shared/ipc-client.js';
-import { installationPaths, readManagedInstallation, requireQuiescentInstallation } from '../shared/managed-daemon-installation.js';
+import { installationPaths, readManagedInstallation, requireQuiescentInstallation, supervisorJob } from '../shared/managed-daemon-installation.js';
+import type { RegisteredManagedJob } from '../shared/managed-daemon-installation.js';
 import { PATHS } from '../shared/paths.js';
 import { DaemonSupervisor, SupervisorPublicShutdown } from '../daemon/supervisor.js';
 import { SupervisorRunFiles } from '../daemon/supervisor-run-files.js';
@@ -59,6 +60,20 @@ async function main(): Promise<void> {
 			delete env['INSRC_PROBATION_RELEASE'];
 			if (reservation.kind === 'update' && installation.releaseId === reservation.predecessor.candidateRelease) {
 				const { candidate } = qualifiedPairFromReservation(reservation);
+				const step = (name: string) => reservation.entries.find(entry => entry.step === name);
+				const stopped = JSON.parse(step('predecessor-stop')?.receipt ?? 'null') as
+					{ generation?: string | null; state?: string; exit?: unknown } | null;
+				const registered = JSON.parse(step('candidate-job')?.receipt ?? 'null') as RegisteredManagedJob | null;
+				const job = supervisorJob(installation);
+				if (stopped === null || stopped.state !== 'exited' || stopped.exit === undefined
+					|| stopped.generation !== reservation.predecessor.generation
+					|| step('predecessor-job-removal')?.receipt === undefined
+					|| step('provisional-selector')?.receipt !== candidate.releaseId
+					|| registered?.pid !== process.pid || registered.target !== `gui/${job.uid}/${job.label}`
+					|| registered.incarnation === undefined || !matchesDarwinPeer(owner, owner, registered.incarnation)
+					|| step('candidate-start')?.intent !== candidate.releaseId || step('candidate-start')?.receipt !== undefined) {
+					throw new Error('candidate launch lacks exact job and predecessor admission');
+				}
 				env['INSRC_PROBATION_UPDATE'] = reservation.id;
 				env['INSRC_PROBATION_RELEASE'] = candidate.releaseId;
 			} else if (reservation.kind === 'update' && installation.releaseId !== reservation.predecessor.priorRelease) {

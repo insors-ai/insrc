@@ -202,6 +202,9 @@ export async function verifyDarwinLaunchJob(
 	const pidText = field('pid');
 	const state = field('state');
 	if (pidText === undefined && state === 'not running') return { target, pid: null };
+	if (pidText === undefined && (state === 'spawn scheduled' || state === 'waiting for spawn')) {
+		throw Object.assign(new Error('verified launch job is still starting'), { code: 'launch-job-starting' });
+	}
 	if (pidText === undefined || !/^\d+$/.test(pidText) || state !== 'running') throw new Error('ambiguous launch job state');
 	return { target, pid: Number(pidArgument(Number(pidText))) };
 }

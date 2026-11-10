@@ -1,0 +1,69 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1794217246278-opped8",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T09:41:42.898Z",
+    "epicCreatedAt": "2026-11-09T09:41:42.898Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "claude-opus-5-5"
+        }
+      ]
+    },
+    "elapsedMs": 56615,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "e95eb34da3769143",
+    "epicSlug": "keep-indexing-running-when-registered-repo",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "revision": 1
+  },
+  "body": {
+    "title": "Keep indexing running when a registered repo's folder is missing",
+    "reproduction": "1. Register a repository with the daemon.\n2. Delete its folder while it stays registered (on 2026-11-09 a reboot cleared `/tmp`, removing a registered temp folder).\n3. Start the daemon.\n\nObserved: the daemon log shows `the indexing worker did not start: No such file or directory`, followed by the supervisor replacing the worker. Indexing stops for every registered repository, not only the missing one, and the `repo.remove` request for the stale repository cannot be served. Three daemon processes in a row logged the same failure.\n\nExpected: the daemon reports the missing repository, skips it, keeps indexing the others, and the stale repository can be removed.",
+    "rootCause": "The startup loop in `src/indexer/index.ts` awaits `this.watcher.addRepo(repo.path, ...)` for each registered repository with no per-repository error handling. `addRepo` in `src/indexer/watcher.ts` awaits a filesystem subscription on the repository's folder, so a missing folder rejects, and that rejection ends indexer startup. `src/daemon/threads/workers.ts` then reports that the worker did not start, and `src/daemon/threads/supervisor.ts` replaces it, which meets the same failure on the next attempt.\n\n`repo.remove` is classed as an indexing request in `src/daemon/threads/method-class.ts`, so the worker that cannot start is the one that would serve it.\n\nThe failing call is inferred from reading the startup path and from the observed recovery, not from a stack trace: the log gives only the message, and recreating the folder as an empty directory let the worker start and `repo.remove` succeed. Why successive daemon processes exited is not established.",
+    "fixIntent": "A registered repository whose folder is missing no longer stops the indexing worker from starting. The daemon reports that repository, skips it, and keeps indexing the others. The stale repository can be removed through the normal request while its folder is missing, without recreating the folder first."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/indexer/index.ts:290",
+      "quotedText": "await this.watcher.addRepo(repo.path, this.refreshedFileFilter(repo.path));"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/indexer/watcher.ts:111",
+      "quotedText": "const sub = await this.subscribe(repoPath, filter, ignored);"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/threads/workers.ts:89"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/threads/supervisor.ts:97"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/daemon/threads/method-class.ts:44",
+      "quotedText": "['repo.remove', 'indexing', false],"
+    },
+    {
+      "id": "c6",
+      "kind": "stakeholder",
+      "ref": "User report on 2026-11-09 of the daemon crash loop, and the daemon log from that incident"
+    }
+  ]
+}

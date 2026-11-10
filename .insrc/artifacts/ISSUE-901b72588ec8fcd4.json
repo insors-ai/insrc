@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1794285043622-9bgwa4",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T04:31:17.022Z",
+    "epicCreatedAt": "2026-11-10T04:31:17.022Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "claude-opus-5-5"
+        }
+      ]
+    },
+    "elapsedMs": 33398,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "901b72588ec8fcd4",
+    "epicSlug": "show-every-chat-reply-cli-produces",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "af0b483b030fec3ef246c9ad4a3b144346151fe7ab386f256fd03335ea760598",
+        "at": "2026-11-10T04:31:17.037Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Show every chat reply the CLI produces and never drop a waiting message",
+    "reproduction": "In the VS Code dev chat with a Claude session, send a message whose work the session runs in the background, such as a long test run or a code review it then waits on.\n\nObserved, chat mui9kpl0 on 2026-11-09: the turn ended in the chat at 16:30 UTC with the message \"the full test sweep is running\". The CLI kept working and wrote 486 more lines over 3.5 hours: progress updates, three code review rounds, fixes and a final question to the user at 20:04 UTC. None of it appeared in the chat, and the user saw a session that looked hung. The chat's own record of the CLI output (`~/.insrc/chat-output/mui9kpl0-pk3pg0.1.ndjson`) holds every one of those lines. Across the kept records, 17 turns lost text the CLI wrote after the turn's result.\n\nAlso observed, chat mvxo88bc on 2026-11-04: a message sent at 18:24 while the previous turn's process was still running never started a turn. The user sent it again at 18:26.\n\nExpected: everything the CLI writes for the chat appears in the chat, and every message the user sends either runs or is shown as not run.",
+    "rootCause": "Two parts of the chat discard work.\n\nFirst, when the result for the user's own message arrives, the chat's stream reader marks the turn done, closes the CLI's input, and reads and discards everything the CLI writes afterwards. A Claude session that has background work keeps running after that point and answers its own task notifications. Those answers are read and thrown away, so the chat never shows them.\n\nSecond, a new message has to wait until the session's previous CLI process exits, because the chat allows one process per session. While it waits, a newer message replaces it (\"latest message wins\"), and the earlier message is dropped without being run. If the previous process is still running after the lock timeout (`insrc.chat.turnLockTimeoutMs`, 10 minutes by default), the waiting turn stops that process, which also ends its background work without telling the user.\n\nA third cause, an empty result from a leftover notification ending the user's turn, was fixed by matching results to the user's request. The kept records show that fix in use from about 2026-11-08.",
+    "fixIntent": "Everything the CLI writes for a chat must reach that chat, including what it writes after the result for the user's message, and the chat must show when the session is still working. Every message the user sends must either run or be shown to the user as not run; none may be dropped silently. Work still running in a session must not be stopped without telling the user. The already-working matching of results to the user's request must stay as it is."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/cli-adapter.ts:1152",
+      "quotedText": "async function drain(it: AsyncIterator<string>): Promise<void> {"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/cli-adapter.ts:1343-1355"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/cli-adapter.ts:788-800"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/session-lock.ts:84",
+      "quotedText": "export class LockWaitSuperseded extends Error {"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/session-lock.ts:204",
+      "quotedText": "waiters.get(sessionId)?.reject(new LockWaitSuperseded(sessionId));"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/session-lock.ts:223-245"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/turn-lifecycle.ts:306-334"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "vscode-plugin/package.json:194",
+      "quotedText": "\"insrc.chat.turnLockTimeoutMs\": {"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-queue-worker.ts:181"
+    }
+  ]
+}

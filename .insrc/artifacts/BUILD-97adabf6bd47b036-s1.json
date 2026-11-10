@@ -1,0 +1,234 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 14,
+        "contentHash": "598445b1d2055013c26f6ed3092e8557b0168b96123d4ba665045d5a5a2b9207",
+        "at": "2026-11-09T19:24:22.995Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 14,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T19:56:49.712Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-062dd974-12bb-49ab-a427-286fa69aa2a0",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T17:24:51.705Z",
+    "epicCreatedAt": "2026-11-09T16:34:12.401Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "97adabf6bd47b036",
+    "storyId": "s1",
+    "revision": 14,
+    "updatedAt": "2026-11-09T19:23:43.994Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "apply-catalog-model-effort-choices-daemon"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      }
+    ],
+    "summary": "Verify that a live setup child exits after cancellation, timeout and preflight rejection.",
+    "testRecord": {
+      "md": "docs/standalone/apply-catalog-model-effort-choices-daemon-E2026110997adabf6/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/shared/__tests__/vibe-session.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:23:43.994Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/vibe-session.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:23:43.994Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/cli-vibe.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:23:43.994Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/cli-provider.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:23:43.994Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/structured-output.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:23:43.994Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/__tests__/packaging.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:23:43.994Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:23:43.994Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:23:43.994Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/cli-adapter.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:23:43.994Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/stream-events.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:23:43.994Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/vibe-session-process.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:23:43.994Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/extension.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:23:43.994Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:23:43.994Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:23:43.994Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/protocol.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:23:43.994Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/apply-catalog-model-effort-choices-daemon-E2026110997adabf6/S001/QUALIFICATION.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:23:43.994Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/apply-catalog-model-effort-choices-daemon-E2026110997adabf6/S001/vibe-selection-smoke.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:23:43.994Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/__tests__/fixtures/vibe-selection-smoke.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:23:43.994Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/esbuild.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:23:43.994Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-queue-fault-injection.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:23:43.994Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/vibe-session-worker.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:23:43.994Z"
+      }
+    ],
+    "commit": "e8bad42bb"
+  },
+  "citations": []
+}

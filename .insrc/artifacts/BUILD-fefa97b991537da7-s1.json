@@ -6,11 +6,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 10,
-        "contentHash": "587ead056d732211734a290ec7e1b9b78914c636739439d6c16ff455753f6cba",
-        "at": "2026-11-08T18:40:15.322Z",
+        "number": 11,
+        "contentHash": "1aa90b48bafafc6c5831dc94c5dea536fc9e4b85b889eeb14e9a65dfb2fee0b5",
+        "at": "2026-11-08T19:41:19.709Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -41,8 +41,8 @@
     "schemaVersion": 1,
     "epicHash": "fefa97b991537da7",
     "storyId": "s1",
-    "revision": 10,
-    "updatedAt": "2026-11-08T18:39:41.076Z",
+    "revision": 11,
+    "updatedAt": "2026-11-08T19:40:34.708Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicSlug": "open-saved-connections-demand-read-all"
@@ -74,7 +74,7 @@
         "passed": false
       }
     ],
-    "summary": "The keys handlers read through the vault, keys.get treats an empty saved secret as existing, the vault module documents the cooldown and legacy retention, and the inventories match the changed sources.",
+    "summary": "The keys handlers read through the vault, keys.get treats an empty saved secret as existing, the vault module documents the cooldown and legacy retention, and the inventories match the changed sources. The live check was reported by the user on a real Keychain: no prompt at start and one prompt after a restart.",
     "testRecord": {
       "md": "docs/standalone/open-saved-connections-demand-read-all-E20261104fefa97b9/S001/TESTS.md"
     },
@@ -84,175 +84,175 @@
           "file": "src/daemon/__tests__/fixtures/fake-keytar.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T18:39:41.076Z"
+        "timestamp": "2026-11-08T19:40:34.708Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/on-demand-open.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T18:39:41.076Z"
+        "timestamp": "2026-11-08T19:40:34.708Z"
       },
       {
         "target": {
           "file": "src/daemon/connection-management-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T18:39:41.076Z"
+        "timestamp": "2026-11-08T19:40:34.708Z"
       },
       {
         "target": {
           "file": "src/daemon/db-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T18:39:41.076Z"
+        "timestamp": "2026-11-08T19:40:34.708Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T18:39:41.076Z"
+        "timestamp": "2026-11-08T19:40:34.708Z"
       },
       {
         "target": {
           "file": "src/daemon/db/managed-store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T18:39:41.076Z"
+        "timestamp": "2026-11-08T19:40:34.708Z"
       },
       {
         "target": {
           "file": "src/daemon/db/management-defaults.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T18:39:41.076Z"
+        "timestamp": "2026-11-08T19:40:34.708Z"
       },
       {
         "target": {
           "file": "src/daemon/db/management.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T18:39:41.076Z"
+        "timestamp": "2026-11-08T19:40:34.708Z"
       },
       {
         "target": {
           "file": "src/daemon/db/secrets.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T18:39:41.076Z"
+        "timestamp": "2026-11-08T19:40:34.708Z"
       },
       {
         "target": {
           "file": "src/daemon/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T18:39:41.076Z"
+        "timestamp": "2026-11-08T19:40:34.708Z"
       },
       {
         "target": {
           "file": "src/mcp/__tests__/helpers/mcp-e2e.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T18:39:41.076Z"
+        "timestamp": "2026-11-08T19:40:34.708Z"
       },
       {
         "target": {
           "file": "src/shared/keystore.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T18:39:41.076Z"
+        "timestamp": "2026-11-08T19:40:34.708Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/fixtures/module-state-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T18:39:41.076Z"
+        "timestamp": "2026-11-08T19:40:34.708Z"
       },
       {
         "target": {
           "file": "src/shared/__tests__/keystore-vault.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T18:39:41.076Z"
+        "timestamp": "2026-11-08T19:40:34.708Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/keystore-forwarding.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T18:39:41.076Z"
+        "timestamp": "2026-11-08T19:40:34.708Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/main-services.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T18:39:41.076Z"
+        "timestamp": "2026-11-08T19:40:34.708Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/worker-entry.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T18:39:41.076Z"
+        "timestamp": "2026-11-08T19:40:34.708Z"
       },
       {
         "target": {
           "file": "src/bin/insrc-connection-maintenance.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T18:39:41.076Z"
+        "timestamp": "2026-11-08T19:40:34.708Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/keystore-guard.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T18:39:41.076Z"
+        "timestamp": "2026-11-08T19:40:34.708Z"
       },
       {
         "target": {
           "file": "src/shared/paths.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T18:39:41.076Z"
+        "timestamp": "2026-11-08T19:40:34.708Z"
       },
       {
         "target": {
           "file": "src/assets/connection-management-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T18:39:41.076Z"
+        "timestamp": "2026-11-08T19:40:34.708Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/keystore-consumers.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T18:39:41.076Z"
+        "timestamp": "2026-11-08T19:40:34.708Z"
       },
       {
         "target": {
           "file": "src/daemon/handler-runtime.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T18:39:41.076Z"
+        "timestamp": "2026-11-08T19:40:34.708Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/driver-field-matrix.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T18:39:41.076Z"
+        "timestamp": "2026-11-08T19:40:34.708Z"
       },
       {
         "target": {
           "file": "src/daemon/db/management-adoption.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T18:39:41.076Z"
+        "timestamp": "2026-11-08T19:40:34.708Z"
       }
     ],
     "commit": "0ed541b91"

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 35 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 35 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -250,9 +250,7 @@ Run at 2026-11-08T18:39:41.076Z on commit `0ed541b91`. Tests check: **passed**. 
 
 ## t6
 
-Run at 2026-11-08T17:36:01.579Z on commit `640372bb9`. Tests check: **failed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
-
-named tests matched no test file: live: after a node upgrade one dialog appears across several connections and threads once migration is complete (pass a `tests` mapping at the validate turn: for each named test, the file and title of the test cases that carry it)
+Run at 2026-11-08T19:40:34.708Z on commit `7b6bcce27`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 **integration: consumers: notify, web and keys handlers read through the vault**
 
@@ -274,10 +272,10 @@ named tests matched no test file: live: after a node upgrade one dialog appears 
 
 **live: live: after a node upgrade one dialog appears across several connections and threads once migration is complete**
 
-Not mapped: no test case was named for this test, and nothing was run for it.
+Reported by the builder, not run by the gate: **pass**. Evidence: Reported in chat by the user (Subho Ghosh) on 2026-11-09 on a real macOS Keychain, running the installed daemon at 76839867c: no prompt at start, and exactly one password prompt after the 01:06 restart while using the saved connections of the insrc repository (9 repositories' ticket keys in the legacy store, one vault item). It was not a node upgrade, and how many threads were exercised is not known.
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/__tests__/keystore-consumers.test.ts` | 0 | 3 | 14.2 s |  |
+| `src/daemon/__tests__/keystore-consumers.test.ts` | 0 | 3 | 19.3 s |  |

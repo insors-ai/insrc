@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 7,
-        "contentHash": "673cbe42ad2192d0dfe85257dc58621a0b7e5e5b31fc465b24ce3fc8e114dc08",
-        "at": "2026-11-08T11:53:32.776Z",
+        "number": 14,
+        "contentHash": "6286be4705d54fc19846bd8011bca1270cc39c1fb7d262022620e063ba0f7fbf",
+        "at": "2026-11-08T13:16:40.906Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,18 +23,18 @@
     "epicHash": "dc557863fa52ecf5",
     "storyId": "s1",
     "createdAt": "2026-11-08T10:28:38.306Z",
-    "updatedAt": "2026-11-08T11:53:32.753Z",
+    "updatedAt": "2026-11-08T13:16:40.885Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-08T08:48:39.709Z",
     "epicSlug": "fix-16-pre-existing-vs-code",
-    "revision": 7
+    "revision": 14
   },
   "body": {
     "tasks": [
       {
         "taskId": "t1",
-        "commit": "ef63d9b9a",
-        "ranAt": "2026-11-08T11:26:05.830Z",
+        "commit": "9d86fb9f5",
+        "ranAt": "2026-11-08T13:12:24.745Z",
         "testsPassed": true,
         "tests": [
           {
@@ -74,6 +74,11 @@
                 "file": "vscode-plugin/src/panels/__tests__/repo-fields-contract.test.ts",
                 "title": "Tracker escapes catalog and setting text and degrades without removing model controls",
                 "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/panels/__tests__/repo-fields-contract.test.ts",
+                "title": "Tracker write outcomes refresh saved values and only accepted consent reaches the daemon",
+                "result": "pass"
               }
             ],
             "files": []
@@ -102,6 +107,11 @@
                 "file": "vscode-plugin/src/panels/__tests__/webview-host.test.ts",
                 "title": "Repo Configuration paints model controls while Tracker and Providers are still loading",
                 "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/panels/__tests__/webview-host.test.ts",
+                "title": "Tracker stays expanded across repaints and resets when the repo changes",
+                "result": "pass"
               }
             ],
             "files": []
@@ -115,6 +125,16 @@
                 "file": "vscode-plugin/src/workspace/__tests__/activation.test.ts",
                 "title": "S007 sc9: extension.ts wires the repo renderer + the consent-gated per-repo write over the shared sc8 gateway",
                 "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
+                "title": "extension wiring: the repo-config panel probes mcp.status WITH the selected repo path, so the project-layer .vibe/config.toml counts for vibe",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/config/__tests__/gateway.test.ts",
+                "title": "gateway.test.ts: panel reads forward their deadline through the VS Code read boundary",
+                "result": "pass"
               }
             ],
             "files": []
@@ -122,10 +142,140 @@
         ],
         "files": [
           {
+            "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 470,
+            "titles": [
+              {
+                "title": "extension.ts gates the chat command on insrc.chat.enabled (config read)",
+                "result": "pass"
+              },
+              {
+                "title": "extension.ts constructs createChatPanelHost with the real injected vscode seams + memento store",
+                "result": "pass"
+              },
+              {
+                "title": "the chat host + protocol + store modules are vscode-free",
+                "result": "pass"
+              },
+              {
+                "title": "package.json contributes the chat command + the insrc.chat.enabled config (default on)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: package.json contributes insrc.chat.diffView (string enum chat|editor, default chat)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: extension.ts reads insrc.chat.diffView (full dotted key) + injects editGovernance seams",
+                "result": "pass"
+              },
+              {
+                "title": "chat wiring: the governance deps carry relPath and no computeDiff, and git is run with the given environment",
+                "result": "pass"
+              },
+              {
+                "title": "S006: the edit-governor module is vscode-free",
+                "result": "pass"
+              },
+              {
+                "title": "group-lock: package.json contributes insrc.chat.lockGroup (boolean, default true, machine scope)",
+                "result": "pass"
+              },
+              {
+                "title": "group-lock: extension.ts wires thin seams into createChatGroupLock and attaches it in the one panel adapter",
+                "result": "pass"
+              },
+              {
+                "title": "group-lock: the module is vscode-free",
+                "result": "pass"
+              },
+              {
+                "title": "S007: package.json contributes the insrc.chat.docsReview command",
+                "result": "pass"
+              },
+              {
+                "title": "S007: extension.ts wires the docs-review host inside the chat gate over the shared client",
+                "result": "pass"
+              },
+              {
+                "title": "S007: the docs-review host + client modules are vscode-free",
+                "result": "pass"
+              },
+              {
+                "title": "editor-title: the chat opens from an editor/title icon, NOT an Activity Bar container",
+                "result": "pass"
+              },
+              {
+                "title": "editor-title: the real insrc icon SVGs exist, are non-empty, and ship in the .vsix",
+                "result": "pass"
+              },
+              {
+                "title": "editor-title: extension.ts opens the chat as an editor-tab panel + gates the icon, docs-review intact",
+                "result": "pass"
+              },
+              {
+                "title": "the extension passes a file-backed lock registry and the turnLockTimeoutMs setting",
+                "result": "pass"
+              },
+              {
+                "title": "package.json contributes insrc.chat.turnLockTimeoutMs (number, default 600000, minimum 1000)",
+                "result": "pass"
+              },
+              {
+                "title": "the extension builds a session output on ~/.insrc/chat-output, passes it to the provider registry, and wires onEvict and the start-up sweep",
+                "result": "pass"
+              },
+              {
+                "title": "extension.ts runs the migration before it builds the file store over join(PATHS.insrc, 'chat-sessions') with the session cap and the onEvict, and the output sweep keeps the store's ids and the migration's kept ids",
+                "result": "pass"
+              },
+              {
+                "title": "extension wiring: the store is built on ~/.insrc/chat-attachments, the picker and opener are injected, onEvict removes a session's attachments and the start-up sweep uses the same keep set",
+                "result": "pass"
+              },
+              {
+                "title": "extension wiring: without a queue the chat command, the chat-ready context, the chat tab serializer and the review host's notifyChat are not set up, and with a queue they are",
+                "result": "pass"
+              },
+              {
+                "title": "extension wiring: package.json lists insrc.chat.open in menus.commandPalette only when insrc.chat.ready",
+                "result": "pass"
+              },
+              {
+                "title": "extension wiring: a restored chat tab gets the chat's current title, since VS Code keeps the title a tab was saved with",
+                "result": "pass"
+              },
+              {
+                "title": "extension wiring: the repo-config panel probes mcp.status WITH the selected repo path, so the project-layer .vibe/config.toml counts for vibe",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/config/__tests__/gateway.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 374,
+            "titles": [
+              {
+                "title": "gateway.test.ts: writeKey and writeKeyPath pass through the daemon's restartRequired, reason and detail, and fall back to 'refused' for a bare { ok:false }",
+                "result": "pass"
+              },
+              {
+                "title": "gateway.test.ts: panel reads forward their deadline through the VS Code read boundary",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
             "file": "vscode-plugin/src/panels/__tests__/detail-renderers.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 496,
+            "durationMs": 385,
             "titles": [
               {
                 "title": "renderDaemonTab renders state + detail (ac1); a missing detail renders just the state",
@@ -178,7 +328,7 @@
             "file": "vscode-plugin/src/panels/__tests__/repo-fields-contract.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 413,
+            "durationMs": 412,
             "titles": [
               {
                 "title": "VS Code rows equal the shared catalog fixture and a new row appears",
@@ -186,6 +336,10 @@
               },
               {
                 "title": "Tracker validates catalog values and rechecks selection and registration after consent",
+                "result": "pass"
+              },
+              {
+                "title": "Tracker write outcomes refresh saved values and only accepted consent reaches the daemon",
                 "result": "pass"
               },
               {
@@ -199,7 +353,7 @@
             "file": "vscode-plugin/src/panels/__tests__/webview-host.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 584,
+            "durationMs": 515,
             "titles": [
               {
                 "title": "showStatusMenu offers EXACTLY five items, including Manage Connections and Delivery Board, and routes each choice to the matching panel",
@@ -334,6 +488,10 @@
                 "result": "pass"
               },
               {
+                "title": "Tracker stays expanded across repaints and resets when the repo changes",
+                "result": "pass"
+              },
+              {
                 "title": "S007: the empty selectRepo option clears the selection back to picker-only",
                 "result": "pass"
               },
@@ -380,7 +538,7 @@
             "file": "vscode-plugin/src/workspace/__tests__/activation.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 436,
+            "durationMs": 390,
             "titles": [
               {
                 "title": "extension.ts constructs the WorkspaceRegistrar over the shared client + real WorkspaceFolders/PromptStore and wires registerWorkspaceCommands with the s1 surfaces",
@@ -1892,9 +2050,9 @@
       },
       {
         "taskId": "t4",
-        "commit": "f698182f9",
-        "ranAt": "2026-11-08T11:00:38.256Z",
-        "testsPassed": false,
+        "commit": "dcc0f03b3",
+        "ranAt": "2026-11-08T13:16:40.885Z",
+        "testsPassed": true,
         "tests": [
           {
             "name": "node --import tsx --test --test-force-exit --test-reporter=tap 'vscode-plugin/src/**/__tests__/*.test.ts'",
@@ -1904,7 +2062,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "docs/standalone/fix-16-pre-existing-vs-code-E20261108dc557863/S001/VS-CODE-SMOKE.md and /tmp/insrc-vs16-final.tap. Serialized full sweep at f698182f9, 1695 pass, 9 skips, 0 fail."
+              "evidence": "docs/standalone/fix-16-pre-existing-vs-code-E20261108dc557863/S001/VS-CODE-SMOKE.md; /tmp/insrc-103-final.txfKIp/vscode.tap. Started 2026-11-08T13:13:39Z, finished 2026-11-08T13:15:18Z, after the recorded passing verdicts for t1 through t3. Serial full sweep on Node 26.5.1: 1699 pass, 9 gated skips, 0 fail."
             }
           },
           {
@@ -1915,19 +2073,23 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "docs/standalone/fix-16-pre-existing-vs-code-E20261108dc557863/S001/VS-CODE-SMOKE.md. node_modules/.bin/tsc -p vscode-plugin/tsconfig.json --pretty false exited 0."
+              "evidence": "docs/standalone/fix-16-pre-existing-vs-code-E20261108dc557863/S001/VS-CODE-SMOKE.md; /tmp/insrc-103-final.txfKIp/vscode.tap. The vscode-bundle-catalog test ran and passed the extension typecheck."
             }
           },
           {
             "name": "Manual Tracker read, write and native approval notification",
             "level": "smoke",
-            "source": "none",
+            "source": "mapping",
             "cases": [],
-            "files": []
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/fix-16-pre-existing-vs-code-E20261108dc557863/S001/VS-CODE-SMOKE.md. The user confirmed both manual checks passed. Only automated test coverage and verification documentation changed in response to the first review."
+            }
           }
         ],
         "files": [],
-        "note": "named tests matched no test file: Manual Tracker read, write and native approval notification (pass a `tests` mapping at the validate turn: for each named test, the file and title of the test cases that carry it)"
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   },

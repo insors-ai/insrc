@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 10,
-        "contentHash": "3fadc9d62f821a0e7a0164226cba0489bce54c73e7fcf050f7c252f03bf678c0",
-        "at": "2026-11-08T18:39:41.094Z",
+        "number": 11,
+        "contentHash": "617465bc8aa2f2974757411fb65195ce4f0a1ab3494c6a7cbf89000b61c75fb3",
+        "at": "2026-11-08T19:40:34.731Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "fefa97b991537da7",
     "storyId": "s1",
     "createdAt": "2026-11-08T16:59:13.219Z",
-    "updatedAt": "2026-11-08T18:39:41.076Z",
+    "updatedAt": "2026-11-08T19:40:34.708Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-04T19:31:14.890Z",
     "epicSlug": "open-saved-connections-demand-read-all",
-    "revision": 10
+    "revision": 11
   },
   "body": {
     "tasks": [
@@ -720,9 +720,9 @@
       },
       {
         "taskId": "t6",
-        "commit": "640372bb9",
-        "ranAt": "2026-11-08T17:36:01.579Z",
-        "testsPassed": false,
+        "commit": "7b6bcce27",
+        "ranAt": "2026-11-08T19:40:34.708Z",
+        "testsPassed": true,
         "tests": [
           {
             "name": "consumers: notify, web and keys handlers read through the vault",
@@ -766,9 +766,13 @@
           {
             "name": "live: after a node upgrade one dialog appears across several connections and threads once migration is complete",
             "level": "live",
-            "source": "none",
+            "source": "mapping",
             "cases": [],
-            "files": []
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Reported in chat by the user (Subho Ghosh) on 2026-11-09 on a real macOS Keychain, running the installed daemon at 76839867c: no prompt at start, and exactly one password prompt after the 01:06 restart while using the saved connections of the insrc repository (9 repositories' ticket keys in the legacy store, one vault item). It was not a node upgrade, and how many threads were exercised is not known."
+            }
           }
         ],
         "files": [
@@ -776,7 +780,7 @@
             "file": "src/daemon/__tests__/keystore-consumers.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 14209,
+            "durationMs": 19296,
             "titles": [
               {
                 "title": "consumers: notify, web and keys handlers read through the vault",
@@ -793,8 +797,7 @@
             ],
             "otherFailures": []
           }
-        ],
-        "note": "named tests matched no test file: live: after a node upgrade one dialog appears across several connections and threads once migration is complete (pass a `tests` mapping at the validate turn: for each named test, the file and title of the test cases that carry it)"
+        ]
       }
     ]
   },

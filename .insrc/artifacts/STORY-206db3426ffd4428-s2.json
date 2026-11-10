@@ -18,7 +18,19 @@
         "relation": "derived-from"
       },
       "references": [],
-      "attachments": [],
+      "attachments": [
+        {
+          "target": {
+            "entityId": "LLD-206db3426ffd4428-s2",
+            "type": "LLD",
+            "relation": "documents",
+            "fragment": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/S002/LLD.md"
+          },
+          "revision": 1,
+          "at": "2026-11-10T03:59:43.918Z",
+          "externalId": "6758589548"
+        }
+      ],
       "binding": {
         "reference": {
           "entityId": "insors-ai/insrc#154",

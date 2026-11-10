@@ -26,6 +26,9 @@ import { CliProvider, type OllamaTarget } from '../cli-provider.js';
 import { OllamaTargetError } from '../ollama-target.js';
 
 const VARS = ['ANTHROPIC_BASE_URL', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_API_KEY', 'CLAUDE_CODE_OAUTH_TOKEN', 'CLAUDE_CODE_USE_BEDROCK', 'CLAUDE_CODE_USE_VERTEX', 'INSRC_ACTIVITY_SENTINEL'] as const;
+/* t2 locks the withOllama contract at the activity call site: endpoint + auth from the
+ * target, API key blanked, all three vendor keys stripped even when the daemon env
+ * carries them, the rest of the daemon env untouched. */
 const SCHEMA = { type: 'object', required: ['ok'], properties: { ok: { type: 'boolean' } }, additionalProperties: false };
 
 interface Run { readonly args: string[]; readonly env: Record<string, string | null>; readonly hasEnvKey: boolean }
@@ -58,7 +61,7 @@ for (const f of frames) process.stdout.write(JSON.stringify(f) + '\\n');
 `);
 	chmodSync(bin, 0o755);
 	// The daemon's environment carries a vendor login, a stray base URL and a sentinel.
-	for (const [k, v] of [['CLAUDE_CODE_OAUTH_TOKEN', 'vendor-token'], ['ANTHROPIC_BASE_URL', 'https://vendor.example'], ['CLAUDE_CODE_USE_BEDROCK', '1'], ['INSRC_ACTIVITY_SENTINEL', 'daemon-env']] as const) {
+	for (const [k, v] of [['CLAUDE_CODE_OAUTH_TOKEN', 'vendor-token'], ['ANTHROPIC_BASE_URL', 'https://vendor.example'], ['ANTHROPIC_API_KEY', 'vendor-key'], ['CLAUDE_CODE_USE_BEDROCK', '1'], ['CLAUDE_CODE_USE_VERTEX', '1'], ['INSRC_ACTIVITY_SENTINEL', 'daemon-env']] as const) {
 		saved[k] = process.env[k];
 		process.env[k] = v;
 	}
@@ -93,6 +96,20 @@ test('T1-ollama-activity-child-env: the activity child of an ollama-claude provi
 	assert.equal(env['CLAUDE_CODE_USE_BEDROCK'], null, 'Bedrock mode is stripped');
 	assert.equal(env['CLAUDE_CODE_USE_VERTEX'], null, 'Vertex mode is stripped');
 	assert.equal(env['INSRC_ACTIVITY_SENTINEL'], 'daemon-env', 'the rest of the daemon environment is kept');
+});
+
+test('T2-ollama-activity-no-vendor-inherit: the activity env carries the Ollama endpoint, a blank API key and none of the three vendor keys', async () => {
+	rmSync(callsPath, { force: true });
+	const p = new CliProvider({ kind: 'claude', binPath: bin, model: 'glm-5.3:cloud', effort: 'high', ollama: TARGET, ollamaCheck: passing, timeoutMs: 20_000 });
+	await p.runReviewSession('review the repo', SCHEMA, activityOpts());
+	const env = calls()[0]!.env;
+	assert.equal(env['ANTHROPIC_BASE_URL'], TARGET.host, 'endpoint comes from the Ollama target, not the daemon env');
+	assert.equal(env['ANTHROPIC_AUTH_TOKEN'], 'ollama');
+	assert.equal(env['ANTHROPIC_API_KEY'], '', 'the inherited vendor API key is blanked');
+	assert.equal(env['CLAUDE_CODE_OAUTH_TOKEN'], null, 'OAuth token stripped even though the daemon env has one');
+	assert.equal(env['CLAUDE_CODE_USE_BEDROCK'], null, 'Bedrock stripped even though the daemon env sets it');
+	assert.equal(env['CLAUDE_CODE_USE_VERTEX'], null, 'Vertex stripped even though the daemon env sets it');
+	assert.equal(env['INSRC_ACTIVITY_SENTINEL'], 'daemon-env', 'non-vendor daemon env survives');
 });
 
 test('T3-ollama-activity-preflight-rejects-before-spawn: a failed checkOllama throws OllamaTargetError and spawns no child', async () => {

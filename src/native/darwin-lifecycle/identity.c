@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/event.h>
+#include <sys/file.h>
 #include <sys/proc_info.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -96,7 +97,11 @@ static long positive(const char *text) {
 int main(int argc, char **argv) {
 	int result = -1;
 	errno = EINVAL;
-	if (argc == 2 && strcmp(argv[1], "peer") == 0) result = print_peer();
+	if (argc == 2 && strcmp(argv[1], "lock") == 0) {
+		/* The caller retains its own descriptor for the same open file. */
+		if (flock(3, LOCK_EX | LOCK_NB) == 0) return EXIT_SUCCESS;
+		if (errno == EWOULDBLOCK) return 75;
+	} else if (argc == 2 && strcmp(argv[1], "peer") == 0) result = print_peer();
 	else if (argc >= 3) {
 		long pid = positive(argv[2]);
 		if (pid > 0 && argc == 3 && strcmp(argv[1], "identity") == 0) result = print_identity((pid_t)pid);

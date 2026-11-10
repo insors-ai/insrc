@@ -44,19 +44,17 @@
       "cliKind": "vibe",
       "displayName": "Mistral Vibe CLI",
       "models": [
-        { "id": "mistral-large-latest", "displayName": "Mistral Large", "efforts": ["low", "medium", "high", "xhigh", "max"] },
-        { "id": "mistral-vibe-cli-latest", "aliases": ["mistral-medium-3.5"], "displayName": "Mistral Medium 3.5 (Vibe default)", "efforts": ["low", "medium", "high", "xhigh", "max"] },
+        { "id": "mistral-large-4-0", "aliases": ["mistral-large-4-0-3", "mistral-large-4"], "displayName": "Mistral Large 4", "efforts": ["low", "medium", "high"] },
+        { "id": "mistral-vibe-cli-latest", "aliases": ["mistral-medium-3.5"], "displayName": "Mistral Medium 3.5 (Vibe default)", "efforts": ["off", "high"] },
         { "id": "zai-glm-5-3", "aliases": ["glm-5-3"], "displayName": "GLM 5.3 (Mistral-hosted)", "efforts": ["low", "high", "max"] },
-        { "id": "zai-glm-5-3-flash", "aliases": ["glm-5-3-flash"], "displayName": "GLM 5.3 Flash (Mistral-hosted)", "efforts": ["low", "high", "max"] },
-        { "id": "devstral-latest", "displayName": "Devstral (coding)", "efforts": ["low", "medium", "high", "xhigh", "max"] },
-        { "id": "mistral-small-latest", "displayName": "Mistral Small", "efforts": ["low", "medium", "high", "xhigh", "max"] }
+        { "id": "zai-glm-5-3-flash", "aliases": ["glm-5-3-flash"], "displayName": "GLM 5.3 Flash (Mistral-hosted)", "efforts": ["low", "high", "max"] }
       ],
       "tierDefaults": {
-        "core":  { "model": "mistral-large-latest" },
+        "core":  { "model": "mistral-large-4-0" },
         "mid":   { "model": "mistral-vibe-cli-latest" },
-        "cheap": { "model": "mistral-small-latest" }
+        "cheap": { "model": "zai-glm-5-3-flash" }
       },
-      "summariserModel": "mistral-small-latest"
+      "summariserModel": "zai-glm-5-3-flash"
     },
     {
       "id": "ollama",

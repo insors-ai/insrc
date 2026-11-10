@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { execFile, execFileSync, spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
@@ -221,7 +221,9 @@ test('Installed controller refuses a verified job belonging to another test root
 	writeFileSync(job.args[1]!, '');
 	await stageManagedInstallation(staged, async () => {});
 	assert.equal(await readManagedInstallation(staged.stateRoot), undefined);
-	assert.match(readFileSync(stagedPaths.descriptor, 'utf8'), /<key>KeepAlive<\/key><false\/>/);
+	const descriptor = readFileSync(stagedPaths.descriptor, 'utf8');
+	assert.match(descriptor, /<key>KeepAlive<\/key><false\/>/);
+	assert.ok(descriptor.includes(`<key>HOME</key><string>${dirname(staged.stateRoot)}</string>`));
 	assert.equal(existsSync(stagedPaths.socket), false);
 });
 

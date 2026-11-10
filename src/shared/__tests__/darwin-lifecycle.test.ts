@@ -66,6 +66,10 @@ test('Validates idle job evidence and refuses the wrong domain or relative progr
 	await assert.rejects(verifyDarwinLaunchJob(job, readJob(serviceOutput.replace('\tpid = 123', '\tpid = 0'))), /invalid process id/);
 	const idle = serviceOutput.replace('state = running\n\tpid = 123', 'state = not running');
 	assert.deepEqual(await verifyDarwinLaunchJob(job, readJob(idle)), { target: service, pid: null });
+	const ambiguous = serviceOutput.replace('state = running', 'state = creating');
+	await assert.rejects(verifyDarwinLaunchJob(job, readJob(ambiguous)), { code: 'launch-job-ambiguous-state' });
+	await assert.rejects(verifyDarwinLaunchJob(job, readJob(ambiguous.replace(job.descriptor, '/foreign/job.plist'))),
+		/does not match pinned descriptor/);
 });
 
 test('Rejects a foreign peer PID or executable', () => {

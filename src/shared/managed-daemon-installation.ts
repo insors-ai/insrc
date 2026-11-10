@@ -173,7 +173,10 @@ function descriptor(job: DarwinLaunchJob, installation: ManagedInstallation): st
 <key>Label</key><string>${xml(job.label)}</string>
 <key>ProgramArguments</key><array>${args}</array>
 <key>WorkingDirectory</key><string>${xml(installation.releaseRoot)}</string>
-<key>EnvironmentVariables</key><dict><key>PATH</key><string>${xml(installation.pathEnv)}</string></dict>
+<key>EnvironmentVariables</key><dict>
+<key>HOME</key><string>${xml(dirname(installation.stateRoot))}</string>
+<key>PATH</key><string>${xml(installation.pathEnv)}</string>
+</dict>
 <key>RunAtLoad</key><true/><key>KeepAlive</key><false/>
 <key>StandardOutPath</key><string>${xml(join(installationPaths(installation.stateRoot).directory, 'supervisor.log'))}</string>
 <key>StandardErrorPath</key><string>${xml(join(installationPaths(installation.stateRoot).directory, 'supervisor.log'))}</string>
@@ -342,7 +345,8 @@ export async function registerManagedJob(
 			}
 			if (performance.now() >= deadline) return result;
 		} catch (error) {
-			if ((error as NodeJS.ErrnoException).code !== 'launch-job-starting' || performance.now() >= deadline) throw error;
+			const code = (error as NodeJS.ErrnoException).code;
+			if ((code !== 'launch-job-starting' && code !== 'launch-job-ambiguous-state') || performance.now() >= deadline) throw error;
 		}
 		await delay(100);
 	}

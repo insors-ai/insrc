@@ -34,6 +34,20 @@ export class DaemonRunFileOwnership {
 	get hasSocketPublication(): boolean { return this.listenerMayUnlink; }
 	markListenerClosed(): void { this.listenerMayUnlink = false; }
 
+	/** Hold an outer local lease for a grant acquired on the inherited supervisor channel. */
+	useBorrowedGuard(guard: RunFileGuard): RunFileLease {
+		if (this.guard !== undefined || guard.path !== this.paths.guardPath) throw new RunFileOwnershipError('cannot attach borrowed guard');
+		guard.assertOwned();
+		this.guard = guard;
+		this.depth = 1;
+		return { guard, release: () => {
+			if (this.guard !== guard || this.depth !== 1) throw new RunFileOwnershipError('borrowed guard still has local users');
+			guard.assertOwned();
+			this.depth = 0;
+			this.guard = undefined;
+		} };
+	}
+
 	lease(): RunFileLease {
 		try {
 			if (!this.guard) { mkdirSync(dirname(this.paths.guardPath), { recursive: true }); this.guard = acquireRunFileGuard(this.paths.guardPath); }

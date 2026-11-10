@@ -12,6 +12,7 @@ import { SupervisorFrameReader, SupervisorLifecycleError, encodeSupervisorFrame,
 import type { SupervisorExit, SupervisorReply, SupervisorRequest, SupervisorState } from '../shared/daemon-supervisor-protocol.js';
 import type { DarwinIncarnation } from '../shared/darwin-lifecycle.js';
 import type { InstallationMutationGate, MutationReservation } from '../shared/installation-mutation-gate.js';
+import type { SupervisorRunFiles } from './supervisor-run-files.js';
 
 export interface ChildEvents {
 	frame(frame: unknown): void;
@@ -84,6 +85,7 @@ interface OwnedGeneration {
 	forceAttempted: boolean;
 	forceSent: boolean;
 	reaped: boolean;
+	checkingReady: boolean;
 	failure: 'exit-unconfirmed' | 'ownership-conflict' | 'runtime-unavailable' | undefined;
 }
 
@@ -99,6 +101,7 @@ export interface SupervisorOptions {
 	readonly reconcileExit: (generation: string, pid: number | undefined) => Promise<void>;
 	readonly allowInitialStart: () => Promise<boolean>;
 	readonly publicArm: (generation: string) => Promise<void>;
+	readonly runFiles?: SupervisorRunFiles;
 	readonly spawnChild?: typeof spawnSupervisedDaemon;
 	readonly clock?: SupervisorClock;
 	readonly startupMs?: number;
@@ -115,6 +118,7 @@ export class DaemonSupervisor {
 	private active: OwnedGeneration | undefined;
 	private last: ConfirmedExit | undefined;
 	private failedStart: string | undefined;
+	private preparing = false;
 	private readonly clock: SupervisorClock;
 
 	constructor(private readonly options: SupervisorOptions) {
@@ -188,7 +192,23 @@ export class DaemonSupervisor {
 		const raced = this.existingStart(request);
 		if (raced !== undefined) return raced;
 		const generation = randomUUID();
+		this.preparing = true;
+		try {
+			return await this.spawnGeneration(request, reservation, owner, generation);
+		} finally { this.preparing = false; }
+	}
+
+	private async spawnGeneration(
+		request: SupervisorRequest, reservation: MutationReservation, owner: DarwinIncarnation, generation: string,
+	): Promise<SupervisorReply> {
+		await this.options.runFiles?.prepare(generation);
 		let child: ManagedChild;
+		try {
+			await this.options.installation.admit({ id: reservation.id, owner });
+		} catch (error) {
+			await this.options.runFiles?.reconcile(generation, undefined);
+			throw error;
+		}
 		try {
 			child = (this.options.spawnChild ?? spawnSupervisedDaemon)(this.options.daemon, generation, {
 				frame: frame => this.childFrame(generation, frame),
@@ -196,12 +216,13 @@ export class DaemonSupervisor {
 				spawnFailed: () => { void this.spawnFailed(generation); },
 			});
 		} catch {
+			await this.options.runFiles?.reconcile(generation, undefined);
 			return fail('runtime-unavailable', 'pinned daemon could not be spawned');
 		}
 		const active: OwnedGeneration = {
 			id: generation, predecessor: request.generation, child, state: 'starting',
 			deadline: undefined, cancel: undefined, drain: undefined, forceAttempted: false,
-			forceSent: false, reaped: false, failure: undefined,
+			forceSent: false, reaped: false, checkingReady: false, failure: undefined,
 		};
 		this.active = active;
 		this.failedStart = undefined;
@@ -210,6 +231,7 @@ export class DaemonSupervisor {
 	}
 
 	private existingStart(request: SupervisorRequest): SupervisorReply | undefined {
+		if (this.preparing) return fail('busy', 'previous generation is preparing to start');
 		if (this.active !== undefined) {
 			if (this.active.failure !== undefined) return fail(this.active.failure, 'previous generation is fenced');
 			if (request.generation === this.active.predecessor && this.active.state !== 'draining') {
@@ -272,6 +294,7 @@ export class DaemonSupervisor {
 		if (this.active !== active || active.reaped || active.forceAttempted) return;
 		active.forceAttempted = true;
 		active.state = 'draining';
+		this.options.runFiles?.fence(active.id);
 		active.child.closeChannel();
 		try { active.forceSent = active.child.kill(); } catch { active.forceSent = false; }
 		active.cancel = this.clock.schedule(() => {
@@ -286,21 +309,16 @@ export class DaemonSupervisor {
 			readSupervisorReply(frame, active.drain);
 			return;
 		}
-		const request = readSupervisorRequest(frame, { role: 'child', generation, leaseToken: null, drainId: active.drain?.id ?? null });
+		const request = readSupervisorRequest(frame, {
+			role: 'child', generation, leaseToken: this.options.runFiles?.token(generation) ?? null, drainId: active.drain?.id ?? null,
+		});
 		void this.handleChild(active, request);
 	}
 
 	private async handleChild(active: OwnedGeneration, request: SupervisorRequest): Promise<void> {
 		try {
 			if (request.op === 'ready') {
-				const pid = active.child.pid;
-				if (active.state !== 'starting' || pid === undefined) return fail('ownership-conflict', 'stale readiness');
-				await this.options.verifyReady(active.id, pid);
-				if (this.active !== active || active.state !== 'starting' || active.reaped || active.forceAttempted) return;
-				if (active.deadline !== undefined && this.clock.now() >= active.deadline) { this.force(active); return; }
-				active.cancel?.();
-				active.deadline = undefined;
-				active.state = 'running';
+				if (!await this.confirmReady(active)) return;
 			} else if (request.op === 'arm') {
 				if (request.armSource === 'public-rpc') await this.options.publicArm(active.id);
 				if (this.active !== active || active.reaped || active.forceAttempted) return;
@@ -308,11 +326,45 @@ export class DaemonSupervisor {
 					active.state = 'draining';
 					this.arm(active, request.deadlineMs ?? this.options.shutdownMs ?? 30_000);
 				}
+			} else if (request.op === 'guard-acquire' && this.options.runFiles !== undefined && active.state !== 'running') {
+				const leaseToken = await this.options.runFiles.grant(active.id);
+				if (this.active === active && !active.reaped && !active.forceAttempted) {
+					active.child.send({ v: 1, id: request.id, generation: active.id, ok: true, state: active.state, leaseToken });
+				}
+				return;
+			} else if (request.op === 'guard-release' && this.options.runFiles !== undefined && request.leaseToken !== undefined) {
+				this.options.runFiles.releaseGrant(active.id, request.leaseToken);
 			} else return fail('watchdog-protocol', 'unsupported inherited operation');
 			active.child.send(this.reply(request, active.id, active.state));
 		} catch (error) {
 			if (this.active === active && !active.reaped && !active.forceAttempted) active.child.send(this.failure(request, error));
 		}
+	}
+
+	private async confirmReady(active: OwnedGeneration): Promise<boolean> {
+		const pid = active.child.pid;
+		if (active.state !== 'starting' || pid === undefined || active.checkingReady) {
+			return fail('ownership-conflict', 'stale or duplicate readiness');
+		}
+		active.checkingReady = true;
+		try {
+			await this.options.verifyReady(active.id, pid);
+			if (!this.canReady(active)) return false;
+			await this.options.runFiles?.ready(active.id, pid);
+			if (!this.canReady(active)) return false;
+			if (active.deadline !== undefined && this.clock.now() >= active.deadline) { this.force(active); return false; }
+			await this.options.runFiles?.finishReady(active.id);
+			if (!this.canReady(active)) return false;
+			if (active.deadline !== undefined && this.clock.now() >= active.deadline) { this.force(active); return false; }
+			active.cancel?.();
+			active.deadline = undefined;
+			active.state = 'running';
+			return true;
+		} finally { active.checkingReady = false; }
+	}
+
+	private canReady(active: OwnedGeneration): boolean {
+		return this.active === active && active.state === 'starting' && !active.reaped && !active.forceAttempted;
 	}
 
 	private async spawnFailed(generation: string): Promise<void> {
@@ -323,7 +375,10 @@ export class DaemonSupervisor {
 		// Node emits a spawn error without a child PID. There is no process to reap.
 		active.reaped = true;
 		active.failure = 'runtime-unavailable';
-		try { await this.options.reconcileExit(active.id, undefined); }
+		try {
+			await this.options.runFiles?.reconcile(active.id, undefined);
+			await this.options.reconcileExit(active.id, undefined);
+		}
 		catch { active.failure = 'ownership-conflict'; return; }
 		this.failedStart = generation;
 		this.active = undefined;
@@ -340,7 +395,10 @@ export class DaemonSupervisor {
 			kind: active.forceSent && signal === os.signals.SIGKILL ? 'forced' : code === 0 ? 'graceful' : 'failed',
 			code, signal,
 		};
-		try { await this.options.reconcileExit(active.id, active.child.pid); }
+		try {
+			await this.options.runFiles?.reconcile(active.id, active.child.pid);
+			await this.options.reconcileExit(active.id, active.child.pid);
+		}
 		catch { active.failure = 'ownership-conflict'; return; }
 		this.last = { generation, exit };
 		this.active = undefined;

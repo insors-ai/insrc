@@ -9,6 +9,7 @@ import { SupervisorLifecycleError } from '../shared/daemon-supervisor-protocol.j
 import { InstallationMutationGate } from '../shared/installation-mutation-gate.js';
 import { rpc } from '../shared/ipc-client.js';
 import { readManagedInstallation, stageManagedInstallation } from '../shared/managed-daemon-installation.js';
+import { recoverInstalledManagedUpdate } from '../daemon/managed-update-recovery.js';
 import { PATHS } from '../shared/paths.js';
 
 const NOT_MANAGED = 10;
@@ -60,11 +61,22 @@ async function main(command: string): Promise<void> {
 		return;
 	}
 	if (command === 'recover') {
+		const gate = new InstallationMutationGate(installation.stateRoot);
+		const active = (await gate.read()).active;
+		if (active?.kind === 'update') {
+			const outcome = await recoverInstalledManagedUpdate(gate, active.id, await readDarwinIncarnation(process.pid));
+			process.stdout.write(`${outcome.decision}: ${outcome.detail}\n`);
+			if (outcome.decision === 'operator-recovery' && (await gate.read()).active !== null) process.exitCode = 4;
+			return;
+		}
 		await control.recoverStoppedLifecycle();
 		process.stdout.write('verified stopped lifecycle reservation recovered\n');
 		return;
 	}
-	if (command === 'update') throw new Error('managed installation requires the transactional updater');
+	if (command === 'update') {
+		process.stdout.write(JSON.stringify(await rpc('daemon.update', {}, undefined, { timeoutMs: 20_000 })) + '\n');
+		return;
+	}
 	if (command !== 'start' && command !== 'stop' && command !== 'restart') throw new Error('invalid lifecycle command');
 	const milliseconds = stopWait(process.argv[3] ?? '30');
 	try {

@@ -3,6 +3,7 @@
 import { setTimeout as delay } from 'node:timers/promises';
 import { accepted, openManagedSupervisorLink } from '../cli/services/managed-daemon-control.js';
 import type { ManagedSupervisorLink } from '../cli/services/managed-daemon-control.js';
+import type { SupervisorReply } from '../shared/daemon-supervisor-protocol.js';
 import type { MutationReservation, InstallationMutationGate } from '../shared/installation-mutation-gate.js';
 import {
 	publishManagedSelector, registerManagedJob, removeManagedJob, requireQuiescentInstallation,
@@ -42,18 +43,20 @@ interface HandoffEffects {
 	readonly inspectStores: (pins: ManagedUpdatePins) => Promise<void>;
 }
 
-const effects: HandoffEffects = {
-	async connect(installation) {
-		const deadline = performance.now() + 4_000;
-		for (;;) {
-			try { return await openManagedSupervisorLink(installation); }
-			catch (error) {
-				const code = (error as NodeJS.ErrnoException).code;
-				if (performance.now() >= deadline || !['ENOENT', 'ECONNREFUSED'].includes(code ?? '')) throw error;
-				await delay(100);
-			}
+export async function connectManagedSupervisor(installation: ManagedInstallation): Promise<ManagedSupervisorLink> {
+	const deadline = performance.now() + 4_000;
+	for (;;) {
+		try { return await openManagedSupervisorLink(installation); }
+		catch (error) {
+			const code = (error as NodeJS.ErrnoException).code;
+			if (performance.now() >= deadline || !['ENOENT', 'ECONNREFUSED'].includes(code ?? '')) throw error;
+			await delay(100);
 		}
-	},
+	}
+}
+
+const effects: HandoffEffects = {
+	connect: connectManagedSupervisor,
 	async remove(installation, revalidate) {
 		await requireQuiescentInstallation(installation);
 		return removeManagedJob(installation, revalidate);
@@ -70,7 +73,9 @@ const effects: HandoffEffects = {
 	},
 };
 
-async function waitForGeneration(link: ManagedSupervisorLink, generation: string, expected: 'exited' | 'running', milliseconds: number) {
+export async function waitForGeneration(
+	link: ManagedSupervisorLink, generation: string, expected: 'exited' | 'running', milliseconds: number,
+): Promise<Extract<SupervisorReply, { ok: true }>> {
 	const until = performance.now() + milliseconds;
 	for (;;) {
 		const status = accepted(await link.call({ op: 'status', generation }));

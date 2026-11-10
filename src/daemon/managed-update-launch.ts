@@ -11,8 +11,8 @@ import type { MutationReservation } from '../shared/installation-mutation-gate.j
 import { readManagedInstallation, readManagedUpdateInputs, verifyManagedReleaseRuntime } from '../shared/managed-daemon-installation.js';
 import { PATHS } from '../shared/paths.js';
 import { readInstalledCommit } from './installed-commit.js';
-import { qualifyManagedUpdate, stageManagedUpdate } from './managed-update-handoff.js';
-import type { HandoffReceipt, ManagedUpdatePins } from './managed-update-handoff.js';
+import { qualifyManagedUpdate } from './managed-update-handoff.js';
+import type { ManagedUpdatePins } from './managed-update-handoff.js';
 import { readReleaseCompatibility } from './release-compatibility.js';
 
 type Update = Extract<MutationReservation, { kind: 'update' }>;
@@ -76,10 +76,10 @@ function waitForReservation(child: ChildProcess): Promise<string> {
 }
 
 /** The detached owner reserves first, and may only stage the update after the private release. */
-export async function runAcknowledgedManagedUpdate(
+export async function runAcknowledgedManagedUpdate<T>(
 	gate: UpdateGate, reserve: () => Promise<Update>, pins: ManagedUpdatePins,
-	stage = stageManagedUpdate,
-): Promise<HandoffReceipt | undefined> {
+	stage: (gate: UpdateGate, update: Update, pins: ManagedUpdatePins) => Promise<T>,
+): Promise<T | undefined> {
 	const update = await reserve();
 	if (!await waitForLaunch(update.id)) {
 		await gate.cancelUnstartedUpdate(update);

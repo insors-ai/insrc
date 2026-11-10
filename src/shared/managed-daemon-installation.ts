@@ -4,13 +4,15 @@ import { execFile } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { constants } from 'node:fs';
 import { access, lstat, mkdir, open, readFile, realpath, rename, rm, unlink, writeFile } from 'node:fs/promises';
+import { createConnection } from 'node:net';
 import { dirname, isAbsolute, join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { promisify } from 'node:util';
-import { darwinLaunchLabel, observeDarwinExit, readDarwinIncarnation, verifyDarwinJobProcess, verifyDarwinLaunchJob } from './darwin-lifecycle.js';
+import { darwinLaunchLabel, matchesDarwinPeer, observeDarwinExit, readDarwinIncarnation, verifyDarwinJobProcess, verifyDarwinLaunchJob } from './darwin-lifecycle.js';
 import type { DarwinIncarnation, DarwinLaunchJob, VerifiedDarwinLaunchJob } from './darwin-lifecycle.js';
 import { PATHS } from './paths.js';
 import { SupervisorLifecycleError } from './daemon-supervisor-protocol.js';
+import { runFileIdentity, sameRunFile } from './daemon-run-files.js';
 
 const exec = promisify(execFile);
 const MANIFEST = 'installation.json';
@@ -171,6 +173,21 @@ function descriptor(job: DarwinLaunchJob, installation: ManagedInstallation): st
 `;
 }
 
+/** A crash between the two atomic selector writes can leave either pinned file on either side. */
+export async function verifyManagedSelectorFiles(first: ManagedInstallation, second = first): Promise<void> {
+	const paths = installationPaths(first.stateRoot);
+	if (first.stateRoot !== second.stateRoot) failure('selector pins refer to different installations');
+	await privateDirectory(paths.directory);
+	await privateFile(paths.descriptor);
+	const selected = await parseInstallation(paths.manifest, first.stateRoot);
+	const contents = await readFile(paths.descriptor, 'utf8');
+	const allowed = [first, second];
+	if (!allowed.some(pin => JSON.stringify(pin) === JSON.stringify(selected))
+		|| !allowed.some(pin => contents === descriptor(supervisorJob(pin), pin))) {
+		failure('installation selector or descriptor is outside the pinned releases');
+	}
+}
+
 async function publishPrivateFile(path: string, contents: string): Promise<void> {
 	const temporary = `${path}.${randomUUID()}`;
 	try {
@@ -201,7 +218,9 @@ export async function publishManagedSelector(installation: ManagedInstallation, 
 }
 
 /** Unload the pinned job after its child has exited and retain exact proof of the job's own exit. */
-export async function removeManagedJob(installation: ManagedInstallation, revalidate: () => Promise<void>): Promise<{
+export async function removeManagedJob(
+	installation: ManagedInstallation, revalidate: () => Promise<void>, expected?: DarwinIncarnation,
+): Promise<{
 	job: VerifiedDarwinLaunchJob;
 	startedAt: string | null;
 } | undefined> {
@@ -211,9 +230,13 @@ export async function removeManagedJob(installation: ManagedInstallation, revali
 	const priorSocket = await lstat(socket).catch((error: NodeJS.ErrnoException) => {
 		if (error.code !== 'ENOENT') throw error;
 	});
+	const socketIdentity = runFileIdentity(socket);
 	if (priorSocket !== undefined && (!priorSocket.isSocket() || priorSocket.uid !== uid())) failure('unexpected supervisor socket');
 	if (job.pid === null && priorSocket !== undefined) failure('inactive job has an unverifiable socket');
 	const target = job.pid === null ? undefined : await readDarwinIncarnation(job.pid);
+	if (expected !== undefined && (target === undefined || !matchesDarwinPeer(target, target, expected))) {
+		failure('registered supervisor no longer matches its recorded incarnation');
+	}
 	const observer = target === undefined ? undefined : await observeDarwinExit(target, 10_000);
 	try {
 		await revalidate();
@@ -224,17 +247,30 @@ export async function removeManagedJob(installation: ManagedInstallation, revali
 		if (observer !== undefined && !await observer.exited) failure('supervisor exit is unconfirmed');
 		if (await inspectManagedJob(installation) !== undefined) failure('supervisor job removal is unconfirmed');
 		if (priorSocket !== undefined) {
-			const current = await lstat(socket).catch((error: NodeJS.ErrnoException) => {
-				if (error.code !== 'ENOENT') throw error;
-			});
+			const current = runFileIdentity(socket);
 			if (current !== undefined) {
-				if (current.dev !== priorSocket.dev || current.ino !== priorSocket.ino) failure('supervisor socket changed during unload');
+				if (socketIdentity === undefined || !sameRunFile(current, socketIdentity)) failure('supervisor socket changed during unload');
 				await revalidate();
+				await verifyNoSupervisorListener(socket);
+				const after = runFileIdentity(socket);
+				if (after === undefined || !sameRunFile(after, current)) failure('supervisor socket changed during stale-listener check');
 				await unlink(socket);
 			}
 		}
 	} finally { await observer?.close(); }
 	return { job, startedAt: target?.startedAt ?? null };
+}
+
+async function verifyNoSupervisorListener(path: string): Promise<void> {
+	await new Promise<void>((resolve, reject) => {
+		const socket = createConnection(path);
+		socket.setTimeout(2_000, () => socket.destroy(new Error('supervisor listener check timed out')));
+		socket.once('connect', () => { socket.destroy(); reject(new Error('supervisor socket still has a listener')); });
+		socket.once('error', (error: NodeJS.ErrnoException) => {
+			if (error.code === 'ECONNREFUSED') resolve();
+			else reject(error);
+		});
+	});
 }
 
 /** Stage a private launch descriptor. The supported rollout must explicitly enable it later. */

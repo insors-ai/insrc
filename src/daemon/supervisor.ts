@@ -167,7 +167,7 @@ export class DaemonSupervisor {
 	}
 
 	private async authorize(request: SupervisorRequest, owner: DarwinIncarnation): Promise<MutationReservation> {
-		const { active } = await this.options.installation.read();
+		const { active, outcome } = await this.options.installation.read();
 		if (active === null || (active.kind === 'update' ? request.updateId !== active.id : request.updateId !== undefined)
 			|| (active.kind !== 'update' && active.kind !== 'restart' && active.kind !== request.op)) {
 			return fail('busy', 'lifecycle operation has no matching installation reservation');
@@ -175,6 +175,14 @@ export class DaemonSupervisor {
 		if (active.owner.pid !== owner.pid || active.owner.uid !== owner.uid
 			|| active.owner.startedAt !== owner.startedAt || active.owner.executable !== owner.executable) {
 			return fail('busy', 'installation lifecycle operation is owned by another controller');
+		}
+		if (active.recovery && outcome?.id === active.id && outcome.decision === 'operator-recovery') {
+			const pending = active.entries.at(-1);
+			const rollbackStep = request.op === 'stop' ? 'rollback-candidate-stop' : 'rollback-start';
+			if (pending?.step !== rollbackStep || pending.receipt !== undefined) {
+				return fail('ownership-conflict', 'recovery admits only its outstanding rollback operation');
+			}
+			return this.options.installation.admit({ id: active.id, owner }, 'reconcile');
 		}
 		return this.options.installation.admit({ id: active.id, owner });
 	}
@@ -220,7 +228,7 @@ export class DaemonSupervisor {
 			}
 		}
 		await this.verifyRuntime();
-		await this.options.installation.admit({ id: reservation.id, owner });
+		await this.authorize(request, owner);
 		const raced = this.existingStart(request);
 		if (raced !== undefined) return raced;
 		const generation = randomUUID();
@@ -237,7 +245,7 @@ export class DaemonSupervisor {
 		await this.options.runFiles?.prepare(generation);
 		let child: ManagedChild;
 		try {
-			await this.options.installation.admit({ id: reservation.id, owner });
+			await this.authorize(request, owner);
 		} catch (error) {
 			await this.options.runFiles?.reconcile(generation, undefined);
 			throw error;

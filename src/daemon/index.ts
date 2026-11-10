@@ -17,6 +17,7 @@ import { UnderstandingService } from '../understanding/service.js';
  */
 
 import { mkdirSync, existsSync, rmSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { runBootSteeringRefresh } from './steering-inject.js';
 import { PATHS } from '../shared/paths.js';
 import type { ProgressKind } from '../shared/task-progress.js';
@@ -47,6 +48,7 @@ import { IndexerService } from '../indexer/index.js';
 import { IpcServer, directDispatch } from './server.js';
 import { declareLiveStoreOwner } from '../db/graph/store.js';
 import { startManagedDaemonProbation } from './managed-daemon-probation.js';
+import { launchManagedUpdate } from './managed-update-launch.js';
 import { installStoreFileOpenDiagnostic } from './store-file-open-diagnostic.js';
 import { reportFatal } from './fatal.js';
 import { createShutdown, exitRespectingStoreHealth, realEndDeps } from './shutdown.js';
@@ -526,7 +528,16 @@ async function main(): Promise<void> {
 	// s2): routed classes go to their workers, everything else runs here.
 	const local = router !== undefined ? lazyForward(buildRuntime).forward : buildRuntime();
 	localForward = local;
-	const forward = connectionSessionRuntime.forward(router?.forward ?? local);
+	const normalForward = router?.forward ?? local;
+	const managedUpdate = directDispatch({
+		'daemon.update': async (_params, context) => {
+			if (context?.awaitUpdateReply === undefined) throw new Error('managed update requires a unary socket request');
+			const entry = fileURLToPath(new URL('../bin/insrc-daemon-update.js', import.meta.url));
+			return launchManagedUpdate(entry, [], context.awaitUpdateReply);
+		},
+	});
+	const forward = connectionSessionRuntime.forward((request, deliver) =>
+		(managed !== undefined && request.method === 'daemon.update' ? managedUpdate : normalForward)(request, deliver));
 	const server = probation?.server ?? new IpcServer(forward);
 	server.onConnectionClose(context => {
 		connectionSessionRuntime.disconnect(context);

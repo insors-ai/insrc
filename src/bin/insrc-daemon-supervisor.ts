@@ -76,8 +76,12 @@ async function main(): Promise<void> {
 				}
 				env['INSRC_PROBATION_UPDATE'] = reservation.id;
 				env['INSRC_PROBATION_RELEASE'] = candidate.releaseId;
-			} else if (reservation.kind === 'update' && installation.releaseId !== reservation.predecessor.priorRelease) {
-				throw new Error('pinned release does not belong to this update');
+			} else if (reservation.kind === 'update') {
+				const restore = reservation.entries.at(-1);
+				if (installation.releaseId !== reservation.predecessor.priorRelease || restore?.step !== 'rollback-start'
+					|| restore.intent !== installation.releaseId || restore.receipt !== undefined) {
+					throw new Error('prior release start lacks rollback admission');
+				}
 			}
 			return { ...daemon, env };
 		},

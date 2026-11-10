@@ -483,3 +483,30 @@ test('T11-unsupported-model-effort-fails-before-dispatch: VibeSelectionError pre
 		assert.ok(!f.calls().some(c => c.method === 'turn/start'));
 	} finally { f.cleanup(); }
 });
+
+test('T6-vibe-activity-coordinator-dispatch-fake-transport: the coordinator mode:\'activity\' dispatch envelope reaches the vibe app-server branch via a fake transport', async (t) => {
+	// design-review/coordinator.ts:379 and task-review/coordinator.ts:223 both call
+	// provider.runReviewSession(prompt, schema, { mode:'activity', cwd, inactivityMs,
+	// signal, internalRetry:false, onActivity, onCandidate }). For kind 'vibe' that
+	// reaches CliProvider.activityReview's vibe branch: a verified app-server
+	// session over the fake transport, frames into ReviewActivityStream('vibe'),
+	// and acceptance through onCandidate. This test drives exactly that envelope.
+	const app = fakeActivityServer('accepted');
+	t.after(() => app.cleanup());
+	const provider = new CliProvider({ kind: 'vibe', vibeAppServerPath: join(app.cwd, 'app-server.mjs'), model: 'mistral-vibe-cli-latest', effort: 'high', timeoutMs: 10_000 });
+	const activities: string[] = [];
+	const value = await provider.runReviewSession('review the artifact', ACTIVITY_SCHEMA, {
+		mode: 'activity', cwd: app.cwd, signal: new AbortController().signal, inactivityMs: 1_800_000, internalRetry: false,
+		onActivity: e => { activities.push(e.kind); },
+		onDiagnostic: () => {},
+		onCandidate: async v => ({ accepted: (v as { verdict?: string }).verdict === 'holds' }),
+	});
+	assert.deepEqual(value, { verdict: 'holds' }, 'the accepted candidate is returned through the coordinator envelope');
+	const appCalls = app.calls();
+	assert.ok(appCalls.some(c => c.method === 'session/start'), 'app-server session opened');
+	assert.ok(appCalls.some(c => c.method === 'turn/start'), 'vibe app-server turn dispatched through the fake transport');
+	assert.equal(appCalls.find(c => c.method === 'session/start')?.policy?.enabledTools?.join(','), 'read_file,mcp_insrc_*', 'read-only tool policy on the dispatched session');
+	const turn = appCalls.find(c => c.method === 'turn/start');
+	assert.match(turn?.prompt ?? '', /review the artifact/, 'the coordinator prompt reached the vibe turn');
+	assert.ok(activities.includes('session_started') && activities.includes('model_output'), 'activity events emitted through onActivity like claude/codex');
+});

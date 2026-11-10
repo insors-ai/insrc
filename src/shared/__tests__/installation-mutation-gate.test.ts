@@ -61,9 +61,10 @@ test('Durable update reservation blocks competing mutations and binds the owner'
 	await rejects('ownership-conflict', second.admit(update));
 	await second.admit(update, 'activate');
 	await gate.release(update);
-	assert.deepEqual(await second.read(), {
-		version: 1, root, active: null, outcome: { id: update.id, decision: 'committed', detail: 'validated g1' },
-	});
+	const finished = await second.read();
+	assert.equal(finished.active, null);
+	assert.ok(finished.outcome?.finishedAt && Number.isFinite(Date.parse(finished.outcome.finishedAt)));
+	assert.deepEqual(finished.outcome, { id: update.id, decision: 'committed', detail: 'validated g1', finishedAt: finished.outcome.finishedAt });
 });
 
 test('Admission rejects foreign update IDs, owner PID reuse and connections opened before lease publication', options, async () => {

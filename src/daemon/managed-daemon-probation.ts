@@ -15,7 +15,7 @@ import { IndexQueue } from './queue.js';
 import { qualifiedPairFromReservation, verifyQuiescedReleaseStores } from './release-compatibility.js';
 import { directDispatch, IpcServer } from './server.js';
 import type { ForwardRequest } from './server.js';
-import { readUpdateOutcome } from './update-runner.js';
+import { readPublicInstalledCommit, readPublicUpdateOutcome } from './managed-update-ipc.js';
 
 export interface DaemonProbation {
 	readonly server: IpcServer;
@@ -51,11 +51,11 @@ export async function startManagedDaemonProbation(
 	const probationStatus = async (): Promise<DaemonStatus> => ({
 		uptime: Math.floor((Date.now() - startedAt) / 1000),
 		repos: [], queueDepth: 0, embeddingsPending: 0,
-		installedCommit: active.predecessor.priorCommit,
+		installedCommit: await readPublicInstalledCommit(gate, updateId),
 	});
 	let forward = directDispatch({
 		'daemon.status': probationStatus,
-		'daemon.updateOutcome': async () => readUpdateOutcome(),
+		'daemon.updateOutcome': async () => readPublicUpdateOutcome(gate),
 	});
 	const server = new IpcServer((request, deliver) => forward(request, deliver));
 	writePid();

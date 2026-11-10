@@ -66,7 +66,7 @@ import { registerParkOffer } from './steps/workflow-step/park-offer.js';
 import { registerSignoff } from './steps/workflow-step/signoff-registration.js';
 
 import { writePid, isAlreadyRunning, bootstrapEmbeddingModel, getModelState } from './lifecycle.js';
-import { readInstalledCommit } from './installed-commit.js';
+import { readPublicInstalledCommit } from './managed-update-ipc.js';
 import { ThreadServices, currentLmdbFileSizeMb, maintenanceConfig, sessionIdleMs, threadsEnabled } from './threads/main-services.js';
 import type { SessionPool } from './threads/session-pool.js';
 import { startSessionRouting } from './threads/session-routing.js';
@@ -267,10 +267,10 @@ async function main(): Promise<void> {
 	// Idle maintenance (graph compaction), made once the workers are (below).
 	let maintenance: MaintenanceController | undefined;
 	const threadServices = threadsEnabled()
-		? new ThreadServices(() => ({
+		? new ThreadServices(async () => ({
 			startedAt,
 			modelState: getModelState(),
-			installedCommit: readInstalledCommit(),
+			installedCommit: await readPublicInstalledCommit(),
 			lmdbFileSizeMb: currentLmdbFileSizeMb(),
 			maintenance: maintenance?.status(),
 		}))

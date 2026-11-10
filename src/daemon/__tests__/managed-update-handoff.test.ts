@@ -135,8 +135,8 @@ async function waitForFile(path: string): Promise<void> {
 	}
 }
 
-test('A lost or unwritten update acknowledgement keeps the detached helper behind its launch gate', options, async t => {
-	for (const delivery of ['disconnect', 'failed-write', 'written']) {
+async function exerciseUpdateReply(t: TestContext, deliveries: readonly string[]): Promise<void> {
+	for (const delivery of deliveries) {
 		const { root, gate } = await rootFixture(t);
 		const socket = join(root, 'test.sock');
 		const fixture = fileURLToPath(new URL('./fixtures/managed-update-launch-child.ts', import.meta.url));
@@ -184,4 +184,10 @@ test('A lost or unwritten update acknowledgement keeps the detached helper behin
 			await observed;
 		}
 	}
-});
+}
+
+test('A lost or unwritten update acknowledgement keeps the detached helper behind its launch gate', options, t =>
+	exerciseUpdateReply(t, ['disconnect', 'failed-write', 'written']));
+
+test('Managed update helper waits for acknowledgement write before destructive work', options, t =>
+	exerciseUpdateReply(t, ['written']));

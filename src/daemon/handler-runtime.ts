@@ -51,7 +51,7 @@ import { claudeModels, modelDefinitions, resolveRoleWire } from './model-definit
 import { approveCheck, checkModel, rejectCheck } from './model-check.js';
 import { sharedAdminHandlers } from './admin-handlers.js';
 import { getGraphStore } from '../db/graph/store.js';
-import { readInstalledCommit } from './installed-commit.js';
+import { readPublicInstalledCommit } from './managed-update-ipc.js';
 
 import { getModelState } from './lifecycle.js';
 import { resolveClosure, searchEntities, findCallers, findCallees, closureEntities, unreachableEntities } from '../db/search.js';
@@ -968,7 +968,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 				modelState: getModelState(),
 				// Story S002 (sc2): the daemon's installed source commit for freshness
 				// checks. Best-effort git read; '' when undeterminable, never throws.
-				installedCommit: readInstalledCommit(),
+				installedCommit: await readPublicInstalledCommit(),
 				lmdbFileSizeMb,
 			});
 			return status;

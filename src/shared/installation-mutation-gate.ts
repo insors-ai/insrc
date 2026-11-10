@@ -60,6 +60,7 @@ export interface DurableUpdateOutcome {
 	readonly id: string;
 	readonly decision: UpdateDecision;
 	readonly detail: string;
+	readonly finishedAt?: string;
 }
 
 export interface InstallationJournal {
@@ -159,7 +160,8 @@ function readJournal(bytes: string, root: string, uid: number): InstallationJour
 		|| (active.recovery !== undefined && active.recovery !== true)
 		|| !validRequest(active) || active.owner.uid !== uid)) conflict('invalid installation reservation');
 	if (outcome !== null && (!object(outcome) || !text(outcome.id) || !validDecision(outcome.decision)
-		|| !text(outcome.detail))) conflict('invalid installation outcome');
+		|| !text(outcome.detail) || (outcome.finishedAt !== undefined
+			&& (typeof outcome.finishedAt !== 'string' || !Number.isFinite(Date.parse(outcome.finishedAt)))))) conflict('invalid installation outcome');
 	const journal = parsed as unknown as InstallationJournal;
 	if (journal.active !== null && journal.outcome !== null && journal.active.id === journal.outcome.id
 		&& journal.active.kind !== 'update') {
@@ -344,7 +346,7 @@ export class InstallationMutationGate {
 				|| state.outcome?.id === active.id || (last !== undefined && last.receipt === undefined && decision !== 'operator-recovery')) {
 				conflict('installation outcome cannot be published');
 			}
-			await this.write({ ...state, outcome: { id: active.id, decision, detail } });
+			await this.write({ ...state, outcome: { id: active.id, decision, detail, finishedAt: new Date().toISOString() } });
 		});
 	}
 

@@ -158,7 +158,7 @@ export class ThreadServices {
 	private maintenance: (() => Promise<unknown>) | undefined;
 	private route: ((request: RouteRequest) => Promise<unknown>) | undefined;
 
-	constructor(private readonly info: () => DaemonInfo, private readonly steps: SharedStepStateStore = new LocalStepStateStore()) {
+	constructor(private readonly info: () => DaemonInfo | Promise<DaemonInfo>, private readonly steps: SharedStepStateStore = new LocalStepStateStore()) {
 		// The main thread joins the same blocks it hands to every worker.
 		installStoreGuard(this.guardBlock);
 		installLockManager(this.lockBlock);

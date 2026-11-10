@@ -21,7 +21,8 @@ import { probeMcpClients } from './mcp-register.js';
 import { validateRepoPath } from '../db/repos.js';
 import type { RpcHandlers } from './server.js';
 import { readSteeringBlock } from './steering-inject.js';
-import { launchUpdate, makeUpdateHandlers, readUpdateOutcome } from './update-runner.js';
+import { launchUpdate, makeUpdateHandlers } from './update-runner.js';
+import { readPublicUpdateOutcome } from './managed-update-ipc.js';
 import { isManagedDaemon } from './managed-daemon-lifecycle.js';
 
 const log = getLogger('daemon');
@@ -109,7 +110,7 @@ export function sharedAdminHandlers(shutdown: (reason: string) => void | Promise
 				if (isManagedDaemon()) throw new Error('managed daemon update is not available yet');
 				return launchUpdate();
 			},
-			readOutcome: readUpdateOutcome,
+			readOutcome: () => readPublicUpdateOutcome(),
 			scheduleShutdown: () => {
 				const t = setTimeout(() => {
 					void Promise.resolve(shutdown('daemon.update RPC')).catch(error => log.error({ error }, 'daemon update shutdown failed'));

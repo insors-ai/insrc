@@ -19,6 +19,7 @@ import type { ManagedInstallation, RegisteredManagedJob } from '../../shared/man
 import { completeLegacyMigration, completeManagedUpdate, recoverInstalledManagedUpdate } from '../managed-update-recovery.js';
 import { qualifyManagedUpdate, stageManagedUpdate } from '../managed-update-handoff.js';
 import { readReleaseCompatibility } from '../release-compatibility.js';
+import { readPublicInstalledCommit, readPublicUpdateOutcome } from '../managed-update-ipc.js';
 
 const owner: DarwinIncarnation = { pid: 10, uid: 501, startedAt: '0:0', executable: '/usr/bin/node' };
 const update: Extract<MutationReservation, { kind: 'update' }> = {
@@ -237,6 +238,39 @@ test('Fail hello after candidate job registration before child start, remove the
 		'remove:candidate', 'select:prior', 'register:prior', 'start:prior',
 	]);
 	assert.equal((await f.gate.read()).active, null);
+});
+
+test('Observe in-flight status throughout injected rollback, then exactly one terminal outcome after restored readiness or a durable operator-recovery decision', mac, async t => {
+	for (const leaveFenced of [false, true]) {
+		const f = await installationFixture(t);
+		const active = await f.gate.reserve({ kind: 'update', owner: f.controller, predecessor: f.predecessor }) as typeof update;
+		f.refuseHello();
+		const host = {
+			...f.host,
+			async select(pin: ManagedInstallation, authorize: () => Promise<void>) {
+				await f.host.select(pin, authorize);
+				assert.equal(await readPublicInstalledCommit(f.gate, undefined, () => 'candidate-head'), 'prior-head');
+				assert.equal(await readPublicUpdateOutcome(f.gate), null);
+			},
+			async remove(pin: ManagedInstallation, authorize: () => Promise<void>, expected?: DarwinIncarnation) {
+				if (pin.releaseId === 'candidate') {
+					assert.equal(await readPublicInstalledCommit(f.gate, undefined, () => 'candidate-head'), 'prior-head');
+					assert.equal(await readPublicUpdateOutcome(f.gate), null);
+					if (leaveFenced) throw new Error('candidate exit is uncertain');
+				}
+				return f.host.remove(pin, authorize, expected);
+			},
+		};
+		const result = await completeManagedUpdate(f.gate, active, f.pins, host, (gate, reservation, pins) =>
+			stageManagedUpdate(gate, reservation, pins, { ...host, async inspectStores() {} }));
+		assert.equal(result.decision, leaveFenced ? 'operator-recovery' : 'rolled-back');
+		const state = await readPublicUpdateOutcome(f.gate);
+		assert.equal(state?.updateId, active.id);
+		assert.equal(state?.state, 'failed');
+		assert.equal(await readPublicInstalledCommit(f.gate, undefined, () => leaveFenced ? 'candidate-head' : 'prior-head'), 'prior-head');
+		await assert.rejects(f.gate.publishOutcome(active, 'committed', 'duplicate'));
+		assert.deepEqual(await readPublicUpdateOutcome(f.gate), state);
+	}
 });
 
 async function killController(

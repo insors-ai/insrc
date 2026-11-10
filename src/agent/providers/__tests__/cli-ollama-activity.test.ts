@@ -24,6 +24,7 @@ import { join } from 'node:path';
 
 import { CliProvider, claudeReviewSessionArgs, type OllamaTarget } from '../cli-provider.js';
 import { OllamaTargetError } from '../ollama-target.js';
+import { ReviewOutputFailureError, type ReviewDiagnosticSnapshot } from '../../../shared/review-diagnostics.js';
 
 const VARS = ['ANTHROPIC_BASE_URL', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_API_KEY', 'CLAUDE_CODE_OAUTH_TOKEN', 'CLAUDE_CODE_USE_BEDROCK', 'CLAUDE_CODE_USE_VERTEX', 'INSRC_ACTIVITY_SENTINEL'] as const;
 /* t2 locks the withOllama contract at the activity call site: endpoint + auth from the
@@ -148,8 +149,24 @@ for (const f of frames) process.stdout.write(JSON.stringify(f) + '\\n');
 test('T3-ollama-activity-preflight-rejects-before-spawn: a failed checkOllama throws OllamaTargetError and spawns no child', async () => {
 	rmSync(callsPath, { force: true });
 	const p = new CliProvider({ kind: 'claude', binPath: bin, model: 'glm-5.3:cloud', ollama: TARGET, ollamaCheck: failing, timeoutMs: 20_000 });
-	await assert.rejects(p.runReviewSession('review the repo', SCHEMA, activityOpts()), (e: unknown) => e instanceof OllamaTargetError && e.cause === 'ollama-unreachable');
+	await assert.rejects(p.runReviewSession('review the repo', SCHEMA, activityOpts()), (e: unknown) =>
+		e instanceof ReviewOutputFailureError && e.diagnostic.terminal?.reason === 'ollama_preflight' && /Ollama is not running/.test(e.diagnostic.terminal.message ?? ''),
+		'a failed checkOllama rejects before any child, wrapped so its diagnostic is persistable');
 	assert.equal(calls().length, 0, 'no child process was spawned');
+});
+
+test('T3b-ollama-activity-preflight-diagnostic-carries-backend-cause: the preflight rejection reaches onDiagnostic as a ReviewOutputFailureError snapshot with the real cause', async () => {
+	rmSync(callsPath, { force: true });
+	const p = new CliProvider({ kind: 'claude', binPath: bin, model: 'glm-5.3:cloud', effort: 'high', ollama: TARGET, ollamaCheck: failing, timeoutMs: 20_000 });
+	const snapshots: ReviewDiagnosticSnapshot[] = [];
+	const opts = { ...activityOpts(), onDiagnostic: (s: ReviewDiagnosticSnapshot) => { snapshots.push(s); } };
+	const err = await p.runReviewSession('review the repo', SCHEMA, opts).then(() => null, (e: unknown) => e);
+	assert.ok(err instanceof ReviewOutputFailureError, 'the preflight rejection is a ReviewOutputFailureError so coordinators persist its diagnostic');
+	assert.equal(err.diagnostic.terminal?.reason, 'ollama_preflight');
+	assert.match(err.diagnostic.terminal?.message ?? '', /Ollama is not running/, 'the real backend cause is in the terminal message');
+	assert.ok(snapshots.some(s => s.terminal?.reason === 'ollama_preflight' && /Ollama is not running/.test(s.terminal.message ?? '')), 'onDiagnostic saw the backend detail');
+	assert.ok(snapshots.every(s => s.provider === 'claude'));
+	assert.equal(calls().length, 0, 'still no child spawned');
 });
 
 test('T4-plain-provider-activity-env-unchanged: without an Ollama target the activity child inherits the daemon env verbatim', async () => {

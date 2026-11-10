@@ -76,6 +76,7 @@ import { codexStrictSchema, rootUnionKey, schemaKeywordSummary, validateCodexRep
 import { buildRetryNote, validateAgainstSchema, withStructuredRetry } from './structured-output.js';
 import { ModelResponseShapeError } from './model-call-error.js';
 import { checkOllamaTarget, OllamaTargetError } from './ollama-target.js';
+import { ReviewOutputFailureError } from '../../shared/review-diagnostics.js';
 import { getModelRegistry } from '../../daemon/model-registry.js';
 import { openVerifiedVibeSession, runVerifiedVibeTurn, vibeAssistantOutput, VibeTurnError, type VibeCatalogModel } from '../../shared/vibe-session.js';
 
@@ -599,6 +600,9 @@ export class CliProvider implements LLMProvider {
 					throw err;
 				}
 				if (err instanceof OllamaTargetError) throw err;
+				// A preflight rejection is wrapped in ReviewOutputFailureError so the
+				// checkpoint diagnostic carries the backend cause; it is not transient.
+				if (err instanceof ReviewOutputFailureError && err.diagnostic.terminal?.reason === 'ollama_preflight') throw err;
 				// The subprocess runner reports its own kill as exit code -9.
 				if (/exited with -9\b/.test(msg)) throw new ReviewSessionTimeoutError(opts.deadlineMs);
 				if (attempt >= maxAttempts || !isTransientCliError(transienceText(err))) throw err;
@@ -672,15 +676,22 @@ export class CliProvider implements LLMProvider {
 
  private async activityReview<T>(prompt:string,schema:StructuredSchema,opts:ActivityReviewSessionOpts):Promise<T>{
   if(this.kind==='vibe') return this.vibeActivityReview<T>(prompt,schema,opts);
-  // Same Ollama preflight + per-child env as the bounded claude path (ISSUE-738d62b848fd173f):
-  // a rejected check throws OllamaTargetError before any child is spawned.
-  await this.checkOllama();
-  const childEnv=this.withOllama(process.env);
   const acceptedStop=new AbortController();
   const signal=AbortSignal.any([opts.signal,acceptedStop.signal]);
   const parser=new ReviewActivityStream<T>(this.kind,schema,opts,()=>acceptedStop.abort());
   let directory:string|undefined;
   try{
+   // Same Ollama preflight + per-child env as the bounded claude path (ISSUE-738d62b848fd173f):
+   // a rejected check throws before any child is spawned, and its cause reaches onDiagnostic so
+   // the checkpoint diagnostic carries the real backend response, not a bare generic.
+   try{await this.checkOllama();}
+   catch(err){
+    if(err instanceof OllamaTargetError){
+     throw await parser.failure('ollama_preflight',`Ollama preflight failed: ${err.message}`,undefined,err.message);
+    }
+    throw err;
+   }
+   const childEnv=this.withOllama(process.env);
    let args:readonly string[];
    if(this.kind==='claude'){
     const original=claudeReviewSessionArgs(schema,this.modelArgs(),opts.codeTaskCommands);

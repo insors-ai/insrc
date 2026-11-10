@@ -7,7 +7,7 @@ import { lstat, mkdir, open, realpath, rename, rm } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { matchesDarwinPeer, readDarwinIncarnation } from './darwin-lifecycle.js';
-import type { DarwinIncarnation } from './darwin-lifecycle.js';
+import type { DarwinIncarnation, DarwinLaunchJob } from './darwin-lifecycle.js';
 import { SupervisorLifecycleError } from './daemon-supervisor-protocol.js';
 import type { ManagedInstallation } from './managed-daemon-installation.js';
 
@@ -23,6 +23,13 @@ export interface UpdatePredecessor {
 	readonly wasRunning: boolean;
 	readonly generation?: string | null;
 	readonly pins?: { readonly prior: ManagedInstallation; readonly candidate: ManagedInstallation };
+	readonly legacy?: {
+		readonly job: DarwinLaunchJob;
+		readonly descriptorHash: string;
+		readonly runAtLoad: boolean;
+		readonly entry: string;
+		readonly baseline: ManagedInstallation;
+	};
 }
 
 export type MutationRequest =
@@ -101,14 +108,26 @@ function validPredecessor(value: unknown): value is UpdatePredecessor {
 	if (!object(value) || !text(value.priorRelease) || !text(value.candidateRelease)
 		|| typeof value.priorCommit !== 'string' || typeof value.wasRunning !== 'boolean'
 		|| (value.generation !== undefined && value.generation !== null && !text(value.generation))) return false;
-	if (value.pins === undefined) return true;
+	if (value.pins === undefined) return value.legacy === undefined;
 	if (!object(value.pins)) return false;
 	const { prior, candidate } = value.pins;
-	const pin = (item: unknown, releaseId: string): item is ManagedInstallation =>
-		object(item) && item.releaseId === releaseId && item.version === 1 && item.enabled === true
+	const pin = (item: unknown, releaseId: string, enabled: boolean): item is ManagedInstallation =>
+		object(item) && item.releaseId === releaseId && item.version === 1 && item.enabled === enabled
 		&& text(item.stateRoot) && isAbsolute(item.stateRoot) && text(item.releaseRoot) && isAbsolute(item.releaseRoot)
 		&& text(item.runtime) && isAbsolute(item.runtime) && typeof item.pathEnv === 'string';
-	return pin(prior, value.priorRelease) && pin(candidate, value.candidateRelease) && prior.stateRoot === candidate.stateRoot;
+	if (!pin(prior, value.priorRelease, value.legacy === undefined) || !pin(candidate, value.candidateRelease, true)
+		|| prior.stateRoot !== candidate.stateRoot) return false;
+	if (value.legacy === undefined) return true;
+	if (!object(value.legacy)) return false;
+	const { job, descriptorHash, entry, baseline, runAtLoad } = value.legacy;
+	return object(job) && typeof job.uid === 'number' && Number.isSafeInteger(job.uid) && job.uid > 0
+		&& text(job.label) && /^[A-Za-z0-9][A-Za-z0-9.-]*$/.test(job.label)
+		&& text(job.descriptor) && isAbsolute(job.descriptor) && text(job.program) && isAbsolute(job.program)
+		&& Array.isArray(job.args) && job.args.length > 0 && job.args.every(text) && job.args[0] === job.program
+		&& typeof descriptorHash === 'string' && /^[a-f0-9]{64}$/.test(descriptorHash)
+		&& typeof runAtLoad === 'boolean'
+		&& text(entry) && isAbsolute(entry) && pin(baseline, value.candidateRelease, false)
+		&& baseline.stateRoot === candidate.stateRoot && baseline.releaseRoot === candidate.releaseRoot && baseline.runtime === candidate.runtime;
 }
 
 function validRequest(value: unknown): value is MutationRequest {

@@ -35,7 +35,7 @@ export function qualifyManagedUpdate(
 	return { prior, candidate, compatibility: requireQualifiedReleasePair(priorProfile, candidateProfile, qualified) };
 }
 
-interface HandoffEffects {
+export interface HandoffEffects {
 	readonly connect: (installation: ManagedInstallation) => Promise<ManagedSupervisorLink>;
 	readonly remove: typeof removeManagedJob;
 	readonly select: typeof publishManagedSelector;
@@ -91,24 +91,30 @@ export interface HandoffReceipt {
 	readonly generation: string | null;
 }
 
-/** The acknowledged update owner runs this phase. A later phase commits or recovers its durable receipts. */
-export async function stageManagedUpdate(
-	gate: Gate, update: Update, pins: ManagedUpdatePins, operations: HandoffEffects = effects,
-): Promise<HandoffReceipt> {
+export async function recordManagedUpdatePins(gate: Gate, update: Update, pins: ManagedUpdatePins): Promise<void> {
 	const { prior, candidate, compatibility } = pins;
 	const { predecessor } = update;
 	if (predecessor.priorRelease !== prior.releaseId || predecessor.candidateRelease !== candidate.releaseId
 		|| (predecessor.pins !== undefined && JSON.stringify(predecessor.pins) !== JSON.stringify({ prior, candidate }))) {
 		throw new Error('update reservation does not match pinned releases');
 	}
+	await gate.admit(update);
+	await gate.recordIntent(update, 'release-pins', JSON.stringify({ prior, candidate }));
+	await gate.recordReceipt(update, 'release-pins', 'pinned for this transaction');
+	await gate.recordIntent(update, COMPATIBILITY_STEP, JSON.stringify(compatibility));
+	await gate.recordReceipt(update, COMPATIBILITY_STEP, COMPATIBILITY_RECEIPT);
+}
+
+/** The acknowledged update owner runs this phase. A later phase commits or recovers its durable receipts. */
+export async function stageManagedUpdate(
+	gate: Gate, update: Update, pins: ManagedUpdatePins, operations: HandoffEffects = effects,
+): Promise<HandoffReceipt> {
+	const { prior } = pins;
+	const { predecessor } = update;
 	const revalidate = async () => { await gate.admit(update); };
 	const intent = (step: string, detail: string) => gate.recordIntent(update, step, detail);
 	const receipt = (step: string, detail: string) => gate.recordReceipt(update, step, detail);
-	await revalidate();
-	await intent('release-pins', JSON.stringify({ prior, candidate }));
-	await receipt('release-pins', 'pinned for this transaction');
-	await intent(COMPATIBILITY_STEP, JSON.stringify(compatibility));
-	await receipt(COMPATIBILITY_STEP, COMPATIBILITY_RECEIPT);
+	await recordManagedUpdatePins(gate, update, pins);
 
 	const previous = await operations.connect(prior);
 	try {
@@ -133,6 +139,16 @@ export async function stageManagedUpdate(
 	const removed = await operations.remove(prior, revalidate);
 	if (removed === undefined) throw new Error('predecessor job disappeared before exact removal was verified');
 	await receipt('predecessor-job-removal', JSON.stringify({ removed, absent: true }));
+	return stageManagedCandidate(gate, update, pins, operations);
+}
+
+export async function stageManagedCandidate(
+	gate: Gate, update: Update, pins: ManagedUpdatePins, operations = effects,
+): Promise<HandoffReceipt> {
+	const { candidate } = pins;
+	const revalidate = async () => { await gate.admit(update); };
+	const intent = (step: string, detail: string) => gate.recordIntent(update, step, detail);
+	const receipt = (step: string, detail: string) => gate.recordReceipt(update, step, detail);
 	await revalidate();
 	await operations.inspectStores(pins);
 	await intent('provisional-selector', candidate.releaseId);
@@ -147,7 +163,7 @@ export async function stageManagedUpdate(
 	try {
 		const idle = accepted(await link.call({ op: 'status', generation: null }));
 		if (idle.state !== 'idle' || idle.generation !== null) throw new Error('candidate supervisor is not idle after handshake');
-		if (!predecessor.wasRunning) return { job, generation: null };
+		if (!update.predecessor.wasRunning) return { job, generation: null };
 		await intent('candidate-start', candidate.releaseId);
 		await revalidate();
 		const started = accepted(await link.call({ op: 'start', generation: null, updateId: update.id }));

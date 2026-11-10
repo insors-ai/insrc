@@ -8,6 +8,7 @@ import { createConnection } from 'node:net';
 import { dirname, isAbsolute, join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { promisify } from 'node:util';
+import { isDeepStrictEqual } from 'node:util';
 import { darwinLaunchLabel, matchesDarwinPeer, observeDarwinExit, readDarwinIncarnation, verifyDarwinJobProcess, verifyDarwinLaunchJob } from './darwin-lifecycle.js';
 import type { DarwinIncarnation, DarwinLaunchJob, VerifiedDarwinLaunchJob } from './darwin-lifecycle.js';
 import { PATHS } from './paths.js';
@@ -86,12 +87,16 @@ async function parseInstallation(path: string, root: string): Promise<ManagedIns
 
 /** The rollout is selected only by an enabled descriptor for this exact installation. */
 export async function readManagedInstallation(root = PATHS.insrc): Promise<ManagedInstallation | undefined> {
+	const installation = await readInstallationSelector(root);
+	return installation?.enabled ? installation : undefined;
+}
+
+export async function readInstallationSelector(root: string): Promise<ManagedInstallation | undefined> {
 	if (process.platform !== 'darwin') return undefined;
 	const paths = installationPaths(root);
 	if (!await exists(paths.manifest)) return undefined;
 	await privateDirectory(paths.directory);
-	const installation = await parseInstallation(paths.manifest, root);
-	return installation.enabled ? installation : undefined;
+	return parseInstallation(paths.manifest, root);
 }
 
 /** Deployment stages these inputs outside either mutable installation selector. */
@@ -122,13 +127,16 @@ export function supervisorJob(installation: ManagedInstallation): DarwinLaunchJo
 	};
 }
 
-async function launchctl(args: readonly string[]): Promise<string> {
+export async function launchctl(args: readonly string[]): Promise<string> {
 	const { stdout } = await exec('/bin/launchctl', [...args], { encoding: 'utf8', timeout: 5000, maxBuffer: 1024 * 1024 });
 	return stdout;
 }
 
 export async function inspectManagedJob(installation: ManagedInstallation): Promise<VerifiedDarwinLaunchJob | undefined> {
-	const job = supervisorJob(installation);
+	return inspectPinnedLaunchJob(supervisorJob(installation));
+}
+
+export async function inspectPinnedLaunchJob(job: DarwinLaunchJob): Promise<VerifiedDarwinLaunchJob | undefined> {
 	try { return await verifyDarwinLaunchJob(job, target => launchctl(['print', target])); }
 	catch (error) {
 		const missing = error as { code?: number; stderr?: string };
@@ -182,7 +190,7 @@ export async function verifyManagedSelectorFiles(first: ManagedInstallation, sec
 	const selected = await parseInstallation(paths.manifest, first.stateRoot);
 	const contents = await readFile(paths.descriptor, 'utf8');
 	const allowed = [first, second];
-	if (!allowed.some(pin => JSON.stringify(pin) === JSON.stringify(selected))
+	if (!allowed.some(pin => isDeepStrictEqual(pin, selected))
 		|| !allowed.some(pin => contents === descriptor(supervisorJob(pin), pin))) {
 		failure('installation selector or descriptor is outside the pinned releases');
 	}
@@ -211,10 +219,7 @@ export async function publishManagedSelector(installation: ManagedInstallation, 
 	await publishPrivateFile(paths.descriptor, descriptor(supervisorJob(installation), installation));
 	await revalidate();
 	await publishPrivateFile(paths.manifest, JSON.stringify(installation) + '\n');
-	if (JSON.stringify(await readManagedInstallation(installation.stateRoot)) !== JSON.stringify(installation)
-		|| await readFile(paths.descriptor, 'utf8') !== descriptor(supervisorJob(installation), installation)) {
-		failure('provisional selector does not match the pinned release');
-	}
+	await verifyManagedSelectorFiles(installation);
 }
 
 /** Unload the pinned job after its child has exited and retain exact proof of the job's own exit. */
@@ -274,11 +279,13 @@ async function verifyNoSupervisorListener(path: string): Promise<void> {
 }
 
 /** Stage a private launch descriptor. The supported rollout must explicitly enable it later. */
-export async function stageManagedInstallation(installation: ManagedInstallation, revalidate: () => Promise<void>): Promise<void> {
+export async function stageManagedInstallation(
+	installation: ManagedInstallation, revalidate: () => Promise<void>, legacyCutover = false,
+): Promise<void> {
 	if (installation.enabled) failure('staging cannot enable installed rollout');
 	const paths = installationPaths(installation.stateRoot);
 	const job = supervisorJob(installation);
-	await requireQuiescentInstallation(installation);
+	if (!legacyCutover) await requireQuiescentInstallation(installation);
 	if (await inspectManagedJob(installation) !== undefined) failure('a launch job is already registered for this installation');
 	await access(installation.runtime, constants.X_OK);
 	await access(job.args[1]!, constants.R_OK);

@@ -10,9 +10,11 @@ import {
 	requireQuiescentInstallation, verifyManagedSelectorFiles,
 } from '../shared/managed-daemon-installation.js';
 import type { ManagedInstallation, RegisteredManagedJob } from '../shared/managed-daemon-installation.js';
-import { connectManagedSupervisor, stageManagedUpdate, waitForGeneration } from './managed-update-handoff.js';
-import type { HandoffReceipt, ManagedUpdatePins } from './managed-update-handoff.js';
+import { connectManagedSupervisor, recordManagedUpdatePins, stageManagedCandidate, stageManagedUpdate, waitForGeneration } from './managed-update-handoff.js';
+import type { HandoffEffects, HandoffReceipt, ManagedUpdatePins } from './managed-update-handoff.js';
 import { recoverManagedTransaction, settleManagedUpdate } from './managed-update-transaction.js';
+import { drainLegacyDaemonForCutover } from './legacy-daemon-cutover.js';
+import { inspectLegacyJob, removeLegacyJob, restoreLegacyService, verifyLegacyService } from './legacy-launch-job.js';
 
 type Update = Extract<MutationReservation, { kind: 'update' }>;
 type Purpose = 'lifecycle' | 'reconcile';
@@ -35,6 +37,19 @@ const host: RecoveryHost = {
 	connect: connectManagedSupervisor, inspect: inspectManagedJob, incarnation: readDarwinIncarnation,
 	select: publishManagedSelector, verifySelector: verifyManagedSelectorFiles, remove: removeManagedJob,
 	register: registerManagedJob, quiescent: requireQuiescentInstallation,
+};
+
+interface LegacyHost {
+	readonly inspect: typeof inspectLegacyJob;
+	readonly drain: typeof drainLegacyDaemonForCutover;
+	readonly remove: typeof removeLegacyJob;
+	readonly restore: typeof restoreLegacyService;
+	readonly verify: typeof verifyLegacyService;
+}
+
+const legacyHost: LegacyHost = {
+	inspect: inspectLegacyJob, drain: drainLegacyDaemonForCutover, remove: removeLegacyJob,
+	restore: restoreLegacyService, verify: verifyLegacyService,
 };
 
 function entry(update: Update, step: string) {
@@ -94,7 +109,7 @@ async function requireReady(
 class Rollback {
 	constructor(
 		private readonly gate: Gate, private readonly authority: Update, private readonly operations: RecoveryHost,
-		private readonly purpose: Purpose,
+		private readonly purpose: Purpose, private readonly legacyOperations = legacyHost,
 	) {}
 
 	private async state(): Promise<Update> {
@@ -118,7 +133,18 @@ class Rollback {
 	async run(): Promise<void> {
 		const initial = await this.state();
 		const { prior, candidate } = pinsOf(initial);
-		await this.operations.verifySelector(prior, candidate);
+		const legacy = initial.predecessor.legacy;
+		const baseline = legacy?.baseline ?? prior;
+		await this.operations.verifySelector(baseline, candidate);
+		if (legacy !== undefined && entry(initial, 'predecessor-stop') === undefined) {
+			const pending = initial.entries.at(-1);
+			if (pending !== undefined && pending.receipt === undefined) {
+				await this.receipt(pending.step, 'preflight interrupted before legacy drain');
+			}
+			await this.operations.verifySelector(baseline);
+			await this.legacyOperations.verify(legacy, prior, initial.predecessor.wasRunning);
+			return;
+		}
 		const candidateAttempt = entry(initial, 'candidate-job');
 		const priorRemoval = entry(initial, 'predecessor-job-removal');
 		const provisional = entry(initial, 'provisional-selector');
@@ -128,14 +154,18 @@ class Rollback {
 		} else if (priorRemoval !== undefined && provisional === undefined) {
 			// A crash while unloading the predecessor may leave no exact exit receipt.
 			// Absence alone does not prove the formerly registered process exited.
-			if (priorRemoval.receipt === undefined && await this.operations.inspect(prior) === undefined) {
+			if (priorRemoval.receipt === undefined && (legacy === undefined
+				? await this.operations.inspect(prior) : await this.legacyOperations.inspect(legacy)) === undefined) {
 				throw new Error('predecessor job removal is unconfirmed');
 			}
 		}
 
 		const pending = (await this.state()).entries.at(-1);
 		if (pending?.receipt === undefined && pending !== undefined && !pending.step.startsWith('rollback-')) {
-			if (pending.step === 'predecessor-stop') {
+			if (pending.step === 'predecessor-stop' && legacy !== undefined) {
+				await this.legacyOperations.verify(legacy, prior, initial.predecessor.wasRunning);
+				await this.receipt(pending.step, 'verified original legacy readiness');
+			} else if (pending.step === 'predecessor-stop') {
 				await withLink(this.operations, prior, async link => {
 					const status = await statusOf(link, initial.predecessor.generation ?? null);
 					if (status.state !== 'running' && !inactive(status)) throw new Error('predecessor stop is still unresolved');
@@ -147,11 +177,20 @@ class Rollback {
 		}
 		if (provisional !== undefined) {
 			await this.journal('rollback-selector', prior.releaseId, async () => {
-				await this.operations.select(prior, this.revalidate);
+				await this.operations.select(baseline, this.revalidate);
 				return prior.releaseId;
 			});
 		}
-		await this.operations.verifySelector(prior);
+		await this.operations.verifySelector(baseline);
+
+		if (legacy !== undefined) {
+			await this.journal('rollback-legacy-service', prior.releaseId, async () => {
+				await this.legacyOperations.restore(legacy, prior, initial.predecessor.wasRunning, this.revalidate);
+				return prior.releaseId;
+			});
+			await this.legacyOperations.verify(legacy, prior, initial.predecessor.wasRunning);
+			return;
+		}
 
 		await this.journal('rollback-job', prior.releaseId, async () => {
 			const job = await this.operations.inspect(prior);
@@ -232,21 +271,57 @@ export async function completeManagedUpdate(
 	});
 }
 
+export async function completeLegacyMigration(
+	gate: Gate, update: Update, pins: ManagedUpdatePins, operations = host, legacyOperations = legacyHost,
+	handoff?: HandoffEffects,
+) {
+	const legacy = update.predecessor.legacy;
+	if (legacy === undefined) throw new Error('legacy migration requires a saved LaunchAgent');
+	const { prior } = pins;
+	const wasRunning = update.predecessor.wasRunning;
+	const authorize = async () => { await gate.admit(update); };
+	return settleManagedUpdate(gate, update, {
+		async stage() {
+			await operations.verifySelector(legacy.baseline);
+			await legacyOperations.verify(legacy, prior, wasRunning);
+			await recordManagedUpdatePins(gate, update, pins);
+			await gate.recordIntent(update, 'predecessor-stop', legacy.entry);
+			const target = await legacyOperations.drain({ stateRoot: prior.stateRoot, runtime: prior.runtime, entry: legacy.entry }, authorize);
+			if (wasRunning !== (target !== undefined)) throw new Error('legacy daemon state changed before its drain');
+			await operations.quiescent(prior);
+			await gate.recordReceipt(update, 'predecessor-stop', JSON.stringify({
+				state: target === undefined ? 'idle' : 'exited', generation: null,
+				...(target === undefined ? {} : { exit: target }),
+			}));
+			await gate.recordIntent(update, 'predecessor-job-removal', legacy.job.label);
+			await legacyOperations.remove(legacy, authorize);
+			await gate.recordReceipt(update, 'predecessor-job-removal', 'saved legacy LaunchAgent verified absent');
+			return stageManagedCandidate(gate, update, pins, handoff);
+		},
+		verifyCandidate: receipt => verifyCandidate(pins.candidate, update, receipt, operations),
+		rollback: () => new Rollback(gate, update, operations, 'lifecycle', legacyOperations).run(),
+	});
+}
+
 async function verifyCandidate(candidate: ManagedInstallation, update: Update, receipt: HandoffReceipt, operations: RecoveryHost): Promise<void> {
 	const job = await requireJob(operations, candidate, receipt.job);
 	if (job?.pid == null) throw new Error('candidate job stopped before outcome publication');
 	await requireReady(operations, candidate, update.predecessor.wasRunning, receipt.generation);
 }
 
-export async function recoverInstalledManagedUpdate(gate: Gate, updateId: string, owner: DarwinIncarnation, operations = host) {
+export async function recoverInstalledManagedUpdate(
+	gate: Gate, updateId: string, owner: DarwinIncarnation, operations = host, legacyOperations = legacyHost,
+) {
 	return recoverManagedTransaction(gate, updateId, owner, {
 		async verifyOwnership({ active, outcome }) {
 			if (active?.kind !== 'update') return false;
 			const { prior, candidate } = pinsOf(active);
-			await operations.verifySelector(prior, candidate);
+			const legacy = active.predecessor.legacy;
+			await operations.verifySelector(legacy?.baseline ?? prior, candidate);
 			const candidateMayOwnJob = entry(active, 'candidate-job') !== undefined && entry(active, 'rollback-selector') === undefined;
 			const expected = candidateMayOwnJob && outcome?.id !== active.id ? evidence<RegisteredManagedJob>(active, 'candidate-job') : undefined;
-			await requireJob(operations, candidateMayOwnJob ? candidate : prior, expected);
+			if (legacy !== undefined && !candidateMayOwnJob) await legacyOperations.inspect(legacy);
+			else await requireJob(operations, candidateMayOwnJob ? candidate : prior, expected);
 			return true;
 		},
 		async verifyCommitted(update) {
@@ -255,8 +330,8 @@ export async function recoverInstalledManagedUpdate(gate: Gate, updateId: string
 			await operations.verifySelector(pinsOf(update).candidate);
 		},
 		async verifyRolledBack(update) {
-			await operations.verifySelector(pinsOf(update).prior);
+			await operations.verifySelector(update.predecessor.legacy?.baseline ?? pinsOf(update).prior);
 		},
-		rollback: (update, purpose) => new Rollback(gate, update, operations, purpose).run(),
+		rollback: (update, purpose) => new Rollback(gate, update, operations, purpose, legacyOperations).run(),
 	});
 }

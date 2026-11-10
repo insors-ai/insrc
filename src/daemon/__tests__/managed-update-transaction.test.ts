@@ -16,7 +16,7 @@ import type {
 } from '../../shared/installation-mutation-gate.js';
 import { recoverManagedTransaction, settleManagedUpdate } from '../managed-update-transaction.js';
 import type { ManagedInstallation, RegisteredManagedJob } from '../../shared/managed-daemon-installation.js';
-import { completeManagedUpdate, recoverInstalledManagedUpdate } from '../managed-update-recovery.js';
+import { completeLegacyMigration, completeManagedUpdate, recoverInstalledManagedUpdate } from '../managed-update-recovery.js';
 import { qualifyManagedUpdate, stageManagedUpdate } from '../managed-update-handoff.js';
 import { readReleaseCompatibility } from '../release-compatibility.js';
 
@@ -314,4 +314,150 @@ test('Relaunch supervisor after provisional release selection and verify recover
 	await assert.rejects(recoverInstalledManagedUpdate(uncertain.gate, id, uncertain.controller, uncertain.host), /recorded supervisor incarnation/);
 	assert.equal((await uncertain.gate.read()).active?.id, id);
 	assert.deepEqual(uncertain.events, []);
+});
+
+async function legacyMigrationFixture(t: TestContext, candidateReady: boolean) {
+	const root = await realpath(await mkdtemp('/tmp/insrc-migration-'));
+	t.after(() => rm(root, { recursive: true, force: true }));
+	const gate = new InstallationMutationGate(root);
+	const owner = await readDarwinIncarnation(process.pid);
+	const makePin = (releaseId: string, enabled: boolean): ManagedInstallation => ({
+		version: 1, enabled, releaseId, stateRoot: root, releaseRoot: join(root, releaseId),
+		runtime: process.execPath, pathEnv: '/usr/bin:/bin',
+	});
+	const prior = makePin('legacy', false);
+	const candidate = makePin('candidate', true);
+	const baseline = { ...candidate, enabled: false };
+	const profile = (releaseId: string) => readReleaseCompatibility({
+		version: 1, releaseId, graphSchema: 10, startup: 'rollback-compatible',
+		formats: { lance: '1', repoAndIndexQueue: '1', config: '1', workflowAndSession: '1' },
+	});
+	const compatibility = { prior: profile('legacy'), candidate: profile('candidate') };
+	const legacy = {
+		baseline, descriptorHash: '1'.repeat(64), entry: join(prior.releaseRoot, 'out/daemon/index.js'), runAtLoad: true,
+		job: { uid: owner.uid, label: 'fixture.recovery', descriptor: join(root, 'saved.plist'), program: '/bin/sh', args: ['/bin/sh', 'launch.sh'] },
+	};
+	const active = await gate.reserve({
+		kind: 'update', owner,
+		predecessor: { priorRelease: 'legacy', candidateRelease: 'candidate', priorCommit: 'old', wasRunning: true,
+			generation: null, pins: { prior, candidate }, legacy },
+	});
+	assert.equal(active.kind, 'update');
+	if (active.kind !== 'update') throw new Error('fixture requires update reservation');
+
+	const events: string[] = [];
+	let selected = baseline;
+	let oldRegistered = true;
+	let oldRunning = true;
+	let newRegistered = false;
+	let generation: string | null = null;
+	const exit = { kind: 'failed', code: 1, signal: null } as const;
+	const job = { target: `gui/${owner.uid}/candidate`, pid: owner.pid, incarnation: owner };
+	const managed = {
+		async connect(pin: ManagedInstallation): Promise<ManagedSupervisorLink> {
+			assert.equal(pin.releaseId, candidate.releaseId);
+			assert.equal(newRegistered, true);
+			return {
+				close() {},
+				async call(request) {
+					if (request.op === 'start') {
+						assert.equal(request.updateId, active.id);
+						generation = 'candidate-generation';
+						events.push('start candidate');
+					}
+					return { v: 1, id: 'reply', ok: true, generation,
+						state: generation === null ? 'idle' : candidateReady ? 'running' : 'exited',
+						...(generation !== null && !candidateReady ? { exit } : {}),
+					};
+				},
+			};
+		},
+		async inspect() { return newRegistered ? job : undefined; },
+		async incarnation() { return owner; },
+		async verifySelector(first: ManagedInstallation, second = first) {
+			assert.ok([first, second].some(pin => pin.releaseId === selected.releaseId && pin.enabled === selected.enabled));
+		},
+		async select(pin: ManagedInstallation, authorize: () => Promise<void>) {
+			await authorize();
+			assert.equal(newRegistered, false);
+			selected = pin;
+			events.push(pin.enabled ? 'select candidate provisionally' : 'restore disabled selector');
+		},
+		async register(_pin: ManagedInstallation, authorize: () => Promise<void>) {
+			await authorize();
+			assert.equal(selected.enabled, true);
+			assert.equal(oldRegistered, false);
+			newRegistered = true;
+			events.push('register candidate');
+			return job;
+		},
+		async remove(_pin: ManagedInstallation, authorize: () => Promise<void>, expected?: DarwinIncarnation) {
+			await authorize();
+			assert.deepEqual(expected, owner);
+			assert.equal(newRegistered, true);
+			newRegistered = false;
+			events.push('remove candidate');
+			return { job, startedAt: owner.startedAt };
+		},
+		async quiescent() { assert.equal(oldRunning, false); },
+	};
+	const legacyHost = {
+		async inspect() { return oldRegistered ? { target: 'saved', pid: oldRunning ? owner.pid : null } : undefined; },
+		async verify(pin: typeof legacy) {
+			assert.deepEqual(pin, legacy);
+			assert.equal(oldRegistered && oldRunning, true);
+		},
+		async drain(_pin: unknown, authorize: () => Promise<void>) {
+			await authorize();
+			oldRunning = false;
+			events.push('observe legacy exit');
+			return owner;
+		},
+		async remove(pin: typeof legacy, authorize: () => Promise<void>) {
+			await authorize();
+			assert.deepEqual(pin, legacy);
+			assert.equal(oldRunning, false);
+			oldRegistered = false;
+			events.push('remove saved LaunchAgent');
+		},
+		async restore(pin: typeof legacy, _prior: ManagedInstallation, wasRunning: boolean, authorize: () => Promise<void>) {
+			await authorize();
+			assert.deepEqual(pin, legacy);
+			assert.equal(newRegistered, false);
+			assert.equal(selected.enabled, false);
+			oldRegistered = true;
+			oldRunning = wasRunning;
+			events.push('restore saved LaunchAgent and verify readiness');
+		},
+	};
+	const migrate = () => completeLegacyMigration(gate, active, { prior, candidate, compatibility }, managed, legacyHost, {
+		...managed, async inspectStores() {
+			assert.equal(oldRegistered, false);
+			events.push('verify quiesced stores');
+		},
+	});
+	return { gate, migrate, events };
+}
+
+test('Recovery job and legacy migration', mac, async t => {
+	const { gate, migrate, events } = await legacyMigrationFixture(t, true);
+	assert.equal((await migrate()).decision, 'committed');
+	assert.deepEqual(events, [
+		'observe legacy exit', 'remove saved LaunchAgent', 'verify quiesced stores',
+		'select candidate provisionally', 'register candidate', 'start candidate',
+	]);
+	assert.equal((await gate.read()).active, null);
+});
+
+test('Rollback after legacy stop but before managed readiness restores the saved service', mac, async t => {
+	const { gate, migrate, events } = await legacyMigrationFixture(t, false);
+	const result = await migrate();
+	assert.equal(result.decision, 'rolled-back');
+	assert.match(result.detail, /before probation readiness/);
+	assert.deepEqual(events, [
+		'observe legacy exit', 'remove saved LaunchAgent', 'verify quiesced stores',
+		'select candidate provisionally', 'register candidate', 'start candidate',
+		'remove candidate', 'restore disabled selector', 'restore saved LaunchAgent and verify readiness',
+	]);
+	assert.equal((await gate.read()).active, null);
 });

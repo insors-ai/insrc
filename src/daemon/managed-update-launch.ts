@@ -106,12 +106,21 @@ function waitForLaunch(updateId: string): Promise<boolean> {
 	});
 }
 
-async function releaseDeclaration(root: string) {
+export async function releaseDeclaration(root: string) {
 	const path = join(root, 'out/release-compatibility.json');
 	const info = await lstat(path);
 	if (!info.isFile() || info.size > 8_192 || (info.mode & 0o022) !== 0
 		|| (info.uid !== 0 && info.uid !== process.getuid?.())) throw new Error('release declaration is not a bounded owned file');
 	return readReleaseCompatibility(JSON.parse(await readFile(path, 'utf8')));
+}
+
+export function readQualifiedReleasePairs(qualifications: unknown) {
+	if (!Array.isArray(qualifications)) throw new Error('invalid qualified release pair list');
+	return qualifications.map((value: unknown) => {
+		if (typeof value !== 'object' || value === null) throw new Error('invalid qualified release pair');
+		const pair = value as { prior?: unknown; candidate?: unknown };
+		return { prior: readReleaseCompatibility(pair.prior), candidate: readReleaseCompatibility(pair.candidate) };
+	});
 }
 
 /** Preflight and reserve inside the detached daemon-owned process so it owns all receipts. */
@@ -120,12 +129,7 @@ export async function prepareManagedUpdate() {
 	const prior = await readManagedInstallation(root);
 	if (prior === undefined) throw new Error('managed update requires an enabled installed daemon');
 	const { candidate, qualifications } = await readManagedUpdateInputs(root);
-	if (!Array.isArray(qualifications)) throw new Error('invalid qualified release pair list');
-	const qualified = qualifications.map((value: unknown) => {
-		if (typeof value !== 'object' || value === null) throw new Error('invalid qualified release pair');
-		const pair = value as { prior?: unknown; candidate?: unknown };
-		return { prior: readReleaseCompatibility(pair.prior), candidate: readReleaseCompatibility(pair.candidate) };
-	});
+	const qualified = readQualifiedReleasePairs(qualifications);
 	const pins = qualifyManagedUpdate(prior, candidate,
 		await releaseDeclaration(prior.releaseRoot), await releaseDeclaration(candidate.releaseRoot), qualified);
 	await verifyManagedReleaseRuntime(prior);

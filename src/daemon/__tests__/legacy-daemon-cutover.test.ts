@@ -8,6 +8,7 @@ import { mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { drainLegacyDaemonForCutover } from '../legacy-daemon-cutover.js';
+import { pinLegacyLaunchJob } from '../legacy-launch-job.js';
 
 test('Legacy cutover observes the exact authenticated process exit before cleaning its publication', {
 	skip: process.platform !== 'darwin', timeout: 10_000,
@@ -28,6 +29,7 @@ const server = createServer(socket => {
     if (request.method === 'daemon.shutdown') process.exit(0);
   });
 });
+
 server.listen(join(root, 'daemon.sock'), () => {
   writeFileSync(join(root, 'daemon.pid'), String(process.pid));
   process.send('ready');
@@ -52,4 +54,24 @@ server.listen(join(root, 'daemon.sock'), () => {
 	assert.deepEqual(await exited, [0, null]);
 	assert.equal(existsSync(join(stateRoot, 'daemon.pid')), false);
 	assert.equal(existsSync(join(stateRoot, 'daemon.sock')), false);
+});
+
+test('Legacy LaunchAgent pinning rejects automatic restart before migration', { skip: process.platform !== 'darwin' }, async t => {
+	const root = await realpath(await mkdtemp('/tmp/insrc-legacy-pin-'));
+	t.after(() => rm(root, { recursive: true, force: true }));
+	const descriptor = join(root, 'recovery.plist');
+	const baseline = { version: 1, enabled: false, stateRoot: root, releaseRoot: root, releaseId: 'release',
+		runtime: '/bin/sh', pathEnv: '/usr/bin:/bin' } as const;
+	const plist = (keepAlive: boolean) => `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict><key>Label</key><string>fixture.recovery</string>
+<key>ProgramArguments</key><array><string>/bin/sh</string><string>recover.sh</string></array>
+<key>KeepAlive</key><${keepAlive}/><key>RunAtLoad</key><true/></dict></plist>`;
+	await writeFile(descriptor, plist(true), { mode: 0o600 });
+	await assert.rejects(pinLegacyLaunchJob(baseline, baseline, descriptor), /unsupported.*restart policy/);
+	await writeFile(descriptor, plist(false));
+	const pin = await pinLegacyLaunchJob(baseline, baseline, descriptor);
+	assert.equal(pin.runAtLoad, true);
+	assert.equal(pin.job.label, 'fixture.recovery');
+	assert.match(pin.descriptorHash, /^[a-f0-9]{64}$/);
 });

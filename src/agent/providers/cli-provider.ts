@@ -77,7 +77,7 @@ import { buildRetryNote, validateAgainstSchema, withStructuredRetry } from './st
 import { ModelResponseShapeError } from './model-call-error.js';
 import { checkOllamaTarget, OllamaTargetError } from './ollama-target.js';
 import { getModelRegistry } from '../../daemon/model-registry.js';
-import { runVerifiedVibeTurn, vibeAssistantOutput, VibeTurnError } from '../../shared/vibe-session.js';
+import { openVerifiedVibeSession, runVerifiedVibeTurn, vibeAssistantOutput, VibeTurnError, type VibeCatalogModel } from '../../shared/vibe-session.js';
 
 const log = getLogger('cli-provider');
 
@@ -607,8 +607,71 @@ export class CliProvider implements LLMProvider {
 		}
 	}
 
+ private vibeActivityCatalog(): readonly VibeCatalogModel[] {
+  const registry = getModelRegistry();
+  const rejected = new Set(registry.rejected('cli-vibe'));
+  return registry.models('cli-vibe').filter(model => !rejected.has(model.id));
+ }
+
+ /** Read-only review tool policy for a Vibe activity session (invariant c4):
+  *  read_file + the insrc analyze MCP tools only; verified against the app
+  *  server's runtime tool list before the turn starts. */
+ private vibeActivityVerifyRuntime(runtime: Readonly<Record<string, unknown>>): void {
+  const tools = runtime['tools'];
+  if (runtime['bypassToolPermissions'] !== false || !Array.isArray(tools) || tools.some(tool => {
+   const name = isRecord(tool) ? tool['name'] : undefined;
+   return typeof name !== 'string' || (name !== 'read_file' && !name.startsWith('mcp_insrc_'));
+  })) throw new Error('Vibe app server did not verify the review tool policy');
+ }
+
+ private async vibeActivityReview<T>(prompt: string, schema: StructuredSchema, opts: ActivityReviewSessionOpts): Promise<T> {
+  const acceptedStop = new AbortController();
+  const signal = AbortSignal.any([opts.signal, acceptedStop.signal]);
+  // Model/effort are verified against the catalog + the runtime's
+  // thinkingLevels before any turn is dispatched; VibeSelectionError precedes it.
+  const session = await openVerifiedVibeSession({
+   command: resolveBin(this.vibeAppServerPath),
+   cwd: opts.cwd,
+   signal,
+   timeoutMs: this.timeoutMs,
+   model: this.defaultModel || undefined,
+   effort: this.effort,
+   catalog: this.vibeActivityCatalog(),
+   agentConfig: { cwd: opts.cwd, headless: true, enabledTools: ['read_file', 'mcp_insrc_*'] },
+   verifyRuntime: runtime => this.vibeActivityVerifyRuntime(runtime),
+   inheritProcessGroup: true,
+  });
+  const parser = new ReviewActivityStream<T>('vibe', schema, opts, () => acceptedStop.abort());
+  // Settles on a terminal turn event, acceptance (stop fires the shared
+  // signal), caller abort, or a transport failure.
+  let settleWait!: () => void;
+  const waitTurn = new Promise<void>(resolve => { settleWait = resolve; });
+  signal.addEventListener('abort', () => settleWait(), { once: true });
+  try {
+   session.transport.releaseSetupAbort();
+   await parser.start();
+   // The app-server transport emits one JSON-RPC notification per line; the
+   // parser's feed() is line-oriented, so each event becomes one frame.
+   session.transport.observe((method, params) => {
+    void parser.feed(Buffer.from(JSON.stringify({ method, params }) + '\n')).catch(() => { acceptedStop.abort(); });
+    if (method === 'turn/completed') settleWait();
+   }, error => {
+    void parser.failure('transport_failed', error.message, undefined, error.message).catch(() => { acceptedStop.abort(); });
+   });
+   await session.transport.request('turn/start', { sessionId: session.id, message: [{ type: 'text', text: prompt + '\n' + outputContractNote(schema) }] });
+   await waitTurn;
+   const accepted = parser.result();
+   if (accepted.accepted) return accepted.value;
+   if (opts.signal.aborted) throw abortError();
+   try { return parser.completed(); }
+   catch (error) { throw await parser.failure('no_valid_final', error instanceof Error ? error.message : 'No valid final assessment'); }
+  } finally {
+   await session.transport.close();
+  }
+ }
+
  private async activityReview<T>(prompt:string,schema:StructuredSchema,opts:ActivityReviewSessionOpts):Promise<T>{
-  if(this.kind==='vibe')throw new Error('review activity is not supported for the vibe CLI');
+  if(this.kind==='vibe') return this.vibeActivityReview<T>(prompt,schema,opts);
   // Same Ollama preflight + per-child env as the bounded claude path (ISSUE-738d62b848fd173f):
   // a rejected check throws OllamaTargetError before any child is spawned.
   await this.checkOllama();

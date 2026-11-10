@@ -348,3 +348,138 @@ test('explicit Vibe review refuses unverified tool policy before dispatch', asyn
 		assert.equal(fixture.calls().length, 0);
 	} finally { fixture.cleanup(); }
 });
+
+// ── t6: activity-mode (streaming) vibe branch ──────────────────────────────
+// A fake vibe-app-server answering JSON-RPC over stdio: verifies the read-only
+// tool policy, drives ReviewActivityStream('vibe') frames, and rejects
+// unsupported model/effort before any turn is dispatched.
+
+const ACTIVITY_APP_SERVER = String.raw`#!/usr/bin/env node
+import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { createInterface } from 'node:readline';
+const dir = fileURLToPath(new URL('.', import.meta.url));
+const callsFile = dir + 'activity-calls.jsonl';
+const mode = readFileSync(dir + 'mode', 'utf8');
+const model = { name: 'mistral-vibe-cli-latest', alias: 'mistral-medium-3.5', thinking: 'low', thinkingLevels: ['off', 'high'] };
+let activeModel = model;
+const sessionId = 'activity-session';
+const reply = (id, result) => process.stdout.write(JSON.stringify({ jsonrpc: '2.0', id, result }) + '\n');
+const event = (method, params) => process.stdout.write(JSON.stringify({ jsonrpc: '2.0', method, params: { sessionId, ...params } }) + '\n');
+createInterface({ input: process.stdin }).on('line', line => {
+	const { method, params, id } = JSON.parse(line);
+	switch (method) {
+		case 'initialize': reply(id, {}); return;
+		case 'initialized': return;
+		case 'session/start': {
+			const policy = params.agentConfig;
+			appendFileSync(callsFile, JSON.stringify({ method, policy }) + '\n');
+			reply(id, { state: { session: { id: sessionId } } });
+			return;
+		}
+		case 'runtime/read':
+			reply(id, { runtime: {
+				config: { activeModel, models: [model] },
+				tools: (mode === 'unsafe' ? ['read_file', 'write_file'] : ['read_file', 'mcp_insrc_analyze']).map(name => ({ name })),
+				bypassToolPermissions: false,
+			} });
+			return;
+		case 'config/model/write': {
+			appendFileSync(callsFile, JSON.stringify({ method, params }) + '\n');
+			activeModel = { ...model, thinking: params.reasoningEffort ?? activeModel.thinking };
+			reply(id, { status: 'applied' });
+			return;
+		}
+		case 'turn/start': {
+			const turn = { id: 'turn-1', sessionId, status: 'in_progress' };
+			appendFileSync(callsFile, JSON.stringify({ method, turn, prompt: params.message[0].text }) + '\n');
+			reply(id, { turn });
+			event('turn/started', { turn });
+			if (mode === 'accepted') {
+				event('history/entryAdded', { turnId: turn.id, entry: { id: 'a1', type: 'effect', detail: { kind: 'tool_call', name: 'read_file' } } });
+				event('history/entryAdded', { turnId: turn.id, entry: { id: 'm1', type: 'message', role: 'assistant', content: [{ type: 'text', text: '{"verdict":"holds"}' }] } });
+				event('turn/completed', { turn: { ...turn, status: 'completed' } });
+			} else if (mode === 'abort') {
+				// Never completes: the caller's signal aborts the wait.
+			}
+			return;
+		}
+		default: throw new Error('unexpected method ' + method);
+	}
+});
+setInterval(() => {}, 1000);
+`;
+
+function fakeActivityServer(mode: string) {
+	const cwd = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-vibe-activity-')));
+	const bin = join(cwd, 'app-server.mjs');
+	const callsPath = join(cwd, 'activity-calls.jsonl');
+	writeFileSync(bin, ACTIVITY_APP_SERVER, { mode: 0o755 });
+	writeFileSync(join(cwd, 'mode'), mode);
+	writeFileSync(callsPath, '');
+	return {
+		cwd,
+		provider: new CliProvider({ kind: 'vibe', vibeAppServerPath: bin, model: 'mistral-vibe-cli-latest', effort: 'high', timeoutMs: 10_000 }),
+		calls: () => readFileSync(callsPath, 'utf8').trim().split('\n').filter(Boolean).map(l => JSON.parse(l) as { method: string; policy?: { headless: boolean; enabledTools?: string[] }; params?: Record<string, unknown>; prompt?: string }),
+		cleanup: () => rmSync(cwd, { recursive: true, force: true }),
+	};
+}
+
+const ACTIVITY_SCHEMA = { type: 'object', required: ['verdict'], additionalProperties: false, properties: { verdict: { type: 'string' } } } as const;
+const activityOpts = (cwd: string, signal?: AbortSignal) => ({
+	mode: 'activity' as const, cwd, signal: signal ?? new AbortController().signal, inactivityMs: 1_800_000, internalRetry: false,
+	onActivity: () => {}, onDiagnostic: () => {}, onCandidate: async () => ({ accepted: true as const }),
+});
+
+test('T7-vibe-activity-readonly-tool-policy: the activity session enables only read_file + mcp_insrc_* and the runtime is verified', async () => {
+	const f = fakeActivityServer('accepted');
+	try {
+		const value = await f.provider.runReviewSession('review it', ACTIVITY_SCHEMA, activityOpts(f.cwd));
+		assert.deepEqual(value, { verdict: 'holds' });
+		const start = f.calls().find(c => c.method === 'session/start');
+		assert.ok(start, 'session/start was issued');
+		assert.equal(start.policy?.headless, true);
+		assert.deepEqual(start.policy?.enabledTools, ['read_file', 'mcp_insrc_*'], 'read-only + insrc MCP only, no write/execute tools');
+	} finally { f.cleanup(); }
+	// An unsafe runtime tool list (write_file present) fails before any turn.
+	const unsafe = fakeActivityServer('unsafe');
+	try {
+		await assert.rejects(unsafe.provider.runReviewSession('review it', ACTIVITY_SCHEMA, activityOpts(unsafe.cwd)), /tool policy/);
+		assert.ok(!unsafe.calls().some(c => c.method === 'turn/start'), 'no turn dispatched when the policy check fails');
+	} finally { unsafe.cleanup(); }
+});
+
+test('T8-vibe-activity-structured-validation-cancellation: schema-checked candidate and shared-signal cancellation', async () => {
+	const f = fakeActivityServer('accepted');
+	try {
+		const rejected: unknown[] = [];
+		const opts = { ...activityOpts(f.cwd), onCandidate: async (v: unknown) => { rejected.push(v); return { accepted: false as const }; } };
+		// Shared lifecycle (invariant c3, identical to claude/codex): onCandidate
+		// gates early acceptance only; the completed turn's final text is then
+		// re-validated against the schema by completed(), so a schema-valid but
+		// host-rejected candidate still resolves with the validated final value.
+		const value = await f.provider.runReviewSession('review it', ACTIVITY_SCHEMA, opts);
+		assert.deepEqual(value, { verdict: 'holds' });
+		assert.equal(rejected.length, 1, 'the schema-valid candidate reached onCandidate exactly once');
+	} finally { f.cleanup(); }
+	// Cancellation: an aborted caller signal stops the activity wait.
+	const g = fakeActivityServer('abort');
+	try {
+		const controller = new AbortController();
+		const pending = g.provider.runReviewSession('review it', ACTIVITY_SCHEMA, activityOpts(g.cwd, controller.signal));
+		setTimeout(() => controller.abort(), 150);
+		await assert.rejects(pending, /abort|cancelled/i);
+	} finally { g.cleanup(); }
+});
+
+test('T11-unsupported-model-effort-fails-before-dispatch: VibeSelectionError precedes any turn when the model/effort is not verified', async () => {
+	const f = fakeActivityServer('accepted');
+	try {
+		const badEffort = new CliProvider({ kind: 'vibe', vibeAppServerPath: join(f.cwd, 'app-server.mjs'), model: 'mistral-vibe-cli-latest', effort: 'max' as never, timeoutMs: 10_000 });
+		await assert.rejects(badEffort.runReviewSession('review it', ACTIVITY_SCHEMA, activityOpts(f.cwd)), (e: unknown) => e instanceof Error && /Vibe selection unavailable|effort is unavailable/.test(e.message));
+		assert.ok(!f.calls().some(c => c.method === 'turn/start'), 'no turn dispatched for an unverified effort');
+		const badModel = new CliProvider({ kind: 'vibe', vibeAppServerPath: join(f.cwd, 'app-server.mjs'), model: 'not-in-catalog', timeoutMs: 10_000 });
+		await assert.rejects(badModel.runReviewSession('review it', ACTIVITY_SCHEMA, activityOpts(f.cwd)), /Vibe selection unavailable|absent from the catalog/);
+		assert.ok(!f.calls().some(c => c.method === 'turn/start'));
+	} finally { f.cleanup(); }
+});

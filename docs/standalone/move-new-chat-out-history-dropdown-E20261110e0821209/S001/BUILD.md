@@ -2,9 +2,9 @@
 
 # Build (standalone small) — Story s1
 
-**Size class:** small  ·  **Standalone:** yes  ·  **Created:** 2026-11-11T04:34:47.332Z  ·  **Updated:** 2026-11-11T04:34:47.332Z
+**Size class:** small  ·  **Standalone:** yes  ·  **Created:** 2026-11-11T04:34:47.332Z  ·  **Updated:** 2026-11-11T04:37:48.073Z
 
-**Commit:** d7affcde9
+**Commit:** b0ef7d8da
 
 ## Summary
 
@@ -18,8 +18,8 @@ Implemented LLD-e0821209d94791d0-s1 in vscode-plugin/src/chat/chat-panel.ts: add
 
 ## Changes
 
-- `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` — **insrc-build** (2026-11-11T04:34:47.332Z)
-- `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` — **insrc-build** (2026-11-11T04:34:47.332Z)
-- `vscode-plugin/src/chat/chat-panel.ts` — **insrc-build** (2026-11-11T04:34:47.332Z)
-- `.insrc/artifacts/EPIC-e0821209d94791d0.json` — **insrc-build** (2026-11-11T04:34:47.332Z)
-- `.insrc/artifacts/EPIC-e0821209d94791d0.log.jsonl` — **insrc-build** (2026-11-11T04:34:47.332Z)
+- `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` — **insrc-build** (2026-11-11T04:37:48.073Z)
+- `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` — **insrc-build** (2026-11-11T04:37:48.073Z)
+- `vscode-plugin/src/chat/chat-panel.ts` — **insrc-build** (2026-11-11T04:37:48.073Z)
+- `.insrc/artifacts/EPIC-e0821209d94791d0.json` — **insrc-build** (2026-11-11T04:37:48.073Z)
+- `.insrc/artifacts/EPIC-e0821209d94791d0.log.jsonl` — **insrc-build** (2026-11-11T04:37:48.073Z)

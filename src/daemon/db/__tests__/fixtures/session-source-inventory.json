@@ -8778,11 +8778,15 @@
     },
     "src/daemon/analyze-rpc.ts": {
       "classification": "owner-rpc-boundary",
-      "rationale": "Daemon entry must validate root/session/audience before routing or input use; main-daemon owner paths and canonical saved guards preserve exact-path compatibility and safe error/drain semantics.",
+      "rationale": "Daemon entry must validate root/session/audience before routing or input use; main-daemon owner paths and canonical saved guards preserve exact-path compatibility and safe error/drain semantics. Analysis progress projects allowlisted stage and task events. Temporary connection persistence remains denied at this entry point and scope and legacy result delivery retain their existing authority.",
       "sites": [
         [
           "storage-call",
           "abandonRunRecord"
+        ],
+        [
+          "unresolved-call",
+          "AnalysisMeasurements"
         ],
         [
           "serialization",
@@ -8957,9 +8961,9 @@
           "writeRunRecord"
         ]
       ],
-      "siteCount": 44,
-      "sitesDigest": "708b14c6182a30b4008bf3097a45b1539de60c5a54a85ea677fb820d43ffbb8c",
-      "sourceDigest": "bbbf5e8aae7759dae153c357487e9a1df615468e23b280e978f5d5f005a76a3c"
+      "siteCount": 45,
+      "sitesDigest": "74046e473ebe7d5d46dbecc7c56ea572d4f99d8261a269cde946493d783d79db",
+      "sourceDigest": "b1a9bb7f35cd53605d948e4eacae2b2421e829d88121126ea34c2ee49a1b2fb7"
     },
     "src/daemon/approval-broker.ts": {
       "classification": "daemon-admission-boundary",
@@ -14112,7 +14116,7 @@
     },
     "src/daemon/handler-runtime.ts": {
       "classification": "owner-rpc-boundary",
-      "rationale": "Daemon entry must validate root/session/audience before routing or input use; main-daemon owner paths and canonical saved guards preserve exact-path compatibility and safe error/drain semantics.",
+      "rationale": "Daemon entry must validate root/session/audience before routing or input use; main-daemon owner paths and canonical saved guards preserve exact-path compatibility and safe error/drain semantics. Workflow and analysis handlers pass a server-owned progress port. The port is supplied through trusted request context and does not carry temporary session authority.",
       "sites": [
         [
           "storage-call",
@@ -15021,22 +15025,11 @@
       ],
       "siteCount": 226,
       "sitesDigest": "f95a307abc17c612f3d9df4980bf8d27464f99ea6a80c4a783014ff702405c54",
-      "sourceDigest": "e9713d2e2325ea5def5a3f20fefb433297fd436e2d95166155aea33f833fc72d",
-      "boundaries": [
-        "diagnostic",
-        "filesystem-read",
-        "filesystem-write",
-        "provider-adapter",
-        "provider-backend",
-        "provider-use",
-        "serialization",
-        "storage-call",
-        "unresolved-call"
-      ]
+      "sourceDigest": "3bc5d72cfa53f407261561d56e5acf5628020b90f3e02271be5bd38da02d6bf8"
     },
     "src/daemon/index.ts": {
       "classification": "daemon-admission-boundary",
-      "rationale": "Default startup initializes fresh registered roots and reopens signed managed state through the existing owner checks. Shutdown includes all startup and lazily created Saved owners; session and driver ownership boundaries and transport authority remain unchanged. Startup warns on stale process-owner observations and wires managed lifecycle and task progress. The existing connection session runtime still owns connection forwarding and disconnect cleanup.",
+      "rationale": "Default startup initializes fresh registered roots and reopens signed managed state through the existing owner checks. Shutdown includes all startup and lazily created Saved owners; session and driver ownership boundaries and transport authority remain unchanged. Startup warns on stale process-owner observations and wires managed lifecycle and task progress. The existing connection session runtime still owns connection forwarding and disconnect cleanup. The main daemon owns the executor progress runtime and mediates reservations after the connection-session forwarding seam. Temporary connections cannot acquire a progress relay.",
       "sites": [
         [
           "storage-call",
@@ -15309,15 +15302,7 @@
       ],
       "siteCount": 67,
       "sitesDigest": "c47ce5f473873416f61d250f588392fff495e593ce6ec4c7f69618e5eca682d6",
-      "sourceDigest": "aacbc03ff100167946e76736aec19624917a2c92ccfe6c1ed76e5c82a4fc4404",
-      "boundaries": [
-        "diagnostic",
-        "filesystem-write",
-        "provider-adapter",
-        "serialization",
-        "storage-call",
-        "unresolved-call"
-      ]
+      "sourceDigest": "4fa6d10e35390de5a767d8baff2e97e45d05b4c13e8286ab3e81bc4170b6b174"
     },
     "src/daemon/legacy-daemon-cutover.ts": {
       "classification": "daemon-admission-boundary",
@@ -17631,7 +17616,7 @@
     },
     "src/daemon/task-progress/access.ts": {
       "classification": "daemon-admission-boundary",
-      "rationale": "Authorizes progress origin and attachment with trusted socket identity and hashed capabilities. Its serialized project identity is based on canonical path and registration, with no data-source binding.",
+      "rationale": "Authorizes progress origin and attachment with trusted socket identity and hashed capabilities. Its serialized project identity is based on canonical path and registration, with no data-source binding. Executor admission chooses a unique verified origin for a registered project. Scope checks use registered paths and do not resolve or store connection-session data.",
       "sites": [
         [
           "serialization",
@@ -17668,11 +17653,11 @@
       ],
       "siteCount": 8,
       "sitesDigest": "c8dac9fbfb1ca7dd0c0df0b9abf819037b70a9ce20f2fb88bc48571b153c353a",
-      "sourceDigest": "9b9b2526a62274b6cdd437c0c2c5c368c2ebc2d8f43097430625841eb3b8ecbe"
+      "sourceDigest": "7b30d270192bf44fefd9bfb1910e5fc206bbcee86dfb02bd473fe1164af5ca0b"
     },
     "src/daemon/task-progress/coordinator.ts": {
       "classification": "daemon-admission-boundary",
-      "rationale": "Publishes bounded task measurements and uses hashed task and cursor keys. Progress details require producer authorization and validation; this coordinator is separate from connection-session admission.",
+      "rationale": "Publishes bounded task measurements and uses hashed task and cursor keys. Progress details require producer authorization and validation; this coordinator is separate from connection-session admission. The producer port type is shared with the internal executor relay. The existing task identity, persistence, and authorization contracts remain enforced by the coordinator.",
       "sites": [
         [
           "serialization",
@@ -17693,7 +17678,52 @@
       ],
       "siteCount": 4,
       "sitesDigest": "602111ff248af6d571d339c0be901861395877ddbdfebd34963fd257838baaa7",
-      "sourceDigest": "6fba268c3a1681cdbd067570e5b75d7b51cf044864bd6ed47e2c2caaded9454c"
+      "sourceDigest": "e4d86e03d02f0887065a3c83fcf787b736c46422e7999274b4a6e98b268ce988"
+    },
+    "src/daemon/task-progress/executor-relay.ts": {
+      "classification": "daemon-admission-boundary",
+      "rationale": "A dedicated worker port carries allowlisted workflow and analysis measurements and terminal evidence. The main daemon validates project and origin, and excludes temporary execution before reserving the port. Paths used for scope verification do not enter stored measurement records.",
+      "sites": [
+        [
+          "unresolved-call",
+          "MessageChannel"
+        ],
+        [
+          "serialization",
+          "port.postMessage"
+        ],
+        [
+          "serialization",
+          "send"
+        ],
+        [
+          "serialization",
+          "send"
+        ],
+        [
+          "serialization",
+          "send"
+        ],
+        [
+          "serialization",
+          "send"
+        ],
+        [
+          "serialization",
+          "send"
+        ],
+        [
+          "serialization",
+          "send"
+        ],
+        [
+          "serialization",
+          "send"
+        ]
+      ],
+      "siteCount": 9,
+      "sitesDigest": "9de9fc39b609dab30292bbd2ec35d7973524e51163da0802ca16644b5969e072",
+      "sourceDigest": "e675a86e80874d78a1bf2a751b8aba8ab90ac54914fc1fe9627549df8e7db882"
     },
     "src/daemon/task-progress/record.ts": {
       "classification": "daemon-admission-boundary",
@@ -18001,7 +18031,7 @@
     },
     "src/daemon/threads/channel.ts": {
       "classification": "routing-background-boundary",
-      "rationale": "Thread infrastructure must route session and owner-mutating requests to main daemon; maintenance retains real completion/drain. Background indexing/summary workers receive no session payload or capability.",
+      "rationale": "Thread infrastructure must route session and owner-mutating requests to main daemon; maintenance retains real completion/drain. Background indexing/summary workers receive no session payload or capability. Worker projection may transfer a daemon-created executor progress port. Temporary connection execution continues to be refused at the worker serialization boundary.",
       "sites": [
         [
           "diagnostic",
@@ -18042,7 +18072,7 @@
       ],
       "siteCount": 9,
       "sitesDigest": "199a8adefe4877200ac64a73c13616cd893053255e4b0d200e3962e955667cca",
-      "sourceDigest": "1a77651bb10d2da6f5f29033e3ed4fb534914680d42985f2e30772028e512ec0"
+      "sourceDigest": "25845b0b08c19eaadb7fe8b7cbd1425e15bfc9809bb7e9ba7f046121099d6776"
     },
     "src/daemon/threads/indexing-port.ts": {
       "classification": "routing-background-boundary",
@@ -18320,7 +18350,7 @@
     },
     "src/daemon/threads/router.ts": {
       "classification": "routing-background-boundary",
-      "rationale": "Thread infrastructure must route session and owner-mutating requests to main daemon; maintenance retains real completion/drain. Background indexing/summary workers receive no session payload or capability.",
+      "rationale": "Thread infrastructure must route session and owner-mutating requests to main daemon; maintenance retains real completion/drain. Background indexing/summary workers receive no session payload or capability. Only the actual dispatched worker receives the private executor progress port. Transfer failure drops the observation port and retries the existing request envelope.",
       "sites": [
         [
           "serialization",
@@ -18333,6 +18363,14 @@
         [
           "diagnostic",
           "log.warn"
+        ],
+        [
+          "serialization",
+          "port.postMessage"
+        ],
+        [
+          "serialization",
+          "port.postMessage"
         ],
         [
           "serialization",
@@ -18379,9 +18417,9 @@
           "this.send"
         ]
       ],
-      "siteCount": 14,
-      "sitesDigest": "8c709e9d70a4e0cc398eca7b76e8cd5f1124f9bc0a1a589e48036d84499cabaa",
-      "sourceDigest": "024d751dead222e7b379c86e771876508f0fb338eefd106d648298558190c393"
+      "siteCount": 16,
+      "sitesDigest": "dce43d87e01f9b9d6d01726c5462e20a45dc6708d0f3ec10b4bd0b009c27d2bd",
+      "sourceDigest": "8473e2d2ed733173cbd9e705e6d1e52bbae66603b039a271a78dd3be1cb3bdec"
     },
     "src/daemon/threads/session-pool.ts": {
       "classification": "routing-background-boundary",
@@ -21785,7 +21823,7 @@
     },
     "src/daemon/workflow-rpc.ts": {
       "classification": "daemon-admission-boundary",
-      "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads.",
+      "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads. Workflow observation consumes only allowlisted stage identifiers and callback counts. No provider response text or temporary connection data enters the progress measurement.",
       "sites": [
         [
           "provider-factory",
@@ -21884,6 +21922,10 @@
           "send"
         ],
         [
+          "unresolved-call",
+          "WorkflowMeasurements"
+        ],
+        [
           "serialization",
           "writeArtifact"
         ],
@@ -21892,13 +21934,13 @@
           "writeAtomic"
         ]
       ],
-      "siteCount": 26,
-      "sitesDigest": "c32d54cb293e3ad0a7a2d5174cbfe39e9ded7423ffe6e3d716d5da6fb83da012",
-      "sourceDigest": "283f0b0a32a8efb6b7794d5de88ffeb392d8076d5f2be6f2aa0d3bcf9ccffd9d"
+      "siteCount": 27,
+      "sitesDigest": "070a3997a1b230bb20e4459b2592eb3c9a4cb647495593dde4db4c20da81c71f",
+      "sourceDigest": "21549cb0a611f49f3404bb089f1397f3aa8601ff3fdf52269cbf698107c94eab"
     },
     "src/daemon/workflow-run-registry.ts": {
       "classification": "daemon-admission-boundary",
-      "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads. Detached-run records are published to the status board (serialization sites `publish`, Epic 86197ac6 s3); a detached run is never connection-scoped (connection-session requests stay on the main thread), so no temporary payload is serialized.",
+      "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads. Detached-run records are published to the status board (serialization sites `publish`, Epic 86197ac6 s3); a detached run is never connection-scoped (connection-session requests stay on the main thread), so no temporary payload is serialized. Detached workflow observation tracks the existing owner through settlement and does not add new poll frames, connection bindings, or data-driver authority.",
       "sites": [
         [
           "diagnostic",
@@ -21935,7 +21977,7 @@
       ],
       "siteCount": 8,
       "sitesDigest": "222c86d7e5fe48ab57f377f7c40ea16e0971e296a13116c9c47f95af2a699d22",
-      "sourceDigest": "3f65ccf92ba614771cc8326a2895857b9591ed5cb672c16763b2cd1582fead78"
+      "sourceDigest": "5ace724b7eb957975cda30a5f164701723cd1211e454eee97099a84bdb3f8353"
     },
     "src/db/compaction.ts": {
       "classification": "persistent-storage-boundary",

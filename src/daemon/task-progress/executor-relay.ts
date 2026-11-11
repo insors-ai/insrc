@@ -8,6 +8,7 @@ import { Value } from '@sinclair/typebox/value';
 import { ProgressId, ProgressSequence, progressObject } from '../../shared/task-progress.js';
 import type { DelegateMeasurement, TaskOwnerFence, TaskProgressDelegate, TaskRef } from '../../shared/task-progress.js';
 import type { TrustedRpcContext } from '../request-context.js';
+import type { ForwardRequest } from '../server.js';
 import type { OwnerEvidence, ProducerPort } from './coordinator.js';
 import { validateExecutorDetails } from './executor-measurements.js';
 import type { AnalysisDetails, ExecutorDetails, WorkflowDetails, registerExecutorProducers } from './executor-measurements.js';
@@ -125,6 +126,19 @@ export class ExecutorProgressRelay {
     private readonly admissionMs = 10_000,
     private readonly limit = 256,
   ) {}
+
+  forward(next: ForwardRequest): ForwardRequest {
+    return (request, deliver) => {
+      const kind = executorProgressKind(request.method);
+      const context = request.trustedContext;
+      const params = request.params as { repo?: unknown; scopeRef?: unknown } | null;
+      const repo = kind === 'analysis' ? analysisProgressPath(params?.scopeRef) : params?.repo;
+      if (kind === undefined || context === undefined || typeof repo !== 'string') return next(request, deliver);
+      const port = this.reserve(kind, repo, context);
+      return next(port === undefined ? request
+        : { ...request, trustedContext: { ...context, executorProgressPort: port } }, deliver);
+    };
+  }
 
   /** A dedicated transferred port binds events to the exact dispatched request and worker. */
   reserve(kind: ExecutorProgressKind, repo: string, context: TrustedRpcContext): MessagePort | undefined {

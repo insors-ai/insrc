@@ -76,7 +76,7 @@ export class WorkflowMeasurements {
   }
 }
 
-const analysisStages: readonly AnalysisDetails['stageId'][] = ['classify', 'plan', 'execute'];
+const analysisStages = Object.freeze(['classify', 'plan', 'execute'] as const);
 // Large or malformed plans can still report a stage without retaining task identities.
 const maxTrackedTasks = 4096;
 

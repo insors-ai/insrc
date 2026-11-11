@@ -1,12 +1,19 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFile, execFileSync } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, readdir, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { setTimeout as delay } from 'node:timers/promises';
 import test from 'node:test';
 import type { TestContext } from 'node:test';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
+import { open } from 'lmdb';
+import { accepted, openManagedSupervisorLink } from '../../cli/services/managed-daemon-control.js';
+import { InstallationMutationGate } from '../../shared/installation-mutation-gate.js';
+import { installFreshSelectorMember, inspectManagedJob, installationPaths, readInstallationSelector, registerManagedJob, removeManagedJob } from '../../shared/managed-daemon-installation.js';
 import { captureManagedReleasePin, stageManagedRelease, verifyStagedReleasePin } from '../managed-release-staging.js';
 import type { ManagedReleaseQualification } from '../managed-release-staging.js';
 import type { ReleaseCompatibility } from '../release-compatibility.js';
@@ -22,9 +29,11 @@ function profile(releaseId: string): ReleaseCompatibility {
 	};
 }
 
-async function fixture(t: TestContext) {
-	const stateRoot = await realpath(await mkdtemp(join(tmpdir(), 'insrc-release-stage-')));
-	t.after(() => rm(stateRoot, { recursive: true, force: true }));
+async function fixture(t: TestContext, supervisor?: string) {
+	const scratch = await realpath(await mkdtemp(join(supervisor === undefined ? tmpdir() : '/tmp', 'insrc-release-stage-')));
+	t.after(() => rm(scratch, { recursive: true, force: true }));
+	const stateRoot = supervisor === undefined ? scratch : join(scratch, '.insrc');
+	if (stateRoot !== scratch) await mkdir(stateRoot);
 	const repoUrl = join(stateRoot, 'origin');
 	const old = join(stateRoot, 'daemon');
 	const qualifiedOld = join(stateRoot, 'qualified');
@@ -41,7 +50,7 @@ async function fixture(t: TestContext) {
 			"import { mkdir, writeFile } from 'node:fs/promises';",
 			"for (const dir of ['out/daemon', 'out/bin', 'node_modules', 'packages/project-memory/dist']) await mkdir(dir, { recursive: true });",
 			"await writeFile('out/daemon/index.js', 'process.stdout.write(\"candidate daemon\");');",
-			"await writeFile('out/bin/insrc-daemon-supervisor.js', 'process.stdout.write(\"candidate supervisor\");');",
+			`await writeFile('out/bin/insrc-daemon-supervisor.js', ${JSON.stringify(supervisor ?? 'process.stdout.write("candidate supervisor");')});`,
 		].join('\n'),
 		'version.txt': 'prior',
 	};
@@ -57,6 +66,10 @@ async function fixture(t: TestContext) {
 		}
 		await writeFile(join(root, 'out/daemon/index.js'), 'import value from "../../node_modules/dependency/index.mjs"; process.stdout.write(value);');
 		await writeFile(join(root, 'node_modules/dependency/index.mjs'), priorDependency);
+		if (supervisor !== undefined) {
+			await mkdir(join(root, 'out/bin'));
+			await writeFile(join(root, 'out/bin/insrc-daemon-supervisor.js'), supervisor);
+		}
 	}
 	const entry = join(old, 'out/daemon/index.js');
 	const dependency = join(old, 'node_modules/dependency/index.mjs');
@@ -70,7 +83,7 @@ async function fixture(t: TestContext) {
 		source, candidate, pairs: [{ prior: profile(priorCommit), candidate, priorFingerprint }],
 	};
 	const options = { stateRoot, runtime, source, qualification, prior: { root: old, runtime } };
-	return { options, entry, dependency, old, priorCommit, priorFingerprint, priorDependency };
+	return { options, entry, dependency, old, priorCommit, priorFingerprint, priorDependency, scratch };
 }
 
 test('Release provenance, changed bytes and absent legacy declaration', async t => {
@@ -91,6 +104,66 @@ test('Release provenance, changed bytes and absent legacy declaration', async t 
 	assert.ok(staged.prior);
 	await writeFile(f.dependency, 'changed dependency');
 	await assert.rejects(verifyStagedReleasePin(staged.prior), /pinned release changed/);
+});
+
+test('The stopped installed controller fetches and commits a qualified update without daemon IPC', {
+	skip: process.platform !== 'darwin' || (process.getuid?.() ?? 0) === 0, timeout: 120_000,
+}, async t => {
+	const supervisor = `
+import { register } from ${JSON.stringify(import.meta.resolve('tsx/esm/api'))};
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+register();
+const { listenForSupervisorControllers } = await import(${JSON.stringify(new URL('../supervisor-socket.ts', import.meta.url).href)});
+const root = process.argv[2];
+const directory = join(root, 'managed-lifecycle');
+const selected = JSON.parse(await readFile(join(directory, 'installation.json'), 'utf8'));
+await listenForSupervisorControllers(join(directory, 'control.sock'), { installationRoot: root, releaseId: selected.releaseId }, {
+  async controller(request) {
+    if (request.op !== 'status') throw new Error('stopped update must not send a start or stop request');
+    return { v: request.v, id: request.id, ok: true, generation: null, state: 'idle' };
+  },
+});
+`;
+	const f = await fixture(t, supervisor);
+	const { stateRoot, runtime, source, qualification } = f.options;
+	const gate = new InstallationMutationGate(stateRoot);
+	await gate.read();
+	const paths = installationPaths(stateRoot);
+	git(source.repoUrl, 'notes', '--ref=insrc-daemon-updates', 'add', '-m', JSON.stringify(qualification), qualification.candidate.releaseId);
+	const graph = open({ path: join(stateRoot, 'graph.lmdb'), noSubdir: true, maxDbs: 32 });
+	graph.openDB({ name: 'meta', keyEncoding: 'ordered-binary' }).putSync('schema_version', 10);
+	await graph.close();
+	await mkdir(join(stateRoot, 'lance'));
+	const prior = { version: 1 as const, stateRoot, runtime, releaseId: f.priorCommit, releaseRoot: f.old,
+		enabled: true, pathEnv: process.env['PATH'] ?? '/usr/bin:/bin' };
+	const id = 'c842126b-7fd6-446d-b529-b043e5ea77e1';
+	await installFreshSelectorMember(prior, 'descriptor', id, async () => {});
+	await installFreshSelectorMember(prior, 'manifest', id, async () => {});
+	try {
+		await registerManagedJob(prior, async () => {});
+		for (let attempt = 0;; attempt++) {
+			try { (await openManagedSupervisorLink(prior)).close(); break; }
+			catch (error) { if (attempt >= 30) throw error; await delay(100); }
+		}
+		await assert.rejects(readFile(paths.daemonPid), { code: 'ENOENT' });
+		const controller = fileURLToPath(new URL('../../bin/insrc-daemon-control.ts', import.meta.url));
+		const result = await promisify(execFile)(runtime, ['--import', 'tsx', controller, 'update-local'], {
+			env: { ...process.env, HOME: f.scratch, INSRC_DAEMON_ROOT: f.old }, timeout: 95_000,
+		});
+		assert.match(result.stdout, /committed/);
+		const selected = await readInstallationSelector(stateRoot);
+		assert.equal(selected?.releaseId, qualification.candidate.releaseId);
+		assert.ok(selected?.enabled);
+		const link = await openManagedSupervisorLink(selected);
+		try { assert.equal(accepted(await link.call({ op: 'status', generation: null })).state, 'idle'); }
+		finally { link.close(); }
+		await assert.rejects(readFile(paths.daemonPid), { code: 'ENOENT' });
+		assert.equal((await gate.read()).outcome?.decision, 'committed');
+	} finally {
+		const selected = await readInstallationSelector(stateRoot);
+		if (selected !== undefined && await inspectManagedJob(selected) !== undefined) await removeManagedJob(selected, async () => {});
+	}
 });
 
 test('Staging leaves the installed release executable and unchanged', async t => {

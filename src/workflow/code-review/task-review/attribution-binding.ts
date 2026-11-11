@@ -63,11 +63,11 @@ function reuseMismatch(review: AdmittedReview, assignment: TaskAssignment, sourc
 export function validateSavedAttribution(attempt: ReviewAttempt): void {
  const h = attempt.header;
  if (!attempt.submitted.reviewRevision) {
-  requireReview(h.finalScopeIdentity === undefined && h.attributionState === undefined && h.acceptedAttribution === undefined && h.taskScopeIdentities === undefined && h.attributionIdentity === undefined && h.attributionFailure === undefined, 'attribution', 'Unpinned history cannot carry final-scope authority'); return;
+  requireReview(h.finalScopeIdentity === undefined && h.attributionState === undefined && h.acceptedAttribution === undefined && h.taskScopeIdentities === undefined && h.attributionIdentity === undefined && h.attributionFailure === undefined && h.taskIdentityFormat === undefined, 'attribution', 'Unpinned history cannot carry final-scope authority'); return;
  }
  requireReview(h.finalScopeIdentity && h.attributionState, 'attribution', 'Pinned attempt requires final-scope attribution phase');
  if (h.attributionState !== 'accepted') {
-  requireReview(h.acceptedAttribution === undefined && h.taskScopeIdentities === undefined, 'attribution', 'Unmapped phase cannot carry accepted task bindings');
+  requireReview(h.acceptedAttribution === undefined && h.taskScopeIdentities === undefined && h.taskIdentityFormat === undefined, 'attribution', 'Unmapped phase cannot carry accepted task bindings');
   if (h.attributionState === 'pending') requireReview(h.attributionIdentity === undefined && h.attributionFailure === undefined, 'attribution', 'Pending attribution has terminal bindings');
   else {
    requireReview(h.attributionFailure && Buffer.byteLength(h.attributionFailure.code)<=64 && Buffer.byteLength(h.attributionFailure.summary)<=8192 && h.attributionIdentity === attributionIdentity('unmapped_failure', h.finalScopeIdentity, h.selectedTaskIds, attempt.submitted.tests.length, []), 'attribution', 'Invalid unmapped failure binding');

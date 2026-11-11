@@ -1047,10 +1047,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // and the transcript's total row count; the webview asks for older pages with 'load-older'.
   const postRestored = (s: ChatSession): void => {
     reconcileSessionConfig(s);
+    // Story c760757cc9077508/s1: echo the run config BEFORE the transcript — the webview's
+    // assistant who-labels compose from it at render time, so the restore must not render
+    // rows under the previous session's identity. ([run-config, session-restored] order.)
+    postRunConfig(s);
     const window = latestWindow(s.transcript);
     viewGeneration += 1;
     post({ type: 'session-restored', sessionId: s.id, viewGeneration, progress: readTurnProgress(s), pendingTurnId: runtimes.get(s.id)?.pendingTurnId, transcript: [...window.rows], mode: permissionMode, firstIndex: window.firstIndex, total: s.transcript.length });
-    postRunConfig(s);
     postOutbox(); // Epic E20261014613abdb3 Story S002: each chat shows its own outbox
   };
 

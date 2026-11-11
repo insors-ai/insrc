@@ -380,6 +380,7 @@ export const HOST_TO_WEBVIEW_TYPES = [
   'docs-companion',
   'turn-running',
   'run-catalog',
+  'run-config',
   'outbox',
 ] as const;
 

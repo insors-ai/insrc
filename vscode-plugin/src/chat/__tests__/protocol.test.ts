@@ -314,3 +314,17 @@ test('E202611031bd72813:S001 t4: active-list is a host->webview kind and ActiveC
   assert.deepEqual(Object.keys(contractDocsDecision).sort(), ['artifactId', 'comments', 'decision', 'type'], 'contract docs-decision keys');
   assert.deepEqual(Object.keys(contractOpenCompanion).sort(), ['artifactId', 'relPath', 'type'], 'contract open-companion keys');
 });
+
+test("run-config message shape is encoded in the HostToWebview union and posted by the host on open/switch/restore/set-run-config", () => {
+  assert.ok(HOST_TO_WEBVIEW_TYPES.includes('run-config'), "'run-config' is listed as host->webview");
+  const msg: HostToWebview = { type: 'run-config', provider: 'claude', model: 'opus-4.5', effort: 'high' };
+  assert.equal(msg.type, 'run-config');
+  if (msg.type === 'run-config') {
+    assert.equal(msg.provider, 'claude');
+    assert.equal(msg.model, 'opus-4.5');
+    assert.equal(msg.effort, 'high');
+  }
+  assert.deepEqual(Object.keys(msg), ['type', 'provider', 'model', 'effort']);
+  const cliDefault: HostToWebview = { type: 'run-config', provider: 'codex', model: '', effort: '' };
+  if (cliDefault.type === 'run-config') assert.equal(cliDefault.model, '');
+});

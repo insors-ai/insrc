@@ -715,6 +715,31 @@ test('S005 open-chat: restores a prior transcript; a missing id is a no-op + ref
   assert.ok(historyLists(fc).length > hlBefore, 'a missing id re-posts history-list (dead row dropped)');
 });
 
+test('c760757cc9077508/s1: the restore path posts run-config BEFORE session-restored, so replayed assistant rows compose the restored session’s identity', () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const prior = store.create('codex');
+  prior.model = 'gpt-5.2';
+  store.append(prior.id, { role: 'assistant', text: 'earlier', at: '2026-11-11T04:18:13.568Z' });
+  store.save(prior);
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]), codex: scriptedAdapter([]) }, ['claude', 'codex']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('open-chat', { chatId: prior.id }));
+  const types = fc.posted.map((m) => m.payload.type);
+  const rc = types.lastIndexOf('run-config');
+  const sr = types.lastIndexOf('session-restored');
+  assert.ok(rc >= 0 && sr >= 0, 'both run-config and session-restored were posted');
+  assert.ok(rc < sr, `run-config (idx ${rc}) precedes session-restored (idx ${sr}) — restored rows render under the new identity`);
+  const rcMsg = fc.posted[rc]!.payload as { provider?: string; model?: string };
+  assert.equal(rcMsg.provider, 'codex');
+  assert.equal(rcMsg.model, 'gpt-5.2');
+});
+
 test('S005 ac3 native resume: turn 2 carries resume from turn 1 done.sessionId; only the new prompt is sent', async () => {
   const fc = fakeChannel();
   const reqs: TurnRequest[] = [];

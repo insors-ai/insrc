@@ -16,6 +16,9 @@ import type { ReviewAdmissionReceipt,ReviewBootstrapInput,ReviewWorkerIdentity }
 import { assertReviewIdentity,sameReviewWorker } from './review-worker-contract.js';
 import type { ReplyEnvelope } from './channel.js';
 import type { DesignRecoveryRequest } from '../../workflow/review/design-review/contracts.js';
+import { ReviewResourceRecovery } from './review-resource-recovery.js';
+import type { ReviewResourceRecoveryDeps } from './review-resource-recovery.js';
+import type { ApprovalBroker } from '../approval-broker.js';
 
 export interface ReviewWorkerScope {
  readonly reviewer:'daemon'|'controller';
@@ -60,6 +63,7 @@ interface Entry {
  started?:StartedReviewWorker|undefined;
  progress?:ReviewWorkerProgress|undefined;
  closing?:Promise<void>|undefined;
+ reclaimedHealthy?:boolean|undefined;
  readonly detach:()=>void;
 }
 const keyOf=(key:ReviewKey)=>JSON.stringify([key.project,key.family,key.reviewId]);
@@ -68,6 +72,7 @@ const keyOf=(key:ReviewKey)=>JSON.stringify([key.project,key.family,key.reviewId
 export class ReviewWorkers {
  private readonly entries=new Map<string,Entry>();
  private readonly cleanup=new Set<string>();
+ private readonly resourceHolds=new Map<string,{readonly cleanupScope:string}>();
  private sequence=0;
  readonly leases:ReviewProcessLeases;
  constructor(private readonly deps:ReviewWorkersDeps){
@@ -88,6 +93,7 @@ export class ReviewWorkers {
   if(!Number.isSafeInteger(input.attempt)||input.attempt<1||typeof input.actionId!=='string'||!input.actionId||input.actionId.length>128||input.operation!==undefined&&!['start','resume'].includes(input.operation))throw new Error('Invalid review admission header');
   const key={...input.key,project:await realpath(input.key.project)};
   const identity={key,incarnation:randomUUID()};assertReviewIdentity(identity);
+  if(this.resourceHolds.has(keyOf(key)))throw new Error('Review resource recovery is in progress');
   const scope=await this.deps.resolveScope(key,context);
   if(!scope.subject||!scope.cleanupScope||!['daemon','controller'].includes(scope.reviewer)||scope.epicHash!==undefined&&!/^[0-9a-f]{16}$/.test(scope.epicHash))throw new Error('Invalid trusted review scope');
   if(context.connectionSignal.aborted)throw new Error('Review connection lost');
@@ -191,8 +197,24 @@ export class ReviewWorkers {
  cachedProgress(key:ReviewKey):ReviewWorkerProgress|undefined{return this.entries.get(keyOf(key))?.progress;}
  /** Held by the artifact/story cleanup operation, including its filesystem work. */
  claimCleanup(scope:string):()=>void{
-  if(this.cleanup.has(scope)||[...this.entries.values()].some(e=>e.scope.cleanupScope===scope))throw new Error('Review cleanup busy');
+  if(this.cleanup.has(scope)||[...this.entries.values()].some(e=>e.scope.cleanupScope===scope)||[...this.resourceHolds.values()].some(h=>h.cleanupScope===scope))throw new Error('Review cleanup busy');
   this.cleanup.add(scope);let held=true;return()=>{if(held){held=false;this.cleanup.delete(scope);}};
+ }
+ resourceRecovery(broker:ApprovalBroker,audit:ReviewResourceRecoveryDeps['audit'],approvalWaitMs?:number):ReviewResourceRecovery{
+  return new ReviewResourceRecovery({services:this.deps.services,broker,audit,track:this.deps.track,approvalWaitMs,claim:async(key,context)=>{
+   if(await realpath(key.project)!==key.project)throw new Error('Canonical resource review project required');
+   const scope=await this.deps.resolveScope(key,context),id=keyOf(key),entry=this.entries.get(id);
+   if(this.resourceHolds.has(id)||this.cleanup.has(scope.cleanupScope)||entry&&(!entry.fence.reclaimed||entry.reclaimedHealthy===false))throw new Error('Review work must be reclaimed before resource clearance');
+   const hold={cleanupScope:scope.cleanupScope};this.resourceHolds.set(id,hold);
+   const assertActive=()=>{const current=this.entries.get(id);if(this.resourceHolds.get(id)!==hold||context.connectionSignal?.aborted||current!==entry&&!(entry&&!current))throw new Error('Stale review resource recovery hold');};
+   return{assertActive,release:()=>{if(this.resourceHolds.get(id)===hold)this.resourceHolds.delete(id);},apply:clearance=>{
+    // An earlier receipt may already have released the captured entry.
+    if(this.resourceHolds.get(id)!==hold||context.connectionSignal?.aborted)throw new Error('Stale resource clearance');
+    if(!entry||!this.entries.has(id))return;if(this.entries.get(id)!==entry||!entry.fence.reclaimed||entry.reclaimedHealthy!==true)throw new Error('Review resources remain unreclaimed');
+    entry.native.authorizeClearance(clearance.approvalReceipt.leaseIds);
+    if(entry.native.reclaimable){entry.native.dispose();if(this.entries.get(id)===entry)this.entries.delete(id);}
+   }};
+  }});
  }
  private closeEntry(e:Entry):Promise<void>{
   if(e.closing)return e.closing;
@@ -204,6 +226,7 @@ export class ReviewWorkers {
    let storesHealthy=true;
    if(started){await started.worker.terminate();const reclaimed=await started.reclaimed;storesHealthy=reclaimed.stores.unhealthy.length===0;started.disconnect();this.deps.services.board.forget(started.threadId);this.deps.services.board.forgetAnalyzeRunsOf(started.threadId);}
    disconnectReviewWorker(e.connection);
+   e.reclaimedHealthy=storesHealthy;
    if(e.native.reclaimable&&e.fence.reclaimed&&storesHealthy){e.native.dispose();if(this.entries.get(keyOf(e.input.key))===e)this.entries.delete(keyOf(e.input.key));}
   })();return e.closing;
  }

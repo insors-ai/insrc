@@ -211,6 +211,13 @@ export class ReviewProcessLeases {
   return [...state.leases.values()].every(l=>l.disposal?.state==='confirmed');
  }
  isFenced(key: ReviewKey): boolean { return this.owners.get(reviewKey(key))?.closing===true; }
+ /** Main-only ownership handle, after its exact local broker clearance. This
+  * never signals a PID or changes the already-returned review outcome. */
+ authorizeClearance(owner:ReviewProcessOwner,operationIds:readonly string[]):void{
+  const state=this.owner(owner);requireProcess(state.closing,'review_resource_fenced');
+  const leases=operationIds.map(id=>{const lease=[...state.leases.values()].find(l=>l.reservation.operationId===id);requireProcess(lease?.phase==='finished','native_disposal_pending');return lease;});
+  for(const lease of leases)if(lease.disposal?.state!=='confirmed')lease.disposal=Object.freeze({state:'confirmed',reason:'operator_clearance'});
+ }
  /** Caller must ALSO reclaim worker locks/stores and persist guard closure
   * before releasing registry ownership. Native confirmation alone is insufficient. */
  release(owner: ReviewProcessOwner): void {

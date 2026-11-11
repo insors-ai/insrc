@@ -2,6 +2,7 @@
 import { Type } from '@sinclair/typebox';
 import type { Static } from '@sinclair/typebox';
 import { Value } from '@sinclair/typebox/value';
+import { createHash } from 'node:crypto';
 
 // A bound is a refusal boundary, never permission to discard an open lease.
 export const MAX_REVIEW_OPEN_LEASES = 128;
@@ -29,6 +30,14 @@ export const ReviewResourceGuardSchema = object({
  }, { additionalProperties: false })),
 }, { additionalProperties: false });
 export type ReviewResourceGuard = Static<typeof ReviewResourceGuardSchema>;
+export type ReviewAuthorizedClearance=NonNullable<ReviewResourceGuard['clearance']>;
+export interface ReviewGuardRow {readonly attempt:number;readonly resourceGuard:ReviewResourceGuard;}
+/** Exact semantic snapshot, independent of object key or lease-set ordering. */
+export function reviewGuardDigest(key:ReviewKey,guards:readonly ReviewGuardRow[]):string{
+ const ordered=guards.map(row=>({...row,resourceGuard:{...row.resourceGuard,openLeases:[...row.resourceGuard.openLeases].sort((a,b)=>a.operationId.localeCompare(b.operationId))}})).sort((a,b)=>a.attempt-b.attempt);
+ const bytes=JSON.stringify({key,guards:ordered},(_k,item:unknown)=>item&&typeof item==='object'&&!Array.isArray(item)?Object.fromEntries(Object.entries(item).sort(([a],[b])=>a.localeCompare(b))):item);
+ return createHash('sha256').update(bytes).digest('hex');
+}
 
 /** Contract validation only. A receipt is NOT authorization: the host must
  * verify its pending broker outcome, exact guard digest and lease set. */

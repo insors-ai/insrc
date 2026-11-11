@@ -33,6 +33,7 @@ import { DesignReviewWorker } from '../../workflow/review/design-review/worker-a
 import type { DesignCoordinatorDeps } from '../../workflow/review/design-review/coordinator.js';
 import { loadStoredDesignCheckpoint } from '../../workflow/review/design-review/checkpoint.js';
 import { isDesignAdmission } from '../../workflow/review/design-review/contracts.js';
+import { requireClosedReviewResources } from '../../workflow/review/resource-recovery.js';
 
 /** A dedicated instance, never the class singleton/session runtime. Source
  * qualification and controller authority adapters are integrated by t9/t10. */
@@ -137,6 +138,7 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
   const dispatch=directDispatch(handlers);
   serveRequests(parentPort!,(request,deliver)=>withReviewNativeTransport(transport,()=>dispatch(request,deliver)));
   parentPort!.postMessage('worker-ready');
+  await requireClosedReviewResources(init.review.key);
   const receipt=await persistReviewWorkerAdmission(init.review);
   parentPort!.postMessage(receipt);
  });

@@ -24,7 +24,7 @@ import type { ChildProcess } from 'node:child_process';
 import { reviewNativeTransport, runReviewNativeProcess } from './review-process-bridge.js';
 
 export type ProcessDisposal =
- | { readonly state: 'confirmed'; readonly reason: 'not_started' | 'closed' }
+ | { readonly state: 'confirmed'; readonly reason: 'not_started' | 'closed' | 'operator_clearance' }
  | { readonly state: 'unknown'; readonly reason: 'child_not_closed' | 'group_not_empty' | 'group_state_unknown' };
 
 /** Observe a child we actually own. Signals and helper settlement are not

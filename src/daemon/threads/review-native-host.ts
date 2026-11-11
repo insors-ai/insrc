@@ -118,5 +118,12 @@ export class ReviewNativeHost {
   }
  }
  get reclaimable():boolean{return this.closing&&this.deps.leases.recheck(this.deps.owner)&&[...this.operations.values()].every(o=>o.intent==='absent'||o.intent==='closed');}
+ /** Called only by this entry's main-owned broker recovery hold, after the
+  * worker has been reclaimed and its exact guard receipt was saved/audited. */
+ authorizeClearance(operationIds:readonly string[]):void{
+  if(!this.closing)throw new Error('Live native owners cannot be cleared');
+  const own=operationIds.filter(id=>this.operations.has(id));this.deps.leases.authorizeClearance(this.deps.owner,own);
+  for(const id of own)this.operations.get(id)!.intent='closed';
+ }
  dispose():void{if(!this.reclaimable)throw new Error('Review native resources fenced');this.stopServing();this.deps.port.close();this.deps.leases.release(this.deps.owner);}
 }

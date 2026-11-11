@@ -1,6 +1,7 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { isDeepStrictEqual as same } from 'node:util';
-import { validateReviewResourceGuard } from '../../../shared/review-resources.js';
+import { validateReviewResourceGuard,reviewGuardDigest } from '../../../shared/review-resources.js';
+import type { ReviewAuthorizedClearance } from '../../../shared/review-resources.js';
 import { decodeDesign, isDesignAdmission, requireDesign, StoredDesignCheckpointSchema } from './contracts.js';
 import type { DesignAdmissionCheckpoint, StoredDesignCheckpoint } from './contracts.js';
 import type { ReviewResourceGuard } from '../../../shared/review-resources.js';
@@ -38,7 +39,12 @@ export function decodeStoredDesignCheckpoint(input: unknown): StoredDesignCheckp
  * changes cannot authorize inference, rebind input or rewrite accepted work.
  * Only exact closures supplied by the registered host lease service permit
  * intent removal; ordinary checkpoint writes retain every unresolved lease. */
-export function checkDesignAdmissionEvolution(previous: StoredDesignCheckpoint, next: DesignAdmissionCheckpoint,hostConfirmedClosures:readonly ReviewResourceGuard['openLeases'][number][]=[]): void {
+export function checkDesignAdmissionEvolution(previous: StoredDesignCheckpoint, next: DesignAdmissionCheckpoint,hostConfirmedClosures:readonly ReviewResourceGuard['openLeases'][number][]=[],authorizedClearance?:ReviewAuthorizedClearance): void {
+ if(authorizedClearance&&!same(previous,next)){
+  const key={project:previous.project,family:'design' as const,reviewId:previous.reviewId};
+  const rows=previous.attempts.flatMap(a=>'resourceGuard'in a&&a.resourceGuard?[{attempt:a.number,resourceGuard:a.resourceGuard}]:[]);
+  requireDesign(same(key,authorizedClearance.approvalReceipt.reviewKey)&&reviewGuardDigest(key,rows)===authorizedClearance.approvalReceipt.guardDigest,'resource_pending','Clearance is not bound to the current guard snapshot');
+ }
  requireDesign(previous.project === next.project && previous.reviewId === next.reviewId, 'foreign_checkpoint', 'Checkpoint identity mismatch');
  requireDesign(next.attempts.length >= previous.attempts.length && next.attempts.length <= previous.attempts.length + 1, 'immutable_history', 'Cannot remove or skip attempts');
  for (const [i, old] of previous.attempts.entries()) {
@@ -63,7 +69,8 @@ export function checkDesignAdmissionEvolution(previous: StoredDesignCheckpoint, 
   }
   const guard = 'resourceGuard' in old ? old.resourceGuard : undefined;
   for (const lease of guard?.openLeases ?? []) {
-   requireDesign(current.resourceGuard && current.resourceGuard.daemonInstance === guard?.daemonInstance && (current.resourceGuard.openLeases.some(saved => same(saved, lease))||hostConfirmedClosures.some(closed=>same(closed,lease))), 'resource_pending', 'Cannot discard or replace an unresolved native intent');
+   const approved=authorizedClearance&&same(current.resourceGuard?.clearance,authorizedClearance)&&authorizedClearance.approvalReceipt.leaseIds.includes(lease.operationId);
+   requireDesign(current.resourceGuard && current.resourceGuard.daemonInstance === guard?.daemonInstance && (current.resourceGuard.openLeases.some(saved => same(saved, lease))||hostConfirmedClosures.some(closed=>same(closed,lease))||approved), 'resource_pending', 'Cannot discard or replace an unresolved native intent');
   }
  }
  if (next.attempts.length > previous.attempts.length) {

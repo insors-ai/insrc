@@ -20,6 +20,8 @@ test('existing local broker approval binds exact guards and requires a separate 
   const after=await f.recovery.inspect(f.key,f.local);assert.equal(after.remaining,0);
   assert.equal(after.guards[0]!.resourceGuard.clearance!.approvalReceipt.guardDigest,before.digest);
   assert.equal(f.started.size,0,'clearance must not admit or resume a review');assert.equal(f.nativeCalls(),0);
+  const {persistReviewWorkerAdmission}=await import('../review-worker-admission.js');
+  await assert.rejects(persistReviewWorkerAdmission(f.input),/explicit (resume|recover)/);
   assert.equal((await f.peer.call('review.resource.clear',{reason:'replay'})).status,'already-clear');
  });
 });

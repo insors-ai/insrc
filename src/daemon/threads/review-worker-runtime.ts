@@ -76,6 +76,7 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
     const p=identity(raw);
     if(p['attempt']!==init.review.attempt||!['start','resume'].includes(String(p['operation'])))throw new Error('Invalid review execution');
     if(!context?.reviewOwnerNonce)throw new Error('Trusted review execution required');
+    if(init.review.operation==='resume'&&p['operation']!=='resume')throw new Error('Recovery admission requires explicit resume execution');
     const owner=init.review.reviewer==='controller'?{id:context.reviewOwnerNonce,signal:controllerLifetime.signal}:undefined;
     if(code){if(p['operation']==='resume')await code.assertResume();code.execute(owner,p['operation'] as 'start'|'resume');}
     else{

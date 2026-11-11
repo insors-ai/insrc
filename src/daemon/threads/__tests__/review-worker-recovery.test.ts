@@ -35,7 +35,11 @@ test('disposable daemon crash reconstructs unresolved guards and leaves unrelate
  const permitted=f.recovery.clear(key,{reason:'Verified owned fixture group ended'},f.local),request=await f.peer.request();
  await f.peer.call('approval.answer',{requestId:request.requestId,decision:'approve'});assert.equal((await permitted).status,'cleared');
  await requireClosedReviewResources(key);assert.equal(f.started.has('crash-review'),false);
+ await assert.rejects(f.registry.admit({...f.input,key,actionId:'crash-start'},f.local),/explicit resume/);
+ await f.registry.shutdown();
+ assert.equal(f.started.has('crash-review'),false,'rejected start cannot dispatch inference');
  const resumed=await f.registry.admit({...f.input,key,operation:'resume',actionId:'explicit-resume'},f.local);
+ await assert.rejects(f.registry.execute(resumed,f.local,'start'),/explicit resume/);
  await f.registry.execute(resumed,f.local,'resume');
  const started=f.started.get('crash-review')!;
  await until(async()=> (await workerRpc(started,'fixture.stats')).entered);

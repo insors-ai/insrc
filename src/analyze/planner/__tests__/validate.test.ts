@@ -628,18 +628,24 @@ test('the task-count check agrees with validatePlan at every band boundary', () 
 			const lo = focused ? Math.floor(SCOPE_BAND[scope].lo / 2) : SCOPE_BAND[scope].lo;
 			const hi = SCOPE_BAND[scope].hi;
 			for (const n of [lo - 1, lo, hi, hi + 1]) {
-				if (n < 2) continue;
-				const plan = planOfSize(n, scope);
+				// Plans of 0 or 1 tasks cannot pass the earlier invariants (INV-1 / INV-12),
+				// so for them the check is compared with the failure written out by hand.
+				const plan = n < 2
+					? { ...planOfSize(2, scope), tasks: planOfSize(2, scope).tasks.slice(0, n) }
+					: planOfSize(n, scope);
 				const direct = taskCountFailure(plan, { focused });
-				const viaValidate = validatePlan(plan, CATALOG, { focused });
+				const viaValidate = validatePlan(plan, CATALOG, { focused }); // for n < 2 an earlier invariant answers first
 				const inBand = n >= lo && n <= hi;
 				const label = `${scope} focused=${focused} n=${n}`;
 				if (inBand) {
 					assert.equal(direct, null, label);
-					assert.equal(viaValidate, null, label);
+					if (n >= 2) assert.equal(viaValidate, null, label);
 				} else {
 					assert.equal(direct?.invariantId, 'INV-13', label);
-					assert.deepEqual(viaValidate, direct, label);
+					assert.equal(direct?.message,
+						`task count ${n} is outside the scope band for ${scope} (${lo}-${hi}${focused ? ' focused' : ''})`, label);
+					assert.deepEqual(direct?.target, { count: n, scope, band: { lo, hi } }, label);
+					if (n >= 2) assert.deepEqual(viaValidate, direct, label);
 				}
 			}
 		}

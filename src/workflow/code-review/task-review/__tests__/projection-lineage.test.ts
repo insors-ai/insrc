@@ -95,3 +95,95 @@ test('boundedProjectionSources caches pathChanges and charges one read per uncac
   assert.equal(listings, 1);
  } finally { r.cleanup(); }
 });
+
+/** A selected change to source.js, then `n` commits on main and `n` on a side branch merged
+ * twice, all touching only other files; the pin is the last merge. */
+async function interleaved(n: number) {
+ const r = deterministicRepo();
+ r.put('source.js', 'a\nb\nc\n'); r.put('other.txt', '0\n'); const base = r.commit('base');
+ r.put('source.js', 'a\nB\nc\n'); const origin = r.commit('selected change');
+ for (let round = 0; round < 2; round++) {
+  r.git('checkout', '-q', '-B', 'side'); for (let i = 0; i < n / 2; i++) { r.put(`side-${round}-${i}.txt`, `${i}\n`); r.commit(`side ${round} ${i}`); }
+  r.git('checkout', '-q', 'main'); for (let i = 0; i < n / 2; i++) { r.put('other.txt', `${round}-${i}\n`); r.commit(`main ${round} ${i}`); }
+  r.tick(); r.git('merge', '-q', '--no-ff', '-m', `merge side ${round}`, 'side');
+ }
+ const pin = r.git('rev-parse', 'HEAD');
+ return { r, base, origin, pin };
+}
+
+function counting(registry: ReviewSources, path: string) {
+ const seen = { reads: 0, bytes: 0, listings: 0 };
+ const sources: ReviewSources = { commit: registry.commit.bind(registry), isAncestor: registry.isAncestor.bind(registry), changedRanges: registry.changedRanges.bind(registry),
+  file: async (commit, at) => { const blob = await registry.file(commit, at); if (at === path) { seen.reads++; seen.bytes += blob?.bytes.byteLength ?? 0; } return blob; },
+  pathChanges: async (...args) => { seen.listings++; return registry.pathChanges(...args); } };
+ return { sources, seen };
+}
+
+test('lineage reads do not grow with interleaved commits that leave the selected path untouched', async () => {
+ const measure = async (n: number) => {
+  const { r, base, origin, pin } = await interleaved(n);
+  try {
+   const registry = new RegistryReviewSources({ repoPath: r.repo, sessionId: 'projection-lineage', requestId: 1, send: () => {} });
+   const { sources, seen } = counting(registry, 'source.js');
+   const projection = await projectReviewScope([await selected(registry, origin, base, 'source.js', 'source.js', [{ after: [2, 2] }])], pin, sources);
+   assert.deepEqual(projection.entries.map(e => e.findingScope), ['selected']);
+   return { ...seen, commits: Number(r.git('rev-list', '--count', `${origin}..${pin}`)) };
+  } finally { r.cleanup(); }
+ };
+ const small = await measure(4), large = await measure(40);
+ assert.ok(large.commits - small.commits >= 36, `the fixtures differ by ${large.commits - small.commits} commits`);
+ assert.deepEqual({ reads: large.reads, bytes: large.bytes, listings: large.listings }, { reads: small.reads, bytes: small.bytes, listings: small.listings });
+ assert.equal(small.listings, 1, 'one listing for the one lineage leg');
+});
+
+/** source.js is selected, then a side branch forked after the origin changes it and is merged. */
+async function sideBranchLineage(side: (r: ReturnType<typeof deterministicRepo>) => void, mergeArgs: readonly string[]) {
+ const r = deterministicRepo();
+ r.put('source.js', 'a\nb\nc\n'); r.put('other.txt', '0\n'); const base = r.commit('base');
+ r.put('source.js', 'a\nB\nc\n'); const origin = r.commit('selected change');
+ r.git('checkout', '-q', '-b', 'side'); side(r);
+ r.git('checkout', '-q', 'main'); r.put('other.txt', '1\n'); r.commit('main work');
+ r.tick(); r.git('merge', '-q', '--no-ff', ...mergeArgs, '-m', 'merge side', 'side');
+ const pin = r.git('rev-parse', 'HEAD');
+ const sources = new RegistryReviewSources({ repoPath: r.repo, sessionId: 'projection-lineage', requestId: 1, send: () => {} });
+ return { r, pin, sources, origins: [await selected(sources, origin, base, 'source.js', 'source.js', [{ after: [2, 2] }])] };
+}
+
+test('a side-branch deletion merged back with the file kept still interrupts lineage', async () => {
+ const f = await sideBranchLineage(r => { r.git('rm', '-q', 'source.js'); r.commit('side deletes source.js'); }, ['-s', 'ours']);
+ try {
+  assert.equal(f.r.git('rev-parse', `${f.pin}:source.js`).length, 40, 'the merge kept source.js');
+  await assert.rejects(projectReviewScope(f.origins, f.pin, f.sources), /Unselected path disappearance or recreation interrupts lineage/);
+ } finally { f.r.cleanup(); }
+});
+
+test('a side-branch deletion and recreation merged back still interrupts lineage', async () => {
+ const f = await sideBranchLineage(r => { r.git('rm', '-q', 'source.js'); r.commit('side deletes source.js'); r.put('source.js', 'a\nB\nc\n'); r.commit('side recreates source.js'); }, []);
+ try {
+  await assert.rejects(projectReviewScope(f.origins, f.pin, f.sources), /Unselected path disappearance or recreation interrupts lineage/);
+ } finally { f.r.cleanup(); }
+});
+
+test('a path history failure is a source error, not a projection limit or lineage conflict', async () => {
+ const { r, base, origin, pin } = await interleaved(4);
+ try {
+  const registry = new RegistryReviewSources({ repoPath: r.repo, sessionId: 'projection-lineage', requestId: 1, send: () => {} });
+  const failure = new TaskReviewInputError('source', 'git log failed');
+  const broken: ReviewSources = { commit: registry.commit.bind(registry), isAncestor: registry.isAncestor.bind(registry), file: registry.file.bind(registry), changedRanges: registry.changedRanges.bind(registry), pathChanges: async () => { throw failure; } };
+  await assert.rejects(projectReviewScope([await selected(registry, origin, base, 'source.js', 'source.js', [{ after: [2, 2] }])], pin, broken), error => error === failure);
+ } finally { r.cleanup(); }
+});
+
+test('the read limit still refuses with projection_limit when the selected file itself changed too often', async () => {
+ const r = deterministicRepo();
+ try {
+  r.put('source.js', 'a\nb\nc\n'); const base = r.commit('base');
+  r.put('source.js', 'a\nB\nc\n'); const origin = r.commit('selected change');
+  for (let i = 0; i < 30; i++) { r.put('source.js', `a\nB\nc\n${i}\n`); r.commit(`unselected edit ${i}`); }
+  const pin = r.git('rev-parse', 'HEAD');
+  const sources = new RegistryReviewSources({ repoPath: r.repo, sessionId: 'projection-lineage', requestId: 1, send: () => {} });
+  const origins = [await selected(sources, origin, base, 'source.js', 'source.js', [{ after: [2, 2] }])];
+  await assert.rejects(projectReviewScope(origins, pin, sources, new ProjectionBudget({ reads: 40 })), (error: unknown) => error instanceof TaskReviewInputError && error.field === 'projection_limit');
+  assert.equal((await projectReviewScope(origins, pin, sources)).entries.length, 1, 'the same projection fits the production limits');
+ } finally { r.cleanup(); }
+});

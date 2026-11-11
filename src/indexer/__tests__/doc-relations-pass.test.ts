@@ -1,6 +1,6 @@
 /**
  * Epic c2ba6fa6, Story s10, t7 -- the document-relations pass over a real
- * indexed repository with a fake mid-tier provider that records its calls:
+ * indexed repository with a fake provider that records its calls:
  * calls are serial and only for new or changed documents (a reindex of an
  * unchanged repository sends none); a document edited, or a full index begun,
  * while it is examined publishes nothing; an unavailable provider records the
@@ -48,7 +48,7 @@ const FILES: Record<string, string> = {
 };
 const write = (rel: string, text: string): void => { mkdirSync(dirname(join(repo, rel)), { recursive: true }); writeFileSync(join(repo, rel), text); };
 
-/** A fake mid-tier provider: answers per document from `answer`, records documents and peak concurrency. */
+/** A fake provider: answers per document from `answer`, records documents and peak concurrency. */
 function fakeProvider(answer: (doc: string, sources: string[]) => unknown) {
 	const calls: string[] = [];
 	let inFlight = 0;
@@ -165,10 +165,10 @@ test('s10 t7: unavailable provider (resolution, not signed in) writes status and
 		writeDocRelationRowInTxn(t, repoId, 'docs/a.md', { contentHash: 'h', modelId: 'm1', computedAtGeneration: 1, proposals: [{ from: a.id, to: 'vanished', rationale: 'r' }] });
 	});
 	// No provider resolves.
-	const refused = await pass({ select: () => ({ ok: false, reason: 'indexer.docRelations is assigned to tier cheap; this capability runs only on the mid tier' }) });
-	assert.deepEqual(refused, { unavailable: true, reason: 'indexer.docRelations is assigned to tier cheap; this capability runs only on the mid tier' });
+	const refused = await pass({ select: () => ({ ok: false, reason: 'indexer.docRelations is assigned to tier core; this capability supports cheap and mid' }) });
+	assert.deepEqual(refused, { unavailable: true, reason: 'indexer.docRelations is assigned to tier core; this capability supports cheap and mid' });
 	assert.equal((await quality())?.extraction.state, 'unavailable');
-	assert.match((await quality())!.extraction.reason!, /tier cheap/);
+	assert.match((await quality())!.extraction.reason!, /tier core/);
 	assert.deepEqual([...(await rows()).keys()], ['docs/a.md'], 'the row of the removed document is deleted');
 	assert.deepEqual((await rows()).get('docs/a.md')!.proposals, [], 'the vanished endpoint is pruned');
 	await withWriteTxn(t => deleteDocRelationRowInTxn(t, repoId, 'docs/a.md'));

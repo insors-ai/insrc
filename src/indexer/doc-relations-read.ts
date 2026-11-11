@@ -1,7 +1,7 @@
 /**
  * The read of document relationships as the daemon serves it (Epic c2ba6fa6
  * s10): the switch computed now -- the repository's recorded figures, the
- * mid-tier model that runs now and the hand-checked set as it is now -- and the
+ * configured model that runs now and the hand-checked set as it is now -- and the
  * store's documentRelations under it.
  */
 
@@ -51,7 +51,7 @@ export async function readDocumentRelations(entityId: string, direction: 'out' |
  * The revision of everything a document-relationship read depends on beyond
  * the graph rows (Epic c2ba6fa6 s10): the repository's IndexState generation
  * (every file commit advances it), its quality row, its proposal rows, the
- * validated mid-tier model and the hand-checked set. A cached context bundle
+ * validated configured model and the hand-checked set. A cached context bundle
  * stamped with another revision is rebuilt.
  */
 export async function docRelationsRevision(repoPath: string, cfg: AnalyzeConfig = loadAnalyzeConfig()): Promise<string> {

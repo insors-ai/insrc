@@ -1,5 +1,5 @@
 /**
- * The measurement of the mid-tier model's proposals against a repository's
+ * The measurement of the configured model's proposals against a repository's
  * hand-checked set (Epic c2ba6fa6 s10, ac2).
  *
  * The set (.insrc/doc-relations-checked.json) is exhaustive for each document
@@ -156,7 +156,7 @@ export interface DocRelationsMeasureDeps {
 	/** The set's hash when the request validated it: a set changed since is not measured. */
 	readonly setHash:     string;
 	readonly shouldStop?: (() => boolean) | undefined;
-	/** The provider selection (a seam): the mid tier's CLI provider by default. */
+	/** The provider selection (a seam): the role's configured provider by default. */
 	readonly select?:     ((repoPath: string) => DocRelationsSelection) | undefined;
 }
 

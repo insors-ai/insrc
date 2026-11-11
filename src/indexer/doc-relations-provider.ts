@@ -1,17 +1,10 @@
 /**
- * The model that proposes document relationships (Epic c2ba6fa6 s10): the mid
- * tier, reached only through a CLI provider (ac4, k3, k9).
+ * The model that proposes document relationships (Epic c2ba6fa6 s10).
  *
- * The role 'indexer.docRelations' is peripheral with default tier 'mid', and a
- * role override may assign it another tier. The capability runs only on the
- * mid tier, so the selection refuses any other assignment rather than follow
- * it -- the router's general precedence is not changed. It checks the
- * assignment with the pure resolveRole (per-repo and global roleTiers
- * included), then, under a routing context, that the router resolved the same
- * mid assignment; on a thread with no routing context (the summary worker) it
- * builds the provider from that resolution. In both it requires a family with
- * a CLI kind and a model the definitions list for it. A refusal carries the
- * reason the status shows; nothing is called.
+ * The role defaults to cheap, which supports local Ollama and CLI providers.
+ * Explicit mid-tier CLI overrides remain supported. Check the effective
+ * assignment and registered model before building the provider, and require
+ * an existing routing context to agree with that selection.
  *
  * Failures of a call: every error the provider call throws -- whatever its
  * shape: a CLI exit, a stall, an error event or envelope turned into an Error,
@@ -33,7 +26,7 @@ export type DocRelationsSelection =
 	| { readonly ok: true; readonly provider: LLMProvider; readonly modelId: string }
 	| { readonly ok: false; readonly reason: string };
 
-/** The mid-tier model the capability runs for a repository, or why it cannot run (no provider is built). */
+/** The configured model for a repository, or why the pass cannot run. */
 export function validatedDocRelationsModel(
 	cfg:      AnalyzeConfig,
 	repoPath: string,
@@ -41,16 +34,16 @@ export function validatedDocRelationsModel(
 ): { readonly ok: true; readonly resolution: RoleResolution; readonly model: ResolvedModel } | { readonly ok: false; readonly reason: string } {
 	try {
 		const resolution = resolveRole(DOC_RELATIONS_ROLE, cfg, repoPath, { registry });
-		if (resolution.tier !== 'mid') {
-			return { ok: false, reason: `${DOC_RELATIONS_ROLE} is assigned to tier ${resolution.tier}; this capability runs only on the mid tier` };
+		const { tier, runner: family } = resolution;
+		if (tier !== 'cheap' && tier !== 'mid') {
+			return { ok: false, reason: `${DOC_RELATIONS_ROLE} is assigned to tier ${tier}; this capability supports cheap and mid` };
 		}
-		const family = resolution.runner;
-		if (registry.cliKind(family) === undefined) {
-			return { ok: false, reason: `the mid tier runs ${family}, which is not a CLI provider` };
+		if (registry.cliKind(family) === undefined && (tier !== 'cheap' || family !== 'ollama')) {
+			return { ok: false, reason: `the ${tier} tier runs ${family}, which is not a CLI provider` };
 		}
 		const model = registry.find(family, resolution.model);
 		if (model === undefined) {
-			return { ok: false, reason: `the mid tier names no model the definitions list for ${family} ('${resolution.model}')` };
+			return { ok: false, reason: `the ${tier} tier names no model the definitions list for ${family} ('${resolution.model}')` };
 		}
 		return { ok: true, resolution, model };
 	} catch (err) {
@@ -58,7 +51,7 @@ export function validatedDocRelationsModel(
 	}
 }
 
-/** The mid-tier CLI provider for the repository's document-relations pass, or why there is none. */
+/** The provider for the repository's document-relations pass, or why there is none. */
 export function selectDocRelationsProvider(
 	cfg:      AnalyzeConfig,
 	repoPath: string,
@@ -71,9 +64,10 @@ export function selectDocRelationsProvider(
 	try {
 		const ctx = currentRoutingContext();
 		if (ctx !== undefined) {
-			const routed = ctx.router.resolveProviderForRole(DOC_RELATIONS_ROLE, cfg, ctx.repoPath ?? repoPath);
-			if (routed.resolution.tier !== 'mid' || routed.resolution.runner !== resolution.runner || routed.resolution.model !== resolution.model) {
-				return { ok: false, reason: `the router resolved ${DOC_RELATIONS_ROLE} to tier ${routed.resolution.tier} (${routed.resolution.runner}); this capability runs only on the mid tier` };
+			const routed = ctx.router.resolveProviderForRole(DOC_RELATIONS_ROLE, cfg, repoPath);
+			if (routed.resolution.tier !== resolution.tier || routed.resolution.runner !== resolution.runner
+				|| routed.resolution.model !== resolution.model) {
+				return { ok: false, reason: `the router resolved a different tier, provider, or model for ${DOC_RELATIONS_ROLE}` };
 			}
 			return { ok: true, provider: routed.provider, modelId: model.id };
 		}

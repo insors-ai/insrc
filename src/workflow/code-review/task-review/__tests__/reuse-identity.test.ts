@@ -5,7 +5,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { fixture, hash } from './publication-fixture.js';
 import { historyFixture } from './history-fixture.js';
 import { provider } from './controller-fixture.js';
-import { assignmentsToRows, attributionIdentity, bindTaskFinalIdentities, restoreAcceptedAssignments, reuseMismatch, taskFinalIdentity, taskInputFingerprint, validateSavedAttribution } from '../attribution-binding.js';
+import { assignmentsToRows, attributionIdentity, refusedListing, throwReuseRefusals, bindTaskFinalIdentities, restoreAcceptedAssignments, reuseMismatch, taskFinalIdentity, taskInputFingerprint, validateSavedAttribution } from '../attribution-binding.js';
 import { prepareReviewAdmission } from '../admission.js';
 import { reviewAssignments } from '../assessment.js';
 import { recordAttributionRejection } from '../attribution-repair.js';
@@ -273,4 +273,21 @@ test('a published v2 reuse row passes the record reuse-identity check', async ()
   (row as { identity: string }).identity = 'f'.repeat(64);
   assert.throws(() => validateTaskBody(tampered), /Reuse source lacks matching accepted final task identity|identity/);
  } finally { f.cleanup(); }
+});
+
+test('refused task ids too long to list are named by Plan position within the feedback bound', () => {
+ const order = Array.from({ length: 45 }, (_unused, i) => `t${String(i + 1).padStart(240, '0')}`), refused = [...order.slice(0, 40), order[44]!];
+ const review = { attempt: { header: { selectedTaskIds: order } } } as unknown as AdmittedReview;
+ const detail = 'x'.repeat(300);
+ let rejection: unknown;
+ try { throwReuseRefusals(review, refused.map((taskId, i) => ({ taskId, field: `origins/tasks/${i}/sourceAttempt/1`, message: detail }))); } catch (error) { rejection = error; }
+ assert.ok(rejection instanceof Error);
+ const feedback = rejection.message.slice(0, 8192);
+ // includes(), not assert.match: a failing regex over a multi-kilobyte string can spin node:test.
+ assert.ok(feedback.includes('41 tasks cannot reuse their source attempt; their task ids are too long to list, so they are named by Plan task position: 1-40, 45.'), feedback.slice(0, 200));
+ assert.match(refusedListing(['t1', 't3'], ['t1', 't2', 't3']), /^2 tasks cannot reuse their source attempt: "t1", "t3"\.$/);
+ const scattered = Array.from({ length: 4000 }, (_unused, i) => `t${String(i).padStart(240, '0')}`);
+ const listing = refusedListing(scattered.filter((_id, i) => i % 2 === 0), scattered);
+ assert.ok(Buffer.byteLength(listing) <= 4096);
+ assert.ok(/ and \d+ more position ranges\.$/.test(listing.slice(-60)), listing.slice(-60));
 });

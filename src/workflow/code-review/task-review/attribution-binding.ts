@@ -135,7 +135,20 @@ export function throwReuseRefusals(review: AdmittedReview, refusals: readonly Re
  const order = review.attempt.header.selectedTaskIds, sorted = [...refusals].sort((a, b) => order.indexOf(a.taskId) - order.indexOf(b.taskId));
  const first = sorted[0]!;
  if (sorted.length === 1) throw new TaskReviewInputError(first.field, first.message);
- throw new TaskReviewInputError(first.field, diagnosticText(`${sorted.length} tasks cannot reuse their source attempt: ${sorted.map(r => JSON.stringify(r.taskId)).join(', ')}. ${sorted.map(r => r.message).join(' ')}`, 8192));
+ throw new TaskReviewInputError(first.field, diagnosticText(`${refusedListing(sorted.map(r => r.taskId), order)} ${sorted.map(r => r.message).join(' ')}`, 8192));
+}
+/** Share of the 8192-byte feedback bound reserved for naming the refused tasks; per-task detail follows and may be cut. */
+const REFUSED_LISTING_BYTES = 4096;
+/** Names every refused task by id; when the ids do not fit the listing share, by their 1-based Plan positions as ranges, which stay short whatever the id length. */
+export function refusedListing(taskIds: readonly string[], order: readonly string[]): string {
+ const byId = `${taskIds.length} tasks cannot reuse their source attempt: ${taskIds.map(id => JSON.stringify(id)).join(', ')}.`;
+ if (Buffer.byteLength(byId) <= REFUSED_LISTING_BYTES) return byId;
+ const positions = taskIds.map(id => order.indexOf(id) + 1).sort((a, b) => a - b), ranges: string[] = [];
+ for (let i = 0; i < positions.length; i++) { let j = i; while (j + 1 < positions.length && positions[j + 1] === positions[j]! + 1) j++; ranges.push(i === j ? `${positions[i]}` : `${positions[i]}-${positions[j]}`); i = j; }
+ const head = `${taskIds.length} tasks cannot reuse their source attempt; their task ids are too long to list, so they are named by Plan task position: `;
+ let listed = '', shown = 0;
+ for (const range of ranges) { const next = listed ? `${listed}, ${range}` : range; if (Buffer.byteLength(head + next) + 40 > REFUSED_LISTING_BYTES) break; listed = next; shown++; }
+ return `${head}${listed}${shown < ranges.length ? ` and ${ranges.length - shown} more position ranges` : ''}.`;
 }
 export function requireReuseIdentity(review: AdmittedReview, assignment: TaskAssignment, format?: TaskIdentityFormat): void {
  const refusal = reuseRefusal(review, assignment, format);

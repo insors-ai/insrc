@@ -39,3 +39,9 @@ export interface ReviewProcessRun {
  readonly started: Promise<{ readonly spawned: boolean; readonly pid?: number | undefined }>;
  readonly result: Promise<ReviewProcessOutcome>;
 }
+/** Only the registered main host sends this after observing owned disposal.
+ * It is not accepted from submission packets or public review exchanges. */
+export interface ConfirmedReviewLeaseClosure {
+ readonly reservation:ReviewProcessReservation;
+ readonly disposal:Extract<ProcessDisposal,{state:'confirmed'}>;
+}

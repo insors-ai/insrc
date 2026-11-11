@@ -15,6 +15,7 @@ export interface ReviewBootstrapDeps{
  readonly schedule?:((fn:()=>void,ms:number)=>()=>void)|undefined;
  /** Registry retains the exact review fence until native AND worker reclaim. */
  readonly onClosing?:(worker:Worker|undefined,reclaimed:Promise<void>)=>void;
+ readonly onCreated?:((worker:Worker)=>void)|undefined;
 }
 /** One runtime lifecycle handle stored by t8's registry, not another map or
  * durable review ledger. It is never reusable, including after reclamation. */
@@ -64,6 +65,7 @@ export function startReviewWorkerBootstrap(services:ThreadServices,review:Review
   try{
    const starting=(deps.start??startWorker)(services,'review','review-worker',{workerData:{role:'review',review,nativePort},transferList:[nativePort]},created=>{
     worker=created;worker.on('message',message);worker.once('error',failed);worker.once('exit',failed);
+    deps.onCreated?.(worker);
     if(closing)void worker.terminate().catch(()=>{});
    });
    void starting.then(started=>{

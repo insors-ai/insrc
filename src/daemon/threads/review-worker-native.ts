@@ -13,6 +13,7 @@ export const REVIEW_NATIVE_OP='review.native.';
 export class ReviewWorkerNativeTransport implements ReviewNativeTransport{
  private readonly hub:HubClient;
  private readonly consumers=new Map<string,(output:ReviewProcessOutput)=>Promise<void>>();
+ private sequence=0;
  constructor(port:MessagePort,private readonly identity:ReviewWorkerIdentity){
   this.hub=new HubClient(port);
   this.hub.onPush(REVIEW_NATIVE_OP+'output',raw=>{
@@ -32,7 +33,7 @@ export class ReviewWorkerNativeTransport implements ReviewNativeTransport{
   if(!isDeepStrictEqual(reservation.key,this.identity.key)||reservation.workerIncarnation!==this.identity.incarnation)throw new Error('Foreign native review lease');
  }
  resolveBinary(command:string):Promise<string>{return this.hub.request(REVIEW_NATIVE_OP+'resolveBinary',{command});}
- async reserve(command:ReviewNativeCommand):Promise<ReviewProcessReservation>{const r=await this.hub.request<ReviewProcessReservation>(REVIEW_NATIVE_OP+'reserve',{command});this.bound(r);return r;}
+ async reserve(command:ReviewNativeCommand):Promise<ReviewProcessReservation>{const r=await this.hub.request<ReviewProcessReservation>(REVIEW_NATIVE_OP+'reserve',{sequence:++this.sequence,command});this.bound(r);return r;}
  saveOpenIntent(r:ReviewProcessReservation):Promise<ReviewIntentReceipt>{this.bound(r);return this.hub.request(REVIEW_NATIVE_OP+'saveOpenIntent',{reservation:r});}
  async start(r:ReviewProcessReservation,receipt:ReviewIntentReceipt,consume:(output:ReviewProcessOutput)=>Promise<void>):Promise<ReviewProcessOutcome>{
   this.bound(r);if(this.consumers.has(r.operationId))throw new Error('Native review delivery already active');

@@ -23,6 +23,9 @@ import { registerBuiltinTemplates } from '../../analyze/planner/templates/bootst
 import { registerBuiltinRuntimes } from '../../analyze/runtimes/bootstrap.js';
 import { isLiveStoreOwnerDeclared } from '../../db/graph/store.js';
 import { getToolSettings } from '../tools/config.js';
+import { updateReviewWorkerResource } from './review-worker-resources.js';
+import type { ReviewProcessReservation, ConfirmedReviewLeaseClosure } from '../../shared/review-native.js';
+import { isDeepStrictEqual } from 'node:util';
 
 /** A dedicated instance, never the class singleton/session runtime. Source
  * qualification and controller authority adapters are integrated by t9/t10. */
@@ -44,6 +47,9 @@ export async function runReviewWorker(init:ReviewWorkerInit):Promise<void>{
    return raw as Record<string,unknown>;
   };
   const handlers:RpcHandlers={
+   'review.worker.matchAdmission':async(raw:unknown)=>{const p=identity(raw);if(p['attempt']!==init.review.attempt||p['reviewer']!==init.review.reviewer||p['actionId']!==init.review.actionId||!isDeepStrictEqual(p['submitted'],init.review.submitted))throw new Error('Conflicting review admission replay');return persistReviewWorkerAdmission(init.review);},
+   'review.worker.resource.open':async(raw:unknown)=>{const p=identity(raw);return updateReviewWorkerResource(init.review,'open',p['reservation'] as ReviewProcessReservation);},
+   'review.worker.resource.close':async(raw:unknown)=>{const p=identity(raw);return updateReviewWorkerResource(init.review,'close',p['reservation'] as ReviewProcessReservation,p['closure'] as ConfirmedReviewLeaseClosure);},
    'review.worker.describe':async(raw:unknown)=>{identity(raw);return{key:init.review.key,incarnation:init.review.incarnation,threadId,coordinator:coordinator.constructor.name,nativeBound:!!reviewNativeTransport(),storeOwnerDeclared:isLiveStoreOwnerDeclared(),shellTimeoutMs:getToolSettings().shell.defaultTimeoutMs};},
    'review.worker.progress':async(raw:unknown)=>{
     const params=identity(raw),attempt=params['attempt'];if(!Number.isSafeInteger(attempt)||Number(attempt)<1)throw new Error('Invalid review attempt');
@@ -61,6 +67,10 @@ export async function runReviewWorker(init:ReviewWorkerInit):Promise<void>{
    if(params['probe']==='tool'){
     const {runShellBytes}=await import('../tools/shell-helper.js');
     return runShellBytes([process.execPath,'-e','process.stdin.pipe(process.stdout)'],{cwd:init.review.key.project,stdin:new Uint8Array([0,255,128,10]),timeoutMs:1000});
+   }
+   if(params['probe']==='hold'){
+    const {runShellBytes}=await import('../tools/shell-helper.js');
+    return runShellBytes([process.execPath,'-e',"process.stdout.write('started');setInterval(()=>{},1000)"],{cwd:init.review.key.project,timeoutMs:60000});
    }
    throw new Error('Unknown native bootstrap probe');
   };

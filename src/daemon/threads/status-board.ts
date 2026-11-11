@@ -20,7 +20,7 @@ const log = getLogger('status-board');
 
 export interface ThreadStatus {
 	readonly threadId: number;
-	readonly cls: MethodClass | 'router';
+	readonly cls: MethodClass | 'router' | 'review';
 	readonly session?: SessionId | undefined;
 	readonly busy: boolean;
 	readonly method?: string | undefined;

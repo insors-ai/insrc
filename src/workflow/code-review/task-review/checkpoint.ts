@@ -23,17 +23,27 @@ export class CheckpointSaveError extends Error {
 }
 const defaultIO = { open, mkdir, rename, unlink };
 export type CheckpointIO = typeof defaultIO;
+const codeWrites=new Map<string,Promise<void>>();
+function serializeCodeWrite<T>(path:string,write:()=>Promise<T>):Promise<T>{
+ const previous=codeWrites.get(path)??Promise.resolve(),next=previous.catch(()=>{}).then(write),tail=next.then(()=>{},()=>{});
+ codeWrites.set(path,tail);void tail.then(()=>{if(codeWrites.get(path)===tail)codeWrites.delete(path);});return next;
+}
 export function checkpointBytes(checkpoint:ReviewCheckpoint):string{return JSON.stringify(decodeReview(CheckpointSchema,checkpoint),null,2)+'\n';}
 /** A poller always sees an entire file; a completed task is flushed before advancing. */
 export async function saveCheckpoint(path: string, checkpoint: ReviewCheckpoint, io: CheckpointIO = defaultIO): Promise<void> {
  for (const attempt of checkpoint.attempts) { validateFailureDiagnostics(attempt); validateSavedAttribution(attempt); }
  const serialized = checkpointBytes(checkpoint);
- return writeCheckpoint(path, serialized, io);
+ return serializeCodeWrite(path,()=>writeCheckpoint(path, serialized, io));
 }
 /** The same atomic writer for the versioned admission contract. Production
  * emission starts only when the worker adapters are cut over. */
 export async function saveStoredCheckpoint(path: string, checkpoint: StoredReviewCheckpoint, io: CheckpointIO = defaultIO): Promise<void> {
- return writeCheckpoint(path, JSON.stringify(decodeStoredCheckpoint(checkpoint), null, 2) + '\n', io);
+ const bytes=JSON.stringify(decodeStoredCheckpoint(checkpoint),null,2)+'\n';
+ return serializeCodeWrite(path,()=>writeCheckpoint(path,bytes,io));
+}
+/** Resource/progress read-modify-write shares the same family save lane. */
+export function updateStoredCodeCheckpoint(path:string,mutate:(current:StoredReviewCheckpoint|undefined)=>StoredReviewCheckpoint|Promise<StoredReviewCheckpoint>):Promise<StoredReviewCheckpoint>{
+ return serializeCodeWrite(path,async()=>{const next=decodeStoredCheckpoint(await mutate(await loadStoredCheckpoint(path)));await writeCheckpoint(path,JSON.stringify(next,null,2)+'\n',defaultIO);return next;});
 }
 async function writeCheckpoint(path: string, serialized: string, io: CheckpointIO): Promise<void> {
  requireReview(Buffer.byteLength(serialized) <= reviewJsonLimit(), 'checkpoint', 'JSON exceeds limit');

@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { DESIGN_LIMITS, requireDesign } from './contracts.js';
 import type { DesignAttempt, DesignChunk, DesignUnitState } from './contracts.js';
 import { validateDesignPlan } from './results.js';
+import { qualifiedDesignAction } from './action-state.js';
 
 /** Fresh execution order filters the full plan; retained coverage is never fabricated as fresh feedback. */
 export function selectedDesignChunks(attempt:DesignAttempt):readonly DesignChunk[]{
@@ -51,7 +52,7 @@ export function sealDesignUnit(attempt:DesignAttempt):void {
  const summaries=attempt.unitSummaries??=[];
  requireDesign(!summaries.some(s=>s.unitId===unit.unitId&&s.phase===unit.phase),'immutable_history','Unit is already sealed');
  const linked=new Set(summaries.flatMap(s=>s.actionIds));
- const actionIds=(attempt.actions??[]).filter(a=>a.operation==='resume'&&!linked.has(a.actionId)).map(a=>a.actionId);
+ const actionIds=(attempt.actions??[]).filter(a=>qualifiedDesignAction(a)&&a.operation==='resume'&&!linked.has(a.actionId)).map(a=>a.actionId);
  summaries.push({unitId:unit.unitId,phase:unit.phase,automaticDispatches:unit.dispatches,retriesUsed:unit.retriesUsed,userDirectedDispatches:unit.userDirectedDispatches,diagnostics:structuredClone(unit.diagnostics),actionIds});
  // A user-directed dispatch has one durable outcome, separate from the exhausted automatic budget.
  const action=[...(attempt.actions??[])].reverse().find(a=>a.userDecision?.action==='retry_failed_unit'&&!a.outcome);

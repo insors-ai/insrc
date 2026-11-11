@@ -3,7 +3,6 @@ import { claimDesignArtifact, releaseDesignArtifact } from './fence.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { realpath } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { createHash } from 'node:crypto';
 import { isMainThread, workerData } from 'node:worker_threads';
 import { getLogger } from '../../../shared/logger.js';
 import { ReviewOutputFailureError } from '../../../shared/review-diagnostics.js';
@@ -31,11 +30,7 @@ import type { DesignPublication } from './contracts.js';
 import { publishDesignReview } from './publication.js';
 
 const log=getLogger('design-review');
-// JSON object key order is not part of an immutable submission's identity.
-function requestSignature(value:unknown):string{
- const canonical=JSON.stringify(value,(_key,item:unknown)=>item&&typeof item==='object'&&!Array.isArray(item)?Object.fromEntries(Object.entries(item).sort(([a],[b])=>a<b?-1:a>b?1:0)):item);
- return createHash('sha256').update(canonical).digest('hex');
-}
+import { requestSignature } from './request-signature.js';
 export interface DesignProvider { readonly provider:LLMProvider; readonly model:string; }
 export interface DesignCoordinatorDeps {
  /** The daemon supplies the durable publisher; isolated execution fixtures may omit this store port. */
@@ -158,7 +153,7 @@ export class DesignReviewCoordinator {
   const saved=active?.checkpoint??await(this.deps.load??loadDesignCheckpoint)(request.repo,request.reviewId);
   requireDesign(saved,'missing_checkpoint','Design review not found');
   const replay=saved.attempts.flatMap(a=>a.actions??[]).find(a=>a.actionId===request.actionId);
-  if(replay){
+  if(replay&&replay.validation!=='unverified'){
    requireDesign(replay.signature===signature,'review_conflict','Conflicting recovery action replay');
    if(active?.owner)requireDesign(context.owner?.id===active.owner.id,'wrong_owner','Not the reviewing connection');
    return this.ack(saved,!!active&&currentDesignAttempt(saved).number===replay.resultAttempt,replay.resultAttempt);
@@ -206,7 +201,8 @@ export class DesignReviewCoordinator {
     attempt.progress={...attempt.progress,status:'paused',phase:'complete',requiresUserInput:true};await(this.deps.save??saveDesignCheckpoint)(request.repo,checkpoint);
    }throw error;
   }
-  (source.actions??=[]).push({actionId:request.actionId,signature,operation:request.operation,sourceAttempt:source.number,resultAttempt:attempt.number,...(request.userDecision?{userDecision:request.userDecision}:{}),...(source.failure&&['publication_capacity','checkpoint_capacity'].includes(source.failure.code)?{outcome:{...source.failure}}:{}),acceptedAt:new Date().toISOString()});
+  const action={actionId:request.actionId,signature,operation:request.operation,sourceAttempt:source.number,resultAttempt:attempt.number,...(request.userDecision?{userDecision:request.userDecision}:{}),...(source.failure&&['publication_capacity','checkpoint_capacity'].includes(source.failure.code)?{outcome:{...source.failure}}:{}),acceptedAt:replay?.acceptedAt??new Date().toISOString(),...(replay?{validation:'qualified' as const}:{})};
+  if(replay){requireDesign(replay.signature===signature&&replay.validation==='unverified','review_conflict','Conflicting recovery admission');source.actions![source.actions!.findIndex(a=>a.actionId===replay.actionId)]=action;}else(source.actions??=[]).push(action);
   const tracker=new DesignProgressTracker(designCheckpointPath(request.repo,request.reviewId),undefined,attempt.progress);
   tracker.phase('persisting',attempt.completedChunks.length,attempt.plan?.chunks.length??0);
   attempt.status='pending';delete attempt.recovery;delete attempt.failure;delete attempt.finishedAt;tracker.coverage(attempt);attempt.progress=tracker.snapshot();
@@ -224,6 +220,7 @@ export class DesignReviewCoordinator {
    this.launch(checkpoint,tracker,context,reservedExecutionId);return this.ack(checkpoint,true);
   }catch(error){if(this.subjects.get(subjectKey)===key)this.subjects.delete(subjectKey);releaseDesignArtifact(request.repo,subjectKey.split("\0")[1]!,key);throw error;}
  }
+ isActive(project:string,reviewId:string):boolean{return this.jobs.has(this.key(project,reviewId))||this.admitting.has(this.key(project,reviewId));}
  private async admit(request:DesignReviewStart,context:DesignStartContext):Promise<DesignReviewAcknowledgement>{
   const key=this.key(request.repo,request.reviewId),active=this.jobs.get(key);
   const saved=active?.checkpoint??await(this.deps.load??loadDesignCheckpoint)(request.repo,request.reviewId);

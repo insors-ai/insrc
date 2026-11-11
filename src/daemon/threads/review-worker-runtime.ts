@@ -31,6 +31,8 @@ import { updateStoredCodeCheckpoint,loadStoredCheckpoint,checkpointPath } from '
 import { isCodeAdmission } from '../../workflow/code-review/task-review/contracts.js';
 import { DesignReviewWorker } from '../../workflow/review/design-review/worker-admission.js';
 import type { DesignCoordinatorDeps } from '../../workflow/review/design-review/coordinator.js';
+import { loadStoredDesignCheckpoint } from '../../workflow/review/design-review/checkpoint.js';
+import { isDesignAdmission } from '../../workflow/review/design-review/contracts.js';
 
 /** A dedicated instance, never the class singleton/session runtime. Source
  * qualification and controller authority adapters are integrated by t9/t10. */
@@ -46,7 +48,7 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
  await withReviewNativeTransport(transport,async()=>{
   const provider=()=>createRoleRouter({cliTimeoutMs:900000}).resolveProviderForRole('review',loadAnalyzeConfig(),init.review.key.project).provider;
   const code=init.review.key.family==='code'?new CodeReviewWorker(init.review,deps.code??{sources:new RegistryReviewSources({repoPath:init.review.key.project,sessionId:`review:${init.review.key.reviewId}`,requestId:0,send:()=>{}}),provider},init.review.epicHash):undefined;
-  const design=init.review.key.family==='design'?new DesignReviewWorker(init.review,deps.design):undefined;
+  const design=init.review.key.family==='design'?new DesignReviewWorker(init.review,deps.design??{provider:()=>{const resolved=createRoleRouter({cliTimeoutMs:900000}).resolveProviderForRole('review',loadAnalyzeConfig(),init.review.key.project);return{provider:resolved.provider,model:resolved.resolution.model};}}):undefined;
   const coordinator=code?.coordinator??design!.coordinator;
   const identity=(raw:unknown):Record<string,unknown>=>{
    if(!raw||typeof raw!=='object'||!sameReviewWorker(init.review,raw as ReviewWorkerIdentity))throw new Error('Foreign or stale review worker operation');
@@ -54,10 +56,20 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
   };
   const handlers:RpcHandlers={
    'review.worker.advance':async raw=>{
-    const p=identity(raw);if(!code||p['attempt']!==init.review.attempt||p['nextAttempt']!==init.review.attempt+1)throw new Error('Invalid review advance');
+    const p=identity(raw);
+    if(design){
+     const cp=await loadStoredDesignCheckpoint(init.review.key.project,init.review.key.reviewId),last=cp?.attempts.at(-1);
+     if(!last||p['attempt']!==last.number||p['nextAttempt']!==last.number+1||design.coordinator.isActive(init.review.key.project,init.review.key.reviewId)||cp!.attempts.some(a=>'resourceGuard'in a&&a.resourceGuard?.openLeases.length)||['pending','running'].includes(last.status)||!isDesignAdmission(last)&&last.publication?.state!=='complete')throw new Error('Previous design attempt is active, unpublished or resource-fenced');
+     return{nextAttempt:p['nextAttempt']};
+    }
+    if(!code||p['attempt']!==init.review.attempt||p['nextAttempt']!==init.review.attempt+1)throw new Error('Invalid review advance');
     const cp=await loadStoredCheckpoint(checkpointPath(init.review.key.project,init.review.key.reviewId)),last=cp?.attempts.at(-1);
     if(!last||last.header.attempt!==init.review.attempt||cp!.attempts.some(a=>a.resourceGuard?.openLeases.length)||['pending','running'].includes(last.header.status)||!isCodeAdmission(last)&&last['review-response'].crPublication!=='complete')throw new Error('Previous attempt is active, unpublished or resource-fenced');
     return{nextAttempt:p['nextAttempt']};
+   },
+   'review.worker.recover':async(raw,context)=>{
+    const p=identity(raw);if(!design||!context?.reviewOwnerNonce)throw new Error('Trusted design recovery required');
+    return design.recover(p['request'],init.review.reviewer==='controller'?{id:context.reviewOwnerNonce,signal:controllerLifetime.signal}:undefined);
    },
    'review.worker.execute':async(raw,context)=>{
     const p=identity(raw);
@@ -65,14 +77,17 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
     if(!context?.reviewOwnerNonce)throw new Error('Trusted review execution required');
     const owner=init.review.reviewer==='controller'?{id:context.reviewOwnerNonce,signal:controllerLifetime.signal}:undefined;
     if(code){if(p['operation']==='resume')await code.assertResume();code.execute(owner,p['operation'] as 'start'|'resume');}
-    else{if(p['operation']!=='start')throw new Error('Design recovery requires its typed recovery action');design!.execute(owner);}
+    else{
+     if(init.review.submitted&&typeof init.review.submitted==='object'&&Reflect.get(init.review.submitted,'phase')==='recover')return design!.recover(init.review.submitted,owner);
+     if(p['operation']!=='start')throw new Error('Design recovery requires its typed recovery action');design!.execute(owner);
+    }
     return{accepted:true,...init.review.key,attempt:init.review.attempt};
    },
    'review.worker.control':async(raw,context)=>{
     const p=identity(raw);
-    if(init.review.reviewer!=='controller'||!context?.reviewOwnerNonce||p['attempt']!==init.review.attempt)throw new Error('Trusted reviewing owner required');
+    if(init.review.reviewer!=='controller'||!context?.reviewOwnerNonce||code&&p['attempt']!==init.review.attempt||!Number.isSafeInteger(p['attempt'])||Number(p['attempt'])<1)throw new Error('Trusted reviewing owner required');
     const owner={id:context.reviewOwnerNonce,signal:controllerLifetime.signal};
-    const phase=p['phase'],project=init.review.key.project,id=init.review.key.reviewId,attempt=init.review.attempt;
+    const phase=p['phase'],project=init.review.key.project,id=init.review.key.reviewId,attempt=Number(p['attempt']);
     if(coordinator instanceof TaskReviewCoordinator){
      const envelope={taskId:p['taskId'],executionId:p['executionId'],sequence:p['sequence']};
      if(phase==='assignment')return coordinator.controllerAssignment(project,id,attempt,owner);
@@ -83,7 +98,7 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
     }
     if(!['assignment','plan','impact','result','activity','failure'].includes(String(phase)))throw new Error('Invalid design control phase');
     const payload=p['input'];
-    return coordinator.exchange({...((payload&&typeof payload==='object')?payload:{}),phase,repo:project,reviewId:id,attempt,...(phase==='assignment'?{}:{actionId:p['actionId'],executionId:p['executionId'],sequence:p['sequence']})},owner);
+    return coordinator.exchange({...((payload&&typeof payload==='object')?payload:{}),phase,repo:project,reviewId:id,attempt,...(phase==='assignment'?{}:{executionId:p['executionId'],sequence:p['sequence']})},owner);
    },
    'review.worker.matchAdmission':async(raw:unknown)=>{
     const p=identity(raw);if(p['attempt']!==init.review.attempt||p['reviewer']!==init.review.reviewer||p['actionId']!==init.review.actionId||!isDeepStrictEqual(p['submitted'],init.review.submitted))throw new Error('Conflicting review admission replay');

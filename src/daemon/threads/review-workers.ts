@@ -15,6 +15,7 @@ import type { StartedReviewWorker } from './review-worker-bootstrap.js';
 import type { ReviewAdmissionReceipt,ReviewBootstrapInput,ReviewWorkerIdentity } from './review-worker-contract.js';
 import { assertReviewIdentity,sameReviewWorker } from './review-worker-contract.js';
 import type { ReplyEnvelope } from './channel.js';
+import type { DesignRecoveryRequest } from '../../workflow/review/design-review/contracts.js';
 
 export interface ReviewWorkerScope {
  readonly reviewer:'daemon'|'controller';
@@ -45,6 +46,7 @@ export interface ReviewWorkerControl extends ReviewWorkerIdentity {
  readonly input:unknown;
 }
 interface Entry {
+ attempt:number;
  readonly input:ReviewBootstrapInput;
  readonly scope:ReviewWorkerScope;
  readonly context:TrustedRpcContext;
@@ -93,8 +95,8 @@ export class ReviewWorkers {
   if(previous){
    this.assertController(previous,context);this.active(previous);await previous.ready;
    if(input.attempt!==previous.input.attempt){
-    if(key.family!=='code'||input.attempt!==previous.input.attempt+1)throw new Error('Review attempt conflict');
-    await this.call(previous,'review.worker.advance',{attempt:previous.input.attempt,nextAttempt:input.attempt});
+    if(input.attempt!==previous.attempt+1)throw new Error('Review attempt conflict');
+    await this.call(previous,'review.worker.advance',{attempt:previous.attempt,nextAttempt:input.attempt});
     await this.closeEntry(previous);
     if(this.entries.has(keyOf(key)))throw new Error('Review resources remain fenced');
     return this.admit(input,context);
@@ -115,7 +117,7 @@ export class ReviewWorkers {
   });
   const lost=()=>{void this.closeEntry(entry);};
   const detach=()=>context.connectionSignal?.removeEventListener('abort',lost);
-  entry={input:review,scope,context,fence,lifetime,connection,owner,native,ready,pending:new Map(),detach};
+  entry={attempt:review.attempt,input:review,scope,context,fence,lifetime,connection,owner,native,ready,pending:new Map(),detach};
   this.entries.set(keyOf(key),entry);
   if(scope.reviewer==='controller')context.connectionSignal.addEventListener('abort',lost,{once:true});
   void Promise.resolve().then(()=>(this.deps.start??startReviewWorkerBootstrap)(this.deps.services,review,port2,{fence,onCreated:worker=>this.deps.track(worker,`review:${key.family}:${key.reviewId}`),onClosing:(_worker,reclaimed)=>{void reclaimed.then(()=>this.closeEntry(entry));}})).then(started=>{
@@ -149,7 +151,16 @@ export class ReviewWorkers {
  /** Family adapters expose only their typed actions, never arbitrary methods. */
  async progress(key:ReviewKey,context:TrustedRpcContext):Promise<unknown>{
   const e=this.entries.get(keyOf(key));if(!e)throw new Error('Review worker not found');this.assertController(e,context);
-  return this.call(e,'review.worker.progress',{attempt:e.input.attempt});
+  return this.call(e,'review.worker.progress',{attempt:e.attempt});
+ }
+ async recover(identity:ReviewWorkerIdentity,request:DesignRecoveryRequest,context:TrustedRpcContext):Promise<unknown>{
+  const e=this.entries.get(keyOf(identity.key));if(!e||identity.key.family!=='design'||!sameReviewWorker(e.input,identity))throw new Error('Foreign design recovery');
+  this.assertController(e,context);this.active(e);
+  if(request.repo!==e.input.key.project||request.reviewId!==e.input.key.reviewId||request.phase!=='recover')throw new Error('Foreign design recovery request');
+  const result=await this.call(e,'review.worker.recover',{request}) as {attempt:number};
+  if(!Number.isSafeInteger(result.attempt)||result.attempt<1)throw new Error('Invalid recovery receipt');
+  if(result.attempt>e.attempt){e.attempt=result.attempt;e.progress=undefined;}
+  return result;
  }
  /** Admission has already been acknowledged. The worker schedules expensive
   * qualification in the background and this private control returns promptly. */
@@ -158,11 +169,13 @@ export class ReviewWorkers {
   this.assertController(e,context);this.active(e);
   const requested=operation??e.input.operation??'start';
   if(!['start','resume'].includes(requested))throw new Error('Invalid review operation');
-  return this.call(e,'review.worker.execute',{operation:requested,attempt:e.input.attempt});
+  const result=await this.call(e,'review.worker.execute',{operation:requested,attempt:e.input.attempt}) as {attempt:number};
+  if(Number.isSafeInteger(result.attempt)&&result.attempt>e.attempt){e.attempt=result.attempt;e.progress=undefined;}
+  return result;
  }
  async control(request:ReviewWorkerControl,context:TrustedRpcContext):Promise<unknown>{
   const e=this.entries.get(keyOf(request.key));
-  if(!e||!sameReviewWorker(e.input,request)||request.attempt!==e.input.attempt||e.scope.reviewer!=='controller')throw new Error('Foreign review control');
+  if(!e||!sameReviewWorker(e.input,request)||request.attempt!==e.attempt||e.scope.reviewer!=='controller')throw new Error('Foreign review control');
   this.assertController(e,context);this.active(e);
   const phases=e.input.key.family==='code'?['assignment','scope','result','activity']:['assignment','plan','impact','result','activity','failure'];
   if(!phases.includes(request.phase)||typeof request.actionId!=='string'||!request.actionId||request.actionId.length>128||typeof request.executionId!=='string'||!request.executionId||request.executionId.length>128||!Number.isSafeInteger(request.sequence)||request.sequence<1||request.taskId!==undefined&&(typeof request.taskId!=='string'||!request.taskId||request.taskId.length>256))throw new Error('Invalid review control envelope');
@@ -170,7 +183,7 @@ export class ReviewWorkers {
  }
  acceptProgress(source:Worker,identity:ReviewWorkerIdentity,progress:ReviewWorkerProgress):boolean{
   const e=this.entries.get(keyOf(identity.key));
-  if(!e||e.started?.worker!==source||e.closing||!sameReviewWorker(e.input,identity)||!sameReviewWorker(identity,progress)||progress.attempt!==e.input.attempt||!Number.isSafeInteger(progress.sequence)||progress.sequence<1||progress.sequence<=(e.progress?.sequence??0)||!Number.isSafeInteger(progress.completed)||progress.completed<0||!['admission','execution','publication','complete','failed','interrupted'].includes(progress.phase)||typeof progress.updatedAt!=='string'||progress.updatedAt.length>40||!Number.isFinite(Date.parse(progress.updatedAt)))return false;
+  if(!e||e.started?.worker!==source||e.closing||!sameReviewWorker(e.input,identity)||!sameReviewWorker(identity,progress)||progress.attempt!==e.attempt||!Number.isSafeInteger(progress.sequence)||progress.sequence<1||progress.sequence<=(e.progress?.sequence??0)||!Number.isSafeInteger(progress.completed)||progress.completed<0||!['admission','execution','publication','complete','failed','interrupted'].includes(progress.phase)||typeof progress.updatedAt!=='string'||progress.updatedAt.length>40||!Number.isFinite(Date.parse(progress.updatedAt)))return false;
   if(progress.total!==undefined&&(!Number.isSafeInteger(progress.total)||progress.total<progress.completed))return false;
   e.progress=Object.freeze({key:e.input.key,incarnation:e.input.incarnation,attempt:progress.attempt,sequence:progress.sequence,phase:progress.phase,completed:progress.completed,total:progress.total,updatedAt:progress.updatedAt});
   this.deps.services.board.publish({threadId:source.threadId,cls:'review',role:e.input.key.family==='code'?'code-review':'design-review',busy:!['complete','failed','interrupted'].includes(progress.phase),method:progress.phase,queued:0});return true;

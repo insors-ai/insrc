@@ -8,6 +8,7 @@ import { updateStoredDesignCheckpoint } from '../../workflow/review/design-revie
 import { decodeDesign,DesignRequestSchemas,isDesignAdmission } from '../../workflow/review/design-review/contracts.js';
 import { reviewWorkerCheckpoint } from './review-worker-contract.js';
 import type { ReviewAdmissionReceipt,ReviewBootstrapInput } from './review-worker-contract.js';
+import { admitDesignRecovery } from '../../workflow/review/design-review/action-admission.js';
 
 /** Only bounded input/history persistence: no Git, artifact qualification or
  * model dispatch. Family execution/recovery adapters consume this in t9/t10. */
@@ -37,11 +38,17 @@ export async function persistReviewWorkerAdmission(input:ReviewBootstrapInput):P
   }
   });
  }else{
+  if(input.submitted&&typeof input.submitted==='object'&&Reflect.get(input.submitted,'phase')==='recover'){
+   const recovery=decodeDesign(DesignRequestSchemas.recover,input.submitted);
+   if(recovery.repo!==input.key.project||recovery.reviewId!==input.key.reviewId||recovery.attempt!==input.attempt||recovery.actionId!==input.actionId)throw new Error('Foreign design recovery admission');
+   await admitDesignRecovery(input.key.project,input.key.reviewId,recovery);
+   return{kind:'review-admission-saved',key:input.key,incarnation:input.incarnation,attempt:input.attempt,checkpointPath:path};
+  }
   const request=decodeDesign(DesignRequestSchemas.start,input.submitted);
   if(request.repo!==input.key.project||request.reviewId!==input.key.reviewId||request.attempt!==input.attempt)throw new Error('Foreign design admission');
   await updateStoredDesignCheckpoint(input.key.project,input.key.reviewId,prior=>{
    const last=prior?.attempts.at(-1);
-   if(last?.number===input.attempt){if(!isDesignAdmission(last)||!['pending','running'].includes(last.status)||last.reviewer!==input.reviewer||last.actionId!==input.actionId||!isDeepStrictEqual(last.submitted,{artifactPath:request.artifactPath,attempt:input.attempt}))throw new Error('Pinned admission cannot be replaced');return prior!;}
+   if(last?.number===input.attempt){if(last.reviewer!==input.reviewer||!('actionId'in last)||last.actionId!==input.actionId||!('submitted'in last)||!isDeepStrictEqual(last.submitted,{artifactPath:request.artifactPath,attempt:input.attempt}))throw new Error('Pinned admission cannot be replaced');return prior!;}
    return{...prior,schemaVersion:2,project:input.key.project,reviewId:input.key.reviewId,attempts:[...(prior?.attempts??[]),{phase:'admission',validation:'unverified',number:input.attempt,reviewer:input.reviewer,status:'pending',operation:'start',actionId:input.actionId,submitted:{artifactPath:request.artifactPath,attempt:input.attempt},acceptedAt:now,startedAt:now,progress:{phase:'admission',totalChunks:0,completedChunks:0,checkpointPath:path,sequence:0,observedAt:now,freshness:'live'}}]};
   });
  }

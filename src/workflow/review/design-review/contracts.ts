@@ -67,6 +67,8 @@ export type DesignUnitSummary = Static<typeof DesignUnitSummarySchema>;
 export const DesignActionRecordSchema = object({
  actionId: id, signature: digest, operation, sourceAttempt: positive, resultAttempt: positive,
  userDecision: Type.Optional(userDecision), acceptedAt: timestamp, outcome: Type.Optional(diagnostic),
+ /** Historical actions without this field are already qualified. */
+ validation:Type.Optional(enumeration(['unverified','qualified','failed'])),
 });
 export type DesignActionRecord = Static<typeof DesignActionRecordSchema>;
 export const DesignStatusSchema = enumeration(['pending','running','interrupted','paused','invalidated','passed','changes_requested','incomplete','failed']);
@@ -231,6 +233,7 @@ export const DesignAdmissionAttemptSchema = object({
   observedAt: timestamp, freshness: enumeration(['live', 'stored']),
  }),
  error: Type.Optional(object({ code: id, field: Type.String({ minLength: 1, maxLength: 256 }), summary: Type.String({ minLength: 1, maxLength: 2048 }) })),
+ actions:Type.Optional(Type.Array(DesignActionRecordSchema,{maxItems:DESIGN_LIMITS.actions})),
  resourceGuard: Type.Optional(ReviewResourceGuardSchema),
 });
 export type DesignAdmissionAttempt = Static<typeof DesignAdmissionAttemptSchema>;

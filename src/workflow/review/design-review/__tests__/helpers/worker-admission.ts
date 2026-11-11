@@ -6,10 +6,17 @@ installReviewNativeSpawnGuard();
 const {runReviewWorker}=await import('../../../../../daemon/threads/review-worker-runtime.js');
 const {prepareDesignSubject}=await import('../../subject.js');
 const {loadStoredDesignCheckpoint,designCheckpointPath}=await import('../../checkpoint.js');
+const {loadWorkerDesignCheckpoint}=await import('../../worker-checkpoint.js');
 const {isDesignAdmission}=await import('../../contracts.js');
 const init=workerData as ReviewWorkerInit,barrier=new Int32Array(workerData.fixtureBarrier as SharedArrayBuffer);
 let prepared:ReturnType<typeof prepareDesignSubject>;
 await runReviewWorker(init,{design:{
+ load:async(project,id)=>{
+  if(Atomics.load(barrier,3)===1){Atomics.store(barrier,4,1);while(Atomics.load(barrier,3)===1)Atomics.wait(barrier,3,1,1000);}
+  return loadWorkerDesignCheckpoint(project,id);
+ },
+ publish:async cp=>({reviewId:cp.reviewId,attempt:cp.attempts.at(-1)!.number,state:'complete',artifactHistoryEntryId:'fixture-publication',reportReference:'fixture-report'}),
+ subjectMonitor:{pollMs:5},
  prepare:(project,path)=>{
   Atomics.store(barrier,0,1);
   while(Atomics.load(barrier,1)===0)Atomics.wait(barrier,1,0,1000);

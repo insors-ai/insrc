@@ -4,6 +4,7 @@ import { validateReviewResourceGuard } from '../../../shared/review-resources.js
 import { decodeDesign, isDesignAdmission, requireDesign, StoredDesignCheckpointSchema } from './contracts.js';
 import type { DesignAdmissionCheckpoint, StoredDesignCheckpoint } from './contracts.js';
 import type { ReviewResourceGuard } from '../../../shared/review-resources.js';
+import { designActionEvolution } from './action-state.js';
 
 /** Decode only; the disk reader also applies canonical identity and qualified
  * feedback checks. No admission baseline, inventory or report is invented. */
@@ -14,6 +15,7 @@ export function decodeStoredDesignCheckpoint(input: unknown): StoredDesignCheckp
  const actions = new Set<string>();
  for (const [i, attempt] of cp.attempts.entries()) {
   if (attempt.resourceGuard) validateReviewResourceGuard(attempt.resourceGuard, { project: cp.project, family: 'design', reviewId: cp.reviewId });
+  for(const action of attempt.actions??[]){requireDesign(!actions.has(action.actionId)&&action.sourceAttempt===attempt.number&&action.resultAttempt===attempt.number+(action.operation==='restart_full'?1:0),'invalid_checkpoint','Invalid or duplicate recovery action');actions.add(action.actionId);}
   if (!isDesignAdmission(attempt)) continue;
   requireDesign(!actions.has(attempt.actionId), 'invalid_checkpoint', 'Duplicate admission action identity'); actions.add(attempt.actionId);
   if (attempt.operation === 'start') requireDesign(attempt.submitted.artifactPath && !attempt.submitted.recovery && attempt.submitted.attempt === attempt.number, 'invalid_checkpoint', 'Invalid start submission identity');
@@ -41,12 +43,15 @@ export function checkDesignAdmissionEvolution(previous: StoredDesignCheckpoint, 
  requireDesign(next.attempts.length >= previous.attempts.length && next.attempts.length <= previous.attempts.length + 1, 'immutable_history', 'Cannot remove or skip attempts');
  for (const [i, old] of previous.attempts.entries()) {
   const current = next.attempts[i]!;
+  const oldActions=old.actions??[],newActions=current.actions??[];
+  requireDesign(newActions.length>=oldActions.length&&oldActions.every((a,n)=>!!newActions[n]&&designActionEvolution(a,newActions[n]!)),'immutable_history','Cannot replace recovery action input or qualification');
   if (isDesignAdmission(old)) {
    if (isDesignAdmission(current)) {
     requireDesign(same(old.submitted, current.submitted) && old.actionId === current.actionId && old.operation === current.operation && old.reviewer === current.reviewer && old.acceptedAt === current.acceptedAt && old.startedAt === current.startedAt, 'immutable_history', 'Cannot replace pinned admission input/action');
-    if (old.status === 'failed' || old.status === 'interrupted') requireDesign(same({ ...old, resourceGuard: undefined }, { ...current, resourceGuard: undefined }), 'immutable_history', 'Terminal admission requires explicit recovery or next attempt');
+    if (old.status === 'failed' || old.status === 'interrupted') requireDesign(same({ ...old, actions:undefined,resourceGuard: undefined }, { ...current,actions:undefined, resourceGuard: undefined }), 'immutable_history', 'Terminal admission requires explicit recovery or next attempt');
    } else {
-    requireDesign(['pending','running'].includes(old.status) && same(old.submitted, current.submitted) && current.actionId === old.actionId && current.operation === old.operation && current.acceptedAt === old.acceptedAt && current.startedAt === old.startedAt && current.reviewer === old.reviewer, 'immutable_history', 'Qualification must preserve the active pinned admission');
+    const resumed=old.status==='interrupted'&&oldActions.some(a=>a.operation==='resume'&&a.validation==='unverified'&&newActions.some(n=>n.actionId===a.actionId&&n.validation==='qualified'));
+    requireDesign((['pending','running'].includes(old.status)||resumed) && same(old.submitted, current.submitted) && current.actionId === old.actionId && current.operation === old.operation && current.acceptedAt === old.acceptedAt && current.startedAt === old.startedAt && current.reviewer === old.reviewer, 'immutable_history', 'Qualification must preserve the active pinned admission');
     requireDesign(current.status === 'pending' && !current.plan && !current.impact && !current.report && !current.completedChunks.length && !current.current && !current.unit && !current.publication, 'invalid_checkpoint', 'Qualification cannot supply review results or dispatch authority');
    }
   } else {
@@ -63,7 +68,16 @@ export function checkDesignAdmissionEvolution(previous: StoredDesignCheckpoint, 
  }
  if (next.attempts.length > previous.attempts.length) {
   const last = previous.attempts.at(-1)!;
-  requireDesign(isDesignAdmission(next.attempts.at(-1)!), 'invalid_checkpoint', 'New attempts must first persist unverified admission');
+  const added=next.attempts.at(-1)!;
+  if(!isDesignAdmission(added)){
+   requireDesign(!isDesignAdmission(last)&&last.status==='invalidated'&&added.number===last.number+1,'invalid_checkpoint','New qualified attempt requires a preaccepted restart');
+   const action=last.actions?.find(a=>a.validation==='unverified'&&a.operation==='restart_full'&&a.resultAttempt===added.number&&a.userDecision?.action==='restart_full');
+   const source=next.attempts.find(a=>a.number===last.number);
+   requireDesign(action&&source&&!isDesignAdmission(source)&&source.actions?.some(a=>a.actionId===action.actionId&&a.signature===action.signature&&a.validation==='qualified'),'invalid_checkpoint','Restart must qualify its exact durable recovery action');
+   const freshReservation=!added.current&&!added.unit||added.current?.kind==='planning'&&added.unit?.phase==='planning'&&added.current.executionId===added.unit.executionId&&added.unit.dispatches===1&&added.unit.retriesUsed===0&&added.unit.userDirectedDispatches===0&&!added.unit.diagnostics.length;
+   requireDesign(added.status==='pending'&&!added.plan&&!added.impact&&!added.report&&!added.completedChunks.length&&freshReservation&&!added.publication,'invalid_checkpoint','Restart qualification cannot supply review results or duplicate dispatch');
+   return;
+  }
   requireDesign(isDesignAdmission(last) ? last.status === 'failed' || last.status === 'interrupted' : ['passed','changes_requested','incomplete'].includes(last.status) && last.report?.status === last.status && last.publication?.state === 'complete', 'invalid_checkpoint', 'New admission requires an explicit terminal predecessor');
  }
 }

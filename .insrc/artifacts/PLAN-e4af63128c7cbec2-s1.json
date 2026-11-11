@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1794407500932-a84hmh",
+    "runId": "wf-1794416016123-up8mo1",
     "repoPath": "/home/subho/work/dev/insors/insrc",
-    "createdAt": "2026-11-11T14:34:32.148Z",
+    "createdAt": "2026-11-11T16:55:39.792Z",
     "epicCreatedAt": "2026-11-09T04:29:20.389Z",
     "standalone": true,
     "attribution": {
@@ -16,7 +16,7 @@
         }
       ]
     },
-    "elapsedMs": 166383,
+    "elapsedMs": 117887,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "e4af63128c7cbec2",
@@ -28,9 +28,9 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 3,
-        "contentHash": "23a18248acadeeb4c0729bfa960f7e6104aadf05295da47432b354bf7385b38f",
-        "at": "2026-11-11T14:34:33.783Z",
+        "number": 4,
+        "contentHash": "7c66c0ac91544754fa99acbc348c626a0d474705d40b0f5304f0d7b59e2f08f5",
+        "at": "2026-11-11T16:55:41.794Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -39,13 +39,13 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 3,
+        "revision": 4,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-11T15:00:22.971Z"
+        "at": "2026-11-11T17:01:38.351Z"
       }
     },
     "envelope": {
@@ -53,8 +53,8 @@
       "references": [],
       "attachments": []
     },
-    "revision": 3,
-    "rangeBase": "8e33c1561351674e87968acff24cb6bb2cbd78b8"
+    "revision": 4,
+    "rangeBase": "c5a00524be0826a563785b224de6ba0669400a1b"
   },
   "body": {
     "summary": {
@@ -405,7 +405,7 @@
       {
         "id": "t11",
         "title": "Implement targeted daemon-crash fences and local clearance",
-        "summary": "Implement request-scoped resourceGuard discovery across retained attempts and explicit resourceClearance on existing code resume/design recover paths. Bind normal existing broker decisions to exact review/guard/lease sets, persist the receipt via a metadata-only recovery worker and require a separate subsequent review resume.",
+        "summary": "Implement request-scoped resourceGuard discovery and exact local-broker clearance as a registered ReviewWorkers component, using a metadata-only recovery worker and the existing family checkpoint writers. Prove the component before production cutover; t13 integrates shared consumers, t14 installs clearance on production code resume/design recover routes, and t15 verifies full production-daemon crash recovery. Clearance always requires a separate subsequent explicit review resume.",
         "size": "L",
         "order": 11,
         "dependsOn": [
@@ -415,11 +415,11 @@
           "t10"
         ],
         "acceptanceChecks": [
-          "An unresolved previous-daemon lease or interrupted legacy active attempt with missing guard reconstructs only that review's fence before native work; PID absence cannot clear it.",
-          "Existing broker/client authentication is unchanged: valid human-UI and automated local-client answers are equally accepted; caller-provided receipts and stale/wrong-review/lease-set approval are refused.",
+          "Within the registered real-worker component, an unresolved previous-daemon lease or interrupted legacy active attempt with missing guard reconstructs only that review's fence before native work; PID absence cannot clear it. Installing this fence on every supported production route is mandatory t14 acceptance.",
+          "Through the real existing local broker and socket/client contract, valid human-UI and automated local-client answers are equally accepted; caller-provided receipts and stale/wrong-review/lease-set approval are refused. Existing broker/client authentication is unchanged; production resume/recover route installation is mandatory t14 acceptance.",
           "No-client, decline, expiry, disconnect, lost pending broker request or changed guard state retains the fence. Re-read all unresolved retained-attempt guards before applying a decision.",
           "Persist exact bounded request/guard/lease approval receipt and authorized closure idempotently; metadata-only recovery cannot call native tools/providers or grant artifact approval.",
-          "Disposable full-daemon-crash tests keep a surviving old child fenced, allow unrelated reviews, and permit work only after clearance plus explicit resume; never crash the live user daemon.",
+          "A disposable complete daemon-host process using the real registered ReviewWorkers/bootstrap/native-lease component is crashed while its owned native child survives. A replacement host keeps only that review fenced, allows unrelated reviews and permits work only after clearance plus separate explicit resume. This is component evidence, not installed production-daemon qualification; the full production-daemon route/crash test is mandatory t15 acceptance. Never crash the live user daemon.",
           "Partial clearance leaves remaining leases blocking; repeated clearances and response-loss replay preserve audit evidence without duplicate inference."
         ],
         "derivedFrom": [
@@ -546,7 +546,8 @@
           "Existing retired review endpoints keep their current refusal behavior; no legacy engine is restored.",
           "The plan/deployment contract forbids installing an intermediate partial build before final qualification.",
           "Through every supported production review route, CLI and tool/Git native work uses the installed transport and registered host lease with verified durable intent; no review-worker local spawn/exec/binary-lookup bypass remains. This gate discharges the production integration deliberately deferred from component acceptance in t5/t6.",
-          "Install the registry and concrete host-derived reviewer/scope resolution, controller authority, binary resolution, and native permission/provenance policies in daemon production construction. Every supported family/control/recovery/cleanup route consumes these bindings and the shared exclusions. Required callbacks and component fixtures from t8 alone are insufficient for this production gate."
+          "Install the registry and concrete host-derived reviewer/scope resolution, controller authority, binary resolution, and native permission/provenance policies in daemon production construction. Every supported family/control/recovery/cleanup route consumes these bindings and the shared exclusions. Required callbacks and component fixtures from t8 alone are insufficient for this production gate.",
+          "Install Task 11 resource discovery and exact existing-local-broker clearance on production code resume and design recover entrypoints. Re-read all retained attempts before work; unresolved previous-daemon or legacy uncertainty fences only its review. No caller-provided receipt, PID-absence inference, or clearance-triggered automatic resume is permitted. This discharges Task 11's deliberately deferred production-route integration."
         ],
         "derivedFrom": [
           "c1",
@@ -581,7 +582,8 @@
           "Whole-history resource fences and clearance/publication/cleanup replay are exercised through real routing; unrelated review files and processes remain untouched.",
           "Run existing relevant ownership/admission/progress/checkpoint/recovery/publication/approval suites alongside these regressions with no live-cloud requirement.",
           "End-to-end fixtures through the actual worker registry and production review routes prove both code/design families use the CLI and tool/Git adapters with host-owned leases, durable intent, bounded byte backpressure and cleanup after real worker loss; unbound or bypassed native execution refuses.",
-          "Through installed production construction, prove host-derived reviewer routing, trusted successful controller exchanges, permission-denied native operations causing zero spawn, and cross-worker design-subject/story-artifact cleanup exclusions for both families."
+          "Through installed production construction, prove host-derived reviewer routing, trusted successful controller exchanges, permission-denied native operations causing zero spawn, and cross-worker design-subject/story-artifact cleanup exclusions for both families.",
+          "Run a disposable full production-daemon crash/replacement test through installed public review routes: persist intent before spawn, crash only the fixture daemon with its native child surviving, retain the exact review fence before native work and allow unrelated review traffic. After the test owner verifies the child ended, use the unchanged normal local broker approval and durable exact-guard receipt; only a separate explicit resume permits review work. Verify both review families and reject stale/wrong-review/lease-set requests. Never terminate the user's live daemon. This discharges Task 11's deferred installed full-daemon recovery qualification."
         ],
         "derivedFrom": [
           "c1",

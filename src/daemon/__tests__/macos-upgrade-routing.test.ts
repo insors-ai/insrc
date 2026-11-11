@@ -12,7 +12,7 @@ const exec = promisify(execFile);
 const installer = fileURLToPath(new URL('../../../scripts/insrc-daemon-install.sh', import.meta.url));
 const control = fileURLToPath(new URL('../../../scripts/daemon-ctl.sh', import.meta.url));
 
-test('Installer and updated CLI, VS Code and JetBrains route matrix', { timeout: 30_000 }, async t => {
+test('Installer and updated CLI, VS Code and JetBrains route matrix', { timeout: 340_000 }, async t => {
 	const root = await realpath(await mkdtemp('/tmp/insrc-bridge-routing-'));
 	t.after(() => rm(root, { recursive: true, force: true }));
 	const home = join(root, 'home');
@@ -29,6 +29,8 @@ test('Installer and updated CLI, VS Code and JetBrains route matrix', { timeout:
 	await shim('git', `
 if [ "$1" = "--version" ]; then printf 'git version 2.45.0\\n'; exit 0; fi
 if [ "$1" = "check-ref-format" ]; then exit 0; fi
+if [ "$1" = "-C" ] && [ "$3" = "remote" ]; then printf '/qualified/origin\\n'; exit 0; fi
+if [ "$1" = "-C" ] && [ "$3" = "symbolic-ref" ]; then printf 'v2\\n'; exit 0; fi
 if [ "$1" = "clone" ]; then
   printf 'clone:%s:%s\\n' "$3" "$7" >> "$INSRC_TEST_TRACE"
   mkdir -p "\${@: -1}/out/bin"
@@ -51,16 +53,42 @@ exit 45`);
 	const env = { ...process.env, HOME: home, TMPDIR: root, PATH: `${tools}:/usr/bin:/bin`,
 		INSRC_DAEMON_ROOT: checkout, INSRC_CTL_LOG_DIR: root, INSRC_TEST_TRACE: trace };
 	const origin = '/qualified/origin';
+	const requireBridge = async () => {
+		const events = (await readFile(trace, 'utf8')).trim().split('\n');
+		assert.equal(events.length, 4);
+		assert.match(events[0]!, /^clone:/);
+		assert.deepEqual(events.slice(1), ['npm:ci', 'npm:run', `controller:${checkout}:${origin}:v2`]);
+		assert.equal(await readFile(join(checkout, 'incumbent'), 'utf8'), 'executable release');
+	};
 	for (const [script, args] of [
 		[installer, ['--target', checkout, '-y', '--repo', origin, '--branch', 'v2']],
 		[control, ['update', '--repo-url', origin, '--branch', 'v2']],
 	] as const) {
 		await writeFile(trace, '');
 		await exec('/bin/bash', [script, ...args], { env, cwd: root, timeout: 12_000 });
-		const events = (await readFile(trace, 'utf8')).trim().split('\n');
-		assert.equal(events.length, 4);
-		assert.match(events[0]!, /^clone:/);
-		assert.deepEqual(events.slice(1), ['npm:ci', 'npm:run', `controller:${checkout}:${origin}:v2`]);
-		assert.equal(await readFile(join(checkout, 'incumbent'), 'utf8'), 'executable release');
+		await requireBridge();
 	}
+	await writeFile(trace, '');
+	const vscodeController = new URL('../../../vscode-plugin/src/daemon/controller.ts', import.meta.url).href;
+	const vscodeSubprocess = new URL('../../../vscode-plugin/src/daemon/subprocess.ts', import.meta.url).href;
+	const { createDaemonLifecycleController } = await import(vscodeController);
+	const { defaultSubprocessRunner } = await import(vscodeSubprocess);
+	const controller = createDaemonLifecycleController({
+		paths: { daemonRoot: checkout, bundledInstaller: installer, daemonEntry: join(checkout, 'out/daemon/index.js'),
+			ctlScript: join(checkout, 'scripts/daemon-ctl.sh'), managedStateRoot: join(home, '.insrc') },
+		runner: { run: (argv: readonly string[]) => defaultSubprocessRunner.run(argv, { env, cwd: root }) },
+		client: { reachability: async () => 'running' },
+	});
+	await copyFile(control, join(checkout, 'scripts/daemon-ctl.sh'));
+	assert.deepEqual(await controller.run('update'), { ok: true, state: 'running' });
+	await requireBridge();
+	await writeFile(trace, '');
+	const jetbrains = fileURLToPath(new URL('../../../jetbrains-plugin/__tests__/managed-update-confirmation-gradle.test.ts', import.meta.url));
+	const childEnv = { ...process.env, INSRC_ROUTE_MATRIX_HOME: home, INSRC_ROUTE_MATRIX_PATH: env.PATH,
+		INSRC_ROUTE_MATRIX_TMP: root, INSRC_ROUTE_MATRIX_TRACE: trace } as NodeJS.ProcessEnv;
+	delete childEnv['NODE_TEST_CONTEXT'];
+	await exec(process.execPath, ['--import', 'tsx', '--test', '--test-name-pattern=JetBrains selects', jetbrains], {
+		env: childEnv, timeout: 315_000,
+	});
+	await requireBridge();
 });

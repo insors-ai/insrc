@@ -60,6 +60,19 @@ class DaemonLifecycleCommandRunnerTest {
 
     @Test
     fun `legacy macOS update selects the bundled installer for the configured checkout`() {
+        val matrixHome = System.getenv("INSRC_ROUTE_MATRIX_HOME")
+        if (matrixHome != null) {
+            val home = Path.of(matrixHome)
+            val locator = DefaultDaemonScriptLocator(homeDir = home, macOS = true, daemonRootOverride = null)
+            val env = System.getenv() + mapOf(
+                "HOME" to matrixHome,
+                "PATH" to System.getenv("INSRC_ROUTE_MATRIX_PATH"),
+                "TMPDIR" to System.getenv("INSRC_ROUTE_MATRIX_TMP"),
+                "INSRC_TEST_TRACE" to System.getenv("INSRC_ROUTE_MATRIX_TRACE"),
+            )
+            assertTrue(DaemonLifecycleCommandRunner(ScriptDaemonProvisioner.ProcessBuilderRunner(), locator, noNode, env)
+                .run(LifecycleCommand.UPDATE) is DaemonActionResult.Ok)
+        }
         val home = Files.createTempDirectory("insrc-legacy-locator").toRealPath()
         try {
             val legacy = home.resolve("legacy")

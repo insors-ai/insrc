@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -125,3 +125,26 @@ Run at 2026-11-11T12:23:50.106Z on commit `4fc8bee23`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/agent/providers/__tests__/review-worker-process.test.ts` | 0 | 2 | 1.8 s |  |
+
+## t6
+
+Run at 2026-11-11T12:42:24.614Z on commit `38163fd3c`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/daemon/tools/__tests__/review-worker-shell.test.ts: Git shell and raw-byte commands preserve output bounds and abort semantics through leases**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | Git shell and raw-byte commands preserve output bounds and abort semantics through leases | `src/daemon/tools/__tests__/review-worker-shell.test.ts` |
+
+**unit: src/daemon/threads/__tests__/review-spawn-inventory.test.ts: all review-reachable native spawn and exec paths use the host bridge**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | all review-reachable native spawn and exec paths use the host bridge | `src/daemon/threads/__tests__/review-spawn-inventory.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/review-spawn-inventory.test.ts` | 0 | 1 | 0.7 s |  |
+| `src/daemon/tools/__tests__/review-worker-shell.test.ts` | 0 | 1 | 3.7 s |  |

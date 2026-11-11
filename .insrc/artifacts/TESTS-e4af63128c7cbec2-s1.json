@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 9,
-        "contentHash": "6b15b86300ec3a5e1af36b9c676b33156c96c5de27dd4ffe446953c4a4d76f95",
-        "at": "2026-11-11T12:23:50.297Z",
+        "number": 11,
+        "contentHash": "f432a2b479a6f29ac1986c9927e47dd574b8e7b557b2fccb864cb4ff7819ba0e",
+        "at": "2026-11-11T12:42:24.839Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "e4af63128c7cbec2",
     "storyId": "s1",
     "createdAt": "2026-11-09T07:52:13.312Z",
-    "updatedAt": "2026-11-11T12:23:50.106Z",
+    "updatedAt": "2026-11-11T12:42:24.614Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-09T04:29:20.389Z",
     "epicSlug": "isolate-each-code-design-review-its",
-    "revision": 9
+    "revision": 11
   },
   "body": {
     "tasks": [
@@ -358,6 +358,68 @@
               },
               {
                 "title": "review binary lookup cannot spawn synchronously on the worker",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "38163fd3c",
+        "ranAt": "2026-11-11T12:42:24.614Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/__tests__/review-worker-shell.test.ts: Git shell and raw-byte commands preserve output bounds and abort semantics through leases",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/review-worker-shell.test.ts",
+                "title": "Git shell and raw-byte commands preserve output bounds and abort semantics through leases",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/threads/__tests__/review-spawn-inventory.test.ts: all review-reachable native spawn and exec paths use the host bridge",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-spawn-inventory.test.ts",
+                "title": "all review-reachable native spawn and exec paths use the host bridge",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/review-spawn-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 694,
+            "titles": [
+              {
+                "title": "all review-reachable native spawn and exec paths use the host bridge",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/__tests__/review-worker-shell.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3734,
+            "titles": [
+              {
+                "title": "Git shell and raw-byte commands preserve output bounds and abort semantics through leases",
                 "result": "pass"
               }
             ],

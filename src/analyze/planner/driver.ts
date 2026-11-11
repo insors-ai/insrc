@@ -66,7 +66,7 @@ import type {
 	PlanBuilderOpts,
 	PlanTask,
 } from './types.js';
-import { validatePlan, type PlanValidationFailure } from './validate.js';
+import { taskCountFailure, validatePlan, type PlanValidationFailure } from './validate.js';
 
 const savedLog = getLogger('analyze:planner');
 const quietLog = { info: (..._args: unknown[]) => { } };
@@ -367,7 +367,10 @@ export async function runPlanner(args: RunPlannerArgs): Promise<PlanTask> {
 		}, 'Plan Builder validation failure -- corrective retry']);
 
 		// Echoed in wire form, so the retry's example matches what the model must emit.
-		messages = appendCorrectionTurn(messages, encodePlanParams(stamped, wire), failure, priorFailures);
+		// validatePlan reports one failure, so a wrong task count would stay unmentioned until the
+		// ordering errors are gone. It is stated beside the primary failure, as text for the model only.
+		const alsoFailing = failure.invariantId === 'INV-13' ? undefined : taskCountFailure(stamped, { focused: intent.focused }) ?? undefined;
+		messages = appendCorrectionTurn(messages, encodePlanParams(stamped, wire), failure, priorFailures, alsoFailing);
 	}
 
 	throw new PlanBuilderExhausted(attempts, failures);

@@ -21,7 +21,8 @@ import '../../orchestrator/__tests__/private-paths.js';
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { ModelCallFailedError } from '../../../agent/providers/model-call-error.js';
 
 import {
@@ -37,8 +38,11 @@ import {
 	runPlanner,
 } from '../index.js';
 import { SCOPE_BAND } from '../scope-band.js';
-import { taskCountFailure } from '../validate.js';
-import type { PlanTask } from '../../../shared/analyze-types.js';
+import { _setPlannerStructuredForTest } from '../driver.js';
+import { planAttemptsDirFor } from '../cache.js';
+import { DOCS_TEMPLATES } from '../templates/docs/index.js';
+import { taskCountFailure, validatePlan } from '../validate.js';
+import type { PlanTask, PlannedTask } from '../../../shared/analyze-types.js';
 import { _resetAnalyzeConfigCacheForTests } from '../../../config/analyze.js';
 import type { AnalyzeContextBundle } from '../../context/types.js';
 import type { LLMMessage, LLMProvider } from '../../../shared/types.js';
@@ -658,4 +662,132 @@ test('runPlanner: an empty template catalog is refused with a typed error before
 	assert.equal(err.target, 'docs');
 	assert.match(err.message, /no task template is registered for target 'docs'/);
 	assert.equal(called, 0, 'no model is called');
+});
+
+// ---------------------------------------------------------------------------
+// The count stated beside another failure, through the retry loop
+// ---------------------------------------------------------------------------
+
+const DOCS_INTENT = {
+	target: 'docs' as const, scope: 'XL' as const, focused: true,
+	scopeRef: { kind: 'repo' as const, value: '/r' }, reasoning: 'count-beside-failure fixture (XL focused: 20-80)',
+};
+const BUNDLE_FIXTURE: AnalyzeContextBundle = { system: '', focus: '', summary: '', structure: '', surface: '', artefacts: '', upstream: '' };
+
+/** A docs plan of n tasks: inventory, n-2 family summaries, aggregator. `edit` may break an invariant. */
+function docsPlan(n: number, edit?: (tasks: PlannedTask[]) => void): PlanTask {
+	const tasks: PlannedTask[] = [
+		{ taskId: 't01', template: 'docs.discovery.inventory', kind: 'leaf', params: { scopeRef: { kind: 'repo', value: '/r' } },
+		  produces: ['docs-inventory'], rationale: 'inventory of every document family in scope' },
+	];
+	for (let i = 2; i < n; i++) {
+		tasks.push({ taskId: `t${String(i).padStart(2, '0')}`, template: 'docs.family.summarise', kind: 'leaf', params: { family: 'design' },
+		  produces: ['family-summary'], rationale: `summary number ${i} of the design family documents` });
+	}
+	tasks.push({ taskId: `t${String(n).padStart(2, '0')}`, template: 'docs.aggregate.report', kind: 'leaf', params: {},
+	  produces: ['report'], rationale: 'aggregate every upstream output into the final report' });
+	edit?.(tasks);
+	return { planId: 'p-docs', goal: 'docs plan', target: 'generic', scope: 'XL', reasoning: 'docs plan used to drive the retry loop in a test fixture', tasks };
+}
+
+/** The reproduced sequence: INV-7 plus a wrong count, then INV-11 alone, then a valid plan. */
+function reproducedReplies(): PlanTask[] {
+	return [
+		docsPlan(15, t => { t[2] = { ...t[2]!, consumes: ['never-produced'] }; }),
+		docsPlan(20, t => { t[2] = { ...t[2]!, consumes: ['family-summary'] }; }),
+		docsPlan(20),
+	];
+}
+
+interface RecordedCall { messages: LLMMessage[]; opts: Record<string, unknown> | undefined }
+
+function recordingProvider(replies: readonly PlanTask[], calls: RecordedCall[]): LLMProvider {
+	return {
+		supportsTools: false,
+		capabilities:  { structuredOutput: true, toolCalling: false, vision: false, webSearch: false, streaming: false, embeddings: false },
+		complete:      async () => { throw new Error('stub: complete not used'); },
+		stream:        async function* () { yield ''; throw new Error('stub: stream not used'); },
+		embed:         async () => [],
+		completeStructured: async <T>(messages: LLMMessage[], _schema: unknown, opts?: Record<string, unknown>) => {
+			calls.push({ messages: [...messages], opts });
+			const reply = replies[calls.length - 1];
+			if (reply === undefined) throw new Error(`stub: no scripted reply for call ${calls.length}`);
+			return reply as T;
+		},
+	} as unknown as LLMProvider;
+}
+
+function feedbackOf(runId: string): string[] {
+	const dir = planAttemptsDirFor({ runId });
+	return [1, 2, 3, 4, 5].flatMap(n => {
+		const path = join(dir, `${String(n).padStart(2, '0')}.feedback.json`);
+		return existsSync(path) ? [(JSON.parse(readFileSync(path, 'utf8')) as PlanValidationFailure).invariantId] : [];
+	});
+}
+
+async function runDocsPlanner(runId: string, provider: LLMProvider): Promise<PlanTask> {
+	_resetAnalyzeConfigCacheForTests();
+	return runPlanner({
+		input: { intent: { ...DOCS_INTENT }, contextBundle: BUNDLE_FIXTURE, catalog: DOCS_TEMPLATES },
+		opts:  { runId },
+		provider,
+	});
+}
+
+test('with a recording stub provider, the initial prompt carries the enforced range', async () => {
+	const calls: RecordedCall[] = [];
+	await runDocsPlanner('count-note-range', recordingProvider([docsPlan(20)], calls));
+	const first = calls[0]!.messages.map(m => String(m.content)).join('\n');
+	assert.match(first, /expected task count: \*\*20-80\*\*/);
+	assert.doesNotMatch(first, /half|halv/i);
+});
+
+test('with a recording stub provider, the correction message sent on call 2 states INV-7 and then the count', async () => {
+	const calls: RecordedCall[] = [];
+	await runDocsPlanner('count-note-call2', recordingProvider(reproducedReplies(), calls));
+	const second = String(calls[1]!.messages[calls[1]!.messages.length - 1]!.content);
+	const primaryAt = second.indexOf('failed invariant **INV-7**');
+	const alsoAt = second.indexOf('also fails invariant **INV-13**');
+	assert.ok(primaryAt >= 0 && alsoAt > primaryAt, second.slice(0, 400));
+	assert.match(second, /task count 15 is outside the scope band for XL \(20-80 focused\)/);
+});
+
+test('recording-stub replay (INV-7 plus count, INV-11, valid) accepted at call 3 with primary-only feedback', async () => {
+	const calls: RecordedCall[] = [];
+	const replies = reproducedReplies();
+	const accepted = await runDocsPlanner('count-note-replay', recordingProvider(replies, calls));
+	assert.equal(calls.length, 3);
+	assert.equal(accepted.tasks.length, 20);
+	const third = String(calls[2]!.messages[calls[2]!.messages.length - 1]!.content);
+	assert.match(third, /failed invariant \*\*INV-11\*\*/);
+	assert.doesNotMatch(third, /ALSO FAILING/);
+	assert.doesNotMatch(third, /REPEATED FAILURE/);
+	assert.deepEqual(feedbackOf('count-note-replay'), ['INV-7', 'INV-11']);
+});
+
+test('through structuredStageForTest, failures and saved feedback hold primary failures only', async () => {
+	const replies = reproducedReplies();
+	const seen: string[][] = [];
+	_setPlannerStructuredForTest(async ({ attempt, failures }) => {
+		seen.push(failures.map(f => f.invariantId));
+		return replies[attempt]!;
+	});
+	try {
+		_resetAnalyzeConfigCacheForTests();
+		await runPlanner({ input: { intent: { ...DOCS_INTENT }, contextBundle: BUNDLE_FIXTURE, catalog: DOCS_TEMPLATES }, opts: { runId: 'count-note-hook' } });
+	} finally {
+		_setPlannerStructuredForTest(undefined);
+	}
+	assert.deepEqual(seen, [[], ['INV-7'], ['INV-7', 'INV-11']]);
+	assert.deepEqual(feedbackOf('count-note-hook'), ['INV-7', 'INV-11']);
+});
+
+test('an empty task list states the count and keeps INV-1 primary', () => {
+	const empty: PlanTask = { ...docsPlan(20), tasks: [] };
+	const failure = validatePlan(empty, DOCS_TEMPLATES, { focused: true });
+	assert.equal(failure?.invariantId, 'INV-1');
+	const also = taskCountFailure(empty, { focused: true });
+	assert.equal(also?.invariantId, 'INV-13');
+	const body = lastUserTurn(_appendCorrectionTurnForTest([], empty, failure!, [], also!));
+	assert.ok(body.indexOf('failed invariant **INV-1**') < body.indexOf('also fails invariant **INV-13**'));
 });

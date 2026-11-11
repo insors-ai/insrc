@@ -181,7 +181,7 @@ test('Explicit fresh activation start intent and owned partial publication', pla
 	assert.equal(await readFile(paths.manifest, 'utf8'), 'foreign');
 });
 
-test('Fresh controller activation reconciles partial selector and bootstrap', platform, async t => {
+test('Fresh controller activation reconciles partial selector and bootstrap', { ...platform, timeout: 100_000 }, async t => {
 	for (const interruption of ['descriptor', 'manifest-link', 'bootstrap', 'recorded-readiness']) {
 		const startChild = interruption === 'bootstrap' || interruption === 'recorded-readiness';
 		const { activation, gate, installation, scratch, exitTrigger } = await fixture(t, startChild);

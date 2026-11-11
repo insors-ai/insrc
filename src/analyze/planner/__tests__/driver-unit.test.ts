@@ -780,6 +780,24 @@ test('through structuredStageForTest, failures and saved feedback hold primary f
 	}
 	assert.deepEqual(seen, [[], ['INV-7'], ['INV-7', 'INV-11']]);
 	assert.deepEqual(feedbackOf('count-note-hook'), ['INV-7', 'INV-11']);
+
+	// A run that never passes: the thrown error carries the primary failures only, never the count note.
+	const never = docsPlan(15, t => { t[2] = { ...t[2]!, consumes: ['never-produced'] }; });
+	_setPlannerStructuredForTest(async () => never);
+	let thrown: unknown;
+	try {
+		_resetAnalyzeConfigCacheForTests();
+		await runPlanner({ input: { intent: { ...DOCS_INTENT }, contextBundle: BUNDLE_FIXTURE, catalog: DOCS_TEMPLATES }, opts: { runId: 'count-note-exhausted' } });
+	} catch (err) {
+		thrown = err;
+	} finally {
+		_setPlannerStructuredForTest(undefined);
+	}
+	assert.ok(thrown instanceof PlanBuilderExhausted, String(thrown));
+	assert.ok(thrown.failures.length >= 3);
+	assert.ok(thrown.failures.every(f => f.invariantId === 'INV-7'), 'the thrown error holds the primary failure only');
+	assert.equal(thrown.lastFailure.invariantId, 'INV-7');
+	assert.deepEqual(feedbackOf('count-note-exhausted'), thrown.failures.map(f => f.invariantId));
 });
 
 test('an empty task list states the count and keeps INV-1 primary', () => {

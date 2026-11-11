@@ -22,7 +22,7 @@
           "entityId": "PLAN-e4af63128c7cbec2-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 2"
+          "fragment": "revision 3"
         },
         {
           "entityId": "TASK-e4af63128c7cbec2-s1-t9",
@@ -55,9 +55,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 2,
-        "contentHash": "45e4e5602de2ddafffeb9b4b3f7f503ee7fe79a07667f27c6fdb946376cf931e",
-        "at": "2026-11-11T12:23:32.903Z",
+        "number": 3,
+        "contentHash": "a86a854e66fe813d0a90d4cb51b9527968db2e179daf3074840b035deee1eeca",
+        "at": "2026-11-11T15:00:24.586Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -75,7 +75,7 @@
         "at": "2026-11-09T07:42:48.108Z"
       }
     },
-    "revision": 2
+    "revision": 3
   },
   "body": {
     "title": "Switch all supported review entrypoints to dedicated workers",
@@ -88,7 +88,8 @@
       "Optional chat/session threading disabled still requires safe dedicated review workers or returns explicit unavailable.",
       "Existing retired review endpoints keep their current refusal behavior; no legacy engine is restored.",
       "The plan/deployment contract forbids installing an intermediate partial build before final qualification.",
-      "Through every supported production review route, CLI and tool/Git native work uses the installed transport and registered host lease with verified durable intent; no review-worker local spawn/exec/binary-lookup bypass remains. This gate discharges the production integration deliberately deferred from component acceptance in t5/t6."
+      "Through every supported production review route, CLI and tool/Git native work uses the installed transport and registered host lease with verified durable intent; no review-worker local spawn/exec/binary-lookup bypass remains. This gate discharges the production integration deliberately deferred from component acceptance in t5/t6.",
+      "Install the registry and concrete host-derived reviewer/scope resolution, controller authority, binary resolution, and native permission/provenance policies in daemon production construction. Every supported family/control/recovery/cleanup route consumes these bindings and the shared exclusions. Required callbacks and component fixtures from t8 alone are insufficient for this production gate."
     ],
     "tests": [
       {

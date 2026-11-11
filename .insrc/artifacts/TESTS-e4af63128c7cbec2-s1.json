@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 15,
-        "contentHash": "0e89786376e90a8b772894939025101144d1444879770529ba8768448f06bbbb",
-        "at": "2026-11-11T14:14:50.937Z",
+        "number": 16,
+        "contentHash": "3a8d3423b081c524b3327ea008076e031a382841d73cb6a90db2eb489b5459d4",
+        "at": "2026-11-11T15:01:36.592Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "e4af63128c7cbec2",
     "storyId": "s1",
     "createdAt": "2026-11-09T07:52:13.312Z",
-    "updatedAt": "2026-11-11T14:14:50.780Z",
+    "updatedAt": "2026-11-11T15:01:36.426Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-09T04:29:20.389Z",
     "epicSlug": "isolate-each-code-design-review-its",
-    "revision": 15
+    "revision": 16
   },
   "body": {
     "tasks": [
@@ -486,8 +486,8 @@
       },
       {
         "taskId": "t8",
-        "commit": "2b4d3a339",
-        "ranAt": "2026-11-11T14:14:50.780Z",
+        "commit": "941bb3611",
+        "ranAt": "2026-11-11T15:01:36.426Z",
         "testsPassed": true,
         "tests": [
           {
@@ -522,7 +522,7 @@
             "file": "src/daemon/threads/__tests__/review-workers.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 4255,
+            "durationMs": 4485,
             "titles": [
               {
                 "title": "canonical identities own one incarnation and preserve subject and cleanup exclusions",

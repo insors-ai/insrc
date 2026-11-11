@@ -22,7 +22,7 @@
           "entityId": "PLAN-e4af63128c7cbec2-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 2"
+          "fragment": "revision 3"
         },
         {
           "entityId": "TASK-e4af63128c7cbec2-s1-t3",
@@ -58,11 +58,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "4eedfee5aa2ed6fbd0ead958922ed787809beeb68381ababb811ecae77a46305",
-        "at": "2026-11-09T07:42:48.102Z",
+        "number": 2,
+        "contentHash": "8a6e458e480ac9298705b88879ab1965a14a309d8d3542bed73f68fa6d82dc53",
+        "at": "2026-11-11T15:00:24.577Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -80,7 +80,7 @@
         "at": "2026-11-09T07:42:48.104Z"
       }
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
     "title": "Route recovery, publication, cleanup and shutdown through the owner",
@@ -92,7 +92,8 @@
       "Publication retry after worker exit or lost receipt consumes saved feedback only, with providerCalls===0; operational guard updates preserve publication identity.",
       "Approval cleanup fences the exact story/artifact across workers, refuses/retains active admission/execution/publication, and deletes only evidence-preserved inactive checkpoints.",
       "Completed reads remain model-free and available after worker exit/cleanup; failed-admission history and clearance receipts survive permanent publication.",
-      "Normal daemon shutdown aborts/drains host native leases before worker termination/reclamation; unknown disposal remains targeted and explicit."
+      "Normal daemon shutdown aborts/drains host native leases before worker termination/reclamation; unknown disposal remains targeted and explicit.",
+      "Bind actual story/artifact approval-cleanup callers to the main registry's exclusion API, including unknown admission scope and active publication; worker-local coordinator maps cannot authorize cross-worker cleanup."
     ],
     "tests": [
       {

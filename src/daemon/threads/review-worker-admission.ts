@@ -2,7 +2,7 @@
 import { isDeepStrictEqual } from 'node:util';
 import { appendCodeAdmission } from '../../workflow/code-review/task-review/admission-checkpoint.js';
 import { parsePacket,isCodeAdmission } from '../../workflow/code-review/task-review/contracts.js';
-import { loadStoredCheckpoint,saveStoredCheckpoint } from '../../workflow/code-review/task-review/checkpoint.js';
+import { updateStoredCodeCheckpoint } from '../../workflow/code-review/task-review/checkpoint.js';
 import { ReviewProgressTracker } from '../../workflow/code-review/task-review/progress.js';
 import { updateStoredDesignCheckpoint } from '../../workflow/review/design-review/checkpoint.js';
 import { decodeDesign,DesignRequestSchemas,isDesignAdmission } from '../../workflow/review/design-review/contracts.js';
@@ -15,15 +15,18 @@ export async function persistReviewWorkerAdmission(input:ReviewBootstrapInput):P
  const path=reviewWorkerCheckpoint(input.key),now=new Date().toISOString();
  if(input.key.family==='code'){
   const parsed=parsePacket(input.submitted);if(!parsed.reviewRevision)throw new Error('Explicit review revision required');
-  const packet={...parsed,reviewRevision:parsed.reviewRevision},prior=await loadStoredCheckpoint(path),last=prior?.attempts.at(-1);
+  const packet={...parsed,reviewRevision:parsed.reviewRevision};
+  await updateStoredCodeCheckpoint(path,prior=>{
+  const last=prior?.attempts.at(-1);
   if(last?.header.attempt===input.attempt){
    if(!isCodeAdmission(last)||!['pending','running'].includes(last.header.status)||last.header.reviewer!==input.reviewer||!isDeepStrictEqual(last.submitted,packet))throw new Error('Pinned admission cannot be replaced');
    // Identical lost-ack replay consumes no new attempt and still fsyncs.
-   await saveStoredCheckpoint(path,prior!);
+   return prior!;
   }else{
    const cp=appendCodeAdmission({project:input.key.project,reviewId:input.key.reviewId,storyId:packet.storyId,...(packet.taskId?{taskId:packet.taskId}:{})},{phase:'admission',validation:'unverified',operation:'start',acceptedAt:now,header:{attempt:input.attempt,reviewer:input.reviewer,status:'pending',createdAt:now},submitted:packet,progress:new ReviewProgressTracker().snapshot()},prior);
-   await saveStoredCheckpoint(path,cp);
+   return cp;
   }
+  });
  }else{
   const request=decodeDesign(DesignRequestSchemas.start,input.submitted);
   if(request.repo!==input.key.project||request.reviewId!==input.key.reviewId||request.attempt!==input.attempt)throw new Error('Foreign design admission');

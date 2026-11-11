@@ -22,7 +22,7 @@
           "entityId": "PLAN-e4af63128c7cbec2-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 2"
+          "fragment": "revision 3"
         },
         {
           "entityId": "TASK-e4af63128c7cbec2-s1-t2",
@@ -53,11 +53,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "a7a5e6f3c96e5ad4267f0034e636df70170e70fdd1946601b2d46e68d5503489",
-        "at": "2026-11-09T07:42:48.091Z",
+        "number": 2,
+        "contentHash": "13f2ca47827d179541f0dda255e056e8d04ed27fea55adab37cf9a45a468acfe",
+        "at": "2026-11-11T15:00:24.553Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -75,7 +75,7 @@
         "at": "2026-11-09T07:42:48.093Z"
       }
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
     "title": "Adapt design review to durable background admission in its worker",
@@ -87,7 +87,8 @@
       "Epic, standalone and ISSUE-derived artifact routes retain their required ancestry and reviewer-author independence checks.",
       "Coherent chunks, completed-feedback persistence, impact-selected corrections, final consistency and bounded technical retry behavior are preserved.",
       "Subject changes invalidate under existing user-directed restart rules; unrelated external changes do not restart the review.",
-      "Design subject claims, controller exchanges and resource intents remain coherent across worker failure/recovery and concurrent reviewers."
+      "Design subject claims, controller exchanges and resource intents remain coherent across worker failure/recovery and concurrent reviewers.",
+      "Connect design-family subject claims and controller admission/execution/exchanges to the main registry contract from t8; concurrent worker subject exclusions and trusted successful exchanges are proven without relying on worker-local globals for cross-worker authority."
     ],
     "tests": [
       {

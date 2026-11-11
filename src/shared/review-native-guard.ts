@@ -21,6 +21,7 @@ let installed=false;
 export function installReviewNativeSpawnGuard():void{
  if(isMainThread||workerData?.role!=='review')throw new Error('Native review guard requires a dedicated review worker');
  if(installed)return;
+ Object.defineProperty(workerData,'role',{value:'review',writable:false,configurable:false,enumerable:true});
  const refuse=()=>{throw new Error('Native spawn is forbidden in a review worker; use the host lease bridge');};
  for(const name of REVIEW_NATIVE_SPAWN_APIS)Object.defineProperty(childProcess,name,{...Object.getOwnPropertyDescriptor(childProcess,name),value:refuse});
  Object.defineProperty(childProcess.ChildProcess.prototype,'spawn',{...Object.getOwnPropertyDescriptor(childProcess.ChildProcess.prototype,'spawn'),value:refuse});

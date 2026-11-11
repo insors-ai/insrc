@@ -1,6 +1,6 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
-import { parentPort,threadId } from 'node:worker_threads';
-import { withReviewNativeTransport,reviewNativeTransport } from '../../shared/review-process-bridge.js';
+import { parentPort,threadId,workerData } from 'node:worker_threads';
+import { withReviewNativeTransport,withoutReviewNativeTransport,reviewNativeTransport } from '../../shared/review-process-bridge.js';
 import { ReviewWorkerNativeTransport } from './review-worker-native.js';
 import { startDaemonWorker,pushedIndexRun } from './worker-entry.js';
 import { StatusBoardClient } from './status-board.js';
@@ -9,6 +9,7 @@ import { setLiveRunPublisher } from '../../analyze/orchestrator/live-runs.js';
 import { setIndexRunSource } from '../../indexer/run-record.js';
 import { serveRequests } from './worker-requests.js';
 import { directDispatch } from '../server.js';
+import type { RpcHandlers } from '../server.js';
 import { assertReviewIdentity,sameReviewWorker } from './review-worker-contract.js';
 import type { ReviewWorkerInit,ReviewWorkerIdentity } from './review-worker-contract.js';
 import { persistReviewWorkerAdmission } from './review-worker-admission.js';
@@ -42,12 +43,26 @@ export async function runReviewWorker(init:ReviewWorkerInit):Promise<void>{
    if(!raw||typeof raw!=='object'||!sameReviewWorker(init.review,raw as ReviewWorkerIdentity))throw new Error('Foreign or stale review worker operation');
    return raw as Record<string,unknown>;
   };
-  const handlers={
+  const handlers:RpcHandlers={
    'review.worker.describe':async(raw:unknown)=>{identity(raw);return{key:init.review.key,incarnation:init.review.incarnation,threadId,coordinator:coordinator.constructor.name,nativeBound:!!reviewNativeTransport(),storeOwnerDeclared:isLiveStoreOwnerDeclared(),shellTimeoutMs:getToolSettings().shell.defaultTimeoutMs};},
    'review.worker.progress':async(raw:unknown)=>{
     const params=identity(raw),attempt=params['attempt'];if(!Number.isSafeInteger(attempt)||Number(attempt)<1)throw new Error('Invalid review attempt');
     return coordinator.progress(init.review.key.project,init.review.key.reviewId,Number(attempt));
    },
+  };
+  if(process.env['INSRC_TEST_HOOKS']==='1')handlers['test.review.native']=async raw=>{
+   const params=identity(raw);
+   if(params['probe']==='role')return{changed:Reflect.set(workerData,'role','session'),role:workerData.role};
+   if(params['probe']==='missing')return withoutReviewNativeTransport(async()=>{const {runShell}=await import('../tools/shell-helper.js');return runShell([process.execPath,'-e',"process.stdout.write('forbidden')"]);});
+   if(params['probe']==='cli'){
+    const {CliProvider}=await import('../../agent/providers/cli-provider.js');
+    return new CliProvider({kind:'claude',binPath:'bootstrap-fixture-cli'}).runReviewSession('fixture',{type:'object',properties:{ok:{type:'boolean'}},required:['ok'],additionalProperties:false},{mode:'activity',cwd:init.review.key.project,signal:new AbortController().signal,inactivityMs:1800000,internalRetry:false,onActivity:()=>{},onCandidate:async()=>({accepted:true})});
+   }
+   if(params['probe']==='tool'){
+    const {runShellBytes}=await import('../tools/shell-helper.js');
+    return runShellBytes([process.execPath,'-e','process.stdin.pipe(process.stdout)'],{cwd:init.review.key.project,stdin:new Uint8Array([0,255,128,10]),timeoutMs:1000});
+   }
+   throw new Error('Unknown native bootstrap probe');
   };
   const dispatch=directDispatch(handlers);
   serveRequests(parentPort!,(request,deliver)=>withReviewNativeTransport(transport,()=>dispatch(request,deliver)));

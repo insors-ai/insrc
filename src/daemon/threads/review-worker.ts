@@ -5,5 +5,7 @@ import type { ReviewWorkerInit } from './review-worker-contract.js';
 
 // Install before importing providers, tools or family runtimes.
 installReviewNativeSpawnGuard();
+Object.freeze(workerData.review.key);Object.freeze(workerData.review);
+Object.defineProperty(workerData,'review',{value:workerData.review,writable:false,configurable:false,enumerable:true});
 const {runReviewWorker}=await import('./review-worker-runtime.js');
 await runReviewWorker(workerData as ReviewWorkerInit);

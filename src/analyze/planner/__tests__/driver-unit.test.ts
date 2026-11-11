@@ -38,7 +38,8 @@ import {
 	runPlanner,
 } from '../index.js';
 import { SCOPE_BAND } from '../scope-band.js';
-import { _setPlannerStructuredForTest } from '../driver.js';
+import { _setPlannerStructuredForTest, PLANNER_MAX_ATTEMPTS } from '../driver.js';
+import { loadAnalyzeConfig } from '../../../config/analyze.js';
 import { planAttemptsDirFor } from '../cache.js';
 import { DOCS_TEMPLATES } from '../templates/docs/index.js';
 import { taskCountFailure, validatePlan } from '../validate.js';
@@ -808,4 +809,37 @@ test('an empty task list states the count and keeps INV-1 primary', () => {
 	assert.equal(also?.invariantId, 'INV-13');
 	const body = lastUserTurn(_appendCorrectionTurnForTest([], empty, failure!, [], also!));
 	assert.ok(body.indexOf('failed invariant **INV-1**') < body.indexOf('also fails invariant **INV-13**'));
+});
+
+// ---------------------------------------------------------------------------
+// The planner's own attempt limit
+// ---------------------------------------------------------------------------
+
+const failingReply = (): PlanTask => docsPlan(15, t => { t[2] = { ...t[2]!, consumes: ['never-produced'] }; });
+
+test('five-call acceptance and exhaustion with the planner limit', async () => {
+	assert.equal(PLANNER_MAX_ATTEMPTS, 5);
+	// valid only on the fifth reply: accepted on the fifth call
+	const accepting: RecordedCall[] = [];
+	const accepted = await runDocsPlanner('limit-fifth', recordingProvider([failingReply(), failingReply(), failingReply(), failingReply(), docsPlan(20)], accepting));
+	assert.equal(accepting.length, 5);
+	assert.equal(accepted.tasks.length, 20);
+	// never valid: five calls, five primary failures, and a sixth reply is never asked for
+	const refusing: RecordedCall[] = [];
+	const replies = Array.from({ length: 7 }, failingReply);
+	let thrown: unknown;
+	try { await runDocsPlanner('limit-never', recordingProvider(replies, refusing)); } catch (err) { thrown = err; }
+	assert.ok(thrown instanceof PlanBuilderExhausted, String(thrown));
+	assert.equal(refusing.length, 5);
+	assert.equal(thrown.failures.length, 5);
+	assert.ok(thrown.failures.every(f => f.invariantId === 'INV-7'));
+});
+
+test('completeStructured receives the shared maxAttempts, not the planner limit', async () => {
+	const shared = loadAnalyzeConfig().shaper.structuredOutputRetries;
+	assert.notEqual(shared, PLANNER_MAX_ATTEMPTS, 'the two limits are different values in this test');
+	const calls: RecordedCall[] = [];
+	await runDocsPlanner('limit-wire', recordingProvider([failingReply(), failingReply(), docsPlan(20)], calls));
+	assert.equal(calls.length, 3);
+	for (const c of calls) assert.equal(c.opts?.['maxAttempts'], shared);
 });

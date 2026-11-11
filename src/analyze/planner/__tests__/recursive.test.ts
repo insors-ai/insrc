@@ -30,7 +30,7 @@ import {
 	maxDepth,
 	runRecursivePlanner,
 } from '../recursive.js';
-import { MaxPlanDepthExceededError, PlanBuilderExhausted } from '../driver.js';
+import { MaxPlanDepthExceededError, PLANNER_MAX_ATTEMPTS, PlanBuilderExhausted } from '../driver.js';
 import {
 	_resetTemplateRegistryForTests,
 	getTemplatesForTarget,
@@ -490,7 +490,7 @@ test("a plan's task band and its depth cap both follow the measured size, and a 
 		assert.equal(accepted.plan.scope, 'S', "the plan's size is the intent's, not the model's");
 		// A plan of 4 tasks, in which the model wrote "XS" (whose band would accept it), is refused for the intent's S.
 		const four = statingSize(makeLeafOnlyPlan('XS'), 'XS');
-		await assert.rejects(build(runId('band-refused'), rootIntent('S'), [four, four, four]), (err: Error) => {
+		await assert.rejects(build(runId('band-refused'), rootIntent('S'), Array.from({ length: PLANNER_MAX_ATTEMPTS }, () => four)), (err: Error) => {
 			assert.ok(err instanceof PlanBuilderExhausted, err.message);
 			assert.equal(err.lastFailure.invariantId, 'INV-13');
 			assert.match(err.lastFailure.message, /task count 4 is outside the scope band for S/);

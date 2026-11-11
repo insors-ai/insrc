@@ -1,45 +1,21 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 
 import { strict as assert } from 'node:assert';
-import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { before, test } from 'node:test';
-import { fileURLToPath } from 'node:url';
+import { jetbrainsPluginRoot, runFocusedJUnit } from '../test-bridge/run-focused-junit.js';
 
-const plugin = fileURLToPath(new URL('../', import.meta.url));
 const freshness = 'ai.insors.insrc.jetbrains.freshness.DaemonFreshnessFlowTest';
 const transport = 'ai.insors.insrc.jetbrains.daemon.UnixSocketDaemonRpcParseTest';
 const lifecycle = 'ai.insors.insrc.jetbrains.lifecycle.DaemonLifecycleCommandRunnerTest';
 const wiring = 'ai.insors.insrc.jetbrains.freshness.InstalledCommitFreshnessConsumerTest';
 const classes = [freshness, transport, lifecycle, wiring];
 
-before(() => {
-	const scratch = mkdtempSync(join(tmpdir(), 'insrc-freshness-gradle-'));
-	try {
-		// Gradle's --tests selects execution only. Limit compilation to the
-		// same test sources so unrelated fixture failures do not affect this gate.
-		const init = join(scratch, 'freshness.gradle');
-		writeFileSync(init, `
-gradle.beforeProject { project ->
-    project.plugins.withId('org.jetbrains.kotlin.jvm') {
-        project.kotlin.sourceSets.getByName('test').kotlin.setIncludes([${classes.map(name => `'${name.replaceAll('.', '/')}.kt'`).join(', ')}])
-    }
-}
-`);
-		const result = spawnSync('./gradlew', [
-			'-I', init, '--no-configuration-cache', 'cleanTest', 'test', '--offline',
-			...classes.flatMap(name => ['--tests', name]), '--console=plain',
-		], { cwd: plugin, encoding: 'utf8', timeout: 290_000 });
-		assert.equal(result.status, 0, `Gradle managed update tests failed:\n${result.stdout}\n${result.stderr}`);
-	} finally {
-		rmSync(scratch, { recursive: true, force: true });
-	}
-}, { timeout: 300_000 });
+before(() => runFocusedJUnit(classes), { timeout: 300_000 });
 
 function requirePassingKotlinCase(className: string, name: string): void {
-	const xml = readFileSync(join(plugin, 'build', 'test-results', 'test', `TEST-${className}.xml`), 'utf8');
+	const xml = readFileSync(join(jetbrainsPluginRoot, 'build', 'test-results', 'test', `TEST-${className}.xml`), 'utf8');
 	const marker = `<testcase name="${name}()"`;
 	const start = xml.indexOf(marker);
 	assert.ok(start >= 0, `Kotlin case did not run: ${name}`);

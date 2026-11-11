@@ -83,12 +83,11 @@ exit 45`);
 	assert.deepEqual(await controller.run('update'), { ok: true, state: 'running' });
 	await requireBridge();
 	await writeFile(trace, '');
-	const jetbrains = fileURLToPath(new URL('../../../jetbrains-plugin/__tests__/managed-update-confirmation-gradle.test.ts', import.meta.url));
-	const childEnv = { ...process.env, INSRC_ROUTE_MATRIX_HOME: home, INSRC_ROUTE_MATRIX_PATH: env.PATH,
-		INSRC_ROUTE_MATRIX_TMP: root, INSRC_ROUTE_MATRIX_TRACE: trace } as NodeJS.ProcessEnv;
-	delete childEnv['NODE_TEST_CONTEXT'];
-	await exec(process.execPath, ['--import', 'tsx', '--test', '--test-name-pattern=JetBrains selects', jetbrains], {
-		env: childEnv, timeout: 315_000,
+	const jetbrains = new URL('../../../jetbrains-plugin/test-bridge/run-focused-junit.ts', import.meta.url).href;
+	const { runFocusedJUnit } = await import(jetbrains);
+	runFocusedJUnit(['ai.insors.insrc.jetbrains.lifecycle.DaemonLifecycleCommandRunnerTest'], {
+		...process.env, INSRC_ROUTE_MATRIX_HOME: home, INSRC_ROUTE_MATRIX_PATH: env.PATH,
+		INSRC_ROUTE_MATRIX_TMP: root, INSRC_ROUTE_MATRIX_TRACE: trace,
 	});
 	await requireBridge();
 });

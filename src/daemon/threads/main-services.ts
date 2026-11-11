@@ -14,6 +14,7 @@
  * single-threaded, as before.
  */
 
+import { setReviewProgressSource } from '../../workflow/review/worker-progress-source.js';
 import { registerReviewWorkerConnection, disconnectReviewWorker, assertReviewOwnerActive } from '../review-request-owner.js';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { MessageChannel } from 'node:worker_threads';
@@ -164,6 +165,7 @@ export class ThreadServices {
 		installLockManager(this.lockBlock);
 		enableMaintenanceLock();
 		installStepStateStore(steps);
+  setReviewProgressSource(async()=>this.board.reviewProgress());
 		this.board.onIndexRuns(runs => { for (const port of this.ports) pushToWorker(port, INDEX_RUNS_OP, runs); });
 		this.handlers = {
 			...statusBoardHubHandlers(this.board),

@@ -11,6 +11,7 @@
  * messages (ordered per port) and read a snapshot with one hub request.
  */
 
+import { reviewProgressRows } from '../../workflow/review/worker-progress-source.js';
 import type { AttachedClient, RegisteredRepo, RepoCompleteness, ThreadRole, UnattributedUnwritableCount } from '../../shared/types.js';
 import type { IndexRunView } from '../../indexer/run-record.js';
 import { getLogger } from '../../shared/logger.js';
@@ -19,6 +20,8 @@ import type { HubClient, HubHandlers, MethodClass, SessionId } from './channel.j
 const log = getLogger('status-board');
 
 export interface ThreadStatus {
+ readonly reviewProgress?:import('../../shared/review-worker-progress.js').ReviewWorkerStatus|undefined;
+ readonly reviewSubject?:string|undefined;
 	readonly threadId: number;
 	readonly cls: MethodClass | 'router' | 'review';
 	readonly session?: SessionId | undefined;
@@ -171,6 +174,7 @@ export class StatusBoard {
 	/** Remove a thread's status (its worker exited or was released). */
 	forget(threadId: number): void { this.threads.delete(threadId); }
 
+	reviewProgress(): ReturnType<typeof reviewProgressRows> { return reviewProgressRows([...this.threads.values()]); }
 	snapshot(): StatusSnapshot {
 		return {
 			threads:  [...this.threads.values()],
@@ -188,7 +192,7 @@ export class StatusBoard {
 
 const OPS = {
 	publish: 'board.publish', publishIndexing: 'board.publishIndexing', publishLane: 'board.publishLane', publishClients: 'board.publishClients',
-	publishRun: 'board.publishRun', forgetRun: 'board.forgetRun', publishStore: 'board.publishStore', snapshot: 'board.snapshot',
+	publishRun: 'board.publishRun', forgetRun: 'board.forgetRun', publishStore: 'board.publishStore', snapshot: 'board.snapshot', reviewProgress:'board.reviewProgress',
 	publishIndexRuns: 'board.publishIndexRuns', markAnalyzeRun: 'board.markAnalyzeRun',
 } as const;
 
@@ -203,6 +207,7 @@ export function statusBoardHubHandlers(board: StatusBoard): HubHandlers {
 		[OPS.forgetRun]:       a => board.forgetRun(a as string),
 		[OPS.publishStore]:    a => board.publishStore(a as StoreStatusSnapshot),
 		[OPS.snapshot]:        () => board.snapshot(),
+  [OPS.reviewProgress]: () => board.reviewProgress(),
 		[OPS.publishIndexRuns]: a => board.publishIndexRuns(a as readonly IndexRunView[]),
 		[OPS.markAnalyzeRun]:  a => { const { runId, threadId, live } = a as { runId: string; threadId: number; live: boolean }; board.markAnalyzeRun(runId, threadId, live); },
 	};
@@ -222,5 +227,6 @@ export class StatusBoardClient {
 	publishStore(store: StoreStatusSnapshot): void { this.hub.send(OPS.publishStore, store); }
 	publishIndexRuns(runs: readonly IndexRunView[]): void { this.hub.send(OPS.publishIndexRuns, runs); }
 	markAnalyzeRun(runId: string, threadId: number, live: boolean): void { this.hub.send(OPS.markAnalyzeRun, { runId, threadId, live }); }
+	reviewProgress(): Promise<ReturnType<typeof reviewProgressRows>> { return this.hub.request(OPS.reviewProgress,null); }
 	snapshot(): Promise<StatusSnapshot> { return this.hub.request<StatusSnapshot>(OPS.snapshot, null); }
 }

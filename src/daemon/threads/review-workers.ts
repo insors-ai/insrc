@@ -18,6 +18,10 @@ import type { ReplyEnvelope } from './channel.js';
 import type { DesignRecoveryRequest } from '../../workflow/review/design-review/contracts.js';
 import { ReviewResourceRecovery } from './review-resource-recovery.js';
 import type { ReviewResourceRecoveryDeps } from './review-resource-recovery.js';
+import { reviewJsonLimit } from '../../config/review.js';
+import { reviewProgressPublication } from './review-progress.js';
+import type { ReviewObservation,ReviewProgressPublication } from './review-progress.js';
+import type { ReviewWorkerStatus } from '../../shared/review-worker-progress.js';
 import type { ApprovalBroker } from '../approval-broker.js';
 
 export interface ReviewWorkerScope {
@@ -40,6 +44,7 @@ export interface ReviewWorkerProgress extends ReviewWorkerIdentity {
  readonly phase:'admission'|'execution'|'publication'|'complete'|'failed'|'interrupted';
  readonly completed:number;readonly total?:number | undefined;
  readonly updatedAt:string;
+ readonly observation?:ReviewObservation|undefined;readonly display?:ReviewWorkerStatus|undefined;
 }
 export interface ReviewWorkerControl extends ReviewWorkerIdentity {
  readonly attempt:number;
@@ -133,12 +138,13 @@ export class ReviewWorkers {
    disconnectReviewWorker(entry.connection);entry.connection=hubConnection;
    entry.owner=registerReviewRequestOwner(hubConnection,randomUUID(),scope.reviewer==='controller'?context.connectionSignal:lifetime.signal);
    this.deps.services.board.publish({threadId:started.threadId,cls:'review',role:key.family==='code'?'code-review':'design-review',busy:true,method:'admission',since:Date.now(),queued:0});
-   started.worker.on('message',(raw:unknown)=>{const reply=raw as ReplyEnvelope;if(reply?.kind!=='reply')return;const p=entry.pending.get(reply.requestId);if(!p)return;entry.pending.delete(reply.requestId);if(reply.error)p.reject(new Error(reply.error));else p.resolve(reply.result);});
+   started.worker.on('message',(raw:unknown)=>{if(raw&&typeof raw==='object'&&Reflect.get(raw,'kind')==='review-progress'){this.acceptPublication(started.worker,raw as ReviewProgressPublication);return;}const reply=raw as ReplyEnvelope;if(reply?.kind!=='reply')return;const p=entry.pending.get(reply.requestId);if(!p)return;entry.pending.delete(reply.requestId);if(reply.error)p.reject(new Error(reply.error));else p.resolve(reply.result);});
    started.worker.once('exit',()=>{for(const p of entry.pending.values())p.reject(new Error('Review worker exited'));entry.pending.clear();void this.closeEntry(entry);});
+   if(started.admission.progress)this.acceptPublication(started.worker,started.admission.progress);
    void started.reclaimed.then(()=>this.closeEntry(entry));resolveReady(started);
    if(entry.closing)void started.worker.terminate();
   },error=>{rejectReady(error);void this.closeEntry(entry);});
-  return (await ready).admission;
+  const {progress:_internalProgress,...admission}=(await ready).admission;return admission;
  }
  private assertController(e:Entry,context:TrustedRpcContext):void{
   if(e.scope.reviewer==='controller'&&(context.connectionIdentity!==e.context.connectionIdentity||context.daemonEpoch!==e.context.daemonEpoch||context.connectionSignal?.aborted))throw new Error('Review owner mismatch');
@@ -157,7 +163,10 @@ export class ReviewWorkers {
  /** Family adapters expose only their typed actions, never arbitrary methods. */
  async progress(key:ReviewKey,context:TrustedRpcContext):Promise<unknown>{
   const e=this.entries.get(keyOf(key));if(!e)throw new Error('Review worker not found');this.assertController(e,context);
-  return this.call(e,'review.worker.progress',{attempt:e.attempt});
+  // Observation never waits on a blocked worker or changes its owner.
+  const cached=e.progress?.observation;if(!cached)throw new Error('Review admission is not durably acknowledged yet');
+  const stale=Date.now()-Date.parse(e.progress!.updatedAt)>2000||!!e.closing;
+  return structuredClone({...cached,freshness:e.input.key.family==='code'?(stale?'stale':'live'):(stale?'stored':'live')});
  }
  async recover(identity:ReviewWorkerIdentity,request:DesignRecoveryRequest,context:TrustedRpcContext):Promise<unknown>{
   const e=this.entries.get(keyOf(identity.key));if(!e||identity.key.family!=='design'||!sameReviewWorker(e.input,identity))throw new Error('Foreign design recovery');
@@ -187,12 +196,21 @@ export class ReviewWorkers {
   if(!phases.includes(request.phase)||typeof request.actionId!=='string'||!request.actionId||request.actionId.length>128||typeof request.executionId!=='string'||!request.executionId||request.executionId.length>128||!Number.isSafeInteger(request.sequence)||request.sequence<1||request.taskId!==undefined&&(typeof request.taskId!=='string'||!request.taskId||request.taskId.length>256))throw new Error('Invalid review control envelope');
   return this.call(e,'review.worker.control',{attempt:request.attempt,phase:request.phase,actionId:request.actionId,executionId:request.executionId,sequence:request.sequence,taskId:request.taskId,input:request.input});
  }
+ private acceptPublication(source:Worker,raw:ReviewProgressPublication):boolean{
+  try{assertReviewIdentity(raw);}catch{return false;}
+  const e=this.entries.get(keyOf(raw.key));if(!e||!sameReviewWorker(e.input,raw)||raw.attempt!==e.attempt||!Number.isSafeInteger(raw.sequence)||raw.sequence<1)return false;
+  try{if(Buffer.byteLength(JSON.stringify(raw))>reviewJsonLimit())return false;
+   const value=reviewProgressPublication({...e.input,attempt:e.attempt},raw.sequence,raw.observation),d=value.display;
+   const phase=d.status==='failed'?'failed':d.status==='interrupted'?'interrupted':d.admission?'admission':['passed','changes_requested','incomplete','paused','invalidated'].includes(d.status)?'complete':d.phase==='publishing'||d.phase==='cr_publication'?'publication':'execution';
+   return this.acceptProgress(source,raw,{...raw,phase,completed:d.completed,total:d.total,updatedAt:d.observedAt,observation:value.observation,display:d});
+  }catch{return false;}
+ }
  acceptProgress(source:Worker,identity:ReviewWorkerIdentity,progress:ReviewWorkerProgress):boolean{
   const e=this.entries.get(keyOf(identity.key));
   if(!e||e.started?.worker!==source||e.closing||!sameReviewWorker(e.input,identity)||!sameReviewWorker(identity,progress)||progress.attempt!==e.attempt||!Number.isSafeInteger(progress.sequence)||progress.sequence<1||progress.sequence<=(e.progress?.sequence??0)||!Number.isSafeInteger(progress.completed)||progress.completed<0||!['admission','execution','publication','complete','failed','interrupted'].includes(progress.phase)||typeof progress.updatedAt!=='string'||progress.updatedAt.length>40||!Number.isFinite(Date.parse(progress.updatedAt)))return false;
   if(progress.total!==undefined&&(!Number.isSafeInteger(progress.total)||progress.total<progress.completed))return false;
-  e.progress=Object.freeze({key:e.input.key,incarnation:e.input.incarnation,attempt:progress.attempt,sequence:progress.sequence,phase:progress.phase,completed:progress.completed,total:progress.total,updatedAt:progress.updatedAt});
-  this.deps.services.board.publish({threadId:source.threadId,cls:'review',role:e.input.key.family==='code'?'code-review':'design-review',busy:!['complete','failed','interrupted'].includes(progress.phase),method:progress.phase,queued:0});return true;
+  e.progress=Object.freeze({key:e.input.key,incarnation:e.input.incarnation,attempt:progress.attempt,sequence:progress.sequence,phase:progress.phase,completed:progress.completed,total:progress.total,updatedAt:progress.updatedAt,...((progress.observation??e.progress?.observation)?{observation:structuredClone(progress.observation??e.progress!.observation!)}:{}),...((progress.display??e.progress?.display)?{display:structuredClone(progress.display??e.progress!.display!)}:{})});
+  this.deps.services.board.publish({threadId:source.threadId,cls:'review',role:e.input.key.family==='code'?'code-review':'design-review',busy:!['complete','failed','interrupted'].includes(progress.phase),method:progress.phase,queued:0,...(progress.display?{reviewProgress:progress.display,reviewSubject:e.input.key.family==='code'&&e.input.epicHash&&e.input.submitted&&typeof e.input.submitted==='object'&&typeof Reflect.get(e.input.submitted,'storyId')==='string'?`BUILD-${e.input.epicHash}-${String(Reflect.get(e.input.submitted,'storyId'))}`:e.scope.subject}:{})});return true;
  }
  cachedProgress(key:ReviewKey):ReviewWorkerProgress|undefined{return this.entries.get(keyOf(key))?.progress;}
  /** Held by the artifact/story cleanup operation, including its filesystem work. */

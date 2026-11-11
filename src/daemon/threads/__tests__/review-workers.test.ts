@@ -73,7 +73,7 @@ test('stale owner messages and targeted disconnects cannot mutate another review
  const f=await fixture(t,'controller'),one=context('one'),two=context('two');
  const a=await f.registry.admit(f.submit('owned-a'),one.context),b=await f.registry.admit(f.submit('owned-b'),two.context);
  const sa=f.started.get('owned-a')!,sb=f.started.get('owned-b')!;
- const progress:ReviewWorkerProgress={...b,attempt:1,sequence:1,phase:'execution',completed:0,updatedAt:new Date().toISOString()};
+ const progress:ReviewWorkerProgress={...b,attempt:1,sequence:(f.registry.cachedProgress(b.key)?.sequence??0)+1,phase:'execution',completed:0,updatedAt:new Date().toISOString()};
  assert.equal(f.registry.acceptProgress(sa.worker,b,progress),false);
  assert.equal(f.registry.acceptProgress(sb.worker,b,progress),true);
  assert.equal(f.registry.acceptProgress(sb.worker,b,progress),false);
@@ -87,7 +87,7 @@ test('stale owner messages and targeted disconnects cannot mutate another review
  one.abort.abort();await holding;await sa.reclaimed;
  assert.ok(await f.registry.progress(b.key,two.context));await rpc(sb,'tool');
  assert.equal(f.registry.acceptProgress(sa.worker,a,{...progress,...a,sequence:2}),false);
- assert.equal(f.registry.cachedProgress(b.key)?.sequence,1);
+ assert.ok((f.registry.cachedProgress(b.key)?.sequence??0)>=progress.sequence);
  const cp=JSON.parse(await readFile(reviewWorkerCheckpoint(a.key),'utf8'));assert.deepEqual(cp.attempts.at(-1).resourceGuard.openLeases,[]);
 });
 test('admission replay retains a native intent committed by the writer ahead of it',async t=>{

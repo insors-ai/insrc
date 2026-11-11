@@ -1243,6 +1243,7 @@ export type ThreadRole = 'admin' | 'code-indexing' | 'document-summary' | 'sessi
 
 /** One daemon worker thread in `DaemonStatus.threads` and the debug-status answer. */
 export interface ThreadView {
+  reviewProgress?:import('./review-worker-progress.js').ReviewWorkerStatus|undefined;
   threadId:    number;
   role:        ThreadRole;
   /** The request class it serves; undefined for a worker that serves none (document summaries). */

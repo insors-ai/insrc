@@ -60,9 +60,9 @@ export async function clearanceFixture(t:{after:(fn:()=>Promise<void>)=>void},fa
  const lifecycle=createRepoLifecycle(repo),artifactId=d?.id??`CR-${hash}-s1`,broker=new ApprovalBroker();let failAudit=false;
  const recovery=registry.resourceRecovery(broker,async(k,rows)=>{if(failAudit)throw new Error('Fixture audit unavailable');await persistReviewResourceAudit(lifecycle.store,artifactId,k,rows);},approvalWaitMs);
  const approval=createApprovalRpc(broker),socketPath=join(repo,'clearance.sock');
- const server=new IpcServer(directDispatch({'approval.answer':approval.answer,'review.resource.clear':(raw,context)=>recovery.clear(key,raw as {reason:string;leaseIds?:string[]},context!), 'review.resource.inspect':(_raw,context)=>recovery.inspect(key,context!)},{'approval.subscribe':approval.subscribe}),Date.now,socketPath);await server.listen();
- const peer=await LocalPeer.connect(socketPath);
+ const server=new IpcServer(directDispatch({'approval.answer':approval.answer,'step.call':async(raw,context)=>{const p=raw as {tool:string;args:{phase:string;reviewId:string}};assert.equal(p.tool,family==='code'?'insrc_code_review_step':'insrc_review_step');assert.equal(p.args.phase,'progress');return{content:[{type:'text',text:JSON.stringify(await registry.progress({...key,reviewId:p.args.reviewId},context!))}]};},'review.resource.clear':(raw,context)=>recovery.clear(key,raw as {reason:string;leaseIds?:string[]},context!), 'review.resource.inspect':(_raw,context)=>recovery.inspect(key,context!)},{'approval.subscribe':approval.subscribe}),Date.now,socketPath);await server.listen();
+ const peer=await LocalPeer.connect(socketPath),beforeClose:Array<()=>void>=[];
  const local={connectionIdentity:'fixture-local',daemonEpoch:'epoch',connectionSignal:new AbortController().signal};
- t.after(async()=>{peer.close();await server.close();await recovery.drained();await registry.shutdown();removeDesign();f.cleanup();});
- return{f,d,repo,key,input,registry,recovery,broker,peer,local,started,barriers,lifecycle,artifactId,nativeCalls:()=>nativeCalls,failAudit:(value:boolean)=>{failAudit=value;}};
+ t.after(async()=>{for(const close of beforeClose)close();peer.close();await server.close();await recovery.drained();await registry.shutdown();removeDesign();f.cleanup();});
+ return{beforeClose:(close:()=>void)=>beforeClose.push(close),f,d,repo,key,input,registry,recovery,broker,peer,local,started,barriers,lifecycle,artifactId,nativeCalls:()=>nativeCalls,failAudit:(value:boolean)=>{failAudit=value;}};
 }

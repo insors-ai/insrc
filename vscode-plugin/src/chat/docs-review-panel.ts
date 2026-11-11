@@ -1,3 +1,4 @@
+import { reviewProgressLabel } from '../../../src/shared/review-worker-progress.js';
 /**
  * Story E20260925edb76e2e:S007 / t3 — the docs-review webview host; reworked by
  * Story E202610138d4b90c9:S001.
@@ -103,6 +104,8 @@ interface PanelCtx {
   /** undefined for the legacy presentKey-less single panel. */
   readonly presentKey: string | undefined;
   opened: OpenDocument | undefined;
+  reviewProgressKnown?:boolean|undefined;
+  progressPolling?:boolean|undefined;
   openSeq: number;
   shellNonce: string;
   watch: { readonly key: string; dispose(): void } | undefined;
@@ -1413,6 +1416,15 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
           for (const ctx of allCtxs()) {
             const o = ctx.opened;
             if (o !== undefined && now.has(o.artifactId) !== before.has(o.artifactId)) void reopen(ctx);
+            else if(o!==undefined&&!ctx.progressPolling){
+              const selected=o,seq=ctx.openSeq;ctx.progressPolling=true;
+              void Promise.resolve().then(()=>deps.client.content(o.docPath??o.artifactId)).then(content=>{
+                if(disposed||ctx.opened!==selected||ctx.openSeq!==seq)return;
+                if(!content.reviewProgress&&!ctx.reviewProgressKnown)return;
+                ctx.reviewProgressKnown=!!content.reviewProgress;
+                post(ctx,{type:'docs-review-progress',artifactId:o.artifactId,...(content.reviewProgress?{reviewProgress:content.reviewProgress,reviewProgressText:reviewProgressLabel(content.reviewProgress)}:{})});
+              }).catch(()=>{}).finally(()=>{ctx.progressPolling=false;});
+            }
           }
           tickPoll();
         });
@@ -1521,6 +1533,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
    * in between), replaced for another document, and ended when the record is cleared.
    */
   function setOpened(ctx: PanelCtx, next: OpenDocument | undefined): void {
+    if(ctx.opened?.artifactId!==next?.artifactId)ctx.reviewProgressKnown=false;
     ctx.opened = next;
     const key = next !== undefined && next.docPath !== undefined ? `${next.artifactId}\n${next.docPath}` : undefined;
     if (key === ctx.watch?.key) return;
@@ -1569,6 +1582,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
         kind: opts.kind ?? pending.get(artifactId)?.kind ?? (ctx.opened?.artifactId === artifactId ? ctx.opened.kind : undefined),
         title: pending.get(artifactId)?.title ?? (ctx.opened?.artifactId === artifactId ? ctx.opened.title : undefined),
       });
+      ctx.reviewProgressKnown=content.reviewProgress!==undefined;
       const documents: DocsDocumentTab[] = [
         { title: docPath !== undefined ? baseName(docPath) : 'Document', type: 'markdown', ...(docPath !== undefined ? { relPath: docPath } : {}) },
         ...htmlCompanions.map((c): DocsDocumentTab => ({ title: c.title, type: 'html', relPath: c.relPath })),
@@ -1598,6 +1612,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
         artifactId,
         ...(presentedIds.length > 0 ? { presented: [...presentedIds] } : {}),
         markdown: content.markdown,
+        ...(content.reviewProgress?{reviewProgress:content.reviewProgress,reviewProgressText:reviewProgressLabel(content.reviewProgress)}:{}),
         openQuestions: content.openQuestions,
         blocked: content.blocked,
         commentable,
@@ -2252,11 +2267,13 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       DOCS_LIST_SOURCE +
       // A content with no artifact id is the host's notice that the list could not be read:
       // it belongs to the list view and is not a document.
+      `function renderReviewProgress(m){if(!shown||shown.artifactId!==m.artifactId)return;var el=document.getElementById('review-progress');if(!el)return;el.textContent=m.reviewProgressText||'';el.title=m.reviewProgress?m.reviewProgress.freshness+' · '+m.reviewProgress.observedAt:'';el.hidden=!m.reviewProgress;}` +
       `function renderContent(m){if(!m.artifactId){rvListNotice(m.markdown);return;}` +
       // A content for the document already shown is a reload in place: the reviewer's place
       // in the document region is taken before the body is rendered again and put back after.
       `var same=!!shown&&shown.artifactId===m.artifactId;` +
       `var top=same?scrollEl.scrollTop:0,before=same?shown.contentVersion:undefined;` +
+      `var progressEl=document.getElementById('review-progress');if(progressEl){progressEl.textContent=m.reviewProgressText||'';progressEl.title=m.reviewProgress?m.reviewProgress.freshness+' · '+m.reviewProgress.observedAt:'';progressEl.hidden=!m.reviewProgress;}` +
       `var r=renderMarkdownBody(bodyEl,m.markdown||'');` +
       // Stamp FIRST, and let the stamped count gate the chooser. On the degraded
       // path the body is plain text with no heading elements, so nothing can be
@@ -2369,6 +2386,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `if(companionFrame&&e.source===companionFrame.contentWindow){rvFrameMessage(e.data);return;}` +
       `var m=e.data&&e.data.payload;if(!m)return;` +
       `if(m.type==='docs-list'){renderList(m.artifacts);}` +
+      `else if(m.type==='docs-review-progress'){renderReviewProgress(m);}` +
       `else if(m.type==='docs-content'){renderContent(m);rvPresented(m.presented);}` +
       `else if(m.type==='docs-decision-result'){rvResult(m);}` +
       `else if(m.type==='docs-companion'){rvCompanion(m);}});` +
@@ -2410,6 +2428,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `<span id="insrc-rv-tabs" class="rv-tabs" role="tablist" aria-label="documents of this artifact"></span>` +
       `<span id="insrc-rv-presented" class="rv-presented" role="list" aria-label="documents presented for review by the chat"></span>` +
       `</div>` +
+      `<div id="review-progress" role="status" hidden></div>` +
       // The one scrolling region: everything of the document, and nothing else.
       `<div id="insrc-rv-scroll" class="rv-scroll"><div id="insrc-rv-md" class="rv-doc">` +
       // The round button a selection offers; placed at the selection by the script.

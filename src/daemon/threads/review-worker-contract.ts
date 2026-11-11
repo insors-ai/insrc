@@ -23,6 +23,7 @@ export interface ReviewWorkerInit extends DaemonWorkerInit {
 }
 export interface ReviewAdmissionReceipt extends ReviewWorkerIdentity {
  readonly kind:'review-admission-saved';readonly attempt:number;readonly checkpointPath:string;
+ readonly progress?:import('./review-progress.js').ReviewProgressPublication|undefined;
 }
 export function assertReviewIdentity(value:ReviewWorkerIdentity):void{
  if(!Value.Check(ReviewKeySchema,value.key)||!isAbsolute(value.key.project)||resolve(value.key.project)!==value.key.project||!value.incarnation||value.incarnation.length>128||/[\x00-\x1f\x7f]/.test(value.incarnation))throw new Error('Invalid review worker identity');

@@ -13,6 +13,7 @@ let release!:()=>void,releaseProvider!:()=>void,entered=false,calls=0,qualifiedB
 const gate=new Promise<void>(resolve=>{release=resolve;});
 const providerGate=new Promise<void>(resolve=>{releaseProvider=resolve;});
 parentPort!.on('message',(raw:{kind?:string;requestId?:string;method?:string})=>{
+ if(raw.method==='fixture.block'&&workerData.fixtureBarrier){const barrier=new Int32Array(workerData.fixtureBarrier as SharedArrayBuffer);Atomics.store(barrier,6,1);while(Atomics.load(barrier,7)===0)Atomics.wait(barrier,7,0,1000);parentPort!.postMessage({kind:'reply',requestId:raw.requestId,result:{released:true}});}
  if(raw.method==='fixture.release'){release();parentPort!.postMessage({kind:'reply',requestId:raw.requestId,result:{released:true}});}
  if(raw.method==='fixture.stats')parentPort!.postMessage({kind:'reply',requestId:raw.requestId,result:{entered,calls,qualifiedBeforeProvider}});
  if(raw.method==='fixture.releaseProvider'){releaseProvider();parentPort!.postMessage({kind:'reply',requestId:raw.requestId,result:{released:true}});}

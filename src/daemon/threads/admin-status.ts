@@ -53,6 +53,7 @@ export function threadViews(snap: StatusSnapshot, now: number): ThreadView[] {
 		const summary = t.role === 'document-summary';
 		const busy = summary ? snap.indexing.summary.processing : t.busy;
 		views.push({
+			...(t.reviewProgress?{reviewProgress:{...t.reviewProgress,freshness:now-Date.parse(t.reviewProgress.observedAt)>2000?'stale' as const:t.reviewProgress.freshness}}:{}),
 			threadId: t.threadId, role: t.role, cls: summary ? undefined : t.cls,
 			...(t.session !== undefined ? { session: { label: t.session.label, pid: t.session.pid } } : {}),
 			busy,

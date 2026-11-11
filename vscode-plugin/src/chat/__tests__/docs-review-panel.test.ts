@@ -1248,10 +1248,11 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  */
 const SHELL_BASELINE = {
   nonce:  'FIXED-NONCE',
-  // ISSUE-7fa297efd4bd1c59: the presented strip (markup + CSS + rvPresented renderer) in the shell.
-  chars:  136787,
-  bytes:  136851,
-  sha256: '848bdcc38400a8cfa003236d51178e64d76297d7d2719e7996a2f4db3a144098',
+  // TASK-e4af63128c7cbec2-s1-t12: add a status line and correlated progress updates
+  // outside the artifact body, preserving comment anchors and drafts (+681 chars/+683 bytes).
+  chars:  137468,
+  bytes:  137534,
+  sha256: 'cc77d09f962dd460fa577196c16f36cfd5ea30be6668b6bd1d3f823f3ce9497c',
 } as const;
 
 function renderShellFor(nonce: string): string {
@@ -1818,6 +1819,7 @@ test('t4: the slug lookup is scoped to the body container, so a same-id element 
 // ---------------------------------------------------------------------------
 
 interface WebviewRun {
+  progress:BodyStub;
   body: BodyStub;
   notice: BodyStub;
   sections: BodyStub;
@@ -1891,7 +1893,7 @@ function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?
     script = script.replace('function uxBuildMockSlot(', 'function uxBuildMockSlot(){throw new Error("ux slot build blew up");}\nfunction _unusedUx(');
   }
 
-  const ids = ['insrc-docs-list', 'insrc-docs-body', 'insrc-docs-oq',
+  const ids = ['review-progress','insrc-docs-list', 'insrc-docs-body', 'insrc-docs-oq',
     'insrc-docs-sections', 'insrc-docs-notice', 'insrc-docs-diagram',
     'insrc-docs-experience',
     // The header and the comment panel of the rebuilt shell (E202610138d4b90c9:S001).
@@ -1980,7 +1982,7 @@ function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?
   );
 
   return {
-    body: byId['insrc-docs-body']!, notice: byId['insrc-docs-notice']!,
+    progress:byId['review-progress']!,body: byId['insrc-docs-body']!, notice: byId['insrc-docs-notice']!,
     sections: byId['insrc-docs-sections']!,
     oq: byId['insrc-docs-oq']!, posted,
     diagram: byId['insrc-docs-diagram']!, experience: byId['insrc-docs-experience']!, created,
@@ -7582,4 +7584,16 @@ test('E202611031bd72813:S001 t8: the REAL presenter wired to the REAL review hos
   assert.equal(made.length, 2, 'a later declaration opens again under a fresh key');
   assert.equal(made[1]!.title, 'insrc docs review — HLD-xyz-S002#2');
   host.dispose();
+});
+
+
+test('review-worker progress refresh changes only the status line and ignores another document',()=>{
+ const w=runWebview();
+ const progress={project:'/repo',family:'code',reviewId:'review-1',attempt:1,status:'pending',phase:'scope_preparation',completed:0,total:0,task:null,observedAt:'2026-11-11T00:00:00.000Z',freshness:'live',admission:{validation:'unverified',state:'pending',stage:'scope_preparation'}};
+ w.deliver({artifactId:'LLD-progress-s1',markdown:'# Pinned body',openQuestions:[],blocked:false,reviewProgress:progress,reviewProgressText:'Preparing review'} as any);
+ assert.equal(w.progress.textContent,'Preparing review');const body=w.body.textContent;
+ w.send('docs-review-progress',{artifactId:'another-artifact',reviewProgress:progress,reviewProgressText:'Wrong review'} as any);
+ assert.equal(w.progress.textContent,'Preparing review');
+ w.send('docs-review-progress',{artifactId:'LLD-progress-s1',reviewProgress:{...progress,status:'failed'},reviewProgressText:'Technical admission failure: Missing source'} as any);
+ assert.equal(w.progress.textContent,'Technical admission failure: Missing source');assert.equal(w.body.textContent,body);
 });

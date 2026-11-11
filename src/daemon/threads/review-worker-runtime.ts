@@ -1,4 +1,6 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
+import { stat } from 'node:fs/promises';
+import { reviewWorkerCheckpoint } from './review-worker-contract.js';
 import { parentPort,threadId,workerData } from 'node:worker_threads';
 import { withReviewNativeTransport,withoutReviewNativeTransport,reviewNativeTransport } from '../../shared/review-process-bridge.js';
 import { ReviewWorkerNativeTransport } from './review-worker-native.js';
@@ -33,6 +35,7 @@ import { DesignReviewWorker } from '../../workflow/review/design-review/worker-a
 import type { DesignCoordinatorDeps } from '../../workflow/review/design-review/coordinator.js';
 import { loadStoredDesignCheckpoint } from '../../workflow/review/design-review/checkpoint.js';
 import { isDesignAdmission } from '../../workflow/review/design-review/contracts.js';
+import { reviewProgressPublication } from './review-progress.js';
 import { requireClosedReviewResources } from '../../workflow/review/resource-recovery.js';
 
 /** A dedicated instance, never the class singleton/session runtime. Source
@@ -51,6 +54,14 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
   const code=init.review.key.family==='code'?new CodeReviewWorker(init.review,deps.code??{sources:new RegistryReviewSources({repoPath:init.review.key.project,sessionId:`review:${init.review.key.reviewId}`,requestId:0,send:()=>{}}),provider},init.review.epicHash):undefined;
   const design=init.review.key.family==='design'?new DesignReviewWorker(init.review,deps.design??{provider:()=>{const resolved=createRoleRouter({cliTimeoutMs:900000}).resolveProviderForRole('review',loadAnalyzeConfig(),init.review.key.project);return{provider:resolved.provider,model:resolved.resolution.model};}}):undefined;
   const coordinator=code?.coordinator??design!.coordinator;
+  let progressSequence=0,publishing=false,lastProgressStamp:string|undefined,observationAttempt=init.review.attempt;
+  const snapshot=async()=>{
+   const observation=code?await code.progress():await design!.progress();
+   // This worker owns the live admission even before execute has been requested.
+   if(code&&observation.admission&&observation.status==='pending')Object.assign(observation,{interrupted:false,executionState:'starting',freshness:'live'});
+   return reviewProgressPublication({...init.review,attempt:observationAttempt},++progressSequence,observation);
+  };
+  const publish=async()=>{if(publishing)return;publishing=true;try{const file=await stat(reviewWorkerCheckpoint(init.review.key),{bigint:true});const stamp=`${file.ino}:${file.mtimeNs}:${file.ctimeNs}:${file.size}`;if(stamp===lastProgressStamp)return;parentPort!.postMessage(await snapshot());lastProgressStamp=stamp;}catch{/* Preserve the last validated snapshot; no fabricated completion. */}finally{publishing=false;}};
   const identity=(raw:unknown):Record<string,unknown>=>{
    if(!raw||typeof raw!=='object'||!sameReviewWorker(init.review,raw as ReviewWorkerIdentity))throw new Error('Foreign or stale review worker operation');
    return raw as Record<string,unknown>;
@@ -70,7 +81,7 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
    },
    'review.worker.recover':async(raw,context)=>{
     const p=identity(raw);if(!design||!context?.reviewOwnerNonce)throw new Error('Trusted design recovery required');
-    return design.recover(p['request'],init.review.reviewer==='controller'?{id:context.reviewOwnerNonce,signal:controllerLifetime.signal}:undefined);
+    const result=await design.recover(p['request'],init.review.reviewer==='controller'?{id:context.reviewOwnerNonce,signal:controllerLifetime.signal}:undefined);observationAttempt=result.attempt;return result;
    },
    'review.worker.execute':async(raw,context)=>{
     const p=identity(raw);
@@ -80,7 +91,7 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
     const owner=init.review.reviewer==='controller'?{id:context.reviewOwnerNonce,signal:controllerLifetime.signal}:undefined;
     if(code){if(p['operation']==='resume')await code.assertResume();code.execute(owner,p['operation'] as 'start'|'resume');}
     else{
-     if(init.review.submitted&&typeof init.review.submitted==='object'&&Reflect.get(init.review.submitted,'phase')==='recover')return design!.recover(init.review.submitted,owner);
+     if(init.review.submitted&&typeof init.review.submitted==='object'&&Reflect.get(init.review.submitted,'phase')==='recover'){const result=await design!.recover(init.review.submitted,owner);observationAttempt=result.attempt;return result;}
      if(p['operation']!=='start')throw new Error('Design recovery requires its typed recovery action');design!.execute(owner);
     }
     return{accepted:true,...init.review.key,attempt:init.review.attempt};
@@ -141,6 +152,7 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
   parentPort!.postMessage('worker-ready');
   await requireClosedReviewResources(init.review.key);
   const receipt=await persistReviewWorkerAdmission(init.review);
-  parentPort!.postMessage(receipt);
+  parentPort!.postMessage({...receipt,progress:await snapshot()});
+  setInterval(()=>{void publish();},500).unref();
  });
 }

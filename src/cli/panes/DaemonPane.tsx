@@ -9,6 +9,7 @@
  * `scripts/daemon-ctl.sh`. Long-running ops stream into a live log.
  */
 
+import { reviewProgressLabel } from '../../shared/review-worker-progress.js';
 import { Box, Text, useInput } from 'ink';
 import { useState } from 'react';
 import type { ReactElement } from 'react';
@@ -112,6 +113,7 @@ function Health(props: { daemon: DaemonState }): ReactElement {
 			<Text>model     {s.modelPullStatus === 'pulling' ? <Text color="yellow">pulling {s.modelPullPct ?? 0}%</Text> : <Text color="green">ready</Text>}</Text>
 			{s.lmdbFileSizeMb !== undefined && <Text>lmdb      <Text bold>{s.lmdbFileSizeMb}</Text> MiB on disk</Text>}
 			<Text>repos     <Text bold>{s.repos.length}</Text> registered</Text>
+   {s.threads?.filter(t=>t.reviewProgress).map(t=><Text key={t.threadId}>review    {t.reviewProgress!.family}/{t.reviewProgress!.reviewId} · {reviewProgressLabel(t.reviewProgress!)}</Text>)}
 			{s.storeFailure !== undefined && (
 				<Box flexDirection="column">
 					<Text color="red">store     FAILED since {s.storeFailure.at} (during: {s.storeFailure.operation})</Text>

@@ -13,6 +13,8 @@
  * daemon worker code, so it is still refused on the live stores.
  */
 
+import { setReviewProgressSource } from '../../workflow/review/worker-progress-source.js';
+import { StatusBoardClient } from './status-board.js';
 import { isMainThread } from 'node:worker_threads';
 import type { MessagePort } from 'node:worker_threads';
 
@@ -74,6 +76,7 @@ export function startDaemonWorker(init: DaemonWorkerInit): HubClient {
 	installLockManager(init.lockBlock);
 	enableMaintenanceLock();
 	const hub = new HubClient(init.hubPort);
+ setReviewProgressSource(()=>new StatusBoardClient(hub).reviewProgress());
 	// Only the main thread touches the Keychain (ISSUE-fefa97b991537da7).
 	forwardKeystoreCalls(call => hub.request(KEYSTORE_OP, call));
 	wireWorkerStoreHealth(hub);

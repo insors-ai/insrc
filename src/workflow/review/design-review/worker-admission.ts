@@ -26,6 +26,7 @@ export class DesignReviewWorker {
  constructor(private readonly input:ReviewBootstrapInput,deps:DesignCoordinatorDeps={}){
   requireDesign(input.key.family==='design','wrong_owner','Design worker required');
   this.targetAttempt=input.attempt;
+  if(input.submitted&&typeof input.submitted==='object'&&Reflect.get(input.submitted,'phase')==='recover'){const request=parseDesignRequest(input.submitted);if(request.phase==='recover')this.recoveryRequest=request;}
   this.coordinator=new DesignReviewCoordinator({...deps,acceptedAttempt:input.attempt,
    prepare:(project,path)=>{
     const prepared=(deps.prepare??prepareDesignSubject)(project,path);
@@ -114,7 +115,7 @@ export class DesignReviewWorker {
   const cp=await loadStoredDesignCheckpoint(this.input.key.project,this.input.key.reviewId);
   const request=this.recoveryRequest,action=request&&cp?.attempts.flatMap(a=>a.actions??[]).find(a=>a.actionId===request.actionId);
   if(cp&&action&&(action.validation==='unverified'||action.validation==='failed'))return{...observeStoredDesignCheckpoint(cp,{active:false}),status:action.validation==='failed'?'failed' as const:'pending' as const,phase:'admission' as const,admission:{validation:'unverified' as const},requiresUserInput:action.validation==='failed',failure:action.outcome,guidance:action.validation==='failed'?'Recovery qualification failed; wait for user direction.':'Preparing recovery; wait for the complete review.'};
-  if(cp&&isDesignAdmission(cp.attempts.at(-1)!))return observeStoredDesignCheckpoint(cp,{active:this.preparing});
+  if(cp&&isDesignAdmission(cp.attempts.at(-1)!))return observeStoredDesignCheckpoint(cp,{active:this.preparing||!this.launch&&!this.recoveryRequest});
   return this.coordinator.progress(this.input.key.project,this.input.key.reviewId,this.targetAttempt);
  }
 }

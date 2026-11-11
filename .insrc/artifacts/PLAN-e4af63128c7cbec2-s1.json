@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1794219406470-ni8pkg",
+    "runId": "wf-1794407500932-a84hmh",
     "repoPath": "/home/subho/work/dev/insors/insrc",
-    "createdAt": "2026-11-09T10:19:25.440Z",
+    "createdAt": "2026-11-11T14:34:32.148Z",
     "epicCreatedAt": "2026-11-09T04:29:20.389Z",
     "standalone": true,
     "attribution": {
@@ -16,7 +16,7 @@
         }
       ]
     },
-    "elapsedMs": 156294,
+    "elapsedMs": 166383,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "e4af63128c7cbec2",
@@ -25,18 +25,12 @@
     "lldRunId": "wf-1794204515305-6q9wbt",
     "lldEffectiveHash": "ccc8515f61bdf184ac15cf0d074be009ad2cff98692ec56305988be1104b55cc",
     "authoredBy": "controller",
-    "envelope": {
-      "description": "",
-      "references": [],
-      "attachments": []
-    },
-    "revision": 2,
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 2,
-        "contentHash": "33d3bf5fa237913bf22b04bc3c9d3e391fd55a882c32de8ab0a476f061f773c7",
-        "at": "",
+        "number": 3,
+        "contentHash": "23a18248acadeeb4c0729bfa960f7e6104aadf05295da47432b354bf7385b38f",
+        "at": "2026-11-11T14:34:33.783Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -45,21 +39,27 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 2,
+        "revision": 3,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-11T12:22:38.774Z"
+        "at": "2026-11-11T15:00:22.971Z"
       }
     },
-    "rangeBase": "2698f91b78f32f302d515508275a5244290b11d6"
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "revision": 3,
+    "rangeBase": "8e33c1561351674e87968acff24cb6bb2cbd78b8"
   },
   "body": {
     "summary": {
       "audience": "technical",
-      "prose": "Build dedicated code/design review workers in dependency order, beginning with durable admission/resource contracts and host-owned native subprocess lifecycle. Then integrate both existing review coordinators, exact-review recovery, progress and supported clients before a coordinated public-route cutover. Real worker/process fixtures prove responsiveness and crash isolation; compiled-package checks and release instructions precede one independent whole-story code review and human BUILD approval. Staged acceptance: before public cutover in t14, each task proves its declared component using bound real-worker/native fixtures and the host-service contract available at that stage. Native adapters are delivered in t5/t6, bootstrap installation in t7, registry/host connection in t8, and both-family production routing and end-to-end qualification in t14/t15. A component pass never claims later production integration is complete."
+      "prose": "Build one dedicated worker per code/design review, beginning with durable admission and host-owned native process contracts, then integrate both existing review coordinators, recovery, progress, supported clients and production routes. Before t14, each task proves its declared component through registered real-worker fixtures and the host-service contract available at that stage; t8 specifically proves canonical ownership, trusted private control dispatch and both CLI/shell adapters under required explicit host-policy bindings. Successful family execution/subject integration remains mandatory in t9/t10, actual shared cleanup consumers in t13, concrete production reviewer/permission bindings and coordinated route cutover in t14, and installed production end-to-end qualification in t15/t16. Component acceptance never claims release readiness: compiled qualification, one independent whole-story code review and human BUILD approval precede deployment and a controlled restarted-daemon smoke."
     },
     "tasks": [
       {
@@ -292,7 +292,7 @@
       {
         "id": "t8",
         "title": "Add the main review-worker registry and trusted control bridge",
-        "summary": "Add proposed src/daemon/threads/review-workers.ts to own per-review routing, registered incarnations, bounded progress cache, subject/cleanup exclusions and trusted owner lifecycle bridging. Reuse current thread/status/supervisor services and review-state host authority; serialize only data, not AbortSignals, providers or live socket objects.",
+        "summary": "Add proposed src/daemon/threads/review-workers.ts to own per-review routing, registered incarnations, bounded progress cache, subject/cleanup exclusions and trusted owner lifecycle bridging. Reuse current thread/status/supervisor services and review-state host authority; serialize only data, not AbortSignals, providers or live socket objects. Component acceptance uses the registered real-worker host contract; it does not require the production installation, family execution transitions, or cleanup callers that depend on t9/t10/t13/t14.",
         "size": "L",
         "order": 8,
         "dependsOn": [
@@ -301,11 +301,11 @@
         ],
         "acceptanceChecks": [
           "Distinct valid review identities reserve distinct workers, including same-session and mixed-family submissions; no global review queue is added.",
-          "Main derives controller authority/reviewer routing from trusted host context and forwards action/execution/sequence envelopes only to the registered target.",
+          "The main registry requires a trusted-host scope/reviewer resolver, derives controller authority from server-owned connection context, and forwards action/execution/sequence envelopes only to the registered worker's installed family control handler. Tests prove wrong-owner/stale refusal and trusted dispatch reaching the family handler; admission-to-assignment execution is completed in t9/t10 and production resolver installation in t14.",
           "Worker loss/late messages cannot release another incarnation's reservation or mutate its progress; replacement waits for targeted process and store/lock reclamation.",
-          "Cross-worker design-subject and story/artifact cleanup exclusions preserve current guarantees without leaving authority in worker-local module globals.",
+          "Main-owned registry APIs enforce cross-worker design-subject and story/artifact cleanup exclusions in real-worker fixtures. Family execution and cleanup consumers are wired to these APIs in t9/t10/t13, with all production paths verified at t14/t15; this component task must not claim those downstream consumers are already migrated.",
           "Daemon reviewer lifetime survives observer disconnect; controller-owner loss interrupts only its owned reviews under current recovery rules.",
-          "Connect both installed native adapters to the main registry's ReviewProcessLeases using the registered worker/port/incarnation identity. Enforce host permission/provenance checks and verify same-family serialized durable open-intent acknowledgment before native launch; on worker loss the main retains cancellation, disposal proof and the exact review fence."
+          "Connect both installed CLI and shell/tool native adapters through the real worker registry's ReviewProcessLeases using registered worker/port/incarnation identity. Require host permission/provenance and binary-resolution callbacks with no permissive fallback, verify same-family serialized durable open-intent acknowledgments before native launch, and retain host cancellation/disposal proof and the exact review fence on worker loss. Exercise both adapters with explicit host-policy fixtures here; concrete production policy bindings and installed route enforcement are mandatory t14/t15 acceptance."
         ],
         "derivedFrom": [
           "c1",
@@ -342,7 +342,8 @@
           "Same-input submission replay after lost acknowledgment observes saved work; conflicting pinned input is refused and admission failure persists with actionable diagnostics.",
           "Task attribution, dependency ordering, committed after-block scope, explicit final revision and existing projection limits remain unchanged.",
           "Controller review transitions from pending admission to its first assignment without duplicate admission/execution identities; trusted exchanges and explicit recovery remain valid.",
-          "Shared serialized checkpoint updates retain native open intents alongside task feedback/progress and correctly close only disposed leases."
+          "Shared serialized checkpoint updates retain native open intents alongside task feedback/progress and correctly close only disposed leases.",
+          "Connect code-family controller admission/execution and story-scope reservations to the main registry contract from t8; successful controller assignment/exchanges are exercised through the registered worker, with no worker-local authority replacing main ownership."
         ],
         "derivedFrom": [
           "c1",
@@ -380,7 +381,8 @@
           "Epic, standalone and ISSUE-derived artifact routes retain their required ancestry and reviewer-author independence checks.",
           "Coherent chunks, completed-feedback persistence, impact-selected corrections, final consistency and bounded technical retry behavior are preserved.",
           "Subject changes invalidate under existing user-directed restart rules; unrelated external changes do not restart the review.",
-          "Design subject claims, controller exchanges and resource intents remain coherent across worker failure/recovery and concurrent reviewers."
+          "Design subject claims, controller exchanges and resource intents remain coherent across worker failure/recovery and concurrent reviewers.",
+          "Connect design-family subject claims and controller admission/execution/exchanges to the main registry contract from t8; concurrent worker subject exclusions and trusted successful exchanges are proven without relying on worker-local globals for cross-worker authority."
         ],
         "derivedFrom": [
           "c1",
@@ -499,7 +501,8 @@
           "Publication retry after worker exit or lost receipt consumes saved feedback only, with providerCalls===0; operational guard updates preserve publication identity.",
           "Approval cleanup fences the exact story/artifact across workers, refuses/retains active admission/execution/publication, and deletes only evidence-preserved inactive checkpoints.",
           "Completed reads remain model-free and available after worker exit/cleanup; failed-admission history and clearance receipts survive permanent publication.",
-          "Normal daemon shutdown aborts/drains host native leases before worker termination/reclamation; unknown disposal remains targeted and explicit."
+          "Normal daemon shutdown aborts/drains host native leases before worker termination/reclamation; unknown disposal remains targeted and explicit.",
+          "Bind actual story/artifact approval-cleanup callers to the main registry's exclusion API, including unknown admission scope and active publication; worker-local coordinator maps cannot authorize cross-worker cleanup."
         ],
         "derivedFrom": [
           "c1",
@@ -542,7 +545,8 @@
           "Optional chat/session threading disabled still requires safe dedicated review workers or returns explicit unavailable.",
           "Existing retired review endpoints keep their current refusal behavior; no legacy engine is restored.",
           "The plan/deployment contract forbids installing an intermediate partial build before final qualification.",
-          "Through every supported production review route, CLI and tool/Git native work uses the installed transport and registered host lease with verified durable intent; no review-worker local spawn/exec/binary-lookup bypass remains. This gate discharges the production integration deliberately deferred from component acceptance in t5/t6."
+          "Through every supported production review route, CLI and tool/Git native work uses the installed transport and registered host lease with verified durable intent; no review-worker local spawn/exec/binary-lookup bypass remains. This gate discharges the production integration deliberately deferred from component acceptance in t5/t6.",
+          "Install the registry and concrete host-derived reviewer/scope resolution, controller authority, binary resolution, and native permission/provenance policies in daemon production construction. Every supported family/control/recovery/cleanup route consumes these bindings and the shared exclusions. Required callbacks and component fixtures from t8 alone are insufficient for this production gate."
         ],
         "derivedFrom": [
           "c1",
@@ -576,7 +580,8 @@
           "Never-ready/pre-save-hung boot, worker death across native-spawn/save boundaries, controller disconnect, observer disconnect and daemon restart retain targeted semantics.",
           "Whole-history resource fences and clearance/publication/cleanup replay are exercised through real routing; unrelated review files and processes remain untouched.",
           "Run existing relevant ownership/admission/progress/checkpoint/recovery/publication/approval suites alongside these regressions with no live-cloud requirement.",
-          "End-to-end fixtures through the actual worker registry and production review routes prove both code/design families use the CLI and tool/Git adapters with host-owned leases, durable intent, bounded byte backpressure and cleanup after real worker loss; unbound or bypassed native execution refuses."
+          "End-to-end fixtures through the actual worker registry and production review routes prove both code/design families use the CLI and tool/Git adapters with host-owned leases, durable intent, bounded byte backpressure and cleanup after real worker loss; unbound or bypassed native execution refuses.",
+          "Through installed production construction, prove host-derived reviewer routing, trusted successful controller exchanges, permission-denied native operations causing zero spawn, and cross-worker design-subject/story-artifact cleanup exclusions for both families."
         ],
         "derivedFrom": [
           "c1",

@@ -3,6 +3,7 @@ import { isDeepStrictEqual as same } from 'node:util';
 import { validateReviewResourceGuard } from '../../../shared/review-resources.js';
 import { decodeDesign, isDesignAdmission, requireDesign, StoredDesignCheckpointSchema } from './contracts.js';
 import type { DesignAdmissionCheckpoint, StoredDesignCheckpoint } from './contracts.js';
+import type { ReviewResourceGuard } from '../../../shared/review-resources.js';
 
 /** Decode only; the disk reader also applies canonical identity and qualified
  * feedback checks. No admission baseline, inventory or report is invented. */
@@ -33,9 +34,9 @@ export function decodeStoredDesignCheckpoint(input: unknown): StoredDesignCheckp
 
 /** Runs within the sole serialized checkpoint write path. Resource-only
  * changes cannot authorize inference, rebind input or rewrite accepted work.
- * Native closure support is added with the host lease service; until then no
- * unresolved intent can be removed through these foundational contracts. */
-export function checkDesignAdmissionEvolution(previous: StoredDesignCheckpoint, next: DesignAdmissionCheckpoint): void {
+ * Only exact closures supplied by the registered host lease service permit
+ * intent removal; ordinary checkpoint writes retain every unresolved lease. */
+export function checkDesignAdmissionEvolution(previous: StoredDesignCheckpoint, next: DesignAdmissionCheckpoint,hostConfirmedClosures:readonly ReviewResourceGuard['openLeases'][number][]=[]): void {
  requireDesign(previous.project === next.project && previous.reviewId === next.reviewId, 'foreign_checkpoint', 'Checkpoint identity mismatch');
  requireDesign(next.attempts.length >= previous.attempts.length && next.attempts.length <= previous.attempts.length + 1, 'immutable_history', 'Cannot remove or skip attempts');
  for (const [i, old] of previous.attempts.entries()) {
@@ -57,7 +58,7 @@ export function checkDesignAdmissionEvolution(previous: StoredDesignCheckpoint, 
   }
   const guard = 'resourceGuard' in old ? old.resourceGuard : undefined;
   for (const lease of guard?.openLeases ?? []) {
-   requireDesign(current.resourceGuard && current.resourceGuard.daemonInstance === guard?.daemonInstance && current.resourceGuard.openLeases.some(saved => same(saved, lease)), 'resource_pending', 'Cannot discard or replace an unresolved native intent');
+   requireDesign(current.resourceGuard && current.resourceGuard.daemonInstance === guard?.daemonInstance && (current.resourceGuard.openLeases.some(saved => same(saved, lease))||hostConfirmedClosures.some(closed=>same(closed,lease))), 'resource_pending', 'Cannot discard or replace an unresolved native intent');
   }
  }
  if (next.attempts.length > previous.attempts.length) {

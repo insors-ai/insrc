@@ -10,6 +10,7 @@ import { DESIGN_LIMITS, DesignCheckpointSchema, DesignReviewError, DesignReviewP
 import type { DesignReviewCheckpoint, DesignAttempt, DesignUnitState, DesignUnitSummary } from './contracts.js';
 import { isDesignAdmission } from './contracts.js';
 import type { StoredDesignCheckpoint } from './contracts.js';
+import type { ReviewResourceGuard } from '../../../shared/review-resources.js';
 import { checkDesignAdmissionEvolution, decodeStoredDesignCheckpoint } from './admission-checkpoint.js';
 
 const same=(a:unknown,b:unknown):boolean=>JSON.stringify(a)===JSON.stringify(b);
@@ -235,7 +236,7 @@ function serializeDesignWrite<T>(path: string, write: () => Promise<T>): Promise
  * the latest durable snapshot, so a delayed progress save cannot drop a lease.
  * Ownership across workers/processes remains the daemon registry's job. */
 export function updateStoredDesignCheckpoint(project: string, reviewId: string,
- mutate: (current: StoredDesignCheckpoint | undefined) => StoredDesignCheckpoint | Promise<StoredDesignCheckpoint>): Promise<StoredDesignCheckpoint> {
+ mutate: (current: StoredDesignCheckpoint | undefined) => StoredDesignCheckpoint | Promise<StoredDesignCheckpoint>,hostConfirmedClosures:readonly ReviewResourceGuard['openLeases'][number][]=[]): Promise<StoredDesignCheckpoint> {
  const path = designCheckpointPath(project, reviewId);
  return serializeDesignWrite(path, async () => {
   const previous = await loadStoredDesignCheckpoint(project, reviewId);
@@ -243,7 +244,7 @@ export function updateStoredDesignCheckpoint(project: string, reviewId: string,
   validateStoredDesignIdentity(project, reviewId, cp);
   if (cp.schemaVersion === 1) { await saveQualifiedDesignCheckpoint(project, cp); return cp; }
   if (previous) {
-   checkDesignAdmissionEvolution(previous, cp);
+   checkDesignAdmissionEvolution(previous, cp,hostConfirmedClosures);
    const before = qualifiedDesignProjection(previous), after = qualifiedDesignProjection(cp);
    if (before && after) checkEvolution(before, after);
   }

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -148,3 +148,47 @@ Run at 2026-11-11T12:51:57.103Z on commit `43d69ad70`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/threads/__tests__/review-spawn-inventory.test.ts` | 0 | 1 | 0.7 s |  |
 | `src/daemon/tools/__tests__/review-worker-shell.test.ts` | 0 | 1 | 5.9 s |  |
+
+## t7
+
+Run at 2026-11-11T13:38:50.061Z on commit `8e26d2c88`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/daemon/threads/__tests__/review-worker-bootstrap.test.ts: real worker joins guards and starts from the registered entrypoint**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | real worker joins guards and starts from the registered entrypoint | `src/daemon/threads/__tests__/review-worker-bootstrap.test.ts` |
+
+**integration: src/daemon/threads/__tests__/review-worker-bootstrap.test.ts: never-ready and pre-save-hung workers fail within the parent bound and reject late acknowledgments**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | never-ready and pre-save-hung workers fail within the parent bound and reject late acknowledgments | `src/daemon/threads/__tests__/review-worker-bootstrap.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/review-worker-bootstrap.test.ts` | 0 | 3 | 19.6 s |  |
+
+## t8
+
+Run at 2026-11-11T14:14:50.780Z on commit `2b4d3a339`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: src/daemon/threads/__tests__/review-workers.test.ts: canonical identities own one incarnation and preserve subject and cleanup exclusions**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | canonical identities own one incarnation and preserve subject and cleanup exclusions | `src/daemon/threads/__tests__/review-workers.test.ts` |
+
+**integration: src/daemon/threads/__tests__/review-workers.test.ts: stale owner messages and targeted disconnects cannot mutate another review**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | stale owner messages and targeted disconnects cannot mutate another review | `src/daemon/threads/__tests__/review-workers.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/review-workers.test.ts` | 0 | 2 | 4.3 s |  |

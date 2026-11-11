@@ -71,11 +71,19 @@ export interface WorkerExtra {
 
 /** Start a worker from `script` and resolve once it is ready; `name` is for errors. Not registered as a request target. */
 export function startWorker(services: ThreadServices, name: string, script: string, extra?: WorkerExtra, onCreated?: OnWorkerCreated): Promise<StartedWorker> {
+	const target = workerScript(script);
+	const source = target.pathname.endsWith('.ts');
+	// Node's native TS stripping cannot resolve NodeNext .js imports to .ts.
+	// Source-only bootstrap uses the installed development loader without a
+	// namespace/query suffix (provider source-attestation uses original URLs).
+	const bootstrap = source ? `const {workerData}=require('node:worker_threads');import(${JSON.stringify(import.meta.resolve('tsx/esm/api'))}).then(async({register})=>{register();await import(workerData.__insrcSourceWorker);});` : undefined;
 	const conn = services.connectWorker();
-	const worker = new Worker(workerScript(script), {
-		workerData: { ...conn.workerData, ...extra?.workerData },
+	let worker: Worker;
+	try { worker = new Worker(bootstrap ?? target, {
+		...(source ? { eval: true } : {}),
+		workerData: { ...conn.workerData, ...extra?.workerData, ...(source ? { __insrcSourceWorker: target.href } : {}) },
 		transferList: [...conn.transferList, ...(extra?.transferList ?? [])],
-	});
+	}); } catch (error) { conn.disconnect(); throw error; }
 	const threadId = worker.threadId;
 	const reclaimed = watchWorker(worker).then(async locks => ({ locks, stores: await getStoreGuard().reclaim(threadId) }));
 	onCreated?.(worker);

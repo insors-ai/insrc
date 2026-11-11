@@ -1239,14 +1239,14 @@ export interface DaemonStatus {
 }
 
 /** What a daemon worker thread is for (`ThreadView.role`). */
-export type ThreadRole = 'admin' | 'code-indexing' | 'document-summary' | 'session' | 'unattributed' | 'shared-state';
+export type ThreadRole = 'admin' | 'code-indexing' | 'document-summary' | 'session' | 'unattributed' | 'shared-state' | 'code-review' | 'design-review';
 
 /** One daemon worker thread in `DaemonStatus.threads` and the debug-status answer. */
 export interface ThreadView {
   threadId:    number;
   role:        ThreadRole;
   /** The request class it serves; undefined for a worker that serves none (document summaries). */
-  cls:         'admin' | 'session' | 'indexing' | undefined;
+  cls:         'admin' | 'session' | 'indexing' | 'review' | undefined;
   /** The client session a session worker serves. */
   session?:    { label: string; pid: number } | undefined;
   /** Serving a request now (the document-summary thread: running a summary). */

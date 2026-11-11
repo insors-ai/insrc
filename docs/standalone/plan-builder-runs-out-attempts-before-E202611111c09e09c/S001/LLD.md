@@ -257,3 +257,16 @@ Replace the single band lookup with one that depends on the template family, so 
 - The Story has no formal acceptance criteria: ac1-ac3 are expectations derived from the ISSUE's fix intent (early count feedback, a band shown as validated, a recoverable reproduced sequence with a documented band and budget decision). A reviewer should confirm they reflect the ISSUE.
 - invariantsToPreserve cite c1..c3, which map to the code citations in References (validate.ts:418, driver.ts:524, driver.ts:241); the s1 bundles carry no ids of their own.
 - The planner attempt limit of 5 gives the reproduced sequence two attempts of slack; it is not measured. The live regression and the stated band revisit trigger cover it.
+
+## Resolved questions
+
+- `q32542bdb` — The Story has no formal acceptance criteria: ac1-ac3 are expectations derived from the ISSUE's fix intent (early count feedback, a band shown as validated, a recoverable reproduced sequence with a documented band and budget decision). A reviewer should confirm they reflect the ISSUE.
+  - **resolved**: Confirm derived criteria — User approved resolving all three as recommended. _(2026-11-11T15:52:48.291Z)_
+
+## Citations
+
+- **[[c1]]** `code` `src/analyze/planner/validate.ts:418` — "INV-13: scope policy adherence -- task count within the band."
+- **[[c2]]** `code` `src/analyze/planner/driver.ts:524` — "function repetitionBannerFor("
+- **[[c3]]** `code` `src/analyze/planner/driver.ts:241` — "const maxAttempts = cfg.shaper.structuredOutputRetries;"
+- **[[c4]]** `code` `src/analyze/planner/render-catalog.ts:79` — "export function renderDepthPolicy(scope: 'XS' | 'S' | 'M' | 'L' | 'XL', focused: boolean): string {"
+- **[[c5]]** `step-output` `~/.insrc/analyze/docs-broad-live-mwc5fz8p/plan.attempts/03.plan.json` — "use 15 tasks, within its focused 10–80 band"

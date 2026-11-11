@@ -80,7 +80,16 @@
       "attachments": []
     },
     "revision": 3,
-    "rangeBase": "a071a507e09ebcb4cddb0600b69bd70d07e81ab8"
+    "rangeBase": "a071a507e09ebcb4cddb0600b69bd70d07e81ab8",
+    "questionResolutions": {
+      "q32542bdb": {
+        "question": "The Story has no formal acceptance criteria: ac1-ac3 are expectations derived from the ISSUE's fix intent (early count feedback, a band shown as validated, a recoverable reproduced sequence with a documented band and budget decision). A reviewer should confirm they reflect the ISSUE.",
+        "status": "resolved",
+        "choice": "Confirm derived criteria",
+        "rationale": "User approved resolving all three as recommended.",
+        "resolvedAt": "2026-11-11T15:52:48.291Z"
+      }
+    }
   },
   "body": {
     "summary": {

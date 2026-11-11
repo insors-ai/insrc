@@ -550,6 +550,26 @@ test('S005 shell: run-config controls (provider·model popup + effort gauge) + h
   assert.match(html, /guardMd\(/, 'assistant markdown is sanitized via guardMd after the marked render');
 });
 
+test('c760757cc9077508/s1: the webview seeds reg.setRunIdentity from the run-config attrs and re-seeds on every run-config message', () => {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+    genNonce: () => 'FIXEDNONCE',
+  });
+  host.open();
+  const html = fc.html();
+  // Bootstrap: the label source is seeded from the server-rendered data-* before first paint.
+  assert.match(html, /reg\.setRunIdentity\(rstate\(\)\.provider,rstate\(\)\.model\)/, 'seeded from the run-config button attrs at bootstrap');
+  // run-config handler: every echo re-seeds the label source (open/switch/restore/set-run-config).
+  assert.match(html, /else if\(m\.type==='run-config'\)\{curProv=m\.provider\|\|'';if\(rb\)\{[^}]*\}reg\.setRunIdentity\(m\.provider\|\|'',m\.model\|\|''\);rlabel\(\);/, 'the run-config handler re-seeds setRunIdentity');
+  // The renderer source carries the compose helper and no literal 'claude' label.
+  assert.match(html, /function assistantLabel\(\)/, 'the webview embeds the compose helper');
+  assert.doesNotMatch(html, /whoRow\('assistant','\\u25c6','claude'/, 'no hardcoded claude who-label');
+});
+
 test('S005 shell: empty providers.available -> disabled selector', () => {
   const fc = fakeChannel();
   const host = createChatPanelHost({

@@ -416,8 +416,8 @@ export function renderRegistryWebviewSource(): string {
     // (>3 lines or a long single line), its content is wrapped in the sc1 collapse primitive
     // (default-collapsed 3-line preview, ac2). Short messages render un-wrapped. textContent only (k1).
     `function isLong(s){s=s||'';return s.split('\\n').length>3||s.length>240;}` +
-    // S001 (bugfix): the mock's role label — 'you \\u276f' (user) / '\\u25c6 claude' (assistant),
-    // the glyph on the outer edge. Spans only (the fake DOM has no createTextNode); textContent (k1).
+    // S001 (bugfix): the mock's role label — 'you \\u276f' (user) / '\\u25c6 <PROVIDER>/<model>'
+    // (assistant), the glyph on the outer edge. Spans only (the fake DOM has no createTextNode); textContent (k1).
     // Story e4ce70ad1ae43d31/s1: `at` (optional ISO) renders as a small muted time at the
     // OPPOSITE end of the same single who-row line — prepended for the right-aligned user row,
     // appended (margin-left:auto) for the left-aligned assistant row. Format:
@@ -429,6 +429,15 @@ export function renderRegistryWebviewSource(): string {
     `if(typeof at!=='string'||at==='')return '';` +
     `var d=new Date(at);if(isNaN(d.getTime())||d.getTime()>Date.now()+60000)return '';` +
     `return WEEKDAYS[d.getDay()]+', '+pad2(d.getDate())+'/'+pad2(d.getMonth()+1)+' '+pad2(d.getHours())+':'+pad2(d.getMinutes());}` +
+    // Story c760757cc9077508/s1: the assistant who-label is the active run identity
+    // '<PROVIDER>/<model>' (provider uppercased, model lowercased verbatim — colons/dashes
+    // kept, only case lowered), composed at render time from setRunIdentity's state. '' model
+    // is the CLI default and renders as the bare provider (no trailing '/'); '' provider
+    // (run-config not yet echoed) falls back to the neutral 'assistant' — never the literal
+    // 'claude'. Already-rendered rows keep their label; new rows pick up a set-run-config change.
+    `var RUN={provider:'',model:''};` +
+    `function setRunIdentity(provider,model){RUN.provider=provider||'';RUN.model=model||'';}` +
+    `function assistantLabel(){var p=RUN.provider;if(p==='')return 'assistant';var m=RUN.model;return p.toUpperCase()+(m===''?'':'/'+m.toLowerCase());}` +
     `function whoRow(role,glyph,label,at){` +
     `var w=document.createElement('div');w.className='insrc-who insrc-who--'+role;` +
     `var g=document.createElement('span');g.className='insrc-glyph';g.textContent=glyph;` +
@@ -447,7 +456,8 @@ export function renderRegistryWebviewSource(): string {
     `var raw=vm&&vm.text!=null?vm.text:'';` +
     `var wrap=line('');wrap.textContent='';wrap.className='insrc-msg insrc-msg--'+role;` +
     // Story e4ce70ad1ae43d31/s1: pass the row's meta.at so whoRow can show its time.
-    `wrap.appendChild(role==='user'?whoRow('user','\\u276f','you',vm&&vm.meta?vm.meta.at:undefined):whoRow('assistant','\\u25c6','claude',vm&&vm.meta?vm.meta.at:undefined));` +
+    // Story c760757cc9077508/s1: the assistant label is the composed run identity (assistantLabel()).
+    `wrap.appendChild(role==='user'?whoRow('user','\\u276f','you',vm&&vm.meta?vm.meta.at:undefined):whoRow('assistant','\\u25c6',assistantLabel(),vm&&vm.meta?vm.meta.at:undefined));` +
     `var bubble=document.createElement('div');bubble.className='insrc-bubble insrc-bubble--'+role;` +
     // ISSUE-b1c7c1bc: the ASSISTANT row is never default-collapsed, however long it runs (S001 ac3:
     // 'the assistant-text renderer is NOT default-collapsed (rendered in full)'). Collapsing is a
@@ -774,6 +784,6 @@ export function renderRegistryWebviewSource(): string {
     `function forgetKeysBefore(idx){for(var k in KEYS){if(/^r\\d+$/.test(k)&&Number(k.slice(1))<idx)delete KEYS[k];}}` +
     `function withIsolatedPending(fn){var live=PEND;PEND=[];try{return fn();}finally{PEND=live;}}` +
     `function forgetPendingIn(nodes){PEND=PEND.filter(function(p){return nodes.indexOf(p.wrap)<0;});for(var k in DIFFS){if(nodes.indexOf(DIFFS[k])>=0)delete DIFFS[k];}}` +
-    `return {register:register,renderRow:renderRow,collapsible:collapsible,toViewModel:toViewModel,appendKeyed:appendKeyed,resetKeys:resetKeys,onApprovalDecision:onApprovalDecision,approvalPosition:approvalPosition,forgetKeysBefore:forgetKeysBefore,withIsolatedPending:withIsolatedPending,forgetPendingIn:forgetPendingIn,redrawDiff:redrawDiff,onSelectionDecision:onSelectionDecision,onAttachmentOpen:onAttachmentOpen,onLinkOpen:onLinkOpen,attachmentSize:attSize};}`
+    `return {register:register,renderRow:renderRow,collapsible:collapsible,toViewModel:toViewModel,appendKeyed:appendKeyed,resetKeys:resetKeys,onApprovalDecision:onApprovalDecision,approvalPosition:approvalPosition,forgetKeysBefore:forgetKeysBefore,withIsolatedPending:withIsolatedPending,forgetPendingIn:forgetPendingIn,redrawDiff:redrawDiff,onSelectionDecision:onSelectionDecision,onAttachmentOpen:onAttachmentOpen,onLinkOpen:onLinkOpen,setRunIdentity:setRunIdentity,attachmentSize:attSize};}`
   );
 }

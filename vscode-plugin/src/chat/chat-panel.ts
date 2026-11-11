@@ -2546,6 +2546,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `const rb=document.getElementById('insrc-runbtn'),gb=document.getElementById('insrc-effortbtn');` +
       `const rp=document.getElementById('insrc-runpop'),ep=document.getElementById('insrc-effortpop');` +
       `function rstate(){return{provider:rb?rb.getAttribute('data-provider')||'':'',model:rb?rb.getAttribute('data-model')||'':'',effort:rb?rb.getAttribute('data-effort')||'':''};}` +
+      // Story c760757cc9077508/s1: seed the assistant who-label source from the server-rendered
+      // run-config attributes, so the first paint already composes PROVIDER/model (no fallback flash).
+      `reg.setRunIdentity(rstate().provider,rstate().model);` +
       `var ICONS=${JSON.stringify(PROVIDER_ICON_SVGS)};function pico(p){return ICONS[p]||'';}` +
       `function rprov(p){return catalog.filter(function(f){return f.id===p;})[0];}` +
       `function rmodel(p,m){var f=rprov(p);return f?f.models.filter(function(x){return x.id===m||x.alias===m||(x.otherAliases&&x.otherAliases.indexOf(m)>=0);})[0]:undefined;}` +
@@ -2699,7 +2702,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // chat has a message — so re-settle the lock here alongside the existing provider re-sync.
       // Run-config echo: the host confirms a session's provider/model/effort (open/switch/
       // restore / set-run-config) — the buttons' labels and data-* follow it.
-      `else if(m.type==='run-config'){curProv=m.provider||'';if(rb){rb.setAttribute('data-provider',m.provider||'');rb.setAttribute('data-model',m.model||'');rb.setAttribute('data-effort',m.effort||'');}rlabel();elabel();updatePickers();}` +
+      `else if(m.type==='run-config'){curProv=m.provider||'';if(rb){rb.setAttribute('data-provider',m.provider||'');rb.setAttribute('data-model',m.model||'');rb.setAttribute('data-effort',m.effort||'');}reg.setRunIdentity(m.provider||'',m.model||'');rlabel();elabel();updatePickers();}` +
       `else if(m.type==='run-catalog'&&m.revision>=catalogRevision){catalogRevision=m.revision;catalogStatus=m.status;catalog=Array.isArray(m.providers)?m.providers:[];rlabel();elabel();updatePickers();}` +
       // history-list: the persisted chats repopulate the session dropdown; reconcile BOTH triggers
       // against cur (a rejected open-chat arrives as history-list alone, so this also clears a stale

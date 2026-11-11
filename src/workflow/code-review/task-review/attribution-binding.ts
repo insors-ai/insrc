@@ -3,7 +3,7 @@ import { diagnosticText } from '../../../shared/review-diagnostics.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { createHash } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
-import { decodeReview, reviewJsonLimit, requireReview } from './contracts.js';
+import { decodeReview, reviewJsonLimit, requireReview, TaskReviewInputError } from './contracts.js';
 import type { ReviewAttempt, TaskIdentityFormat } from './contracts.js';
 import { AcceptedTaskAttributionSchema, AcceptedDecisionSchema } from './final-scope-contracts.js';
 import type { AcceptedTaskAttribution } from './final-scope-contracts.js';
@@ -112,16 +112,34 @@ export function assignmentsToRows(review: AdmittedReview, assignments: readonly 
   decision: review.attempt.header.attempt === 1 ? { action: 'initial' as const } : decodeReview(AcceptedDecisionSchema, a.reassessment),
  }; });
 }
-export function requireReuseIdentity(review: AdmittedReview, assignment: TaskAssignment): void {
+/** The identity format an attempt binds in: its recorded format, else v1 for an attempt accepted before formats were recorded, else v2. */
+export function attemptIdentityFormat(header: ReviewAttempt['header']): TaskIdentityFormat {
+ return header.taskIdentityFormat ?? (header.attributionState === 'accepted' ? 'final-task-v1' : 'final-task-v2');
+}
+export interface ReuseRefusal { readonly taskId: string; readonly field: string; readonly message: string }
+/** Format or identity refusal for one reuse decision, or undefined when reuse holds. Malformed decisions and sources still throw at once. */
+export function reuseRefusal(review: AdmittedReview, assignment: TaskAssignment, format: TaskIdentityFormat = attemptIdentityFormat(review.attempt.header)): ReuseRefusal | undefined {
  const decision = assignment.reassessment;
  requireReview(decision?.action === 'reuse' && decision.sourceAttempt !== undefined && decision.sourceAttempt < review.attempt.header.attempt, 'origins', 'Reuse requires an earlier accepted source');
  const source = review.checkpoint.attempts.find(e => e.header.attempt === decision.sourceAttempt);
  requireReview(source?.submitted.reviewRevision && source.header.reviewer === review.attempt.header.reviewer && source.header.attributionState === 'accepted' && source['review-response'].tasks.some(t => t.taskId === assignment.taskId), 'origins', 'Missing or foreign-party accepted source');
  validateSavedAttribution(source);
- if(source.header.taskScopeIdentities?.find(b => b.taskId === assignment.taskId)?.identity !== taskFinalIdentity(review.prepared, assignment)){
-  const taskIndex=review.attempt.header.selectedTaskIds.indexOf(assignment.taskId);
-  requireReview(false, `origins/tasks/${taskIndex}/sourceAttempt/${decision.sourceAttempt}`, reuseMismatch(review,assignment,decision.sourceAttempt,'final-task-v1'));
- }
+ const field = `origins/tasks/${review.attempt.header.selectedTaskIds.indexOf(assignment.taskId)}/sourceAttempt/${decision.sourceAttempt}`;
+ if ((source.header.taskIdentityFormat ?? 'final-task-v1') !== format) return { taskId: assignment.taskId, field, message: diagnosticText(`Task ${JSON.stringify(assignment.taskId)} cannot reuse attempt ${decision.sourceAttempt}: its result was recorded under an earlier task identity format. Set action to "reassess" and omit sourceAttempt for this task; retain eligible reuse for other tasks.`, 8192) };
+ if (source.header.taskScopeIdentities?.find(b => b.taskId === assignment.taskId)?.identity !== taskFinalIdentity(review.prepared, assignment, format)) return { taskId: assignment.taskId, field, message: reuseMismatch(review, assignment, decision.sourceAttempt, format) };
+ return undefined;
+}
+/** Raise every refusal of one submission as a single rejection, so it costs one attribution submission however many tasks are refused. */
+export function throwReuseRefusals(review: AdmittedReview, refusals: readonly ReuseRefusal[]): void {
+ if (!refusals.length) return;
+ const order = review.attempt.header.selectedTaskIds, sorted = [...refusals].sort((a, b) => order.indexOf(a.taskId) - order.indexOf(b.taskId));
+ const first = sorted[0]!;
+ if (sorted.length === 1) throw new TaskReviewInputError(first.field, first.message);
+ throw new TaskReviewInputError(first.field, diagnosticText(`${sorted.length} tasks cannot reuse their source attempt: ${sorted.map(r => JSON.stringify(r.taskId)).join(', ')}. ${sorted.map(r => r.message).join(' ')}`, 8192));
+}
+export function requireReuseIdentity(review: AdmittedReview, assignment: TaskAssignment, format?: TaskIdentityFormat): void {
+ const refusal = reuseRefusal(review, assignment, format);
+ if (refusal) throwReuseRefusals(review, [refusal]);
 }
 /** Mutate one complete candidate; caller MUST await its save before ACK/dispatch. */
 export async function bindTaskFinalIdentities(review: AdmittedReview, input: readonly AcceptedTaskAttribution[]): Promise<readonly TaskAssignment[]> {
@@ -130,16 +148,20 @@ export async function bindTaskFinalIdentities(review: AdmittedReview, input: rea
   const decision = rows.find(r => r.taskId === a.taskId)!.decision;
   return decision.action === 'initial' ? a : { ...a, reassessment: { ...decision } };
  });
- const identities = assignments.map(a => ({ taskId: a.taskId, identity: taskFinalIdentity(review.prepared, a) }));
+ const format = attemptIdentityFormat(review.attempt.header);
+ const identities = assignments.map(a => ({ taskId: a.taskId, identity: taskFinalIdentity(review.prepared, a, format) }));
  const ordered = assignments.map(a => rows.find(r => r.taskId === a.taskId)!);
  const candidate = { finalScopeIdentity: review.prepared.projection!.identity, attributionState: 'accepted' as const, acceptedAttribution: ordered, taskScopeIdentities: identities,
-  attributionIdentity: attributionIdentity('accepted', review.prepared.projection!.identity, review.attempt.header.selectedTaskIds, review.prepared.packet.tests.length, ordered.map(r => ({ ...r, identity: identities.find(b => b.taskId === r.taskId)!.identity }))) };
+  attributionIdentity: attributionIdentity('accepted', review.prepared.projection!.identity, review.attempt.header.selectedTaskIds, review.prepared.packet.tests.length, ordered.map(r => ({ ...r, identity: identities.find(b => b.taskId === r.taskId)!.identity }))),
+  ...(format === 'final-task-v2' ? { taskIdentityFormat: format } : {}) };
  if (review.attempt.header.attributionState === 'accepted') {
   for (const key of Object.keys(candidate) as (keyof typeof candidate)[]) requireReview(isDeepStrictEqual(review.attempt.header[key], candidate[key]), 'attribution', 'Accepted mapping cannot change within an attempt');
  } else requireReview(review.attempt.header.attributionState === 'pending', 'attribution', 'Attribution phase cannot accept a mapping');
  requireReview(Buffer.byteLength(JSON.stringify(candidate))<=reviewJsonLimit(),'projection_limit','Accepted attribution exceeds review storage capacity');
  validateSavedAttribution({ ...review.attempt, header: { ...review.attempt.header, ...candidate } });
- for (const a of assignments) if (a.reassessment?.action === 'reuse') requireReuseIdentity(review, a);
+ const refusals: ReuseRefusal[] = [];
+ for (const a of assignments) if (a.reassessment?.action === 'reuse') { const refusal = reuseRefusal(review, a, format); if (refusal) refusals.push(refusal); }
+ throwReuseRefusals(review, refusals);
  qualifyReviewCapacity({...review,checkpoint:{...review.checkpoint,attempts:review.checkpoint.attempts.map(a=>a===review.attempt?{...a,header:{...a.header,...candidate}}:a)},attempt:{...review.attempt,header:{...review.attempt.header,...candidate}}});
  Object.assign(review.attempt.header, candidate);
  return assignments;

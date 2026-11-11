@@ -56,7 +56,7 @@ test('interrupted unpinned attempts remain readable but cannot execute on resume
  try {
   const state = f.checkpoint('unpinned');
   delete state.attempts[0]!.submitted.reviewRevision;
-  for (const key of ['finalScopeIdentity','attributionState','acceptedAttribution','taskScopeIdentities','attributionIdentity','attributionFailure'] as const) delete state.attempts[0]!.header[key];
+  for (const key of ['finalScopeIdentity','attributionState','acceptedAttribution','taskScopeIdentities','attributionIdentity','attributionFailure','taskIdentityFormat'] as const) delete state.attempts[0]!.header[key];
   const path = checkpointPath(f.repo, 'unpinned');
   await saveCheckpoint(path, state);
   const bytes = readFileSync(path, 'utf8');

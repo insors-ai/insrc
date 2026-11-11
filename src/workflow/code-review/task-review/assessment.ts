@@ -9,7 +9,8 @@ import type { PreparedReviewPacket, TaskAssignment } from './packet.js';
 import type { ReviewSources } from './sources.js';
 import type { AdmittedReview } from './execution.js';
 import { normalizeTaskResult } from './results.js';
-import { requireReuseIdentity } from './attribution-binding.js';
+import { requireReuseIdentity, reuseRefusal, throwReuseRefusals } from './attribution-binding.js';
+import type { ReuseRefusal } from './attribution-binding.js';
 
 export const AttributionSchema = Type.Object({ tasks: Type.Array(Type.Object({ taskId: Type.String(), changeIndexes: Type.Array(Type.Integer({ minimum: 0 })), testIndexes: Type.Array(Type.Integer({ minimum: 0 })) }, { additionalProperties: false })) }, { additionalProperties: false });
 function applicableTaskIds(prepared:PreparedReviewPacket):string[]{
@@ -87,12 +88,14 @@ export function reviewAssignments(review:AdmittedReview,input:unknown):readonly 
  if(review.attempt.header.attempt===1)return deriveTaskAssignments(review.prepared,decodeReview(AttributionSchema,input).tasks);
  const plan=decodeReview(ReassessmentSchema,input);
  requireReview(review.attempt.header.attributionState!=='accepted'||plan.summary===review.attempt.header.reassessmentSummary,'attribution','Accepted reassessment summary cannot change');
+ const refusals:ReuseRefusal[]=[];
  const assignments=deriveTaskAssignments(review.prepared,plan.tasks).map(assignment=>{
   const decision=plan.tasks.find(task=>task.taskId===assignment.taskId)!;
   const mapped={...assignment,reassessment:{action:decision.action,reason:decision.reason,...(decision.action==='reuse'?{sourceAttempt:decision.sourceAttempt}:{})}};
-  if(decision.action==='reuse')sourceAssessment(review,mapped);
+  if(decision.action==='reuse'){const refusal=reuseRefusal(review,mapped);if(refusal)refusals.push(refusal);else sourceAssessment(review,mapped);}
   return mapped;
  });
+ throwReuseRefusals(review,refusals);
  review.attempt.header.reassessmentSummary=plan.summary;
  return assignments;
 }

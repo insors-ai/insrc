@@ -39,12 +39,12 @@ export async function fixture(full=false,taskCount:1|2|3=1) {
  const deps={sources,through};
  const refreshBinding=async(rows?:readonly TaskAttribution[])=>{
   const state=checkpoint('fixture-binding'),attempt=state.attempts[0]!,prepared=await prepareReviewPacket(packet,sources,true);
-  delete attempt.header.acceptedAttribution;delete attempt.header.taskScopeIdentities;delete attempt.header.attributionIdentity;
+  delete attempt.header.acceptedAttribution;delete attempt.header.taskScopeIdentities;delete attempt.header.attributionIdentity;delete attempt.header.taskIdentityFormat;
   attempt.header.attributionState='pending';attempt.header.finalScopeIdentity=prepared.projection!.identity;
   const review={path:checkpointPath(repo,'fixture-binding'),checkpoint:state,attempt,prepared};
   const assignments=deriveTaskAssignments(prepared,rows??attempt.header.selectedTaskIds.map(taskId=>({taskId,changeIndexes:prepared.changes.map((_c,i)=>i),testIndexes:prepared.packet.tests.map((_t,i)=>i)})));
   await bindTaskFinalIdentities(review,assignmentsToRows(review,assignments));
-  const h=attempt.header;binding={finalScopeIdentity:h.finalScopeIdentity!,attributionState:'accepted',acceptedAttribution:h.acceptedAttribution!,taskScopeIdentities:h.taskScopeIdentities!,attributionIdentity:h.attributionIdentity!};
+  const h=attempt.header;binding={finalScopeIdentity:h.finalScopeIdentity!,attributionState:'accepted',acceptedAttribution:h.acceptedAttribution!,taskScopeIdentities:h.taskScopeIdentities!,attributionIdentity:h.attributionIdentity!,...(h.taskIdentityFormat?{taskIdentityFormat:h.taskIdentityFormat}:{})};
  };
  const read=(path:string):ReviewCheckpoint=>JSON.parse(readFileSync(path,'utf8')) as ReviewCheckpoint;
  const readRecord=(path:string):{meta:{schemaVersion:number;reviewedBy:string;epicSlug?:string;revision?:number};body:TaskReviewBody}=>JSON.parse(readFileSync(path,'utf8'));

@@ -68,7 +68,7 @@ test('immutable historical before/after packets remain resumable but cannot be s
  try {
   const checkpoint = f.checkpoint('old-packet');
   delete checkpoint.attempts[0]!.submitted.reviewRevision;
-  for (const key of ['finalScopeIdentity','attributionState','acceptedAttribution','taskScopeIdentities','attributionIdentity','attributionFailure'] as const) delete checkpoint.attempts[0]!.header[key];
+  for (const key of ['finalScopeIdentity','attributionState','acceptedAttribution','taskScopeIdentities','attributionIdentity','attributionFailure','taskIdentityFormat'] as const) delete checkpoint.attempts[0]!.header[key];
   checkpoint.attempts[0]!.header.status = 'passed';
   checkpoint.attempts[0]!.submitted.reviewSet[0]!.files[0]!.segments[0]!.before = [1, 1];
   const path = checkpointPath(f.repo, 'old-packet');

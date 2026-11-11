@@ -33,6 +33,7 @@ import type {
 	PlannedTask,
 } from '../../shared/analyze-types.js';
 import { isKindCompatibleWithTarget, TARGET_TO_KINDS } from '../classifier/validate.js';
+import { focusedLowerBound, SCOPE_BAND } from './scope-band.js';
 
 /** Catalog-key -> template, indexed once at the start of validation. */
 type CatalogIndex = ReadonlyMap<string, AnalyzeTaskTemplate>;
@@ -53,18 +54,7 @@ export type PlanInvariantId =
 	| 'INV-6'  | 'INV-7'  | 'INV-8'  | 'INV-9'  | 'INV-10'
 	| 'INV-11' | 'INV-12' | 'INV-13' | 'INV-14' | 'INV-15';
 
-/**
- * Scope-policy task-count bands from the design doc. Indexed by the
- * Plan's own scope bucket (not the root Run's). The cap is 80; the
- * floor is reduced by 50% for focused intents (see INV-13 note).
- */
-export const SCOPE_BAND: Readonly<Record<AnalyzeScope, { readonly lo: number; readonly hi: number }>> = Object.freeze({
-	XS: { lo: 3,  hi: 8  },
-	S:  { lo: 10, hi: 20 },
-	M:  { lo: 20, hi: 40 },
-	L:  { lo: 30, hi: 60 },
-	XL: { lo: 40, hi: 80 },
-});
+export { SCOPE_BAND };
 
 /**
  * A scope of the task whose kind does not go with its kind of source, or null:
@@ -157,11 +147,6 @@ function missingConstraintSource(
 			`task ${task.taskId} (${task.template}): an adherence check needs constraints to check against, and this task gives none. ` +
 			`Give ${CONSTRAINT_WAYS}; or leave the task out of the plan.`,
 	};
-}
-
-/** Reduce the lower bound for focused intents (INV-13 note). */
-function focusedLowerBound(scope: AnalyzeScope): number {
-	return Math.floor(SCOPE_BAND[scope].lo / 2);
 }
 
 export interface ValidateOpts {

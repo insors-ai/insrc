@@ -17,6 +17,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import {
 	SCOPE_BAND,
@@ -596,4 +597,13 @@ test('SCOPE_BAND values match the design doc', () => {
 	assert.deepEqual(SCOPE_BAND['M'],  { lo: 20, hi: 40 });
 	assert.deepEqual(SCOPE_BAND['L'],  { lo: 30, hi: 60 });
 	assert.deepEqual(SCOPE_BAND['XL'], { lo: 40, hi: 80 });
+});
+
+test('the band module imports nothing from the validator or the renderer', () => {
+	const source = readFileSync(new URL('../scope-band.ts', import.meta.url), 'utf8');
+	const imports = [...source.matchAll(/^import[^;]*from\s+'([^']+)'/gms)].map(m => m[1]);
+	assert.ok(imports.length > 0);
+	for (const spec of imports) {
+		assert.ok(!/validate|render-catalog/.test(spec ?? ''), `unexpected import ${spec}`);
+	}
 });

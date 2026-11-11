@@ -55,6 +55,8 @@ NODE_MIN_MAJOR=20
 INSTALL_ROOT="$DEFAULT_TARGET"
 REPO_URL="$DEFAULT_REPO_URL"
 BRANCH="$DEFAULT_BRANCH"
+EXPLICIT_REPO=0
+EXPLICIT_BRANCH=0
 START_AFTER_INSTALL=1
 ASSUME_YES=0
 FRESH_MAC_INSTALL=0
@@ -101,8 +103,8 @@ confirm() {
 while [ $# -gt 0 ]; do
 	case "$1" in
 		--target)    shift; INSTALL_ROOT="${1:-}"; [ -n "$INSTALL_ROOT" ] || die "--target requires a value" ;;
-		--branch)    shift; BRANCH="${1:-}";       [ -n "$BRANCH" ]       || die "--branch requires a value" ;;
-		--repo)      shift; REPO_URL="${1:-}";     [ -n "$REPO_URL" ]     || die "--repo requires a value" ;;
+		--branch)    shift; BRANCH="${1:-}"; EXPLICIT_BRANCH=1; [ -n "$BRANCH" ] || die "--branch requires a value" ;;
+		--repo)      shift; REPO_URL="${1:-}"; EXPLICIT_REPO=1; [ -n "$REPO_URL" ] || die "--repo requires a value" ;;
 		--no-start)  START_AFTER_INSTALL=0 ;;
 		--embedder)
 			shift
@@ -178,6 +180,47 @@ if [ "$(uname -s)" = Darwin ] && [ -f "$INSTALL_ROOT/out/bin/insrc-daemon-contro
 		rc=$?
 		[ "$rc" -eq 10 ] || die "managed daemon activation could not be recovered" 4
 	fi
+fi
+
+# An existing macOS installation must stay executable while its replacement is built.
+if [ "$(uname -s)" = Darwin ] && [ "$FRESH_MAC_INSTALL" -eq 0 ] && [ -e "$INSTALL_ROOT" ]; then
+	if [ ! -d "$INSTALL_ROOT/.git" ] && [ ! -f "$HOME/.insrc/managed-lifecycle/installation.json" ] \
+		&& [ -f "$HOME/.insrc/managed-lifecycle/journal.json" ] && [ -x "$INSTALL_ROOT/scripts/daemon-ctl.sh" ]; then
+		"$INSTALL_ROOT/scripts/daemon-ctl.sh" recover || die "interrupted macOS upgrade could not be recovered" 4
+	fi
+	if [ -f "$HOME/.insrc/managed-lifecycle/installation.json" ] && [ -x "$INSTALL_ROOT/scripts/daemon-ctl.sh" ]; then
+		if node -e 'const fs=require("fs"); process.exit(JSON.parse(fs.readFileSync(process.argv[1],"utf8")).enabled === true ? 0 : 1)' "$HOME/.insrc/managed-lifecycle/installation.json"; then
+			UPDATE_ARGS=(update)
+			if [ "$EXPLICIT_REPO" -eq 1 ]; then UPDATE_ARGS+=(--repo-url "$REPO_URL"); fi
+			if [ "$EXPLICIT_BRANCH" -eq 1 ]; then UPDATE_ARGS+=(--branch "$BRANCH"); fi
+			cd /
+			INSRC_DAEMON_UPDATE_WAIT=1 INSRC_DAEMON_ROOT="$INSTALL_ROOT" exec "$INSTALL_ROOT/scripts/daemon-ctl.sh" "${UPDATE_ARGS[@]}"
+		fi
+	fi
+	[ -d "$INSTALL_ROOT/.git" ] || die "existing target is neither a legacy checkout nor a managed launcher" 3
+	confirm "stage a verified macOS daemon upgrade" || die "user declined" 1
+	if [ "$EXPLICIT_REPO" -eq 0 ]; then
+		REPO_URL=$(git -C "$INSTALL_ROOT" remote get-url origin)
+		CONFIG_REPO=$(node -e 'try {const c=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")); console.log(c.daemonUpdate?.repoUrl ?? "");}catch(e){if(e.code!=="ENOENT")throw e;}' "$HOME/.insrc/config.json")
+		if [ -n "$CONFIG_REPO" ]; then REPO_URL="$CONFIG_REPO"; fi
+	fi
+	if [ "$EXPLICIT_BRANCH" -eq 0 ]; then
+		BRANCH=$(git -C "$INSTALL_ROOT" symbolic-ref --short HEAD)
+		CONFIG_BRANCH=$(node -e 'try {const c=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")); console.log(c.daemonUpdate?.branch ?? "");}catch(e){if(e.code!=="ENOENT")throw e;}' "$HOME/.insrc/config.json")
+		if [ -n "$CONFIG_BRANCH" ]; then BRANCH="$CONFIG_BRANCH"; fi
+	fi
+	case "$REPO_URL" in https://*|http://*|ssh://*|git://*|file://*|/*|*@*:*) ;; *) die "unsupported daemon origin" 3 ;; esac
+	git check-ref-format --branch "$BRANCH" >/dev/null || die "invalid daemon branch" 3
+	BRIDGE=$(mktemp -d "${TMPDIR:-/tmp}/insrc-upgrade-XXXXXXXX")
+	trap 'rm -rf "$BRIDGE"' EXIT
+	log "preparing the macOS upgrade bridge beside the installed release"
+	git clone --quiet --branch "$BRANCH" --single-branch -- "$REPO_URL" "$BRIDGE/checkout"
+	( cd "$BRIDGE/checkout" && CXXFLAGS="${CXXFLAGS:+$CXXFLAGS }-std=c++17" npm ci --no-fund --no-audit && npm run --silent build )
+	[ -f "$BRIDGE/checkout/out/bin/insrc-daemon-control.js" ] || die "selected branch has no macOS upgrade bridge" 4
+	INSTALL_ROOT=$(cd "$INSTALL_ROOT" && pwd -P)
+	cd /
+	# The controller owns cleanup after exec, so no old checkout shell remains during the fence census.
+	exec node "$BRIDGE/checkout/out/bin/insrc-daemon-control.js" prepare-legacy-upgrade "$INSTALL_ROOT" "$REPO_URL" "$BRANCH" "$BRIDGE"
 fi
 
 if [ -e "$INSTALL_ROOT" ]; then

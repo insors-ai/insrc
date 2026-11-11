@@ -2,7 +2,7 @@
 
 import { strict as assert } from 'node:assert';
 import { existsSync } from 'node:fs';
-import { mkdtemp, realpath, rm } from 'node:fs/promises';
+import { mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import { createConnection } from 'node:net';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -29,7 +29,7 @@ async function rootFixture(t: TestContext) {
 	return { root, gate: new InstallationMutationGate(root) };
 }
 
-async function handoffFixture(t: TestContext, failHello: boolean) {
+async function handoffFixture(t: TestContext, failHello: boolean, wasRunning = true) {
 	const { root, gate } = await rootFixture(t);
 	const install = (releaseId: string): ManagedInstallation => ({
 		version: 1, releaseId, releaseRoot: join(root, releaseId), stateRoot: root,
@@ -43,10 +43,16 @@ async function handoffFixture(t: TestContext, failHello: boolean) {
 	});
 	const next = { ...old, releaseId: 'new' };
 	const pins = qualifyManagedUpdate(prior, candidate, old, next, [{ prior: old, candidate: next }]);
-	const update = await gate.reserve({
-		kind: 'update', owner: await readDarwinIncarnation(process.pid),
-		predecessor: { priorRelease: 'old', candidateRelease: 'new', priorCommit: 'prior', wasRunning: true, generation: 'old-generation' },
+	const owner = await readDarwinIncarnation(process.pid);
+	const generation = wasRunning ? 'old-generation' : null;
+	const admitted = await gate.reserve({
+		kind: 'update', owner,
+		predecessor: { preparing: true, priorRelease: 'old', candidateRelease: 'unqualified', priorCommit: 'prior', wasRunning, generation },
 	}) as Extract<MutationReservation, { kind: 'update' }>;
+	const update = await gate.qualifyUpdate(admitted, {
+		priorRelease: 'old', candidateRelease: 'new', priorCommit: 'prior', wasRunning, generation, pins: { prior, candidate },
+	});
+	assert.equal(update.id, admitted.id);
 	const calls: string[] = [];
 	const job = { target: 'gui/fixture/job', pid: 2468 };
 	let selected = prior;
@@ -73,7 +79,7 @@ async function handoffFixture(t: TestContext, failHello: boolean) {
 					calls.push('candidate-child');
 					return { ...result, state: 'running', generation: 'new-generation' };
 				}
-				return isCandidate ? { ...result, state: 'idle', generation: null }
+				return isCandidate || !wasRunning ? { ...result, state: 'idle', generation: null }
 					: { ...result, state: 'running', generation: 'old-generation' };
 			},
 		};
@@ -116,6 +122,13 @@ test('Candidate job handoff records registration before child admission and keep
 	assert.deepEqual(JSON.parse(state.active!.entries.find(entry => entry.step === 'predecessor-stop')!.receipt!), {
 		generation: 'old-generation', state: 'exited', exit: { kind: 'graceful', code: 0, signal: null },
 	});
+});
+
+test('Running managed update IPC and stopped local managed update', options, async t => {
+	const { handoff, calls, job } = await handoffFixture(t, false, false);
+	assert.deepEqual(await handoff(), { job, generation: null });
+	assert.deepEqual(calls, ['predecessor-hello', 'prior-job-removed', 'read-only-stores', 'selector', 'candidate-registered', 'candidate-hello']);
+	await exerciseUpdateReply(t, ['written']);
 });
 
 test('A failed candidate hello yields an exact job receipt without admitting a daemon child', options, async t => {
@@ -188,6 +201,43 @@ async function exerciseUpdateReply(t: TestContext, deliveries: readonly string[]
 
 test('A lost or unwritten update acknowledgement keeps the detached helper behind its launch gate', options, t =>
 	exerciseUpdateReply(t, ['disconnect', 'failed-write', 'written']));
+
+test('Managed update acknowledges before slow preparation and survives client disconnect', { ...options, timeout: 70_000 }, async t => {
+	const { root, gate } = await rootFixture(t);
+	const socket = join(root, 'test.sock');
+	const fixture = fileURLToPath(new URL('./fixtures/managed-update-launch-child.ts', import.meta.url));
+	const server = new IpcServer(directDispatch({
+		'daemon.status': async () => ({ pid: process.pid, state: 'running' }),
+		'daemon.update': async (_params, context) => {
+			assert.ok(context?.awaitUpdateReply);
+			return launchManagedUpdate(fixture, [root, 'slow'], context.awaitUpdateReply);
+		},
+	}), Date.now, socket);
+	await server.listen();
+	t.after(async () => { await server.close(); });
+	const connection = createConnection(socket);
+	const reply = await rpc<{ launched: boolean; updateId: string }>('daemon.update', {}, () => connection, { timeoutMs: 20_000 });
+	assert.equal(reply.launched, true);
+	connection.destroy();
+	await waitForFile(join(root, 'admitted'));
+	await delay(21_000);
+	const state = await gate.read();
+	assert.equal(state.active?.id, reply.updateId);
+	assert.equal(state.outcome, null);
+	assert.deepEqual(await rpc('daemon.status', {}, () => createConnection(socket), { timeoutMs: 2_000 }), { pid: process.pid, state: 'running' });
+	await writeFile(join(root, 'complete-preparation'), 'ready');
+	const deadline = performance.now() + 8_000;
+	for (;;) {
+		const terminal = await gate.read();
+		if (terminal.active === null) {
+			assert.equal(terminal.outcome?.id, reply.updateId);
+			assert.equal(terminal.outcome.decision, 'committed');
+			break;
+		}
+		assert.ok(performance.now() < deadline, 'detached update did not publish a terminal outcome');
+		await delay(50);
+	}
+});
 
 test('Managed update helper waits for acknowledgement write before destructive work', options, t =>
 	exerciseUpdateReply(t, ['written']));

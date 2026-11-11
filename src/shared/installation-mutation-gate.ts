@@ -26,6 +26,7 @@ export interface UpdatePredecessor {
 	readonly pins?: { readonly prior: ManagedInstallation; readonly candidate: ManagedInstallation };
 	readonly launch?: LegacyLaunchPin;
 	readonly selectorAbsent?: true;
+	readonly preparing?: true;
 	readonly legacy?: {
 		readonly job: DarwinLaunchJob;
 		readonly descriptorHash: string;
@@ -136,6 +137,8 @@ function validPredecessor(value: unknown): value is UpdatePredecessor {
 		|| typeof value.priorCommit !== 'string' || typeof value.wasRunning !== 'boolean'
 		|| (value.generation !== undefined && value.generation !== null && !text(value.generation))) return false;
 	if (value.selectorAbsent !== undefined && (value.selectorAbsent !== true || value.launch === undefined)) return false;
+	if (value.preparing !== undefined && (value.preparing !== true || value.candidateRelease !== 'unqualified'
+		|| value.pins !== undefined || value.launch !== undefined || value.legacy !== undefined)) return false;
 	if (value.pins === undefined) return value.legacy === undefined && value.launch === undefined;
 	if (!object(value.pins)) return false;
 	const { prior, candidate } = value.pins;
@@ -427,6 +430,23 @@ export class InstallationMutationGate {
 				conflict('cannot cancel an update that has started');
 			}
 			await this.write({ ...state, active: null });
+		});
+	}
+
+	/** Preserve the acknowledged update ID when replacing preparation with exact release pins. */
+	async qualifyUpdate(authority: MutationAuthority, predecessor: UpdatePredecessor): Promise<Extract<MutationReservation, { kind: 'update' }>> {
+		await assertLiveOwner(authority.owner, this.helper);
+		return this.arbitrate(async state => {
+			const active = this.admitted(state, authority);
+			this.permit(state, active, 'lifecycle');
+			if (active.kind !== 'update' || active.predecessor.preparing !== true || active.entries.length !== 0
+				|| predecessor.preparing !== undefined || predecessor.pins?.prior.stateRoot !== this.root
+				|| active.predecessor.priorRelease !== predecessor.priorRelease
+				|| active.predecessor.wasRunning !== predecessor.wasRunning || active.predecessor.generation !== predecessor.generation
+				|| !validRequest({ ...active, predecessor })) conflict('qualified update differs from admitted preparation');
+			const qualified = { ...active, predecessor };
+			await this.write({ ...state, active: qualified });
+			return qualified;
 		});
 	}
 

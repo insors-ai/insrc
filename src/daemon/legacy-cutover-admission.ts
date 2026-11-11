@@ -31,6 +31,19 @@ function inside(root: string, path: string): boolean {
 
 function fail(message: string): never { throw new Error(`legacy cutover refused: ${message}`); }
 
+function dispatchCommand(update: Extract<MutationReservation, { kind: 'update' }>, name: string): string[] | undefined {
+	const candidate = update.predecessor.pins?.candidate;
+	return candidate === undefined ? undefined : [candidate.runtime, join(candidate.releaseRoot, 'out/bin/insrc-daemon-control.js'),
+		'dispatch', candidate.stateRoot, name];
+}
+
+function launcher(update: Extract<MutationReservation, { kind: 'update' }>, name: string): string {
+	const command = dispatchCommand(update, name);
+	if (command === undefined) return BLOCKED;
+	const shell = command.map(arg => "'" + arg.replaceAll("'", "'\\''") + "'").join(' ');
+	return `#!/bin/sh\n# macOS daemon migration is in progress until the selector is committed.\nexec ${shell} "$@"\n`;
+}
+
 async function registeredLegacyJobs(prior: ManagedInstallation, baseline: ManagedInstallation, labels: readonly string[], pid?: number) {
 	const rows = (await launchctl(['list'])).split('\n').slice(1);
 	const jobs: NonNullable<UpdatePredecessor['legacy']>[] = [];
@@ -238,7 +251,14 @@ export async function fenceLegacyLauncher(gate: Gate, update: Extract<MutationRe
 		try {
 			await mkdir(join(displaced, 'scripts'));
 			for (const name of ['daemon-ctl.sh', 'insrc', 'insrc-daemon-install.sh']) {
-				await writeFile(join(displaced, 'scripts', name), BLOCKED, { mode: 0o700, flag: 'wx' });
+				await writeFile(join(displaced, 'scripts', name), launcher(update, name), { mode: 0o700, flag: 'wx' });
+			}
+			const mcp = dispatchCommand(update, 'insrc-mcp.js');
+			if (mcp !== undefined) {
+				await mkdir(join(displaced, 'out/bin'), { recursive: true });
+				await writeFile(join(displaced, 'out/bin/insrc-mcp.js'),
+					`const [runtime, ...args] = ${JSON.stringify(mcp)};\nconst child = require('node:child_process').spawn(runtime, [...args, ...process.argv.slice(2)], {stdio:'inherit'});\nchild.on('exit', code => { process.exitCode = code ?? 4; });\n`,
+					{ mode: 0o600, flag: 'wx' });
 			}
 			fence = { canonical, displaced, legacy: await directoryPin(canonical), dispatcher: await directoryPin(displaced) };
 			await gate.recordIntent(update, 'legacy-launcher-fence', JSON.stringify(fence));
@@ -258,8 +278,9 @@ export async function fenceLegacyLauncher(gate: Gate, update: Extract<MutationRe
 		}, helper);
 	}
 	if (await layout(fence) !== 'fenced') fail('launcher exchange did not publish its fence');
+	const dispatcher = await readFile(join(canonical, 'scripts/daemon-ctl.sh'), 'utf8');
 	if (runFileIdentity(join(canonical, MANAGED_ENTRY)) !== undefined || runFileIdentity(join(canonical, '.git')) !== undefined
-		|| await readFile(join(canonical, 'scripts/daemon-ctl.sh'), 'utf8') !== BLOCKED) {
+		|| (dispatcher !== launcher(update, 'daemon-ctl.sh') && dispatcher !== BLOCKED)) {
 		fail('canonical dispatcher permits a legacy launch or update');
 	}
 	if (runFileIdentity(marker) !== undefined) fail('an older updater started before the launcher fence');

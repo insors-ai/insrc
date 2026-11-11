@@ -10,7 +10,7 @@ import type { RunFileGuard } from '../shared/daemon-run-files.js';
 import type { InstallationMutationGate, MutationReservation } from '../shared/installation-mutation-gate.js';
 import {
 	inspectManagedJob, publishManagedSelector, registerManagedJob, removeManagedJob,
-	requireAbsentManagedSelector, requireQuiescentInstallation, restoreAbsentManagedSelector, verifyFreshSelectorOwnership, verifyManagedSelectorFiles,
+	readManagedInstallation, requireAbsentManagedSelector, requireQuiescentInstallation, restoreAbsentManagedSelector, verifyFreshSelectorOwnership, verifyManagedSelectorFiles,
 } from '../shared/managed-daemon-installation.js';
 import type { ManagedInstallation, RegisteredManagedJob } from '../shared/managed-daemon-installation.js';
 import { connectManagedSupervisor, recordManagedUpdatePins, stageManagedCandidate, stageManagedUpdate, waitForGeneration } from './managed-update-handoff.js';
@@ -391,8 +391,11 @@ export async function recoverInstalledManagedUpdate(
 	gate: Gate, updateId: string, owner: DarwinIncarnation, operations = host, legacyOperations = legacyHost,
 ) {
 	return recoverManagedTransaction(gate, updateId, owner, {
-		async verifyOwnership({ active, outcome }) {
+		async verifyOwnership({ active, outcome, root }) {
 			if (active?.kind !== 'update') return false;
+			if (active.predecessor.preparing) {
+				return active.entries.length === 0 && (await readManagedInstallation(root))?.releaseId === active.predecessor.priorRelease;
+			}
 			const { prior, candidate } = pinsOf(active);
 			const { legacy, launch } = active.predecessor;
 			await verifyRollbackSelector(active, operations, entry(active, 'provisional-selector') !== undefined);
@@ -408,8 +411,10 @@ export async function recoverInstalledManagedUpdate(
 			await operations.verifySelector(pinsOf(update).candidate);
 		},
 		async verifyRolledBack(update) {
-			await verifyRollbackSelector(update, operations);
+			if (!update.predecessor.preparing) await verifyRollbackSelector(update, operations);
 		},
-		rollback: (update, purpose) => new Rollback(gate, update, operations, purpose, legacyOperations).run(),
+		async rollback(update, purpose) {
+			if (!update.predecessor.preparing) await new Rollback(gate, update, operations, purpose, legacyOperations).run();
+		},
 	});
 }

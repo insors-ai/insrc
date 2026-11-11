@@ -262,6 +262,8 @@ Replace the single band lookup with one that depends on the template family, so 
 
 - `q32542bdb` — The Story has no formal acceptance criteria: ac1-ac3 are expectations derived from the ISSUE's fix intent (early count feedback, a band shown as validated, a recoverable reproduced sequence with a documented band and budget decision). A reviewer should confirm they reflect the ISSUE.
   - **resolved**: Confirm derived criteria — User approved resolving all three as recommended. _(2026-11-11T15:52:48.291Z)_
+- `qa7830c69` — invariantsToPreserve cite c1..c3, which map to the code citations in References (validate.ts:418, driver.ts:524, driver.ts:241); the s1 bundles carry no ids of their own.
+  - **resolved**: Keep reference citation IDs — User approved resolving all three as recommended. _(2026-11-11T15:53:20.429Z)_
 
 ## Citations
 

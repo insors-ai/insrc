@@ -88,6 +88,13 @@
         "choice": "Confirm derived criteria",
         "rationale": "User approved resolving all three as recommended.",
         "resolvedAt": "2026-11-11T15:52:48.291Z"
+      },
+      "qa7830c69": {
+        "question": "invariantsToPreserve cite c1..c3, which map to the code citations in References (validate.ts:418, driver.ts:524, driver.ts:241); the s1 bundles carry no ids of their own.",
+        "status": "resolved",
+        "choice": "Keep reference citation IDs",
+        "rationale": "User approved resolving all three as recommended.",
+        "resolvedAt": "2026-11-11T15:53:20.429Z"
       }
     }
   },

@@ -20,6 +20,16 @@ import { matchesInstalledDaemonArguments } from '../legacy-launch-job.js';
 
 const options = { skip: process.platform !== 'darwin' || (process.getuid?.() ?? 0) === 0, timeout: 60_000 };
 
+async function fixtureOwner(helper: string) {
+	for (let attempt = 0;; attempt++) {
+		try { return await readDarwinIncarnation(process.pid, helper); }
+		catch (error) {
+			if (attempt >= 2 || (error as { killed?: boolean }).killed !== true) throw error;
+			await delay(250);
+		}
+	}
+}
+
 async function fixture(t: TestContext) {
 	const scratch = await realpath(await mkdtemp('/tmp/insrc-cutover-'));
 	t.after(() => rm(scratch, { recursive: true, force: true }));
@@ -38,7 +48,7 @@ async function fixture(t: TestContext) {
 	const prior = installation(oldRoot, 'prior', false);
 	const candidate = installation(candidateRoot, 'candidate', true);
 	const gate = new InstallationMutationGate(stateRoot, helper);
-	const owner = await readDarwinIncarnation(process.pid, helper);
+	const owner = await fixtureOwner(helper);
 	const predecessor = { priorRelease: prior.releaseId, candidateRelease: candidate.releaseId, priorCommit: 'old', wasRunning: false };
 	return { scratch, oldRoot, stateRoot, helper, runtime, prior, candidate, gate, owner, predecessor };
 }
@@ -149,8 +159,20 @@ createServer(socket => socket.on('error', () => {})).listen(${JSON.stringify(joi
 test('Old shell/helper concurrent with canonical launcher exchange and old child attempting to open stores', options, async t => {
 	const f = await fixture(t);
 	const entry = join(f.oldRoot, 'out/daemon/index.js');
-	const marker = join(f.stateRoot, 'opened-store');
-	await writeFile(entry, `require('node:fs').writeFileSync(${JSON.stringify(marker)}, 'opened');`);
+	const graph = join(f.stateRoot, 'graph.lmdb');
+	await writeFile(join(f.oldRoot, 'package.json'), '{"type":"module"}');
+	await writeFile(entry, `
+import { once } from 'node:events';
+import { open } from ${JSON.stringify(import.meta.resolve('lmdb'))};
+if (process.argv.includes('--wait')) {
+  console.log('waiting to open graph');
+  process.stdin.resume();
+  await once(process.stdin, 'data');
+}
+const db = open({ path: ${JSON.stringify(graph)}, noSubdir: true });
+db.putSync('verification', 'opened-store');
+await db.close();
+`);
 	const update = await f.gate.reserve({
 		kind: 'update', owner: f.owner,
 		predecessor: { ...f.predecessor, pins: { prior: f.prior, candidate: f.candidate }, launch: { kind: 'stopped' } },
@@ -168,12 +190,11 @@ test('Old shell/helper concurrent with canonical launcher exchange and old child
 		await once(other, 'spawn');
 		await assert.rejects(fenceLegacyLauncher(f.gate, update, f.helper), /older launcher/);
 	} finally { await finish(other); }
-	const pending = spawn(f.runtime, ['-e', 'console.log("ready"); setInterval(() => {}, 1000)', entry],
-		{ cwd: f.oldRoot, stdio: ['ignore', 'pipe', 'inherit'] });
+	const pending = spawn(f.runtime, [entry, '--wait'], { cwd: f.oldRoot, stdio: ['pipe', 'pipe', 'inherit'] });
 	try {
 		await once(pending.stdout, 'data');
 		await assert.rejects(fenceLegacyLauncher(f.gate, update, f.helper), /older launcher/);
-		await assert.rejects(readFile(marker), { code: 'ENOENT' });
+		await assert.rejects(readFile(graph), { code: 'ENOENT' });
 	} finally { await finish(pending); }
 	const lostReceipt = {
 		admit: f.gate.admit.bind(f.gate), recordIntent: f.gate.recordIntent.bind(f.gate),
@@ -181,7 +202,7 @@ test('Old shell/helper concurrent with canonical launcher exchange and old child
 	};
 	await assert.rejects(fenceLegacyLauncher(lostReceipt, update, f.helper), /interrupted after exchange/);
 	assert.throws(() => execFileSync(f.runtime, [entry], { stdio: 'ignore' }));
-	await assert.rejects(readFile(marker), { code: 'ENOENT' });
+	await assert.rejects(readFile(graph), { code: 'ENOENT' });
 	const displaced = await fenceLegacyLauncher(f.gate, update, f.helper);
 	assert.match(await readFile(join(displaced, 'out/daemon/index.js'), 'utf8'), /opened-store/);
 	assert.match(await readFile(join(f.oldRoot, 'scripts/daemon-ctl.sh'), 'utf8'), /migration is in progress/);
@@ -189,4 +210,6 @@ test('Old shell/helper concurrent with canonical launcher exchange and old child
 	await restoreLegacyLauncher(f.gate, update, f.helper);
 	await restoreLegacyLauncher(f.gate, update, f.helper);
 	assert.match(await readFile(entry, 'utf8'), /opened-store/);
+	execFileSync(f.runtime, [entry], { cwd: f.oldRoot, stdio: 'ignore' });
+	assert.ok((await readFile(graph)).length > 0);
 });

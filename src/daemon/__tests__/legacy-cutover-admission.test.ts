@@ -195,7 +195,15 @@ await db.close();
 		await once(pending.stdout, 'data');
 		await assert.rejects(fenceLegacyLauncher(f.gate, update, f.helper), /older launcher/);
 		await assert.rejects(readFile(graph), { code: 'ENOENT' });
+		assert.deepEqual((await f.gate.read()).active?.entries, []);
+		// The pre-existing process must attempt the open itself. It can proceed on the
+		// original installation because cutover was refused before any mutation.
+		const exited = once(pending, 'exit');
+		pending.stdin.end('open');
+		assert.deepEqual(await exited, [0, null]);
+		assert.ok((await readFile(graph)).length > 0);
 	} finally { await finish(pending); }
+	await rm(graph);
 	const lostReceipt = {
 		admit: f.gate.admit.bind(f.gate), recordIntent: f.gate.recordIntent.bind(f.gate),
 		recordReceipt: async () => { throw new Error('interrupted after exchange'); },

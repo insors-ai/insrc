@@ -1,0 +1,364 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1794423251207-of26xe",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T18:56:55.906Z",
+    "epicCreatedAt": "2026-11-11T18:56:55.906Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 163304,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c760757cc9077508",
+    "epicSlug": "show-provider-model-chat-assistant-header",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1794423251207-of26xe",
+    "hldEffectiveHash": "c760757cc90775087740d5cda86290c11e6613d3c9373d778cff2d23b60bd4ed",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Show <PROVIDER>/<model> as the chat assistant header label",
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "Grounded on the analyze pass over vscode-plugin/src/chat: the hardcoded 'claude' label is a single literal in render-registry.ts:450. Provider/model already exist on both sides of the webview channel (session-store + run-config echo at chat-panel.ts:1059), so the fix threads them into the assistant view-model meta and renders PROVIDER/model at the whoRow call. One module, a handful of files + tests, one obvious approach, no new contract. Sized small → standalone design.story → build.",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "46f75d75e5977d7b0a8e667004bb914659e27a9a27c6c82e48b0f930f23f58dd",
+        "at": "2026-11-11T18:56:56.544Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T19:00:40.374Z",
+        "override": {
+          "reason": "Daemon design reviewer broken (ISSUE-738d62b848fd173f); mandatory LLD review done as a thorough controller self-review recorded at docs/standalone/show-provider-model-chat-assistant-header-E20261111c760757c/S001/LLD-SELF-REVIEW.md (round 1, passed, no findings), per the user's standing instruction of 2026-11-10/11."
+        }
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65"
+  },
+  "body": {
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Compose the label in the webview from run-config state",
+        "oneLineSummary": "Smallest change: msgRow reads the already-echoed run-config provider/model and renders PROVIDER/model; zero protocol or host changes.",
+        "approach": "The webview keeps its current run-config state (curProv / model set by the `run-config` message, protocol.ts:109). msgRow's assistant branch composes the label at render time from that state: `whoRow('assistant', glyph, (curProv||'?').toUpperCase() + '/' + (curModel||'').toLowerCase(), at)`. No change to toViewModel, RowViewModel meta, protocol, or the host; when model is '' the label is 'PROVIDER/' (CLI default). Live deltas and restored replays render identically because both go through the same msgRow.",
+        "pros": [
+          "Single-file change in the webview source (render-registry.ts:450) plus the inline parity copy the registry pins.",
+          "Reuses the existing run-config echo (chat-panel.ts:1059 → protocol.ts:109); no new message, no host work, no persistence change.",
+          "Covers live and replayed rows uniformly.",
+          "Smallest possible diff; easy to unit-test via the render-registry fake-DOM tests."
+        ],
+        "cons": [
+          "Label is re-composed per row from mutable global state; a row rendered under a then-current run-config reflects whatever was active at render time, not necessarily at send time (acceptable here — the header is a run identity, not a per-message fact).",
+          "If run-config has not arrived yet (first paint race), the label would briefly render with an empty provider — needs a fallback ('…' or the provider from new-chat).",
+          "Model '' renders a trailing '/' — requires an explicit empty-model rule (show 'PROVIDER/default' or 'PROVIDER/')."
+        ],
+        "costEstimate": "XS"
+      },
+      {
+        "id": "a2",
+        "name": "Stamp provider/model into RowViewModel meta per assistant row",
+        "oneLineSummary": "Thread provider/model through the view-model meta so each assistant row carries its own label; historically accurate after model switches.",
+        "approach": "Extend RowViewModel meta with `provider`/`model` on the two assistant branches of toViewModel (render-registry.ts:131 transcript replay, :163 live delta). The host stamps each assistant TranscriptEntry (or the delta event) with the session's provider/model at write time (session-store/session-output path, using the ChatSession's provider + model at session-store.ts:110-127), so replayed history shows the provider/model that produced it even after a set-run-config model change. msgRow then reads vm.meta.provider/model and composes the label.",
+        "pros": [
+          "Label is per-row data, immune to mid-session model changes and first-paint races.",
+          "Replayed history stays accurate even if the session's model was changed later.",
+          "Fits the existing meta channel already used for at/attachments/callId."
+        ],
+        "cons": [
+          "Touches protocol.ts (TranscriptEntry), session-store.ts, the host write path, render-registry.ts, and their tests — a wider diff across the host→webview boundary.",
+          "Persisting provider/model per row grows stored transcripts and needs a back-compat read for pre-change rows (meta absent → fall back to run-config state).",
+          "Overkill if the header should track the CURRENT run config rather than the historical one."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Over-built for a run-identity header: spans protocol/session-store/host write path plus back-compat reads; violates minimal scope (s3 rank 2)."
+      },
+      {
+        "id": "a3",
+        "name": "Hybrid: run-config for live rows, meta for replayed rows",
+        "oneLineSummary": "Split behaviour between live and replay paths; maximum accuracy at maximum cost.",
+        "approach": "Hybrid: label composed in the webview from run-config state (a1) as the live source, and toViewModel/stamping (a2) only for restored replay rows so old sessions still label correctly. Not needed if a1's fallback handles missing run-config, so this is the most code for the least marginal benefit.",
+        "pros": [
+          "Historically accurate replays AND live run-config tracking."
+        ],
+        "cons": [
+          "Two sources of truth for one label; more tests, more edge cases.",
+          "Wider diff than either alone for a cosmetic header."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Two sources of truth and the widest diff for a cosmetic header; no marginal benefit once a1 handles the missing-run-config fallback (s3 rank 3)."
+      },
+      {
+        "id": "a4",
+        "name": "New assistant-identity protocol message",
+        "oneLineSummary": "Dedicated per-turn identity message; rejected as redundant with the existing run-config echo.",
+        "approach": "Change the host to send a dedicated `assistant-identity { provider, model }` with every turn-event / session-restored, independent of run-config. Equivalent information, but adds a new protocol message instead of reusing the run-config echo.",
+        "pros": [
+          "Explicit per-turn binding."
+        ],
+        "cons": [
+          "New protocol surface for data the webview already receives; duplicates run-config.",
+          "More protocol tests; no benefit over a1."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "New protocol message duplicating the existing run-config echo; violates reuse (s3 rank 4)."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "contractDetails": {
+      "api": [
+        {
+          "errors": [],
+          "name": "toViewModel",
+          "parameters": [
+            {
+              "name": "entry",
+              "optional": false,
+              "purpose": "TranscriptEntry (replay) or TurnEvent (live) to map to a row view model",
+              "type": "TranscriptEntry | TurnEvent"
+            }
+          ],
+          "postconditions": [
+            "Assistant rows keep kind 'assistant-text' and collapsible=true; no label is stored on the view model (label is composed at render time from run-config state)"
+          ],
+          "preconditions": [
+            "entry is a well-formed TranscriptEntry or TurnEvent"
+          ],
+          "returns": {
+            "meaning": "The row's view model consumed by msgRow",
+            "type": "RowViewModel"
+          },
+          "signature": "toViewModel(entry: TranscriptEntry | TurnEvent): RowViewModel"
+        },
+        {
+          "errors": [],
+          "name": "msgRow (webview inline copy)",
+          "parameters": [
+            {
+              "name": "vm",
+              "optional": false,
+              "purpose": "the row view model",
+              "type": "RowViewModel"
+            },
+            {
+              "name": "host",
+              "optional": false,
+              "purpose": "renderer host (collapsible etc.)",
+              "type": "RenderHost"
+            },
+            {
+              "name": "role",
+              "optional": false,
+              "purpose": "'user' | 'assistant'",
+              "type": "string"
+            },
+            {
+              "name": "inner",
+              "optional": true,
+              "purpose": "pre-rendered inner content",
+              "type": "Element | null"
+            }
+          ],
+          "postconditions": [
+            "The assistant whoRow label is the composed run identity: provider.toUpperCase() + '/' + model.toLowerCase(), with '' model rendered per the empty-model rule (CLI default); the literal 'claude' no longer appears"
+          ],
+          "preconditions": [
+            "run-config state (curProv, model) has been received, or the fallback applies",
+            "vm carries text and optional meta.at"
+          ],
+          "returns": {
+            "meaning": "The message row element appended to the transcript",
+            "type": "Element"
+          },
+          "signature": "msgRow(vm, host, role, inner?) — inline in renderRegistryWebviewSource; parity-pinned with the TS-side mapping"
+        }
+      ],
+      "surfaceLevel": "internal"
+    },
+    "dataModelChanges": [
+      {
+        "callSites": [
+          "vscode-plugin/src/chat/render-registry.ts:450",
+          "vscode-plugin/src/chat/chat-panel.ts:2702",
+          "vscode-plugin/src/chat/protocol.ts:109"
+        ],
+        "change": "field-modify",
+        "details": "The webview's run-config handler state (curProv, m.model at chat-panel.ts:2702) is now also the source of the assistant whoRow label; no new field is added — the existing echoed provider/model strings are composed into the label. Empty provider (run-config not yet received) falls back to the literal-free placeholder; empty model ('') is the CLI default and renders without a trailing slash ambiguity per the compose rule.",
+        "entity": "run-config webview state (curProv / model, set from HostToWebview 'run-config')",
+        "schemaDiff": "no schema change: { type:'run-config', provider:string, model:string, effort:string } is consumed as-is"
+      }
+    ],
+    "errorPaths": {
+      "edgeCases": [
+        {
+          "expected": "The compose rule for empty model does not produce a misleading trailing segment; the label shows the provider with the CLI-default rule applied (no bare 'CODEX/').",
+          "input": "run-config received with provider='codex', model='' (CLI default model)"
+        },
+        {
+          "expected": "Label falls back to a neutral placeholder (not the literal 'claude') until the first run-config arrives; once run-config lands the next rendered/updated row shows the real identity.",
+          "input": "Assistant row rendered before any run-config message arrived (first-paint race on panel open)"
+        },
+        {
+          "expected": "Label shows e.g. 'OLLAMA/qwen3.6:35b-a3b' — provider caps, model lowercased verbatim (colons/dashes preserved, only case lowered).",
+          "input": "run-config with provider='ollama', model='Qwen3.6:35B-A3B'"
+        },
+        {
+          "expected": "After a set-run-config model change mid-session, newly rendered assistant rows show the new model; already-rendered rows keep their render-time label — acceptable since the header tracks the active run.",
+          "input": "set-run-config changes model mid-session"
+        }
+      ],
+      "errorCases": [
+        {
+          "detection": "The compose helper treats provider==='' (run-config not yet received) as the fallback case at render time — detected by reading the current run-config state inside msgRow.",
+          "recoverable": true,
+          "response": "Render the assistant label from the fallback (e.g. 'assistant') instead of crashing or showing 'undefined/undefined'; when run-config arrives, subsequent rows compose the real label.",
+          "scenario": "msgRow renders an assistant row while curProv is still '' (run-config echo not yet processed)",
+          "userImpact": "Briefly a generic assistant header instead of PROVIDER/model on the very first rows; self-corrects on the next render."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "source": "c1",
+          "text": "whoRow keeps its signature whoRow(role, glyph, label, at) and the time-stamp behaviour (meta.at → insrc-when span) is unchanged; only the assistant label argument changes from the literal 'claude' to the composed run identity (vscode-plugin/src/chat/render-registry.ts:432-441,446-450)."
+        },
+        {
+          "source": "c2",
+          "text": "toViewModel's assistant branches (vscode-plugin/src/chat/render-registry.ts:131 transcript replay, :163 live delta) keep producing kind 'assistant-text', role 'assistant', collapsible true, and meta.at; no provider/model is persisted on the view model (chosen alternative a1 keeps the label render-time, run-config-sourced)."
+        },
+        {
+          "source": "c3",
+          "text": "The run-config protocol message shape { type:'run-config', provider, model, effort } (vscode-plugin/src/chat/protocol.ts:109) and its host poster (vscode-plugin/src/chat/chat-panel.ts:1059) are unchanged — the story consumes the echo, it does not extend it."
+        }
+      ]
+    },
+    "hldContextSlice": {
+      "adjacentBoundaries": [],
+      "boundary": {
+        "depends": [],
+        "internal": "Show <PROVIDER>/<model> as the chat assistant header label",
+        "owns": [],
+        "storyId": "s1"
+      },
+      "consumedContracts": [],
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "nonFunctional": {},
+      "ownedContracts": [],
+      "rolloutPhase": "standalone"
+    },
+    "interactionWithShared": [],
+    "migration": {
+      "backwardCompat": "No persisted data changes: TranscriptEntry, the run-config message, and the session record are untouched, so stored sessions replay unchanged and old extension versions still read everything the new webview writes. The only behavioural delta is the label text itself (cosmetic). No public API changes (surfaceLevel internal).",
+      "dataRewriteRequired": false,
+      "migrationSteps": [
+        {
+          "action": "Replace the literal 'claude' assistant whoRow label in the webview source with a compose helper reading run-config state (provider.toUpperCase() + '/' + model.toLowerCase(); '' model = CLI default rule; '' provider = neutral fallback).",
+          "order": 1,
+          "rollbackable": true
+        },
+        {
+          "action": "Update the render-registry parity copy and the unit assertions that pin the old literal label.",
+          "order": 2,
+          "rollbackable": true
+        }
+      ],
+      "stateAfter": "Every assistant message row (live delta and restored replay) renders '<PROVIDER>/<model>' from the active run-config echo; the literal 'claude' no longer appears in the renderer.",
+      "stateBefore": "msgRow's assistant branch hardcodes the whoRow label 'claude' (vscode-plugin/src/chat/render-registry.ts:450), regardless of the session's actual provider/model; the webview already holds the correct provider/model in run-config state (vscode-plugin/src/chat/protocol.ts:109, posted from vscode-plugin/src/chat/chat-panel.ts:1059).",
+      "zeroDowntime": true
+    },
+    "openQuestions": [],
+    "summary": {
+      "audience": "technical",
+      "prose": "This story replaces the hardcoded 'claude' assistant header in the VS Code chat webview with the active run identity '<PROVIDER>/<model>' (provider uppercased, model lowercased, '' = CLI default). The webview already receives provider/model via the existing run-config echo, so the change is confined to the render path: a small compose helper in the webview source builds the label, and msgRow's assistant branch uses it instead of the literal. Live assistant-delta rows and session-restored replay rows both render through msgRow, so both get the label with no protocol, host, or persistence change."
+    },
+    "testStrategy": {
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "chat webview unit: msgRow assistant label composes 'CLAUDE/<model-lowercased>' from run-config state (render-registry fake-DOM test)",
+            "chat webview unit: msgRow assistant label composes 'CODEX/…' and 'OLLAMA/qwen3.6:35b-a3b' for those providers",
+            "chat webview unit: empty model ('') renders the CLI-default rule, not a trailing '/' artifact",
+            "chat webview unit: no run-config yet → neutral fallback label, never the literal 'claude'",
+            "parity test: TS-side mapping and the inline webview copy stay in sync (existing parity suite)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "chat webview unit: a session-restored replay assistant row renders the same composed PROVIDER/model label as a live assistant-delta row (both through msgRow)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "existing chat-panel/protocol suites updated: no assertion expects the literal 'claude' whoRow label; run-config echo behaviour (vscode-plugin/src/chat/chat-panel.ts:1059, vscode-plugin/src/chat/protocol.ts:109) unchanged"
+          ]
+        }
+      ],
+      "testFramework": "node:test via tsx (repo convention: npx tsx --test 'vscode-plugin/src/chat/__tests__/*.test.ts'); the webview render path is exercised through render-registry's fake-DOM harness in vscode-plugin/src/chat/__tests__",
+      "testLevels": [
+        {
+          "fixturesNeeded": [
+            "run-config message { provider, model, effort } injected into the fake webview state",
+            "fake DOM harness from the render-registry tests"
+          ],
+          "level": "unit",
+          "purpose": "Prove the composed assistant label for every provider, the empty-model CLI-default case, the pre-run-config fallback, and replay/live parity through msgRow; update any assertion pinning the old literal 'claude'.",
+          "subjects": [
+            "vscode-plugin/src/chat/render-registry.ts (msgRow/whoRow inline webview source + toViewModel parity)",
+            "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+            "vscode-plugin/src/chat/__tests__/protocol.test.ts"
+          ]
+        }
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "quotedText": "s1 bundle 1 (structural-map): toViewModel (render-registry.ts:116) maps a TranscriptEntry or TurnEvent to a RowViewModel; assistant transcript branch line 131 and live delta branch line 163 carry meta with only `at`; both feed msgRow (line 446), whose webview source hardcodes the assistant whoRow label as the literal 'claude' (line 450).",
+      "ref": "vscode-plugin/src/chat/render-registry.ts:116-179"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "quotedText": "s1 bundle 2 (capability-discovery): the host posts { type:'run-config', provider, model, effort } to the webview on open/switch/restore and after set-run-config; ChatSession carries provider + optional model per session.",
+      "ref": "vscode-plugin/src/chat/protocol.ts:109"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "quotedText": "s1 bundle 3 (how-does-it-work): TranscriptEntry is a discriminated union on role (session-store.ts:31); existing chat __tests__ suites pin the current rendering and must drop assertions expecting the literal 'claude' label.",
+      "ref": "vscode-plugin/src/chat/session-store.ts:31-106"
+    }
+  ]
+}

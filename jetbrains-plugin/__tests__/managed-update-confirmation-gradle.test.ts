@@ -11,6 +11,9 @@ import { fileURLToPath } from 'node:url';
 const plugin = fileURLToPath(new URL('../', import.meta.url));
 const freshness = 'ai.insors.insrc.jetbrains.freshness.DaemonFreshnessFlowTest';
 const transport = 'ai.insors.insrc.jetbrains.daemon.UnixSocketDaemonRpcParseTest';
+const lifecycle = 'ai.insors.insrc.jetbrains.lifecycle.DaemonLifecycleCommandRunnerTest';
+const wiring = 'ai.insors.insrc.jetbrains.freshness.InstalledCommitFreshnessConsumerTest';
+const classes = [freshness, transport, lifecycle, wiring];
 
 before(() => {
 	const scratch = mkdtempSync(join(tmpdir(), 'insrc-freshness-gradle-'));
@@ -21,16 +24,13 @@ before(() => {
 		writeFileSync(init, `
 gradle.beforeProject { project ->
     project.plugins.withId('org.jetbrains.kotlin.jvm') {
-        project.kotlin.sourceSets.getByName('test').kotlin.setIncludes([
-            '${freshness.replaceAll('.', '/')}.kt',
-            '${transport.replaceAll('.', '/')}.kt'
-        ])
+        project.kotlin.sourceSets.getByName('test').kotlin.setIncludes([${classes.map(name => `'${name.replaceAll('.', '/')}.kt'`).join(', ')}])
     }
 }
 `);
 		const result = spawnSync('./gradlew', [
 			'-I', init, '--no-configuration-cache', 'cleanTest', 'test', '--offline',
-			'--tests', freshness, '--tests', transport, '--console=plain',
+			...classes.flatMap(name => ['--tests', name]), '--console=plain',
 		], { cwd: plugin, encoding: 'utf8', timeout: 290_000 });
 		assert.equal(result.status, 0, `Gradle managed update tests failed:\n${result.stdout}\n${result.stderr}`);
 	} finally {
@@ -46,6 +46,12 @@ function requirePassingKotlinCase(className: string, name: string): void {
 	const next = xml.indexOf('<testcase', start + marker.length);
 	assert.doesNotMatch(xml.slice(start, next < 0 ? undefined : next), /<failure|<error|<skipped/);
 }
+
+test('JetBrains selects the installer on legacy macOS and verifies the migrated commit', () => {
+	requirePassingKotlinCase(lifecycle, 'legacy macOS update selects the bundled installer for the configured checkout');
+	requirePassingKotlinCase(freshness, 'legacy macOS freshness verifies the bridged update without invoking old IPC');
+	requirePassingKotlinCase(wiring, 'freshness routes legacy macOS through the installer and keeps managed IPC');
+});
 
 for (const name of [
 	'Correlated update outcomes ignore unrelated terminal records and changed installedCommit',

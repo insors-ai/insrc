@@ -4,7 +4,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, realpathSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -62,6 +62,33 @@ test('run(action) spawns bash <ctlScript> <action> for each lifecycle action and
     assert.equal(result.ok, true);
     assert.equal(result.state, reach, `${action} reflects the real reachability`);
   }
+});
+
+test('The VS Code update action selects the installer on legacy macOS and the selected controller after migration', {
+  skip: process.platform !== 'darwin',
+}, async t => {
+  const paths = fixturePaths({ ctl: true, entry: true, installer: true });
+  t.after(() => rmSync(paths.daemonRoot, { recursive: true, force: true }));
+  const root = realpathSync(paths.daemonRoot);
+  paths.managedStateRoot = root;
+  const runner = new FakeRunner(0);
+  const ctl = createDaemonLifecycleController({ runner, paths, client: fakeClient('stopped') });
+  assert.deepEqual(await ctl.run('update'), { ok: true, state: 'stopped' });
+  assert.deepEqual(runner.calls[0], ['bash', paths.bundledInstaller, '-y', '--target', paths.daemonRoot]);
+  const candidate = join(root, 'selected');
+  const ctlScript = join(candidate, 'scripts', 'daemon-ctl.sh');
+  mkdirSync(dirname(ctlScript), { recursive: true });
+  writeFileSync(ctlScript, '#!/bin/sh\n');
+  const entry = join(candidate, 'out', 'daemon', 'index.js');
+  mkdirSync(dirname(entry), { recursive: true });
+  writeFileSync(entry, '');
+  mkdirSync(join(root, 'managed-lifecycle'), { mode: 0o700 });
+  writeFileSync(join(root, 'managed-lifecycle', 'installation.json'), JSON.stringify({ version: 1, stateRoot: root,
+    releaseRoot: candidate, releaseId: 'candidate', runtime: realpathSync(process.execPath), pathEnv: '/usr/bin', enabled: true }), { mode: 0o600 });
+  rmSync(paths.daemonEntry);
+  assert.equal(await ctl.isInstalled(), true);
+  assert.deepEqual(await ctl.run('update'), { ok: true, state: 'stopped' });
+  assert.deepEqual(runner.calls[1], ['bash', ctlScript, 'update']);
 });
 
 test('run(action) maps EACH ctl exit code 1/2/3/4 to its documented reason and never throws', async () => {
@@ -139,7 +166,8 @@ test('source-scan: vscode-plugin/src/daemon/ imports only node builtins + the sh
         allowedNode.has(spec) ||
         spec.startsWith('./') ||
         spec.startsWith('../surfaces/') ||
-        spec === '../../../src/shared/ipc-client.js';
+        spec === '../../../src/shared/ipc-client.js' ||
+        (f === 'paths.ts' && spec === '../../../src/shared/managed-daemon-installation.js' && line.includes('{ readManagedInstallation }'));
       assert.ok(ok, `${f}: unexpected import ${spec} (k5 thin boundary — no daemon internals/indexer/storage)`);
     }
   }

@@ -25,7 +25,8 @@ import { createCommandRegistry } from './surfaces/command-registry.js';
 import { createConsentGate } from './surfaces/consent-gate.js';
 import { activateExtension } from './activation.js';
 import { defaultSubprocessRunner } from './daemon/subprocess.js';
-import { defaultDaemonPaths } from './daemon/paths.js';
+import { defaultDaemonPaths, selectedDaemonRoot } from './daemon/paths.js';
+import { readUpdateSource } from '../../src/shared/update-source.js';
 import { createDaemonLifecycleController } from './daemon/controller.js';
 import { registerDaemonCommands, restartDaemonAndReport } from './daemon/commands.js';
 import type { ModelDefinitions } from './models/definitions.js';
@@ -225,10 +226,14 @@ export function activate(context: vscode.ExtensionContext): void {
   void activationSettled.then(() => runDaemonFreshnessCheck({
     client,
     daemonRoot: paths.daemonRoot,
-    gitLsRemote: (root, branch) =>
-      new Promise<string>((resolve) => {
+    upgradeLegacy: async () => paths.managedStateRoot !== undefined && await selectedDaemonRoot(paths) === undefined
+      ? controller.run('update') : undefined,
+    gitLsRemote: async (root, branch) => {
+      const checkout = await selectedDaemonRoot(paths) ?? root;
+      const configured = readUpdateSource();
+      return new Promise<string>((resolve) => {
         // A failure/timeout ⇒ undeterminable ⇒ '' (the flow skips). Never reject.
-        execFile('git', ['-C', root, 'ls-remote', 'origin', branch], { timeout: 15_000 }, (err, stdout) => {
+        execFile('git', ['-C', checkout, 'ls-remote', '--', configured.repoUrl ?? 'origin', configured.branch ?? branch], { timeout: 15_000 }, (err, stdout) => {
           if (err !== null) {
             resolve('');
             return;
@@ -236,7 +241,8 @@ export function activate(context: vscode.ExtensionContext): void {
           const firstLine = stdout.split('\n', 1)[0] ?? '';
           resolve(firstLine.split(/\s+/, 1)[0] ?? '');
         });
-      }),
+      });
+    },
     notify: (message, ...actions) =>
       Promise.resolve(vscode.window.showInformationMessage(message, {}, ...actions)),
     versionState: {

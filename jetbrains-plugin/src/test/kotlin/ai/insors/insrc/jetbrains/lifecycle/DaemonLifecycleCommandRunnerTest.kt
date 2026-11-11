@@ -59,6 +59,39 @@ class DaemonLifecycleCommandRunnerTest {
     }
 
     @Test
+    fun `legacy macOS update selects the bundled installer for the configured checkout`() {
+        val home = Files.createTempDirectory("insrc-legacy-locator").toRealPath()
+        try {
+            val legacy = home.resolve("legacy")
+            val oldCtl = legacy.resolve("scripts/daemon-ctl.sh")
+            Files.createDirectories(oldCtl.parent)
+            Files.writeString(oldCtl, "old controller")
+            val installer = "fixture installer".toByteArray()
+            val locator = DefaultDaemonScriptLocator(homeDir = home, bundledInstaller = { installer.inputStream() },
+                macOS = true, daemonRootOverride = legacy.toString())
+            val runner = RecordingRunner(0)
+            val controller = DaemonLifecycleCommandRunner(runner, locator, noNode, emptyMap())
+            assertTrue(controller.run(LifecycleCommand.UPDATE) is DaemonActionResult.Ok)
+            val bridge = runner.lastSpec!!.command
+            assertEquals("fixture installer", Files.readString(Path.of(bridge[1])))
+            assertEquals(listOf("-y", "--target", legacy.toString()), bridge.drop(2))
+
+            val state = home.resolve(".insrc")
+            val selector = state.resolve("managed-lifecycle/installation.json")
+            val release = home.resolve("selected")
+            val entry = release.resolve("out/daemon/index.js")
+            val script = release.resolve("scripts/daemon-ctl.sh")
+            for (path in listOf(selector, entry, script)) Files.createDirectories(path.parent)
+            Files.writeString(entry, "selected daemon")
+            Files.writeString(script, "selected controller")
+            Files.writeString(selector, """{"version":1,"stateRoot":"$state","enabled":true,"releaseRoot":"$release"}""")
+            assertTrue(controller.run(LifecycleCommand.UPDATE) is DaemonActionResult.Ok)
+            assertEquals(listOf("bash", script.toString(), "update"), runner.lastSpec?.command)
+            assertEquals("1", runner.lastSpec?.env?.get("INSRC_DAEMON_UPDATE_WAIT"))
+        } finally { home.toFile().deleteRecursively() }
+    }
+
+    @Test
     fun `run prepends the resolved Node bin dir to PATH`() {
         val script = tempScript()
         val runner = RecordingRunner(exit = 0)

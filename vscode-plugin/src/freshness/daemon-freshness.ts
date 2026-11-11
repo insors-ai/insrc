@@ -92,6 +92,7 @@ export interface DaemonFreshnessDeps {
   notify: FreshnessNotify;
   versionState: PluginVersionState;
   daemonRoot: string;
+  upgradeLegacy?: () => Promise<{ ok: boolean; state: string; message?: string } | undefined>;
   /** Bound for the reconnect-and-confirm loop; defaults to {@link DEFAULT_RECONNECT_BUDGET_MS}. */
   reconnectBudgetMs?: number | undefined;
   /** Injectable delay for the reconnect loop (tests pass a no-wait); defaults to setTimeout. */
@@ -202,6 +203,20 @@ async function performUpdate(deps: DaemonFreshnessDeps, priorCommit: string): Pr
   const now = deps.now ?? Date.now;
   const startedAtMs = now();
 
+  try {
+    const bridge = await deps.upgradeLegacy?.();
+    if (bridge !== undefined) {
+      if (!bridge.ok || bridge.state !== 'running') throw new Error(bridge.message ?? 'the migrated daemon did not become ready');
+      const current = (await deps.client.status()).installedCommit;
+      if (!current || current === priorCommit) throw new Error('the migrated daemon did not report an updated commit');
+      await notifyReload(deps);
+      return;
+    }
+  } catch (error) {
+    await deps.notify(failureMessage(error));
+    return;
+  }
+
   let launched;
   try {
     launched = await deps.client.update(); // sc1 — the daemon-owned IPC (k2), NOT a shell-out.
@@ -223,21 +238,19 @@ async function performUpdate(deps: DaemonFreshnessDeps, priorCommit: string): Pr
 
   const result = await confirmUpdate(deps, priorCommit, startedAtMs, launched.updateId);
   if (result.state === 'succeeded') {
-    // The daemon is current, but the MCP host held by claude/codex still points at
-    // the old daemon process. Nudge the user to reload the window (respawns the MCP
-    // host) — one-click when the reload seam is wired, notification-only otherwise.
-    const choice = await deps.notify(RELOAD_NUDGE_MESSAGE, RELOAD_WINDOW_ACTION);
-    if (choice === RELOAD_WINDOW_ACTION && deps.reloadWindow !== undefined) {
-      try {
-        await deps.reloadWindow();
-      } catch {
-        /* a reload failure must never surface from the fire-and-forget flow */
-      }
-    }
+    await notifyReload(deps);
   } else if (result.state === 'pending') {
     await deps.notify('insrc daemon update confirmation is pending.');
   } else {
     await deps.notify(failureMessage(result.error ?? 'the daemon did not come back'));
+  }
+}
+
+async function notifyReload(deps: DaemonFreshnessDeps): Promise<void> {
+  const choice = await deps.notify(RELOAD_NUDGE_MESSAGE, RELOAD_WINDOW_ACTION);
+  if (choice === RELOAD_WINDOW_ACTION && deps.reloadWindow !== undefined) {
+    try { await deps.reloadWindow(); }
+    catch { /* A reload failure cannot surface from the activation flow. */ }
   }
 }
 

@@ -48,10 +48,10 @@ test('extension.ts wires the versionState seam over globalState + packageJSON.ve
 test('extension.ts wires gitLsRemote to a child_process git ls-remote (no pull, k1)', () => {
   const src = extensionSource();
   assert.match(src, /from 'node:child_process'/, 'imports child_process');
-  assert.match(src, /execFile\('git',\s*\['-C',\s*root,\s*'ls-remote',\s*'origin',\s*branch\]/, 'runs git ls-remote origin <branch>');
+  assert.match(src, /execFile\('git',\s*\['-C',\s*checkout,\s*'ls-remote',\s*'--',\s*configured\.repoUrl \?\? 'origin',\s*configured\.branch \?\? branch\]/);
 });
 
-test('extension.ts consumes the daemon-owned sc1 IPC (client), never a controller.run(\'update\') shell-out (k2)', () => {
+test('extension.ts routes only unmanaged macOS freshness through the installer bridge', () => {
   const src = extensionSource();
   // Extract exactly the runDaemonFreshnessCheck({ ... }); deps block and assert on
   // its contents (not the whole file), so the k2 check is scoped to the flow wiring.
@@ -59,8 +59,7 @@ test('extension.ts consumes the daemon-owned sc1 IPC (client), never a controlle
   assert.ok(block, 'the runDaemonFreshnessCheck({ ... }); block is present');
   const depsBlock = block![1]!;
   assert.match(depsBlock, /(^|\W)client,/, 'the freshness deps pass the shared ipc client');
-  assert.doesNotMatch(depsBlock, /controller\.run\(/, 'no controller.run shell-out inside the freshness deps (k2)');
-  assert.doesNotMatch(depsBlock, /daemon-ctl\.sh/, 'no daemon-ctl.sh shell-out inside the freshness deps (k2)');
+  assert.match(depsBlock, /upgradeLegacy: async \(\) => paths\.managedStateRoot !== undefined && await selectedDaemonRoot\(paths\) === undefined\s+\? controller\.run\('update'\) : undefined/);
 });
 
 test('extension.ts wires the reloadWindow seam to workbench.action.reloadWindow (S001 post-update nudge)', () => {

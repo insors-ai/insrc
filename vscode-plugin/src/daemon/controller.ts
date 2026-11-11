@@ -8,10 +8,12 @@
  * shared sc1 client (correct even for `update`, which does not start the daemon).
  */
 import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 
 import type { IpcClient, DaemonReachability } from '../../../src/shared/ipc-client.js';
 import type { SubprocessRunner } from './subprocess.js';
 import type { DaemonPaths } from './paths.js';
+import { selectedDaemonRoot } from './paths.js';
 
 export type LifecycleAction = 'start' | 'stop' | 'restart' | 'update';
 
@@ -75,32 +77,40 @@ export function createDaemonLifecycleController(deps: ControllerDeps): DaemonLif
   const { runner, paths, client } = deps;
 
   const reachability = async (): Promise<DaemonReachability> => client.reachability();
+  const install = async (existing = false): Promise<LifecycleResult> => {
+    if (!existsSync(paths.bundledInstaller)) {
+      return { ok: false, state: 'errored', message: 'the bundled insrc installer is missing — reinstall the extension' };
+    }
+    const { code } = await runner.run(['bash', paths.bundledInstaller, '-y',
+      ...(existing || paths.managedStateRoot !== undefined ? ['--target', paths.daemonRoot] : [])]);
+    return code === 0 ? { ok: true, state: await reachability() }
+      : { ok: false, state: 'errored', message: installerReason(code) };
+  };
 
   return {
     async isInstalled(): Promise<boolean> {
       try {
-        return existsSync(paths.daemonEntry);
+        const root = await selectedDaemonRoot(paths);
+        return existsSync(root === undefined ? paths.daemonEntry : join(root, 'out/daemon/index.js'));
       } catch {
         return false;
       }
     },
 
-    async install(): Promise<LifecycleResult> {
-      if (!existsSync(paths.bundledInstaller)) {
-        return { ok: false, state: 'errored', message: 'the bundled insrc installer is missing — reinstall the extension' };
-      }
-      const { code } = await runner.run(['bash', paths.bundledInstaller, '-y']);
-      if (code === 0) {
-        return { ok: true, state: await reachability() };
-      }
-      return { ok: false, state: 'errored', message: installerReason(code) };
-    },
+    install: () => install(),
 
     async run(action: LifecycleAction, options?: LifecycleRunOptions | undefined): Promise<LifecycleResult> {
-      if (!existsSync(paths.ctlScript)) {
+      let managed: string | undefined;
+      try { managed = await selectedDaemonRoot(paths); }
+      catch (error) { return { ok: false, state: 'errored', message: String(error) }; }
+      const script = managed === undefined ? paths.ctlScript : join(managed, 'scripts/daemon-ctl.sh');
+      if (action === 'update' && paths.managedStateRoot !== undefined && managed === undefined
+        && (existsSync(paths.daemonEntry) || existsSync(paths.ctlScript))) return install(true);
+      if (!existsSync(script)) {
         return { ok: false, state: 'errored', message: 'insrc daemon is not installed — run Install first' };
       }
-      const { code } = await runner.run(['bash', paths.ctlScript, action, ...(options?.plain === true ? PLAIN_FLAGS : [])]);
+      const { code } = await runner.run(['bash', script, action, ...(options?.plain === true ? PLAIN_FLAGS : [])],
+        managed === undefined ? undefined : { env: { INSRC_DAEMON_ROOT: managed, INSRC_DAEMON_UPDATE_WAIT: '1' } });
       if (code === 0) {
         return { ok: true, state: await reachability() };
       }

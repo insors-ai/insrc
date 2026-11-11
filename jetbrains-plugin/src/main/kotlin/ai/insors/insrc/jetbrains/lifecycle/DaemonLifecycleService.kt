@@ -199,6 +199,8 @@ class DefaultDaemonScriptLocator(
     private val homeDir: java.nio.file.Path = java.nio.file.Path.of(System.getProperty("user.home")),
     private val bundledInstaller: () -> java.io.InputStream? =
         { DefaultDaemonScriptLocator::class.java.getResourceAsStream(BUNDLED_INSTALLER_RESOURCE) },
+    private val macOS: Boolean = com.intellij.openapi.util.SystemInfo.isMac,
+    private val daemonRootOverride: String? = System.getenv("INSRC_DAEMON_ROOT"),
 ) : DaemonScriptLocator {
 
     override fun scriptFor(kind: ProvisionKind): java.nio.file.Path? =
@@ -219,8 +221,35 @@ class DefaultDaemonScriptLocator(
     }
 
     private fun daemonHomeScript(name: String): java.nio.file.Path? {
-        val path = homeDir.resolve(".insrc").resolve("daemon").resolve("scripts").resolve(name)
+        val path = (managedReleaseRoot() ?: daemonRoot()).resolve("scripts").resolve(name)
         return if (java.nio.file.Files.exists(path)) path else null
+    }
+
+    fun daemonRoot(): java.nio.file.Path = daemonRootOverride?.takeIf { it.isNotBlank() }?.let { java.nio.file.Path.of(it) }
+        ?: homeDir.resolve(".insrc").resolve("daemon")
+
+    override fun existingUpgradeTarget(): java.nio.file.Path? = daemonRoot().takeIf { root ->
+        macOS && managedReleaseRoot() == null && (java.nio.file.Files.isRegularFile(root.resolve("scripts/daemon-ctl.sh")) ||
+            java.nio.file.Files.isRegularFile(root.resolve("out/daemon/index.js")))
+    }
+
+    fun managedReleaseRoot(): java.nio.file.Path? {
+        if (!macOS) return null
+        val stateRoot = homeDir.resolve(".insrc")
+        val selector = stateRoot.resolve("managed-lifecycle/installation.json")
+        if (java.nio.file.Files.notExists(selector, java.nio.file.LinkOption.NOFOLLOW_LINKS)) return null
+        require(java.nio.file.Files.isRegularFile(selector, java.nio.file.LinkOption.NOFOLLOW_LINKS) &&
+            java.nio.file.Files.size(selector) <= 8192) { "Invalid managed daemon selector" }
+        val profile = com.google.gson.JsonParser.parseString(java.nio.file.Files.readString(selector)).asJsonObject
+        require(profile.get("version")?.asInt == 1 && profile.get("stateRoot")?.asString == stateRoot.toRealPath().toString()) {
+            "Managed daemon selector names a different state root"
+        }
+        if (profile.get("enabled")?.asBoolean != true) return null
+        val root = java.nio.file.Path.of(profile.get("releaseRoot").asString)
+        require(root.isAbsolute && root.toRealPath() == root && java.nio.file.Files.isRegularFile(root.resolve("out/daemon/index.js"))) {
+            "Managed daemon selector names an unavailable release"
+        }
+        return root
     }
 
     companion object {

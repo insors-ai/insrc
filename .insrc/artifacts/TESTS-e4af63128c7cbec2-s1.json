@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 12,
-        "contentHash": "dd91b34188fd57a1304da8b317366e08e261d77aff9cd0ab22c90280b08e883e",
-        "at": "2026-11-11T12:51:57.351Z",
+        "number": 14,
+        "contentHash": "916776894b2ab35960aee8843b9eb7b3fac6945bee211476e1fbab2537c0dc94",
+        "at": "2026-11-11T13:38:50.223Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "e4af63128c7cbec2",
     "storyId": "s1",
     "createdAt": "2026-11-09T07:52:13.312Z",
-    "updatedAt": "2026-11-11T12:51:57.103Z",
+    "updatedAt": "2026-11-11T13:38:50.061Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-09T04:29:20.389Z",
     "epicSlug": "isolate-each-code-design-review-its",
-    "revision": 12
+    "revision": 14
   },
   "body": {
     "tasks": [
@@ -420,6 +420,63 @@
             "titles": [
               {
                 "title": "Git shell and raw-byte commands preserve output bounds and abort semantics through leases",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "8e26d2c88",
+        "ranAt": "2026-11-11T13:38:50.061Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/threads/__tests__/review-worker-bootstrap.test.ts: real worker joins guards and starts from the registered entrypoint",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-bootstrap.test.ts",
+                "title": "real worker joins guards and starts from the registered entrypoint",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/threads/__tests__/review-worker-bootstrap.test.ts: never-ready and pre-save-hung workers fail within the parent bound and reject late acknowledgments",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-bootstrap.test.ts",
+                "title": "never-ready and pre-save-hung workers fail within the parent bound and reject late acknowledgments",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/review-worker-bootstrap.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 19609,
+            "titles": [
+              {
+                "title": "real worker joins guards and starts from the registered entrypoint",
+                "result": "pass"
+              },
+              {
+                "title": "never-ready and pre-save-hung workers fail within the parent bound and reject late acknowledgments",
+                "result": "pass"
+              },
+              {
+                "title": "native byte replies retain the originating review async context",
                 "result": "pass"
               }
             ],

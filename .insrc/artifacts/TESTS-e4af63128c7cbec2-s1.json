@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 18,
-        "contentHash": "4b230ae3fd5adc9d77e01db9a20304923f4b7297f1c1f2184fe01471b3c10a49",
-        "at": "2026-11-11T15:21:51.178Z",
+        "number": 19,
+        "contentHash": "b4c658268b894ec26f7b9d3603be62767d071d51625c2954faa331ff16e9bc74",
+        "at": "2026-11-11T15:27:53.490Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "e4af63128c7cbec2",
     "storyId": "s1",
     "createdAt": "2026-11-09T07:52:13.312Z",
-    "updatedAt": "2026-11-11T15:21:51.015Z",
+    "updatedAt": "2026-11-11T15:27:53.328Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-09T04:29:20.389Z",
     "epicSlug": "isolate-each-code-design-review-its",
-    "revision": 18
+    "revision": 19
   },
   "body": {
     "tasks": [
@@ -543,8 +543,8 @@
       },
       {
         "taskId": "t9",
-        "commit": "e57dc09f2",
-        "ranAt": "2026-11-11T15:21:51.015Z",
+        "commit": "76e049edb",
+        "ranAt": "2026-11-11T15:27:53.328Z",
         "testsPassed": true,
         "tests": [
           {
@@ -579,7 +579,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/worker-admission.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 4489,
+            "durationMs": 6967,
             "titles": [
               {
                 "title": "durable acknowledgment precedes blocked source qualification and provider dispatch",

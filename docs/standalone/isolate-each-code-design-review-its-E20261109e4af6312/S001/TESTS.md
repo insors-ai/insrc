@@ -195,7 +195,7 @@ Run at 2026-11-11T15:06:26.825Z on commit `1635e86d6`. Tests check: **passed**. 
 
 ## t9
 
-Run at 2026-11-11T15:21:51.015Z on commit `e57dc09f2`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-11T15:27:53.328Z on commit `76e049edb`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/workflow/code-review/task-review/__tests__/worker-admission.test.ts: durable acknowledgment precedes blocked source qualification and provider dispatch**
 
@@ -213,4 +213,4 @@ Run at 2026-11-11T15:21:51.015Z on commit `e57dc09f2`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/code-review/task-review/__tests__/worker-admission.test.ts` | 0 | 2 | 4.5 s |  |
+| `src/workflow/code-review/task-review/__tests__/worker-admission.test.ts` | 0 | 2 | 7 s |  |

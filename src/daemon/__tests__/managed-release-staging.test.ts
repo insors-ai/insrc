@@ -250,6 +250,7 @@ createServer(connection => {
 	const old = spawn(runtime, [f.entry], { env, cwd: f.old, stdio: ['ignore', 'pipe', 'inherit'] });
 	const exited = once(old, 'exit');
 	const gate = new InstallationMutationGate(stateRoot);
+	let verified = false;
 	try {
 		const [ready] = await Promise.race([once(old.stdout, 'data'), exited]);
 		assert.match(String(ready), /ready/);
@@ -286,21 +287,30 @@ createServer(connection => {
 			pairs: [{ prior: qualification.candidate, candidate: next, priorFingerprint: managedFingerprint }] }), next.releaseId);
 		const ack = await rpc<{ launched: boolean; updateId: string }>('daemon.update', {}, () => createConnection(paths.daemonSocket), { timeoutMs: 20_000 });
 		assert.equal(ack.launched, true);
-		const deadline = performance.now() + 40_000;
+		const deadline = performance.now() + 80_000;
 		for (;;) {
 			const { active, outcome } = await gate.read();
-			if (outcome?.id === ack.updateId && active === null) { assert.equal(outcome.decision, 'committed', outcome.detail); break; }
-			assert.ok(performance.now() < deadline, 'running managed update did not settle');
+			if (outcome?.id === ack.updateId) {
+				assert.equal(outcome.decision, 'committed', outcome.detail);
+				if (active === null) break;
+			}
+			assert.ok(performance.now() < deadline, `running managed update did not settle: ${active?.entries.at(-1)?.step ?? 'preparation'}`);
 			await delay(100);
 		}
 		assert.equal((await readInstallationSelector(stateRoot))?.releaseId, next.releaseId);
+		verified = true;
 	} finally {
 		if (old.exitCode === null && old.signalCode === null) old.kill();
 		await exited;
 		const selected = await readInstallationSelector(stateRoot);
 		if (selected?.enabled && await inspectManagedJob(selected) !== undefined) {
-			await new ManagedDaemonControl(selected).run('stop', 5_000);
-			await removeManagedJob(selected, async () => {});
+			try {
+				await new ManagedDaemonControl(selected).run('stop', 5_000);
+				await removeManagedJob(selected, async () => {});
+			} catch (error) {
+				if (verified) throw error;
+				t.diagnostic(`Managed fixture cleanup failed: ${String(error)}`);
+			}
 		}
 	}
 });

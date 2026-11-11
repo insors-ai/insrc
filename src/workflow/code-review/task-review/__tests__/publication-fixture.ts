@@ -1,6 +1,6 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, realpathSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { registerGitTools } from '../../../../daemon/tools/builtins/git/index.js';
@@ -17,7 +17,8 @@ import { assignmentsToRows, bindTaskFinalIdentities } from '../attribution-bindi
 registerGitTools();
 export const hash='1234567890abcdef', date='2026-10-31T14:00:00.000Z';
 export async function fixture(full=false,taskCount:1|2|3=1) {
- const repo=mkdtempSync(join(tmpdir(),'task-review-publication-'));
+ // Resolve the temp dir: on macOS tmpdir() is under a /var symlink, and admission compares the resolved project path.
+ const repo=realpathSync(mkdtempSync(join(tmpdir(),'task-review-publication-')));
  const git=(...args:string[])=>execFileSync('git',['-C',repo,...args],{encoding:'utf8',env:{...process.env,GIT_CONFIG_NOSYSTEM:'1',GIT_CONFIG_GLOBAL:'/dev/null'}}).trim();
  const put=(path:string,value:unknown)=>{mkdirSync(join(repo,path,'..'),{recursive:true});writeFileSync(join(repo,path),typeof value==='string'?value:JSON.stringify(value));};
  git('init','-q');git('config','user.name','Fixture');git('config','user.email','fixture@example.test');

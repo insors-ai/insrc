@@ -30,7 +30,7 @@
     "triageRationale": "One cohesive UX add: an optional ts on the transcript row, rendered as a smaller, opposite-end-aligned time in the existing who-row. It touches a small, known set of files inside the single chat module (render-registry.ts host mirror + webview string + CSS, session-store.ts TranscriptEntry, the row-creation sites in chat-panel/turn-lifecycle/session-file-store, and the parity tests), with one obvious approach (optional field, default-now, render in whoRow) and no new contract or storage-schema change — a session-file-store row simply gains an optional field. That is a small (one story, few tasks), not trivial: it spans more than one file and needs the host/webview parity kept. [LLD note: the rationale above was written at triage time and sketches the a2-shaped 'optional ts field' idea; the LLD body's chosenAlternative is a1 — reuse the existing persisted `at`, no new TranscriptEntry/session-store field — which a2 was explicitly rejected for duplicating. The triage text is kept verbatim for provenance; the body is authoritative.]",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "approved",
+      "status": "completed",
       "revision": {
         "number": 1,
         "contentHash": "1a40a989ddb33f2b226676fc7e4eac9089cd052101adffa4ee12502044d0c13f",

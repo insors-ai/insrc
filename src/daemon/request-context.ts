@@ -1,4 +1,5 @@
 import type { ConnectionExecutionContext } from '../shared/step-context.js';
+import type { MessagePort } from 'node:worker_threads';
 import type { ConnectionAccessContext, ConnectionSessionAudience } from '../shared/connection-management.js';
 export interface TrustedConnectionSession {
 	readonly role: 'control' | 'data';
@@ -10,6 +11,8 @@ export interface TrustedConnectionSession {
 }
 /** Server-owned transport metadata; never deserialized from request params or client labels. */
 export interface TrustedRpcContext {
+	/** Private channel for this verified executor launch. */
+	readonly executorProgressPort?: MessagePort | undefined;
 	/** Main-thread minted request nonce; the only review authority carried over the worker wire. */
 	readonly reviewOwnerNonce?: string | undefined;
 	readonly connectionIdentity: string;

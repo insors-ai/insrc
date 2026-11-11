@@ -147,6 +147,19 @@ export class ProgressAccess<D extends Details> {
     this.bind(connectionId, origin);
   }
 
+  /** Resolve a single verified origin for a legacy launch with no origin field. */
+  async launchBound(path: string, ownerId: string, context: TrustedRpcContext) {
+    const connectionId = connection(context);
+    const projectId = await this.project(path);
+    const matches = [...(this.boundOrigins.get(connectionId) ?? [])].filter(id => {
+      const origin = this.origins.get(id);
+      return origin?.projectId === projectId && !origin.revoked && origin.expiresAt > this.now();
+    });
+    const [originId] = matches;
+    if (originId === undefined || matches.length !== 1) throw unavailable();
+    return this.launch(path, originId, ownerId, context);
+  }
+
   /** Called by a trusted executor entry point. There is no IPC method to mint this port. */
   async launch(path: string, originId: string, ownerId: string, context: TrustedRpcContext): Promise<{
     authorization: ProducerAuthorization;

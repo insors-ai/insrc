@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3d4f94e3-acaf-477f-8e92-9cde2288bad7",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T12:13:08.957Z",
+    "epicCreatedAt": "2026-11-09T06:00:04.355Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "206db3426ffd4428",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Qualify combined progress and legacy compatibility",
+      "parent": {
+        "entityId": "STORY-206db3426ffd4428-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-206db3426ffd4428-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-206db3426ffd4428-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-206db3426ffd4428-s2-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#160",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "a20180f4dc2bc81e2a9a2b858e34c186e13c1d3c82b2e80d18a86628628e5225",
+        "at": "2026-11-11T12:13:08.957Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T12:13:08.961Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Qualify combined progress and legacy compatibility",
+    "summary": "Exercise both producers through real daemon routing and the in-process path with controlled providers and verified test origins. Run the integrated verification sweep after focused task checks.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Concurrent workflow and analysis preserve attempt and project isolation and retain authoritative terminal outcomes. Check a quiet owner, worker exit, observer loss, authorization denial, pending admission and persistence failure.",
+      "Legacy compatibility holds with observation active, absent, refused and failing. Provider invocation counts stay unchanged.",
+      "Run the backend build and full backend test sweep once the tasks are complete. Record the exact tested revision, outcomes and evidence.",
+      "Check that pre-existing S1 records require no rewrite and a daemon without active S2 producers still serves the legacy contract."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "S2 real daemon routes concurrent workflow and analysis progress to isolated observers"
+      },
+      {
+        "level": "integration",
+        "name": "S2 legacy workflow and analysis outcomes survive absent refused and failing observation"
+      },
+      {
+        "level": "integration",
+        "name": "S2 production runtime preserves S1 records and adds no provider calls"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

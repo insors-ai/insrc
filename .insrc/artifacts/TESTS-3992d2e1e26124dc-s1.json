@@ -1,0 +1,1706 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 17,
+        "contentHash": "f6875724b5f5af47f666244f604406b7cf4e344770e347bc3dfacacc9a1b0090",
+        "at": "2026-11-10T17:38:41.788Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "3992d2e1e26124dc",
+    "storyId": "s1",
+    "createdAt": "2026-11-10T11:27:18.492Z",
+    "updatedAt": "2026-11-10T17:38:41.765Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-10T04:52:20.369Z",
+    "epicSlug": "restore-reliable-daemon-restart-macos",
+    "revision": 17
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "c97073de2",
+        "ranAt": "2026-11-10T14:02:42.226Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Wrong peer, root and generation",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/daemon-supervisor-protocol.test.ts",
+                "title": "Wrong peer, root and generation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Protocol version, frame bounds, channel role and request correlation",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/daemon-supervisor-protocol.test.ts",
+                "title": "Protocol version, frame bounds, channel role and request correlation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Discriminated ownership-conflict, exit-unconfirmed, supervisor-unavailable and watchdog errors",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/daemon-supervisor-protocol.test.ts",
+                "title": "Discriminated ownership-conflict, exit-unconfirmed, supervisor-unavailable and watchdog errors",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Lease token, channel and generation mismatch",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/daemon-supervisor-protocol.test.ts",
+                "title": "Lease token, channel and generation mismatch",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Update lock, version refusal and terminal outcome",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/daemon-supervisor-protocol.test.ts",
+                "title": "Update lock, version refusal and terminal outcome",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Missing, misplaced, reused and stale lease tokens",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/daemon-supervisor-protocol.test.ts",
+                "title": "Missing, misplaced, reused and stale lease tokens",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Hello negotiates the highest common version and rejects peer identity mismatch, malformed hello and empty overlap",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/daemon-supervisor-protocol.test.ts",
+                "title": "Hello negotiates the highest common version and rejects peer identity mismatch, malformed hello and empty overlap",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/daemon-supervisor-protocol.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 403,
+            "titles": [
+              {
+                "title": "Wrong peer, root and generation",
+                "result": "pass"
+              },
+              {
+                "title": "Protocol version, frame bounds, channel role and request correlation",
+                "result": "pass"
+              },
+              {
+                "title": "Discriminated ownership-conflict, exit-unconfirmed, supervisor-unavailable and watchdog errors",
+                "result": "pass"
+              },
+              {
+                "title": "Lease token, channel and generation mismatch",
+                "result": "pass"
+              },
+              {
+                "title": "Update lock, version refusal and terminal outcome",
+                "result": "pass"
+              },
+              {
+                "title": "Missing, misplaced, reused and stale lease tokens",
+                "result": "pass"
+              },
+              {
+                "title": "Hello negotiates the highest common version and rejects peer identity mismatch, malformed hello and empty overlap",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "b08167fdb",
+        "ranAt": "2026-11-10T14:08:25.983Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Compares peer identity and scopes job labels by installation root",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/darwin-lifecycle.test.ts",
+                "title": "Compares peer identity and scopes job labels by installation root",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Validates idle job evidence and refuses the wrong domain or relative program",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/darwin-lifecycle.test.ts",
+                "title": "Validates idle job evidence and refuses the wrong domain or relative program",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Rejects a reused PID with a different start incarnation",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/darwin-lifecycle.test.ts",
+                "title": "Rejects a reused PID with a different start incarnation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Legacy exit observation rejects PID reuse, owner mismatch and timeout without invoking the Mach broker",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/darwin-lifecycle.test.ts",
+                "title": "Legacy exit observation rejects PID reuse, owner mismatch and timeout without invoking the Mach broker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Uses separate labels for test roots and rejects a foreign registered root",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/darwin-lifecycle.test.ts",
+                "title": "Uses separate labels for test roots and rejects a foreign registered root",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Legacy socket peer UID or PID differs from the registered process incarnation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/darwin-lifecycle.test.ts",
+                "title": "Reads credentials from the connected socket and rejects mismatched PID or UID",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Rejects a foreign peer PID or executable",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/darwin-lifecycle.test.ts",
+                "title": "Rejects a foreign peer PID or executable",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Verifies recovery job registration against the pinned descriptor and argv",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/darwin-lifecycle.test.ts",
+                "title": "Verifies recovery job registration against the pinned descriptor and argv",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Observes exact exit of a disposable child with the read-only Darwin helper",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/darwin-lifecycle.test.ts",
+                "title": "Observes exact exit of a disposable child with the read-only Darwin helper",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/darwin-lifecycle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1183,
+            "titles": [
+              {
+                "title": "Compares peer identity and scopes job labels by installation root",
+                "result": "pass"
+              },
+              {
+                "title": "Validates idle job evidence and refuses the wrong domain or relative program",
+                "result": "pass"
+              },
+              {
+                "title": "Rejects a foreign peer PID or executable",
+                "result": "pass"
+              },
+              {
+                "title": "Rejects a reused PID with a different start incarnation",
+                "result": "pass"
+              },
+              {
+                "title": "Verifies recovery job registration against the pinned descriptor and argv",
+                "result": "pass"
+              },
+              {
+                "title": "Observes exact exit of a disposable child with the read-only Darwin helper",
+                "result": "pass"
+              },
+              {
+                "title": "Legacy exit observation rejects PID reuse, owner mismatch and timeout without invoking the Mach broker",
+                "result": "pass"
+              },
+              {
+                "title": "Uses separate labels for test roots and rejects a foreign registered root",
+                "result": "pass"
+              },
+              {
+                "title": "Reads credentials from the connected socket and rejects mismatched PID or UID",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "2e4d4e224",
+        "ranAt": "2026-11-10T14:14:04.649Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Durable update reservation blocks competing mutations and binds the owner",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/installation-mutation-gate.test.ts",
+                "title": "Durable update reservation blocks competing mutations and binds the owner",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Admission rejects foreign update IDs, owner PID reuse and connections opened before lease publication",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/installation-mutation-gate.test.ts",
+                "title": "Admission rejects foreign update IDs, owner PID reuse and connections opened before lease publication",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Recovery classification distinguishes uncommitted, committed, rolled-back and fenced transactions",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/installation-mutation-gate.test.ts",
+                "title": "Recovery classification distinguishes uncommitted, committed, rolled-back and fenced transactions",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Two independent processes cannot reserve the same installation or clear an unverified orphan reservation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/installation-mutation-gate.test.ts",
+                "title": "Two independent processes cannot reserve the same installation or clear an unverified orphan reservation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Controller death releases short arbitration but preserves the durable reservation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/installation-mutation-gate.test.ts",
+                "title": "Controller death releases short arbitration but preserves the durable reservation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Public lifecycle admission remains busy while an update owns the installation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/installation-mutation-gate.test.ts",
+                "title": "Public lifecycle admission remains busy while an update owns the installation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/installation-mutation-gate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1356,
+            "titles": [
+              {
+                "title": "Durable update reservation blocks competing mutations and binds the owner",
+                "result": "pass"
+              },
+              {
+                "title": "Admission rejects foreign update IDs, owner PID reuse and connections opened before lease publication",
+                "result": "pass"
+              },
+              {
+                "title": "Recovery classification distinguishes uncommitted, committed, rolled-back and fenced transactions",
+                "result": "pass"
+              },
+              {
+                "title": "Two independent processes cannot reserve the same installation or clear an unverified orphan reservation",
+                "result": "pass"
+              },
+              {
+                "title": "Controller death releases short arbitration but preserves the durable reservation",
+                "result": "pass"
+              },
+              {
+                "title": "Public lifecycle admission remains busy while an update owns the installation",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "59cdc2718",
+        "ranAt": "2026-11-10T14:21:53.106Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Monotonic deadline, repeated requests and grace versus forced outcome",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/daemon-supervisor.test.ts",
+                "title": "Monotonic deadline, repeated requests and grace versus forced outcome",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Supervisor classifies idle stop, unavailable runtime, and confirmed failed exit",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/daemon-supervisor.test.ts",
+                "title": "Supervisor classifies idle stop, unavailable runtime, and confirmed failed exit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Late ready cannot beat startup timeout or allow replacement before confirmed reap",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/daemon-supervisor.test.ts",
+                "title": "Late ready cannot beat startup timeout or allow replacement before confirmed reap",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Delayed controller cannot stop the replacement generation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/daemon-supervisor.test.ts",
+                "title": "Delayed controller cannot stop the replacement generation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Fresh supervisor first start requires durable predecessor evidence and an admitted owner",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/daemon-supervisor.test.ts",
+                "title": "Fresh supervisor first start requires durable predecessor evidence and an admitted owner",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/daemon-supervisor.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1330,
+            "titles": [
+              {
+                "title": "Monotonic deadline, repeated requests and grace versus forced outcome",
+                "result": "pass"
+              },
+              {
+                "title": "Supervisor classifies idle stop, unavailable runtime, and confirmed failed exit",
+                "result": "pass"
+              },
+              {
+                "title": "Late ready cannot beat startup timeout or allow replacement before confirmed reap",
+                "result": "pass"
+              },
+              {
+                "title": "Delayed controller cannot stop the replacement generation",
+                "result": "pass"
+              },
+              {
+                "title": "Fresh supervisor first start requires durable predecessor evidence and an admitted owner",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "4d227509f",
+        "ranAt": "2026-11-10T14:29:05.467Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Guarded stale run files and replacement ownership",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/supervisor-run-files.test.ts",
+                "title": "Guarded stale run files and replacement ownership",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Run-file mutation rejects a mismatched grant, channel or generation",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/supervisor-run-files.test.ts",
+                "title": "Run-file mutation rejects a mismatched grant, channel or generation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Partially published run files stay fenced while startup reap is unconfirmed",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/supervisor-run-files.test.ts",
+                "title": "Partially published run files stay fenced while startup reap is unconfirmed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Repeated or stale lease release cannot change the physical run-file guard",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/supervisor-run-files.test.ts",
+                "title": "Repeated or stale lease release cannot change the physical run-file guard",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Queued release before and after escalation preserves shutdown guard",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/supervisor-run-files.test.ts",
+                "title": "Queued release before and after escalation preserves shutdown guard",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Kill startup child before PID, after PID, and after socket publication before ready",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/supervisor-run-files.test.ts",
+                "title": "Kill startup child before PID, after PID, and after socket publication before ready",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/supervisor-run-files.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 557,
+            "titles": [
+              {
+                "title": "Guarded stale run files and replacement ownership",
+                "result": "pass"
+              },
+              {
+                "title": "Run-file mutation rejects a mismatched grant, channel or generation",
+                "result": "pass"
+              },
+              {
+                "title": "Partially published run files stay fenced while startup reap is unconfirmed",
+                "result": "pass"
+              },
+              {
+                "title": "Repeated or stale lease release cannot change the physical run-file guard",
+                "result": "pass"
+              },
+              {
+                "title": "Queued release before and after escalation preserves shutdown guard",
+                "result": "pass"
+              },
+              {
+                "title": "Kill startup child before PID, after PID, and after socket publication before ready",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "c348f0652",
+        "ranAt": "2026-11-10T15:36:35.635Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Managed watchdog arm has reserved capacity during a controller request burst",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-daemon-lifecycle.test.ts",
+                "title": "Managed watchdog arm has reserved capacity during a controller request burst",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "IPC and signal shutdown with no controller",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-daemon-lifecycle.test.ts",
+                "title": "IPC and signal shutdown with no controller",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Hung before shutdown reply and hung native close after watchdog readiness",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-daemon-lifecycle.test.ts",
+                "title": "Hung before shutdown reply and hung native close after watchdog readiness",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Linux existing pidfd and watchdog suites",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/restore-reliable-daemon-restart-macos-E202611103992d2e1/S001/test-evidence/t6-orbstack-linux.tap (SHA-256 ec49c70963bda99532b5b7da2f820e51135831bc56b578d2511cdbc01e8ca3d4). OrbStack Linux aarch64, Node v22.22.1, commit cff400b05. Native process client, process-broker and shutdown-watchdog suites: 21 passed, 0 failed, 0 skipped."
+            }
+          },
+          {
+            "name": "Hold a client connection open during managed server.close and confirm forced reap releases the supervisor guard and permits exactly one restart",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-daemon-lifecycle.test.ts",
+                "title": "Hold a client connection open during managed server.close and confirm forced reap releases the supervisor guard and permits exactly one restart",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Public RPC arm gets busy during update while an admitted drain and local signal preserve their watchdog path",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-daemon-lifecycle.test.ts",
+                "title": "Public RPC arm gets busy during update while an admitted drain and local signal preserve their watchdog path",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/managed-daemon-lifecycle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8251,
+            "titles": [
+              {
+                "title": "Managed watchdog arm has reserved capacity during a controller request burst",
+                "result": "pass"
+              },
+              {
+                "title": "IPC and signal shutdown with no controller",
+                "result": "pass"
+              },
+              {
+                "title": "Hung before shutdown reply and hung native close after watchdog readiness",
+                "result": "pass"
+              },
+              {
+                "title": "Hold a client connection open during managed server.close and confirm forced reap releases the supervisor guard and permits exactly one restart",
+                "result": "pass"
+              },
+              {
+                "title": "Public RPC arm gets busy during update while an admitted drain and local signal preserve their watchdog path",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "17605863f",
+        "ranAt": "2026-11-10T15:52:06.153Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Normal CLI and shell restart",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/managed-daemon-control.test.ts",
+                "title": "Normal CLI and shell restart",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Supervisor loss, concurrent restart and stale files",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/managed-daemon-control.test.ts",
+                "title": "Supervisor loss, concurrent restart and stale files",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Managed Darwin never invokes the Mach broker from either the controller or shutdown watchdog",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/managed-daemon-control.test.ts",
+                "title": "Managed Darwin never invokes the Mach broker from either the controller or shutdown watchdog",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Installed controller refuses a verified job belonging to another test root",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/managed-daemon-control.test.ts",
+                "title": "Installed controller refuses a verified job belonging to another test root",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Kill the supervisor while it owns the guard and verify fail-closed operator recovery",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/managed-daemon-control.test.ts",
+                "title": "Kill the supervisor while it owns the guard and verify fail-closed operator recovery",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Installed shell restart sends one stop and one start bound to the same predecessor",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/managed-daemon-control.test.ts",
+                "title": "Installed shell restart sends one stop and one start bound to the same predecessor",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Race competing start, stop, raw shutdown and update against both supervisor versions",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/managed-daemon-control.test.ts",
+                "title": "Race competing start, stop, raw shutdown and update against both supervisor versions",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/services/__tests__/managed-daemon-control.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5102,
+            "titles": [
+              {
+                "title": "Normal CLI and shell restart",
+                "result": "pass"
+              },
+              {
+                "title": "Supervisor loss, concurrent restart and stale files",
+                "result": "pass"
+              },
+              {
+                "title": "Managed Darwin never invokes the Mach broker from either the controller or shutdown watchdog",
+                "result": "pass"
+              },
+              {
+                "title": "Installed controller refuses a verified job belonging to another test root",
+                "result": "pass"
+              },
+              {
+                "title": "Kill the supervisor while it owns the guard and verify fail-closed operator recovery",
+                "result": "pass"
+              },
+              {
+                "title": "Installed shell restart sends one stop and one start bound to the same predecessor",
+                "result": "pass"
+              },
+              {
+                "title": "Race competing start, stop, raw shutdown and update against both supervisor versions",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "ffd700b07",
+        "ranAt": "2026-11-10T16:02:02.357Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Compatibility declaration and read-only quiesced check refuse unknown or migration-bearing pairs",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/release-compatibility.test.ts",
+                "title": "Compatibility declaration and read-only quiesced check refuse unknown or migration-bearing pairs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Inject upgrade with a newer graph schema and verify the old daemon can still open the unchanged store",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/release-compatibility.test.ts",
+                "title": "Inject upgrade with a newer graph schema and verify the old daemon can still open the unchanged store",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/release-compatibility.test.ts",
+                "title": "Candidate stays read-only and serves the prior commit until matching durable success",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/release-compatibility.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1839,
+            "titles": [
+              {
+                "title": "Compatibility declaration and read-only quiesced check refuse unknown or migration-bearing pairs",
+                "result": "pass"
+              },
+              {
+                "title": "Inject upgrade with a newer graph schema and verify the old daemon can still open the unchanged store",
+                "result": "pass"
+              },
+              {
+                "title": "Candidate stays read-only and serves the prior commit until matching durable success",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "875d2b7d8",
+        "ranAt": "2026-11-10T16:15:05.049Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Candidate job handoff records registration before child admission and keeps release selection provisional",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-update-handoff.test.ts",
+                "title": "Candidate job handoff records registration before child admission and keeps release selection provisional",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "A failed candidate hello yields an exact job receipt without admitting a daemon child",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-update-handoff.test.ts",
+                "title": "A failed candidate hello yields an exact job receipt without admitting a daemon child",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "A lost or unwritten update acknowledgement keeps the detached helper behind its launch gate",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-update-handoff.test.ts",
+                "title": "A lost or unwritten update acknowledgement keeps the detached helper behind its launch gate",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/managed-update-handoff.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1586,
+            "titles": [
+              {
+                "title": "Candidate job handoff records registration before child admission and keeps release selection provisional",
+                "result": "pass"
+              },
+              {
+                "title": "A failed candidate hello yields an exact job receipt without admitting a daemon child",
+                "result": "pass"
+              },
+              {
+                "title": "A lost or unwritten update acknowledgement keeps the detached helper behind its launch gate",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "c547b8a54",
+        "ranAt": "2026-11-10T17:16:49.776Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Incompatible supervisor version produces one terminal failure after reconciliation",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-update-transaction.test.ts",
+                "title": "Incompatible supervisor version produces one terminal failure after reconciliation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Terminal outcome and marker ordering, including persistence failure",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-update-transaction.test.ts",
+                "title": "Terminal outcome and marker ordering, including persistence failure",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Recovery applies only the operations permitted by the matching outcome",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-update-transaction.test.ts",
+                "title": "Recovery applies only the operations permitted by the matching outcome",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Recovery job and legacy migration",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-update-transaction.test.ts",
+                "title": "Recovery job and legacy migration",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/legacy-daemon-cutover.test.ts",
+                "title": "Legacy cutover observes the exact authenticated process exit before cleaning its publication",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/legacy-daemon-cutover.test.ts",
+                "title": "Legacy LaunchAgent pinning rejects automatic restart before migration",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Rollback after legacy stop but before managed readiness restores the saved service",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-update-transaction.test.ts",
+                "title": "Rollback after legacy stop but before managed readiness restores the saved service",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Fail hello after candidate job registration before child start, remove the candidate job and restore the prior release",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-update-transaction.test.ts",
+                "title": "Fail hello after candidate job registration before child start, remove the candidate job and restore the prior release",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Kill the controller at reservation, job registration, probation, and after outcome publication",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-update-transaction.test.ts",
+                "title": "Kill the controller at reservation, job registration, probation, and after outcome publication",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Relaunch supervisor after provisional release selection and verify recovery restores the old selector before uncommitted rollback, or preserves the candidate after success",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-update-transaction.test.ts",
+                "title": "Relaunch supervisor after provisional release selection and verify recovery restores the old selector before uncommitted rollback, or preserves the candidate after success",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/legacy-daemon-cutover.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 703,
+            "titles": [
+              {
+                "title": "Legacy cutover observes the exact authenticated process exit before cleaning its publication",
+                "result": "pass"
+              },
+              {
+                "title": "Legacy LaunchAgent pinning rejects automatic restart before migration",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/managed-update-transaction.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4060,
+            "titles": [
+              {
+                "title": "Incompatible supervisor version produces one terminal failure after reconciliation",
+                "result": "pass"
+              },
+              {
+                "title": "Terminal outcome and marker ordering, including persistence failure",
+                "result": "pass"
+              },
+              {
+                "title": "Recovery applies only the operations permitted by the matching outcome",
+                "result": "pass"
+              },
+              {
+                "title": "Fail hello after candidate job registration before child start, remove the candidate job and restore the prior release",
+                "result": "pass"
+              },
+              {
+                "title": "Kill the controller at reservation, job registration, probation, and after outcome publication",
+                "result": "pass"
+              },
+              {
+                "title": "Relaunch supervisor after provisional release selection and verify recovery restores the old selector before uncommitted rollback, or preserves the candidate after success",
+                "result": "pass"
+              },
+              {
+                "title": "Recovery job and legacy migration",
+                "result": "pass"
+              },
+              {
+                "title": "Rollback after legacy stop but before managed readiness restores the saved service",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "7cb0424ed",
+        "ranAt": "2026-11-10T17:25:11.011Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Daemon-initiated update survives supervisor unload and writes one terminal result across a protocol version change",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-update-ipc.test.ts",
+                "title": "Daemon-initiated update survives supervisor unload and writes one terminal result across a protocol version change",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Observe in-flight status throughout injected rollback, then exactly one terminal outcome after restored readiness or a durable operator-recovery decision",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-update-transaction.test.ts",
+                "title": "Observe in-flight status throughout injected rollback, then exactly one terminal outcome after restored readiness or a durable operator-recovery decision",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Hold application RPCs and indexing until matching durable success across threaded and non-threaded status paths",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-update-ipc.test.ts",
+                "title": "Hold application RPCs and indexing until matching durable success across threaded and non-threaded status paths",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Managed update helper waits for acknowledgement write before destructive work",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-update-handoff.test.ts",
+                "title": "Managed update helper waits for acknowledgement write before destructive work",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Threaded and non-threaded status publish the same committed release for the matching outcome",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-update-ipc.test.ts",
+                "title": "Threaded and non-threaded status publish the same committed release for the matching outcome",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/managed-update-handoff.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1649,
+            "titles": [
+              {
+                "title": "Candidate job handoff records registration before child admission and keeps release selection provisional",
+                "result": "pass"
+              },
+              {
+                "title": "A failed candidate hello yields an exact job receipt without admitting a daemon child",
+                "result": "pass"
+              },
+              {
+                "title": "A lost or unwritten update acknowledgement keeps the detached helper behind its launch gate",
+                "result": "pass"
+              },
+              {
+                "title": "Managed update helper waits for acknowledgement write before destructive work",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/managed-update-ipc.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10486,
+            "titles": [
+              {
+                "title": "single-threaded",
+                "result": "pass"
+              },
+              {
+                "title": "threaded",
+                "result": "pass"
+              },
+              {
+                "title": "Hold application RPCs and indexing until matching durable success across threaded and non-threaded status paths",
+                "result": "pass"
+              },
+              {
+                "title": "single-threaded",
+                "result": "pass"
+              },
+              {
+                "title": "threaded",
+                "result": "pass"
+              },
+              {
+                "title": "Threaded and non-threaded status publish the same committed release for the matching outcome",
+                "result": "pass"
+              },
+              {
+                "title": "Unreadable managed journal withholds the provisional commit and terminal outcome",
+                "result": "pass"
+              },
+              {
+                "title": "Daemon-initiated update survives supervisor unload and writes one terminal result across a protocol version change",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/managed-update-transaction.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3837,
+            "titles": [
+              {
+                "title": "Incompatible supervisor version produces one terminal failure after reconciliation",
+                "result": "pass"
+              },
+              {
+                "title": "Terminal outcome and marker ordering, including persistence failure",
+                "result": "pass"
+              },
+              {
+                "title": "Recovery applies only the operations permitted by the matching outcome",
+                "result": "pass"
+              },
+              {
+                "title": "Fail hello after candidate job registration before child start, remove the candidate job and restore the prior release",
+                "result": "pass"
+              },
+              {
+                "title": "Observe in-flight status throughout injected rollback, then exactly one terminal outcome after restored readiness or a durable operator-recovery decision",
+                "result": "pass"
+              },
+              {
+                "title": "Kill the controller at reservation, job registration, probation, and after outcome publication",
+                "result": "pass"
+              },
+              {
+                "title": "Relaunch supervisor after provisional release selection and verify recovery restores the old selector before uncommitted rollback, or preserves the candidate after success",
+                "result": "pass"
+              },
+              {
+                "title": "Recovery job and legacy migration",
+                "result": "pass"
+              },
+              {
+                "title": "Rollback after legacy stop but before managed readiness restores the saved service",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "660ea82e3",
+        "ranAt": "2026-11-10T17:38:41.765Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Correlated update outcomes ignore unrelated terminal records and changed installedCommit",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/freshness/__tests__/daemon-freshness.test.ts",
+                "title": "Correlated update outcomes ignore unrelated terminal records and changed installedCommit",
+                "result": "pass"
+              },
+              {
+                "file": "jetbrains-plugin/__tests__/managed-update-confirmation-gradle.test.ts",
+                "title": "Correlated update outcomes ignore unrelated terminal records and changed installedCommit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Candidate status projects the prior commit during validation and a later rollback in both IDE confirmation flows",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/freshness/__tests__/daemon-freshness.test.ts",
+                "title": "Candidate status projects the prior commit during validation and a later rollback in both IDE confirmation flows",
+                "result": "pass"
+              },
+              {
+                "file": "jetbrains-plugin/__tests__/managed-update-confirmation-gradle.test.ts",
+                "title": "Candidate status projects the prior commit during validation and a later rollback in both IDE confirmation flows",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Lost update acknowledgement does not trigger an automatic duplicate request",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/freshness/__tests__/daemon-freshness.test.ts",
+                "title": "Lost update acknowledgement does not trigger an automatic duplicate request",
+                "result": "pass"
+              },
+              {
+                "file": "jetbrains-plugin/__tests__/managed-update-confirmation-gradle.test.ts",
+                "title": "Lost update acknowledgement does not trigger an automatic duplicate request",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/ipc-client.test.ts",
+                "title": "A missing update acknowledgement is classified as uncertain after the request write",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "jetbrains-plugin/__tests__/managed-update-confirmation-gradle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 13084,
+            "titles": [
+              {
+                "title": "Correlated update outcomes ignore unrelated terminal records and changed installedCommit",
+                "result": "pass"
+              },
+              {
+                "title": "Candidate status projects the prior commit during validation and a later rollback in both IDE confirmation flows",
+                "result": "pass"
+              },
+              {
+                "title": "Lost update acknowledgement does not trigger an automatic duplicate request",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/shared/__tests__/ipc-client.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 611,
+            "titles": [
+              {
+                "title": "rpc preserves a multi-byte response character split across socket reads",
+                "result": "pass"
+              },
+              {
+                "title": "openStream preserves multi-byte characters split across frame chunks",
+                "result": "pass"
+              },
+              {
+                "title": "rpc resolves the daemon result and writes the { label, pid } identity envelope on connect",
+                "result": "pass"
+              },
+              {
+                "title": "rpc rejects with \"daemon is not running\" on ENOENT / ECONNREFUSED",
+                "result": "pass"
+              },
+              {
+                "title": "rpc surfaces a daemon-side error and an unparseable line distinctly",
+                "result": "pass"
+              },
+              {
+                "title": "IpcClient.status returns the wire DaemonStatus via daemon.status",
+                "result": "pass"
+              },
+              {
+                "title": "IpcClient.reachability derives running / stopped / errored and never throws",
+                "result": "pass"
+              },
+              {
+                "title": "sockFilePath resolves to the daemon socket",
+                "result": "pass"
+              },
+              {
+                "title": "src/cli/client.ts re-exports rpc from the shared ipc-client (CLI/TUI surface preserved)",
+                "result": "pass"
+              },
+              {
+                "title": "src/shared/ipc-client imports only node:net and shared IPC/text helpers (no daemon internals/indexer/storage)",
+                "result": "pass"
+              },
+              {
+                "title": "ipc-client.test.ts: a connection lost after the request (end/close or ECONNRESET then close) rejects with DaemonDisconnectedError; pre-connect refusal and replies unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "A missing update acknowledgement is classified as uncertain after the request write",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/freshness/__tests__/daemon-freshness.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 536,
+            "titles": [
+              {
+                "title": "Correlated update outcomes ignore unrelated terminal records and changed installedCommit",
+                "result": "pass"
+              },
+              {
+                "title": "Candidate status projects the prior commit during validation and a later rollback in both IDE confirmation flows",
+                "result": "pass"
+              },
+              {
+                "title": "Lost update acknowledgement does not trigger an automatic duplicate request",
+                "result": "pass"
+              },
+              {
+                "title": "startup-check drift: notify shows Update/Dismiss; update() runs ONLY on 'Update'",
+                "result": "pass"
+              },
+              {
+                "title": "startup-check drift: Dismiss (and closed→undefined) does NOT call update()",
+                "result": "pass"
+              },
+              {
+                "title": "skip paths: unreachable / installedCommit===\"\" / up-to-date / ls-remote fail → no notify, no update",
+                "result": "pass"
+              },
+              {
+                "title": "self-update: current!==lastSeen + drift → update() with NO prompt (notify-after), setLastSeen recorded",
+                "result": "pass"
+              },
+              {
+                "title": "first-ever activation (lastSeen undefined) is treated as self-update when there is drift",
+                "result": "pass"
+              },
+              {
+                "title": "self-update mode but daemon already up to date → no update, no notify, still setLastSeen (fire-once, k4)",
+                "result": "pass"
+              },
+              {
+                "title": "an undeterminable current version (\"\") falls back to the prompt path, never auto-updates",
+                "result": "pass"
+              },
+              {
+                "title": "reconnect-and-confirm success: updateOutcome().state===\"succeeded\" → success notify",
+                "result": "pass"
+              },
+              {
+                "title": "reconnect tolerates a socket drop across passes: throws on pass 1, confirms on pass 2",
+                "result": "pass"
+              },
+              {
+                "title": "a STALE succeeded outcome (finished before the update started) is ignored; commit-advance decides",
+                "result": "pass"
+              },
+              {
+                "title": "failure: update() rejects → exactly ONE failure notify with the raw error, no retry",
+                "result": "pass"
+              },
+              {
+                "title": "failure: updateOutcome().state===\"failed\" (fresh) → one failure notify carrying the raw error",
+                "result": "pass"
+              },
+              {
+                "title": "failure: commit never advances within the budget → one failure notify, no second update()",
+                "result": "pass"
+              },
+              {
+                "title": "launched:false → a single failure notify, no confirm loop",
+                "result": "pass"
+              },
+              {
+                "title": "never-throws: a throwing seam is swallowed; runDaemonFreshnessCheck resolves; setLastSeen still runs",
+                "result": "pass"
+              },
+              {
+                "title": "setLastSeen(current) is recorded on the skip path too (self-update fires once)",
+                "result": "pass"
+              },
+              {
+                "title": "post-update nudge: on a confirmed update, notify is called with the reload-nudge message AND a Reload Window action",
+                "result": "pass"
+              },
+              {
+                "title": "post-update nudge: choosing 'Reload Window' with the seam present invokes reloadWindow() exactly once",
+                "result": "pass"
+              },
+              {
+                "title": "post-update nudge: dismissing the nudge (undefined) does NOT invoke reloadWindow()",
+                "result": "pass"
+              },
+              {
+                "title": "post-update nudge: with reloadWindow omitted, the flow is notification-only and never crashes",
+                "result": "pass"
+              },
+              {
+                "title": "post-update nudge: a reloadWindow rejection is swallowed — runDaemonFreshnessCheck still resolves",
+                "result": "pass"
+              },
+              {
+                "title": "post-update nudge: the nudge also follows the startup-check prompt path (Update → success → nudge)",
+                "result": "pass"
+              },
+              {
+                "title": "post-update nudge: NO nudge on a no-op update (already current) or a failed update",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

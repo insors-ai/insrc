@@ -1,0 +1,196 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1794290209440-pmqrnf",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T05:58:05.294Z",
+    "epicCreatedAt": "2026-11-10T05:58:05.294Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 75853,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0765b3a578e43eec",
+    "epicSlug": "add-dedicated-security-reviews",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "9bd4a1820c485b37443bea0112e97977bf751ce3db5ac0042ab7ddd39a546087",
+        "at": "2026-11-10T05:58:05.316Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 1,
+        "reviewer": {
+          "id": "agent:design-review-daemon",
+          "kind": "agent",
+          "properties": {
+            "party": "daemon"
+          }
+        },
+        "party": "daemon",
+        "verdict": "block",
+        "counts": {
+          "HIGH": 0,
+          "MED": 7,
+          "LOW": 5
+        },
+        "at": "2026-11-10T06:05:22.738Z",
+        "report": {
+          "entityId": "DEF-0765b3a578e43eec",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "ed208b2f288e729231d0649896e5be099b2d4816707565e67e6075392b89ab68"
+        }
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "tracker": {
+      "adapter": "github",
+      "epicStatus": "open",
+      "storyStatus": {},
+      "lastSyncedAt": "2026-11-11T12:29:47.927Z"
+    }
+  },
+  "body": {
+    "title": "Add dedicated security reviews",
+    "flavor": "new-capability",
+    "problem": "Insrc's general review flow does not give developers a dedicated assessment of vulnerabilities or a separately chosen security reviewer model. It also lacks a defined way to check resolved dependencies against current advisories while keeping repository and credential access bounded, making it hard to distinguish verified findings from gaps in coverage.",
+    "summary": {
+      "prose": "Developers can request a dedicated assessment of code and dependency vulnerabilities. Each report identifies the security model, evidence, and limits of the assessment.",
+      "audience": "product"
+    },
+    "nonGoals": [
+      {
+        "text": "General code quality review and automatic remediation",
+        "rationale": "This workflow is scoped to security assessment."
+      }
+    ],
+    "assumptions": [],
+    "constraints": [
+      {
+        "id": "k1",
+        "text": "Cloud inference uses the installed CLI provider. Embeddings and repository stores follow the existing local-first rules.",
+        "type": "invariant",
+        "source": "c2"
+      },
+      {
+        "id": "k2",
+        "text": "Use an explicitly selected security model alongside existing model selections. Keep repository access read-only and constrain advisory egress to the information required for lookup.",
+        "type": "stakeholder",
+        "source": "c1"
+      }
+    ],
+    "stories": [
+      {
+        "id": "s1",
+        "title": "Configure a dedicated security model",
+        "userValue": "Select and audit the reviewer model independently of core, mid, and cheap.",
+        "dependsOn": [],
+        "sizeEstimate": "M",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a configured security model is available",
+            "when": "a security review starts",
+            "then": "it runs with that model and records its identity. If unavailable, it reports the blocker without a silent fallback.",
+            "operationalizes": [
+              "k2"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "s2",
+        "title": "Isolate reviewer access and fetch dependency advisories",
+        "userValue": "Check current dependency advisories while protecting repository data and local credentials.",
+        "dependsOn": [],
+        "sizeEstimate": "M",
+        "acceptanceCriteria": [
+          {
+            "id": "ac2",
+            "given": "a read-only review scope and resolved dependencies",
+            "when": "the reviewer checks public advisories",
+            "then": "lookups send only approved package coordinates through controlled egress, and unavailable sources or unresolved dependencies remain explicit gaps.",
+            "operationalizes": [
+              "k2"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "s3",
+        "title": "Run and report a security-only review",
+        "userValue": "Request a review of vulnerabilities with actionable evidence.",
+        "dependsOn": [
+          "s1",
+          "s2"
+        ],
+        "sizeEstimate": "M",
+        "acceptanceCriteria": [
+          {
+            "id": "ac3",
+            "given": "a selected repository scope and revision",
+            "when": "a user requests a security review",
+            "then": "the report separates code findings, confirmed affected dependencies, and unverified coverage, with severity, evidence, prerequisites, and remediation.",
+            "operationalizes": [
+              "k2"
+            ]
+          }
+        ]
+      }
+    ],
+    "openQuestions": [],
+    "functionalDefinition": {
+      "requirements": [
+        {
+          "id": "E202611100765b3a5:FR001",
+          "statement": "Run a separate security-only review using a specified security model and record the effective model in the report.",
+          "scope": "doc"
+        },
+        {
+          "id": "E202611100765b3a5:FR002",
+          "statement": "Assess relevant code vulnerabilities and resolve direct and transitive dependency advisory matches where exact versions are available.",
+          "scope": "doc"
+        },
+        {
+          "id": "E202611100765b3a5:FR003",
+          "statement": "Give findings evidence, severity, exploit prerequisites, and remediation guidance. Report unresolved versions, missing evidence and unavailable advisory sources explicitly.",
+          "scope": "doc"
+        }
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "stakeholder",
+      "ref": "User request for dedicated security reviews"
+    },
+    {
+      "id": "c2",
+      "kind": "convention",
+      "ref": "AGENTS.md"
+    }
+  ]
+}

@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1016a656-36a7-43bd-82d5-2f018e5d31f1",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T12:13:08.924Z",
+    "epicCreatedAt": "2026-11-09T06:00:04.355Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "206db3426ffd4428",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Bridge verified run ownership to the daemon coordinator",
+      "parent": {
+        "entityId": "STORY-206db3426ffd4428-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-206db3426ffd4428-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-206db3426ffd4428-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#157",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "839e4b4aeea693491ed3c9d932e87b90b3519daba40a32e5c37a8c9d3f79efed",
+        "at": "2026-11-11T12:13:08.925Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T12:13:08.932Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Bridge verified run ownership to the daemon coordinator",
+    "summary": "Connect routed workflow and analysis runs to the main daemon through a private worker relay. Use the same producer lifecycle in-process. Keep the existing coordinator and access rules as the authority.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "A server-verified launch binds the registered project, invocation, actual worker channel and execution key to one S1 attempt. No client-supplied identity or ambiguous binding can mint a grant.",
+      "Bound the relay to a latest active sample and a reserved terminal update per admitted execution. Reject stale, malformed, foreign and late events. Keep a terminal outcome that arrives before admission within the bounded reservation; expire unresolved admissions.",
+      "Probe the actual execution owner during quiet work. Terminal evidence bypasses active coalescing, persists before S1 delivery and is replayable under the same fence. Verified owner loss without accepted terminal evidence is interrupted.",
+      "Failure or refusal cannot delay or reject legacy execution, and no worker opens a second progress store.",
+      "Verify the origin and registered project at the main daemon before admitting a routed owner. An admitted detached run outlives the initiating socket under the existing registry. Worker exit cleans up the relay."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "S2 producer relay admits only a verified project origin and worker attempt"
+      },
+      {
+        "level": "integration",
+        "name": "S2 producer relay preserves early terminal evidence and releases unresolved admissions"
+      },
+      {
+        "level": "integration",
+        "name": "S2 quiet owner renews activity and worker loss fences stale evidence"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

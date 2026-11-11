@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b93131bf-dea7-48a3-b39e-26ad7f843ca9",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T18:01:41.608Z",
+    "epicCreatedAt": "2026-11-10T17:43:51.648Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3ec4189b758be646",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Vibe activity branch in CliProvider.activityReview",
+      "parent": {
+        "entityId": "STORY-3ec4189b758be646-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3ec4189b758be646-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-3ec4189b758be646-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-3ec4189b758be646-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "269cb3c91d2273b4fc529533a5893885c05869f8e94610be8482940cf1fb788d",
+        "at": "2026-11-10T18:01:41.619Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-10T18:01:41.623Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Vibe activity branch in CliProvider.activityReview",
+    "summary": "Replace the vibe rejection in activityReview with a vibe branch that starts the verified Vibe app-server session and feeds its frames into ReviewActivityStream('vibe'), enforcing the read-only tool policy and pre-dispatch VibeSelectionError.",
+    "size": "L",
+    "order": 6,
+    "acceptanceChecks": [
+      "activityReview vibe guard at cli-provider.ts:611 replaced by a vibe branch",
+      "vibe branch validates model via catalog + runtime thinkingLevels (vibe-session.ts:384-404) BEFORE starting the Vibe app server; VibeSelectionError precedes dispatch",
+      "vibe activity drives ReviewActivityStream kind 'vibe' with read-only tool policy (read_file + mcp_insrc_* equivalent, LLD invariant c4)",
+      "cancellation via shared signal/acceptedStop honored"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "T7-vibe-activity-readonly-tool-policy"
+      },
+      {
+        "level": "unit",
+        "name": "T8-vibe-activity-structured-validation-cancellation"
+      },
+      {
+        "level": "unit",
+        "name": "T11-unsupported-model-effort-fails-before-dispatch"
+      },
+      {
+        "level": "integration",
+        "name": "T6-vibe-activity-coordinator-dispatch-fake-transport"
+      },
+      {
+        "level": "live",
+        "name": "T10-vibe-session-readback-core-mid"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

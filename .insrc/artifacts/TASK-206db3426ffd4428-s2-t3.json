@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-994ae736-468b-4942-a6d3-2cd7d4f58b8c",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T12:13:08.938Z",
+    "epicCreatedAt": "2026-11-09T06:00:04.355Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "206db3426ffd4428",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Wire workflow execution owners",
+      "parent": {
+        "entityId": "STORY-206db3426ffd4428-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-206db3426ffd4428-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-206db3426ffd4428-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#158",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "5813c8d48f2cca254044706e629b00509c65ac076077b874482c7694a6676379",
+        "at": "2026-11-11T12:13:08.939Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T12:13:08.944Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire workflow execution owners",
+    "summary": "Connect both workflow.run streaming and workflow.run.start detached execution to the shared workflow delegate. Use the existing driver callbacks and real stream or registry outcome.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Stream stage and delta frames, token batching, tail and terminal payloads are byte-compatible. Detached poll frames, cursor and abort behavior are preserved.",
+      "Both entry paths report stage transitions and measured cumulative output with the declared unit when present. Nested grounding and controller steps do not create separate observations.",
+      "Observer loss leaves detached work active. Accepted completion, rejection and actual cancellation publish exactly one settled status. Cancel requests alone do not certify termination."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "S2 workflow progress preserves streaming frames and terminal result"
+      },
+      {
+        "level": "integration",
+        "name": "S2 detached workflow preserves poll cursor and abort behavior across observer loss"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -1,0 +1,419 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 5,
+        "contentHash": "f7a487180d3f084aac3e701dbecaf9b593090556ea2ac43a807d31919b77e22c",
+        "at": "2026-11-11T12:28:52.241Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "66d4d41d99f805af",
+    "storyId": "s1",
+    "createdAt": "2026-11-11T12:12:10.791Z",
+    "updatedAt": "2026-11-11T12:28:52.211Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-11T05:24:15.548Z",
+    "epicSlug": "code-review-refuses-correction-packet-because",
+    "revision": 5
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "441cd725e",
+        "ranAt": "2026-11-11T12:12:10.791Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "projection identity matches the identity pinned from the code before the change",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts",
+                "title": "projection identity matches the identity pinned from the code before the change",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1682,
+            "titles": [
+              {
+                "title": "projection identity matches the identity pinned from the code before the change",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "960da97bc",
+        "ranAt": "2026-11-11T12:18:49.344Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "fullHistory lists a side-branch deletion and the merge that default history omits",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-path-history-full.test.ts",
+                "title": "fullHistory lists a side-branch deletion and the merge that default history omits",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "without fullHistory the listing is unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-path-history-full.test.ts",
+                "title": "without fullHistory the listing is unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-path-history-full.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1893,
+            "titles": [
+              {
+                "title": "fullHistory lists a side-branch deletion and the merge that default history omits",
+                "result": "pass"
+              },
+              {
+                "title": "without fullHistory the listing is unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "f42060471",
+        "ranAt": "2026-11-11T12:22:38.265Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "pathChanges lists the commits that changed the path and refuses a failed or malformed listing as a source error",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts",
+                "title": "pathChanges lists the commits that changed the path and refuses a failed or malformed listing as a source error",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "boundedProjectionSources caches pathChanges and charges one read per uncached listing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts",
+                "title": "boundedProjectionSources caches pathChanges and charges one read per uncached listing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4439,
+            "titles": [
+              {
+                "title": "projection identity matches the identity pinned from the code before the change",
+                "result": "pass"
+              },
+              {
+                "title": "pathChanges lists the commits that changed the path and refuses a failed or malformed listing as a source error",
+                "result": "pass"
+              },
+              {
+                "title": "boundedProjectionSources caches pathChanges and charges one read per uncached listing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "dfa56cd4b",
+        "ranAt": "2026-11-11T12:28:52.211Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "lineage reads do not grow with interleaved commits that leave the selected path untouched",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts",
+                "title": "lineage reads do not grow with interleaved commits that leave the selected path untouched",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a side-branch deletion merged back with the file kept still interrupts lineage",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts",
+                "title": "a side-branch deletion merged back with the file kept still interrupts lineage",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a side-branch deletion and recreation merged back still interrupts lineage",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts",
+                "title": "a side-branch deletion and recreation merged back still interrupts lineage",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a path history failure is a source error, not a projection limit or lineage conflict",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts",
+                "title": "a path history failure is a source error, not a projection limit or lineage conflict",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the read limit still refuses with projection_limit when the selected file itself changed too often",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts",
+                "title": "the read limit still refuses with projection_limit when the selected file itself changed too often",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "projection identity matches the identity pinned from the code before the change",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts",
+                "title": "projection identity matches the identity pinned from the code before the change",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "identical final blobs cannot hide an unselected rename-away and recreation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+                "title": "identical final blobs cannot hide an unselected rename-away and recreation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "selected rename chains compare exact blobs independently of rename similarity and reject unselected moves",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+                "title": "selected rename chains compare exact blobs independently of rename similarity and reject unselected moves",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "production projection budgets accept their exact ceilings and refuse the next unit",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+                "title": "production projection budgets accept their exact ceilings and refuse the next unit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the eedc4519199b24b4/s1 correction packet prepares without projection_limit and attempt 4 re-prepares saved attempts 1-3 to their stored identities",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/code-review-refuses-correction-packet-because-E2026111166d4d41d/S001/SMOKE.md (packet admitted: 135 entries, 1088 reads, 10.89 MiB; attempts 1-3 identities match, checked offline with admission.ts:47-48 logic since the installed daemon is not yet updated)"
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 16409,
+            "titles": [
+              {
+                "title": "projection identity matches the identity pinned from the code before the change",
+                "result": "pass"
+              },
+              {
+                "title": "pathChanges lists the commits that changed the path and refuses a failed or malformed listing as a source error",
+                "result": "pass"
+              },
+              {
+                "title": "boundedProjectionSources caches pathChanges and charges one read per uncached listing",
+                "result": "pass"
+              },
+              {
+                "title": "lineage reads do not grow with interleaved commits that leave the selected path untouched",
+                "result": "pass"
+              },
+              {
+                "title": "a side-branch deletion merged back with the file kept still interrupts lineage",
+                "result": "pass"
+              },
+              {
+                "title": "a side-branch deletion and recreation merged back still interrupts lineage",
+                "result": "pass"
+              },
+              {
+                "title": "a path history failure is a source error, not a projection limit or lineage conflict",
+                "result": "pass"
+              },
+              {
+                "title": "the read limit still refuses with projection_limit when the selected file itself changed too often",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 16896,
+            "titles": [
+              {
+                "title": "selected later witnesses justify complete supersession and immutable origin accounting",
+                "result": "pass"
+              },
+              {
+                "title": "partial replacement witnesses must cover the entire changed target and deletions retain explicit witnesses",
+                "result": "pass"
+              },
+              {
+                "title": "selected rename chains compare exact blobs independently of rename similarity and reject unselected moves",
+                "result": "pass"
+              },
+              {
+                "title": "unselected merge resolution rejects and explicit selected merge replacement supplies the witness",
+                "result": "pass"
+              },
+              {
+                "title": "competing selected path moves fail instead of choosing a rename by array order",
+                "result": "pass"
+              },
+              {
+                "title": "identical final blobs cannot hide an unselected rename-away and recreation",
+                "result": "pass"
+              },
+              {
+                "title": "typed blob diff mode requires both objects and cannot fall back to HEAD or the working tree",
+                "result": "pass"
+              },
+              {
+                "title": "projection budgets refuse before exceeding limits, preserve source fields and use serial reads",
+                "result": "pass"
+              },
+              {
+                "title": "actual diff truncation stays changes while oversized JSON refuses input before source/provider work",
+                "result": "pass"
+              },
+              {
+                "title": "production projection budgets accept their exact ceilings and refuse the next unit",
+                "result": "pass"
+              },
+              {
+                "title": "selected rename then deletion projects absent final blobs and still requires the deletion witness",
+                "result": "pass"
+              },
+              {
+                "title": "verified rename deletion ignores unrelated and identical recreation at the original pathname",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

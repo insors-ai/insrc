@@ -1,0 +1,127 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-970b1c48-3bc4-475a-a084-e18efc1afcc1",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T18:01:41.667Z",
+    "epicCreatedAt": "2026-11-10T17:43:51.648Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3ec4189b758be646",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Test suite: unit + coordinator integration + live-gated",
+      "parent": {
+        "entityId": "STORY-3ec4189b758be646-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3ec4189b758be646-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-3ec4189b758be646-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-3ec4189b758be646-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-3ec4189b758be646-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-3ec4189b758be646-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-3ec4189b758be646-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-3ec4189b758be646-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-3ec4189b758be646-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-3ec4189b758be646-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "01bc11e8db4ccf446033078422d4d9fc9220d1e663bc9ccd237f0e79f64ba288",
+        "at": "2026-11-10T18:01:41.678Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-10T18:01:41.682Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Test suite: unit + coordinator integration + live-gated",
+    "summary": "Write the LLD's test suite: unit tests per touched module (env/preflight, vendor strip, args-unchanged, vibe lifecycle/policy, catalog, diagnostics), an integration pass through both review coordinators, and a live-gated manual suite. Full sweep once at plan end.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "unit tests T1-T8 in colocated __tests__ beside cli-provider / review-activity-stream / review-diagnostics",
+      "unit tests T9-T11 beside vibe-session / model-catalog + catalog schema",
+      "integration test through both coordinators (design-review:379, task-review:223) with a fake binary capturing env",
+      "live/ manual suite (INSRC_LIVE_TESTS-gated) documents the real ollama-claude and cli-vibe review runs"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "T1-ollama-activity-coordinator-dispatch-env-capture"
+      },
+      {
+        "level": "integration",
+        "name": "T6-vibe-activity-coordinator-dispatch-fake-transport"
+      },
+      {
+        "level": "live",
+        "name": "T10-vibe-session-readback-core-mid"
+      },
+      {
+        "level": "live",
+        "name": "live-ollama-claude-activity-review-completes-planning"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

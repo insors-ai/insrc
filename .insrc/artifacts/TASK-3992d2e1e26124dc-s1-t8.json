@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6f396f14-6e36-48bd-ae6f-80dd019bd010",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T11:23:35.718Z",
+    "epicCreatedAt": "2026-11-10T04:52:20.369Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3992d2e1e26124dc",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Enforce rollback-compatible startup and probation",
+      "parent": {
+        "entityId": "STORY-3992d2e1e26124dc-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3992d2e1e26124dc-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-3992d2e1e26124dc-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-3992d2e1e26124dc-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-3992d2e1e26124dc-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "92bc104df758b0160332885e85322b391dd905ac44f712daf13071e1293b2db5",
+        "at": "2026-11-10T14:07:39.253Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-10T11:23:35.721Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Enforce rollback-compatible startup and probation",
+    "summary": "Define the release compatibility declarations and read-only quiesced checks. Validate before live boot effects. Gate graph migrations, cleanup, indexing and normal IPC until the candidate observes matching durable success.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "A newer graph schema or an unqualified release is refused before candidate writes",
+      "Candidate readiness verifies store opens and paused indexer initialization with no production indexing"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Compatibility declaration and read-only quiesced check refuse unknown or migration-bearing pairs"
+      },
+      {
+        "level": "integration",
+        "name": "Inject upgrade with a newer graph schema and verify the old daemon can still open the unchanged store"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

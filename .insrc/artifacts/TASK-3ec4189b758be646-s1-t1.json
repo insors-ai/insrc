@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2f11f529-9a14-4d02-809b-7b1b8f935d0f",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T18:01:41.528Z",
+    "epicCreatedAt": "2026-11-10T17:43:51.648Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3ec4189b758be646",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Ollama preflight + env on the activity-mode spawn path",
+      "parent": {
+        "entityId": "STORY-3ec4189b758be646-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3ec4189b758be646-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "794312e6e6594058cf2020178a7b6989a5c2afba7201b79308d0db6fb7f1d5c4",
+        "at": "2026-11-10T18:01:41.539Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-10T18:01:41.544Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Ollama preflight + env on the activity-mode spawn path",
+    "summary": "In CliProvider.activityReview (src/agent/providers/cli-provider.ts:610-627): add `await this.checkOllama()` first, compute `childEnv = this.withOllama(process.env) ?? undefined` when this.ollama is set, and pass `env: childEnv` into the runInProcessGroup activity call. Bounded path (runClaude :826, checkOllama :813, withOllama :803-811) semantics reused verbatim.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "activityReview awaits this.checkOllama() at the top, before args are built and before parser.start()",
+      "childEnv = this.withOllama(process.env) computed when this.ollama is set",
+      "runInProcessGroup activity call passes ...(childEnv ? { env: childEnv } : {})",
+      "when childEnv is undefined the call is byte-identical to today (process-group.ts:136 spreads only when set)",
+      "a rejected preflight throws OllamaTargetError before any child spawn; runReviewSession rethrows un-retried"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "T1-ollama-activity-child-env"
+      },
+      {
+        "level": "unit",
+        "name": "T3-ollama-activity-preflight-rejects-before-spawn"
+      },
+      {
+        "level": "unit",
+        "name": "T4-plain-provider-activity-env-unchanged"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

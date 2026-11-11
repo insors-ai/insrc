@@ -1,0 +1,122 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-53fa55b3-022a-4e69-b2fe-1d0e92a95005",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T11:23:35.757Z",
+    "epicCreatedAt": "2026-11-10T04:52:20.369Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3992d2e1e26124dc",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Qualify installed rollout and run the final sweep",
+      "parent": {
+        "entityId": "STORY-3992d2e1e26124dc-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3992d2e1e26124dc-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-3992d2e1e26124dc-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-3992d2e1e26124dc-s1-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-3992d2e1e26124dc-s1-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-3992d2e1e26124dc-s1-t12",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "516e8c49daeb4b9ea56964fb7a3d6bbb93a76a5bdbe0437da4be6e787e935261",
+        "at": "2026-11-10T14:07:39.297Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-10T11:23:35.762Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Qualify installed rollout and run the final sweep",
+    "summary": "Exercise the installed macOS LaunchAgent on disposable roots and regular Apple Silicon, including hung close, partial boot, legacy cutover, version-changing rollback and recovery. Verify Linux regressions, then run the complete sweep after all implementation tasks.",
+    "size": "M",
+    "order": 13,
+    "acceptanceChecks": [
+      "Installed smoke proves verified generation change and safe rollback",
+      "All implementation tasks have relevant targeted test evidence before the final sweep",
+      "Managed installed activation is release-qualified only after the installed smoke and regression checks pass"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "Install or upgrade into supported launchd domain"
+      },
+      {
+        "level": "smoke",
+        "name": "Normal and blocked shutdown complete with verified generation change"
+      },
+      {
+        "level": "smoke",
+        "name": "Restart leaves one daemon and serves status and indexing"
+      },
+      {
+        "level": "smoke",
+        "name": "Stopped daemon remains stopped and rollback preserves state"
+      },
+      {
+        "level": "smoke",
+        "name": "On the installed Apple Silicon build recover stale owned PID and socket files and refuse files belonging to a replacement"
+      },
+      {
+        "level": "smoke",
+        "name": "Real macOS migration exit observation and restoration after injected pre-readiness failure"
+      },
+      {
+        "level": "smoke",
+        "name": "Apple Silicon real blocked-close guard recovery and boot timeout after partial publication"
+      },
+      {
+        "level": "smoke",
+        "name": "Apple Silicon installed update across a supervisor version change with injected rollback"
+      }
+    ],
+    "planTaskId": "t13"
+  },
+  "citations": []
+}

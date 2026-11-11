@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-19718f34-783f-4e9e-9a76-1743e85edaad",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T11:23:35.686Z",
+    "epicCreatedAt": "2026-11-10T04:52:20.369Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3992d2e1e26124dc",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Define the managed lifecycle wire contract",
+      "parent": {
+        "entityId": "STORY-3992d2e1e26124dc-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3992d2e1e26124dc-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d928318cc1a13a852d2e7276f4bf11f56014cb009ea607569a8777119816d9ca",
+        "at": "2026-11-10T11:23:35.687Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-10T11:23:35.689Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Define the managed lifecycle wire contract",
+    "summary": "Implement bounded frame parsing, stable hello negotiation, typed requests and receipts, operation-specific field validation, and the controller and inherited channel roles.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "A mismatched release or version cannot issue a lifecycle command",
+      "Lease, update and drain fields are accepted only for the documented operations"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Wrong peer, root and generation"
+      },
+      {
+        "level": "unit",
+        "name": "Protocol version, frame bounds, channel role and request correlation"
+      },
+      {
+        "level": "unit",
+        "name": "Discriminated ownership-conflict, exit-unconfirmed, supervisor-unavailable and watchdog errors"
+      },
+      {
+        "level": "unit",
+        "name": "Lease token, channel and generation mismatch"
+      },
+      {
+        "level": "unit",
+        "name": "Update lock, version refusal and terminal outcome"
+      },
+      {
+        "level": "unit",
+        "name": "Missing, misplaced, reused and stale lease tokens"
+      },
+      {
+        "level": "unit",
+        "name": "Hello negotiates the highest common version and rejects peer identity mismatch, malformed hello and empty overlap"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

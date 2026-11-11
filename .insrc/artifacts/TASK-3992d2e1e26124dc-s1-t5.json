@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c47880f5-4758-4b62-8cc1-5ad85b48abeb",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T11:23:35.705Z",
+    "epicCreatedAt": "2026-11-10T04:52:20.369Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3992d2e1e26124dc",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Delegate the run-file guard for managed children",
+      "parent": {
+        "entityId": "STORY-3992d2e1e26124dc-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3992d2e1e26124dc-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-3992d2e1e26124dc-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "049e38c47d50a07268616549dd7402f8c8309a497f85b0b5e127bf572af34fcd",
+        "at": "2026-11-10T14:07:39.229Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-10T11:23:35.708Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Delegate the run-file guard for managed children",
+    "summary": "Have the supervisor own the existing guard and issue generation-scoped grants for child startup and listener close. Capture partial publication and reconcile only identity-proven files before releasing the guard.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Forced close and partial startup release the supervisor-owned guard only after verified reap and reconciliation",
+      "Foreign or orphan guard and legacy Linux behavior remain fail-closed"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Guarded stale run files and replacement ownership"
+      },
+      {
+        "level": "unit",
+        "name": "Run-file mutation rejects a mismatched grant, channel or generation"
+      },
+      {
+        "level": "unit",
+        "name": "Partially published run files stay fenced while startup reap is unconfirmed"
+      },
+      {
+        "level": "unit",
+        "name": "Repeated or stale lease release cannot change the physical run-file guard"
+      },
+      {
+        "level": "unit",
+        "name": "Queued release before and after escalation preserves shutdown guard"
+      },
+      {
+        "level": "integration",
+        "name": "Kill startup child before PID, after PID, and after socket publication before ready"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-01c49a83-f801-4a3b-b3a1-8ea9f20730e9",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T18:01:41.646Z",
+    "epicCreatedAt": "2026-11-10T17:43:51.648Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3ec4189b758be646",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Failure diagnostics carry real backend detail",
+      "parent": {
+        "entityId": "STORY-3ec4189b758be646-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3ec4189b758be646-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-3ec4189b758be646-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-3ec4189b758be646-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "d8e073db4b59af88186f7ec6593b3ac9bcc43d27d52685d81b2901221403c854",
+        "at": "2026-11-10T18:01:41.656Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-10T18:01:41.661Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Failure diagnostics carry real backend detail",
+    "summary": "Failure diagnostics carry backend detail: spawn/crash failures record the real stderr line (and preflight failures the OllamaTargetError cause) in the diagnostic snapshot, fixing the checkpoint's lost backend response.",
+    "size": "S",
+    "order": 8,
+    "acceptanceChecks": [
+      "parser.failure('spawn_failed'|'cli_exit') detail includes the real stderr error line / OllamaTargetError cause alongside the generic",
+      "checkpoint diagnostic snapshot carries the backend detail (not bare NATIVE_CLI_FAILURE)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "T12-failure-diagnostic-carries-backend-detail"
+      },
+      {
+        "level": "integration",
+        "name": "T1-ollama-activity-coordinator-dispatch-env-capture"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

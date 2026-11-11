@@ -1,0 +1,297 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 4,
+        "contentHash": "a12ebf4142c112ab622880a5b08094e17b076ac99cadc1591e60ef5fc2f15b88",
+        "at": "2026-11-11T12:45:34.152Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "206db3426ffd4428",
+    "storyId": "s2",
+    "createdAt": "2026-11-11T12:19:05.191Z",
+    "updatedAt": "2026-11-11T12:45:34.126Z",
+    "epicCreatedAt": "2026-11-09T06:00:04.355Z",
+    "epicSlug": "show-long-running-task-progress-chat",
+    "revision": 4
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "960da97bc",
+        "ranAt": "2026-11-11T12:19:05.191Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "S2 workflow measurements count provider output chunks and preserve legacy token batches",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/executor-measurements.test.ts",
+                "title": "S2 workflow measurements count provider output chunks and preserve legacy token batches",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S2 analysis measurements ignore previews and isolate nested task identities",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/executor-measurements.test.ts",
+                "title": "S2 analysis measurements ignore previews and isolate nested task identities",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/task-progress/__tests__/executor-measurements.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1954,
+            "titles": [
+              {
+                "title": "S2 workflow measurements count provider output chunks and preserve legacy token batches",
+                "result": "pass"
+              },
+              {
+                "title": "S2 analysis measurements ignore previews and isolate nested task identities",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "dfa56cd4b",
+        "ranAt": "2026-11-11T12:28:54.973Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "S2 producer relay admits only a verified project origin and worker attempt",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/executor-relay.test.ts",
+                "title": "S2 producer relay admits only a verified project origin and worker attempt",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S2 producer relay preserves early terminal evidence and releases unresolved admissions",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/executor-relay.test.ts",
+                "title": "S2 producer relay preserves early terminal evidence and releases unresolved admissions",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S2 quiet owner renews activity and worker loss fences stale evidence",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/executor-relay.test.ts",
+                "title": "S2 quiet owner renews activity and worker loss fences stale evidence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/task-progress/__tests__/executor-relay.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1070,
+            "titles": [
+              {
+                "title": "S2 producer relay admits only a verified project origin and worker attempt",
+                "result": "pass"
+              },
+              {
+                "title": "S2 producer relay preserves early terminal evidence and releases unresolved admissions",
+                "result": "pass"
+              },
+              {
+                "title": "S2 quiet owner renews activity and worker loss fences stale evidence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "76ee13aa4",
+        "ranAt": "2026-11-11T12:37:48.459Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "S2 workflow progress preserves streaming frames and terminal result",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/executor-relay.test.ts",
+                "title": "S2 workflow progress preserves streaming frames and terminal result",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S2 detached workflow preserves poll cursor and abort behavior across observer loss",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/executor-relay.test.ts",
+                "title": "S2 detached workflow preserves poll cursor and abort behavior across observer loss",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/task-progress/__tests__/executor-relay.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 21086,
+            "titles": [
+              {
+                "title": "S2 producer relay admits only a verified project origin and worker attempt",
+                "result": "pass"
+              },
+              {
+                "title": "S2 workflow progress preserves streaming frames and terminal result",
+                "result": "pass"
+              },
+              {
+                "title": "S2 detached workflow preserves poll cursor and abort behavior across observer loss",
+                "result": "pass"
+              },
+              {
+                "title": "S2 producer relay preserves early terminal evidence and releases unresolved admissions",
+                "result": "pass"
+              },
+              {
+                "title": "S2 quiet owner renews activity and worker loss fences stale evidence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "61f7b29ab",
+        "ranAt": "2026-11-11T12:45:34.126Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "S2 analysis progress preserves stage frames and the analyze.result then done sequence",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/executor-relay.test.ts",
+                "title": "S2 analysis progress preserves stage frames and the analyze.result then done sequence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S2 analysis preserves cached completion cancellation and persisted status",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/executor-relay.test.ts",
+                "title": "S2 analysis preserves cached completion cancellation and persisted status",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/task-progress/__tests__/executor-relay.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3869,
+            "titles": [
+              {
+                "title": "S2 producer relay admits only a verified project origin and worker attempt",
+                "result": "pass"
+              },
+              {
+                "title": "S2 workflow progress preserves streaming frames and terminal result",
+                "result": "pass"
+              },
+              {
+                "title": "S2 detached workflow preserves poll cursor and abort behavior across observer loss",
+                "result": "pass"
+              },
+              {
+                "title": "S2 producer relay preserves early terminal evidence and releases unresolved admissions",
+                "result": "pass"
+              },
+              {
+                "title": "S2 quiet owner renews activity and worker loss fences stale evidence",
+                "result": "pass"
+              },
+              {
+                "title": "S2 analysis progress preserves stage frames and the analyze.result then done sequence",
+                "result": "pass"
+              },
+              {
+                "title": "S2 analysis preserves cached completion cancellation and persisted status",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

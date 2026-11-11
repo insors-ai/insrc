@@ -1,0 +1,117 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-94ad85f7-5720-487f-adbc-27458706b947",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T11:23:35.714Z",
+    "epicCreatedAt": "2026-11-10T04:52:20.369Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3992d2e1e26124dc",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Route installed shell and TUI lifecycle through the supervisor",
+      "parent": {
+        "entityId": "STORY-3992d2e1e26124dc-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3992d2e1e26124dc-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-3992d2e1e26124dc-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-3992d2e1e26124dc-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-3992d2e1e26124dc-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-3992d2e1e26124dc-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "631a9951adebc3143a6029ef15c5328f5052078d144ba6ab3a0499682bcaa822",
+        "at": "2026-11-10T14:07:39.244Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-10T11:23:35.716Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Route installed shell and TUI lifecycle through the supervisor",
+    "summary": "Use one predecessor-bound restart in both entry points, stage the per-user launch job and require verified quiescence for legacy cutover. Add status and operator recovery access independent of a live daemon. Keep installed activation gated on end-to-end rollout readiness.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "Start, stop and restart share the installation gate and do not issue a second stop",
+      "CLI status shows recovery state when the daemon socket is unavailable"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Normal CLI and shell restart"
+      },
+      {
+        "level": "integration",
+        "name": "Supervisor loss, concurrent restart and stale files"
+      },
+      {
+        "level": "integration",
+        "name": "Managed Darwin never invokes the Mach broker from either the controller or shutdown watchdog"
+      },
+      {
+        "level": "integration",
+        "name": "Installed controller refuses a verified job belonging to another test root"
+      },
+      {
+        "level": "integration",
+        "name": "Kill the supervisor while it owns the guard and verify fail-closed operator recovery"
+      },
+      {
+        "level": "integration",
+        "name": "Installed shell restart sends one stop and one start bound to the same predecessor"
+      },
+      {
+        "level": "integration",
+        "name": "Race competing start, stop, raw shutdown and update against both supervisor versions"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

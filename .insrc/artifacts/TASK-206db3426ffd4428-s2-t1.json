@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-efa3853d-b795-440c-b201-07fb59bb4051",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T12:13:08.909Z",
+    "epicCreatedAt": "2026-11-09T06:00:04.355Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "206db3426ffd4428",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Define and validate workflow and analysis measurements",
+      "parent": {
+        "entityId": "STORY-206db3426ffd4428-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-206db3426ffd4428-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#156",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "ffe2510338d26c5b01ec5cb3e2b55708818a2cf8b485140565f2ded23d08be00",
+        "at": "2026-11-11T12:13:08.912Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T12:13:08.914Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Define and validate workflow and analysis measurements",
+    "summary": "Add closed sc4 detail schemas and run-local mapping for the existing workflow callbacks and typed analysis events. Feed the production runtime validators and register both producer ports.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Both detail types pass S1 runtime validation and use closed, bounded identifiers. Unsupported or malformed measurements remain unknown.",
+      "Workflow callback counts use output-chunks with unknown total. The legacy token batching and tail remain unchanged. Analysis preview text never becomes progress or a count.",
+      "Workflow stage position does not use legacy event indexes. Analysis positions, if available, count completed work within the same plan. Duplicate or nested task IDs must not corrupt the count."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "S2 workflow measurements count provider output chunks and preserve legacy token batches"
+      },
+      {
+        "level": "unit",
+        "name": "S2 analysis measurements ignore previews and isolate nested task identities"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0d5b8293-6214-417d-860a-aac1d56d5deb",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T12:08:25.364Z",
+    "epicCreatedAt": "2026-11-11T05:24:15.548Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "66d4d41d99f805af",
+    "storyId": "s1",
+    "envelope": {
+      "description": "pathChanges source method",
+      "parent": {
+        "entityId": "STORY-66d4d41d99f805af-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-66d4d41d99f805af-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-66d4d41d99f805af-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c61522d49301c7edb16001a319d7905e710a9778133f95dbe353fba9b7224059",
+        "at": "2026-11-11T12:08:25.364Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T12:08:25.375Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "pathChanges source method",
+    "summary": "Add required pathChanges(from, to, path) to ReviewSources; implement it in RegistryReviewSources through git_path_history { cwd: this.deps.repoPath, rev: from..to, path, fullHistory: true } with full-OID validation and field 'source' errors; wrap it in boundedProjectionSources (cached per [from,to,path], one budget.read per uncached call); bind it in every ReviewSources test literal. pathContinuity is not changed yet.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "A failed listing, a non-hexadecimal sha, or a sha whose length differs from the from/to OIDs raises TaskReviewInputError with field source.",
+      "Every existing task-review test that builds a ReviewSources literal still passes with pathChanges bound."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "pathChanges lists the commits that changed the path and refuses a failed or malformed listing as a source error"
+      },
+      {
+        "level": "integration",
+        "name": "boundedProjectionSources caches pathChanges and charges one read per uncached listing"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

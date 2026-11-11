@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c8e8a95b-595a-4231-a00d-2a882f8ae847",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T12:08:25.361Z",
+    "epicCreatedAt": "2026-11-11T05:24:15.548Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "66d4d41d99f805af",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Full-history option on git_path_history",
+      "parent": {
+        "entityId": "STORY-66d4d41d99f805af-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-66d4d41d99f805af-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d29f9fefb84e45294989af22aeddca820a482a7068861516c5b24929b82848a6",
+        "at": "2026-11-11T12:08:25.361Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T12:08:25.362Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Full-history option on git_path_history",
+    "summary": "Add the optional fullHistory boolean to git_path_history's input schema; when true pass --full-history. Default argv unchanged.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "With fullHistory the tool lists a side-branch deletion and both merge kinds that default history omits.",
+      "Without fullHistory the argv and output are unchanged."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "fullHistory lists a side-branch deletion and the merge that default history omits"
+      },
+      {
+        "level": "unit",
+        "name": "without fullHistory the listing is unchanged"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

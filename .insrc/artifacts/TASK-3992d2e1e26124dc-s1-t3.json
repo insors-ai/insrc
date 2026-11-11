@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9c24e135-b44b-4a9f-842a-05ad10ee911a",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T11:23:35.697Z",
+    "epicCreatedAt": "2026-11-10T04:52:20.369Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3992d2e1e26124dc",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement the installation mutation gate and journal",
+      "parent": {
+        "entityId": "STORY-3992d2e1e26124dc-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3992d2e1e26124dc-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-3992d2e1e26124dc-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-3992d2e1e26124dc-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "84b8f0a80a528f044170ff634eaa80f9aa856bfe04dc1006518ceda2f48855c9",
+        "at": "2026-11-10T14:07:39.214Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-10T11:23:35.699Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Implement the installation mutation gate and journal",
+    "summary": "Add installation-local arbitration, durable controller identity and reservations, transaction stages and recovery decisions. Serialize ordinary restart as a single reservation. Bind each mutation to the current owner and update ID where applicable.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Stale sockets, reused owner PID, unrelated controllers and orphan reservations cannot mutate",
+      "Recovery branches on the matching durable outcome before any destructive action"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Durable update reservation blocks competing mutations and binds the owner"
+      },
+      {
+        "level": "unit",
+        "name": "Admission rejects foreign update IDs, owner PID reuse and connections opened before lease publication"
+      },
+      {
+        "level": "unit",
+        "name": "Recovery classification distinguishes uncommitted, committed, rolled-back and fenced transactions"
+      },
+      {
+        "level": "integration",
+        "name": "Two independent processes cannot reserve the same installation or clear an unverified orphan reservation"
+      },
+      {
+        "level": "integration",
+        "name": "Controller death releases short arbitration but preserves the durable reservation"
+      },
+      {
+        "level": "integration",
+        "name": "Public lifecycle admission remains busy while an update owns the installation"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

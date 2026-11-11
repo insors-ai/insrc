@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-fa5ff497-8204-44dd-93f0-92038ae23deb",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T12:13:08.949Z",
+    "epicCreatedAt": "2026-11-09T06:00:04.355Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "206db3426ffd4428",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Wire analysis execution owner",
+      "parent": {
+        "entityId": "STORY-206db3426ffd4428-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-206db3426ffd4428-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-206db3426ffd4428-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#159",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "756e22be587cd8409589784c1b2dd9bff487040c60a700fa239f1810f307dd1f",
+        "at": "2026-11-11T12:13:08.949Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T12:13:08.954Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire analysis execution owner",
+    "summary": "Connect analyze.run.start to the analysis delegate at the existing typed event and result seams. Preserve analysis persistence and status retrieval.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Legacy stage mapping and analyze.result/done ordering remain compatible. analyze.run.status returns the existing persisted result.",
+      "Typed stage and task events feed the delegate. Preview and tool text, nested analysis and controller steps do not add progress observations. Cached completion and typed cancellation use the actual result.",
+      "Invalid launches, an unexpected throw, disconnect and a race with completion preserve legacy semantics and do not fabricate successful progress."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "S2 analysis progress preserves stage frames and the analyze.result then done sequence"
+      },
+      {
+        "level": "integration",
+        "name": "S2 analysis preserves cached completion cancellation and persisted status"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

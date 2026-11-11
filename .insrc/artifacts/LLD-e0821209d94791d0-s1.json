@@ -30,7 +30,7 @@
     "triageRationale": "One webview module, one obvious approach: the history menu trailing new… row is removed and a dedicated button is placed before .histchip, reusing the .pico icon slot and the existing newChatPick() message; the host new-chat contract is untouched. Two files change: chat-panel.ts and chat-panel.test.ts.",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "approved",
+      "status": "completed",
       "revision": {
         "number": 2,
         "contentHash": "bf0ebebcf6fd3754dfaa2e824bc354608a9095f06dec82f645d73e39fa173eda",

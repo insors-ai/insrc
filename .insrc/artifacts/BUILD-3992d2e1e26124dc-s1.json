@@ -1,0 +1,558 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 14,
+        "contentHash": "499da38f83d68d7e30351c4aed44fa38ad76f01a15bf43d91cdb42fa71ff7829",
+        "at": "2026-11-10T17:40:24.896Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 14,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-10T19:26:27.373Z",
+        "override": {
+          "reason": "User explicitly approved BUILD-3992d2e1e26124dc-s1 with these recorded gaps: T1–T12 passed validation, all eight disposable Apple Silicon installed smoke checks and all 21 OrbStack Linux regressions passed, and the follow-up privacy inventory fix passed 12 focused tests and independent review. The full backend regression sweep remains red, with 576 recorded failures across the interrupted and resumed run and residual failures still unclassified. T13 validation and this restart story’s independent completion review remain pending. This override is for BUILD artifact approval; production rollout qualification remains a separate gate."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-71b20994-cb84-4822-8ff4-c3ca4d73b8af",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T11:27:18.492Z",
+    "epicCreatedAt": "2026-11-10T04:52:20.369Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3992d2e1e26124dc",
+    "storyId": "s1",
+    "revision": 14,
+    "updatedAt": "2026-11-10T17:38:41.765Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "restore-reliable-daemon-restart-macos"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      },
+      {
+        "id": "t9",
+        "passed": true
+      },
+      {
+        "id": "t10",
+        "passed": true
+      },
+      {
+        "id": "t11",
+        "passed": true
+      },
+      {
+        "id": "t12",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/standalone/restore-reliable-daemon-restart-macos-E202611103992d2e1/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/shared/__tests__/daemon-supervisor-protocol.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/daemon-supervisor-protocol.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "build-process-broker.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/native/darwin-lifecycle/identity.c"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/__tests__/darwin-lifecycle.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/darwin-lifecycle.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/__tests__/installation-mutation-gate.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/installation-mutation-gate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/daemon-supervisor.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/supervisor-socket.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/supervisor.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/supervisor-run-files.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/run-file-ownership.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/supervisor-run-files.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/daemon-run-files.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/managed-daemon-lifecycle.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/admin-handlers.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/handler-runtime.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/managed-daemon-lifecycle.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/shutdown.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/admin-worker.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/main-services.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/restore-reliable-daemon-restart-macos-E202611103992d2e1/S001/test-evidence/t6-orbstack-linux.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "scripts/daemon-ctl.sh"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/bin/insrc-daemon-control.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/bin/insrc-daemon-supervisor.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/__tests__/managed-daemon-control.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/daemon.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/maintenance.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/managed-daemon-control.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/managed-daemon-installation.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/release-compatibility.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/managed-daemon-probation.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/release-compatibility.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/fixtures/managed-update-launch-child.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/managed-update-handoff.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/managed-update-handoff.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/managed-update-launch.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/request-context.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/server.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/bin/insrc-daemon-update.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/managed-update-transaction.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/managed-update-recovery.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/managed-update-transaction.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/legacy-daemon-cutover.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/legacy-daemon-cutover.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/legacy-launch-job.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/fixtures/managed-update-ipc-detached.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/managed-update-ipc.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/managed-update-ipc.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/update-runner.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/__tests__/managed-update-confirmation-gradle.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/freshness/DaemonFreshnessFlow.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpcParseTest.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/freshness/DaemonFreshnessFlowTest.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/__tests__/ipc-client.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/ipc-client.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/freshness/__tests__/daemon-freshness.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/freshness/daemon-freshness.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-10T17:38:41.765Z"
+      }
+    ],
+    "commit": "660ea82e3",
+    "summary": "Both IDEs correlate managed outcomes by update ID and preserve legacy confirmation. The JetBrains targeted bridge compiles freshness and transport tests in isolation because pre-existing tracker-settings test fixtures fail the wider compile."
+  },
+  "citations": []
+}

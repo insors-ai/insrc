@@ -1,0 +1,105 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a13c9d26-715f-47f5-b126-700de7a436ff",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T11:23:35.692Z",
+    "epicCreatedAt": "2026-11-10T04:52:20.369Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3992d2e1e26124dc",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add Darwin job and peer identity primitives",
+      "parent": {
+        "entityId": "STORY-3992d2e1e26124dc-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3992d2e1e26124dc-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "220355abe05034aea4474c3685389a6c8de69dbc7fac8dd9fcced63004e168f1",
+        "at": "2026-11-10T14:07:39.205Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-10T11:23:35.694Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Add Darwin job and peer identity primitives",
+    "summary": "Implement the narrow Darwin support for Unix peer PID and UID, process incarnation, read-only exit observation and verified per-user launch-job ownership. Package the platform-specific entry points and keep the Linux process broker unchanged.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Peer mismatch, reused PID, wrong launch domain and unverified job removal fail closed",
+      "Darwin observations work without a Mach task right and Linux packaging remains intact"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Compares peer identity and scopes job labels by installation root"
+      },
+      {
+        "level": "unit",
+        "name": "Validates idle job evidence and refuses the wrong domain or relative program"
+      },
+      {
+        "level": "unit",
+        "name": "Rejects a reused PID with a different start incarnation"
+      },
+      {
+        "level": "integration",
+        "name": "Legacy exit observation rejects PID reuse, owner mismatch and timeout without invoking the Mach broker"
+      },
+      {
+        "level": "integration",
+        "name": "Uses separate labels for test roots and rejects a foreign registered root"
+      },
+      {
+        "level": "integration",
+        "name": "Legacy socket peer UID or PID differs from the registered process incarnation"
+      },
+      {
+        "level": "unit",
+        "name": "Rejects a foreign peer PID or executable"
+      },
+      {
+        "level": "integration",
+        "name": "Verifies recovery job registration against the pinned descriptor and argv"
+      },
+      {
+        "level": "integration",
+        "name": "Observes exact exit of a disposable child with the read-only Darwin helper"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

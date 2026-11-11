@@ -2353,6 +2353,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `.chatbtn:focus-visible{outline:1px solid var(--focus);outline-offset:1px;}` +
       `.chatbtn .chatlbl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}` +
       `.chatbtn .chev{opacity:.6;font-size:10px;}` +
+      // Story e0821209d94791d0/s1: the dedicated new-chat button left of the history chip — same
+      // ground/border/radius as .histchip, icon-only, glyph in the shared .pico 14px slot.
+      `.newchatbtn{display:inline-flex;align-items:center;justify-content:center;padding:3px 5px;margin:0 6px 0 0;background:var(--dropdown-bg);border:1px solid var(--dropdown-border);border-radius:6px;color:var(--fg);cursor:pointer;}` +
+      `.newchatbtn:hover{color:var(--accent);}` +
+      `.newchatbtn:focus-visible{outline:1px solid var(--focus);outline-offset:1px;}` +
       `.chatmenu{bottom:auto;right:auto;top:calc(100% + 6px);left:0;width:auto;min-width:min(220px,calc(100vw - 28px));max-width:min(360px,calc(100vw - 28px));max-height:min(300px,50vh);overflow:auto;}` +
       // The history chip is RIGHT-aligned: its menu must anchor to the chip's right edge and open
       // leftward, or the left-anchored .chatmenu default pushes it past the right viewport edge.
@@ -2524,6 +2529,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // S005: history-dropdown wiring (same one nonce'd script).
       `var cur='';var curProv='';` +
       `const hs=document.getElementById('insrc-history');` +
+      // Story e0821209d94791d0/s1: the new-chat chrome button left of .histchip posts the same new-chat.
+      `const nc=document.getElementById('insrc-newchat');` +
       `const actChip=document.getElementById('insrc-actchip');const act=document.getElementById('insrc-active');` +
       `const DOT={ 'waiting-input':'red', working:'yellow', done:'green' };` +
       // Story 546198e11c24c1e3/s1: the two chrome dropdowns are now custom button triggers + .popup
@@ -2554,7 +2561,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // Story 546198e11c24c1e3/s1: the chat dropdowns. The two triggers render from selected-id
       // membership (histChatFor/activeChatFor return the entry or undefined); the menus reuse mitem's
       // role=menuitem rows with a roving tabindex. Activation writes actSel/histSel optimistically and
-      // posts open-chat; the 'new…' row posts new-chat. reconcile() snaps BOTH selections to cur.
+      // posts open-chat; new-chat is posted by the #insrc-newchat chrome button. reconcile() snaps BOTH selections to cur.
       `function histChatFor(id){for(var i=0;i<histEntries.length;i++){if(histEntries[i].id===id)return histEntries[i];}return undefined;}` +
       `function activeChatFor(id){for(var i=0;i<actEntries.length;i++){if(actEntries[i].id===id)return actEntries[i];}return undefined;}` +
       `function chatTrig(e,label){return '<span class="pico">'+(e?pico(e.provider):'')+'</span><span class="chatlbl">'+rtext(label)+'</span><span class="chev">▾</span>';}` +
@@ -2565,11 +2572,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `function activeRow(c){var d=mitem(c.id===actSel,c.title||c.id,'●',function(){pickChat(c.id,act);},undefined,false,pico(c.provider));var s=d.querySelector('.sub');if(s)s.setAttribute('data-dot',DOT[c.status]||'green');return d;}` +
       `function historyRow(c){return mitem(c.id===histSel,c.title||c.id,undefined,function(){pickChat(c.id,hs);},undefined,false,pico(c.provider));}` +
       `function renderActiveMenu(){actMenu.innerHTML='';if(actEntries.length===0){actMenu.appendChild(mitem(false,'no active work',undefined,undefined,undefined,true,''));return;}for(var i=0;i<actEntries.length;i++)actMenu.appendChild(activeRow(actEntries[i]));}` +
-      `function renderHistoryMenu(){histMenu.innerHTML='';for(var i=0;i<histEntries.length;i++)histMenu.appendChild(historyRow(histEntries[i]));histMenu.appendChild(mitem(histSel==='','new…','starts a new chat',function(){newChatPick(hs);},undefined,false,''));}` +
+      // Story e0821209d94791d0/s1: the menu lists persisted chats only — new-chat moved to the #insrc-newchat chrome button.
+      `function renderHistoryMenu(){histMenu.innerHTML='';for(var i=0;i<histEntries.length;i++)histMenu.appendChild(historyRow(histEntries[i]));}` +
       `function chatRows(menu){var out=[];for(var i=0;i<menu.children.length;i++){var c=menu.children[i];if(c.getAttribute&&c.getAttribute('role')==='menuitem'&&c.getAttribute('aria-disabled')!=='true')out.push(c);}return out;}` +
       `function focusRow(rows,row,keep){for(var i=0;i<rows.length;i++)rows[i].setAttribute('tabindex',rows[i]===row?'0':'-1');chatFocused=row;if(row&&row.focus){if(keep)row.focus({preventScroll:true});else row.focus();}}` +
       // ISSUE-0d3939248a956860: opening a menu shows its top (the most recent chats) and focuses its
-      // selected row WITHOUT scrolling to it. Focusing the trailing 'new…' row of a fresh chat used
+      // selected row WITHOUT scrolling to it. Focusing the selected row of a fresh chat used
       // to scroll it to its oldest entries, and a hidden menu keeps the offset it was closed at.
       // Arrow keys still scroll to the row they move to.
       `function focusMenu(menu){var rows=chatRows(menu);var sel=null;for(var i=0;i<rows.length;i++){if((' '+(rows[i].className||'')+' ').indexOf(' sel ')>=0){sel=rows[i];break;}}var target=sel||rows[0]||null;if(target)focusRow(rows,target,true);else chatFocused=null;menu.scrollTop=0;}` +
@@ -2578,6 +2586,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `function chatMenuKey(trigger,menu,e){var rows=chatRows(menu);if(e.key==='Escape'){if(e.stopPropagation)e.stopPropagation();closePops();if(trigger&&trigger.focus)trigger.focus();return;}if(e.key==='Tab'){closePops();return;}if(!rows.length)return;var idx=-1;for(var i=0;i<rows.length;i++){if(rows[i]===chatFocused){idx=i;break;}}if(e.key==='ArrowDown'){if(e.preventDefault)e.preventDefault();if(e.stopPropagation)e.stopPropagation();idx=(idx+1)%rows.length;focusRow(rows,rows[idx]);}else if(e.key==='ArrowUp'){if(e.preventDefault)e.preventDefault();if(e.stopPropagation)e.stopPropagation();idx=(idx-1+rows.length)%rows.length;focusRow(rows,rows[idx]);}else if(e.key==='Home'){if(e.preventDefault)e.preventDefault();if(e.stopPropagation)e.stopPropagation();focusRow(rows,rows[0]);}else if(e.key==='End'){if(e.preventDefault)e.preventDefault();if(e.stopPropagation)e.stopPropagation();focusRow(rows,rows[rows.length-1]);}else if(e.key==='Enter'||e.key===' '){if(e.preventDefault)e.preventDefault();if(e.stopPropagation)e.stopPropagation();var r=rows[idx<0?0:idx];if(r&&r.onclick)r.onclick();}}` +
       `if(act)act.addEventListener('click',function(e){if(e&&e.stopPropagation)e.stopPropagation();toggleChatMenu(act,actMenu,renderActiveMenu);});` +
       `if(hs)hs.addEventListener('click',function(e){if(e&&e.stopPropagation)e.stopPropagation();toggleChatMenu(hs,histMenu,renderHistoryMenu);});` +
+      `if(nc)nc.addEventListener('click',function(e){if(e&&e.stopPropagation)e.stopPropagation();newChatPick(nc);});` +
       `function triggerKey(trigger,menu,render,e){if(e.key==='Enter'||e.key===' '){if(e.preventDefault)e.preventDefault();toggleChatMenu(trigger,menu,render);}else if(e.key==='ArrowDown'||e.key==='ArrowUp'){if(e.preventDefault)e.preventDefault();closePops();openChatMenu(trigger,menu,render);}}` +
       `if(act)act.addEventListener('keydown',function(e){triggerKey(act,actMenu,renderActiveMenu,e);});` +
       `if(hs)hs.addEventListener('keydown',function(e){triggerKey(hs,histMenu,renderHistoryMenu,e);});` +
@@ -2748,7 +2757,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
             // E202611031bd72813:S001 t4: #insrc-active LEFT-aligned at the chrome start; the history
             // chip stays the sole control of .right (right-aligned).
             `<span class="actchip" id="insrc-actchip" data-urgent=""><button type="button" id="insrc-active" class="chatbtn" aria-haspopup="menu" aria-expanded="false" aria-label="active chats"><span class="pico"></span><span class="chatlbl">no active work</span><span class="chev">▾</span></button><div id="insrc-actmenu" class="popup chatmenu" role="menu" aria-label="active chats"></div></span>` +
-            `<span class="right"><span class="histchip"><button type="button" id="insrc-history" class="chatbtn ${histCls}" aria-haspopup="menu" aria-expanded="false" aria-label="session"><span class="pico"></span><span class="chatlbl">new…</span><span class="chev">▾</span></button><div id="insrc-histmenu" class="popup chatmenu" role="menu" aria-label="session"></div></span></span>` +
+            `<span class="right"><button type="button" id="insrc-newchat" class="newchatbtn" aria-label="new chat" title="new chat"><span class="pico"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M8 3C4.7 3 2 5.2 2 8s2.7 5 6 5c.6 0 1.2-.1 1.8-.2.9.5 1.9.8 3.2.9-.5-.7-.8-1.5-.9-2.2 1-.9 1.9-2.4 1.9-4.5C14 5.2 11.3 3 8 3Z"/><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" d="M8 6v4M6 8h4"/></svg></span></button><span class="histchip"><button type="button" id="insrc-history" class="chatbtn ${histCls}" aria-haspopup="menu" aria-expanded="false" aria-label="session"><span class="pico"></span><span class="chatlbl">new…</span><span class="chev">▾</span></button><div id="insrc-histmenu" class="popup chatmenu" role="menu" aria-label="session"></div></span></span>` +
       `</div>` +
       // Full-width bars (mock): the scrolling transcript, then the live progress bar, then the input
       // bar — each a flex:0 band with its own top border + inset ground, NOT inset inside a .pad.

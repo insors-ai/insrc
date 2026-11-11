@@ -2010,12 +2010,16 @@ test('run-config popup bootstrap: catalog parse + button wiring posts new-chat /
 
 test('regression: the history trigger still opens/new-chats, and session-restored still clears + replays', () => {
   const html = fidelityHtml();
-  // Picking a persisted session posts open-chat; picking 'new…' posts new-chat with the current
-  // provider (curProv). pickChat/newChatPick are the two message splits.
+  // Picking a persisted session posts open-chat; the chrome new-chat button posts new-chat with the
+  // current provider (curProv). pickChat/newChatPick are the two message splits.
   assert.match(html, /function pickChat\(id,trigger\)/, 'pickChat() exists (persisted row activation)');
   assert.match(html, /type:'open-chat',chatId:id/, 'a picked session posts open-chat');
-  assert.match(html, /function newChatPick\(trigger\)/, "newChatPick() exists (the 'new…' row)");
-  assert.match(html, /type:'new-chat',provider:curProv\|\|''/, "'new…' posts new-chat with the current provider");
+  assert.match(html, /function newChatPick\(trigger\)/, 'newChatPick() exists (the #insrc-newchat button)');
+  assert.match(html, /type:'new-chat',provider:curProv\|\|''/, 'newChatPick posts new-chat with the current provider');
+  // Story e0821209d94791d0/s1: the history menu lists persisted chats only; the new-chat affordance
+  // is the #insrc-newchat chrome button left of .histchip, wired to newChatPick(nc).
+  assert.match(html, /function renderHistoryMenu\(\)\{histMenu\.innerHTML='';for\(var i=0;i<histEntries\.length;i\+\+\)histMenu\.appendChild\(historyRow\(histEntries\[i\]\)\);\}/, 'renderHistoryMenu lists persisted rows only — no new… row');
+  assert.match(html, /if\(nc\)nc\.addEventListener\('click',function\(e\)\{if\(e&&e\.stopPropagation\)e\.stopPropagation\(\);newChatPick\(nc\);\}\)/, 'the #insrc-newchat button click posts new-chat via newChatPick(nc)');
   // session-restored still clears, resets keys and replays.
   assert.match(html, /t\.textContent='';reg\.resetKeys\(\);var _rows=m\.transcript\|\|\[\]/, 'session-restored still clears, resets keys and replays the transcript');
   assert.match(html, /_rows\.forEach\(function\(x,i\)/, 'every posted row is replayed');
@@ -2335,6 +2339,14 @@ test('UI: the #insrc-history session dropdown carries a leading history/clock gl
   // Story E202610137fefc3fc:S001: the chip is a wrapper around the select, and the glyph is a mask
   // in the chip's ::before, filled with the current text colour so it follows the theme.
   assert.match(html, /<span class="histchip"><button type="button" id="insrc-history" class="chatbtn [^"]*" aria-haspopup="menu"[^>]*><span class="pico"><\/span><span class="chatlbl">new…<\/span>/, 'one wrapper holds the trigger button');
+  // Story e0821209d94791d0/s1: the new-chat button sits inside .right BEFORE the history chip and
+  // carries the bubble-plus inline SVG in its .pico slot.
+  const rightAt = html.indexOf('class="right"');
+  const ncAt = html.indexOf('id="insrc-newchat"');
+  const chipAt = html.indexOf('<span class="histchip">');
+  assert.ok(rightAt !== -1 && ncAt > rightAt && ncAt < chipAt, '#insrc-newchat sits left of .histchip inside .right');
+  assert.match(html, /<button type="button" id="insrc-newchat" class="newchatbtn" aria-label="new chat" title="new chat"><span class="pico"><svg viewBox="0 0 16 16"/, 'the new-chat button carries an inline SVG in its .pico slot');
+  assert.match(html, /M8 6v4M6 8h4/, 'the icon carries the plus strokes (bubble-plus glyph)');
   const rule = html.slice(html.indexOf('.histchip{'));
   const decl = rule.slice(0, rule.indexOf('}') + 1);
   const icon = /\.histchip::before\{([^}]*)\}/.exec(html);

@@ -883,7 +883,7 @@ test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): a rendered menu
   // The history menu's persisted-chat rows carry the same real per-row SVG (historyRow -> pico()).
   fire(hs, 'click');
   const histMenu = v.el('insrc-histmenu');
-  assert.equal(histMenu.children.length, 3, 'two history rows + the new… row');
+  assert.equal(histMenu.children.length, 2, 'two history rows only — Story e0821209d94791d0/s1 moved new-chat to the chrome button');
   assert.ok(histMenu.children[0]!.innerHTML.includes(PROVIDER_ICON_SVGS.claude), 'history row A inlines the Claude SVG');
   assert.ok(histMenu.children[1]!.innerHTML.includes(PROVIDER_ICON_SVGS.codex), 'history row B inlines the Codex SVG');
 
@@ -917,16 +917,17 @@ test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): activating a ro
   assert.ok(act.innerHTML.includes(PROVIDER_ICON_SVGS.codex), 'with the Codex icon');
   assert.ok(hs.innerHTML.includes('Chat B'), 'the history trigger re-rendered optimistically');
 
-  // The history menu's trailing 'new…' row posts new-chat (subject 5 history activation).
+  // Story e0821209d94791d0/s1: the history menu has no new… row; the #insrc-newchat chrome button
+  // posts new-chat (subject 5 history activation).
   fire(hs, 'click');
   const histMenu = v.el('insrc-histmenu');
-  const newRow = histMenu.children.at(-1)!;
-  assert.equal(newRow.querySelector('.lbl')!.textContent, 'new…', 'the last history row is new…');
-  (newRow as unknown as { onclick: () => void }).onclick();
+  assert.equal(histMenu.children.length, 2, 'persisted rows only — no new… row');
+  const nc = v.el('insrc-newchat');
+  fire(nc, 'click');
   assert.deepEqual(v.sent.at(-1), { type: 'new-chat', provider: '' });
 });
 
-test('ISSUE-0d3939248a956860: opening the history menu on a fresh (draft) chat focuses the trailing new… row WITHOUT scrolling to it; arrow keys still scroll', () => {
+test('ISSUE-0d3939248a956860: opening the history menu on a fresh (draft) chat focuses the TOP row WITHOUT scrolling to it; arrow keys still scroll', () => {
   // Where the menu then sits is layout, which this fake DOM does not model:
   // history-menu-browser.live.test.ts checks it in a real browser.
   const v = runShell();
@@ -936,15 +937,15 @@ test('ISSUE-0d3939248a956860: opening the history menu on a fresh (draft) chat f
 
   fire(hs, 'click');
   const rows = histMenu.children;
-  const newRow = rows.at(-1)!;
-  assert.equal(newRow.querySelector('.lbl')!.textContent, 'new…', 'the selected row of a draft is the trailing new…');
-  assert.equal(newRow.getAttribute('tabindex'), '0', 'it carries the roving focus');
+  assert.equal(rows.length, 2, 'persisted rows only — Story e0821209d94791d0/s1 removed the new… row');
+  const topRow = rows[0]!;
+  assert.equal(topRow.getAttribute('tabindex'), '0', 'the top row carries the roving focus');
   // The script runs in its own realm: compare the focus options by value, not by prototype.
-  assert.equal(JSON.stringify((newRow as unknown as { focusedWith: unknown }).focusedWith), '{"preventScroll":true}', 'focused without scrolling to it');
+  assert.equal(JSON.stringify((topRow as unknown as { focusedWith: unknown }).focusedWith), '{"preventScroll":true}', 'focused without scrolling to it');
 
   fire(histMenu, 'keydown', { key: 'ArrowDown', preventDefault() {}, stopPropagation() {} });
-  assert.equal(rows[0]!.getAttribute('tabindex'), '0', 'ArrowDown wraps to the most recent chat');
-  assert.equal((rows[0] as unknown as { focusedWith: unknown }).focusedWith, 'scroll', 'keyboard moves use a scrolling focus');
+  assert.equal(rows[1]!.getAttribute('tabindex'), '0', 'ArrowDown moves to the next chat');
+  assert.equal((rows[1] as unknown as { focusedWith: unknown }).focusedWith, 'scroll', 'keyboard moves use a scrolling focus');
 });
 
 test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): activating a persisted history row posts open-chat (not new-chat) even when that chat is absent from the active list', () => {
@@ -1123,17 +1124,13 @@ test("E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): the 'vibe' prov
   assert.ok(actMenu.children[1]!.innerHTML.includes(PROVIDER_ICON_SVGS.vibe), 'row B inlines the Vibe SVG');
 });
 
-test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): with a run-config provider set, the history new… row posts new-chat carrying that provider', () => {
+test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1; Story e0821209d94791d0/s1): with a run-config provider set, the #insrc-newchat button posts new-chat carrying that provider', () => {
   const v = runShell();
   v.msg({ type: 'active-list', chats: chatEntries('claude') });
   v.msg({ type: 'history-list', chats: chatEntries('claude') });
-  const hs = v.el('insrc-history');
   v.msg({ type: 'run-config', provider: 'codex', model: '', effort: '' });
-  fire(hs, 'click');
-  const histMenu = v.el('insrc-histmenu');
-  const newRow = histMenu.children.at(-1)!;
-  assert.equal(newRow.querySelector('.lbl')!.textContent, 'new…', 'the last history row is new…');
-  (newRow as unknown as { onclick: () => void }).onclick();
+  const nc = v.el('insrc-newchat');
+  fire(nc, 'click');
   assert.deepEqual(v.sent.at(-1), { type: 'new-chat', provider: 'codex' });
 });
 

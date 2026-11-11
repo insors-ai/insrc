@@ -33,7 +33,7 @@ async function verifyReady(socketPath: string, pid: number, uid: number): Promis
 			else void readDarwinPeerCredentials(fd).then(resolvePeer, rejectPeer);
 		});
 		return socket;
-	}, { timeoutMs: 2_000 });
+	}, { timeoutMs: 12_000 });
 	const [status, credentials] = await Promise.all([result, peer]);
 	if (status === null || typeof status !== 'object' || credentials.pid !== pid || credentials.uid !== uid) {
 		throw new Error('status socket does not belong to the managed child');

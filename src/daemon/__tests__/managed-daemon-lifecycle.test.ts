@@ -151,10 +151,11 @@ const shutdown = createShutdown({
 lifecycle.setShutdownHandler(shutdown);
 process.on('SIGTERM', () => lifecycle.signal('SIGTERM', kill));
 await lifecycle.ready();
+writeFileSync(root + '/ready-acknowledged', 'ready');
 `;
 }
 
-async function setup(t: TestContext, mode: Mode = 'normal', threaded = false) {
+async function setup(t: TestContext, mode: Mode = 'normal', threaded = false, verifyReady = async () => {}) {
 	const root = mkdtempSync(join(scratch, 'root-'));
 	const gate = new InstallationMutationGate(root, helper);
 	const owner = await readDarwinIncarnation(process.pid, helper);
@@ -167,7 +168,7 @@ async function setup(t: TestContext, mode: Mode = 'normal', threaded = false) {
 	const supervisor = new DaemonSupervisor({
 		installation: gate, runFiles,
 		daemon: { runtime: process.execPath, entry, cwd: root, env: { ...process.env, NODE_OPTIONS: '--import ' + import.meta.resolve('tsx') } },
-		verifyReady: async () => {}, reconcileExit: generation => admission.reconciled(generation),
+		verifyReady, reconcileExit: generation => admission.reconciled(generation),
 		allowInitialStart: async () => true, publicArm: generation => admission.admit(generation),
 		shutdownMs: mode === 'normal' ? 3000 : 650,
 		spawnChild(config, generation, events) {
@@ -202,6 +203,13 @@ async function setup(t: TestContext, mode: Mode = 'normal', threaded = false) {
 	};
 	return { paths, root, gate, owner, call, state, start, stop };
 }
+
+test('Managed daemon accepts verified readiness beyond the normal watchdog reply deadline', integration, async t => {
+	const fixture = await setup(t, 'normal', false, async () => { await delay(2_250); });
+	const generation = await fixture.start();
+	await poll(() => existsSync(join(fixture.root, 'ready-acknowledged')) || undefined);
+	assert.equal((await fixture.stop(generation)).exit?.kind, 'graceful');
+});
 
 async function connected(t: TestContext, path: string): Promise<Socket> {
 	const client = createConnection(path);

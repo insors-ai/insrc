@@ -8,8 +8,7 @@ import type { Socket } from 'node:net';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { promisify } from 'node:util';
-import { matchesDarwinPeer, observeDarwinExit, readDarwinIncarnation, readDarwinPeerCredentials, verifyDarwinJobProcess } from '../shared/darwin-lifecycle.js';
-import { readProcessIdentity } from '../shared/daemon-process.js';
+import { matchesDarwinPeer, observeDarwinExit, readDarwinIncarnation, readDarwinLaunchContext, readDarwinPeerCredentials, verifyDarwinJobProcess } from '../shared/darwin-lifecycle.js';
 import { runFileIdentity, sameRunFile } from '../shared/daemon-run-files.js';
 import type { UpdatePredecessor } from '../shared/installation-mutation-gate.js';
 import { rpc } from '../shared/ipc-client.js';
@@ -72,6 +71,12 @@ export async function inspectLegacyJob(legacy: Legacy) {
 	return inspectPinnedLaunchJob(legacy.job);
 }
 
+export function matchesInstalledDaemonArguments(argv: readonly string[], runtime: string, entry: string): boolean {
+	if (argv[0] !== runtime && argv[0] !== 'node') return false;
+	return (argv.length === 2 && argv[1] === entry)
+		|| (argv.length === 4 && argv[1] === '--import' && argv[2] === 'tsx/esm' && argv[3] === entry);
+}
+
 /** The daemon must already have completed its cooperative drain. */
 export async function removeLegacyJob(legacy: Legacy, authorize: () => Promise<void>): Promise<void> {
 	const registered = await inspectLegacyJob(legacy);
@@ -105,9 +110,9 @@ export async function verifyLegacyService(legacy: Legacy, prior: ManagedInstalla
 	const text = (await readFile(paths.daemonPid, 'utf8')).trim();
 	if (!/^\d+$/.test(text)) throw new Error('legacy PID publication is invalid');
 	const target = await readDarwinIncarnation(Number(text));
-	const command = readProcessIdentity(target.pid)?.commandLine;
+	const context = await readDarwinLaunchContext(target.pid);
 	if (target.uid !== legacy.job.uid || await realpath(target.executable) !== prior.runtime
-		|| (command !== `${prior.runtime} ${legacy.entry}` && command !== `node ${legacy.entry}`)) {
+		|| context.cwd !== prior.releaseRoot || !matchesInstalledDaemonArguments(context.argv, prior.runtime, legacy.entry)) {
 		throw new Error('legacy daemon readiness belongs to a different release');
 	}
 	type Peer = Awaited<ReturnType<typeof readDarwinPeerCredentials>>;

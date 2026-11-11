@@ -10,6 +10,7 @@ import { matchesDarwinPeer, readDarwinIncarnation } from './darwin-lifecycle.js'
 import type { DarwinIncarnation, DarwinLaunchJob } from './darwin-lifecycle.js';
 import { SupervisorLifecycleError } from './daemon-supervisor-protocol.js';
 import type { ManagedInstallation } from './managed-daemon-installation.js';
+import type { RunFileIdentity } from './daemon-run-files.js';
 
 const HELPER = fileURLToPath(new URL('../../out/bin/insrc-darwin-lifecycle', import.meta.url));
 const MAX_BYTES = 128 * 1024;
@@ -23,6 +24,7 @@ export interface UpdatePredecessor {
 	readonly wasRunning: boolean;
 	readonly generation?: string | null;
 	readonly pins?: { readonly prior: ManagedInstallation; readonly candidate: ManagedInstallation };
+	readonly launch?: LegacyLaunchPin;
 	readonly legacy?: {
 		readonly job: DarwinLaunchJob;
 		readonly descriptorHash: string;
@@ -31,6 +33,11 @@ export interface UpdatePredecessor {
 		readonly baseline: ManagedInstallation;
 	};
 }
+
+export type LegacyLaunchPin =
+	| { readonly kind: 'direct' | 'job'; readonly process: DarwinIncarnation; readonly cwd: string;
+		readonly argv: readonly string[]; readonly pidFile: RunFileIdentity; readonly socketFile: RunFileIdentity }
+	| { readonly kind: 'stopped' };
 
 export type MutationRequest =
 	| { readonly kind: 'start'; readonly owner: DarwinIncarnation; readonly activation?: FreshActivation }
@@ -112,19 +119,37 @@ function validOwner(value: unknown): value is DarwinIncarnation {
 		&& text(value.startedAt) && text(value.executable) && isAbsolute(value.executable);
 }
 
+function validLegacyLaunch(value: unknown): value is LegacyLaunchPin {
+	if (!object(value)) return false;
+	if (value.kind === 'stopped') return Object.keys(value).length === 1;
+	const file = (entry: unknown) => object(entry)
+		&& ['dev', 'ino', 'ctimeNs', 'mtimeNs', 'size'].every(key => typeof entry[key] === 'string' && /^\d+$/.test(entry[key]));
+	return (value.kind === 'direct' || value.kind === 'job') && validOwner(value.process)
+		&& text(value.cwd) && isAbsolute(value.cwd) && Array.isArray(value.argv) && value.argv.length >= 2
+		&& value.argv.length <= 4 && value.argv.every(arg => text(arg) && !/[\r\n]/.test(arg))
+		&& file(value.pidFile) && file(value.socketFile);
+}
+
 function validPredecessor(value: unknown): value is UpdatePredecessor {
 	if (!object(value) || !text(value.priorRelease) || !text(value.candidateRelease)
 		|| typeof value.priorCommit !== 'string' || typeof value.wasRunning !== 'boolean'
 		|| (value.generation !== undefined && value.generation !== null && !text(value.generation))) return false;
-	if (value.pins === undefined) return value.legacy === undefined;
+	if (value.pins === undefined) return value.legacy === undefined && value.launch === undefined;
 	if (!object(value.pins)) return false;
 	const { prior, candidate } = value.pins;
 	const pin = (item: unknown, releaseId: string, enabled: boolean): item is ManagedInstallation =>
 		object(item) && item.releaseId === releaseId && item.version === 1 && item.enabled === enabled
 		&& text(item.stateRoot) && isAbsolute(item.stateRoot) && text(item.releaseRoot) && isAbsolute(item.releaseRoot)
 		&& text(item.runtime) && isAbsolute(item.runtime) && typeof item.pathEnv === 'string';
-	if (!pin(prior, value.priorRelease, value.legacy === undefined) || !pin(candidate, value.candidateRelease, true)
+	if (value.launch !== undefined && (!validLegacyLaunch(value.launch)
+		|| value.wasRunning !== (value.launch.kind !== 'stopped') || value.generation != null
+		|| (value.launch.kind === 'job' && value.legacy === undefined)
+		|| (value.launch.kind === 'direct' && value.legacy !== undefined))) return false;
+	if (!pin(prior, value.priorRelease, value.legacy === undefined && value.launch === undefined) || !pin(candidate, value.candidateRelease, true)
 		|| prior.stateRoot !== candidate.stateRoot) return false;
+	if (value.launch !== undefined && value.launch.kind !== 'stopped'
+		&& (value.launch.process.executable !== prior.runtime || value.launch.cwd !== prior.releaseRoot
+			|| value.launch.argv.at(-1) !== join(prior.releaseRoot, 'out/daemon/index.js'))) return false;
 	if (value.legacy === undefined) return true;
 	if (!object(value.legacy)) return false;
 	const { job, descriptorHash, entry, baseline, runAtLoad } = value.legacy;
@@ -141,7 +166,10 @@ function validPredecessor(value: unknown): value is UpdatePredecessor {
 function validRequest(value: unknown): value is MutationRequest {
 	return object(value) && validOwner(value.owner) && ((value.kind === 'start'
 		&& (value.activation === undefined || validActivation(value.activation))) || value.kind === 'stop'
-		|| value.kind === 'restart' || (value.kind === 'update' && validPredecessor(value.predecessor)));
+		|| value.kind === 'restart' || (value.kind === 'update' && validPredecessor(value.predecessor)
+			&& (value.predecessor.launch === undefined || ((value.predecessor.launch.kind === 'stopped'
+				|| value.predecessor.launch.process.uid === value.owner.uid)
+				&& (value.predecessor.legacy === undefined || value.predecessor.legacy.job.uid === value.owner.uid)))));
 }
 
 function validActivation(value: unknown): value is FreshActivation {
@@ -183,6 +211,8 @@ function readJournal(bytes: string, root: string, uid: number): InstallationJour
 	const journal = parsed as unknown as InstallationJournal;
 	if (journal.active?.kind === 'start' && journal.active.activation !== undefined
 		&& journal.active.activation.installation.stateRoot !== root) conflict('fresh activation names another installation root');
+	if (journal.active?.kind === 'update' && journal.active.predecessor.launch !== undefined
+		&& journal.active.predecessor.pins?.prior.stateRoot !== root) conflict('legacy migration names another installation root');
 	if (journal.active !== null && journal.outcome !== null && journal.active.id === journal.outcome.id
 		&& journal.active.kind !== 'update') {
 		conflict('update outcome belongs to an ordinary lifecycle reservation');
@@ -300,6 +330,8 @@ export class InstallationMutationGate {
 			if (!validRequest(request) || request.owner.uid !== uid) conflict('invalid installation owner');
 			if (request.kind === 'start' && request.activation !== undefined
 				&& request.activation.installation.stateRoot !== this.root) conflict('fresh activation names another installation root');
+			if (request.kind === 'update' && request.predecessor.launch !== undefined
+				&& request.predecessor.pins?.prior.stateRoot !== this.root) conflict('legacy migration names another installation root');
 			const active: MutationReservation = { ...request, id: randomUUID(), entries: [] };
 			await this.write({ ...state, active });
 			return active;

@@ -45,6 +45,26 @@ export async function readDarwinIncarnation(pid: number, executable = HELPER): P
 	return { pid, uid: Number(match[2]), startedAt: `${match[3]}:${match[4]}`, executable: path };
 }
 
+export async function readDarwinLaunchContext(pid: number, executable = HELPER): Promise<{ cwd: string; argv: string[] }> {
+	requireDarwin();
+	const { stdout } = await exec(executable, ['context', pidArgument(pid)], { encoding: 'utf8', timeout: ATTACH_TIMEOUT_MS, maxBuffer: 1024 * 1024 });
+	const [cwd, ...args] = stdout.split('\0');
+	if (cwd === undefined || !isAbsolute(cwd) || args.pop() !== '' || args.length === 0) {
+		throw new Error('invalid Darwin launch context');
+	}
+	return { cwd, argv: args };
+}
+
+/** Exchange owned directories on the same volume in one rename operation. */
+export async function swapDarwinDirectories(
+	left: string, right: string, expected: { device: string; leftInode: string; rightInode: string }, executable = HELPER,
+): Promise<void> {
+	requireDarwin();
+	await exec(executable, ['swap-directories', left, right, expected.device, expected.leftInode, expected.rightInode], {
+		timeout: ATTACH_TIMEOUT_MS, maxBuffer: 8192,
+	});
+}
+
 /** Inspect the caller's existing connected socket via its inherited duplicate. */
 export async function readDarwinPeerCredentials(socketFd: number, executable = HELPER): Promise<DarwinPeerCredentials> {
 	requireDarwin();

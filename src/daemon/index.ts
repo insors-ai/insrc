@@ -22,7 +22,7 @@ import { runBootSteeringRefresh } from './steering-inject.js';
 import { PATHS } from '../shared/paths.js';
 import { openProgressRuntime } from './task-progress/runtime.js';
 import { registerExecutorProducers, validateExecutorDetails } from './task-progress/executor-measurements.js';
-import { ExecutorProgressRelay, executorProgressKind } from './task-progress/executor-relay.js';
+import { analysisProgressPath, ExecutorProgressRelay, executorProgressKind } from './task-progress/executor-relay.js';
 import { setLogMode, getLogger } from '../shared/logger.js';
 
 setLogMode('daemon');
@@ -542,7 +542,8 @@ async function main(): Promise<void> {
 		if (managed !== undefined && request.method === 'daemon.update') return managedUpdate(request, deliver);
 		const kind = executorProgressKind(request.method);
 		const context = request.trustedContext;
-		const repo = (request.params as { repo?: unknown } | null)?.repo;
+		const params = request.params as { repo?: unknown; scopeRef?: unknown } | null;
+		const repo = kind === 'analysis' ? analysisProgressPath(params?.scopeRef) : params?.repo;
 		if (kind === undefined || context === undefined || typeof repo !== 'string') return normalForward(request, deliver);
 		const port = executorProgress.reserve(kind, repo, context);
 		return normalForward(port === undefined ? request

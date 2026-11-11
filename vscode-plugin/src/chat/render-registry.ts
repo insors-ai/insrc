@@ -117,13 +117,18 @@ export function toViewModel(entry: TranscriptEntry | TurnEvent): RowViewModel {
   // A TranscriptEntry carries `role`; a TurnEvent carries `kind`.
   if ('role' in entry) {
     if (entry.role === 'user') {
-      // Story E2026101259da3204:S001: the files the message carried ride on `meta`; a message
-      // with none keeps exactly the shape it had.
-      return entry.attachments !== undefined && entry.attachments.length > 0
-        ? { kind: 'user', role: 'user', text: entry.text, collapsible: true, meta: { attachments: entry.attachments } }
-        : { kind: 'user', role: 'user', text: entry.text, collapsible: true };
+      // Story E2026101259da3204:S001: the files the message carried ride on `meta`.
+      // Story e4ce70ad1ae43d31/s1: the row's `at` rides on `meta` too, so whoRow can show it.
+      const meta: { attachments?: typeof entry.attachments; at?: string } = {
+        ...(entry.attachments !== undefined && entry.attachments.length > 0 ? { attachments: entry.attachments } : {}),
+        ...(entry.at !== undefined ? { at: entry.at } : {}),
+      };
+      return {
+        kind: 'user', role: 'user', text: entry.text, collapsible: true,
+        ...(Object.keys(meta).length > 0 ? { meta } : {}),
+      };
     }
-    if (entry.role === 'assistant') return { kind: 'assistant-text', role: 'assistant', text: entry.text, collapsible: true };
+    if (entry.role === 'assistant') return { kind: 'assistant-text', role: 'assistant', text: entry.text, collapsible: true, ...(entry.at !== undefined ? { meta: { at: entry.at } } : {}) };
     // Story E20261013b2e8109f:S001: a diff row -> the diff widget; the row itself rides on `meta`.
     if (entry.role === 'diff') return { kind: 'diff', text: entry.path, collapsible: false, meta: entry };
     // S001 (dev-chat ux polish): a replayed tool-result row -> the structured tool-result view-model
@@ -153,7 +158,9 @@ export function toViewModel(entry: TranscriptEntry | TurnEvent): RowViewModel {
       : { kind: 'fallback', text: entry.text, collapsible: false };
   }
   if (entry.kind === 'assistant-delta') {
-    return { kind: 'assistant-text', role: 'assistant', text: entry.text, collapsible: true };
+    // Story e4ce70ad1ae43d31/s1: a live delta carries no `at` (stream-events.ts), so the
+    // render-time stamp is the row's time while streaming.
+    return { kind: 'assistant-text', role: 'assistant', text: entry.text, collapsible: true, meta: { at: new Date().toISOString() } };
   }
   if (entry.kind === 'tool-call') {
     const label = entry.command ?? (entry.mcp ? `${entry.mcp.server} · ${entry.mcp.name}` : entry.tool);
@@ -312,7 +319,15 @@ export const RENDER_REGISTRY_STYLE =
   // S004: the persisted resolved-selection chip — a ✓ glyph + the chosen label(s). Non-actionable.
   `.insrc-selectoutcome{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--border-lit);border-radius:8px;background:var(--code-bg);padding:5px 11px;max-width:100%;}` +
   `.insrc-selectoutcome__icon{color:var(--pass);flex:0 0 auto;}` +
-  `.insrc-selectoutcome__labels{color:var(--fg-strong);font-family:var(--font);white-space:pre-wrap;word-break:break-word;}`;
+  `.insrc-selectoutcome__labels{color:var(--fg-strong);font-family:var(--font);white-space:pre-wrap;word-break:break-word;}` +
+  // Story e4ce70ad1ae43d31/s1: the who-row's small muted time, at the opposite end of the
+  // label on the SAME single line (smaller than .insrc-who's 11px, set in chat-panel).
+  `.insrc-when{font-size:10px;opacity:.65;margin:0 6px;align-self:center;}` +
+  // Story e4ce70ad1ae43d31/s1: opposite-end placement without inline styles (the fake-DOM
+  // tests and CSP both prefer classes): the user row is right-aligned, so its time is the
+  // FIRST child; the assistant row is left-aligned, so its time is the LAST child via auto.
+  `.insrc-who--user .insrc-when{margin-right:6px;margin-left:0;}` +
+  `.insrc-who--assistant .insrc-when{margin-left:auto;margin-right:0;}`;
 
 /**
  * The webview-embeddable factory source. Evaluating it yields
@@ -403,11 +418,26 @@ export function renderRegistryWebviewSource(): string {
     `function isLong(s){s=s||'';return s.split('\\n').length>3||s.length>240;}` +
     // S001 (bugfix): the mock's role label — 'you \\u276f' (user) / '\\u25c6 claude' (assistant),
     // the glyph on the outer edge. Spans only (the fake DOM has no createTextNode); textContent (k1).
-    `function whoRow(role,glyph,label){` +
+    // Story e4ce70ad1ae43d31/s1: `at` (optional ISO) renders as a small muted time at the
+    // OPPOSITE end of the same single who-row line — prepended for the right-aligned user row,
+    // appended (margin-left:auto) for the left-aligned assistant row. Format:
+    // '<3-letter weekday>, dd/MM HH:mm' (e.g. 'Wed, 11/11 04:18'). Missing/invalid/far-future
+    // `at` (beyond now+60s) renders no span — the row falls back to the pre-story markup.
+    `var WEEKDAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];` +
+    `function pad2(n){return (n<10?'0':'')+n;}` +
+    `function whenText(at){` +
+    `if(typeof at!=='string'||at==='')return '';` +
+    `var d=new Date(at);if(isNaN(d.getTime())||d.getTime()>Date.now()+60000)return '';` +
+    `return WEEKDAYS[d.getDay()]+', '+pad2(d.getDate())+'/'+pad2(d.getMonth()+1)+' '+pad2(d.getHours())+':'+pad2(d.getMinutes());}` +
+    `function whoRow(role,glyph,label,at){` +
     `var w=document.createElement('div');w.className='insrc-who insrc-who--'+role;` +
     `var g=document.createElement('span');g.className='insrc-glyph';g.textContent=glyph;` +
     `var l=document.createElement('span');l.className='insrc-wholabel';l.textContent=label;` +
-    `if(role==='user'){w.appendChild(l);w.appendChild(g);}else{w.appendChild(g);w.appendChild(l);}` +
+    `var when=whenText(at);` +
+    `if(when!==''){var t=document.createElement('span');t.className='insrc-when';t.textContent=when;` +
+    `if(role==='user'){w.appendChild(t);w.appendChild(l);w.appendChild(g);}` +
+    `else{w.appendChild(g);w.appendChild(l);w.appendChild(t);}}` +
+    `else if(role==='user'){w.appendChild(l);w.appendChild(g);}else{w.appendChild(g);w.appendChild(l);}` +
     `return w;}` +
     // S001 (bugfix): a message row is the mock's `.msg` — a `.who` role label above a bordered
     // `.bubble` (user right-aligned blue card / assistant magenta-left-border card, k5). Long text
@@ -416,7 +446,8 @@ export function renderRegistryWebviewSource(): string {
     `function msgRow(vm,host,role,inner){` +
     `var raw=vm&&vm.text!=null?vm.text:'';` +
     `var wrap=line('');wrap.textContent='';wrap.className='insrc-msg insrc-msg--'+role;` +
-    `wrap.appendChild(role==='user'?whoRow('user','\\u276f','you'):whoRow('assistant','\\u25c6','claude'));` +
+    // Story e4ce70ad1ae43d31/s1: pass the row's meta.at so whoRow can show its time.
+    `wrap.appendChild(role==='user'?whoRow('user','\\u276f','you',vm&&vm.meta?vm.meta.at:undefined):whoRow('assistant','\\u25c6','claude',vm&&vm.meta?vm.meta.at:undefined));` +
     `var bubble=document.createElement('div');bubble.className='insrc-bubble insrc-bubble--'+role;` +
     // ISSUE-b1c7c1bc: the ASSISTANT row is never default-collapsed, however long it runs (S001 ac3:
     // 'the assistant-text renderer is NOT default-collapsed (rendered in full)'). Collapsing is a
@@ -464,8 +495,10 @@ export function renderRegistryWebviewSource(): string {
     `function toViewModel(entry){` +
     `if(!entry)return {kind:'fallback',text:'',collapsible:false};` +
     `if('role' in entry){` +
-    `if(entry.role==='user')return entry.attachments!==undefined&&entry.attachments.length>0?{kind:'user',role:'user',text:entry.text,collapsible:true,meta:{attachments:entry.attachments}}:{kind:'user',role:'user',text:entry.text,collapsible:true};` +
-    `if(entry.role==='assistant')return {kind:'assistant-text',role:'assistant',text:entry.text,collapsible:true};` +
+    // Story e4ce70ad1ae43d31/s1: user/assistant rows carry their `at` on meta (parity with the host).
+    // Story e4ce70ad1ae43d31/s1: meta is present only when it carries something (parity with host).
+    `if(entry.role==='user'){var m={};if(entry.attachments!==undefined&&entry.attachments.length>0)m.attachments=entry.attachments;if(entry.at!==undefined)m.at=entry.at;return Object.keys(m).length>0?{kind:'user',role:'user',text:entry.text,collapsible:true,meta:m}:{kind:'user',role:'user',text:entry.text,collapsible:true};}` +
+    `if(entry.role==='assistant')return entry.at!==undefined?{kind:'assistant-text',role:'assistant',text:entry.text,collapsible:true,meta:{at:entry.at}}:{kind:'assistant-text',role:'assistant',text:entry.text,collapsible:true};` +
     // Story E20261013b2e8109f:S001: a diff row -> the diff widget; the row itself rides on meta.
     `if(entry.role==='diff')return {kind:'diff',text:entry.path,collapsible:false,meta:entry};` +
     // S001 (dev-chat ux polish): a replayed tool-result row -> the structured tool-result view-model.
@@ -477,7 +510,8 @@ export function renderRegistryWebviewSource(): string {
     // ISSUE-1163888072faa9f2: a persisted tool-call marker replays as the tool row (parity with host).
     `if(entry.role==='marker'&&entry.cssClass===${JSON.stringify(MARKER_CLASS.tool)})return {kind:'tool-command',text:entry.text,collapsible:false};` +
     `return entry.cssClass!==undefined?{kind:'fallback',text:entry.text,cssClass:entry.cssClass,collapsible:false}:{kind:'fallback',text:entry.text,collapsible:false};}` +
-    `if(entry.kind==='assistant-delta')return {kind:'assistant-text',role:'assistant',text:entry.text,collapsible:true};` +
+    // Story e4ce70ad1ae43d31/s1: a live delta has no `at` — stamp it at render time (parity with the host).
+    `if(entry.kind==='assistant-delta')return {kind:'assistant-text',role:'assistant',text:entry.text,collapsible:true,meta:{at:new Date().toISOString()}};` +
     `if(entry.kind==='tool-call'){var label=entry.command!=null?entry.command:(entry.mcp?(entry.mcp.server+' \\u00b7 '+entry.mcp.name):entry.tool);return entry.callId!==undefined?{kind:'tool-command',text:label,collapsible:false,meta:{callId:entry.callId}}:{kind:'tool-command',text:label,collapsible:false};}` +
     // S001 (dev-chat ux polish): a live tool-result event -> the SAME structured view-model (parity).
     `if(entry.kind==='tool-result')return {kind:'tool-result',text:entry.command!=null?entry.command:'',collapsible:isLong(entry.output),meta:entry.callId!==undefined?{command:entry.command,output:entry.output,callId:entry.callId}:{command:entry.command,output:entry.output}};` +

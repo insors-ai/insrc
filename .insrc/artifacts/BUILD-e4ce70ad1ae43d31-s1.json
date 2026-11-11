@@ -1,0 +1,114 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "640d7e05bb39787399e9e5f30ff05c65880040ef48f348d02f630a75989fb4ce",
+        "at": "2026-11-11T13:24:03.853Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T13:38:59.017Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-ac36e66e-05d9-4727-9518-14a831bb9dd4",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T13:22:59.471Z",
+    "epicCreatedAt": "2026-11-11T04:42:53.469Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e4ce70ad1ae43d31",
+    "storyId": "s1",
+    "revision": 1,
+    "updatedAt": "2026-11-11T13:22:59.471Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "Small standalone UX change scoped to the dev-chat render registry (whoRow/msgRow/toViewModel mirrors + CSS); triaged small -> standalone design.story (LLD-e4ce70ad1ae43d31-s1, approved) -> build.",
+    "epicSlug": "show-human-readable-timestamp-dev-chat"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Implemented s1: who-row time span. Both toViewModel mirrors pass at through meta (omitted when absent), delta branch stamps at render time, whoRow renders span.insrc-when at the opposite end via CSS classes (no inline styles — fake-DOM/CSP safe), format '<3-letter weekday>, dd/MM HH:mm' in local time, invalid/far-future at renders no span. Focused tests 107/107 green, tsc clean, committed 91298c050 with Insrc-Story trailer.",
+    "testRecord": {
+      "md": "docs/standalone/show-human-readable-timestamp-dev-chat-E20261111e4ce70ad/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "docs/standalone/show-human-readable-timestamp-dev-chat-E20261111e4ce70ad/S001/LLD-SELF-REVIEW.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T13:22:59.471Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/show-human-readable-timestamp-dev-chat-E20261111e4ce70ad/S001/ux-mock.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T13:22:59.471Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/render-registry.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T13:22:59.471Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T13:22:59.471Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T13:22:59.471Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/protocol.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T13:22:59.471Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/render-registry.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T13:22:59.471Z"
+      }
+    ],
+    "commit": "91298c050"
+  },
+  "citations": []
+}

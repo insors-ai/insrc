@@ -26,6 +26,9 @@
  */
 
 import { ensureDraftIssues, readinessFields, type IssueReadiness } from '../workflow/draft-issues.js';
+import type { MessagePort } from 'node:worker_threads';
+import { WorkflowMeasurements } from './task-progress/executor-measurements.js';
+import { beginExecutorProgress } from './task-progress/executor-relay.js';
 import { assertMayAuthor, settleBeforeAuthor } from '../workflow/team/author-gate.js';
 import { getLogger } from '../shared/logger.js';
 import type { IpcStreamMessage, LLMMessage, LLMProvider, StageProgressEvent, StructuredCompletionOpts, TokenProgressEvent } from '../shared/types.js';
@@ -120,6 +123,23 @@ export interface WorkflowProgress {
 	readonly runner?:  string | undefined;
 	readonly attempt?: number | undefined;
 	readonly detail?:  string | undefined;
+}
+
+export function beginWorkflowProgress(port?: MessagePort) {
+	const owner = beginExecutorProgress(port);
+	if (owner === undefined) return undefined;
+	const measurements = new WorkflowMeasurements();
+	return {
+		stage(event: WorkflowProgress) {
+			measurements.onProgress(event);
+			owner.sample(measurements.read());
+		},
+		chunk() {
+			measurements.onOutputChunk();
+			owner.sample(measurements.read());
+		},
+		settle: owner.settle,
+	};
 }
 
 export interface RunWorkflowOpts {
@@ -469,6 +489,7 @@ export async function runStart(
 	rawParams: unknown,
 	send:      (msg: IpcStreamMessage) => void,
 	signal:    AbortSignal,
+	progressPort?: MessagePort,
 ): Promise<void> {
 	let prep: PreparedWorkflowRun;
 	try {
@@ -479,10 +500,12 @@ export async function runStart(
 	}
 	const { intent, runId, epicKey, provider, modelLabel, clientDefault, router, cfg, repoPath } = prep;
 	const p = { review: prep.review };
+	let observation: ReturnType<typeof beginWorkflowProgress>;
 
 	try {
 		await settleBeforeAuthor(intent);   // signoff of the stage this follows, settled first
 		await assertMayAuthor(intent);   // team gate at the entry; the driver asks again before the draft is written
+		observation = beginWorkflowProgress(progressPort);
 		// t5/t6: map the driver's internal vocabulary onto the sc1 wire shape.
 		// WorkflowProgress → StageProgressEvent on `progress`; the per-token
 		// string stream is counted + batched into TokenProgressEvent on `delta`.
@@ -491,8 +514,16 @@ export async function runStart(
 		const tokens = makeTokenAccumulator();
 		const drive = (): Promise<RunWorkflowResult> => driver(intent, provider, {
 			runId, epicKey, modelLabel, signal, router, cfg, repoPath,
-			onProgress: (f) => { appendProgressLog(runId, 'workflow.run', f.phase, formatProgressDetail(f)); send({ id: 0, stream: 'progress', data: workflowProgressToStage(f, stageIndex++) }); },
-			onToken:    (stepId, token) => { const ev = tokens.push(stepId, token); if (ev !== null) send({ id: 0, stream: 'delta', data: ev }); },
+			onProgress: (f) => {
+				observation?.stage(f);
+				appendProgressLog(runId, 'workflow.run', f.phase, formatProgressDetail(f));
+				send({ id: 0, stream: 'progress', data: workflowProgressToStage(f, stageIndex++) });
+			},
+			onToken: (stepId, token) => {
+				observation?.chunk();
+				const ev = tokens.push(stepId, token);
+				if (ev !== null) send({ id: 0, stream: 'delta', data: ev });
+			},
 			...(p.review !== undefined ? { review: p.review } : {}),
 		});
 		// Establish the sc6 RoutingSeamContext (S005) around the drive so the
@@ -504,10 +535,14 @@ export async function runStart(
 		const out = clientDefault !== undefined
 			? await runWithClientProviderContext(clientDefault, driveWithSeam)
 			: await driveWithSeam();
+		observation?.settle('completed');
 		const tail = tokens.flush();   // emit any tokens left below the batch threshold
 		if (tail !== null) send({ id: 0, stream: 'delta', data: tail });
 		send({ id: 0, stream: 'done', data: workflowDoneData(out) });
 	} catch (err) {
+		const cancelled = signal.aborted && (err === signal.reason ||
+			(err instanceof Error && (err.name === 'AbortError' || err.message === 'workflow.run: aborted')));
+		observation?.settle(cancelled ? 'cancelled' : 'failed');
 		send({ id: 0, stream: 'error', data: { error: (err as Error).message, recoverable: false } });
 	}
 }

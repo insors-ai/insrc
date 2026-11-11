@@ -1719,9 +1719,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// (returns a runId immediately), POLL for new progress frames +
 		// the terminal result via a cursor, and ABORT mid-run. See
 		// daemon/workflow-run-registry.ts.
-		'workflow.run.start': async (params) => {
+		'workflow.run.start': async (params, context) => {
 			const mod = await import('./workflow-run-registry.js');
-			return mod.startWorkflowRun(params);
+			return mod.startWorkflowRun(params, { progressPort: context?.executorProgressPort });
 		},
 		'workflow.run.poll': async (params) => {
 			const mod = await import('./workflow-run-registry.js');
@@ -1805,15 +1805,15 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		'analyze.run.start': async (params, send, signal, context) => {
 			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
 			const mod = await import('./analyze-rpc.js');
-			return mod.runStart(params, send, signal, context?.connectionExecution);
+			return mod.runStart(params, send, signal, context?.connectionExecution, context?.executorProgressPort);
 		},
 		// Daemon-side workflow runner: drives one workflow (define / design.* /
 		// plan / stub) end-to-end through the LLMProvider (config → invoking
 		// CLI → Ollama), stamping meta.model with the resolved provider id.
 		// Emits `progress` frames per phase, then terminal `done`/`error`.
-		'workflow.run': async (params, send, signal) => {
+		'workflow.run': async (params, send, signal, context) => {
 			const mod = await import('./workflow-rpc.js');
-			return mod.runStart(params, send, signal);
+			return mod.runStart(params, send, signal, context?.executorProgressPort);
 		},
 		// Daemon-side code-review runner (code-review S006/sc5): resolves the
 		// high-tier provider + the fixed sc1 subject (declining, not verdicting,

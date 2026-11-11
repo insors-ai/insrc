@@ -10,8 +10,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { marked } from 'marked';
-import { bodyStub, fire, type BodyStub } from './fake-dom.js';
+import { allOf, bodyStub, fire, textOf, type BodyStub } from './fake-dom.js';
 import { renderRegistryWebviewSource } from '../render-registry.js';
+import type { TranscriptEntry } from '../session-store.js';
 import { KEEP_ROWS, LOAD_WAIT_MS, MAX_HELD_ROWS, transcriptPagerWebviewSource } from '../transcript-pager.js';
 
 // The registry renders assistant markdown through the bundled `marked` global.
@@ -504,4 +505,24 @@ test('jump: the pager works with no jump element', () => {
   // eslint-disable-next-line no-eval
   const pager = (eval(`(${transcriptPagerWebviewSource()})`) as (t: BodyStub, o: unknown) => Pager)(term, {});
   assert.doesNotThrow(() => { pager.reset('s1', 0, 0); pager.append(bodyStub('div')); fire(term, 'scroll'); });
+});
+
+// Story e4ce70ad1ae43d31/s1 — a replayed stored row keeps its `at` and renders the same span.
+test('a replayed stored row keeps its `at` and renders the who-row time span', () => {
+  const v = makeView();
+  const at = '2026-11-11T04:18:13.568Z';
+  // Restore one stored user row with a real ISO `at`, as the shell replays the transcript.
+  const row: TranscriptEntry = { role: 'user', text: 'stored question', at };
+  const node = v.pager.track(0, () => v.reg.appendKeyed(v.reg.toViewModel(row), 'r0'));
+  const all = allOf(node!);
+  const when = all.find(n => n.nodeType !== 3 && n.className.split(' ').includes('insrc-when'));
+  assert.ok(when, 'the replayed user row renders span.insrc-when');
+  // whenText renders in LOCAL time — compute the expectation from the fixture the same way.
+  const d = new Date(at);
+  const wd = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()]!;
+  const p = (n: number) => (n < 10 ? '0' : '') + n;
+  assert.equal(textOf(when!), `${wd}, ${p(d.getDate())}/${p(d.getMonth() + 1)} ${p(d.getHours())}:${p(d.getMinutes())}`);
+  // The who-row stays ONE line: the span is a child of .insrc-who, not a sibling row.
+  const who = all.find(n => n.nodeType !== 3 && n.className.split(' ').includes('insrc-who'));
+  assert.ok(who!.children.some(c => c.className.split(' ').includes('insrc-when')), 'the span sits on the same who-row line');
 });

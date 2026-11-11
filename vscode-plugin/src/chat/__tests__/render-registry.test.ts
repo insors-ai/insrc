@@ -205,16 +205,22 @@ test('RENDER_REGISTRY_STYLE clamps the collapsed body to a 3-line preview', () =
 
 test('toViewModel maps transcript rows: user/assistant/marker to the right kind + role', () => {
   const user: TranscriptEntry = { role: 'user', text: 'hi there', at: 't' };
-  assert.deepEqual(toViewModel(user), { kind: 'user', role: 'user', text: 'hi there', collapsible: true });
+  // Story e4ce70ad1ae43d31/s1: user/assistant rows surface their `at` on meta.
+  assert.deepEqual(toViewModel(user), { kind: 'user', role: 'user', text: 'hi there', collapsible: true, meta: { at: 't' } });
   const asst: TranscriptEntry = { role: 'assistant', text: 'hello', at: 't' };
-  assert.deepEqual(toViewModel(asst), { kind: 'assistant-text', role: 'assistant', text: 'hello', collapsible: true });
+  assert.deepEqual(toViewModel(asst), { kind: 'assistant-text', role: 'assistant', text: 'hello', collapsible: true, meta: { at: 't' } });
   const marker: TranscriptEntry = { role: 'marker', text: 'done', cssClass: 'insrc-term__marker--done', at: 't' };
   assert.deepEqual(toViewModel(marker), { kind: 'fallback', text: 'done', cssClass: 'insrc-term__marker--done', collapsible: false });
 });
 
 test('toViewModel maps live events: assistant-delta -> assistant-text (ac2), tool-call -> tool-command (ac3)', () => {
   const delta: TurnEvent = { kind: 'assistant-delta', turnId: 't', text: 'step output' };
-  assert.deepEqual(toViewModel(delta), { kind: 'assistant-text', role: 'assistant', text: 'step output', collapsible: true });
+  // Story e4ce70ad1ae43d31/s1: a live delta has no `at`, so the delta branch stamps one at render time.
+  const vm = toViewModel(delta);
+  assert.equal(vm.kind, 'assistant-text');
+  const at = (vm.meta as { at?: unknown } | undefined)?.at;
+  assert.equal(typeof at, 'string');
+  assert.ok(!Number.isNaN(new Date(at as string).getTime()), 'delta branch stamps a parseable at');
   // command-bearing -> the command is the row text.
   const withCmd: TurnEvent = { kind: 'tool-call', turnId: 't', tool: 'Bash', command: 'npm test' };
   assert.deepEqual(toViewModel(withCmd), { kind: 'tool-command', text: 'npm test', collapsible: false });
@@ -1065,10 +1071,11 @@ test("render registry: a user row with attachments renders a chip per attachment
   const tiny = { id: '3-t.txt', name: 't.txt', kind: 'file' as const, size: 12, path: '/d/3-t.txt' };
   const withFiles: TranscriptEntry = { role: 'user', text: 'look at these', at: 't', attachments: [image, doc, tiny] };
 
-  // The view-model carries the attachments; one without them is exactly today's.
-  assert.deepEqual(toViewModel(withFiles), { kind: 'user', role: 'user', text: 'look at these', collapsible: true, meta: { attachments: [image, doc, tiny] } });
-  assert.deepEqual(toViewModel({ role: 'user', text: 'hi', at: 't' }), { kind: 'user', role: 'user', text: 'hi', collapsible: true });
-  assert.deepEqual(toViewModel({ role: 'user', text: 'hi', at: 't', attachments: [] }), { kind: 'user', role: 'user', text: 'hi', collapsible: true });
+  // The view-model carries the attachments + the `at` on meta; one without them keeps the
+  // pre-story shape (meta omitted entirely — no `at` key at all).
+  assert.deepEqual(toViewModel(withFiles), { kind: 'user', role: 'user', text: 'look at these', collapsible: true, meta: { at: 't', attachments: [image, doc, tiny] } });
+  assert.deepEqual(toViewModel({ role: 'user', text: 'hi' }), { kind: 'user', role: 'user', text: 'hi', collapsible: true });
+  assert.deepEqual(toViewModel({ role: 'user', text: 'hi', attachments: [] }), { kind: 'user', role: 'user', text: 'hi', collapsible: true });
 
   const { reg } = makeRegistry();
   assert.deepEqual(reg.toViewModel(withFiles), toViewModel(withFiles));
@@ -1129,6 +1136,9 @@ test("render registry: a user row with attachments renders a chip per attachment
       { tag: 'div', className: 'insrc-bubble insrc-bubble--user', textContent: 'hi', children: [] },
     ],
   });
+  // Story e4ce70ad1ae43d31/s1: a row WITH a parseable `at` gains the time span on the same
+  // who-row line (first child = left end of the right-aligned user row); `at:'t'` is invalid
+  // so this still renders exactly like `plain`.
   assert.deepEqual(shape(reg.renderRow(toViewModel({ role: 'user', text: 'hi', at: 't', attachments: [] }))!), shape(plain));
   // An assistant row never shows chips, whatever its meta holds.
   const assistant = reg.renderRow({ kind: 'assistant-text', role: 'assistant', text: 'yo', collapsible: true, meta: { attachments: [image] } })!;
@@ -1268,4 +1278,114 @@ test('diff widget: 8 lines or fewer has no chevron and no button; a binary row, 
   drop.reg.renderRow(drop.reg.toViewModel(diffRow()));
   drop.reg.resetKeys();
   assert.equal(drop.reg.redrawDiff(diffRow({ sid: undefined, replaces: 'k-0' })), false);
+});
+
+// Story e4ce70ad1ae43d31/s1 — the who-row time span (.insrc-when).
+// whenText renders in LOCAL time (the panel shows the user's wall clock), so the expected
+// string is computed from the fixture with the same local getters — timezone-independent.
+const FIX_AT = '2026-11-11T04:18:13.568Z';
+function expectedWhen(at: string): string {
+  const d = new Date(at);
+  const wd = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()]!;
+  const p = (n: number) => (n < 10 ? '0' : '') + n;
+  return `${wd}, ${p(d.getDate())}/${p(d.getMonth() + 1)} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+test('who-row shows span.insrc-when with the formatted time for a user row (span is the FIRST child — left end)', () => {
+  const { reg } = makeRegistry();
+  // 2026-11-11T04:18:13.568Z is a Wednesday (in UTC; the span shows local time).
+  const row = reg.renderRow(reg.toViewModel({ role: 'user', text: 'hi', at: FIX_AT }))!;
+  const who = findByClass(row, 'insrc-who')!;
+  const when = findByClass(who, 'insrc-when')!;
+  assert.equal(when.textContent, expectedWhen(FIX_AT));
+  assert.equal(who.children[0]!.className, 'insrc-when', 'user row: the time is the FIRST child (left end of the right-aligned row)');
+  assert.deepEqual(who.children.slice(1).map(c => c.className), ['insrc-wholabel', 'insrc-glyph'], 'the label keeps its end');
+  // Host parity: the host toViewModel carries the same meta.at.
+  assert.equal((toViewModel({ role: 'user', text: 'hi', at: FIX_AT }).meta as { at: string }).at, FIX_AT);
+});
+
+test('who-row shows span.insrc-when for an assistant row (span is the LAST child — right end via margin-left:auto)', () => {
+  const { reg } = makeRegistry();
+  const row = reg.renderRow(reg.toViewModel({ role: 'assistant', text: 'yo', at: FIX_AT }))!;
+  const who = findByClass(row, 'insrc-who')!;
+  const when = findByClass(who, 'insrc-when')!;
+  assert.equal(when.textContent, expectedWhen(FIX_AT));
+  assert.equal(who.children[who.children.length - 1]!.className, 'insrc-when', 'assistant row: the time is the LAST child (right end)');
+  // Placement is CSS-driven (no inline style): the assistant who-row class pins margin-left:auto.
+  assert.match(RENDER_REGISTRY_STYLE, /\.insrc-who--assistant \.insrc-when\{margin-left:auto;/);
+  assert.deepEqual(who.children.slice(0, -1).map(c => c.className), ['insrc-glyph', 'insrc-wholabel'], 'the label keeps its end');
+});
+
+test('NAMED live-row test — a live user-row entry ({role:user,text,at}) via toViewModel renders span.insrc-when (webview user-row path)', () => {
+  const { reg } = makeRegistry();
+  // chat-panel.ts:2677 builds exactly this entry from the posted user-row message (which now carries `at`).
+  const entry = { role: 'user', text: 'live prompt', attachments: undefined, at: FIX_AT } as unknown as TranscriptEntry;
+  const row = reg.renderRow(reg.toViewModel(entry))!;
+  const when = findByClass(findByClass(row, 'insrc-who')!, 'insrc-when')!;
+  assert.equal(when.textContent, expectedWhen(FIX_AT));
+});
+
+test('NAMED live-row test — a live assistant-delta TurnEvent (no at) through the delta branch stamps at=now() and renders span.insrc-when', () => {
+  const { reg } = makeRegistry();
+  const before = Date.now();
+  const row = reg.renderRow(reg.toViewModel({ kind: 'assistant-delta', turnId: 't', text: 'streaming' }))!;
+  const after = Date.now();
+  const when = findByClass(findByClass(row, 'insrc-who')!, 'insrc-when')!;
+  assert.ok(when.textContent.length > 0, 'the delta branch stamped a time');
+  const vm = reg.toViewModel({ kind: 'assistant-delta', turnId: 't', text: 'x' });
+  const at = (vm.meta as { at: string }).at;
+  const t = new Date(at).getTime();
+  assert.ok(t >= before - 1000 && t <= after + 1000, `stamped at is the render time (${at})`);
+});
+
+test('invalid/empty `at` renders no span.insrc-when and the who-row markup is unchanged (fallback test)', () => {
+  const { reg } = makeRegistry();
+  for (const at of ['', 'not-a-date', undefined]) {
+    const entry = { role: 'user', text: 'hi', at } as unknown as TranscriptEntry;
+    const row = reg.renderRow(reg.toViewModel(entry))!;
+    const who = findByClass(row, 'insrc-who')!;
+    assert.equal(findByClass(who, 'insrc-when'), undefined, `at=${String(at)} renders no span`);
+    assert.deepEqual(who.children.map(c => c.className), ['insrc-wholabel', 'insrc-glyph'], 'pre-story markup');
+  }
+});
+
+test('far-future `at` (e.g. 9999-12-31) renders no span — the future-window bound (d <= now+60s) suppresses it', () => {
+  const { reg } = makeRegistry();
+  // `new Date('9999-12-31T00:00:00.000Z')` parses fine; only the bound catches it.
+  assert.ok(!Number.isNaN(new Date('9999-12-31T00:00:00.000Z').getTime()));
+  const row = reg.renderRow(reg.toViewModel({ role: 'assistant', text: 'yo', at: '9999-12-31T00:00:00.000Z' }))!;
+  assert.equal(findByClass(findByClass(row, 'insrc-who')!, 'insrc-when'), undefined);
+});
+
+test('.insrc-when CSS present in RENDER_REGISTRY_STYLE, smaller than .insrc-who', () => {
+  assert.match(RENDER_REGISTRY_STYLE, /\.insrc-when\{font-size:10px;opacity:\.65;/);
+});
+
+test('non-message rows (marker / tool-result / permission-outcome / diff) render no time span', () => {
+  const { reg } = makeRegistry();
+  const rows = [
+    { role: 'marker', text: 'done', cssClass: 'insrc-term__marker--done', at: FIX_AT },
+    { role: 'tool-result', command: 'ls', output: 'a', at: FIX_AT },
+    { role: 'permission-outcome', toolName: 'Bash', decision: 'approved', at: FIX_AT },
+    diffRow(),
+  ] as unknown as TranscriptEntry[];
+  for (const r of rows) {
+    const row = reg.renderRow(reg.toViewModel(r))!;
+    assert.equal(findByClass(row, 'insrc-when'), undefined, `${r.role} row has no time span`);
+  }
+});
+
+test('parity: host toViewModel meta.at === webview toViewModel meta.at, including the delta branch', () => {
+  const { reg } = makeRegistry();
+  for (const s of [
+    { role: 'user', text: 'hi', at: FIX_AT },
+    { role: 'assistant', text: 'yo', at: FIX_AT },
+  ] as TranscriptEntry[]) {
+    assert.deepEqual(reg.toViewModel(s).meta, toViewModel(s).meta);
+  }
+  const d: TurnEvent = { kind: 'assistant-delta', turnId: 't', text: 'x' };
+  const hostAt = (toViewModel(d).meta as { at: string }).at;
+  const webAt = (reg.toViewModel(d).meta as { at: string }).at;
+  assert.equal(typeof hostAt, 'string');
+  assert.equal(typeof webAt, 'string');
+  assert.ok(Math.abs(new Date(hostAt).getTime() - new Date(webAt).getTime()) < 5000, 'both mirrors stamp the delta at render time');
 });

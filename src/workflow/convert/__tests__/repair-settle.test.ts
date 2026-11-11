@@ -286,6 +286,22 @@ test('the preview proposes a later approval whose override or review the migrati
 		const preview = await runRepair(renamed.repo, 'repair-preview');
 		assert.ok(preview.plan.changes.some(c => c.rule === 'settle-unit' && c.artifactId === STORY), JSON.stringify(preview.plan.changes.slice(0, 4)));
 	} finally { renamed.done(); }
+
+	// a Task head the migration has yet to give a lifecycle
+	const unmigratedTask = repository();
+	try {
+		epicHead(unmigratedTask, H);
+		await ready(unmigratedTask, 's1', LATER);
+		const t = head(unmigratedTask.repo, T2);
+		const { lifecycle: _gone, ...legacy } = t.meta;
+		unmigratedTask.put(T2, { ...legacy, approvedAt: AT }, t.body);
+		const preview = await runRepair(unmigratedTask.repo, 'repair-preview');
+		assert.ok(preview.plan.changes.some(c => c.rule === 'settle-unit' && c.artifactId === STORY), JSON.stringify(preview.plan.changes.filter(c => c.rule !== 'migrate-head')));
+		const out = result(await runRepair(unmigratedTask.repo, 'repair'));
+		assert.equal(out.stoppedAt, undefined, JSON.stringify(out.stoppedAt));
+		assert.equal(statusOf(unmigratedTask.repo, STORY), 'completed', JSON.stringify(out.held));
+		assert.deepEqual((await runRepair(unmigratedTask.repo, 'repair-preview')).plan.changes.filter(c => c.rule === 'settle-unit'), [], 'nothing is left to propose');
+	} finally { unmigratedTask.done(); }
 });
 
 test('an open Epic whose Stories are all completed is in the preview and is settled', async () => {

@@ -97,10 +97,11 @@ function plannedRollUp(repo: string, heads: readonly RawHead[], unit: string, st
 	return rollUp(unit, reader, evidence);
 }
 
-/** Whether a Story's BUILD or code review still has an uppercase id or no lifecycle, so the evidence the live rule reads is not there yet. */
+/** Whether a Story's BUILD, code review, Task set or Task still has an uppercase id or no lifecycle, so the evidence the live rule reads is not there yet. */
 function awaitsMigration(heads: readonly RawHead[], epicHash: string, story: string): boolean {
 	return heads.some(h => {
-		const m = /^(BUILD|CR)-([0-9a-f]{16})-([sS]\d+)$/.exec(h.artifactId);
+		// a Task head without a lifecycle reads as having no status, which holds the live rule until migration gives it one
+		const m = /^(BUILD|CR|TASK|TASKS)-([0-9a-f]{16})-([sS]\d+)(?:-t\d+)?$/.exec(h.artifactId);
 		return m !== null && m[2] === epicHash && storyOf(m[3]!) === story && (m[3] !== story || !isObj(metaOf(h)['lifecycle']));
 	});
 }

@@ -14,13 +14,14 @@ import type { GitPathHistoryData } from './schemas.js';
 
 export const gitPathHistoryTool = {
   id: 'git_path_history',
-  description: 'List the commits (sha, committer time, subject) that touched a path, newest first or oldest first, optionally only those that added/deleted/modified/renamed it, along the first parent, or whose change adds or removes a text.',
+  description: 'List the commits (sha, committer time, subject) that touched a path, newest first or oldest first, optionally only those that added/deleted/modified/renamed it, along the first parent, over the full unsimplified history, or whose change adds or removes a text.',
   inputSchema: Type.Object({
     cwd: Type.Optional(Type.String({ description: 'Repository root. Defaults to process cwd.' })),
     path: Type.Optional(Type.String({ description: 'A path relative to the repository root, matched literally. Default: the whole history.' })),
     rev: Type.Optional(Type.String({ description: 'Where to start: HEAD (default) or a ref such as origin/main.' })),
     diffFilter: Type.Optional(Type.String({ enum: ['A', 'D', 'M', 'R'], description: 'Only commits that Added, Deleted, Modified or Renamed the path.' })),
     firstParent: Type.Optional(Type.Boolean({ description: 'Follow only the first parent of merges (--first-parent).' })),
+    fullHistory: Type.Optional(Type.Boolean({ description: 'Do not simplify history (--full-history): list every commit whose path differs from at least one parent, merges included.' })),
     reverse: Type.Optional(Type.Boolean({ description: 'Oldest first (--reverse).' })),
     limit: Type.Optional(Type.Number({ description: 'At most this many commits (-n).', minimum: 1 })),
     pickaxe: Type.Optional(Type.String({ description: 'Only commits whose change adds or removes this text (-S).' })),
@@ -39,6 +40,7 @@ export const gitPathHistoryTool = {
     const filter = str(input, 'diffFilter');
     if (filter !== undefined) { argv.push(`--diff-filter=${filter}`); }
     if (input['firstParent'] === true) { argv.push('--first-parent'); }
+    if (input['fullHistory'] === true) { argv.push('--full-history'); }
     if (input['reverse'] === true) { argv.push('--reverse'); }
     if (typeof input['limit'] === 'number') { argv.push('-n', String(Math.floor(input['limit']))); }
     if (pickaxe !== undefined) { argv.push('-S', pickaxe); }

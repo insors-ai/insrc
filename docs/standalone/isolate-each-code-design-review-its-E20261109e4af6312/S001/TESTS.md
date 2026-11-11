@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 24 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 25 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -239,7 +239,7 @@ Run at 2026-11-11T16:04:20.516Z on commit `aa9aa072f`. Tests check: **passed**. 
 
 ## t11
 
-Run at 2026-11-11T17:07:06.921Z on commit `11aaac85d`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-11T17:27:54.699Z on commit `f3c1b184a`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/daemon/threads/__tests__/review-worker-recovery.test.ts: disposable daemon crash reconstructs unresolved guards and leaves unrelated reviews usable**
 
@@ -252,6 +252,7 @@ Run at 2026-11-11T17:07:06.921Z on commit `11aaac85d`. Tests check: **passed**. 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | existing local broker approval binds exact guards and requires a separate resume | `src/daemon/threads/__tests__/review-worker-clearance.test.ts` |
+| pass | cleared failed attempts accept only a separate explicit next submission and preserve the failed record | `src/daemon/threads/__tests__/review-worker-clearance.test.ts` |
 
 **integration: src/daemon/threads/__tests__/review-worker-clearance.test.ts: stale partial repeated or lost-response clearance preserves remaining fences and audit receipts**
 
@@ -263,5 +264,5 @@ Run at 2026-11-11T17:07:06.921Z on commit `11aaac85d`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/threads/__tests__/review-worker-clearance.test.ts` | 0 | 6 | 9.8 s |  |
-| `src/daemon/threads/__tests__/review-worker-recovery.test.ts` | 0 | 2 | 5.3 s |  |
+| `src/daemon/threads/__tests__/review-worker-clearance.test.ts` | 0 | 9 | 12 s |  |
+| `src/daemon/threads/__tests__/review-worker-recovery.test.ts` | 0 | 2 | 5.1 s |  |

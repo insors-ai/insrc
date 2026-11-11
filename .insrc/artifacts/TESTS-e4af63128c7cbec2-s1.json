@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 24,
-        "contentHash": "03645c5ee79ad440757e5007998bd793ef0a42913a2dd365eedf3baeea2bf6d1",
-        "at": "2026-11-11T17:07:07.100Z",
+        "number": 26,
+        "contentHash": "5cff8b36e0717b150f438c732f1f0302a4cfe4ed709ef062414c35eb8e28d8cd",
+        "at": "2026-11-11T17:27:54.781Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "e4af63128c7cbec2",
     "storyId": "s1",
     "createdAt": "2026-11-09T07:52:13.312Z",
-    "updatedAt": "2026-11-11T17:07:06.921Z",
+    "updatedAt": "2026-11-11T17:27:54.699Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-09T04:29:20.389Z",
     "epicSlug": "isolate-each-code-design-review-its",
-    "revision": 24
+    "revision": 26
   },
   "body": {
     "tasks": [
@@ -653,8 +653,8 @@
       },
       {
         "taskId": "t11",
-        "commit": "11aaac85d",
-        "ranAt": "2026-11-11T17:07:06.921Z",
+        "commit": "f3c1b184a",
+        "ranAt": "2026-11-11T17:27:54.699Z",
         "testsPassed": true,
         "tests": [
           {
@@ -679,6 +679,11 @@
                 "file": "src/daemon/threads/__tests__/review-worker-clearance.test.ts",
                 "title": "existing local broker approval binds exact guards and requires a separate resume",
                 "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-clearance.test.ts",
+                "title": "cleared failed attempts accept only a separate explicit next submission and preserve the failed record",
+                "result": "pass"
               }
             ],
             "files": []
@@ -702,7 +707,7 @@
             "file": "src/daemon/threads/__tests__/review-worker-clearance.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 9836,
+            "durationMs": 11995,
             "titles": [
               {
                 "title": "code",
@@ -727,6 +732,18 @@
               {
                 "title": "receipt survives a post-application audit failure and replay repairs its audit without inference",
                 "result": "pass"
+              },
+              {
+                "title": "code",
+                "result": "pass"
+              },
+              {
+                "title": "design",
+                "result": "pass"
+              },
+              {
+                "title": "cleared failed attempts accept only a separate explicit next submission and preserve the failed record",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -735,7 +752,7 @@
             "file": "src/daemon/threads/__tests__/review-worker-recovery.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 5289,
+            "durationMs": 5137,
             "titles": [
               {
                 "title": "disposable daemon crash reconstructs unresolved guards and leaves unrelated reviews usable",

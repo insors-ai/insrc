@@ -49,6 +49,8 @@ export interface DesignCoordinatorDeps {
  readonly load?:typeof loadDesignCheckpoint;
  readonly activity?:ReviewActivityMonitorDeps|undefined;
  readonly subjectMonitor?:DesignSubjectMonitorDeps|undefined;
+ /** Internal preaccepted worker handoff; never supplied by a public packet. */
+ readonly acceptedAttempt?:number|undefined;
 }
 export interface DesignControllerOwner { readonly id:string; readonly signal:AbortSignal; }
 export interface DesignStartContext { readonly provider?:(()=>DesignProvider)|undefined; readonly owner?:DesignControllerOwner|undefined; }
@@ -98,7 +100,7 @@ export class DesignReviewCoordinator {
  }
  private ack(checkpoint:DesignReviewCheckpoint,active:boolean,number=currentDesignAttempt(checkpoint).number):DesignReviewAcknowledgement{
   this.knownArtifacts.set(this.key(checkpoint.project,checkpoint.reviewId),checkpoint.subject.canonicalPath);
-  const attempt=checkpoint.attempts[number-1];requireDesign(attempt,'missing_attempt','Design review attempt not found');
+  const attempt=checkpoint.attempts.find(a=>a.number===number);requireDesign(attempt,'missing_attempt','Design review attempt not found');
   const error=number===currentDesignAttempt(checkpoint).number&&this.uncertain.get(this.key(checkpoint.project,checkpoint.reviewId));
   return {reviewId:checkpoint.reviewId,attempt:attempt.number,artifactId:checkpoint.artifactId,reviewer:attempt.reviewer??checkpoint.subject.reviewer,
    status:error?'failed':attempt.status==='invalidated'?'invalidated':attempt.publication?.state==='pending'?(attempt.publication.error?'failed':'pending'):!active&&(attempt.status==='pending'||attempt.status==='running')?'interrupted':attempt.status,
@@ -227,9 +229,9 @@ export class DesignReviewCoordinator {
   const saved=active?.checkpoint??await(this.deps.load??loadDesignCheckpoint)(request.repo,request.reviewId);
   if(saved){
    if(saved.submitted.artifactPath!==request.artifactPath)throw new DesignReviewConflictError('Review id belongs to another immutable submission');
-   if(saved.attempts[request.attempt-1]?.number===request.attempt)return this.ack(saved,!!active&&currentDesignAttempt(saved).number===request.attempt,request.attempt);
+   if(saved.attempts.some(a=>a.number===request.attempt))return this.ack(saved,!!active&&currentDesignAttempt(saved).number===request.attempt,request.attempt);
    const source=currentDesignAttempt(saved);
-   requireDesign(request.attempt===source.number+1,'review_conflict','Expected the next sequential attempt');
+   requireDesign(request.attempt===source.number+1||request.attempt===this.deps.acceptedAttempt&&request.attempt>source.number,'review_conflict','Expected the next sequential attempt');
    requireDesign(!active&&!this.subjects.has(this.subjectKey(saved.subject)),'review_conflict','Subject already has an active review');
    requireDesign(!this.uncertain.has(key),'persistence_failed','Prior terminal state could not be persisted');
    requireDesign(['passed','changes_requested','incomplete'].includes(source.status)&&source.report?.status===source.status,'review_conflict','Correction requires a complete terminal report; unfinished work uses explicit recovery');
@@ -250,7 +252,7 @@ export class DesignReviewCoordinator {
     this.launch(checkpoint,tracker,context);return this.ack(checkpoint,true);
    }catch(error){if(this.subjects.get(subjectKey)===key)this.subjects.delete(subjectKey);releaseDesignArtifact(request.repo,subjectKey.split("\0")[1]!,key);throw error;}
   }
-  requireDesign(request.attempt===1,'review_conflict','Initial review requires attempt 1');
+  requireDesign(request.attempt===1||request.attempt===this.deps.acceptedAttempt,'review_conflict','Initial review requires attempt 1');
   const prepared=(this.deps.prepare??prepareDesignSubject)(request.repo,request.artifactPath);
   if(prepared.subject.reviewer==='controller')requireDesign(context.owner&&!context.owner.signal.aborted,'wrong_owner','A live trusted reviewer connection is required');
   const subjectKey=this.subjectKey(prepared.subject);
@@ -259,7 +261,7 @@ export class DesignReviewCoordinator {
   try{
    const tracker=new DesignProgressTracker(designCheckpointPath(request.repo,request.reviewId));
    const checkpoint:DesignReviewCheckpoint={schemaVersion:1,reviewId:request.reviewId,project:request.repo,artifactId:prepared.subject.artifactId,subject:prepared.subject,
-    submitted:{artifactPath:request.artifactPath,attempt:1},attempts:[{number:1,status:'pending',preparationKind:'planning',baseline:prepared.baseline,inventory:prepared.inventory,completedChunks:[],progress:tracker.snapshot(),startedAt:new Date().toISOString(),reviewer:prepared.subject.reviewer}]};
+    submitted:{artifactPath:request.artifactPath,attempt:request.attempt},attempts:[{number:request.attempt,status:'pending',preparationKind:'planning',baseline:prepared.baseline,inventory:prepared.inventory,completedChunks:[],progress:tracker.snapshot(),startedAt:new Date().toISOString(),reviewer:prepared.subject.reviewer}]};
    await this.deps.admit?.(checkpoint);
    await(this.deps.save??saveDesignCheckpoint)(request.repo,checkpoint);
    this.launch(checkpoint,tracker,context);
@@ -282,9 +284,9 @@ export class DesignReviewCoordinator {
    return{...observeStoredDesignCheckpoint({...checkpoint,attempts:checkpoint.attempts.filter(a=>a.number<=attempt)},options),source:'checkpoint'};
   }
   this.knownArtifacts.set(key,checkpoint.subject.canonicalPath);
-  requireDesign(checkpoint.attempts[attempt-1]?.number===attempt,'missing_attempt','Design review attempt not found');
+  requireDesign(checkpoint.attempts.some(a=>a.number===attempt),'missing_attempt','Design review attempt not found');
   const live=!!job&&currentDesignAttempt(checkpoint).number===attempt;
-  const view=observeDesignCheckpoint({...checkpoint,attempts:checkpoint.attempts.slice(0,attempt)},{...options,active:live,...(live?{liveProgress:job.tracker.snapshot()}:{})});
+  const view=observeDesignCheckpoint({...checkpoint,attempts:checkpoint.attempts.filter(a=>a.number<=attempt)},{...options,active:live,...(live?{liveProgress:job.tracker.snapshot()}:{})});
   const uncertain=attempt===currentDesignAttempt(checkpoint).number&&this.uncertain.get(key);
   if(uncertain)return{...view,status:'failed',phase:'complete',requiresUserInput:true,failure:uncertain};
   const reason=live&&job.abort.signal.reason;

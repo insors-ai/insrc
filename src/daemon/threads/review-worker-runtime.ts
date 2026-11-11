@@ -14,7 +14,6 @@ import { assertReviewIdentity,sameReviewWorker } from './review-worker-contract.
 import type { ReviewWorkerInit,ReviewWorkerIdentity } from './review-worker-contract.js';
 import { persistReviewWorkerAdmission } from './review-worker-admission.js';
 import { TaskReviewCoordinator } from '../../workflow/code-review/task-review/coordinator.js';
-import { DesignReviewCoordinator } from '../../workflow/review/design-review/coordinator.js';
 import { RegistryReviewSources } from '../../workflow/code-review/task-review/sources.js';
 import { createRoleRouter } from '../../analyze/context/role-router.js';
 import { loadAnalyzeConfig } from '../../config/analyze.js';
@@ -30,10 +29,12 @@ import { CodeReviewWorker } from '../../workflow/code-review/task-review/worker-
 import type { TaskReviewDeps } from '../../workflow/code-review/task-review/coordinator.js';
 import { updateStoredCodeCheckpoint,loadStoredCheckpoint,checkpointPath } from '../../workflow/code-review/task-review/checkpoint.js';
 import { isCodeAdmission } from '../../workflow/code-review/task-review/contracts.js';
+import { DesignReviewWorker } from '../../workflow/review/design-review/worker-admission.js';
+import type { DesignCoordinatorDeps } from '../../workflow/review/design-review/coordinator.js';
 
 /** A dedicated instance, never the class singleton/session runtime. Source
  * qualification and controller authority adapters are integrated by t9/t10. */
-export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?:TaskReviewDeps|undefined}={}):Promise<void>{
+export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?:TaskReviewDeps|undefined;readonly design?:DesignCoordinatorDeps|undefined}={}):Promise<void>{
  if(!parentPort||init.role!=='review')throw new Error('Dedicated review worker required');
  assertReviewIdentity(init.review);
  const hub=startDaemonWorker(init),board=new StatusBoardClient(hub);
@@ -45,7 +46,8 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
  await withReviewNativeTransport(transport,async()=>{
   const provider=()=>createRoleRouter({cliTimeoutMs:900000}).resolveProviderForRole('review',loadAnalyzeConfig(),init.review.key.project).provider;
   const code=init.review.key.family==='code'?new CodeReviewWorker(init.review,deps.code??{sources:new RegistryReviewSources({repoPath:init.review.key.project,sessionId:`review:${init.review.key.reviewId}`,requestId:0,send:()=>{}}),provider},init.review.epicHash):undefined;
-  const coordinator=code?.coordinator??new DesignReviewCoordinator();
+  const design=init.review.key.family==='design'?new DesignReviewWorker(init.review,deps.design):undefined;
+  const coordinator=code?.coordinator??design!.coordinator;
   const identity=(raw:unknown):Record<string,unknown>=>{
    if(!raw||typeof raw!=='object'||!sameReviewWorker(init.review,raw as ReviewWorkerIdentity))throw new Error('Foreign or stale review worker operation');
    return raw as Record<string,unknown>;
@@ -58,11 +60,12 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
     return{nextAttempt:p['nextAttempt']};
    },
    'review.worker.execute':async(raw,context)=>{
-    const p=identity(raw);if(!code)throw new Error('Design execution adapter not installed');
+    const p=identity(raw);
     if(p['attempt']!==init.review.attempt||!['start','resume'].includes(String(p['operation'])))throw new Error('Invalid review execution');
     if(!context?.reviewOwnerNonce)throw new Error('Trusted review execution required');
-    if(p['operation']==='resume')await code.assertResume();
-    code.execute(init.review.reviewer==='controller'?{id:context.reviewOwnerNonce,signal:controllerLifetime.signal}:undefined,p['operation'] as 'start'|'resume');
+    const owner=init.review.reviewer==='controller'?{id:context.reviewOwnerNonce,signal:controllerLifetime.signal}:undefined;
+    if(code){if(p['operation']==='resume')await code.assertResume();code.execute(owner,p['operation'] as 'start'|'resume');}
+    else{if(p['operation']!=='start')throw new Error('Design recovery requires its typed recovery action');design!.execute(owner);}
     return{accepted:true,...init.review.key,attempt:init.review.attempt};
    },
    'review.worker.control':async(raw,context)=>{
@@ -95,7 +98,7 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
    'review.worker.describe':async(raw:unknown)=>{identity(raw);return{key:init.review.key,incarnation:init.review.incarnation,threadId,coordinator:coordinator.constructor.name,nativeBound:!!reviewNativeTransport(),storeOwnerDeclared:isLiveStoreOwnerDeclared(),shellTimeoutMs:getToolSettings().shell.defaultTimeoutMs};},
    'review.worker.progress':async(raw:unknown)=>{
     const params=identity(raw),attempt=params['attempt'];if(!Number.isSafeInteger(attempt)||Number(attempt)<1)throw new Error('Invalid review attempt');
-    return code?code.progress():coordinator.progress(init.review.key.project,init.review.key.reviewId,Number(attempt));
+    return code?code.progress():design!.progress();
    },
   };
   if(process.env['INSRC_TEST_HOOKS']==='1')handlers['test.review.native']=async raw=>{

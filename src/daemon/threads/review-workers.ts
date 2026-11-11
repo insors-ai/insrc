@@ -80,7 +80,7 @@ export class ReviewWorkers {
  private active(e:Entry):void{
   if(this.entries.get(keyOf(e.input.key))!==e||e.closing||e.fence.state==='closing')throw new Error('Review worker fenced');assertReviewOwnerActive(e.owner,e.connection);
  }
- async admit(input:Omit<ReviewBootstrapInput,'incarnation'|'reviewer'|'epicHash'>,context:TrustedRpcContext):Promise<ReviewAdmissionReceipt>{
+ async admit(input:Omit<ReviewBootstrapInput,'incarnation'|'reviewer'|'epicHash'|'subject'>,context:TrustedRpcContext):Promise<ReviewAdmissionReceipt>{
   if(!context.connectionIdentity||!context.daemonEpoch||!context.connectionSignal||context.connectionSignal.aborted)throw new Error('Trusted live review connection required');
   context.assertRequestActive?.();
   if(!Number.isSafeInteger(input.attempt)||input.attempt<1||typeof input.actionId!=='string'||!input.actionId||input.actionId.length>128||input.operation!==undefined&&!['start','resume'].includes(input.operation))throw new Error('Invalid review admission header');
@@ -102,7 +102,7 @@ export class ReviewWorkers {
    return this.call(previous,'review.worker.matchAdmission',{...input,key,incarnation:previous.input.incarnation,reviewer:scope.reviewer}) as Promise<ReviewAdmissionReceipt>;
   }
   if(this.cleanup.has(scope.cleanupScope)||key.family==='design'&&[...this.entries.values()].some(e=>e.input.key.family==='design'&&e.input.key.project===key.project&&e.scope.subject===scope.subject))throw new Error('Review subject or cleanup busy');
-  const review:ReviewBootstrapInput={attempt:input.attempt,actionId:input.actionId,submitted:input.submitted,...identity,reviewer:scope.reviewer,...(scope.epicHash?{epicHash:scope.epicHash}:{}),...(input.operation?{operation:input.operation}:{})};
+  const review:ReviewBootstrapInput={attempt:input.attempt,actionId:input.actionId,submitted:input.submitted,...identity,reviewer:scope.reviewer,subject:scope.subject,...(scope.epicHash?{epicHash:scope.epicHash}:{}),...(input.operation?{operation:input.operation}:{})};
   const {port1,port2}=new MessageChannel(),connection=registerReviewWorkerConnection(port1),lifetime=new AbortController();
   const owner=registerReviewRequestOwner(connection,randomUUID(),scope.reviewer==='controller'?context.connectionSignal:lifetime.signal);
   const processOwner=this.leases.register(key,identity.incarnation),fence=new ReviewBootstrapFence(identity);

@@ -1,0 +1,601 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 19,
+        "contentHash": "22a836fb1064ccc6449b78ac985214041c1342842056f87337a31728abcfc56e",
+        "at": "2026-11-09T16:29:06.022Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-9fa6b652-e272-4d70-bd80-8020f47eab6c",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T15:23:29.152Z",
+    "epicCreatedAt": "2026-11-09T05:00:05.847Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "eedc4519199b24b4",
+    "storyId": "s1",
+    "revision": 19,
+    "updatedAt": "2026-11-09T16:28:26.847Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "make-delivery-board-read-common-artifact"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      },
+      {
+        "id": "t9",
+        "passed": true
+      },
+      {
+        "id": "t10",
+        "passed": true
+      }
+    ],
+    "summary": "The plugin reads the new snapshot fields, joins plan rows on planRowId, renders tasks in the order given, shows an Epic as complete only from its own unit status, and shows each Task's unit status beside its validation result.",
+    "testRecord": {
+      "md": "docs/standalone/make-delivery-board-read-common-artifact-E20261109eedc4519/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/completion-evidence.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/completion-holds.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/lifecycle-completion.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/lifecycle-kit.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/lifecycle-rollup.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/completion-evidence.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/lifecycle.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tasks/__tests__/task-build-rounds.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/workflow.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/workflow-approve.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/story-completion.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/lifecycle-resignoff.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/lifecycle-table.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/history.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/lifecycle-service.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/gates.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/workflow-step/phases/synthesize.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/workflow-rpc.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/workflow-head-lifecycle.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-write-inventory.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/storage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/repo-convert.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/repo-lifecycle.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/__tests__/repair.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/amendments.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/migrated-head.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/plan.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/rename.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/repair.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/stamps.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/units.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/binding.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tasks/task-set.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/__tests__/repair-tasks.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/tasks.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/__tests__/repair-kit.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/__tests__/repair-settle.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/settle.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/__tests__/handlers.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/__tests__/load.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/handlers.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/load.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/__tests__/fixtures.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/__tests__/fixtures/delivery-snapshot.sample.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/__tests__/gate.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/__tests__/graph.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/__tests__/notice.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/__tests__/snapshot.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/__tests__/stage.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/gate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/graph.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/notice.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/snapshot.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/stage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/delivery-handler-contract.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/__tests__/task-membership.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/path-scheme.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-details.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-fixtures.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-views.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/delivery-client.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/labels.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-details.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-host.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-model.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-protocol.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-views.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/delivery-contract.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/labels.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T16:28:26.847Z"
+      }
+    ],
+    "commit": "6951de5a0"
+  },
+  "citations": []
+}

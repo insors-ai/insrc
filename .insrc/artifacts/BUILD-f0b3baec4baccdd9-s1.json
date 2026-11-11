@@ -1,0 +1,137 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "de265466591bb511801ca9e42144aa9e1ce64d74bd2e33ee497213116eb74dda",
+        "at": "2026-11-09T19:47:28.275Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T19:56:25.139Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-1f565b93-352f-47e3-91df-ef27da95f8c0",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T19:37:10.735Z",
+    "epicCreatedAt": "2026-11-09T19:36:01.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f0b3baec4baccdd9",
+    "storyId": "s1",
+    "revision": 2,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "A defect with a clear approach: the shared theme already exists and three page shells compose it. The UX card styles and the zoom controls need to use it. The change is confined to styling in the companion and docgen shells and has no contract change.",
+    "epicSlug": "make-ux-mocks-zoom-controls-follow",
+    "updatedAt": "2026-11-09T19:45:56.378Z"
+  },
+  "body": {
+    "focus": "The UX mock and all zoom and pan controls must follow the selected light or dark theme, using the shared theme's colours, and stay readable in both. Zoom and pan must keep working as they do today on every page type, including the docgen fallback page. Pages that are already generated keep their current styling until they are regenerated. The fix must confirm the result by rendering real pages in both themes.",
+    "producesLld": false,
+    "commit": "7f22642c8",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "UX mock pages now run a theme-only boot script, which they lacked entirely, so their toggle works and they no longer stick on the dark stylesheet. UX card colours use the theme variables, with per-mode status colours checked for 4.5:1 contrast. The companion toolbar uses the themed iv-bar class, and both docgen shells theme svg-pan-zoom's on-diagram controls. Real UX and docgen fallback pages were rendered in both themes through the page's own toggle; screenshots are in docs/standalone/make-ux-mocks-zoom-controls-follow-E20261109f0b3baec/S001/evidence/. The primary Mermaid docgen page could not be captured visually in headless Chrome.",
+    "testRecord": {
+      "md": "docs/standalone/make-ux-mocks-zoom-controls-follow-E20261109f0b3baec/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/artifact-theme/theme.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:45:56.378Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:45:56.378Z"
+      },
+      {
+        "target": {
+          "file": "src/docgen/render/__tests__/fallback.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:45:56.378Z"
+      },
+      {
+        "target": {
+          "file": "src/docgen/render/__tests__/shell.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:45:56.378Z"
+      },
+      {
+        "target": {
+          "file": "src/docgen/render/fallback.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:45:56.378Z"
+      },
+      {
+        "target": {
+          "file": "src/docgen/render/shell.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:45:56.378Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:45:56.378Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/companion/__tests__/ux-page.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:45:56.378Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/companion/shell.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:45:56.378Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/companion/ux.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T19:45:56.378Z"
+      }
+    ]
+  },
+  "citations": []
+}

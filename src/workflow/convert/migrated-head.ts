@@ -23,6 +23,8 @@ import type { ConversionDeps, ConvertedHead } from './types.js';
 /** Test seam: called between the appended entries and the head replace (a crash there is what the rerun repairs). */
 export interface MigratedHeadSeams {
 	readonly beforeHeadWrite?: (() => void) | undefined;
+	/** Told once the head has been replaced. */
+	readonly headWritten?: ((artifactId: string) => void) | undefined;
 }
 
 type Obj = Record<string, unknown>;
@@ -85,6 +87,7 @@ export async function writeMigratedHead(repo: string, converted: ConvertedHead, 
 		seams.beforeHeadWrite?.();
 		if (current !== converted.bytes) {
 			writeAtomic(path, converted.bytes);
+			seams.headWritten?.(id);
 			changed = true;
 		}
 		return changed ? 'written' : 'unchanged';

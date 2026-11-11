@@ -72,6 +72,8 @@ export interface ApproveOutcome {
 	readonly attach?:  AttachUnitResult | { readonly skipped: string };
 	/** The second commit, of the unit head that records the attachments. */
 	readonly attachCommit?: CommitArtifactsResult;
+	/** Whether a BUILD approval completed its Story, and why not when it did not (the approval stands either way). */
+	readonly storyCompletion?: { readonly ok: boolean; readonly note?: string; readonly completed: readonly string[] };
 }
 
 const DEF_RE = /^DEF-([0-9a-f]{16})\.json$/;
@@ -150,7 +152,7 @@ interface PipelineReply {
 /** Rebuild the terminal's ApproveOutcome from the pipeline's follow-on entries; an entry stopped by a denial becomes the failed outcome of its step. */
 export function approveOutcomeOf(reply: PipelineReply): ApproveOutcome {
 	const entry = (kind: import('../../workflow/gates.js').FollowOnOutcome['kind']) => reply.followOn.find(e => e.kind === kind);
-	const sync = entry('tasks-sync'), push = entry('tracker-push'), commit = entry('artifact-commit'), attach = entry('document-attach'), second = entry('attach-commit');
+	const sync = entry('tasks-sync'), push = entry('tracker-push'), commit = entry('artifact-commit'), attach = entry('document-attach'), second = entry('attach-commit'), completion = entry('story-completion');
 	const failedPush = (note: string | undefined): AutoPushResult => ({ status: 'failed', reason: note ?? 'the publication stopped' });
 	return {
 		approval: reply.approval,
@@ -158,6 +160,7 @@ export function approveOutcomeOf(reply: PipelineReply): ApproveOutcome {
 		...(push !== undefined ? { tracker: (push.tracker ?? failedPush(push.note)) as AutoPushResult } : {}),
 		...(commit !== undefined ? { commit: commit.commit ?? { committed: false, pushed: false, reason: commit.note ?? 'the check-in commit stopped' } } : {}),
 		...(attach !== undefined ? { attach: (attach.attach ?? { error: attach.note ?? 'the attachment stopped' }) as AttachUnitResult | { readonly skipped: string } } : {}),
+		...(completion !== undefined ? { storyCompletion: { ok: completion.ok, ...(completion.note !== undefined ? { note: completion.note } : {}), completed: completion.completed ?? [] } } : {}),
 		...(second !== undefined ? { attachCommit: second.commit ?? { committed: false, pushed: false, reason: second.note ?? 'the commit of the attachment records stopped' } } : {}),
 	};
 }

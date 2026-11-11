@@ -1,0 +1,663 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1794254425999-ht2ypo",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T20:03:28.224Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 181867,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-11-09T06:00:04.355Z",
+    "epicHash": "206db3426ffd4428",
+    "epicSlug": "show-long-running-task-progress-chat",
+    "storyId": "s2",
+    "hldBaseRunId": "wf-1794211533808-ghbhlu",
+    "hldEffectiveHash": "48a6a5468b45d758c2f607734dcbfdf65a0d1476d8c409eeed1ac09aa037dec9",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Preserve live progress for workflows and analysis",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5f40f524997013fa3040331c0b28c8f8460230ea358f1717f07717590a20c93c",
+        "at": "2026-11-09T20:03:28.375Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 1,
+        "reviewer": {
+          "id": "agent:design-review-daemon",
+          "kind": "agent",
+          "properties": {
+            "party": "daemon"
+          }
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "HIGH": 0,
+          "MED": 0,
+          "LOW": 0
+        },
+        "at": "2026-11-09T20:17:47.686Z",
+        "report": {
+          "entityId": "LLD-206db3426ffd4428-s2",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "f3cb3630efa76e92a4789091308696a589750b2a709d14d57d5de6b864b5f2ee"
+        }
+      },
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-10T03:59:29.265Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Workflow and analysis executors feed structured measurements to the daemon coordinator through run-owned delegates. Existing streams, detached workflow polls, and analysis results keep their current contracts. Progress reports a stage even when the producer cannot measure output."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Use executor delegates with a shared daemon coordinator. Preserve legacy workflow and analyze IPC frames and existing execution authority. The coordinator feeds a typed VS Code adapter, request-scoped MCP notifications and one optional fallback observation schedule.",
+      "ownedContracts": [
+        {
+          "id": "sc4",
+          "name": "Workflow and analysis measurements",
+          "purpose": "Maps supported existing stage/delta data into task details while preserving the old frame and result channel. Use measured output production only when a producer supports it, retaining its declared unit. No text enters progress. The two delivery stories consume the mapped details.",
+          "interfaceSketch": "interface WorkflowDetails {\n  readonly kind: 'workflow';\n  readonly stageId: string;\n  readonly stagePosition: MeasuredCount | null;\n  readonly production: MeasuredCount | null;\n}\ninterface AnalysisDetails {\n  readonly kind: 'analysis';\n  readonly stageId: string;\n  readonly stagePosition: MeasuredCount | null;\n  readonly production: MeasuredCount | null;\n}",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s5",
+            "s6"
+          ],
+          "assumptions": [
+            "c4",
+            "c5"
+          ]
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Task identity and delegate observation",
+          "purpose": "One verified owner binds each task attempt to one project and originating invocation. An insrc chat may own many invocations, and an invocation may launch many tasks. Each task has one current attempt, with at most one active owner epoch. External host, daemon session and extension chat identities are optional distinct bindings, never inferred from one another. Both delivery paths use this delegate snapshot. The foundation is parameterized by producer-owned detail types, so it has no type dependency on later stories.",
+          "interfaceSketch": "interface TaskRef {\n  readonly projectId: string;\n  readonly invocationId: string;\n  readonly taskId: string;\n  readonly attempt: number;\n}\ninterface TaskOwnerFence {\n  readonly ownerId: string;\n  readonly ownerEpoch: string;\n  readonly ownerSequence: number;\n}\ninterface TaskOrigin {\n  readonly extensionChatId?: string;\n  readonly daemonSessionId?: string;\n  readonly nativeSessionId?: string;\n  readonly turnId?: string;\n}\ntype ProgressKind = 'workflow' | 'analysis' | 'design-review' | 'code-review' | 'test';\ninterface MeasuredCount {\n  readonly unit: string;\n  readonly completed: number;\n  readonly total: number | null;\n}\ninterface DelegateMeasurement<Details extends { readonly kind: ProgressKind }> {\n  readonly task: TaskRef;\n  readonly owner: TaskOwnerFence;\n  readonly kind: ProgressKind;\n  readonly measuredAt: string;\n  readonly meaningfulRevision: number;\n  readonly lastMeaningfulAt: string | null;\n  readonly phase: string;\n  readonly activeUnit: string | null;\n  readonly counts: readonly MeasuredCount[];\n  readonly milestones: readonly string[];\n  readonly controls: readonly ('cancel')[];\n  readonly details: Details;\n}\ninterface TaskProgressDelegate<Details extends { readonly kind: ProgressKind }> {\n  progress(task: TaskRef): Promise<DelegateMeasurement<Details> | null>;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6"
+          ],
+          "assumptions": [
+            "c3",
+            "c4",
+            "c5",
+            "c7"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "Scoped snapshots, subscriptions and observation control",
+          "purpose": "The daemon authorizes every operation against server-verified caller/project/origin bindings, including logs and controls. A read yields a compact snapshot, meaningful-change indicator and revision cursor. Observer loss, executor state and session retention are independent. The shared coordinator arbitrates one optional fallback schedule per task, independent of all native subscriptions. Owner credentials, internal session identifiers and fencing fields remain server-side. A structured fallback lease governs the scheduler, without granting execution authority.",
+          "interfaceSketch": "type TaskState = 'queued' | 'running' | 'waiting' | 'paused' | 'completed' | 'failed' | 'cancelled' | 'interrupted' | 'unknown';\ntype ProgressFreshness = 'live' | 'stale' | 'unavailable';\ntype DeliveredMeasurement<Details extends { readonly kind: ProgressKind }> = Omit<DelegateMeasurement<Details>, 'owner'>;\ninterface ProgressSnapshot<Details extends { readonly kind: ProgressKind }> {\n  readonly task: TaskRef;\n  readonly cursor: string;\n  readonly state: TaskState;\n  readonly freshness: ProgressFreshness;\n  readonly measurement: DeliveredMeasurement<Details> | null;\n  readonly lastOwnerActivityAt: string | null;\n  readonly workerHealth: 'alive' | 'lost' | 'unknown';\n  readonly cancellation: 'none' | 'pending';\n  readonly resultRef?: string;\n}\ninterface ObservationReply<Details extends { readonly kind: ProgressKind }> {\n  readonly snapshot: ProgressSnapshot<Details>;\n  readonly disposition: 'changed' | 'unchanged' | 'resync';\n  readonly schedule: 'native' | 'scheduled' | 'suspended' | 'stopped';\n  readonly nextPollNotBefore?: string;\n}\ninterface ObservationControl {\n  readonly task: TaskRef;\n  readonly action: 'stop-observation' | 'cancel-execution';\n  readonly requestId: string;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6"
+          ],
+          "assumptions": [
+            "c3",
+            "c6",
+            "c7"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "Execution-owned activity and chat retention",
+          "purpose": "One current owned attempt may hold at most one active association for its originating insrc conversation. Each chat may have many associations. The coordinator renews through verified executor activity, and the actual session owner consumes the lease or a runtime renewal. View closure does not release a retained conversation. Removing a conversation releases only its association and retains project-scoped authorized task results.",
+          "interfaceSketch": "interface TaskActivityLease {\n  readonly task: TaskRef;\n  readonly origin: TaskOrigin;\n  readonly fence: TaskOwnerFence;\n  readonly renewedAt: string;\n  readonly expiresAt: string;\n}\ninterface ChatTaskRetention {\n  readonly originatingChatId: string;\n  readonly retainedTasks: readonly { task: TaskRef; expiresAt: string }[];\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c3"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s2",
+        "owns": [
+          "sc4"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3"
+        ],
+        "internal": "Own adapters for existing workflow and analyze producer signals and terminal/owner evidence. Existing stream shape and command semantics remain compatible."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "depends": [],
+          "internal": "Own daemon coordination, verified registration, cursors, normalization, scoped read/subscribe/control, durable state, owner fencing and fallback schedule arbitration. Keep storage, fencing and expiry implementation private."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "Own DesignReviewDelegate and CodeReviewDelegate and mappings from checkpoint progress and execution ownership. Review results, admission, retries and publication remain under the existing engines."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc6"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "Own TestDelegate and managed reporter interpretation, including suite/case identity, provisional counts and abnormal exit. Keep test orchestration and exit semantics unchanged."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Own typed VS Code reader and transcript row, current status projection and bindings to the session owner. Render durable snapshots by origin across turns and multiple windows without executing or polling models."
+        },
+        {
+          "storyId": "s6",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Own MCP adapter, capability qualification, explicit opt-in disclosure and connection to the coordinator's fallback lease. No vendor-specific process changes or assumptions about session identity."
+        }
+      ],
+      "rolloutPhase": "Phase B — executor measurement adapters",
+      "nonFunctional": {
+        "performance": "Proposed caps for qualification are one coalesced active snapshot per second per task, 8 KiB per snapshot, 32 retained meaningful milestones, 16 queued observer updates and a reserved terminal state. Enforce per-project limits of 128 tracked active observations and 1,024 retained terminal observations, plus a global disk budget of 128 MiB. Exceeding observation capacity must report degradation without refusing, cancelling or slowing work. Terminal updates bypass normal coalescing. Reserve the observation terminal slot and bounded storage on admission. Evict only older terminal entries by policy, and refuse new observation with a capacity state when no reservation is possible. Do not evict active owners to admit new observations.",
+        "security": "Authenticate observations via existing daemon caller identity and verify project, conversation/invocation and task attempt before returning any snapshot, detail or control. Opaque cursors and task IDs do not grant authorization. Persist and expose sanitized structured measurements only. Detailed logs remain authorized, bounded references. No direct database access in MCP or VS Code.",
+        "observability": "Measure emitted and coalesced progress, cursor gaps, scheduler degradation, stale source age, rejected owner fences and retention transitions separately. Qualify each producer end to end, verify zero extra model invocations for native paths, and live-qualify CLI token, rendering, background lifetime and scheduling per version/session. Never log raw prompts, output or credentials as progress.",
+        "durability": "Use daemon-owned atomic per-task snapshots on local storage, with bounded milestone records and terminal result pointers. Persist terminal state before delivery. Refresh verified owner activity every 30 seconds with a 120-second lease, qualifying the margin against the actual session owner's idle threshold. After daemon restart recover persisted observations before accepting new owner events. Hold stale owner retention at most through its bounded grace and show interrupted or unknown until authority is reverified. Terminal retention is seven days subject to bounded capacity, after which separately available executor results remain authoritative. For executors without durable result history, expiry is explicit and is never rendered as a success, cancellation or new execution."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "TaskProgressDelegate",
+          "signature": "interface TaskProgressDelegate<D> { progress(task: TaskRef, signal?: AbortSignal): Promise<DelegateMeasurement<D> | null> }",
+          "parameters": [
+            {
+              "name": "task",
+              "type": "TaskRef",
+              "purpose": "Fence lookup to the admitted attempt.",
+              "optional": false
+            },
+            {
+              "name": "signal",
+              "type": "AbortSignal",
+              "purpose": "Stop the observation read.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<DelegateMeasurement<D> | null>",
+            "meaning": "Latest sanitized snapshot or null when no observation exists."
+          },
+          "errors": [],
+          "preconditions": [
+            "Task was admitted through the trusted S1 producer port."
+          ],
+          "postconditions": [
+            "The read is bounded and does not perform producer work."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "WorkflowDetails",
+        "change": "new",
+        "details": "One optional current snapshot per owned workflow attempt, pointing from the S1 task to an executor-local measurement. stageId comes from the internal phase allowlist, with a validated step or runner identifier as activeUnit. stagePosition is null because the legacy index counts events, including retries, and is not completion. production is a run-cumulative count of actual provider deltas with unit output-chunks and null total. Existing tokensTotal counts callbacks, so label tokens only when a provider explicitly supplies a verified token count. Track detached deltas without adding frames to the legacy poll.",
+        "callSites": [
+          "src/daemon/workflow-rpc.ts",
+          "src/daemon/workflow-run-registry.ts"
+        ]
+      },
+      {
+        "entity": "AnalysisDetails",
+        "change": "new",
+        "details": "One optional current snapshot per owned analyze attempt. Use allowlisted typed stage and task transition data, and report unknown stagePosition unless a same-plan completed count is available. Production is null on the current analysis preview route. No preview text, labels, prompts, tool messages or arbitrary payload fields cross into progress.",
+        "callSites": [
+          "src/daemon/analyze-rpc.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Once per actual run use the trusted producer port and launch authorization, a daemon-created execution key and the admitted fence. Use main daemon as sole owner of the S1 runtime. Session workers send bounded typed measurements and lifecycle through a private hub relay keyed to the actual worker channel and run. The coordinator-side delegate reads an in-memory mirror. Never accept an origin, owner epoch or opaque handle from public params. In-process route uses the same port without a hub hop."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Register workflow and analysis projectors and matching closed validators in the runtime. Keep public stream, poll and status payloads unchanged. Start observation independently of legacy delivery. Observation admission, writer failures and slow consumers never block the legacy terminal path. Owner-side result settlement is the terminal evidence. Supply a safe result handle only where an existing authorized result lookup exists."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Check live execution via the real run owner and its worker channel even when the producer is quiet. Use server-verified origin bindings only. Loss of observer does not renew or end ownership. End the observed attempt exactly once at owner settlement or classify verified owner loss as interrupted, preserving the S1 lease policy."
+      },
+      {
+        "contractId": "sc4",
+        "role": "implements",
+        "howDetails": "Separate workflow/analysis detail discriminants use the same stage, optional measured position and optional declared-unit production fields. The daemon observes workflow.run and detached workflow.run.start, and analyze.run.start. Controller step calls and nested grounding are not independently registered as complete daemon-owned runs."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Progress admission or persistence fails.",
+          "detection": "Producer port rejects or throws, relay closes, or reservation is refused.",
+          "response": "Disable or degrade that run's progress observation; isolate the rejection from execution and preserve the existing result path. Retry only an exact terminal write under the same fence as S1 permits.",
+          "userImpact": "Legacy operation continues. No fabricated successful progress is published.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Worker owner exits or a stale worker sends an update.",
+          "detection": "Worker channel closure or mismatch with the bound worker, run, attempt or strictly ordered sequence.",
+          "response": "Reject stale frames. Use verified worker loss for interruption when no prior terminal evidence exists; keep a previously persisted terminal state.",
+          "userImpact": "An interrupted owner is distinguishable from a quiet stage.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Untrusted or missing origin.",
+          "detection": "Trusted project resolution or S1 origin binding validation fails.",
+          "response": "Do not mint a conversation grant. Never infer a chat from a client-supplied ID, run ID, socket or session label. Continue legacy execution.",
+          "userImpact": "Run remains usable via its existing path.",
+          "recoverable": false
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Quiet stage or provider without count evidence.",
+          "expected": "Keep stage stable; production is null until evidence exists. Verified owner liveness is separate from meaningful progress."
+        },
+        {
+          "input": "Cancellation request races with successful settlement.",
+          "expected": "Pending cancellation is not terminal. Workflow detached uses its existing final status; analysis uses the typed aborted result; a verified successful completion remains successful."
+        },
+        {
+          "input": "Legacy streaming client disconnects or detached poll stops.",
+          "expected": "Preserve existing stream-abort semantics and detached-run lifetime. Only owner evidence determines progress terminal state."
+        },
+        {
+          "input": "An analysis preview token or a workflow retry carries arbitrary text.",
+          "expected": "Legacy handling stays byte-compatible. No text is copied into the new measurement."
+        },
+        {
+          "input": "Legacy execution settles before asynchronous progress admission completes.",
+          "expected": "Hold one terminal slot per local owner; if admission completes, submit terminal evidence without replaying late active updates; release state after bounded settlement."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Preserve workflow driver, streaming and detached workflow results, progress frames and abort authority.",
+          "source": "c1"
+        },
+        {
+          "text": "Preserve analysis stage filtering and the separate analyze.result/done terminal pair.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "Node.js node:test through tsx",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Verify typed mapping, privacy and monotonic event behavior.",
+          "subjects": [
+            "Workflow phases, retries and known versus absent production units",
+            "Analysis stages, tasks and ignored previews",
+            "Owner settlement and quiet liveness"
+          ],
+          "fixturesNeeded": [
+            "Chunk-only streaming provider and non-streaming provider fixtures",
+            "Analysis events carrying sentinel secrets"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Exercise routed and in-process execution with real S1 coordinator and a verified test origin.",
+          "subjects": [
+            "workflow.run",
+            "workflow.run.start/poll/abort",
+            "analyze.run.start/status",
+            "Worker exit, rebinding and terminal write failure"
+          ],
+          "fixturesNeeded": [
+            "Fake provider with controlled stage transitions",
+            "Real worker channel and temporary progress store"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Confirm legacy compatibility independent of observation state.",
+          "subjects": [
+            "Exact frame sequences and payloads",
+            "Cancellation and detached lifetime",
+            "Denial for wrong project or origin and stale worker",
+            "No extra provider invocations, bounded relay and final cleanup"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "Both real daemon entry paths expose normalized stage updates via S1, even during quiet stages and concurrent runs.",
+            "Workflow chunks keep their actual unit and analysis previews leave production unknown.",
+            "Worker relay rejects wrong owner and old sequence."
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "Legacy clients receive identical workflow stream, detached poll and analysis terminal frames with progress disabled, active, refused and failing.",
+            "Existing abort and socket disconnect paths keep their outcomes, detached workflow survives observer loss, and settled runs stop owner updates.",
+            "Terminal snapshot persists exactly once before S1 observer delivery without delaying legacy result."
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The S2 context bundle locates separate legacy workflow stage/delta, detached poll, and analysis stage/result routes. S1 has a daemon-owned progress runtime but has no workflow or analysis projector.",
+      "stateAfter": "New verified workflow and analysis executions can produce typed progress through the existing coordinator without altering any legacy operation contract.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the two closed detail validators and initialize the two producer ports on the existing runtime.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Attach owner delegates at the existing workflow and analysis launch sites, with the private main-thread relay for routed execution.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Qualify real routing and compatibility with registered test origins before delivery stories consume the contract.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Existing RPC request and result fields, stream order, detached poll cursor, abort and restart behavior remain compatible. Existing progress records require no rewrite.",
+      "zeroDowntime": false,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Executor-owned delegates over existing callbacks",
+        "oneLineSummary": "Map producer events at each supported run owner.",
+        "approach": "Use one workflow and one analysis delegate with run-local state fed by typed producer callbacks and settled by the executor that owns the result. The S1 coordinator remains the only progress authority.",
+        "pros": [
+          "Preserves legacy delivery and existing cancellation authority.",
+          "Retains access to trusted terminal and owner evidence."
+        ],
+        "cons": [
+          "Each supported owner entry point must wire its lifecycle explicitly."
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Shared internal producer event envelope",
+        "oneLineSummary": "Normalize run events into a single internal envelope before delegation.",
+        "approach": "Introduce a typed daemon-private event envelope for workflow and analysis producers, preserving the existing adapters for legacy output and using the same coordinator producer port.",
+        "pros": [
+          "Centralizes event classification and contract validation."
+        ],
+        "cons": [
+          "Adds a transport and translation layer for two producers and widens legacy-path changes."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Can meet the same contracts but requires a parallel internal envelope."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "id": "workflow-analysis-progress",
+      "narrative": "An executor sends measurements and terminal evidence to the coordinator without making the legacy result path wait on progress. The worker relay applies only in routed execution. A run without an authorized observation continues through the legacy path.",
+      "participants": [
+        {
+          "id": "caller",
+          "label": "Legacy caller",
+          "description": "Receives existing stream or poll results."
+        },
+        {
+          "id": "exec",
+          "label": "Run owner",
+          "description": "Owns workflow or analysis execution and the legacy result."
+        },
+        {
+          "id": "relay",
+          "label": "Worker relay",
+          "description": "Connects the worker-owned execution to the main daemon using a private bounded channel."
+        },
+        {
+          "id": "coord",
+          "label": "Coordinator",
+          "description": "Owns admission, fencing and persistence."
+        },
+        {
+          "id": "observer",
+          "label": "Bound observer",
+          "description": "Uses the S1 observation capability."
+        }
+      ],
+      "messages": [
+        {
+          "from": "caller",
+          "to": "exec",
+          "label": "Start run",
+          "description": "Existing validation, inputs and cancellation semantics."
+        },
+        {
+          "from": "exec",
+          "to": "relay",
+          "label": "Offer observation",
+          "description": "Daemon-generated execution key and server-verified launch context. No observer is required to execute."
+        },
+        {
+          "from": "relay",
+          "to": "coord",
+          "label": "Admit producer",
+          "description": "Bind one worker and one run to the S1 owner fence. Skip observation when authorization or admission fails."
+        },
+        {
+          "from": "exec",
+          "to": "caller",
+          "label": "Send existing stage frame",
+          "description": "Detached workflow retains its poll frame shape."
+        },
+        {
+          "from": "exec",
+          "to": "relay",
+          "label": "Send structured measurement",
+          "description": "Coalesce and forward allowlisted data only."
+        },
+        {
+          "from": "relay",
+          "to": "coord",
+          "label": "Signal latest sample",
+          "description": "The coordinator reads the delegate and verifies the fence."
+        },
+        {
+          "from": "coord",
+          "to": "observer",
+          "label": "Publish snapshot",
+          "description": "Only a bound observer receives the snapshot."
+        },
+        {
+          "from": "exec",
+          "to": "caller",
+          "label": "Deliver legacy outcome",
+          "description": "Independent of whether observation can persist."
+        },
+        {
+          "from": "exec",
+          "to": "relay",
+          "label": "Send terminal evidence",
+          "description": "Use actual owner settlement, never an abort receipt or preview."
+        },
+        {
+          "from": "relay",
+          "to": "coord",
+          "label": "Record terminal",
+          "description": "Bypass active coalescing and fence late updates."
+        },
+        {
+          "from": "coord",
+          "to": "observer",
+          "label": "Publish terminal snapshot",
+          "description": "Only after persistence succeeds."
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/S002/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1",
+      "quotedText": "Workflow has streaming and detached owners. Analysis maps stage transitions independently of its terminal result."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/HLD.md"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/workflow-rpc.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/workflow-run-registry.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/daemon/analyze-rpc.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/daemon/task-progress/coordinator.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/daemon/task-progress/access.ts"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/daemon/index.ts"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/shared/task-progress.ts"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/daemon/threads/method-class.ts"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/daemon/__tests__/workflow-progress-map.test.ts"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "src/daemon/__tests__/analyze-progress.test.ts"
+    }
+  ]
+}

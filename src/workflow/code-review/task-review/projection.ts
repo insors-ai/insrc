@@ -26,12 +26,13 @@ export class ProjectionBudget {
 const sourceBudgets = new WeakMap<ReviewSources, ProjectionBudget>();
 export function boundedProjectionSources(source: ReviewSources, budget: ProjectionBudget): ReviewSources {
  if (sourceBudgets.get(source) === budget) return source;
- const commits = new Map<string, readonly string[]>(), files = new Map<string, PinnedBlob | null>(), diffs = new Map<string, readonly ChangedRange[]>(), ancestors = new Map<string, boolean>();
+ const commits = new Map<string, readonly string[]>(), files = new Map<string, PinnedBlob | null>(), diffs = new Map<string, readonly ChangedRange[]>(), ancestors = new Map<string, boolean>(), histories = new Map<string, readonly string[]>();
  const wrapped: ReviewSources = {
   async commit(oid, field) { if (commits.has(oid)) return commits.get(oid)!; budget.read(); const value = await source.commit(oid, field); commits.set(oid, value); return value; },
   async file(commit, path) { const key = JSON.stringify([commit, path]); if (files.has(key)) return files.get(key)!; budget.read(); const value = await source.file(commit, path); if (value) budget.decode(value.bytes.byteLength); files.set(key, value); return value; },
   async changedRanges(commit, parent, paths) { const key = JSON.stringify([commit, parent, paths]); if (diffs.has(key)) return diffs.get(key)!; budget.read(); const value = await source.changedRanges(commit, parent, paths); diffs.set(key, value); return value; },
   async isAncestor(a, b) { const key = JSON.stringify([a, b]); if (ancestors.has(key)) return ancestors.get(key)!; budget.read(); const value = await source.isAncestor(a, b); ancestors.set(key, value); return value; },
+  async pathChanges(from, to, path) { const key = JSON.stringify([from, to, path]); if (histories.has(key)) return histories.get(key)!; budget.read(); const value = await source.pathChanges(from, to, path); histories.set(key, value); return value; },
  };
  sourceBudgets.set(wrapped, budget); return wrapped;
 }
@@ -46,19 +47,20 @@ function intersects(a: ReviewedSegment, b: ReviewedSegment): boolean {
  return 'after' in a && 'after' in b ? a.after[0] <= b.after[1] && b.after[0] <= a.after[1] : 'deletionAt' in a && 'deletionAt' in b && a.deletionAt === b.deletionAt;
 }
 /** A final blob match cannot hide an unselected delete/move and recreation.
- * Inspect every descendant edge of this path leg, not log's simplified or
- * first-parent-only history. Selected move boundaries start a new leg. */
+ * Every descendant edge of this path leg whose path existence differs is checked,
+ * merges and side branches included; simplified or first-parent history is never
+ * used. Only an edge whose entry at the path differs can change existence, so the
+ * full-history listing of commits that changed the path names every edge to check;
+ * commits that leave the path untouched cost nothing. Selected move boundaries start
+ * a new leg. */
 async function pathContinuity(path: string, from: string, to: string, origins: readonly SelectedChange[], sources: ReviewSources): Promise<void> {
- const pending = [to], seen = new Set<string>();
- while (pending.length) {
-  const commit = pending.pop()!;
-  if (commit === from || seen.has(commit)) continue;
-  seen.add(commit);
+ if (from === to) return;
+ for (const commit of await sources.pathChanges(from, to, path)) {
+  if (!await sources.isAncestor(from, commit)) continue;
   for (const parent of await sources.commit(commit)) {
    if (parent !== from && !await sources.isAncestor(from, parent)) continue;
    const before = await sources.file(parent, path), after = await sources.file(commit, path);
    requireReview(Boolean(before) === Boolean(after) || origins.some(o => o.commit === commit && (o.path === path || o.previousPath === path)), 'scope_conflict', 'Unselected path disappearance or recreation interrupts lineage');
-   pending.push(parent);
   }
  }
 }

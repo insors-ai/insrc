@@ -47,7 +47,7 @@ the bundled bootstrap:
 ```bash
 git clone https://github.com/insors-ai/insrc ~/.insrc/daemon
 cd ~/.insrc/daemon
-npm install                    # builds native modules against Node 22 headers
+CXXFLAGS=-std=c++17 npm install   # builds native modules against Node 22 headers; fs-ext needs the C++ standard set
 npm run build                  # tsc + copy-assets → out/
 ```
 

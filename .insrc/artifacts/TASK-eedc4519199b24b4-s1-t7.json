@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1eb98ab0-3c01-47d2-bc96-7a58726e9d20",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T15:17:26.323Z",
+    "epicCreatedAt": "2026-11-09T05:00:05.847Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "eedc4519199b24b4",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Board loads every record kind",
+      "parent": {
+        "entityId": "STORY-eedc4519199b24b4-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-eedc4519199b24b4-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "37fdc53773b70c851a78474c52679465eaac5613f53ccd7ec976f7a3597286f2",
+        "at": "2026-11-09T15:17:26.323Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T15:17:26.324Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Board loads every record kind",
+    "summary": "Add EPIC, STORY, TASK, TASKS and DIAG to the loader, give a head with no lifecycle the state unmigrated, and let evidence reads accept ids with two suffixes.",
+    "size": "S",
+    "order": 7,
+    "acceptanceChecks": [
+      "Every common-model kind loads with no notice and TESTS stays skipped",
+      "A head with no lifecycle has approval state unmigrated",
+      "A TASK or sequenced DIAG id can be read as evidence, and malformed or escaping ids are refused"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "liftStoreFile admits EPIC, STORY, TASK, TASKS and a valid DIAG with no notice, gives a head with no lifecycle the state unmigrated, and TESTS stays skipped"
+      },
+      {
+        "level": "unit",
+        "name": "handleDeliveryEvidence reads a valid TASK id and a sequenced DIAG id, still accepts a one-suffix and an uppercase legacy id, and refuses a malformed id and one that escapes the store"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

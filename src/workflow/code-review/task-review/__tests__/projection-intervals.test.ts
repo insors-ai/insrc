@@ -72,7 +72,7 @@ test('committed projection uses identical-blob fast path and ignores HEAD/worktr
  try {
   const prepared = await prepareReviewPacket(f.packet, f.deps.sources), origin = prepared.originChanges[0]!;
   let diffs = 0;
-  const sources: ReviewSources = { commit: f.deps.sources.commit.bind(f.deps.sources), isAncestor: f.deps.sources.isAncestor.bind(f.deps.sources), file: f.deps.sources.file.bind(f.deps.sources), changedRanges: async (...args) => { diffs++; return f.deps.sources.changedRanges(...args); } };
+  const sources: ReviewSources = { commit: f.deps.sources.commit.bind(f.deps.sources), isAncestor: f.deps.sources.isAncestor.bind(f.deps.sources), file: f.deps.sources.file.bind(f.deps.sources), changedRanges: async (...args) => { diffs++; return f.deps.sources.changedRanges(...args); }, pathChanges: f.deps.sources.pathChanges.bind(f.deps.sources) };
   const identity = await projectFileIntervals(origin, 0, origin.commit, origin.path, sources);
   assert.equal(diffs, 0); assert.deepEqual(identity.entry.segments, [{ after: [1, 1] }]);
   f.put('source.js', 'UNSELECTED_PREFIX\nexport const total = 2;\n'); f.git('add', 'source.js'); f.git('commit', '-qm', 'shift selected line');
@@ -96,7 +96,7 @@ test('projection refuses malformed or omitted changes, invalid UTF-8 and binary 
   const origin = (await prepareReviewPacket(f.packet, f.deps.sources)).originChanges[0]!;
   for (const bytes of [new Uint8Array([255]), new Uint8Array([0])]) {
    let diffs = 0;
-   const sources: ReviewSources = { commit: f.deps.sources.commit.bind(f.deps.sources), isAncestor: f.deps.sources.isAncestor.bind(f.deps.sources), file: async () => ({ bytes, oid: 'f'.repeat(40) }), changedRanges: async () => { diffs++; return []; } };
+   const sources: ReviewSources = { commit: f.deps.sources.commit.bind(f.deps.sources), isAncestor: f.deps.sources.isAncestor.bind(f.deps.sources), file: async () => ({ bytes, oid: 'f'.repeat(40) }), changedRanges: async () => { diffs++; return []; }, pathChanges: f.deps.sources.pathChanges.bind(f.deps.sources) };
    await assert.rejects(projectFileIntervals(origin, 0, origin.commit, origin.path, sources), /scope_conflict/);
    assert.equal(diffs, 0);
   }

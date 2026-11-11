@@ -1,0 +1,262 @@
+import { randomUUID } from 'node:crypto';
+import { MessageChannel } from 'node:worker_threads';
+import type { MessagePort } from 'node:worker_threads';
+import { Type } from '@sinclair/typebox';
+import type { Static } from '@sinclair/typebox';
+import { Value } from '@sinclair/typebox/value';
+import { ProgressId, ProgressSequence, progressObject } from '../../shared/task-progress.js';
+import type { DelegateMeasurement, TaskOwnerFence, TaskProgressDelegate, TaskRef } from '../../shared/task-progress.js';
+import type { TrustedRpcContext } from '../request-context.js';
+import type { OwnerEvidence, ProducerPort } from './coordinator.js';
+import { validateExecutorDetails } from './executor-measurements.js';
+import type { AnalysisDetails, ExecutorDetails, WorkflowDetails, registerExecutorProducers } from './executor-measurements.js';
+import type { ProgressRuntime } from './rpc.js';
+
+export type ExecutorProgressKind = ExecutorDetails['kind'];
+export function executorProgressKind(method: string): ExecutorProgressKind | undefined {
+  if (method === 'workflow.run' || method === 'workflow.run.start') return 'workflow';
+  return method === 'analyze.run.start' ? 'analysis' : undefined;
+}
+type ExecutorRuntime = ProgressRuntime<ExecutorDetails> & { producers: ReturnType<typeof registerExecutorProducers> };
+const TERMINAL = Type.Union([Type.Literal('completed'), Type.Literal('failed'), Type.Literal('cancelled')]);
+type Terminal = Static<typeof TERMINAL>;
+const EventSchema = Type.Union([
+  progressObject({ type: Type.Literal('start') }),
+  progressObject({ type: Type.Literal('sample'), sequence: ProgressSequence, details: Type.Unknown() }),
+  progressObject({
+    type: Type.Literal('terminal'), sequence: ProgressSequence, state: TERMINAL, resultRef: Type.Optional(ProgressId),
+  }),
+  progressObject({ type: Type.Literal('alive'), probe: ProgressSequence }),
+]);
+const CommandSchema = Type.Union([
+  progressObject({ type: Type.Literal('ack'), sequence: ProgressSequence }),
+  progressObject({ type: Type.Literal('probe'), probe: ProgressSequence }),
+]);
+type Event = Static<typeof EventSchema>;
+type Command = Static<typeof CommandSchema>;
+type TerminalEvent = Extract<Event, { type: 'terminal' }>;
+
+function send(port: MessagePort, message: Event | Command): void {
+  try { port.postMessage(message); } catch { port.close(); }
+}
+
+/** The execution owner holds one unsent sample while the previous sample is in transit. */
+export function beginExecutorProgress(port: MessagePort | undefined) {
+  if (port === undefined) return undefined;
+  let sequence = 0;
+  let awaiting: number | undefined;
+  let latest: ExecutorDetails | undefined;
+  let ended = false;
+  const flush = () => {
+    if (latest === undefined || awaiting !== undefined || ended) return;
+    awaiting = ++sequence;
+    send(port, { type: 'sample', sequence, details: latest });
+    latest = undefined;
+  };
+  port.on('message', (command: unknown) => {
+    if (ended || !Value.Check(CommandSchema, command)) return;
+    if (command.type === 'probe') send(port, { type: 'alive', probe: command.probe });
+    if (command.type === 'ack' && command.sequence === awaiting) {
+      awaiting = undefined;
+      flush();
+    }
+  });
+  port.once('close', () => { ended = true; latest = undefined; });
+  port.unref();
+  send(port, { type: 'start' });
+  return {
+    sample(details: ExecutorDetails | null): void {
+      if (details === null || ended) return;
+      latest = details;
+      flush();
+    },
+    settle(state: Terminal, resultRef?: string): void {
+      if (ended) return;
+      ended = true;
+      latest = undefined;
+      send(port, { type: 'terminal', sequence: ++sequence, state,
+        ...(Value.Check(ProgressId, resultRef) ? { resultRef } : {}) });
+    },
+  };
+}
+
+type AcceptedOwner = {
+  readonly task: TaskRef;
+  readonly fence: TaskOwnerFence;
+  readonly signal: (sequence: number) => Promise<void>;
+  readonly settle: (evidence: OwnerEvidence) => Promise<'recorded' | 'replay' | 'rejected'>;
+};
+
+export class ExecutorProgressRelay {
+  private reservations = 0;
+
+  constructor(
+    private readonly runtime: () => Promise<ExecutorRuntime>,
+    private readonly admissionMs = 10_000,
+    private readonly limit = 256,
+  ) {}
+
+  /** A dedicated transferred port binds events to the exact dispatched request and worker. */
+  reserve(kind: ExecutorProgressKind, repo: string, context: TrustedRpcContext): MessagePort | undefined {
+    if (this.reservations >= this.limit || context.connectionSignal?.aborted ||
+        context.connectionSession !== undefined || context.connectionExecution?.mode === 'session-memory') return undefined;
+    const { port1, port2 } = new MessageChannel();
+    this.reservations++;
+    this.receive(port1, kind, repo, context);
+    port2.unref();
+    return port2;
+  }
+
+  private receive(port: MessagePort, kind: ExecutorProgressKind, repo: string, context: TrustedRpcContext): void {
+    const ownerId = randomUUID();
+    let started = false;
+    let closed = false;
+    let released = false;
+    let expired = false;
+    let accepted: AcceptedOwner | undefined;
+    let sequence = 0;
+    let lastEvent = 0;
+    let latest: ExecutorDetails | undefined;
+    let final: TerminalEvent | undefined;
+    let snapshot: DelegateMeasurement<ExecutorDetails> | null = null;
+    let pumping = false;
+    let probeNumber = 0;
+    let waiting: { id: number; resolve: (sequence: number | null) => void } | undefined;
+
+    const release = () => {
+      if (released) return;
+      released = true;
+      clearTimeout(timer);
+      this.reservations--;
+      port.close();
+    };
+    const timer = setTimeout(() => {
+      expired = true;
+      closed = true;
+      release();
+    }, this.admissionMs);
+    timer.unref();
+
+    const probe = (_task: TaskRef, signal: AbortSignal): Promise<number | null> => {
+      if (closed || final !== undefined || signal.aborted || waiting !== undefined) return Promise.resolve(null);
+      return new Promise(resolve => {
+        const id = ++probeNumber;
+        const finish = (value: number | null) => {
+          if (waiting?.id !== id) return;
+          waiting = undefined;
+          signal.removeEventListener('abort', abort);
+          resolve(value);
+        };
+        const abort = () => finish(null);
+        waiting = { id, resolve: finish };
+        signal.addEventListener('abort', abort, { once: true });
+        send(port, { type: 'probe', probe: id });
+      });
+    };
+
+    const pump = async (): Promise<void> => {
+      const owner = accepted;
+      if (owner === undefined || pumping || (released && !expired)) return;
+      pumping = true;
+      try {
+        while (latest !== undefined && !expired) {
+          const details = latest;
+          latest = undefined;
+          const at = new Date().toISOString();
+          const revision = ++sequence;
+          // Rebuild the trusted envelope from the admitted task and its fence.
+          snapshot = {
+            task: owner.task, kind, measuredAt: at, meaningfulRevision: revision, lastMeaningfulAt: at,
+            owner: { ...owner.fence, ownerSequence: revision },
+            phase: details.stageId, activeUnit: details.activeUnit, details, milestones: [], controls: [],
+            counts: [details.stagePosition, details.production].filter(count => count !== null),
+          };
+          await owner.signal(revision).catch(() => {});
+          if (final !== undefined) break;
+        }
+        if (final !== undefined || closed) {
+          const evidence: OwnerEvidence = final === undefined
+            ? { sequence: ++sequence, state: 'interrupted' }
+            : { sequence: ++sequence, state: final.state,
+              ...(final.resultRef !== undefined ? { resultRef: final.resultRef } : {}) };
+          await owner.settle(evidence).catch(() => owner.settle(evidence)).catch(() => {});
+          release();
+        }
+      } finally {
+        pumping = false;
+      }
+    };
+    const schedule = () => { void pump().catch(release); };
+
+    const admit = async () => {
+      const runtime = await this.runtime();
+      if (released) return;
+      const launch = await runtime.access.launchBound(repo, ownerId, context);
+      if (released) return;
+      const delegate = <D extends ExecutorDetails>(matches: (value: ExecutorDetails) => value is D): TaskProgressDelegate<D> => ({
+        progress: async task => snapshot !== null && matches(snapshot.details) &&
+          snapshot.task.projectId === task.projectId && snapshot.task.invocationId === task.invocationId &&
+          snapshot.task.taskId === task.taskId && snapshot.task.attempt === task.attempt
+          ? { ...snapshot, details: snapshot.details } : null,
+        ownerActivity: probe,
+      });
+      const bind = async (
+        producer: Pick<ProducerPort<ExecutorDetails>, 'recordLifecycle' | 'signalMeasurement'>,
+        registration: ReturnType<ProducerPort<ExecutorDetails>['register']>,
+      ) => {
+        const admission = await registration;
+        if (admission.kind !== 'admitted') { release(); return; }
+        const { task, owner, fence } = admission;
+        accepted = { task, fence, signal: revision => producer.signalMeasurement(owner, revision),
+          settle: evidence => producer.recordLifecycle(owner, evidence) };
+        clearTimeout(timer);
+        if (!expired && !closed && final === undefined) {
+          await accepted.settle({ sequence: ++sequence, state: 'running' }).catch(() => {});
+        }
+        schedule();
+      };
+      if (kind === 'workflow') {
+        const producer = runtime.producers.workflow;
+        await bind(producer, producer.register(launch.authorization, ownerId,
+          delegate((details): details is WorkflowDetails => details.kind === 'workflow')));
+      } else {
+        const producer = runtime.producers.analysis;
+        await bind(producer, producer.register(launch.authorization, ownerId,
+          delegate((details): details is AnalysisDetails => details.kind === 'analysis')));
+      }
+    };
+
+    port.on('message', (event: unknown) => {
+      if (released || closed || !Value.Check(EventSchema, event)) return;
+      if (event.type === 'start') {
+        if (started) return;
+        started = true;
+        void admit().catch(release);
+        return;
+      }
+      if (!started || final !== undefined) return;
+      if (event.type === 'alive') {
+        if (waiting?.id === event.probe) waiting.resolve(++sequence);
+        return;
+      }
+      if (event.sequence <= lastEvent) return;
+      if (event.type === 'sample') {
+        if (!validateExecutorDetails(kind, event.details)) return;
+        latest = event.details;
+        send(port, { type: 'ack', sequence: event.sequence });
+      } else {
+        final = event;
+        waiting?.resolve(null);
+      }
+      lastEvent = event.sequence;
+      schedule();
+    });
+    port.once('close', () => {
+      closed = true;
+      waiting?.resolve(null);
+      if (!started) release();
+      else schedule();
+    });
+    port.unref();
+  }
+}

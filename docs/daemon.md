@@ -128,7 +128,7 @@ repo, kept in sync with `origin`).
 # Clone into the canonical install location:
 git clone https://github.com/insors-ai/insrc-ide.git ~/.insrc/daemon
 cd ~/.insrc/daemon/src/insrc
-npm install
+CXXFLAGS=-std=c++17 npm install
 npm run build
 ```
 

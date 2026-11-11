@@ -186,7 +186,7 @@ export class IpcServer {
   private readonly pendingWrites = new Set<Promise<boolean>>();
   private writeFailed = false;
 
-  private writeLine(socket: Socket, line: string, onFailure?: () => void): void {
+  private writeLine(socket: Socket, line: string, onFailure?: () => void): Promise<boolean> {
     let complete!: (ok: boolean) => void;
     const pending = new Promise<boolean>(resolve => { complete = resolve; });
     this.pendingWrites.add(pending);
@@ -207,6 +207,7 @@ export class IpcServer {
     socket.once('close', failed);
     socket.once('error', failed);
     try { socket.write(line, error => finish(!error)); } catch { finish(false); }
+    return pending;
   }
 
   async flushPendingWrites(timeoutMs = 1000): Promise<boolean> {
@@ -389,6 +390,16 @@ export class IpcServer {
     let settle!: () => void;
     const settled = new Promise<void>(resolve => { settle = resolve; });
     let cancel: () => void = () => {};
+    let pendingFrame: Promise<boolean> | undefined;
+    let finishUpdate: ((written: boolean) => void) | undefined;
+    const updateReply = request.method === 'daemon.update' && request.stream !== true
+      ? new Promise<boolean>(resolve => { finishUpdate = resolve; })
+      : undefined;
+    if (updateReply !== undefined) {
+      const abortUpdate = () => finishUpdate?.(false);
+      conn.controller.signal.addEventListener('abort', abortUpdate, { once: true });
+      void updateReply.then(() => conn.controller.signal.removeEventListener('abort', abortUpdate));
+    }
     const end = (): void => { ended = true; settle(); };
     // A terminal frame ends delivery; socket cancellation remains live through actual cleanup.
     void Promise.all([lifetime.completed, lifetime.drained]).then(() => { running?.delete(requestId); settle(); });
@@ -397,14 +408,15 @@ export class IpcServer {
       if (ended || !this.inflight.has(socket)) return;
       if (envelope.kind === 'reply') {
         end();
-        this.send(socket, envelope.error !== undefined ? { id: request.id, error: envelope.error } : { id: request.id, result: envelope.result });
+        const written = this.send(socket, envelope.error !== undefined ? { id: request.id, error: envelope.error } : { id: request.id, result: envelope.result });
+        if (finishUpdate !== undefined) void written.then(ok => finishUpdate?.(ok && envelope.error === undefined));
         return;
       }
       // Always override the frame's id with the request's id so the client can correlate.
       const frame = { ...(envelope.frame as IpcStreamMessage), id: request.id };
       if (frame.stream === 'done' || frame.stream === 'error') end();
       try {
-        this.writeLine(socket, JSON.stringify(frame) + '\n', () => { lifetime.abort(); cancel(); });
+        pendingFrame = this.writeLine(socket, JSON.stringify(frame) + '\n', () => { lifetime.abort(); cancel(); });
       } catch {
         // Serialization or delivery failure cancels work without releasing its drains.
         lifetime.abort(); cancel();
@@ -413,7 +425,9 @@ export class IpcServer {
     try { cancel = this.forward({
       kind: 'request', requestId, method: request.method, params: request.params, stream: request.stream === true,
       ...(client !== undefined ? { session: client } : {}),
-      trustedContext: this.connectionContext(conn),
+      trustedContext: request.method === 'progress.subscribe'
+        ? { ...this.connectionContext(conn), awaitProgressWrite: () => pendingFrame ?? Promise.resolve(false) }
+        : { ...this.connectionContext(conn), ...(updateReply === undefined ? {} : { awaitUpdateReply: () => updateReply }) },
       ...(lifetime ? { lifetime } : {}),
     }, deliver); }
     catch (error) {
@@ -426,9 +440,9 @@ export class IpcServer {
     return settled;
   }
 
-  private send(socket: Socket, response: IpcResponse): void {
+  private send(socket: Socket, response: IpcResponse): Promise<boolean> {
     try {
-      this.writeLine(socket, JSON.stringify(response) + '\n');
-    } catch { /* socket already closed */ }
+      return this.writeLine(socket, JSON.stringify(response) + '\n');
+    } catch { return Promise.resolve(false); }
   }
 }

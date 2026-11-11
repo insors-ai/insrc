@@ -257,3 +257,10 @@ test('docgen/render/__tests__/fallback.test.ts: the theme switch is a direct chi
 	const bar = shell.html.slice(shell.html.indexOf('<div class="iv-bar">'), shell.html.indexOf('</div>', shell.html.indexOf('<div class="iv-bar">')));
 	assert.doesNotMatch(bar, /iv-theme/, 'not inside the toolbar');
 });
+
+// ISSUE-f0b3baec4baccdd9: the library's own controls follow the page theme.
+test('the fallback page themes the pan-zoom controls in both modes', () => {
+	const { html } = assembleFallbackShell(irOf(1, 0), '<svg></svg>', '/*spz*/', '3.6.2');
+	assert.equal(html.split('.svg-pan-zoom-control{fill:var(--iv-text)').length - 1, 2);
+	assert.equal(html.split('.svg-pan-zoom-control-background{fill:var(--iv-panel)').length - 1, 2);
+});

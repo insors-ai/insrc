@@ -52,7 +52,7 @@ export interface Artifact<P> {
 export type Operation =
 	| 'create' | 'update' | 'delete' | 'reparent' | 'request-review' | 'review'
 	| 'approve' | 'reject' | 'open-signoff' | 'signoff-changes' | 'signed-off'
-	| 'complete' | 'reopen' | 'withdraw' | 'supersede' | 'mark-stale' | 'ack-stale';
+	| 'complete' | 'reopen' | 'withdraw' | 'supersede' | 'mark-stale' | 'ack-stale' | 'record-override';
 
 /** One entry of an artifact's operation log. */
 export interface ChangeLogEntry {

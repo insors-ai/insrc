@@ -1,0 +1,1933 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 19,
+        "contentHash": "1ee41935c5b36fc6bf3c11538e322ad4acd438556483a914504f9d09b812aed0",
+        "at": "2026-11-09T16:28:26.864Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "eedc4519199b24b4",
+    "storyId": "s1",
+    "createdAt": "2026-11-09T15:23:29.152Z",
+    "updatedAt": "2026-11-09T16:28:26.847Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-09T05:00:05.847Z",
+    "epicSlug": "make-delivery-board-read-common-artifact",
+    "revision": 19
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "ed7a49bdd",
+        "ranAt": "2026-11-09T15:27:25.257Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "rollUp for STORY: approved BUILD with clean review and all listed Tasks' latest rounds passed completes",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/lifecycle-rollup.test.ts",
+                "title": "rollUp for STORY: approved BUILD with clean review and all listed Tasks latest rounds passed completes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "rollUp for STORY: an earlier pass followed by a failing latest round holds back, and an explicit override completes it",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/lifecycle-rollup.test.ts",
+                "title": "rollUp for STORY: an earlier pass followed by a failing latest round holds back, and an explicit override completes it",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifact-core/__tests__/completion-evidence.test.ts",
+                "title": "an earlier pass followed by a failing latest round holds back, and an explicit override completes it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "rollUp for STORY: a listed Task with no head holds back",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/lifecycle-rollup.test.ts",
+                "title": "rollUp for STORY: a listed Task with no head holds back",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "rollUp for STORY: an approved PLAN with no TASKS head holds back, with no TASK heads and with a part-way set whose Tasks passed",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/completion-evidence.test.ts",
+                "title": "an approved PLAN with no TASKS head holds back, with no TASK heads and with a part-way set whose Tasks passed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "rollUp for STORY: a TASKS head from an older plan revision holds back even when every listed Task passed, and an explicit override completes it",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/completion-evidence.test.ts",
+                "title": "a TASKS head from an older plan revision holds back even when every listed Task passed, and an explicit override completes it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "storyTasks: a qualifying PLAN at stored revision 0 matches a TASKS head at planRevision 1; an empty current listing answers not-created; with no qualifying PLAN a TASKS listing, then child TASK heads, then none-required apply in that order",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/completion-evidence.test.ts",
+                "title": "a qualifying PLAN at stored revision 0 matches a TASKS head at planRevision 1",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifact-core/__tests__/completion-evidence.test.ts",
+                "title": "an empty current listing answers not-created",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifact-core/__tests__/completion-evidence.test.ts",
+                "title": "with no qualifying PLAN a TASKS listing, then child TASK heads, then none-required apply in that order",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "rollUp for STORY: a Story with no PLAN and no Tasks completes, and child TASK heads with no PLAN are the listed set",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/lifecycle-rollup.test.ts",
+                "title": "rollUp for STORY: a Story with no PLAN and no Tasks completes",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifact-core/__tests__/completion-evidence.test.ts",
+                "title": "child TASK heads with no PLAN are the listed set",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "rollUp for STORY: a listed withdrawn or superseded Task is not counted; a clean review is not an override",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/lifecycle-rollup.test.ts",
+                "title": "rollUp for STORY: a listed withdrawn or superseded Task is not counted",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifact-core/__tests__/lifecycle-rollup.test.ts",
+                "title": "rollUp for STORY: a clean review is not an override",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "rollUp for EPIC: a declared Story without a terminal head holds it; an Epic with no DEF rolls up from its counted Stories",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/lifecycle-rollup.test.ts",
+                "title": "rollUp for EPIC: a declared Story without a terminal head holds it",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifact-core/__tests__/lifecycle-rollup.test.ts",
+                "title": "rollUp for EPIC: an Epic with no DEF rolls up from its counted Stories",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "unitMembers includes TASK heads, and a held Story leaves every Task unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/lifecycle-completion.test.ts",
+                "title": "unitMembers includes TASK heads, and a held Story leaves every Task unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "reopening a Story reopens only the Tasks it froze",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/lifecycle-completion.test.ts",
+                "title": "reopening a Story reopens only the Tasks it froze",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/completion-evidence.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1105,
+            "titles": [
+              {
+                "title": "storyCodeReview maps the gate, an explicit override wins over a stored one, and an empty reason is not an override",
+                "result": "pass"
+              },
+              {
+                "title": "taskBuildPassed reads the Task own build rounds: the latest round decides, and no head has no round",
+                "result": "pass"
+              },
+              {
+                "title": "an earlier pass followed by a failing latest round holds back, and an explicit override completes it",
+                "result": "pass"
+              },
+              {
+                "title": "an approved PLAN with no TASKS head holds back, with no TASK heads and with a part-way set whose Tasks passed",
+                "result": "pass"
+              },
+              {
+                "title": "a TASKS head from an older plan revision holds back even when every listed Task passed, and an explicit override completes it",
+                "result": "pass"
+              },
+              {
+                "title": "child TASK heads with no PLAN are the listed set",
+                "result": "pass"
+              },
+              {
+                "title": "rollUp over real records",
+                "result": "pass"
+              },
+              {
+                "title": "a qualifying PLAN at stored revision 0 matches a TASKS head at planRevision 1",
+                "result": "pass"
+              },
+              {
+                "title": "an empty current listing answers not-created",
+                "result": "pass"
+              },
+              {
+                "title": "a TASKS head from an older plan revision, and an approved PLAN with only some Task heads, answer not-created",
+                "result": "pass"
+              },
+              {
+                "title": "with no qualifying PLAN a TASKS listing, then child TASK heads, then none-required apply in that order",
+                "result": "pass"
+              },
+              {
+                "title": "the override, approval and declared Stories are read from the records",
+                "result": "pass"
+              },
+              {
+                "title": "storyTasks",
+                "result": "pass"
+              },
+              {
+                "title": "createCompletionEvidence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifact-core/__tests__/lifecycle-completion.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 731,
+            "titles": [
+              {
+                "title": "completeIfRolledUp records the Story once, members first and the unit last, and the Epic follows",
+                "result": "pass"
+              },
+              {
+                "title": "a completion that fails part-way is finished by a retry, and reopen reopens the frozen members and is refused while the Epic is completed",
+                "result": "pass"
+              },
+              {
+                "title": "a member whose head and log disagree stops the unit from completing and nothing is frozen",
+                "result": "pass"
+              },
+              {
+                "title": "a unit whose own transition is refused leaves its members untouched, and a withdrawn unit is left alone",
+                "result": "pass"
+              },
+              {
+                "title": "competing operations on one artifact each answer with their own entry",
+                "result": "pass"
+              },
+              {
+                "title": "unitMembers includes TASK heads, and a held Story leaves every Task unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "reopening a Story reopens only the Tasks it froze",
+                "result": "pass"
+              },
+              {
+                "title": "LifecycleService.completeIfRolledUp",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifact-core/__tests__/lifecycle-rollup.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 562,
+            "titles": [
+              {
+                "title": "the Task, Story and Epic roll-up rules, the evidence mapping and the unreadable child",
+                "result": "pass"
+              },
+              {
+                "title": "an unreadable head of another kind does not block a Story roll-up",
+                "result": "pass"
+              },
+              {
+                "title": "an unreadable head of the counted kind still blocks the roll-up",
+                "result": "pass"
+              },
+              {
+                "title": "rollUp for STORY: approved BUILD with clean review and all listed Tasks latest rounds passed completes",
+                "result": "pass"
+              },
+              {
+                "title": "rollUp for STORY: an earlier pass followed by a failing latest round holds back, and an explicit override completes it",
+                "result": "pass"
+              },
+              {
+                "title": "rollUp for STORY: a listed Task with no head holds back",
+                "result": "pass"
+              },
+              {
+                "title": "rollUp for STORY: an approved PLAN with no TASKS head holds back",
+                "result": "pass"
+              },
+              {
+                "title": "rollUp for STORY: a Story with no PLAN and no Tasks completes",
+                "result": "pass"
+              },
+              {
+                "title": "rollUp for STORY: a listed withdrawn or superseded Task is not counted",
+                "result": "pass"
+              },
+              {
+                "title": "rollUp for STORY: a clean review is not an override",
+                "result": "pass"
+              },
+              {
+                "title": "rollUp for EPIC: a declared Story without a terminal head holds it",
+                "result": "pass"
+              },
+              {
+                "title": "rollUp for EPIC: an Epic with no DEF rolls up from its counted Stories",
+                "result": "pass"
+              },
+              {
+                "title": "rollUp",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "dd4eefa59",
+        "ranAt": "2026-11-09T15:35:32.908Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "record-override keeps status, revision and approval time, logs the actor and reason, and is refused from a completed BUILD",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/story-completion.test.ts",
+                "title": "record-override keeps status, revision and approval time, logs the actor and reason, and is refused from a completed BUILD",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "handleWorkflowApprove on a BUILD: the outcome merges the approval's own followOn with the seam's, and the Story, its Tasks and its Epic complete",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/story-completion.test.ts",
+                "title": "handleWorkflowApprove on a BUILD: the outcome merges the approval's own followOn with the seam's, and the Story, its Tasks and its Epic complete",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a walk failure leaves the approval standing and reports ok false",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/story-completion.test.ts",
+                "title": "a walk failure leaves the approval standing and reports ok false",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a live approval with a listed Task missing its head is held and named in the note",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/story-completion.test.ts",
+                "title": "a live approval with a listed Task missing its head is held and named in the note",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a live approval after a failed reconcile, and after one that stopped part-way with newly created unlisted Tasks, is held and leaves those Tasks unfrozen",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/story-completion.test.ts",
+                "title": "a live approval after a failed reconcile, and after one that stopped part-way with newly created unlisted Tasks, is held and leaves those Tasks unfrozen",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "initial approval held, then re-approval with an override records it and completes the Story",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/story-completion.test.ts",
+                "title": "initial approval held, then re-approval with an override records it and completes the Story",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a BUILD approved over a blocking code review with an override, a failure injected in completion, then re-approval with no override in the request passes the outer gate on the stored override and completes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/story-completion.test.ts",
+                "title": "a BUILD approved over a blocking code review with an override, a failure injected in completion, then re-approval with no override in the request passes the outer gate on the stored override and completes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a draft BUILD at a new revision is not passed by an earlier revision's override",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/story-completion.test.ts",
+                "title": "a draft BUILD at a new revision is not passed by an earlier revision's override",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a held Story in signoff completes later from the stored override",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/story-completion.test.ts",
+                "title": "a held Story in signoff completes later from the stored override",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "an Epic with a signoff hold stays open after its Story completes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/story-completion.test.ts",
+                "title": "an Epic with a signoff hold stays open after its Story completes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the CLI adapter exposes the story-completion outcome",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/story-completion.test.ts",
+                "title": "the CLI adapter exposes the story-completion outcome",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/story-completion.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1479,
+            "titles": [
+              {
+                "title": "record-override keeps status, revision and approval time, logs the actor and reason, and is refused from a completed BUILD",
+                "result": "pass"
+              },
+              {
+                "title": "handleWorkflowApprove on a BUILD: the outcome merges the approval's own followOn with the seam's, and the Story, its Tasks and its Epic complete",
+                "result": "pass"
+              },
+              {
+                "title": "a walk failure leaves the approval standing and reports ok false",
+                "result": "pass"
+              },
+              {
+                "title": "a live approval with a listed Task missing its head is held and named in the note",
+                "result": "pass"
+              },
+              {
+                "title": "a live approval after a failed reconcile, and after one that stopped part-way with newly created unlisted Tasks, is held and leaves those Tasks unfrozen",
+                "result": "pass"
+              },
+              {
+                "title": "initial approval held, then re-approval with an override records it and completes the Story",
+                "result": "pass"
+              },
+              {
+                "title": "a BUILD approved over a blocking code review with an override, a failure injected in completion, then re-approval with no override in the request passes the outer gate on the stored override and completes",
+                "result": "pass"
+              },
+              {
+                "title": "a draft BUILD at a new revision is not passed by an earlier revision's override",
+                "result": "pass"
+              },
+              {
+                "title": "a held Story in signoff completes later from the stored override",
+                "result": "pass"
+              },
+              {
+                "title": "an Epic with a signoff hold stays open after its Story completes",
+                "result": "pass"
+              },
+              {
+                "title": "the CLI adapter exposes the story-completion outcome",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "19b00a12b",
+        "ranAt": "2026-11-09T15:39:54.255Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the storage helper: a first write gets a draft lifecycle; a rewrite with unchanged content keeps the lifecycle; a rewrite with changed content gets a draft and keeps Signoff entries, with no Signoff entries and with them",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/workflow-head-lifecycle.test.ts",
+                "title": "the storage helper: a first write gets a draft lifecycle; a rewrite with unchanged content keeps the lifecycle; a rewrite with changed content gets a draft and keeps Signoff entries, with no Signoff entries and with them",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "both first-write sites give a new head a draft lifecycle",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/workflow-head-lifecycle.test.ts",
+                "title": "both first-write sites give a new head a draft lifecycle",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "guard: a production content write of a delivery kind cannot create a head without a lifecycle",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/workflow-head-lifecycle.test.ts",
+                "title": "guard: a production content write of a delivery kind cannot create a head without a lifecycle",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/workflow-head-lifecycle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2424,
+            "titles": [
+              {
+                "title": "the storage helper: a first write gets a draft lifecycle; a rewrite with unchanged content keeps the lifecycle; a rewrite with changed content gets a draft and keeps Signoff entries, with no Signoff entries and with them",
+                "result": "pass"
+              },
+              {
+                "title": "both first-write sites give a new head a draft lifecycle",
+                "result": "pass"
+              },
+              {
+                "title": "guard: a production content write of a delivery kind cannot create a head without a lifecycle",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "60436e184",
+        "ranAt": "2026-11-09T15:50:25.019Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "repair on a store with an uppercase head holding body.feedback and an approved flat amendment: the head is renamed, the feedback survives under the new id, and the amendment stays approved",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/repair.test.ts",
+                "title": "repair on a store with an uppercase head holding body.feedback and an approved flat amendment: the head is renamed, the feedback survives under the new id, and the amendment stays approved",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a failure injected in the head migration step answers a RepairReport whose written lists the committed feedback lines and migration entries, with stoppedAt and remaining, and settles nothing; the next run finishes with no feedback line added twice",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/repair.test.ts",
+                "title": "a failure injected in the head migration step answers a RepairReport whose written lists the committed feedback lines and migration entries, with stoppedAt and remaining, and settles nothing; the next run finishes with no feedback line added twice",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a plan with a rename collision answers an error and writes nothing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/repair.test.ts",
+                "title": "a plan with a rename collision answers an error and writes nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "an unknown mode answers an error and writes nothing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/repair.test.ts",
+                "title": "an unknown mode answers an error and writes nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "rollback: after a staged write fails before head replacement, restoring the copied artifacts, journal and docs with the daemon stopped leaves no pending operation to replay",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/repair.test.ts",
+                "title": "rollback: after a staged write fails before head replacement, restoring the copied artifacts, journal and docs with the daemon stopped leaves no pending operation to replay",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/convert/__tests__/repair.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1870,
+            "titles": [
+              {
+                "title": "repair on a store with an uppercase head holding body.feedback and an approved flat amendment: the head is renamed, the feedback survives under the new id, and the amendment stays approved",
+                "result": "pass"
+              },
+              {
+                "title": "a head with a content hash keeps its content through the reference rewrite, so its integrity still holds",
+                "result": "pass"
+              },
+              {
+                "title": "a failure injected in the head migration step answers a RepairReport whose written lists the committed feedback lines and migration entries, with stoppedAt and remaining, and settles nothing; the next run finishes with no feedback line added twice",
+                "result": "pass"
+              },
+              {
+                "title": "moving a binding reports each write it made, including a failed pending link, and a later run reports none for it",
+                "result": "pass"
+              },
+              {
+                "title": "a Task record moved from the plan onto its Task head is reported, though it does not go through the store",
+                "result": "pass"
+              },
+              {
+                "title": "a plan with a rename collision answers an error and writes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "an unknown mode answers an error and writes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "rollback: after a staged write fails before head replacement, restoring the copied artifacts, journal and docs with the daemon stopped leaves no pending operation to replay",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "bd52cff4d",
+        "ranAt": "2026-11-09T15:58:10.221Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "repair on an already converted repository creates missing EPIC, STORY, TASKS and TASK heads, including from signed-off and completed PLANs, and finishes a part-way Task set",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/repair-tasks.test.ts",
+                "title": "repair on an already converted repository creates missing EPIC, STORY, TASKS and TASK heads, including from signed-off and completed PLANs, and finishes a part-way Task set",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "repair with crossed Task numbers and plan rows gives each BUILD result to the Task with that planTaskId and leaves existing rounds alone, before the live rule settles the Story",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/repair-tasks.test.ts",
+                "title": "repair with crossed Task numbers and plan rows gives each BUILD result to the Task with that planTaskId and leaves existing rounds alone, before the live rule settles the Story",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a failure injected while Task rounds are back-filled lists the rounds already written",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/repair-tasks.test.ts",
+                "title": "a failure injected while Task rounds are back-filled lists the rounds already written",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a TASKS head listing a missing Task, or made from a different plan revision, is reported failed and not settled, and other Stories continue",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/repair-tasks.test.ts",
+                "title": "a TASKS head listing a missing Task, or made from a different plan revision, is reported failed and not settled, and other Stories continue",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/convert/__tests__/repair-tasks.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1223,
+            "titles": [
+              {
+                "title": "repair on an already converted repository creates missing EPIC, STORY, TASKS and TASK heads, including from signed-off and completed PLANs, and finishes a part-way Task set",
+                "result": "pass"
+              },
+              {
+                "title": "repair with crossed Task numbers and plan rows gives each BUILD result to the Task with that planTaskId and leaves existing rounds alone, before the live rule settles the Story",
+                "result": "pass"
+              },
+              {
+                "title": "a failure injected while Task rounds are back-filled lists the rounds already written",
+                "result": "pass"
+              },
+              {
+                "title": "a TASKS head listing a missing Task, or made from a different plan revision, is reported failed and not settled, and other Stories continue",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "435f14567",
+        "ranAt": "2026-11-09T16:03:54.545Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "repair-preview writes nothing, and every write repair makes belongs to a change the preview listed, including proposed head creation, round back-fill and settlement",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/repair-settle.test.ts",
+                "title": "repair-preview writes nothing, and every write repair makes belongs to a change the preview listed, including proposed head creation, round back-fill and settlement",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "repair settles a BUILD approved before COMPLETION_RULE_FROM with the attributed override",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/repair-settle.test.ts",
+                "title": "repair settles a BUILD approved before COMPLETION_RULE_FROM with the attributed override",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "repair holds a BUILD approved exactly at COMPLETION_RULE_FROM, and a later one, whose latest round failed, and lists them in result.held",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/repair-settle.test.ts",
+                "title": "repair holds a BUILD approved exactly at COMPLETION_RULE_FROM, and a later one, whose latest round failed, and lists them in result.held",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "repair completes a later BUILD whose latest round failed when its approval carries a stored explicit override",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/repair-settle.test.ts",
+                "title": "repair completes a later BUILD whose latest round failed when its approval carries a stored explicit override",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "failures injected inside nested Task-set creation, settlement and completing a pending operation, after a log append and before head replacement, are recorded accurately and the pending operation is finished on the next run",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/repair-settle.test.ts",
+                "title": "failures injected inside nested Task-set creation, settlement and completing a pending operation, after a log append and before head replacement, are recorded accurately and the pending operation is finished on the next run",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a failure injected after earlier members commit is listed with completedMembers, and the next repair run finishes the unit",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/repair-settle.test.ts",
+                "title": "a failure injected after earlier members commit is listed with completedMembers, and the next repair run finishes the unit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a second repair lists no changes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/repair-settle.test.ts",
+                "title": "a second repair lists no changes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/convert/__tests__/repair-settle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2806,
+            "titles": [
+              {
+                "title": "repair-preview writes nothing, and every write repair makes belongs to a change the preview listed, including proposed head creation, round back-fill and settlement",
+                "result": "pass"
+              },
+              {
+                "title": "repair settles a BUILD approved before COMPLETION_RULE_FROM with the attributed override",
+                "result": "pass"
+              },
+              {
+                "title": "repair holds a BUILD approved exactly at COMPLETION_RULE_FROM, and a later one, whose latest round failed, and lists them in result.held",
+                "result": "pass"
+              },
+              {
+                "title": "repair completes a later BUILD whose latest round failed when its approval carries a stored explicit override",
+                "result": "pass"
+              },
+              {
+                "title": "failures injected inside nested Task-set creation, settlement and completing a pending operation, after a log append and before head replacement, are recorded accurately and the pending operation is finished on the next run",
+                "result": "pass"
+              },
+              {
+                "title": "a failure injected after earlier members commit is listed with completedMembers, and the next repair run finishes the unit",
+                "result": "pass"
+              },
+              {
+                "title": "a second repair lists no changes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "d6d103919",
+        "ranAt": "2026-11-09T16:07:01.126Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "liftStoreFile admits EPIC, STORY, TASK, TASKS and a valid DIAG with no notice, gives a head with no lifecycle the state unmigrated, and TESTS stays skipped",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/delivery/__tests__/load.test.ts",
+                "title": "liftStoreFile admits EPIC, STORY, TASK, TASKS and a valid DIAG with no notice, gives a head with no lifecycle the state unmigrated, and TESTS stays skipped",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "handleDeliveryEvidence reads a valid TASK id and a sequenced DIAG id, still accepts a one-suffix and an uppercase legacy id, and refuses a malformed id and one that escapes the store",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/delivery/__tests__/handlers.test.ts",
+                "title": "handleDeliveryEvidence reads a valid TASK id and a sequenced DIAG id, still accepts a one-suffix and an uppercase legacy id, and refuses a malformed id and one that escapes the store",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/delivery/__tests__/handlers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2692,
+            "titles": [
+              {
+                "title": "handleDeliveryEvidence reads a valid TASK id and a sequenced DIAG id, still accepts a one-suffix and an uppercase legacy id, and refuses a malformed id and one that escapes the store",
+                "result": "pass"
+              },
+              {
+                "title": "resolveDocsMarkdown keeps workflow.artifactContent's containment errors word for word",
+                "result": "pass"
+              },
+              {
+                "title": "a build record that stamps no epic slug or date is located through its work item's folder",
+                "result": "pass"
+              },
+              {
+                "title": "workflow.delivery returns one timestamped snapshot and leaves the store, docs and git untouched",
+                "result": "pass"
+              },
+              {
+                "title": "workflow.deliveryEvidence reads a marker-less build record through the daemon",
+                "result": "pass"
+              },
+              {
+                "title": "workflow.deliveryEvidence refuses an invalid or escaping id and reports a missing one",
+                "result": "pass"
+              },
+              {
+                "title": "an unresolved repo or an unreadable store is an error and an absent store is an empty snapshot",
+                "result": "pass"
+              },
+              {
+                "title": "a 1,000-record store forming 500 work items is served within 500 ms",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/delivery/__tests__/load.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 606,
+            "titles": [
+              {
+                "title": "every kind in a temporary store is lifted, an amendment like the others",
+                "result": "pass"
+              },
+              {
+                "title": "invalid JSON, missing meta, unknown prefix and an unreadable file each become a load failure and the load continues",
+                "result": "pass"
+              },
+              {
+                "title": "an absent store yields an empty record set",
+                "result": "pass"
+              },
+              {
+                "title": "a store whose listDir throws raises DeliveryStoreUnreadableError",
+                "result": "pass"
+              },
+              {
+                "title": "the store is byte-identical after a load",
+                "result": "pass"
+              },
+              {
+                "title": "an unparseable storyId keeps storyIdRaw with storyOrdinal null",
+                "result": "pass"
+              },
+              {
+                "title": "liftStoreFile admits EPIC, STORY, TASK, TASKS and a valid DIAG with no notice, gives a head with no lifecycle the state unmigrated, and TESTS stays skipped",
+                "result": "pass"
+              },
+              {
+                "title": "load.test.ts: approval state comes from the lifecycle",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "60810876e",
+        "ranAt": "2026-11-09T16:16:31.674Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "buildWorkItemGraph: unit is null for a missing head and has status unmigrated for a head with no lifecycle",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/delivery/__tests__/graph.test.ts",
+                "title": "buildWorkItemGraph: unit is null for a missing head and has status unmigrated for a head with no lifecycle",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a missing or unmigrated unit raises needs-migration and not pending-decision",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/delivery/__tests__/gate.test.ts",
+                "title": "a missing or unmigrated unit raises needs-migration and not pending-decision",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "storyStage is complete only with a completed STORY head, and an approved BUILD otherwise stays build-recorded with text giving the head's status, that it is not migrated, or that there is no head",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/delivery/__tests__/stage.test.ts",
+                "title": "storyStage is complete only with a completed STORY head, and an approved BUILD otherwise stays build-recorded with text giving the head's status, that it is not migrated, or that there is no head",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/delivery/__tests__/gate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 939,
+            "titles": [
+              {
+                "title": "a missing or unmigrated unit raises needs-migration and not pending-decision",
+                "result": "pass"
+              },
+              {
+                "title": "approved, rejected and unstamped artifacts read approved, rejected and pending",
+                "result": "pass"
+              },
+              {
+                "title": "an approved historical block and an overridden block do not block and still show the verdict and the override",
+                "result": "pass"
+              },
+              {
+                "title": "a block whose blocking findings are all resolved has effective verdict pass, and a warn with an unresolved MED is effectively a block",
+                "result": "pass"
+              },
+              {
+                "title": "a code review blocks only while its story has no approved build",
+                "result": "pass"
+              },
+              {
+                "title": "the reviewer party is read through reviewerPartyOf, and a code review's own approval stamp is reported but does not lift its block",
+                "result": "pass"
+              },
+              {
+                "title": "a malformed review, finding, code-review body, task entry or unparseable task id never throws and reports nothing invented",
+                "result": "pass"
+              },
+              {
+                "title": "an unapproved block with no override is blocking and puts the item in Needs attention, and deriveStages over the same fixture gives the same stage as without the review",
+                "result": "pass"
+              },
+              {
+                "title": "an approved build with a failed task is a validation conflict and keeps both facts, and deriveStages over the same fixture keeps it build-recorded",
+                "result": "pass"
+              },
+              {
+                "title": "a failed story-level result on an approved build raises the conflict (BUILD-0855311b6b32eb72-s1 shape)",
+                "result": "pass"
+              },
+              {
+                "title": "a planned task with no recorded result is unrecorded and counted as neither passed nor failed",
+                "result": "pass"
+              },
+              {
+                "title": "a build task with no planned task keeps its result and is marked unplanned",
+                "result": "pass"
+              },
+              {
+                "title": "a pending artifact superseded by an approved later gate on the same item stops counting, even with a blocked review or as a SPEC on a story, and the rule is stated",
+                "result": "pass"
+              },
+              {
+                "title": "every epic, story and issue in the real-shape fixtures gets item gates, deterministically",
+                "result": "pass"
+              },
+              {
+                "title": "a story built without a plan marks its tasks unplanned, and the notice says the story has no plan",
+                "result": "pass"
+              },
+              {
+                "title": "a recorded block with no unresolved HIGH/MED finding is effectively pass, as the approval gate reads it, and still reports the block",
+                "result": "pass"
+              },
+              {
+                "title": "gate.test.ts: blocking comes from the lifecycle review and the review log entry",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/delivery/__tests__/graph.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 593,
+            "titles": [
+              {
+                "title": "buildWorkItemGraph: unit is null for a missing head and has status unmigrated for a head with no lifecycle",
+                "result": "pass"
+              },
+              {
+                "title": "a story with LLD, PLAN, BUILD and CR is one item with all four as evidence",
+                "result": "pass"
+              },
+              {
+                "title": "the LLD and BUILD of one story join one story node, keeping its id in sourceIds",
+                "result": "pass"
+              },
+              {
+                "title": "the real records of epic dfc0371b yield one story",
+                "result": "pass"
+              },
+              {
+                "title": "LLD standalone true with BUILD standalone false (real d88062a6 and dfc0371b shapes) is one item with no notice",
+                "result": "pass"
+              },
+              {
+                "title": "an unparseable storyId keeps its own :R(<raw>) item and raises identity-ambiguous naming the sibling story items",
+                "result": "pass"
+              },
+              {
+                "title": "a standalone story with no head is a root with no invented epic, dated from its own LLD",
+                "result": "pass"
+              },
+              {
+                "title": "a trivial story with only a BUILD (standalone true) and a CR is a standalone root with no unresolved-parent notice",
+                "result": "pass"
+              },
+              {
+                "title": "pending and rejected EXT records create no story item and appear as epic evidence",
+                "result": "pass"
+              },
+              {
+                "title": "a rejected EXT whose story nothing else names is keyed epic-level and creates no story key",
+                "result": "pass"
+              },
+              {
+                "title": "records with an invalid createdAt or a non-hex hash get the H-form id and an identity-anchor-missing notice",
+                "result": "pass"
+              },
+              {
+                "title": "groupRecordsByWorkItem keys an unparseable storyId as <hash>|R(x), omits SPECs, and a head-less HLD key carries an unresolved-parent notice",
+                "result": "pass"
+              },
+              {
+                "title": "an epic story under a hash with no head raises unresolved-parent and gets no parent",
+                "result": "pass"
+              },
+              {
+                "title": "a Define story with no records yet is still a member of its epic",
+                "result": "pass"
+              },
+              {
+                "title": "no call throws for a malformed createdAt, a non-hex hash or an unparseable storyId",
+                "result": "pass"
+              },
+              {
+                "title": "task t1 in two stories of different epics gets two distinct canonical ids",
+                "result": "pass"
+              },
+              {
+                "title": "a BUILD task id equal to the story id creates no task item and no notice",
+                "result": "pass"
+              },
+              {
+                "title": "tasks under an :R(x) story and under a story with an invalid createdAt get <story id>:T<nnn> ids and the builder does not throw",
+                "result": "pass"
+              },
+              {
+                "title": "an issue with fix stories S001 and S002 has two distinct story children with their own tasks and evidence",
+                "result": "pass"
+              },
+              {
+                "title": "a self-slug parentRef gives correctsRef null and no notice",
+                "result": "pass"
+              },
+              {
+                "title": "an issue whose outward parentRef matches nothing is present with an unresolved-parent notice",
+                "result": "pass"
+              },
+              {
+                "title": "a parentRef with slug and storyId (ISSUE-57446545909fe95c shape) resolves to the named story",
+                "result": "pass"
+              },
+              {
+                "title": "a parentRef naming an existing epic and a storyId it lacks resolves to the epic with an unresolved-parent notice naming the missing story",
+                "result": "pass"
+              },
+              {
+                "title": "a bare-hash parentRef slug (ISSUE-095906bac5bbacaf shape) resolves to the existing story without a notice",
+                "result": "pass"
+              },
+              {
+                "title": "an artifact-id slug parentRef resolves through ArtifactIds.parse",
+                "result": "pass"
+              },
+              {
+                "title": "a work-item-id slug parentRef from before the artifact ids is not parsed, so it resolves to nothing",
+                "result": "pass"
+              },
+              {
+                "title": "a parentRef slug matching two hashes resolves to nothing and raises identity-ambiguous naming both",
+                "result": "pass"
+              },
+              {
+                "title": "a SPEC named by seededFromSpec is in that epic's evidence; an unnamed SPEC raises unattached-spec",
+                "result": "pass"
+              },
+              {
+                "title": "the same record set built twice gives a deep-equal graph",
+                "result": "pass"
+              },
+              {
+                "title": "every load failure is one store-level record-unreadable notice naming the file, reason and detail",
+                "result": "pass"
+              },
+              {
+                "title": "items, rootIds and every other notice are the same with and without an unreadable file",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/delivery/__tests__/stage.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 554,
+            "titles": [
+              {
+                "title": "a full-chain story with an approved plan and no build is ready-plan-approved, naming the plan",
+                "result": "pass"
+              },
+              {
+                "title": "a story with an unapproved build whose tasks all passed is build-recorded",
+                "result": "pass"
+              },
+              {
+                "title": "storyStage is complete only with a completed STORY head, and an approved BUILD otherwise stays build-recorded with text giving the head's status, that it is not migrated, or that there is no head",
+                "result": "pass"
+              },
+              {
+                "title": "a story with an approved build is complete whatever its task results and review verdict",
+                "result": "pass"
+              },
+              {
+                "title": "a story with no design, plan or build record is scoped",
+                "result": "pass"
+              },
+              {
+                "title": "the issue magnitude decides a fix story's route ahead of its build stamp",
+                "result": "pass"
+              },
+              {
+                "title": "a story under an epic never takes its route from an ISSUE that shares its hash",
+                "result": "pass"
+              },
+              {
+                "title": "a non-standalone build stamp is never read and an epic story is full-chain",
+                "result": "pass"
+              },
+              {
+                "title": "a sized-bugfix or full-chain story with an approved design and no plan is design-plan",
+                "result": "pass"
+              },
+              {
+                "title": "an unknown or disagreeing stamp gives the unknown route, never a guess",
+                "result": "pass"
+              },
+              {
+                "title": "a small story with an approved design and a small-bugfix issue with an approved issue are ready-design-approved with no plan notice",
+                "result": "pass"
+              },
+              {
+                "title": "a code review with no build leaves the stage and raises review-without-build",
+                "result": "pass"
+              },
+              {
+                "title": "an item with no recorded route keeps its records' stage and raises unknown-route",
+                "result": "pass"
+              },
+              {
+                "title": "a story or issue with no design, plan or build is scoped",
+                "result": "pass"
+              },
+              {
+                "title": "an issue takes the least advanced stage of its fix stories",
+                "result": "pass"
+              },
+              {
+                "title": "missing evidence records and wrongly typed fields never throw",
+                "result": "pass"
+              },
+              {
+                "title": "every story and issue in the real-shape fixtures gets exactly one stage, deterministically",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "1f6edc0a1",
+        "ranAt": "2026-11-09T16:24:38.100Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "buildWorkItemGraph: TASKS-listed membership, withdrawn and superseded exclusion, PLAN fallback with an absent PLAN and an empty listing, unit, planRowId and taskOrder, and a Task whose number differs from its plan row has no number alias in sourceIds",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/delivery/__tests__/task-membership.test.ts",
+                "title": "buildWorkItemGraph: TASKS-listed membership, withdrawn and superseded exclusion, PLAN fallback with an absent PLAN and an empty listing, unit, planRowId and taskOrder, and a Task whose number differs from its plan row has no number alias in sourceIds",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "buildWorkItemGraph: a TASKS head from an older plan revision yields the PLAN's rows matched by planTaskId, in the PLAN's order even when a matching Task head carries an older order",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/delivery/__tests__/task-membership.test.ts",
+                "title": "buildWorkItemGraph: a TASKS head from an older plan revision yields the PLAN's rows matched by planTaskId, in the PLAN's order even when a matching Task head carries an older order",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "board id: Task t4 representing row t9 with a new headless row t4 gives :T004 and :R004 with separate validation and evidence",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/delivery/__tests__/task-membership.test.ts",
+                "title": "board id: Task t4 representing row t9 with a new headless row t4 gives :T004 and :R004 with separate validation and evidence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "board id: Task t4 representing row t9 with an unmatched BUILD result for t4 gives :T004 and :R004",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/delivery/__tests__/task-membership.test.ts",
+                "title": "board id: Task t4 representing row t9 with an unmatched BUILD result for t4 gives :T004 and :R004",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "board id: a headless row and a BUILD result for the same row stay one item; a row whose number no real Task holds keeps :T<nnn>; no two items in a Story share an id",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/delivery/__tests__/task-membership.test.ts",
+                "title": "board id: a headless row and a BUILD result for the same row stay one item; a row whose number no real Task holds keeps :T<nnn>; no two items in a Story share an id",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "buildWorkItemGraph and gate: a PLAN plus an extra failed BUILD result, and a BUILD with no PLAN, keep those task items, their failed count and their validation conflict, with no needs-migration",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/delivery/__tests__/task-membership.test.ts",
+                "title": "buildWorkItemGraph and gate: a PLAN plus an extra failed BUILD result, and a BUILD with no PLAN, keep those task items, their failed count and their validation conflict, with no needs-migration",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "gate sorts tasks by taskOrder, null last, then id",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/delivery/__tests__/task-membership.test.ts",
+                "title": "gate sorts tasks by taskOrder, null last, then id",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "verifyConversion keeps passing on a converted fixture with the changed loader, graph and gates",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/repair.test.ts",
+                "title": "verifyConversion keeps passing on a converted fixture with the changed loader, graph and gates",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/delivery-handler-contract.test.ts carries unit (including status unmigrated), planRowId, taskOrder, unmigrated and needs-migration through the snapshot",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/delivery-handler-contract.test.ts",
+                "title": "workflow.delivery carries unit (including status unmigrated), planRowId, taskOrder, unmigrated and needs-migration through the snapshot",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/delivery-handler-contract.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 816,
+            "titles": [
+              {
+                "title": "index.ts registers 'workflow.delivery', which lazy-imports handleDelivery and passes INSRC_REPO",
+                "result": "pass"
+              },
+              {
+                "title": "index.ts registers 'workflow.deliveryEvidence', which lazy-imports handleDeliveryEvidence and passes INSRC_REPO",
+                "result": "pass"
+              },
+              {
+                "title": "workflow.delivery carries unit (including status unmigrated), planRowId, taskOrder, unmigrated and needs-migration through the snapshot",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/convert/__tests__/repair.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1429,
+            "titles": [
+              {
+                "title": "repair on a store with an uppercase head holding body.feedback and an approved flat amendment: the head is renamed, the feedback survives under the new id, and the amendment stays approved",
+                "result": "pass"
+              },
+              {
+                "title": "a head with a content hash keeps its content through the reference rewrite, so its integrity still holds",
+                "result": "pass"
+              },
+              {
+                "title": "a failure injected in the head migration step answers a RepairReport whose written lists the committed feedback lines and migration entries, with stoppedAt and remaining, and settles nothing; the next run finishes with no feedback line added twice",
+                "result": "pass"
+              },
+              {
+                "title": "moving a binding reports each write it made, including a failed pending link, and a later run reports none for it",
+                "result": "pass"
+              },
+              {
+                "title": "a Task record moved from the plan onto its Task head is reported, though it does not go through the store",
+                "result": "pass"
+              },
+              {
+                "title": "verifyConversion keeps passing on a converted fixture with the changed loader, graph and gates",
+                "result": "pass"
+              },
+              {
+                "title": "a plan with a rename collision answers an error and writes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "an unknown mode answers an error and writes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "rollback: after a staged write fails before head replacement, restoring the copied artifacts, journal and docs with the daemon stopped leaves no pending operation to replay",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/delivery/__tests__/task-membership.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 515,
+            "titles": [
+              {
+                "title": "buildWorkItemGraph: TASKS-listed membership, withdrawn and superseded exclusion, PLAN fallback with an absent PLAN and an empty listing, unit, planRowId and taskOrder, and a Task whose number differs from its plan row has no number alias in sourceIds",
+                "result": "pass"
+              },
+              {
+                "title": "buildWorkItemGraph: a TASKS head from an older plan revision yields the PLAN's rows matched by planTaskId, in the PLAN's order even when a matching Task head carries an older order",
+                "result": "pass"
+              },
+              {
+                "title": "board id: Task t4 representing row t9 with a new headless row t4 gives :T004 and :R004 with separate validation and evidence",
+                "result": "pass"
+              },
+              {
+                "title": "board id: Task t4 representing row t9 with an unmatched BUILD result for t4 gives :T004 and :R004",
+                "result": "pass"
+              },
+              {
+                "title": "board id: a headless row and a BUILD result for the same row stay one item; a row whose number no real Task holds keeps :T<nnn>; no two items in a Story share an id",
+                "result": "pass"
+              },
+              {
+                "title": "buildWorkItemGraph and gate: a PLAN plus an extra failed BUILD result, and a BUILD with no PLAN, keep those task items, their failed count and their validation conflict, with no needs-migration",
+                "result": "pass"
+              },
+              {
+                "title": "gate sorts tasks by taskOrder, null last, then id",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "6951de5a0",
+        "ranAt": "2026-11-09T16:28:26.847Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "taskShortIdOf shows R004 for a row id",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-details.test.ts",
+                "title": "taskShortIdOf shows R004 for a row id",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "board-details joins on planRowId, falling back to sourceIds only when it is null",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-details.test.ts",
+                "title": "board-details joins on planRowId, falling back to sourceIds only when it is null",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "board-views shows an Epic complete only from its unit status",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-views.test.ts",
+                "title": "board-views shows an Epic complete only from its unit status",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "TaskRowView carries a Task's unit status, including unmigrated",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-details.test.ts",
+                "title": "TaskRowView carries a Task's unit status, including unmigrated",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "vscode-plugin/src/delivery/__tests__/delivery-client.test.ts reads the same shape and opens a sequenced DIAG evidence row",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/delivery-client.test.ts",
+                "title": "vscode-plugin/src/delivery/__tests__/delivery-client.test.ts reads the same shape and opens a sequenced DIAG evidence row",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Render the board webview during the build and confirm a Task row shows its unit status beside its validation result, including an unmigrated one",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Real board host and BOARD_WEBVIEW_SCRIPT rendered in headless Chrome with CSP enforced: /tmp/insrc-scratch/board/board.png. Rows read T001 Passed / Completed, T002 Failed / Not migrated, R004 Unrecorded with no unit, T003 Unplanned / Approved."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/delivery/__tests__/board-details.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 391,
+            "titles": [
+              {
+                "title": "taskShortIdOf shows R004 for a row id",
+                "result": "pass"
+              },
+              {
+                "title": "board-details joins on planRowId, falling back to sourceIds only when it is null",
+                "result": "pass"
+              },
+              {
+                "title": "TaskRowView carries a Task's unit status, including unmigrated",
+                "result": "pass"
+              },
+              {
+                "title": "planned tasks show their dependencies and checks with Passed, Failed or Unrecorded, a build-only task is unplanned, and unrecorded tasks are counted apart",
+                "result": "pass"
+              },
+              {
+                "title": "the details give the daemon's stage reason and the records it cites",
+                "result": "pass"
+              },
+              {
+                "title": "an approved build with failed tasks shows the approval, the failed rows and a sentence explaining the conflict",
+                "result": "pass"
+              },
+              {
+                "title": "a rejected record reads Rejected, and the original review verdict is shown with any override",
+                "result": "pass"
+              },
+              {
+                "title": "a code review with no build keeps its stage, lists the review-without-build notice and shows the review as evidence",
+                "result": "pass"
+              },
+              {
+                "title": "chain rows per route — full-chain story shows DEF/HLD from its epic plus LLD/PLAN/BUILD; small story has no PLAN row; small-bugfix has ISSUE and BUILD only; trivial has BUILD only; unknown lists recorded kinds only; a missing expected kind is 'Not recorded'; two BUILDs give two rows",
+                "result": "pass"
+              },
+              {
+                "title": "a story with CR, SPEC, EXT and AMD evidence gets a chain without those kinds, they remain in Records, and buildItemDetails does not throw",
+                "result": "pass"
+              },
+              {
+                "title": "conflict is { headline: 'Two records disagree', text } exactly when item.conflict is set",
+                "result": "pass"
+              },
+              {
+                "title": "kicker, chips and TaskRowView.resultTone",
+                "result": "pass"
+              },
+              {
+                "title": "the chain takes DEF and HLD only from a parent epic, and ISSUE only from a parent issue",
+                "result": "pass"
+              },
+              {
+                "title": "an item kind or approval state this build does not know still gives a readable kicker and a neutral chain row",
+                "result": "pass"
+              },
+              {
+                "title": "the tasks chip is danger when the story-level result failed, even with every task passed",
+                "result": "pass"
+              },
+              {
+                "title": "correctedBy lists the issues correcting the item and approvedAt reads the approval time",
+                "result": "pass"
+              },
+              {
+                "title": "a task row with no title shows its id, as the same task does among the dependencies",
+                "result": "pass"
+              },
+              {
+                "title": "a task's short id is the last ':' segment of its item id, or the whole id without one",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/delivery/__tests__/board-views.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 334,
+            "titles": [
+              {
+                "title": "an epic with five stories, two complete, reads 2 of 5 stories complete, and every epic is a row, by stage and then snapshot order",
+                "result": "pass"
+              },
+              {
+                "title": "a standalone issue correcting a story of an epic counts towards no epic, and the epic's Epics row equals its board header",
+                "result": "pass"
+              },
+              {
+                "title": "the Epics body filters rows by epic title or id and by attention, with whole-epic counts, and a search matching no epic gives the no-matches panel",
+                "result": "pass"
+              },
+              {
+                "title": "epic rows count the planned tasks of the epic's stories and an issue's count separately",
+                "result": "pass"
+              },
+              {
+                "title": "attentionLabel is 'No open gates' at 0, '1 needs attention' at 1, 'N need attention' otherwise",
+                "result": "pass"
+              },
+              {
+                "title": "an epic row's compactId is the epic's compact id",
+                "result": "pass"
+              },
+              {
+                "title": "the Issues body lists issues in stage order with their parent, parent notice and fix stories",
+                "result": "pass"
+              },
+              {
+                "title": "with a search and a scope, the Issues list holds the same issues as the board screen",
+                "result": "pass"
+              },
+              {
+                "title": "the Issues body groups issues into stage sections with the board screens' defaults and fold",
+                "result": "pass"
+              },
+              {
+                "title": "board-views shows an Epic complete only from its unit status",
+                "result": "pass"
+              },
+              {
+                "title": "the Epics body places each epic at the stage of its least-advanced story, by the board screens' section rule, and epics with no stories after the sections",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/delivery/__tests__/delivery-client.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 748,
+            "titles": [
+              {
+                "title": "vscode-plugin/src/delivery/__tests__/delivery-client.test.ts reads the same shape and opens a sequenced DIAG evidence row",
+                "result": "pass"
+              },
+              {
+                "title": "snapshot and evidence send the workspace repo and nothing is sent without a workspace",
+                "result": "pass"
+              },
+              {
+                "title": "the client classifies a missing workspace, a stopped daemon, a daemon error, a timeout and an unknown schemaVersion into their own failure kinds",
+                "result": "pass"
+              },
+              {
+                "title": "opening and refreshing against a temporary git repository leaves the store, docs and git untouched",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-78f36cf1-cae3-4b24-b54a-e82d1c067756",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T17:21:09.368Z",
+    "epicCreatedAt": "2026-11-09T16:34:12.401Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "97adabf6bd47b036",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Own Vibe turn dispatch, events and cleanup",
+      "parent": {
+        "entityId": "STORY-97adabf6bd47b036-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-97adabf6bd47b036-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-97adabf6bd47b036-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1a27c6dbdf9e94965f0d186db4c3476b142bbbcb4c43a4e94465d36363517214",
+        "at": "2026-11-09T17:21:09.368Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T17:21:09.370Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Own Vibe turn dispatch, events and cleanup",
+    "summary": "Extend the verified session path with bounded turn dispatch and events. Track not-sent, possibly-sent and accepted states before writes and preserve them through loss, timeouts, cancellation and child cleanup. Preserve text, reasoning, tool events, native identity and terminal outcome for both adapters.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "The verified session submits turn/start once",
+      "Lost acknowledgement and accepted failures preserve dispatch certainty",
+      "Cancellation closes the owned turn and child and keeps partial output and identity"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Scripted Vibe turn acknowledgement loss, bounded events, cancellation and cleanup"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

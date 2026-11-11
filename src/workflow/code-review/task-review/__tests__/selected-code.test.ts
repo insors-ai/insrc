@@ -21,7 +21,7 @@ test('selected code: exact pinned after blocks reach attribution and assessment 
   f.packet.reviewSet = [{ commit, parent, files: [{ path: 'source.js', segments: [{ after: [1, 1] }] }] }];
   f.packet.reviewRevision = f.packet.reviewSet[0]!.commit;
   const reads: string[] = [];
-  const sources = { isAncestor: f.deps.sources.isAncestor.bind(f.deps.sources), commit: f.deps.sources.commit.bind(f.deps.sources), changedRanges: f.deps.sources.changedRanges.bind(f.deps.sources), file: async (oid: string, path: string) => { reads.push(`${oid}:${path}`); return f.deps.sources.file(oid, path); } };
+  const sources = { isAncestor: f.deps.sources.isAncestor.bind(f.deps.sources), commit: f.deps.sources.commit.bind(f.deps.sources), changedRanges: f.deps.sources.changedRanges.bind(f.deps.sources), pathChanges: f.deps.sources.pathChanges.bind(f.deps.sources), file: async (oid: string, path: string) => { reads.push(`${oid}:${path}`); return f.deps.sources.file(oid, path); } };
   f.put('source.js', 'WORKTREE_ONLY_SECRET\n');
   const prepared = await prepareReviewPacket(f.packet, sources);
   assert.ok(!reads.includes(`${parent}:source.js`), 'old implementation is fetched only if needed');

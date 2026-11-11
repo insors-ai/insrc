@@ -1,0 +1,504 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1794333498080-s77klt",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T18:00:44.793Z",
+    "epicCreatedAt": "2026-11-10T17:43:51.648Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 146300,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3ec4189b758be646",
+    "epicSlug": "fix-claude-ollama-mistral-vibe-streaming",
+    "storyId": "s1",
+    "lldRunId": "wf-1794331973678-kkqo4t",
+    "lldEffectiveHash": "3ec4189b758be6460445ee96339bc96f514ec64ec18c713ce9e55010f100ac0e",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "bbabae155a00e16ba47b9368b5321af52a4863801d668822cd91a57530ea9bdf",
+        "at": "2026-11-10T18:00:45.111Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-10T18:01:39.177Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "5cb934ee4e014a86f8e571ce1725d65537efe809"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Building this story fixes the activity-mode (streaming) review path in the CLI provider in two halves. The Ollama half adds the same checkOllama preflight and withOllama per-child env that the bounded claude path already uses, passed through runInProcessGroup's existing opts.env, so an Ollama-targeted review child is bound to the right endpoint with vendor login stripped and a failed preflight spawns nothing. The Vibe half replaces the outright rejection with a vibe branch that starts a runtime-verified Vibe app-server session and feeds its frames into ReviewActivityStream kind 'vibe' under the same read-only tool policy, alongside a lockstep diagnostics type widening and an additive mistral-large-4 catalog entry. Nine ordered tasks cover the provider edit, the stream/diagnostics widening, the vibe branch, the catalog entry, diagnostic detail, and the unit/integration/live test suite."
+    },
+    "tasks": [
+      {
+        "acceptanceChecks": [
+          "activityReview awaits this.checkOllama() at the top, before args are built and before parser.start()",
+          "childEnv = this.withOllama(process.env) computed when this.ollama is set",
+          "runInProcessGroup activity call passes ...(childEnv ? { env: childEnv } : {})",
+          "when childEnv is undefined the call is byte-identical to today (process-group.ts:136 spreads only when set)",
+          "a rejected preflight throws OllamaTargetError before any child spawn; runReviewSession rethrows un-retried"
+        ],
+        "dependsOn": [],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c7"
+        ],
+        "id": "t1",
+        "order": 1,
+        "size": "M",
+        "summary": "In CliProvider.activityReview (src/agent/providers/cli-provider.ts:610-627): add `await this.checkOllama()` first, compute `childEnv = this.withOllama(process.env) ?? undefined` when this.ollama is set, and pass `env: childEnv` into the runInProcessGroup activity call. Bounded path (runClaude :826, checkOllama :813, withOllama :803-811) semantics reused verbatim.",
+        "tests": [
+          {
+            "level": "unit",
+            "name": "T1-ollama-activity-child-env"
+          },
+          {
+            "level": "unit",
+            "name": "T3-ollama-activity-preflight-rejects-before-spawn"
+          },
+          {
+            "level": "unit",
+            "name": "T4-plain-provider-activity-env-unchanged"
+          }
+        ],
+        "title": "Ollama preflight + env on the activity-mode spawn path"
+      },
+      {
+        "acceptanceChecks": [
+          "withOllama output contains ANTHROPIC_BASE_URL/ANTHROPIC_AUTH_TOKEN from this.ollama, ANTHROPIC_API_KEY=''",
+          "CLAUDE_CODE_OAUTH_TOKEN / CLAUDE_CODE_USE_BEDROCK / CLAUDE_CODE_USE_VERTEX are deleted even when present in the daemon env",
+          "unit test proves both env contents and vendor stripping through the activity call site"
+        ],
+        "dependsOn": [
+          "t1"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c7"
+        ],
+        "id": "t2",
+        "order": 2,
+        "size": "S",
+        "summary": "Verify/lock the withOllama env contract at the activity call site: Ollama endpoint + auth present, ANTHROPIC_API_KEY blanked, vendor login keys stripped regardless of daemon env contents.",
+        "tests": [
+          {
+            "level": "unit",
+            "name": "T2-ollama-activity-no-vendor-inherit"
+          }
+        ],
+        "title": "Vendor-login stripping + Ollama env contents on activity children"
+      },
+      {
+        "acceptanceChecks": [
+          "claudeReviewSessionArgs + stream-json/--verbose/--include-partial-messages arg construction unchanged",
+          "codexReviewSessionArgs tmp-schema flow unchanged",
+          "no opts/env changes alter args; only opts.env is added"
+        ],
+        "dependsOn": [
+          "t1"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4",
+          "c7"
+        ],
+        "id": "t3",
+        "order": 3,
+        "size": "S",
+        "summary": "Regression-guard that claude/codex activity arg construction is byte-identical after the t1 edit (invariant c2 of the LLD): only the runInProcessGroup opts gain env.",
+        "tests": [
+          {
+            "level": "unit",
+            "name": "T5-claude-codex-activity-args-unchanged"
+          }
+        ],
+        "title": "Invariant guard: claude/codex activity args unchanged"
+      },
+      {
+        "acceptanceChecks": [
+          "ReviewActivityStream kind widened to 'claude'|'codex'|'vibe'",
+          "decode() gains a vibe branch mapping Vibe app-server frames onto tool_started/tool_completed/result/feedback",
+          "start/feed/failure/result/completed lifecycle identical across kinds (LLD invariant c3); 128-tool cap and NATIVE_CLI_FAILURE diagnostic preserved"
+        ],
+        "dependsOn": [],
+        "derivedFrom": [
+          "c3",
+          "c5",
+          "c8"
+        ],
+        "id": "t4",
+        "order": 4,
+        "size": "M",
+        "summary": "Widen ReviewActivityStream (src/agent/providers/review-activity-stream.ts:14) kind to include 'vibe' and add the vibe frame-decode branch so Vibe app-server frames drive the same lifecycle/events as claude/codex.",
+        "tests": [
+          {
+            "level": "unit",
+            "name": "T6-vibe-activity-stream-lifecycle"
+          }
+        ],
+        "title": "ReviewActivityStream kind 'vibe' + vibe frame mapping"
+      },
+      {
+        "acceptanceChecks": [
+          "ReviewDiagnosticCollector constructor param and ReviewDiagnosticSnapshot.provider widened to 'claude'|'codex'|'vibe' (review-diagnostics.ts:9,33,35)",
+          "type-checks with ReviewActivityStream feeding kind into the collector (:28)"
+        ],
+        "dependsOn": [
+          "t4"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c5",
+          "c8",
+          "c9"
+        ],
+        "id": "t5",
+        "order": 5,
+        "size": "S",
+        "summary": "Widen ReviewDiagnosticCollector.provider / ReviewDiagnosticSnapshot.provider to include 'vibe' in lockstep with ReviewActivityStream.kind (LLD §3.4, revision 2) so the vibe branch type-checks and invariant c3 holds.",
+        "tests": [
+          {
+            "level": "unit",
+            "name": "T12-failure-diagnostic-carries-backend-detail"
+          }
+        ],
+        "title": "Widen diagnostics provider type in lockstep (LLD §3.4)"
+      },
+      {
+        "acceptanceChecks": [
+          "activityReview vibe guard at cli-provider.ts:611 replaced by a vibe branch",
+          "vibe branch validates model via catalog + runtime thinkingLevels (vibe-session.ts:384-404) BEFORE starting the Vibe app server; VibeSelectionError precedes dispatch",
+          "vibe activity drives ReviewActivityStream kind 'vibe' with read-only tool policy (read_file + mcp_insrc_* equivalent, LLD invariant c4)",
+          "cancellation via shared signal/acceptedStop honored"
+        ],
+        "dependsOn": [
+          "t4",
+          "t5"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4",
+          "c5",
+          "c7",
+          "c8",
+          "c11"
+        ],
+        "id": "t6",
+        "order": 6,
+        "size": "L",
+        "summary": "Replace the vibe rejection in activityReview with a vibe branch that starts the verified Vibe app-server session and feeds its frames into ReviewActivityStream('vibe'), enforcing the read-only tool policy and pre-dispatch VibeSelectionError.",
+        "tests": [
+          {
+            "level": "unit",
+            "name": "T7-vibe-activity-readonly-tool-policy"
+          },
+          {
+            "level": "unit",
+            "name": "T8-vibe-activity-structured-validation-cancellation"
+          },
+          {
+            "level": "unit",
+            "name": "T11-unsupported-model-effort-fails-before-dispatch"
+          },
+          {
+            "level": "integration",
+            "name": "T6-vibe-activity-coordinator-dispatch-fake-transport"
+          },
+          {
+            "level": "live",
+            "name": "T10-vibe-session-readback-core-mid"
+          }
+        ],
+        "title": "Vibe activity branch in CliProvider.activityReview"
+      },
+      {
+        "acceptanceChecks": [
+          "cli-vibe family gains { id: 'mistral-large-4', displayName: 'Mistral Large 4', efforts: [<runtime-verified only>] } in src/assets/models/cloud-model-catalog.json",
+          "model-catalog.ts cliKind/family validation passes on the new entry",
+          "uncatalogued model or unverified effort still throws VibeSelectionError before any turn (vibe-session.ts:385,403-404)"
+        ],
+        "dependsOn": [],
+        "derivedFrom": [
+          "c5",
+          "c6",
+          "c10",
+          "c11"
+        ],
+        "id": "t7",
+        "order": 7,
+        "size": "S",
+        "summary": "Add the versioned mistral-large-4 entry (verified efforts only) to the cli-vibe family in cloud-model-catalog.json; catalog validation unchanged and still rejects unverified selections.",
+        "tests": [
+          {
+            "level": "unit",
+            "name": "T9-catalog-large4-entry-verified-efforts"
+          }
+        ],
+        "title": "cli-vibe catalog: mistral-large-4 entry with verified efforts"
+      },
+      {
+        "acceptanceChecks": [
+          "parser.failure('spawn_failed'|'cli_exit') detail includes the real stderr error line / OllamaTargetError cause alongside the generic",
+          "checkpoint diagnostic snapshot carries the backend detail (not bare NATIVE_CLI_FAILURE)"
+        ],
+        "dependsOn": [
+          "t1",
+          "t6"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c7",
+          "c9",
+          "c12",
+          "c13"
+        ],
+        "id": "t8",
+        "order": 8,
+        "size": "S",
+        "summary": "Failure diagnostics carry backend detail: spawn/crash failures record the real stderr line (and preflight failures the OllamaTargetError cause) in the diagnostic snapshot, fixing the checkpoint's lost backend response.",
+        "tests": [
+          {
+            "level": "unit",
+            "name": "T12-failure-diagnostic-carries-backend-detail"
+          },
+          {
+            "level": "integration",
+            "name": "T1-ollama-activity-coordinator-dispatch-env-capture"
+          }
+        ],
+        "title": "Failure diagnostics carry real backend detail"
+      },
+      {
+        "acceptanceChecks": [
+          "unit tests T1-T8 in colocated __tests__ beside cli-provider / review-activity-stream / review-diagnostics",
+          "unit tests T9-T11 beside vibe-session / model-catalog + catalog schema",
+          "integration test through both coordinators (design-review:379, task-review:223) with a fake binary capturing env",
+          "live/ manual suite (INSRC_LIVE_TESTS-gated) documents the real ollama-claude and cli-vibe review runs"
+        ],
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4",
+          "t5",
+          "t6",
+          "t7",
+          "t8"
+        ],
+        "derivedFrom": [
+          "c6",
+          "c7",
+          "c8",
+          "c9",
+          "c10",
+          "c11",
+          "c12",
+          "c13"
+        ],
+        "id": "t9",
+        "order": 9,
+        "size": "M",
+        "summary": "Write the LLD's test suite: unit tests per touched module (env/preflight, vendor strip, args-unchanged, vibe lifecycle/policy, catalog, diagnostics), an integration pass through both review coordinators, and a live-gated manual suite. Full sweep once at plan end.",
+        "tests": [
+          {
+            "level": "integration",
+            "name": "T1-ollama-activity-coordinator-dispatch-env-capture"
+          },
+          {
+            "level": "integration",
+            "name": "T6-vibe-activity-coordinator-dispatch-fake-transport"
+          },
+          {
+            "level": "live",
+            "name": "T10-vibe-session-readback-core-mid"
+          },
+          {
+            "level": "live",
+            "name": "live-ollama-claude-activity-review-completes-planning"
+          }
+        ],
+        "title": "Test suite: unit + coordinator integration + live-gated"
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "coveredByTaskIds": [
+          "t1",
+          "t2",
+          "t8",
+          "t9"
+        ],
+        "lldStrategyItem": "CliProvider.activityReview (src/agent/providers/cli-provider.ts:610)"
+      },
+      {
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ],
+        "lldStrategyItem": "withOllama / checkOllama reuse (src/agent/providers/cli-provider.ts:803-811)"
+      },
+      {
+        "coveredByTaskIds": [
+          "t1",
+          "t8",
+          "t9"
+        ],
+        "lldStrategyItem": "runInProcessGroup env passthrough (src/shared/process-group.ts:68-136)"
+      },
+      {
+        "coveredByTaskIds": [
+          "t4",
+          "t6"
+        ],
+        "lldStrategyItem": "ReviewActivityStream kind 'vibe' decode path (src/agent/providers/review-activity-stream.ts)"
+      },
+      {
+        "coveredByTaskIds": [
+          "t6",
+          "t7",
+          "t9"
+        ],
+        "lldStrategyItem": "vibe-session catalog+runtime verification (src/shared/vibe-session.ts:384-404)"
+      },
+      {
+        "coveredByTaskIds": [
+          "t7",
+          "t9"
+        ],
+        "lldStrategyItem": "model-catalog validation of the new cli-vibe entry (src/daemon/model-catalog.ts)"
+      },
+      {
+        "coveredByTaskIds": [
+          "t7"
+        ],
+        "lldStrategyItem": "cloud-model-catalog.json cli-vibe family schema"
+      },
+      {
+        "coveredByTaskIds": [
+          "t9"
+        ],
+        "lldStrategyItem": "src/workflow/review/design-review/coordinator.ts:379"
+      },
+      {
+        "coveredByTaskIds": [
+          "t9"
+        ],
+        "lldStrategyItem": "src/workflow/code-review/task-review/coordinator.ts:223"
+      },
+      {
+        "coveredByTaskIds": [
+          "t9"
+        ],
+        "lldStrategyItem": "real Ollama cloud endpoint + real installed Vibe runtime"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "quotedText": "ProcessGroupOpts gains an explicit env passthrough at the activityReview call site: env = this.withOllama(process.env) when this.ollama is set ... vendor login keys removed",
+      "ref": "LLD 3ec4189b758be646 s1 — dataModelChanges[0] activity-mode child env field-add + errorPaths (preflight rejection, spawn/crash diagnostics, vendor strip)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "quotedText": "childEnv = this.withOllama(process.env) ?? undefined ... runInProcessGroup(command, args, { mode:'activity', ..., ...(childEnv ? { env: childEnv } : {}) })",
+      "ref": "LLD 3ec4189b758be646 s1 — contractDetails.api[0]/api[1] CliProvider.activityReview + runInProcessGroup env passthrough and postconditions"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "quotedText": "kind: 'claude' | 'codex' | 'vibe' ... provider: 'claude' | 'codex' | 'vibe' (both the constructor parameter and the ReviewDiagnosticSnapshot.provider field)",
+      "ref": "LLD 3ec4189b758be646 s1 — dataModelChanges[2]/[3] ReviewActivityStream kind 'vibe' + lockstep diagnostics provider widening (revision 2 §3.4) + invariant c3"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "quotedText": "vibe now runs through the Vibe app-server transport feeding ReviewActivityStream kind 'vibe' ... read-only + insrc MCP tools and no write/execute tools",
+      "ref": "LLD 3ec4189b758be646 s1 — contractDetails.api[2] ReviewActivityStream kind 'vibe' via Vibe app-server transport + invariant c4 read-only tool policy"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "quotedText": "models[] += { id: 'mistral-large-4', displayName: 'Mistral Large 4', efforts: [<verified only>] } — validated by model-catalog.ts cliKind check",
+      "ref": "LLD 3ec4189b758be646 s1 — dataModelChanges[1] cli-vibe catalog mistral-large-4 field-add + invariants c3/c5 (catalog verification unchanged)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "quotedText": "testFramework node:test via npx tsx --test ... colocated __tests__ beside the touched files",
+      "ref": "LLD 3ec4189b758be646 s1 — testStrategy (ac1-ac5 acceptance mapping + unit/integration/live testLevels)"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts:610-627"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/agent/providers/review-activity-stream.ts:14-43"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/shared/review-diagnostics.ts:9-35"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/assets/models/cloud-model-catalog.json:43-82"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/shared/vibe-session.ts:384-404"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/coordinator.ts:379"
+    },
+    {
+      "id": "c13",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/coordinator.ts:223"
+    }
+  ]
+}

@@ -1,0 +1,120 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-33e7061e-689e-42d9-8564-5e8eb0e35f50",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T15:17:26.307Z",
+    "epicCreatedAt": "2026-11-09T05:00:05.847Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "eedc4519199b24b4",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Approval completes the Story and keeps a later override",
+      "parent": {
+        "entityId": "STORY-eedc4519199b24b4-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-eedc4519199b24b4-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-eedc4519199b24b4-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1549caebfbc37a365f69afda1cca67798643cf1e712b37a4c30d2a06462be0d7",
+        "at": "2026-11-09T15:17:26.307Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T15:17:26.309Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Approval completes the Story and keeps a later override",
+    "summary": "Add the record-override operation, use a stored override at the outer code-review gate, make completeThroughService ensure heads and report a story-completion outcome, and merge outcomes through handleWorkflowApprove and the CLI.",
+    "size": "L",
+    "order": 2,
+    "acceptanceChecks": [
+      "Approving a BUILD completes its Story, Tasks and Epic when the rule holds, or reports why not",
+      "A second approval with an override records it with an audit entry and leaves status, revision and approval time unchanged",
+      "A re-approval with no override passes the gate on the stored one, and a draft BUILD does not",
+      "The story-completion outcome reaches daemon and CLI callers"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "record-override keeps status, revision and approval time, logs the actor and reason, and is refused from a completed BUILD"
+      },
+      {
+        "level": "integration",
+        "name": "handleWorkflowApprove on a BUILD: the outcome merges the approval's own followOn with the seam's, and the Story, its Tasks and its Epic complete"
+      },
+      {
+        "level": "integration",
+        "name": "a walk failure leaves the approval standing and reports ok false"
+      },
+      {
+        "level": "integration",
+        "name": "a live approval with a listed Task missing its head is held and named in the note"
+      },
+      {
+        "level": "integration",
+        "name": "a live approval after a failed reconcile, and after one that stopped part-way with newly created unlisted Tasks, is held and leaves those Tasks unfrozen"
+      },
+      {
+        "level": "integration",
+        "name": "initial approval held, then re-approval with an override records it and completes the Story"
+      },
+      {
+        "level": "integration",
+        "name": "a BUILD approved over a blocking code review with an override, a failure injected in completion, then re-approval with no override in the request passes the outer gate on the stored override and completes"
+      },
+      {
+        "level": "integration",
+        "name": "a draft BUILD at a new revision is not passed by an earlier revision's override"
+      },
+      {
+        "level": "integration",
+        "name": "a held Story in signoff completes later from the stored override"
+      },
+      {
+        "level": "integration",
+        "name": "an Epic with a signoff hold stays open after its Story completes"
+      },
+      {
+        "level": "integration",
+        "name": "the CLI adapter exposes the story-completion outcome"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

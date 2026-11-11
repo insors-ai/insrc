@@ -16,29 +16,35 @@ import { createFileSidecarStore } from '../workflow/artifact-core/sidecar-store.
 import type { Actor } from '../workflow/artifact-core/types.js';
 import { CONVERSION_RULES } from '../workflow/convert/apply.js';
 import { planConversion } from '../workflow/convert/plan.js';
+import { isRepairMode, runRepair } from '../workflow/convert/repair.js';
+import type { RepairMode } from '../workflow/convert/repair.js';
 import { runConversion } from '../workflow/convert/run.js';
 import type { ConversionMode } from '../workflow/convert/run.js';
-import type { ConversionDeps, ConversionReport } from '../workflow/convert/types.js';
+import type { ConversionDeps, ConversionReport, RepairReport } from '../workflow/convert/types.js';
 import { TaskSets } from '../workflow/tasks/task-set.js';
 import { openTracker } from '../workflow/tracker-auto.js';
 import { lifecycleFor } from './lifecycle-registry.js';
 
 export interface RepoConvertParams {
 	readonly repo?: string;
-	readonly mode?: ConversionMode;
+	readonly mode?: ConversionMode | RepairMode;
 }
 
 const MIGRATION_ACTOR: Actor = { id: 'insrc:migration', kind: 'system', properties: {} };
 
-/** `repo.convert`: a preview or an apply; `{ error }` says why nothing was attempted or why the conversion stopped. */
-export async function handleRepoConvert(params: unknown, repoEnv: string | undefined): Promise<ConversionReport | { error: string }> {
+/**
+ * `repo.convert`: a preview, an apply, or a repair at any schema version. `{ error }` says why nothing was attempted or why the
+ * conversion stopped; a repair that has begun writing always answers its report.
+ */
+export async function handleRepoConvert(params: unknown, repoEnv: string | undefined): Promise<ConversionReport | RepairReport | { error: string }> {
 	const p = (params ?? {}) as RepoConvertParams;
 	const repoPath = p.repo !== undefined && p.repo.length > 0 ? p.repo : repoEnv;
 	if (repoPath === undefined || repoPath.length === 0) return { error: 'repo is required' };
 	const mode = p.mode ?? 'preview';
-	if (mode !== 'preview' && mode !== 'apply') return { error: `unknown mode ${String(mode)}: use 'preview' or 'apply'` };
+	if (mode !== 'preview' && mode !== 'apply' && !isRepairMode(mode)) return { error: `unknown mode ${String(mode)}: use 'preview', 'apply', 'repair-preview' or 'repair'` };
 	if (!existsSync(repoPath) || !statSync(repoPath).isDirectory()) return { error: `${repoPath} is not a repository directory` };
 	try {
+		if (isRepairMode(mode)) return await runRepair(repoPath, mode);
 		// the tracker, when the repository has one, is read by both modes: the plan lists the pre-s8 attach comments on its issues
 		const gate = await openTracker(repoPath);
 		// a preview opens no store and no sidecar: opening them creates files, and a preview writes nothing

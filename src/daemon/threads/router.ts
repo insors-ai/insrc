@@ -613,7 +613,18 @@ export class Router {
 			...(onAck !== undefined ? { onAck } : {}),
 		});
 		this.began(threadId, request);
-		try { port.postMessage(wireRequest(owned, onAck !== undefined ? { ack: true } : {})); }
+		const progress = owned.trustedContext?.executorProgressPort;
+		try {
+			const wire = wireRequest(owned, onAck !== undefined ? { ack: true } : {});
+			if (progress === undefined) port.postMessage(wire);
+			else {
+				try { port.postMessage(wire, [progress]); }
+				catch {
+					progress.close();
+					port.postMessage({ ...wire, trustedContext: { ...wire.trustedContext!, executorProgressPort: undefined } });
+				}
+			}
+		}
 		catch {
 			if (reviewOwner) retireReviewOwner(reviewOwner);
 			this.pending.delete(request.requestId);

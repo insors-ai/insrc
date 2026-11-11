@@ -172,6 +172,32 @@ test('an unparseable storyId keeps storyIdRaw with storyOrdinal null', () => {
 	}
 });
 
+test('liftStoreFile admits EPIC, STORY, TASK, TASKS and a valid DIAG with no notice, gives a head with no lifecycle the state unmigrated, and TESTS stays skipped', () => {
+	const h = '2222222222222222';
+	const meta = { epicHash: h, createdAt: '2026-10-01T00:00:00.000Z', epicCreatedAt: '2026-10-01T00:00:00.000Z', ...draftMeta() };
+	const files = [`EPIC-${h}.json`, `STORY-${h}-s1.json`, `TASK-${h}-s1-t1.json`, `TASKS-${h}-s1.json`, `DIAG-${h}-s1-1.json`];
+	for (const name of files) {
+		const lifted = liftStoreFile(name, { meta: { ...meta, storyId: 's1' }, body: {} });
+		assert.ok(!('reason' in lifted), `${name}: ${JSON.stringify(lifted)}`);
+		assert.equal(lifted.kind, name.split('-')[0]);
+		assert.equal(lifted.approval.state, 'pending');
+		assert.equal(lifted.workItemHash, h);
+	}
+	const { lifecycle: _gone, ...noLifecycle } = meta as Record<string, unknown>;
+	const unmigrated = liftStoreFile(`LLD-${h}-s1.json`, { meta: { ...noLifecycle, storyId: 's1', approvedAt: '2026-10-03T00:00:00.000Z' }, body: {} });
+	assert.deepEqual('approval' in unmigrated ? unmigrated.approval : null, { state: 'unmigrated', at: null });
+
+	// a store holding all of them, and a test record: no failures, and the test record is not a record of the model
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-delivery-kinds-'));
+	try {
+		mkdirSync(join(dir, ARTIFACTS_DIR), { recursive: true });
+		for (const name of [...files, `TESTS-${h}-s1.json`]) writeFileSync(join(dir, ARTIFACTS_DIR, name), JSON.stringify({ meta: { ...meta, storyId: 's1' }, body: {} }));
+		const set = loadArtifactRecordSet(dir, undefined, NOW);
+		assert.deepEqual(set.failures, []);
+		assert.deepEqual(set.records.map(r => r.kind).sort(), ['DIAG', 'EPIC', 'STORY', 'TASK', 'TASKS']);
+	} finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
 test('load.test.ts: approval state comes from the lifecycle', () => {
 	const meta = { epicHash: '2222222222222222', epicCreatedAt: '2026-10-01T00:00:00.000Z', createdAt: '2026-10-01T00:00:00.000Z' };
 	const repo = storeRepo({
@@ -194,7 +220,7 @@ test('load.test.ts: approval state comes from the lifecycle', () => {
 		assert.equal(approval('LLD-2222222222222222-s4')?.state, 'pending');
 		// the legacy stamps on a head with no lifecycle say nothing: only the lifecycle decides
 		const stamped = liftStoreFile('PLAN-2222222222222222-s1.json', { meta: { ...meta, storyId: 's1', approvedAt: '2026-10-03T00:00:00.000Z', rejectedAt: '2026-10-04T00:00:00.000Z', status: 'approved' }, body: {} });
-		assert.deepEqual('approval' in stamped ? stamped.approval : null, { state: 'pending', at: null });
+		assert.deepEqual('approval' in stamped ? stamped.approval : null, { state: 'unmigrated', at: null });
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
 	}

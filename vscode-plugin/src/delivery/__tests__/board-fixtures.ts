@@ -29,6 +29,7 @@ export function item(spec: ItemSpec): DeliveryItem {
     evidence: [], tasks: [], validation: null, storyLevelResult: null, conflict: null, correctsRef: null,
     amendments: [], notices: [], needsAttention: false, attentionReasons: [],
     description: unrecordedDescription(spec.kind ?? 'story'), feedback: [],
+    unit: null, planRowId: null, taskOrder: null,
     ...rest,
     stage: stage === null ? null : { stage, route: 'full-chain', reason: { text: '', artifactIds: reasonIds } },
   } as unknown as DeliveryItem;

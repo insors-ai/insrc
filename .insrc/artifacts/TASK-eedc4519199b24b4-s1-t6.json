@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a2820d21-3a6d-4f93-866f-d9e2ded2f35b",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T15:17:26.319Z",
+    "epicCreatedAt": "2026-11-09T05:00:05.847Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "eedc4519199b24b4",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Repair settles units",
+      "parent": {
+        "entityId": "STORY-eedc4519199b24b4-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-eedc4519199b24b4-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-eedc4519199b24b4-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-eedc4519199b24b4-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "03b0f079ae8c66ffad7a28b5ed091503c6240e32e1af4d2832b38d9b9a6a91e1",
+        "at": "2026-11-09T15:17:26.319Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T15:17:26.320Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Repair settles units",
+    "summary": "Add the settle step with COMPLETION_RULE_FROM: approvals before it are settled with the attributed override, later ones by the live rule, with held and failed outcomes per unit.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "An approval strictly before the cutoff is settled with the insrc:migration override",
+      "An approval at or after it is settled only by the live rule, using any stored explicit override, and otherwise is listed as held",
+      "A settlement that fails part-way lists completedMembers and the next run finishes it",
+      "A second repair lists no changes"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "repair-preview writes nothing, and every write repair makes belongs to a change the preview listed, including proposed head creation, round back-fill and settlement"
+      },
+      {
+        "level": "integration",
+        "name": "repair settles a BUILD approved before COMPLETION_RULE_FROM with the attributed override"
+      },
+      {
+        "level": "integration",
+        "name": "repair holds a BUILD approved exactly at COMPLETION_RULE_FROM, and a later one, whose latest round failed, and lists them in result.held"
+      },
+      {
+        "level": "integration",
+        "name": "repair completes a later BUILD whose latest round failed when its approval carries a stored explicit override"
+      },
+      {
+        "level": "integration",
+        "name": "failures injected inside nested Task-set creation, settlement and completing a pending operation, after a log append and before head replacement, are recorded accurately and the pending operation is finished on the next run"
+      },
+      {
+        "level": "integration",
+        "name": "a failure injected after earlier members commit is listed with completedMembers, and the next repair run finishes the unit"
+      },
+      {
+        "level": "integration",
+        "name": "a second repair lists no changes"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

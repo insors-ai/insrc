@@ -4,6 +4,7 @@ import { callTool } from '../../../daemon/tools/call-tool.js';
 import { gitCatFileTool } from '../../../daemon/tools/builtins/git/cat-file.js';
 import { gitMergeBaseTool } from '../../../daemon/tools/builtins/git/merge-base.js';
 import { gitDiffTool } from '../../../daemon/tools/builtins/git/diff.js';
+import { gitPathHistoryTool } from '../../../daemon/tools/builtins/git/path-history.js';
 import type { ToolDeps } from '../../../daemon/tools/types.js';
 import { requireReview } from './contracts.js';
 
@@ -13,6 +14,10 @@ export interface ReviewSources {
  isAncestor(origin: string, revision: string): Promise<boolean>;
  file(commit: string, path: string): Promise<PinnedBlob | null>;
  changedRanges(commit: string, parent: string | null, paths: readonly string[]): Promise<readonly ChangedRange[]>;
+ /** Every commit reachable from `to` and not from `from` whose entry at `path` differs
+  * from at least one parent (full, unsimplified history, merges included). A commit not
+  * listed has the same entry at `path` as each of its parents. */
+ pathChanges(from: string, to: string, path: string): Promise<readonly string[]>;
 }
 export interface ChangedRange { readonly before?: readonly [number, number]; readonly after?: readonly [number, number]; readonly deletionAt?: number; }
 /** Hunk counts can include unchanged lines (diff.interHunkContext); retain only +/- runs. */
@@ -68,6 +73,14 @@ export class RegistryReviewSources implements ReviewSources {
   return result.data.isAncestor;
  }
  file(commit: string, path: string): Promise<PinnedBlob | null> { return this.object(`${commit}:${path}`, 'blob'); }
+ async pathChanges(from: string, to: string, path: string): Promise<readonly string[]> {
+  const result = await callTool(gitPathHistoryTool, { cwd: this.deps.repoPath, rev: `${from}..${to}`, path, fullHistory: true }, this.deps);
+  requireReview(result.success, 'source', result.success ? '' : result.error.message);
+  requireReview('commits' in result.data && Array.isArray(result.data.commits), 'source', 'Expected Git path history');
+  const shas = result.data.commits.map(c => c.sha);
+  requireReview(shas.every(sha => /^[0-9a-f]+$/.test(sha) && sha.length === from.length && sha.length === to.length && (sha.length === 40 || sha.length === 64)), 'source', 'Unexpected Git path history entry');
+  return shas;
+ }
  async changedRanges(commit: string, parent: string | null, paths: readonly string[]): Promise<readonly ChangedRange[]> {
   if (parent !== null && paths.length === 2 && paths[0] !== paths[1]) {
    // Path lineage is verified separately. Compare those exact committed blobs:

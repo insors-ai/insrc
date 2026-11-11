@@ -80,7 +80,7 @@ export function buildEpicRollup(snapshot: DeliverySnapshot, filter: Pick<MatchFi
     const row = rowOf(e.id, titleOf(e), matches);
     if (filter.needsAttentionOnly && row.attentionCount === 0) continue;
     shown++;
-    const stage = leastAdvancedStage(matches);
+    const stage = epicStage(e, matches);
     if (stage === null) noStories.push(row);
     else byStage.get(stage)?.push(row);
   }
@@ -99,7 +99,16 @@ export function buildEpicRollup(snapshot: DeliverySnapshot, filter: Pick<MatchFi
   };
 }
 
-/** The earliest stage among an epic's stories, so an epic is Complete only when every story is; null with no stories. */
+/**
+ * The stage an epic's row sits at: its least-advanced story's, but Complete only when its own unit status is completed, because every
+ * story being done does not complete an epic that is held (a signoff, a declared story nobody started). Null with no stories.
+ */
+function epicStage(epic: DeliveryItemView, matches: readonly MatchedCard[]): DeliveryStage | null {
+  const stage = leastAdvancedStage(matches);
+  return stage === 'complete' && epic.unit?.status !== 'completed' ? 'build-recorded' : stage;
+}
+
+/** The earliest stage among an epic's stories; null with no stories. */
 function leastAdvancedStage(matches: readonly MatchedCard[]): DeliveryStage | null {
   let best: number | null = null;
   for (const m of matches) {

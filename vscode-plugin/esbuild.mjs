@@ -1,10 +1,11 @@
 /**
  * Story E20260921ad0d45c9:S006 / t1 — the extension bundle step.
  *
- * esbuild bundles the two entry points into self-contained CommonJS so the .vsix
+ * esbuild bundles the entry points into self-contained CommonJS so the .vsix
  * carries no `../../src` and no node_modules:
  *   - src/extension.ts   -> out/extension.js   (the `main`, S001)
  *   - src/uninstall.ts   -> out/uninstall.js   (the `vscode:uninstall` hook, S005)
+ *   - src/vibe-session-worker.ts -> out/vibe-session-worker.js (durable Vibe output)
  *
  * The cross-package `../../src/shared/ipc-client.js` is INLINED (k5: only the
  * thin socket client — node:net + pure types + paths — travels; no daemon
@@ -29,10 +30,10 @@ import { dirname, join } from 'node:path';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
-/** Bundle the two entry points into `outdir` as self-contained CJS + the CJS marker. */
+/** Bundle the entry points into `outdir` as self-contained CJS + the CJS marker. */
 export async function bundle(outdir) {
   await build({
-    entryPoints: [join(here, 'src/extension.ts'), join(here, 'src/uninstall.ts')],
+    entryPoints: [join(here, 'src/extension.ts'), join(here, 'src/uninstall.ts'), join(here, 'src/vibe-session-worker.ts')],
     bundle: true,
     platform: 'node',
     format: 'cjs',
@@ -56,5 +57,5 @@ export async function bundle(outdir) {
 // Run as a script (`node esbuild.mjs`) -> bundle into ./out.
 if (process.argv[1] !== undefined && fileURLToPath(import.meta.url) === process.argv[1]) {
   await bundle(join(here, 'out'));
-  console.log('bundled -> out/extension.js + out/uninstall.js (CJS)');
+  console.log('bundled -> out/extension.js, out/uninstall.js and out/vibe-session-worker.js (CJS)');
 }

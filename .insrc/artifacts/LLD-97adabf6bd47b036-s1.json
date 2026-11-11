@@ -1,0 +1,541 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1794244063610-bypsg8",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T17:07:45.014Z",
+    "epicCreatedAt": "2026-11-09T16:34:12.401Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 1087,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "97adabf6bd47b036",
+    "epicSlug": "apply-catalog-model-effort-choices-daemon",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1794244063610-bypsg8",
+    "hldEffectiveHash": "ea720fa2f14ee366b49dc1b5d2354ada136b63cf386def20d0fb3f2fa459fede",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Apply catalog model and effort choices in daemon and VS Code",
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "revision": 3,
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 3,
+        "contentHash": "48f3e37227f197847817bdbcd4a1f6c64f75e57a9044bb8e5a3f1bcb28e1ce52",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 3,
+        "reviewer": {
+          "id": "agent:design-review-daemon",
+          "kind": "agent",
+          "properties": {
+            "party": "daemon"
+          }
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "HIGH": 0,
+          "MED": 0,
+          "LOW": 1
+        },
+        "at": "2026-11-09T17:17:30.395Z",
+        "report": {
+          "entityId": "LLD-97adabf6bd47b036-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "295b18bc87510f35f5a892d6cc1fd2a5f1032dfdea94e5cb4ab3bb71b96b689c"
+        }
+      },
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T17:18:37.247Z"
+      }
+    },
+    "rangeBase": "6951de5a0fe470834173a90223bd0ed1502ed61d"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Apply catalog model and effort choices in daemon and VS Code"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "summary": {
+      "prose": "Apply catalog-backed selections at the Vibe session boundary and recover the VS Code chat picker when the daemon catalog becomes available.",
+      "audience": "technical"
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "Vibe session launch",
+          "signature": "runVibeSession(request: VibeRunRequest, transport: VibeSessionTransport): Promise<VibeRunResult>",
+          "parameters": [
+            {
+              "name": "request",
+              "type": "VibeRunRequest",
+              "purpose": "Existing prompt, working directory, permissions, attachments, native session, optional model and effort, and cancellation.",
+              "optional": false
+            },
+            {
+              "name": "transport",
+              "type": "VibeSessionTransport",
+              "purpose": "Caller-owned local process adapter for the installed Vibe app-server binary.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<VibeRunResult>",
+            "meaning": "Verified effective selection, native session identity, and the same bounded events and outcome each caller consumes."
+          },
+          "errors": [
+            {
+              "type": "selection-unavailable",
+              "condition": "Local protocol lacks a required capability, a catalog model cannot be mapped to an unambiguous allowed alias, or the runtime does not confirm the requested choice."
+            },
+            {
+              "type": "launch-failed",
+              "condition": "Process startup, authentication, protocol, timeout, or tool-scope parity fails."
+            },
+            {
+              "type": "dispatch-uncertain",
+              "condition": "Writing turn/start may have delivered bytes but no authoritative reply was received. This failure carries dispatchState: 'possibly-sent'."
+            },
+            {
+              "type": "turn-failed",
+              "condition": "Vibe acknowledged turn/start before the failure. This failure carries dispatchState: 'accepted'."
+            }
+          ],
+          "preconditions": [
+            "Catalog models and effort levels remain sourced from models.definitions and the daemon registry. Discovery is limited to the local Vibe session and never grants access to a model absent from the catalog.",
+            "Explicit choices use the app-server path. Default-only invocations retain the existing headless behavior. Preserve the caller's existing working directory, tool approvals, attachment access, budgets, and abort signal."
+          ],
+          "postconditions": [
+            "Use one local process and at most one Vibe session per invocation. Start a new session or resume the supplied native ID without sending the prompt. Resolve catalog ID and aliases against the session's model choices, apply config/model/write with session_only true, and verify runtime model and effort before turn/start. A default model with explicit effort uses the verified effective model and its catalog levels.",
+            "Model aliases are accepted only when they resolve to the intended catalog ID. A returned failure, policy rejection, or mismatched effective selection stops before prompt delivery. Existing CLI credentials and configuration files are preserved.",
+            "Translate bounded native events into current daemon and VS Code outputs, including text, reasoning, tool activity and session identity. Preserve resume identity. Cancel or time out the owned turn and child, and distinguish failure after dispatch from a safe pre-dispatch refusal. Never replay an uncertain prompt.",
+            "Use a typed VibeSessionError with dispatchState 'not-sent' | 'possibly-sent' | 'accepted'. Enter possibly-sent before handing turn/start to the transport, including write and cancellation races. Enter accepted on a successful acknowledgement or authoritative turn event. Only a proven pre-dispatch failure can enter the existing transient retry path. The daemon complete() and runEditSession() retries and the separate runReviewSession() retry loop must consult this field before classifying error text. The chat adapter releases its turn lease and preserves its transcript and native session without automatic replay. A lost acknowledgement never resets the state. Apply the same dispatch guard to completeStructuredVibe() through withStructuredRetry(). Propagate typed failures in the possibly-sent and accepted states as the original error, without converting them into validation feedback or wrapping them on final failure. Keep schema correction for successfully received output that fails validation.",
+            "Follow the installed stdio handshake in order. Send initialize, wait for the response, send initialized, open or resume, apply session-only config, then use runtime/read to verify the effective model and effort. Qualify the installed protocol in the smoke test with a loopback fixture and record the effective values and unchanged configuration."
+          ]
+        },
+        {
+          "name": "Chat catalog refresh and selection",
+          "signature": "refreshRunCatalog(): Promise<void>; reconcileRunConfig(provider: Provider, next: RunConfig, catalog: RunCatalog): RunConfig",
+          "parameters": [
+            {
+              "name": "provider",
+              "type": "Provider",
+              "purpose": "The target session's provider selects the model list from the catalog projection.",
+              "optional": false
+            },
+            {
+              "name": "next",
+              "type": "RunConfig",
+              "purpose": "Existing optional model and effort fields. Keep their persisted format.",
+              "optional": false
+            },
+            {
+              "name": "catalog",
+              "type": "RunCatalog",
+              "purpose": "In-memory projection keyed by provider, containing the existing per-provider model and per-model effort views.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "RunConfig",
+            "meaning": "A selection whose effort is supported by the selected model, or its default effort."
+          },
+          "errors": [
+            {
+              "type": "catalog-unavailable",
+              "condition": "The daemon is disconnected or fails its catalog request."
+            }
+          ],
+          "preconditions": [
+            "Provider discovery remains based on locally available chat adapters. Daemon tier settings retain their existing config gateway and model validation."
+          ],
+          "postconditions": [
+            "Coalesce concurrent catalog refreshes. Retry after reconnect or reopening the picker. Preserve the last valid catalog during transient failures and display a loading or unavailable state when there is no catalog. Ignore late or disposed responses.",
+            "Commit model and effort together. Retain the old effort only when the selected catalog model allows it. Show default as the only effort until a specific model is known. Preserve existing persisted chat selection until a valid catalog can evaluate it, and keep session identity, transcript, and in-flight turns intact.",
+            "Use provider-aware reconciliation for new-chat, set-run-config, and session restore. Persist provider and reconciled fields in one session update. Validate again on the authoritative host before a turn. Without catalog evidence, preserve restored choices but disable edits that depend on unavailable definitions.",
+            "The extension supplies its existing IpcClient reachability probe to the chat host. After a catalog failure, the host runs one bounded reachability probe per minute while a panel is open, without invoking an agent. A reachable daemon permits a coalesced catalog retry. The picker-open webview intent requests immediate refresh; a failing definitions request while the daemon is reachable remains retryable. Stop the timer on catalog success or panel disposal.",
+            "Keep cache, single-flight refresh, and monotonic generation on the chat host. Dispose or replace the webview binding before accepting another ready handshake. Ignore results from invalidated generations. Send a run-catalog snapshot with status, revision and provider projection on ready and after changes. The webview applies it to the picker state only and rerenders the open controls in place. Selection, transcript and active turn state stay on their existing channels."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "VibeRunRequest and effective selection",
+        "change": "new",
+        "details": "Transient one-to-one ownership from a daemon run or VS Code turn to an owned Vibe process and session. A resumed session is referenced by its existing native ID. The returned model and effort confirm the request before dispatch. Credentials and existing saved settings stay in Vibe.",
+        "callSites": [
+          "src/agent/providers/cli-provider.ts",
+          "vscode-plugin/src/chat/cli-adapter.ts"
+        ]
+      },
+      {
+        "entity": "VS Code chat run configuration",
+        "change": "invariant-change",
+        "details": "One session retains a provider, optional catalog model and optional supported effort. Many sessions can read the same in-memory catalog projection. Existing persisted fields and wire messages remain compatible.",
+        "callSites": [
+          "vscode-plugin/src/chat/chat-panel.ts",
+          "vscode-plugin/src/extension.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Catalog fetch fails or the daemon reconnects during a fetch",
+          "detection": "Read rejects, times out, or returns for an obsolete refresh generation.",
+          "response": "Keep the last valid catalog if present, expose unavailable state otherwise, and retry on reconnect or picker open.",
+          "userImpact": "Model choices return without reopening the chat.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Vibe lacks a required method or cannot apply the selected model or effort",
+          "detection": "Capability negotiation, a negative mutation response, or read-back differs from the requested selection.",
+          "response": "Stop before submitting the prompt and surface a concise error that names the unsupported choice. Do not use an implicit default for an explicit selection.",
+          "userImpact": "The user can choose an available value or clear the override without losing the chat.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Vibe loses the turn/start acknowledgement or fails after dispatch",
+          "detection": "Transport closes, terminal event reports failure, or the owned deadline expires.",
+          "response": "Preserve dispatch certainty in the typed error. Bypass automatic transient retries and structured-output correction retries when dispatch may have occurred. Propagate the original error, release the child, and preserve received output and session identity.",
+          "userImpact": "The user can inspect partial output and decide whether to retry.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Model changes from a high-effort choice to a model offering no effort choices",
+          "expected": "Persist the new model with default effort in one update."
+        },
+        {
+          "input": "A saved model and effort are restored while the catalog is unavailable",
+          "expected": "Preserve the saved selection and defer validation until a successful refresh."
+        },
+        {
+          "input": "No explicit model or effort was chosen",
+          "expected": "Preserve the existing headless defaults and output path."
+        },
+        {
+          "input": "Existing Vibe session resumes with a supported selection different from its prior settings",
+          "expected": "Confirm the selection in that session before starting its next turn. Preserve native session identity and caller policy."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Daemon tiers and VS Code read model and effort definitions from the existing catalog projection.",
+          "source": "c1"
+        },
+        {
+          "text": "Existing run paths retain their prompt, provider authentication, policy, session resume, and cancellation behavior.",
+          "source": "c7"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Protect catalog lifecycle and model-specific selection.",
+          "subjects": [
+            "Chat recovers from a failed catalog request without losing session state",
+            "Chat validates effort on model switch and session restore"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Qualify both existing execution entry points with a fake Vibe process and verify preflight, output and cleanup.",
+          "subjects": [
+            "Daemon and chat apply verified Vibe model and effort to new and resumed turns",
+            "Vibe preflight failures never submit or replay the prompt",
+            "Vibe protocol path preserves caller permissions, attachments, and terminal output",
+            "Lost turn/start acknowledgement and post-acknowledgement transport errors each dispatch once through daemon complete, structured completion, edit and review",
+            "Real picker intent and ready handshake recover from initial catalog failure and reconnect without replacing the view or interrupting the turn",
+            "Structured Vibe completion retains schema correction when a received response fails validation"
+          ],
+          "fixturesNeeded": [
+            "Scripted local app-server protocol fixture with capability, configuration, event, and cancellation cases."
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Check the installed CLI contract using an isolated session with no cloud prompt.",
+          "subjects": [
+            "Installed Vibe confirms a session-only model and effort without changing saved configuration"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "Daemon and chat apply verified Vibe model and effort to new and resumed turns",
+            "Installed Vibe confirms a session-only model and effort without changing saved configuration"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "Chat recovers from a failed catalog request without losing session state",
+            "Chat validates effort on model switch and session restore",
+            "Real picker intent and ready handshake recover from initial catalog failure and reconnect without replacing the view or interrupting the turn"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "Vibe preflight failures never submit or replay the prompt",
+            "Vibe protocol path preserves caller permissions, attachments, and terminal output",
+            "Lost turn/start acknowledgement and post-acknowledgement transport errors each dispatch once through daemon complete, structured completion, edit and review",
+            "Structured Vibe completion retains schema correction when a received response fails validation"
+          ]
+        }
+      ],
+      "testFramework": "Node test runner with tsx, injected fake child process and chat panel fixtures. The standalone issue states acceptance in prose. The local mapping uses ac1 for effective execution selection, ac2 for picker recovery and compatible selection, and ac3 for safe dispatch and explicit failure."
+    },
+    "migration": {
+      "stateBefore": "The daemon registry serves the catalog. Both Vibe launch paths omit effort, and the VS Code chat fetches its catalog once and stores model and effort independently.",
+      "stateAfter": "The same catalog drives validated choices. Explicit Vibe selections use verified session-only settings, and a chat can recover its catalog after a daemon reconnect.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Qualify the local Vibe protocol and execution policy parity. Deploy the daemon and VS Code builds with shared selection handling and typed preflight failures.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Reload the VS Code extension and restart the daemon through normal release operations when the build is installed. Retain existing model tier and chat records.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Existing catalog RPC and saved config shapes remain valid. Older Vibe builds retain the default headless path and report unsupported explicit choices if session-only settings cannot be verified. A mixed daemon and extension release uses the same existing catalog wire shape. Rollback restores the prior selection behavior without migrating data.",
+      "zeroDowntime": false,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Session-only Vibe settings",
+        "oneLineSummary": "Verify explicit overrides before dispatch.",
+        "approach": "Apply and verify local session settings while preserving existing default behavior.",
+        "pros": [
+          "Session-scoped changes and read-back"
+        ],
+        "cons": [
+          "Requires transport and policy parity"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Child environment configuration",
+        "oneLineSummary": "Apply child-local environment settings.",
+        "approach": "Keep headless invocation and express the selected model and thinking through a child environment.",
+        "pros": [
+          "Preserves headless transport"
+        ],
+        "cons": [
+          "Sparse effort overrides and resume precedence cannot be verified"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "The sparse environment route cannot reliably preserve complete model settings or precedence on resume."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "id": "catalog-model-selection",
+      "narrative": "The two execution callers apply and verify a Vibe session override before dispatching a prompt. The chat picker refreshes the existing catalog and reconciles the selected effort.",
+      "participants": [
+        {
+          "id": "chat",
+          "label": "VS Code chat host",
+          "description": "Owns picker state and sends a validated run selection."
+        },
+        {
+          "id": "daemon",
+          "label": "Daemon and model catalog",
+          "description": "Serves the catalog and resolves the daemon's selected tier."
+        },
+        {
+          "id": "adapter",
+          "label": "Local Vibe session adapter",
+          "description": "Owns a local child and gates prompt dispatch on verified settings."
+        },
+        {
+          "id": "vibe",
+          "label": "Installed Vibe app server",
+          "description": "Opens or resumes a session and applies local session-only settings."
+        }
+      ],
+      "messages": [
+        {
+          "from": "chat",
+          "to": "daemon",
+          "label": "Read models.definitions",
+          "description": "A picker-open intent or recovered daemon reachability asks the host to refresh its catalog."
+        },
+        {
+          "from": "daemon",
+          "to": "chat",
+          "label": "Catalog or recoverable error",
+          "kind": "return",
+          "description": "Publish the new catalog and status in place after the ready handshake, preserving the current chat and any last valid catalog."
+        },
+        {
+          "from": "chat",
+          "to": "adapter",
+          "label": "Start selected chat turn",
+          "description": "Pass the model, allowed effort, resume identity and existing execution policy."
+        },
+        {
+          "from": "daemon",
+          "to": "adapter",
+          "label": "Start selected daemon run",
+          "description": "The alternate caller passes the resolved tier and its existing run policy."
+        },
+        {
+          "from": "adapter",
+          "to": "vibe",
+          "label": "Open or resume without a prompt",
+          "description": "Negotiate capabilities and obtain the local session identity."
+        },
+        {
+          "from": "adapter",
+          "to": "vibe",
+          "label": "Apply and verify session-only model and effort",
+          "description": "Resolve the catalog alias and verify the active model and effort before any turn."
+        },
+        {
+          "from": "vibe",
+          "to": "adapter",
+          "label": "Effective selection or rejection",
+          "kind": "return",
+          "description": "A rejection stops the adapter before it sends the prompt."
+        },
+        {
+          "from": "adapter",
+          "to": "vibe",
+          "label": "Start turn once",
+          "description": "Dispatch only after effective values match and existing execution policy is applied."
+        },
+        {
+          "from": "vibe",
+          "to": "adapter",
+          "label": "Bounded events and terminal outcome",
+          "kind": "return",
+          "description": "Preserve caller outputs and cancellation. Never replay a turn whose dispatch may have occurred."
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/apply-catalog-model-effort-choices-daemon-E2026110997adabf6/S001/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/daemon/model-definitions.ts:147"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/apply-catalog-model-effort-choices-daemon-E2026110997adabf6/ISSUE.md"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/assets/models/cloud-model-catalog.json"
+    },
+    {
+      "id": "c4",
+      "kind": "doc",
+      "ref": "https://docs.mistral.ai/vibe/code/cli/work-with-cli"
+    },
+    {
+      "id": "c5",
+      "kind": "doc",
+      "ref": "https://docs.mistral.ai/vibe/code/cli/configuration-reference"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "/Users/subhagho/.local/share/uv/tools/mistral-vibe/lib/python3.14/site-packages/vibe/app_server/protocol.py"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts:309"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:326"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/shared/ipc-client.ts:149"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/agent/providers/structured-output.ts:230"
+    },
+    {
+      "id": "c11",
+      "kind": "doc",
+      "ref": ".insrc/tmp/design-review/catalog-model-effort-lld-97adabf6-evidence/sequence-fit.png",
+      "quotedText": "Chrome capture of the generated sequence after Fit. All four participants and nine messages are visible. The sequence definition is unchanged from the captured revision."
+    }
+  ]
+}

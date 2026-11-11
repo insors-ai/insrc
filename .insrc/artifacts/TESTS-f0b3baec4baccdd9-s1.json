@@ -1,0 +1,323 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "a7de6f88f3a56564ac2c696b0cf6e069f1ec0f8a037a2461da8742eb0a3d1f9c",
+        "at": "2026-11-09T19:45:56.390Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "f0b3baec4baccdd9",
+    "storyId": "s1",
+    "createdAt": "2026-11-09T19:45:56.378Z",
+    "updatedAt": "2026-11-09T19:45:56.378Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-09T19:36:01.720Z",
+    "epicSlug": "make-ux-mocks-zoom-controls-follow",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "7f22642c8",
+        "ranAt": "2026-11-09T19:45:56.378Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/docgen/render/__tests__/fallback.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/docgen/render/__tests__/fallback.test.ts"
+            ]
+          },
+          {
+            "name": "src/docgen/render/__tests__/shell.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/docgen/render/__tests__/shell.test.ts"
+            ]
+          },
+          {
+            "name": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/artifacts/companion/__tests__/shell.test.ts"
+            ]
+          },
+          {
+            "name": "src/workflow/artifacts/companion/__tests__/ux-page.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/artifacts/companion/__tests__/ux-page.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/docgen/render/__tests__/fallback.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 922,
+            "titles": [
+              {
+                "title": "oversized: false at/below the limit, true above it (strict >, ac4/ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "oversized: default OVERSIZED_LIMIT applied when no limit passed; injected limit overrides",
+                "result": "pass"
+              },
+              {
+                "title": "toGraphvizDot: valid digraph — n<i> aliases, one node + one edge each",
+                "result": "pass"
+              },
+              {
+                "title": "toGraphvizDot: DOT-hostile label chars are escaped into well-formed DOT",
+                "result": "pass"
+              },
+              {
+                "title": "toGraphvizDot: an edge to an alias-less node is skipped",
+                "result": "pass"
+              },
+              {
+                "title": "assembleFallbackShell: sc3 shape, inlined SVG + svg-pan-zoom, offline (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "assembleShell(small IR): primary-inline path; renderer NEVER invoked (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "assembleShell(small IR): byte-identical to the default-renderer output (ac4 regression)",
+                "result": "pass"
+              },
+              {
+                "title": "assembleShell(oversized IR, ok renderer): fallback-subprocess shell (ac1/ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "assembleShell(oversized IR, unavailable renderer): fallback-unavailable naming tried binaries + remedy (ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "live: graphvizSubprocessRenderer renders real DOT to an <svg> root",
+                "result": "skipped"
+              },
+              {
+                "title": "live: generateDocument for an oversized component-dependency scope → ok fallback shell",
+                "result": "skipped"
+              },
+              {
+                "title": "live: both binaries absent → unavailable naming the tried binaries (ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "live: a present binary that fails on bad DOT → unavailable(reason), never throws",
+                "result": "skipped"
+              },
+              {
+                "title": "generateDocument: unknown docType still → not-found (s5 leaves the surface intact)",
+                "result": "pass"
+              },
+              {
+                "title": "docgen/render/__tests__/fallback.test.ts: the fallback script defaults to light, does not consult prefers-color-scheme and uses the same storage key as the shared script",
+                "result": "pass"
+              },
+              {
+                "title": "docgen/render/__tests__/fallback.test.ts: the theme switch is a direct child of the body in the fallback page",
+                "result": "pass"
+              },
+              {
+                "title": "the fallback page themes the pan-zoom controls in both modes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/docgen/render/__tests__/shell.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 422,
+            "titles": [
+              {
+                "title": "documentIRToMermaid: classDiagram with class decls + inherit/implement arrows",
+                "result": "pass"
+              },
+              {
+                "title": "documentIRToMermaid: an edge to an alias-less node is skipped; labels are escaped",
+                "result": "pass"
+              },
+              {
+                "title": "assembleShell: offline self-contained shell — runtime INLINED, no external fetch",
+                "result": "pass"
+              },
+              {
+                "title": "assembleShell: assets absent → sc4 fallbackUnavailable naming copy-assets (UNCHANGED s1 degrade), not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "assembleShell: the s5 fallback backend is ALSO self-contained offline (both backends, ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "assembleShell: the primary Mermaid shell is branded — shared classes, theme meta, fonts, controls, no theme neutral / old colors",
+                "result": "pass"
+              },
+              {
+                "title": "assembleShell: the legend renders iff the diagram source carries role classes (R4)",
+                "result": "pass"
+              },
+              {
+                "title": "assembleShell: the fallback subprocess shell is branded too (shared classes + meta + theme toggle + export)",
+                "result": "pass"
+              },
+              {
+                "title": "docgen/render/__tests__/shell.test.ts: the docgen page keeps the theme root on the body and docgenPageStyle has no .insrc-viewer html rule",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 603,
+            "titles": [
+              {
+                "title": "d9f85b3c t3 — Header, Narrative, View and Description appear in that order",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — the header table has the four rows: Work item, Source doc (linked), Date, User",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — no http(s) URL appears: none in the shell markup, none at all on an HTML page",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — both visuals get the toolbar, the pan/zoom runtime and its init",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — a Mermaid page inlines Mermaid and the branded theme boot drives the render",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — the legend renders iff the mermaid source carries role classes (R4)",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — an HTML page inlines no Mermaid, fits on load and carries the visual and its CSS",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — an inlined runtime cannot close its script element early",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — every header, narrative and table string is escaped",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — a null cell renders as an em dash, and a tagged cell as its badge",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — a missing narrative renders only the context line; a present one renders its paragraphs",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — the runtime loader reads the shipped assets: pan/zoom always, Mermaid for a Mermaid visual only",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — a missing runtime asset raises DiagramGenerationError",
+                "result": "pass"
+              },
+              {
+                "title": "companion/__tests__/shell.test.ts: the companion page carries class insrc-viewer, data-theme and the export CSS on the body",
+                "result": "pass"
+              },
+              {
+                "title": "companion/__tests__/shell.test.ts: the companion layout rule targets the page inside the theme root",
+                "result": "pass"
+              },
+              {
+                "title": "companion/__tests__/shell.test.ts: the theme switch is a direct child of the body in the companion page, and the companion CSS has the max-width:480px rule for header.hdr and table.ref",
+                "result": "pass"
+              },
+              {
+                "title": "companion/__tests__/shell.test.ts: the export CSS attribute still carries the fonts and the diagram overrides unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifacts/companion/__tests__/ux-page.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 607,
+            "titles": [
+              {
+                "title": "d9f85b3c t7 — key elements are numbered depth-first: top-level text, inputs, described elements and every action",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t7 — the markers in the card are exactly the table numbers, in the same order",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t7 — numbering is stable: the same definition always gives the same markers and table",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t7 — descriptions fill the table, and an undescribed key element gets a null cell",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t7 — Submit and OpenUrl stay distinguishable in the card and the table",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t7 — the visual is HTML with its own card CSS, so the page inlines no Mermaid",
+                "result": "pass"
+              },
+              {
+                "title": "a UX mock page carries the theme switch",
+                "result": "pass"
+              },
+              {
+                "title": "the UX card colours come from the theme, and the status colours per mode are readable",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

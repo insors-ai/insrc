@@ -15,9 +15,10 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 // The handler map is built in handler-runtime.ts (moved out of index.ts's main(), Epic 86197ac6 s2/t1).
@@ -45,3 +46,43 @@ for (const [method, fn] of [['workflow.delivery', 'handleDelivery'], ['workflow.
 		assert.equal(typeof mod[fn], 'function', `${imported} exports ${fn}`);
 	});
 }
+
+test('workflow.delivery carries unit (including status unmigrated), planRowId, taskOrder, unmigrated and needs-migration through the snapshot', async () => {
+	const { handleDelivery } = await import('../../workflow/delivery/handlers.js');
+	const h = '1111111111111111';
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-delivery-contract-'));
+	try {
+		const dir = join(repo, '.insrc', 'artifacts');
+		mkdirSync(dir, { recursive: true });
+		const by = { id: 'insrc:system', kind: 'system', properties: {} };
+		const lifecycle = (status: string) => ({ status, revision: { number: 1, contentHash: '', at: 't', by }, signoffs: [], ...(status === 'approved' ? { approval: { revision: 1, by, at: '2026-11-01T00:00:00.000Z' } } : {}) });
+		const meta = { createdAt: '2026-11-01T00:00:00.000Z', epicCreatedAt: '2026-11-01T00:00:00.000Z', epicHash: h };
+		const put = (id: string, m: object, body: object): void => writeFileSync(join(dir, `${id}.json`), JSON.stringify({ meta: { ...meta, ...m }, body, citations: [] }));
+		put(`DEF-${h}`, { lifecycle: lifecycle('approved') }, { stories: [{ id: 's1', title: 'One' }] });
+		put(`EPIC-${h}`, {}, {});   // no lifecycle: not migrated
+		put(`STORY-${h}-s1`, { storyId: 's1', lifecycle: lifecycle('draft') }, {});
+		put(`PLAN-${h}-s1`, { storyId: 's1', lifecycle: lifecycle('approved') }, { tasks: [{ id: 't9', title: 'Row', order: 3 }] });
+		put(`TASKS-${h}-s1`, { storyId: 's1', lifecycle: lifecycle('draft') }, { planRevision: 1, taskIds: ['t4'], nextNumber: 5 });
+		put(`TASK-${h}-s1-t4`, { storyId: 's1', lifecycle: lifecycle('approved') }, { planTaskId: 't9', order: 3, title: 'Row' });
+		put(`LLD-${h}-s1`, { storyId: 's1' }, { goal: 'g' });   // no lifecycle: not migrated
+
+		const answer = handleDelivery({ repo }, undefined);
+		assert.ok(!('error' in answer), JSON.stringify(answer));
+		const snapshot = JSON.parse(JSON.stringify(answer)) as typeof answer;   // what crosses the IPC boundary
+		const items = 'items' in snapshot ? snapshot.items : [];
+		const epic = items.find(i => i.kind === 'epic');
+		const story = items.find(i => i.kind === 'story');
+		const task = items.find(i => i.kind === 'task');
+		assert.deepEqual(epic?.unit, { artifactId: `EPIC-${h}`, status: 'unmigrated' });
+		assert.deepEqual(story?.unit, { artifactId: `STORY-${h}-s1`, status: 'draft' });
+		assert.deepEqual(task?.unit, { artifactId: `TASK-${h}-s1-t4`, status: 'approved' });
+		assert.equal(task?.planRowId, 't9');
+		assert.equal(task?.taskOrder, 3);
+		assert.equal(story?.tasks[0]?.taskOrder, 3);
+		assert.equal(story?.evidence.find(e => e.artifactId === `LLD-${h}-s1`)?.approval.state, 'unmigrated');
+		assert.ok(epic?.attentionReasons.includes('needs-migration'), JSON.stringify(epic?.attentionReasons));
+		assert.ok(story?.attentionReasons.includes('needs-migration'), JSON.stringify(story?.attentionReasons));
+		assert.ok(!story?.attentionReasons.includes('pending-decision'), 'the unmigrated LLD is no pending decision');
+		assert.ok(story?.notices.some(n => n.code === 'needs-migration' && n.artifactIds.includes(`LLD-${h}-s1`)), JSON.stringify(story?.notices));
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});

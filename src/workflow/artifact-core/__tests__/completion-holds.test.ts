@@ -24,19 +24,18 @@ describe('LifecycleService.completeIfRolledUp holds', () => {
 		try {
 			await seedEpic(k);
 			const svc = service(k, stubEvidence([T1, T2]));
-			await svc.completeIfRolledUp(T1, bob);
 
-			// a held Story is left as it is, and the Epic above it is not completed either
+			// a held Story is left as it is, with its Tasks, and the Epic above it is not completed either
 			const asked: string[] = [];
-			const heldStory = await svc.completeIfRolledUp(T2, bob, { holds: id => { asked.push(id); return id === STORY; } });
-			assert.deepEqual(heldStory.completed, [T2], 'only the Task completes');
+			const heldStory = await svc.completeIfRolledUp(STORY, bob, { holds: id => { asked.push(id); return id === STORY; } });
+			assert.deepEqual(heldStory.completed, [], 'nothing completes');
 			assert.equal(await status(k, STORY), 'draft');
+			assert.equal(await status(k, T1), 'draft');
 			assert.equal(await status(k, EPIC), 'draft');
 			assert.ok(asked.includes(STORY), 'the walk asks about the Story');
-			assert.ok(asked.includes(T2), 'every unit the walk is about to complete is asked, Tasks included');
 
 			// the Story is released but the Epic is held: the Story completes, the walk stops at the Epic
-			const heldEpic = await svc.completeIfRolledUp(T2, bob, { holds: id => id === EPIC });
+			const heldEpic = await svc.completeIfRolledUp(STORY, bob, { holds: id => id === EPIC });
 			assert.deepEqual(heldEpic.completed, [STORY]);
 			assert.equal(await status(k, STORY), 'completed');
 			assert.equal(await status(k, EPIC), 'draft');
@@ -53,8 +52,7 @@ describe('LifecycleService.completeIfRolledUp holds', () => {
 		try {
 			await seedEpic(k);
 			const svc = service(k, stubEvidence([T1, T2]));
-			await svc.completeIfRolledUp(T1, bob);
-			assert.deepEqual((await svc.completeIfRolledUp(T2, bob)).completed, [T2, STORY, EPIC]);
+			assert.deepEqual((await svc.completeIfRolledUp(STORY, bob)).completed, [STORY, EPIC]);
 		} finally { k.done(); }
 	});
 });

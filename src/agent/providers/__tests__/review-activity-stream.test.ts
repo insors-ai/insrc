@@ -13,7 +13,7 @@ import { runInProcessGroup } from '../../../shared/process-group.js';
 // were verified with the installed CLI help. Codex finality uses turn.completed.
 const schema={type:'object',required:['ok'],properties:{ok:{type:'boolean'}},additionalProperties:false};
 const json=(x:unknown)=>JSON.stringify(x)+'\n';
-function harness(kind:'claude'|'codex',accept=true){
+function harness(kind:'claude'|'codex'|'vibe',accept=true){
  const events:ReviewActivityEvent[]=[],candidates:unknown[]=[];let stopped=false;
  const opts:ActivityReviewSessionOpts={mode:'activity',cwd:'/tmp',signal:new AbortController().signal,inactivityMs:1800000,internalRetry:false,onActivity:e=>{events.push(e);},onCandidate:async value=>{candidates.push(value);return{accepted:accept};}};
  return {parser:new ReviewActivityStream(kind,schema,opts,()=>{stopped=true;}),events,candidates,stopped:()=>stopped};
@@ -142,4 +142,39 @@ test('Codex streamed candidates and final replies share nullable decoding and or
  const opts:ActivityReviewSessionOpts={mode:'activity',cwd:'/tmp',signal:new AbortController().signal,inactivityMs:1800000,onActivity:()=>{},onCandidate:async()=>{throw new Error('invalid response must not be submitted');}};
  const bad=new ReviewActivityStream('codex',host,opts,()=>{});await bad.start();await bad.feed(frames({...raw,pair:['a']}));assert.throws(()=>bad.completed());assert.ok(bad.diagnosticSnapshot().issues.some(i=>i.field==='/pair/0'&&i.code==='SCHEMA_CONSTRAINT'));
  const claude=new ReviewActivityStream('claude',host,opts,()=>{});await claude.start();await claude.feed(Buffer.from(json({type:'result',subtype:'success',structured_output:raw})));assert.throws(()=>claude.completed());assert.ok(claude.diagnosticSnapshot().issues.some(i=>i.field==='/error'&&i.code==='INVALID_FIELD_TYPE'));
+});
+
+test('T6-vibe-activity-stream-lifecycle: Vibe app-server frames drive the same start/feed/result/completed lifecycle as claude/codex',async()=>{
+ const h=harness('vibe');const p=h.parser;await p.start();
+ assert.ok(h.events.some(e=>e.kind==='session_started'),'start emits session_started for vibe like other kinds');
+ // reasoning + a tool-call effect map onto model_output / tool events.
+ await p.feed(Buffer.from(json({method:'history/entryAdded',params:{sessionId:'s',turnId:'t1',entry:{id:'r1',type:'reasoning',text:'private thinking'}}})));
+ await p.feed(Buffer.from(json({method:'history/entryAdded',params:{sessionId:'s',turnId:'t1',entry:{id:'e1',type:'effect',detail:{kind:'tool_call',name:'Read'}}}})));
+ // A first assistant message, then an append patch, superseded by a final message.
+ await p.feed(Buffer.from(json({method:'history/entryAdded',params:{sessionId:'s',turnId:'t1',entry:{id:'m1',type:'message',role:'assistant',content:[{type:'text',text:'interim '}]}}})));
+ await p.feed(Buffer.from(json({method:'history/entryUpdated',params:{sessionId:'s',turnId:'t1',entryId:'m1',patch:[{op:'append',path:'/content/0/text',value:'prose'}]}})));
+ await p.feed(Buffer.from(json({method:'history/entryAdded',params:{sessionId:'s',turnId:'t1',entry:{id:'m2',type:'message',role:'assistant',content:[{type:'text',text:'{"ok":true}'}]}}})));
+ // Non-final assistant text is never a candidate.
+ assert.equal(h.candidates.length,0,'no candidate before turn finality');
+ await p.feed(Buffer.from(json({method:'turn/completed',params:{sessionId:'s',turn:{id:'t1',sessionId:'s',status:'completed'}}})));
+ assert.deepEqual(h.candidates,[{ok:true}]);
+ assert.deepEqual(p.result(),{accepted:true,value:{ok:true}});
+ assert.deepEqual(p.completed(),{ok:true});
+ assert.equal(h.stopped(),true,'acceptance stops the session like other kinds');
+ assert.ok(h.events.some(e=>e.kind==='tool_started'&&e.toolId==='Read')&&h.events.some(e=>e.kind==='tool_completed'&&e.toolId==='Read'),'vibe tool_call effect maps to tool_started/tool_completed');
+ assert.ok(h.events.some(e=>e.kind==='model_output'));
+ assert.ok(!JSON.stringify(h.events).includes('private thinking'),'reasoning text never reaches activity events');
+ assert.equal(p.diagnosticSnapshot().provider,'vibe');
+ // A failed turn records the same NATIVE_CLI_FAILURE diagnostic shape as claude/codex.
+ const failed=harness('vibe');await failed.parser.start();
+ await failed.parser.feed(Buffer.from(json({method:'turn/completed',params:{sessionId:'s',turn:{id:'t1',sessionId:'s',status:'failed',error:{message:'model exploded'}}}})));
+ const d=failed.parser.diagnosticSnapshot();
+ assert.equal(d.terminal?.reason,'turn.failed');assert.ok(d.issues.some(i=>i.code==='NATIVE_CLI_FAILURE'&&i.message==='model exploded'));
+ assert.throws(()=>failed.parser.completed(),/successful final assessment/);
+ // Non-JSON final text yields INVALID_JSON, identical semantics to codex.
+ const badJson=harness('vibe');await badJson.parser.start();
+ await badJson.parser.feed(Buffer.from(json({method:'history/entryAdded',params:{sessionId:'s',turnId:'t1',entry:{id:'m1',type:'message',role:'assistant',content:[{type:'text',text:'not json'}]}}})));
+ await badJson.parser.feed(Buffer.from(json({method:'turn/completed',params:{sessionId:'s',turn:{id:'t1',sessionId:'s',status:'completed'}}})));
+ assert.ok(badJson.parser.diagnosticSnapshot().issues.some(i=>i.code==='INVALID_JSON'));
+ assert.equal(badJson.candidates.length,0);assert.throws(()=>badJson.parser.completed());
 });

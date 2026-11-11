@@ -232,7 +232,7 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `if(d.tasks.length>0){const wrap=make('div',undefined,'table-wrap');const tbl=make('table',undefined,'records tasks');tbl.setAttribute('aria-label','Tasks');`,
   `const hr=make('tr');for(const h of ['ID','Task','Result','Depends on','Checks'])hr.appendChild(make('th',h));const thead=make('thead');thead.appendChild(hr);tbl.appendChild(thead);const tb=make('tbody');`,
   `for(const t of d.tasks){const tr=make('tr',undefined,'task-row');tr.setAttribute('data-item-id',t.taskItemId);tr.appendChild(make('td',t.shortId,'task-id kicker'));`,
-  `tr.appendChild(make('td',t.title===null?t.taskItemId:t.title,'task-title'));const res=make('td');res.appendChild(pill(t.resultLabel,t.resultTone));tr.appendChild(res);`,
+  `tr.appendChild(make('td',t.title===null?t.taskItemId:t.title,'task-title'));const res=make('td');res.appendChild(pill(t.resultLabel,t.resultTone));if(t.unitLabel!==null){res.appendChild(make('span',' '));res.appendChild(pill(t.unitLabel,t.unitTone));}tr.appendChild(res);`,
   `const deps=make('td',undefined,'task-deps');if(t.dependsOn===null||t.dependsOn.length===0)deps.appendChild(make('span','\u2014','muted'));else for(const dep of t.dependsOn){const chip=pill(dep.shortId,'neutral');chip.setAttribute('title',dep.title);deps.appendChild(chip);}tr.appendChild(deps);`,
   `const cc=make('td',undefined,'task-checks');const checks=t.acceptanceChecks===null?[]:t.acceptanceChecks;tb.appendChild(tr);tr.appendChild(cc);`,
   `if(checks.length===0){cc.appendChild(make('span','\u2014','muted'));continue;}`,

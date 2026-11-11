@@ -38,7 +38,7 @@ const status = createAdminStatus({
 });
 
 serveRequests(init.hubPort, directDispatch(adminWorkerHandlers({
-	shutdown: reason => hub.send(SHUTDOWN_OP, reason),
+	shutdown: reason => hub.request<void>(SHUTDOWN_OP, reason),
 	status: () => status.daemonStatus(),
 	clients: async () => (await board.snapshot()).clients,
 	repoList: () => status.repoList(),

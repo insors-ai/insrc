@@ -1,0 +1,111 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-96e17cf1-cfcb-47d7-9abb-eee24873b59d",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T15:17:26.330Z",
+    "epicCreatedAt": "2026-11-09T05:00:05.847Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "eedc4519199b24b4",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Board Task membership, order and ids",
+      "parent": {
+        "entityId": "STORY-eedc4519199b24b4-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-eedc4519199b24b4-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-eedc4519199b24b4-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6f9d81a99ed77524ac63a49fe1de45b4368309b70bc76a0efc74a09c353472f6",
+        "at": "2026-11-09T15:17:26.330Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T15:17:26.332Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Board Task membership, order and ids",
+    "summary": "Take active Tasks from the current TASKS head or the PLAN, publish planRowId and taskOrder, keep unmatched BUILD results, and apply the :T and :R id rule.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "Active Tasks come from a TASKS head made from the current plan revision, else from the PLAN's rows in the PLAN's order",
+      "Unmatched BUILD results keep their validation and conflicts and raise no needs-migration",
+      "No two items in a Story share a board id, and an item that does not collide keeps its id"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "buildWorkItemGraph: TASKS-listed membership, withdrawn and superseded exclusion, PLAN fallback with an absent PLAN and an empty listing, unit, planRowId and taskOrder, and a Task whose number differs from its plan row has no number alias in sourceIds"
+      },
+      {
+        "level": "unit",
+        "name": "buildWorkItemGraph: a TASKS head from an older plan revision yields the PLAN's rows matched by planTaskId, in the PLAN's order even when a matching Task head carries an older order"
+      },
+      {
+        "level": "unit",
+        "name": "board id: Task t4 representing row t9 with a new headless row t4 gives :T004 and :R004 with separate validation and evidence"
+      },
+      {
+        "level": "unit",
+        "name": "board id: Task t4 representing row t9 with an unmatched BUILD result for t4 gives :T004 and :R004"
+      },
+      {
+        "level": "unit",
+        "name": "board id: a headless row and a BUILD result for the same row stay one item; a row whose number no real Task holds keeps :T<nnn>; no two items in a Story share an id"
+      },
+      {
+        "level": "unit",
+        "name": "buildWorkItemGraph and gate: a PLAN plus an extra failed BUILD result, and a BUILD with no PLAN, keep those task items, their failed count and their validation conflict, with no needs-migration"
+      },
+      {
+        "level": "unit",
+        "name": "gate sorts tasks by taskOrder, null last, then id"
+      },
+      {
+        "level": "integration",
+        "name": "verifyConversion keeps passing on a converted fixture with the changed loader, graph and gates"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/__tests__/delivery-handler-contract.test.ts carries unit (including status unmigrated), planRowId, taskOrder, unmigrated and needs-migration through the snapshot"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

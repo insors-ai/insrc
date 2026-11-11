@@ -32,6 +32,12 @@ export type WriteClass = 'content' | 'meta-only' | 'mixed' | 'render' | 'record'
 export type WriteVia = 'writeArtifact' | 'raw' | 'injected' | 'both';
 
 /**
+ * How a content writer of a delivery kind keeps a head from being created with no lifecycle (ac4): it settles one with
+ * withWorkflowLifecycle, writes one in the head it builds, creates the head through the store first, or names why it needs none.
+ */
+export type NewHeadLifecycle = 'settled' | 'carried' | 'store-first' | { readonly exempt: string };
+
+/**
  * The team gate behind a content writer (Story f32c3abf4a55494b/s1): `path` or `path:fn`, the file or function that calls
  * assertMayAuthor or assertMayReviseDraft before the write, or `{ exempt }` with the reason the writer needs none.
  */
@@ -44,6 +50,8 @@ export interface WriteSite {
 	readonly kind: 'content' | 'meta-only' | 'content|meta-only';
 	/** Required for a `content` or `content|meta-only` site. */
 	readonly gatedBy?: WriteGate | undefined;
+	/** Required for a `content` or `content|meta-only` site. */
+	readonly newHead?: NewHeadLifecycle | undefined;
 }
 
 export interface InventoryEntry {
@@ -55,17 +63,19 @@ export interface InventoryEntry {
 	readonly sites?: readonly WriteSite[] | undefined;
 	/** Required for a `content` entry; a mixed entry names it per site. */
 	readonly gatedBy?: WriteGate | undefined;
+	/** Required for a `content` entry; a mixed entry names it per site. */
+	readonly newHead?: NewHeadLifecycle | undefined;
 	readonly note:  string;
 }
 
 export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 	// --- content: the body or something a signoff covers changes -------------------
-	{ file: 'src/daemon/steps/workflow-step/phases/synthesize.ts', class: 'content', gatedBy: 'src/daemon/steps/workflow-step/phases/synthesize.ts', via: 'both', note: 'the draft pair: json is content, markdown a render; a redraft of a head that has history leaves it past its log, and LifecycleService.apply logs it as an adopted update at the next approve, review or complete' },
-	{ file: 'src/daemon/workflow-rpc.ts', class: 'content', gatedBy: 'src/daemon/workflow-rpc.ts', via: 'both', note: 'the server-side draft pair; a redraft of a head that has history leaves it past its log, and LifecycleService.apply logs it as an adopted update at the next approve, review or complete' },
-	{ file: 'src/workflow/resolve-comment.ts', class: 'content', gatedBy: 'src/workflow/resolve-comment.ts:handleResolveComment', via: 'writeArtifact', note: 'appends the comment to body.openQuestions; a redraft of a head that has history leaves it past its log, and LifecycleService.apply logs it as an adopted update at the next approve, review or complete' },
-	{ file: 'src/workflow/tracker/unit-head.ts', class: 'content', gatedBy: { exempt: 'makes the head of a unit that has none and never rewrites one that exists; it writes no author content a signoff covers' }, via: 'writeArtifact', note: 'makes the EPIC or STORY head of a unit that has none (a draft with an empty body, a lifecycle at revision 1 and its create entry); it never rewrites a head that exists' },
-	{ file: 'src/workflow/runners/build/standalone-record.ts', class: 'content', gatedBy: { exempt: 'machine output of the build gate for a unit that passed assertMayBuild; a build is gated by the build action, not revise' }, via: 'both', note: 'the BUILD record is regenerated on each persist' },
-	{ file: 'src/workflow/runners/build/test-record.ts', class: 'content', gatedBy: { exempt: 'machine output of the build gate (the TESTS record), never approved or signed off; the build is gated by assertMayBuild' }, via: 'both', note: 'the TESTS record replaces body.tasks; its rollback restores the earlier bytes and revision' },
+	{ file: 'src/daemon/steps/workflow-step/phases/synthesize.ts', class: 'content', newHead: 'settled', gatedBy: 'src/daemon/steps/workflow-step/phases/synthesize.ts', via: 'both', note: 'the draft pair: json is content, markdown a render; a redraft of a head that has history leaves it past its log, and LifecycleService.apply logs it as an adopted update at the next approve, review or complete' },
+	{ file: 'src/daemon/workflow-rpc.ts', class: 'content', newHead: 'settled', gatedBy: 'src/daemon/workflow-rpc.ts', via: 'both', note: 'the server-side draft pair; a redraft of a head that has history leaves it past its log, and LifecycleService.apply logs it as an adopted update at the next approve, review or complete' },
+	{ file: 'src/workflow/resolve-comment.ts', class: 'content', newHead: { exempt: 'appends a comment to a head it has just read; it never creates one' }, gatedBy: 'src/workflow/resolve-comment.ts:handleResolveComment', via: 'writeArtifact', note: 'appends the comment to body.openQuestions; a redraft of a head that has history leaves it past its log, and LifecycleService.apply logs it as an adopted update at the next approve, review or complete' },
+	{ file: 'src/workflow/tracker/unit-head.ts', class: 'content', newHead: 'carried', gatedBy: { exempt: 'makes the head of a unit that has none and never rewrites one that exists; it writes no author content a signoff covers' }, via: 'writeArtifact', note: 'makes the EPIC or STORY head of a unit that has none (a draft with an empty body, a lifecycle at revision 1 and its create entry); it never rewrites a head that exists' },
+	{ file: 'src/workflow/runners/build/standalone-record.ts', class: 'content', newHead: 'store-first', gatedBy: { exempt: 'machine output of the build gate for a unit that passed assertMayBuild; a build is gated by the build action, not revise' }, via: 'both', note: 'the BUILD record is regenerated on each persist' },
+	{ file: 'src/workflow/runners/build/test-record.ts', class: 'content', newHead: { exempt: 'the TESTS record is not a delivery kind' }, gatedBy: { exempt: 'machine output of the build gate (the TESTS record), never approved or signed off; the build is gated by assertMayBuild' }, via: 'both', note: 'the TESTS record replaces body.tasks; its rollback restores the earlier bytes and revision' },
 	{ file: 'src/workflow/code-review/task-review/publication.ts', class: 'render', via: 'raw', note: 'task-based CR JSON is merged and journalled through the canonical artifact store queue; writeAtomic refreshes only its markdown projection' },
 
 	// --- meta-only: stamps, review stamps, tracker patches, resolutions -------------
@@ -73,7 +83,7 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 	{ file: 'src/workflow/tracker/refs.ts', class: 'meta-only', via: 'writeArtifact', note: 'patchTrackerMeta' },
 	{ file: 'src/workflow/tracker/binding.ts', class: 'meta-only', via: 'writeArtifact', note: 'the tracker binding: the one writer of meta.envelope.binding after creation; a synchronous patch that moves no revision, refused while the store has a write staged' },
 	{ file: 'src/workflow/tracker/attach.ts', class: 'meta-only', via: 'writeArtifact', note: 'recordAttachment: the one writer of meta.envelope.attachments after creation; a synchronous patch that moves no revision, refused while the store has a write staged' },
-	{ file: 'src/workflow/tasks/task-set.ts', class: 'content', gatedBy: { exempt: 'the Task records follow the plan approval and the build, which are gated by assertMayBuild; no signoff covers a Task draft' }, via: 'injected', note: 'the Task set: writes the TASKS and TASK heads through ArtifactStore.write and update (a Task\'s own content, so each change mints a revision), and a build round or a pending close as a revision-less log entry through History' },
+	{ file: 'src/workflow/tasks/task-set.ts', class: 'content', newHead: { exempt: 'writes only through ArtifactStore.write, which stores a lifecycle on every head' }, gatedBy: { exempt: 'the Task records follow the plan approval and the build, which are gated by assertMayBuild; no signoff covers a Task draft' }, via: 'injected', note: 'the Task set: writes the TASKS and TASK heads through ArtifactStore.write and update (a Task\'s own content, so each change mints a revision), and a build round or a pending close as a revision-less log entry through History' },
 	{ file: 'src/workflow/bugfix/stamp.ts', class: 'meta-only', via: 'writeArtifact', note: 'single-field meta patch (meta.parentRef)' },
 	{ file: 'src/workflow/orchestrator.ts', class: 'meta-only', via: 'both', note: 'tracker push and sync patch the Define meta; the scope-analyze cache is not an artifact' },
 
@@ -81,7 +91,7 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 	{
 		file: 'src/workflow/gates.ts', class: 'mixed', via: 'both',
 		sites: [
-			{ fn: 'appendStoryToDefine', kind: 'content', gatedBy: 'src/workflow/orchestrator.ts:finalizeDefineExtend' },
+			{ fn: 'appendStoryToDefine', kind: 'content', newHead: { exempt: 'rewrites a Define that exists and refuses a missing one' }, gatedBy: 'src/workflow/orchestrator.ts:finalizeDefineExtend' },
 			{ fn: 'approveArtifactByJsonPath', kind: 'meta-only' },
 		],
 		note: 'the extend path changes body.stories; approve stamps meta.rangeBase after the lifecycle approves (reject and ack-stale write no head)',
@@ -325,6 +335,64 @@ export function checkInventoryEntry(source: string, entry: InventoryEntry | unde
 		}
 	}
 	return problems;
+}
+
+/** The arguments text of each `writeArtifact(...)` call in `source` that writes with kind 'content'. */
+function contentWriteArgs(source: string): string[] {
+	const found: string[] = [];
+	const visit = (node: ts.Node): void => {
+		if (ts.isCallExpression(node) && node.expression.getText() === 'writeArtifact' && node.arguments.some(a => a.getText() === "'content'")) found.push(node.arguments.map(a => a.getText()).join(', '));
+		ts.forEachChild(node, visit);
+	};
+	visit(ts.createSourceFile('x.ts', source, ts.ScriptTarget.Latest, true));
+	return found;
+}
+
+/** The problems of one content writer against what it says about the lifecycle of a new head. */
+function newHeadProblems(where: string, rule: NewHeadLifecycle | undefined, source: string): string[] {
+	if (rule === undefined) return [`${where}: says nothing about the lifecycle of a new head`];
+	if (typeof rule === 'object') return rule.exempt.trim().length > 0 ? [] : [`${where}: an exemption needs a reason`];
+	if (rule === 'carried') return /lifecycle:\s*\{\s*status:\s*'draft'/.test(source) ? [] : [`${where}: builds no draft lifecycle in the head it writes`];
+	if (rule === 'store-first') return /\bstoreRound\(through\b/.test(source) ? [] : [`${where}: does not create the head through the store first`];
+	const writes = contentWriteArgs(source);
+	if (writes.length === 0) return [`${where}: has no content write to settle`];
+	return writes.filter(args => !args.includes('withWorkflowLifecycle(')).map(args => `${where}: writes without withWorkflowLifecycle: ${args}`);
+}
+
+/**
+ * The content writers that could create a delivery head with no lifecycle. Every content entry and site has to say how it avoids it.
+ * `readSource` reads a repo-relative file; a missing file is a problem.
+ */
+export function checkNewHeadLifecycles(entries: readonly InventoryEntry[], readSource: (file: string) => string | undefined): string[] {
+	const problems: string[] = [];
+	for (const entry of entries) {
+		const check = (where: string, rule: NewHeadLifecycle | undefined): void => {
+			const source = readSource(entry.file);
+			if (source === undefined) problems.push(`${where}: no such file`);
+			else problems.push(...newHeadProblems(where, rule, source));
+		};
+		if (entry.class === 'content') check(entry.file, entry.newHead);
+		for (const site of entry.class === 'mixed' ? entry.sites ?? [] : []) if (site.kind !== 'meta-only') check(`${entry.file} ${site.fn}`, site.newHead);
+	}
+	return problems;
+}
+
+/** The BUILD record writers that create a head through the store only when they are given a writer, and the argument that holds it. */
+const STORE_FIRST_WRITERS: Readonly<Record<string, number>> = { persistBuildRecord: 2, persistStandaloneBuildRecord: 2, ensureBuildRecordOnCompletion: 3 };
+
+/** The calls in `source` of a store-first BUILD record writer that pass it no writer, which would create the head with no lifecycle. */
+export function storeFirstCallsWithoutWriter(source: string): string[] {
+	const found: string[] = [];
+	const visit = (node: ts.Node): void => {
+		if (ts.isCallExpression(node)) {
+			const index = STORE_FIRST_WRITERS[node.expression.getText()];
+			const given = index === undefined ? undefined : node.arguments[index]?.getText();
+			if (index !== undefined && (given === undefined || given === 'undefined')) found.push(node.getText().slice(0, 80));
+		}
+		ts.forEachChild(node, visit);
+	};
+	visit(ts.createSourceFile('x.ts', source, ts.ScriptTarget.Latest, true));
+	return found;
 }
 
 /** A use of the team gate's author or revise check (a call, or the default of a test seam). */

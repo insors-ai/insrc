@@ -27,7 +27,10 @@ export class ReviewActivityStream<T> {
  private readonly diagnostics: ReviewDiagnosticCollector;
  private readonly outputTools = new Set<string>();
  private diagnosticWriteError: unknown;
- constructor(private readonly kind: 'claude'|'codex', private readonly schema: StructuredSchema, private readonly opts: ActivityReviewSessionOpts, private readonly stop: () => void) { this.diagnostics = new ReviewDiagnosticCollector(kind); }
+ /** Vibe app-server assistant text blocks per history entry id; only the last entry can be final. */
+ private readonly vibeBlocks = new Map<string, string[]>();
+ private vibeLastEntry: string | undefined;
+ constructor(private readonly kind: 'claude'|'codex'|'vibe', private readonly schema: StructuredSchema, private readonly opts: ActivityReviewSessionOpts, private readonly stop: () => void) { this.diagnostics = new ReviewDiagnosticCollector(kind); }
  async start(): Promise<void> { await this.activity('session_started'); }
  async feed(chunk: Buffer): Promise<void> { this.buffer += this.decoder.write(chunk); await this.decode(false); }
  async end(): Promise<void> { this.buffer += this.decoder.end(); await this.decode(true); }
@@ -40,11 +43,23 @@ export class ReviewActivityStream<T> {
   return new ReviewOutputFailureError(message, this.diagnosticSnapshot());
  }
  result(): { accepted: true; value: T } | { accepted: false } { return this.accepted ? {accepted:true,value:this.value!} : {accepted:false}; }
- completed(): T {
+ private completedClaudeCodex(): T {
   if (this.failed || !this.finalSucceeded || this.pendingFinal === undefined) throw new ReviewOutputFailureError('Review native session did not produce a successful final assessment', this.diagnosticSnapshot());
   const checked = this.kind === 'codex' ? validateCodexReply<T>(this.schema,this.pendingFinal) : validateAgainstSchema<T>(this.schema,this.pendingFinal);
   if (!checked.ok) throw new ReviewOutputFailureError('Review final assessment does not match schema', this.diagnosticSnapshot());
   return checked.value;
+ }
+ completed(): T {
+  if (this.kind === 'vibe') {
+   if (this.failed || !this.finalSucceeded || this.vibeLastEntry === undefined) throw new ReviewOutputFailureError('Review native session did not produce a successful final assessment', this.diagnosticSnapshot());
+   const text = (this.vibeBlocks.get(this.vibeLastEntry) ?? []).join('');
+   let raw: unknown;
+   try { raw = JSON.parse(text); } catch { throw new ReviewOutputFailureError('Review final assessment is not valid JSON', this.diagnosticSnapshot()); }
+   const checked = validateAgainstSchema<T>(this.schema, raw);
+   if (!checked.ok) throw new ReviewOutputFailureError('Review final assessment does not match schema', this.diagnosticSnapshot());
+   return checked.value;
+  }
+  return this.completedClaudeCodex();
  }
  private async report(): Promise<void> {
   try { await this.opts.onDiagnostic?.(this.diagnosticSnapshot()); }
@@ -79,7 +94,7 @@ export class ReviewActivityStream<T> {
      if (this.seen.size>=RECENT_EVENT_IDS) this.seen.delete(this.seen.values().next().value!);
      this.seen.add(frame.uuid);
     }
-    if (this.kind==='claude') await this.claude(frame); else await this.codex(frame);
+    if (this.kind==='claude') await this.claude(frame); else if (this.kind==='vibe') await this.vibe(frame); else await this.codex(frame);
    }
    if (newline<0) break;
   }
@@ -151,6 +166,79 @@ export class ReviewActivityStream<T> {
     await this.note({code:'NATIVE_CLI_FAILURE',field:'/',correction:'Resolve the reported native CLI output failure.',message});
    }
    if(this.finalSucceeded){this.pendingFinal=frame.structured_output;await this.candidate(frame.structured_output);}
+  }
+ }
+ private async vibe(frame:Record<string,unknown>):Promise<void>{
+  // Vibe app-server JSON-RPC notifications: { method, params } with params.sessionId.
+  // NB: the shared record() type-guard narrows to `true` under tsx's esbuild
+  // transform, so the object extraction is written inline here.
+  const method=typeof frame['method']==='string'?frame['method']:undefined;
+  if(method===undefined||method==='')return;
+  const paramsRaw=frame['params'];
+  const params=(typeof paramsRaw==='object'&&paramsRaw!==null&&!Array.isArray(paramsRaw))?paramsRaw as Record<string,unknown>:undefined;
+  const turnRaw=params?.['turn'];
+  const turn=(typeof turnRaw==='object'&&turnRaw!==null&&!Array.isArray(turnRaw))?turnRaw as Record<string,unknown>:undefined;
+  if(method==='turn/started'||method==='turn/completed'){
+   if(turn&&typeof turn['status']==='string'){
+    if(turn['status']==='failed'){
+     this.failed=true;
+     const errRaw=turn['error'];
+     const err=(typeof errRaw==='object'&&errRaw!==null&&!Array.isArray(errRaw))?errRaw as Record<string,unknown>:undefined;
+     const message=typeof err?.['message']==='string'?err['message']:'Native Vibe turn failed';
+     this.diagnostics.terminal('turn.failed',message);
+     await this.note({code:'NATIVE_CLI_FAILURE',field:'/',correction:'Resolve the reported native CLI output failure.',message});
+    }else if(turn['status']==='completed'){
+     this.finalSucceeded=true;
+     if(this.vibeLastEntry!==undefined){
+      const text=(this.vibeBlocks.get(this.vibeLastEntry)??[]).join('');
+      let raw:unknown;try{raw=JSON.parse(text);}catch{
+       this.diagnostics.rejectedText(text);await this.note({code:'INVALID_JSON',field:'/',correction:'Return one valid JSON object.',message:'Final assistant message is not valid JSON.'});
+       return;
+      }
+      await this.candidate(raw);
+     }
+    }
+   }
+   return;
+  }
+  if((method==='history/entryAdded'||method==='history/entryUpdated')&&params){
+   const entryRaw=params['entry'];
+   const entry=(typeof entryRaw==='object'&&entryRaw!==null&&!Array.isArray(entryRaw))?entryRaw as Record<string,unknown>:undefined;
+   if(method==='history/entryAdded'&&entry){
+    const id=typeof entry['id']==='string'?entry['id']:undefined;
+    if(entry['type']==='reasoning'&&typeof entry['text']==='string')await this.activity('model_output');
+    else if(entry['type']==='effect'){
+     const detailRaw=entry['detail'];
+     const detail=(typeof detailRaw==='object'&&detailRaw!==null&&!Array.isArray(detailRaw))?detailRaw as Record<string,unknown>:undefined;
+     if(detail?.['kind']==='tool_call'){
+      const name=detail['name'];
+      await this.tool('tool_started',typeof name==='string'?name:entry['id']);
+      await this.tool('tool_completed',typeof name==='string'?name:entry['id']);
+     }
+    }else if(entry['type']==='message'&&entry['role']==='assistant'&&id){
+     // A new assistant message supersedes the previous one as the final answer.
+     this.vibeLastEntry=id;
+     const blocks:string[]=Array.isArray(entry['content'])?entry['content'].map(block=>{const itemRaw=block;const item=(typeof itemRaw==='object'&&itemRaw!==null&&!Array.isArray(itemRaw))?itemRaw as Record<string,unknown>:undefined;return item?.['type']==='text'&&typeof item['text']==='string'?item['text']:'';}):[];
+     this.vibeBlocks.set(id,blocks);
+     await this.activity('model_output');
+    }
+    return;
+   }
+   if(method==='history/entryUpdated'&&typeof params['entryId']==='string'&&Array.isArray(params['patch'])){
+    const blocks=this.vibeBlocks.get(params['entryId']);
+    if(blocks===undefined)return;
+    for(const item of params['patch']){
+     const patchRaw=item;
+     const patch=(typeof patchRaw==='object'&&patchRaw!==null&&!Array.isArray(patchRaw))?patchRaw as Record<string,unknown>:undefined;
+     const path=patch?.['path'];
+     const index=typeof path==='string'?/^\/content\/(\d+)\/text$/.exec(path)?.[1]:undefined;
+     if(index===undefined||typeof patch?.['value']!=='string')continue;
+     const i=Number(index);const old=blocks[i];
+     if(old===undefined||old===null)continue;
+     blocks[i]=patch['op']==='append'?old+patch['value']:patch['op']==='replace'?patch['value']:old;
+    }
+    if(this.vibeLastEntry===params['entryId'])await this.activity('model_output');
+   }
   }
  }
  private async codex(frame:Record<string,unknown>):Promise<void>{

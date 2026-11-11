@@ -66,7 +66,7 @@ test('final pin validates object type and ancestry with truthful source failures
   assert.equal(await f.sources.isAncestor(f.commit, f.base), false);
   assert.equal(await f.sources.isAncestor(f.commit, f.commit), true);
   const failure = new TaskReviewInputError('source', 'Transport/integrity failure');
-  const broken = { commit: async () => { throw failure; }, isAncestor: f.sources.isAncestor.bind(f.sources), file: f.sources.file.bind(f.sources), changedRanges: f.sources.changedRanges.bind(f.sources) };
+  const broken = { commit: async () => { throw failure; }, isAncestor: f.sources.isAncestor.bind(f.sources), file: f.sources.file.bind(f.sources), changedRanges: f.sources.changedRanges.bind(f.sources), pathChanges: f.sources.pathChanges.bind(f.sources) };
   await assert.rejects(prepareReviewPacket(f.packet, broken), error => error === failure);
   const empty = structuredClone(f.packet); empty.reviewSet[0]!.files[0]!.segments = [];
   let reads = 0;

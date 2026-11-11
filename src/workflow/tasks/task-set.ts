@@ -24,6 +24,8 @@ import { ArtifactNotFoundError, LifecycleConflictError } from '../artifact-core/
 import { emptyLifecycle } from '../artifact-core/decode.js';
 import type { Actor, Artifact, Reference } from '../artifact-core/types.js';
 import { bindArtifact, readBinding, setPendingLink } from '../tracker/binding.js';
+import type { BindingWritten } from '../tracker/binding.js';
+import { APPROVED_OR_BEYOND } from '../artifact-core/approval-view.js';
 import { readTrackerMeta } from '../tracker/refs.js';
 import { isToolDenied, TaskSyncDenied } from '../tracker/tool-denied.js';
 import { unitKey } from '../tracker/unit-issue.js';
@@ -54,6 +56,13 @@ export interface TaskSetsDeps {
 	/** The history the store writes through: a Task's pending issue close is logged on it. */
 	readonly history:  History;
 	readonly now?:     (() => Date) | undefined;
+	/** Told when a Task record's binding has been written to its head; those writes do not go through the store. */
+	readonly bindingWritten?: BindingWritten | undefined;
+}
+
+/** `acceptLaterStatus`: a repair's plan may have moved past approved; every live caller, and reconcile, leaves it unset. */
+export interface CreateFromPlanOptions {
+	readonly acceptLaterStatus?: boolean | undefined;
 }
 
 /** What a re-plan did to the Task set. `closeFailed` lists the issues of withdrawn Tasks that could not be closed; the next call retries them. */
@@ -107,7 +116,7 @@ export class TaskSets {
 	constructor(private readonly deps: TaskSetsDeps) {}
 
 	/** The Task ids and the plan's row order, read from the plan; refuses a plan that is absent, not approved, or whose rows cannot become Tasks. */
-	protected async readPlan(planId: string): Promise<PlanRead> {
+	protected async readPlan(planId: string, options: CreateFromPlanOptions = {}): Promise<PlanRead> {
 		const key = ArtifactIds.parse(planId);
 		if (key?.kind !== 'PLAN' || key.story === undefined) throw new TaskSetError(`'${planId}' is not a plan id`);
 		let plan: Artifact<HeadPayload>;
@@ -116,7 +125,7 @@ export class TaskSets {
 			if (err instanceof ArtifactNotFoundError) throw new TaskSetError(`${planId} has no head`);
 			throw err;
 		}
-		if (plan.lifecycle.status !== 'approved') throw new TaskSetError(`${planId} is ${plan.lifecycle.status}, not approved: the Tasks are made from an approved plan`);
+		if (plan.lifecycle.status !== 'approved' && !(options.acceptLaterStatus === true && APPROVED_OR_BEYOND.includes(plan.lifecycle.status))) throw new TaskSetError(`${planId} is ${plan.lifecycle.status}, not approved: the Tasks are made from an approved plan`);
 		const body = plan.payload.body as unknown as Partial<PlanBody>;
 		if (!Array.isArray(body.tasks)) throw new TaskSetError(`${planId} has no Task rows`);
 		const rows = [...body.tasks].sort((a, b) => a.order - b.order);
@@ -151,8 +160,8 @@ export class TaskSets {
 	 * moved onto its head's binding. A repeat for the same plan revision writes nothing; a part-way failure is finished by
 	 * repeating the call, because the TASKS head that marks the set done is written last and heads already made are kept.
 	 */
-	async createFromPlan(planId: string, by: Actor): Promise<TaskSet> {
-		const plan = await this.readPlan(planId);
+	async createFromPlan(planId: string, by: Actor, options: CreateFromPlanOptions = {}): Promise<TaskSet> {
+		const plan = await this.readPlan(planId, options);
 		const tasksId = this.tasksId(plan);
 		const done = await this.readTasksHead(tasksId);
 		if (done !== undefined) {
@@ -221,12 +230,12 @@ export class TaskSets {
 			if (readBinding(this.deps.repoPath, taskArtifactId) !== undefined) return;
 			const record = readTrackerMeta(artifactJsonPath(this.deps.repoPath, p.planId))?.units?.[unitKey({ unit: 'task', repoPath: this.deps.repoPath, epicHash: p.epicHash, storyId: p.storyId, taskId: row.id })];
 			if (record === undefined || typeof record.issue !== 'string' || record.issue.length === 0) return;
-			const bound = bindArtifact(this.deps.repoPath, taskArtifactId, record.issue);
+			const bound = bindArtifact(this.deps.repoPath, taskArtifactId, record.issue, undefined, this.deps.bindingWritten);
 			if (!bound.ok) { log.warn({ taskArtifactId, why: bound.kind, reason: bound.reason }, 'tasks: the plan\'s Task record was not moved'); return; }
 			const link = record.pendingLink;
 			if (link !== undefined) {
 				const issueRef = (ref: string): Reference => ({ entityId: ref, type: 'github:issue', relation: 'tracked-by' });
-				setPendingLink(this.deps.repoPath, taskArtifactId, { parent: issueRef(link.parent), ...(link.childId !== undefined ? { childId: link.childId } : {}), ...(link.child !== undefined ? { child: issueRef(link.child) } : {}) });
+				setPendingLink(this.deps.repoPath, taskArtifactId, { parent: issueRef(link.parent), ...(link.childId !== undefined ? { childId: link.childId } : {}), ...(link.child !== undefined ? { child: issueRef(link.child) } : {}) }, this.deps.bindingWritten);
 			}
 		} catch (err) { log.warn({ taskArtifactId, err: (err as Error).message }, 'tasks: the plan\'s Task record was not moved'); }
 	}

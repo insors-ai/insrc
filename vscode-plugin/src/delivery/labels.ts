@@ -16,6 +16,7 @@ import type {
   AttentionReason,
   DeliveryStage,
   NoticeCode,
+  UnitStatus,
   ReviewVerdict,
   TaskResult,
 } from './delivery-contract.js';
@@ -27,6 +28,8 @@ export interface DisplayLabels {
   readonly notice: Readonly<Record<NoticeCode, string>>;
   readonly taskResult: Readonly<Record<TaskResult, string>>;
   readonly approval: Readonly<Record<ApprovalState, string>>;
+  /** A unit's status as its head records it, in the words the board uses. */
+  readonly unitStatus: Readonly<Record<UnitStatus, string>>;
   readonly reviewVerdict: Readonly<Record<ReviewVerdict, string>>;
   readonly unplanned: string;
   /** The artifact chain's row for an expected record that does not exist. */
@@ -78,9 +81,16 @@ export function msBetween(from: string, to: string): number | null {
 }
 
 /** The tone of each approval state; a state this build does not know is neutral. */
-const APPROVAL_TONES: Readonly<Record<ApprovalState, 'success' | 'warning' | 'danger'>> = { approved: 'success', pending: 'warning', rejected: 'danger' };
+const APPROVAL_TONES: Readonly<Record<ApprovalState, 'success' | 'warning' | 'danger'>> = { approved: 'success', pending: 'warning', rejected: 'danger', unmigrated: 'warning' };
 export function approvalTone(state: ApprovalState): 'success' | 'warning' | 'danger' | 'neutral' {
   return Object.hasOwn(APPROVAL_TONES, state) ? APPROVAL_TONES[state] : 'neutral';
+}
+
+/** The tone of a unit's status: completed and signed off success, not migrated or rejected a warning or danger, anything else neutral. */
+export function unitStatusTone(status: UnitStatus): 'success' | 'warning' | 'danger' | 'neutral' {
+  if (status === 'completed' || status === 'signed-off') return 'success';
+  if (status === 'unmigrated' || status === 'changes-requested') return 'warning';
+  return status === 'rejected' ? 'danger' : 'neutral';
 }
 
 /** The tone of a recorded task result: Passed success, Failed danger, Unrecorded (or a result this build does not know) neutral. */
@@ -118,6 +128,7 @@ export const DISPLAY_LABELS: DisplayLabels = {
     'review-blocked': 'Review blocked',
     'validation-failed': 'Validation failed',
     'validation-conflict': 'Validation conflict',
+    'needs-migration': 'Needs migration',
   },
   notice: {
     'record-unreadable': 'Unreadable record',
@@ -132,6 +143,7 @@ export const DISPLAY_LABELS: DisplayLabels = {
     'incomplete-evidence': 'Incomplete evidence',
     'review-currency-unknown': 'Review currency unknown',
     'base-predates-extension': 'Framing predates an extension',
+    'needs-migration': 'Needs migration',
   },
   taskResult: {
     'passed': 'Passed',
@@ -142,6 +154,20 @@ export const DISPLAY_LABELS: DisplayLabels = {
     'approved': 'Approved',
     'rejected': 'Rejected',
     'pending': 'Pending',
+    'unmigrated': 'Not migrated',
+  },
+  unitStatus: {
+    'draft': 'Draft',
+    'pending-review': 'In review',
+    'approved': 'Approved',
+    'in-signoff': 'In signoff',
+    'changes-requested': 'Changes requested',
+    'signed-off': 'Signed off',
+    'rejected': 'Rejected',
+    'completed': 'Completed',
+    'withdrawn': 'Withdrawn',
+    'superseded': 'Superseded',
+    'unmigrated': 'Not migrated',
   },
   reviewVerdict: {
     'pass': 'Review passed',

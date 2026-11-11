@@ -38,6 +38,7 @@ import { formatAjvError, reviewValidationIssue } from './structured-schema.js';
 export { codexStrictSchema, validateCodexReply, rootUnionKey, processSchemaForOpenAIStrict } from './structured-schema.js';
 export type { RootUnionKey } from './structured-schema.js';
 import { getLogger } from '../../shared/logger.js';
+import { VibeTurnError } from '../../shared/vibe-session.js';
 import { ModelCallFailedError, ModelResponseShapeError } from './model-call-error.js';
 import type { StructuredSchema } from '../../shared/types.js';
 
@@ -229,7 +230,7 @@ export async function withStructuredRetry<T>(
 			assertConnectionProviderAttempt(execution);
 		} catch (err) {
 			// Budget admission is not a failed model answer and must never be retried/wrapped.
-			if (err instanceof ReviewBudgetError) throw err;
+			if (err instanceof ReviewBudgetError || err instanceof VibeTurnError) throw err;
 			assertConnectionProviderAttempt(execution);
 			if (execution?.mode === 'session-memory') throw new ConnectionExecutionError(connectionExecutionErrorCode(err) ?? 'unsupported-temporary');
 			if (err instanceof ConnectionExecutionError) throw err;

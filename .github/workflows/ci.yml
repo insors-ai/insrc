@@ -35,6 +35,8 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
+        env:
+          CXXFLAGS: -std=c++17
         run: npm ci
 
       - name: Build

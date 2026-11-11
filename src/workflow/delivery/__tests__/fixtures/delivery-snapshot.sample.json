@@ -59,6 +59,9 @@
       "validation": null,
       "storyLevelResult": null,
       "conflict": null,
+      "unit": null,
+      "planRowId": null,
+      "taskOrder": null,
       "correctsRef": null,
       "amendments": [
         {
@@ -83,11 +86,22 @@
           ],
           "fileNames": [],
           "attention": false
+        },
+        {
+          "code": "needs-migration",
+          "message": "E20261007aaaaaaaa needs a repair: the epic has no head",
+          "itemIds": [
+            "E20261007aaaaaaaa"
+          ],
+          "artifactIds": [],
+          "fileNames": [],
+          "attention": true
         }
       ],
       "needsAttention": true,
       "attentionReasons": [
-        "pending-decision"
+        "pending-decision",
+        "needs-migration"
       ],
       "description": {
         "kind": "epic",
@@ -113,10 +127,10 @@
         "E20261007aaaaaaaa:S001:T001"
       ],
       "stage": {
-        "stage": "complete",
+        "stage": "build-recorded",
         "route": "full-chain",
         "reason": {
-          "text": "BUILD-aaaaaaaaaaaaaaaa-s1 approved",
+          "text": "BUILD-aaaaaaaaaaaaaaaa-s1 approved; the Story has no head yet",
           "artifactIds": [
             "BUILD-aaaaaaaaaaaaaaaa-s1"
           ]
@@ -189,7 +203,8 @@
         {
           "taskItemId": "E20261007aaaaaaaa:S001:T001",
           "result": "passed",
-          "planned": true
+          "planned": true,
+          "taskOrder": 1
         }
       ],
       "validation": {
@@ -200,9 +215,22 @@
       },
       "storyLevelResult": null,
       "conflict": null,
+      "unit": null,
+      "planRowId": null,
+      "taskOrder": null,
       "correctsRef": null,
       "amendments": [],
       "notices": [
+        {
+          "code": "needs-migration",
+          "message": "E20261007aaaaaaaa:S001 needs a repair: the story has no head, task E20261007aaaaaaaa:S001:T001 has no head",
+          "itemIds": [
+            "E20261007aaaaaaaa:S001"
+          ],
+          "artifactIds": [],
+          "fileNames": [],
+          "attention": true
+        },
         {
           "code": "review-currency-unknown",
           "message": "no recorded field settles whether the review of CR-aaaaaaaaaaaaaaaa-s1 still matches its record",
@@ -216,8 +244,10 @@
           "attention": false
         }
       ],
-      "needsAttention": false,
-      "attentionReasons": [],
+      "needsAttention": true,
+      "attentionReasons": [
+        "needs-migration"
+      ],
       "description": {
         "kind": "story",
         "purpose": {
@@ -270,6 +300,9 @@
       "validation": null,
       "storyLevelResult": null,
       "conflict": null,
+      "unit": null,
+      "planRowId": "t1",
+      "taskOrder": 1,
       "correctsRef": null,
       "amendments": [],
       "notices": [],
@@ -323,12 +356,27 @@
       },
       "storyLevelResult": null,
       "conflict": null,
+      "unit": null,
+      "planRowId": null,
+      "taskOrder": null,
       "correctsRef": null,
       "amendments": [],
-      "notices": [],
+      "notices": [
+        {
+          "code": "needs-migration",
+          "message": "E20261007aaaaaaaa:S002 needs a repair: the story has no head",
+          "itemIds": [
+            "E20261007aaaaaaaa:S002"
+          ],
+          "artifactIds": [],
+          "fileNames": [],
+          "attention": true
+        }
+      ],
       "needsAttention": true,
       "attentionReasons": [
-        "pending-decision"
+        "pending-decision",
+        "needs-migration"
       ],
       "description": {
         "kind": "story",
@@ -375,6 +423,9 @@
       "validation": null,
       "storyLevelResult": null,
       "conflict": null,
+      "unit": null,
+      "planRowId": null,
+      "taskOrder": null,
       "correctsRef": {
         "slug": "fix-it",
         "resolvedItemId": null
@@ -431,10 +482,10 @@
       "design-plan": 1,
       "ready-design-approved": 0,
       "ready-plan-approved": 0,
-      "build-recorded": 0,
-      "complete": 1
+      "build-recorded": 1,
+      "complete": 0
     },
-    "needsAttention": 3
+    "needsAttention": 4
   },
   "attentionRule": "An item needs attention when it has a gate attention reason (a pending decision, a rejection, a blocking review, a failed validation or a validation conflict; a pending record stops counting once a later gate on its item is approved) or a notice whose code is marked for attention."
 }

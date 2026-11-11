@@ -11,7 +11,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { runInNewContext } from 'node:vm';
 import { marked } from 'marked';
-import { createChatPanelHost, type ChatPanelChannel } from '../chat-panel.js';
+import { createChatPanelHost, type ChatPanelChannel, type ChatPanelHostDeps } from '../chat-panel.js';
 import { createInMemoryChatSessionStore } from '../session-store.js';
 import type { ProviderRegistry, StreamAdapter } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
@@ -19,6 +19,7 @@ import { createAttachmentStore } from '../attachment-store.js';
 import { allOf, bodyStub, fire, textNode, textOf, type BodyStub } from './fake-dom.js';
 import { fakeAttachmentFs } from './fake-attachment-fs.js';
 import { PROVIDER_ICON_SVGS } from '../provider-icons.js';
+import { waitFor } from './fixtures.js';
 
 const ROW_PX = 10;
 const VIEW_PX = 100;
@@ -40,7 +41,7 @@ interface Shell {
   tickIntervals: () => void;
 }
 /** `attach` gives the host its attachment seams, so the shell has the attach controls. */
-function runShell(opts: { attach?: boolean | undefined; queue?: boolean | undefined; clock?: { t: number } | undefined; store?: ReturnType<typeof createInMemoryChatSessionStore> | undefined; channel?: ChatPanelChannel | undefined; catalog?: unknown } = {}): Shell {
+function runShell(opts: { attach?: boolean | undefined; queue?: boolean | undefined; clock?: { t: number } | undefined; store?: ReturnType<typeof createInMemoryChatSessionStore> | undefined; channel?: ChatPanelChannel | undefined; catalog?: unknown; hostDeps?: Partial<ChatPanelHostDeps> | undefined } = {}): Shell {
   let html = '';
   const inner: ChatPanelChannel = opts.channel ?? { setHtml: (h) => { html = h; }, postMessage: () => {}, onMessage: () => {}, onDidDispose: () => {}, reveal: () => {}, dispose: () => {} };
   // keep runShell's own html snapshot in sync when a caller supplies the channel
@@ -60,6 +61,7 @@ function runShell(opts: { attach?: boolean | undefined; queue?: boolean | undefi
     ...(opts.attach === true
       ? { attachments: { store: createAttachmentStore({ root: '/att', fs: fakeAttachmentFs().fs }), pickFiles: async () => [], open: () => {} } }
       : {}),
+    ...opts.hostDeps,
   }).open();
   const script = html.slice(html.indexOf('>', html.indexOf('<script nonce=')) + 1, html.lastIndexOf('</script>'));
 
@@ -842,12 +844,14 @@ test('new-session model and effort controls open and apply selections in the exe
   assert.ok(modelRows.length >= 2, 'catalog model rows are rendered');
   clickControl(modelRows.at(-1)!);
   assert.deepEqual(v.sent.at(-1), { type: 'set-run-config', model: 'claude-opus' });
+  v.msg({ type: 'run-config', provider: 'claude', model: 'claude-opus', effort: '' });
   assert.match(v.el('insrc-runbtn').innerHTML, /opus/);
   clickControl(v.el('insrc-effortbtn'));
   assert.equal(v.el('insrc-runbtn').getAttribute('aria-expanded'), 'false');
   assert.equal(v.el('insrc-effortbtn').getAttribute('aria-expanded'), 'true');
   clickControl(v.el('insrc-notches').children.at(-1)!);
   assert.deepEqual(v.sent.at(-1), { type: 'set-run-config', effort: 'high' });
+  v.msg({ type: 'run-config', provider: 'claude', model: 'claude-opus', effort: 'high' });
   assert.equal(v.el('insrc-effortlabel').textContent, 'high');
   assert.ok(v.el('insrc-runpop').listeners['click']?.length, 'menu consumes inside clicks before document dismissal');
   assert.ok(v.el('insrc-effortpop').listeners['click']?.length, 'slider consumes inside clicks before document dismissal');
@@ -879,7 +883,7 @@ test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): a rendered menu
   // The history menu's persisted-chat rows carry the same real per-row SVG (historyRow -> pico()).
   fire(hs, 'click');
   const histMenu = v.el('insrc-histmenu');
-  assert.equal(histMenu.children.length, 3, 'two history rows + the new… row');
+  assert.equal(histMenu.children.length, 2, 'two history rows only — Story e0821209d94791d0/s1 moved new-chat to the chrome button');
   assert.ok(histMenu.children[0]!.innerHTML.includes(PROVIDER_ICON_SVGS.claude), 'history row A inlines the Claude SVG');
   assert.ok(histMenu.children[1]!.innerHTML.includes(PROVIDER_ICON_SVGS.codex), 'history row B inlines the Codex SVG');
 
@@ -913,16 +917,17 @@ test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): activating a ro
   assert.ok(act.innerHTML.includes(PROVIDER_ICON_SVGS.codex), 'with the Codex icon');
   assert.ok(hs.innerHTML.includes('Chat B'), 'the history trigger re-rendered optimistically');
 
-  // The history menu's trailing 'new…' row posts new-chat (subject 5 history activation).
+  // Story e0821209d94791d0/s1: the history menu has no new… row; the #insrc-newchat chrome button
+  // posts new-chat (subject 5 history activation).
   fire(hs, 'click');
   const histMenu = v.el('insrc-histmenu');
-  const newRow = histMenu.children.at(-1)!;
-  assert.equal(newRow.querySelector('.lbl')!.textContent, 'new…', 'the last history row is new…');
-  (newRow as unknown as { onclick: () => void }).onclick();
+  assert.equal(histMenu.children.length, 2, 'persisted rows only — no new… row');
+  const nc = v.el('insrc-newchat');
+  fire(nc, 'click');
   assert.deepEqual(v.sent.at(-1), { type: 'new-chat', provider: '' });
 });
 
-test('ISSUE-0d3939248a956860: opening the history menu on a fresh (draft) chat focuses the trailing new… row WITHOUT scrolling to it; arrow keys still scroll', () => {
+test('ISSUE-0d3939248a956860: opening the history menu on a fresh (draft) chat focuses the TOP row WITHOUT scrolling to it; arrow keys still scroll', () => {
   // Where the menu then sits is layout, which this fake DOM does not model:
   // history-menu-browser.live.test.ts checks it in a real browser.
   const v = runShell();
@@ -932,15 +937,15 @@ test('ISSUE-0d3939248a956860: opening the history menu on a fresh (draft) chat f
 
   fire(hs, 'click');
   const rows = histMenu.children;
-  const newRow = rows.at(-1)!;
-  assert.equal(newRow.querySelector('.lbl')!.textContent, 'new…', 'the selected row of a draft is the trailing new…');
-  assert.equal(newRow.getAttribute('tabindex'), '0', 'it carries the roving focus');
+  assert.equal(rows.length, 2, 'persisted rows only — Story e0821209d94791d0/s1 removed the new… row');
+  const topRow = rows[0]!;
+  assert.equal(topRow.getAttribute('tabindex'), '0', 'the top row carries the roving focus');
   // The script runs in its own realm: compare the focus options by value, not by prototype.
-  assert.equal(JSON.stringify((newRow as unknown as { focusedWith: unknown }).focusedWith), '{"preventScroll":true}', 'focused without scrolling to it');
+  assert.equal(JSON.stringify((topRow as unknown as { focusedWith: unknown }).focusedWith), '{"preventScroll":true}', 'focused without scrolling to it');
 
   fire(histMenu, 'keydown', { key: 'ArrowDown', preventDefault() {}, stopPropagation() {} });
-  assert.equal(rows[0]!.getAttribute('tabindex'), '0', 'ArrowDown wraps to the most recent chat');
-  assert.equal((rows[0] as unknown as { focusedWith: unknown }).focusedWith, 'scroll', 'keyboard moves use a scrolling focus');
+  assert.equal(rows[1]!.getAttribute('tabindex'), '0', 'ArrowDown moves to the next chat');
+  assert.equal((rows[1] as unknown as { focusedWith: unknown }).focusedWith, 'scroll', 'keyboard moves use a scrolling focus');
 });
 
 test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): activating a persisted history row posts open-chat (not new-chat) even when that chat is absent from the active list', () => {
@@ -1119,17 +1124,13 @@ test("E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): the 'vibe' prov
   assert.ok(actMenu.children[1]!.innerHTML.includes(PROVIDER_ICON_SVGS.vibe), 'row B inlines the Vibe SVG');
 });
 
-test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): with a run-config provider set, the history new… row posts new-chat carrying that provider', () => {
+test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1; Story e0821209d94791d0/s1): with a run-config provider set, the #insrc-newchat button posts new-chat carrying that provider', () => {
   const v = runShell();
   v.msg({ type: 'active-list', chats: chatEntries('claude') });
   v.msg({ type: 'history-list', chats: chatEntries('claude') });
-  const hs = v.el('insrc-history');
   v.msg({ type: 'run-config', provider: 'codex', model: '', effort: '' });
-  fire(hs, 'click');
-  const histMenu = v.el('insrc-histmenu');
-  const newRow = histMenu.children.at(-1)!;
-  assert.equal(newRow.querySelector('.lbl')!.textContent, 'new…', 'the last history row is new…');
-  (newRow as unknown as { onclick: () => void }).onclick();
+  const nc = v.el('insrc-newchat');
+  fire(nc, 'click');
   assert.deepEqual(v.sent.at(-1), { type: 'new-chat', provider: 'codex' });
 });
 
@@ -1244,4 +1245,83 @@ test('shell: the jump button sits outside the transcript and a click returns foc
   const box = composer(v, '');
   fire(v.el('insrc-jump'), 'click');
   assert.equal(box.focusedWith, 'scroll');
+});
+
+test('picker opens in the real webview script and recovers catalog over the host handshake without reloading an active turn', async () => {
+  let shell: Shell | undefined;
+  let receive: ((message: unknown) => void) | undefined;
+  let dispose: (() => void) | undefined;
+  let renders = 0;
+  let requests = 0;
+  let reachable = false;
+  let release!: () => void;
+  const hold = new Promise<void>(resolve => { release = resolve; });
+  const adapter: StreamAdapter = {
+    async *run(): AsyncIterable<TurnEvent> {
+      yield { kind: 'assistant-delta', turnId: 'active-turn', text: 'working on it' };
+      await hold;
+      yield { kind: 'done', turnId: 'active-turn', ok: true };
+    },
+    cancel: () => { release(); }, decide: () => {}, capabilities: { resume: true },
+  };
+  const definitions = {
+    version: 1, defaultFamily: 'cli-claude', families: [
+      { id: 'cli-claude', cliKind: 'claude', displayName: 'Claude', models: [
+        { id: 'claude-opus', aliases: ['opus'], displayName: 'Opus', efforts: ['high'] },
+      ] },
+    ],
+  } as never;
+  const channel: ChatPanelChannel = {
+    setHtml: () => { renders += 1; },
+    postMessage: message => {
+      if (shell !== undefined) shell.msg((message as { payload: Record<string, unknown> }).payload);
+    },
+    onMessage: callback => { receive = callback; },
+    onDidDispose: callback => { dispose = callback; },
+    reveal: () => {},
+    dispose: () => dispose?.(),
+  };
+  shell = runShell({
+    channel,
+    hostDeps: {
+      providers: { available: ['claude'], get: () => adapter },
+      definitions: async () => {
+        requests += 1;
+        if (!reachable) throw new Error('offline');
+        return definitions;
+      },
+      catalogReachable: async () => reachable,
+      catalogRetryMs: 5,
+    },
+  });
+  let delivered = 0;
+  const flush = (): void => {
+    for (const payload of shell!.sent.slice(delivered)) receive?.({ v: 1, payload });
+    delivered = shell!.sent.length;
+  };
+  try {
+    flush();
+    await waitFor(() => requests === 1);
+    receive?.({ v: 1, payload: { type: 'submit-turn', text: 'keep this turn' } });
+    const hasAnswer = () => allOf(shell!.term).some(node => node.innerHTML.includes('working on it') || node.textContent.includes('working on it'));
+    await waitFor(hasAnswer);
+    const before = shell.term.children[0];
+    (shell.el('insrc-runbtn') as unknown as { onclick: (event: { stopPropagation(): void }) => void }).onclick({ stopPropagation() {} });
+    assert.equal(shell.sent.at(-1)?.['type'], 'open-run-picker');
+    flush();
+    await waitFor(() => requests === 2 && /unavailable/i.test(shell!.el('insrc-popfoot').textContent));
+    reachable = true;
+    await waitFor(() => requests === 3 && shell!.el('insrc-modelpane').children.length === 2);
+    assert.equal(renders, 1);
+    assert.equal(shell.term.children[0], before);
+    assert.ok(hasAnswer());
+    assert.equal(shell.el('insrc-runbtn').getAttribute('aria-expanded'), 'true');
+    const opus = shell.el('insrc-modelpane').children[1] as unknown as { onclick: () => void };
+    opus.onclick();
+    flush();
+    assert.equal(shell.el('insrc-runbtn').getAttribute('data-model'), 'claude-opus');
+  } finally {
+    release();
+    channel.dispose();
+  }
 });

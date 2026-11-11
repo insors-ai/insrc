@@ -25,6 +25,8 @@ import { captureDaemon, cleanupStoppedDaemon, waitForReady, waitForStop } from '
 import type { CapturedDaemon } from './lifecycle.js';
 import type { StopTarget } from '../../shared/daemon-process-client.js';
 import { runFileGuardConflict } from '../../shared/daemon-run-files.js';
+import { readManagedInstallation } from '../../shared/managed-daemon-installation.js';
+import { ManagedDaemonControl } from './managed-daemon-control.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 /** Daemon entry point relative to this compiled file (out/cli/services).
@@ -55,14 +57,24 @@ export interface StartResult {
 
 /** Fetch daemon health + indexing queue. Rejects with a friendly
  *  "daemon is not running" error when the socket is absent. */
-export function getStatus(): Promise<DaemonStatus> {
-	return rpc<DaemonStatus>('daemon.status');
+export async function getStatus(): Promise<DaemonStatus> {
+	try { return await rpc<DaemonStatus>('daemon.status'); }
+	catch (error) {
+		const managed = await readManagedInstallation();
+		if (managed === undefined) throw error;
+		throw new Error(await new ManagedDaemonControl(managed).recoveryStatus(), { cause: error });
+	}
 }
 
 /** Spawn the daemon detached and wait (up to 60 s) for it to become
  *  ready — pid file + socket present and the pid alive. The long
  *  window covers ONNX cold-boot on a fresh install. */
 export async function startDaemon(): Promise<StartResult> {
+	const managed = await readManagedInstallation();
+	if (managed !== undefined) {
+		const result = await new ManagedDaemonControl(managed).run('start');
+		return { started: true, logPath: PATHS.daemonLog, alreadyRunning: result.alreadyRunning };
+	}
 	const conflict = runFileGuardConflict(PATHS.daemonRunGuard);
 	if (conflict) throw new Error(conflict);
 	const alreadyRunning = existsSync(PATHS.pidFile);
@@ -149,7 +161,14 @@ const realStopDeps: StopDeps = {
  *  daemon to stop, and when the stop cannot be completed safely (the pid is
  *  not a daemon's, or it survives the kill) — never leaving a second daemon
  *  free to start on the same store. */
-export function stopDaemon(over: Partial<StopDeps> = {}): Promise<StopOutcome> {
+export async function stopDaemon(over: Partial<StopDeps> = {}): Promise<StopOutcome> {
+	if (Object.keys(over).length === 0) {
+		const managed = await readManagedInstallation();
+		if (managed !== undefined) {
+			const result = await new ManagedDaemonControl(managed).run('stop');
+			return { stopped: true, forced: result.forced };
+		}
+	}
 	return stopDaemonWith({ ...realStopDeps, ...over });
 }
 

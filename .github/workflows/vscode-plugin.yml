@@ -33,6 +33,8 @@ jobs:
       # to PATH when running a script from the nested package, so the
       # vscode:prepublish typecheck + bundle find their binaries.
       - name: Install dependencies (repo root)
+        env:
+          CXXFLAGS: -std=c++17
         run: npm ci
 
       # The plugin declares its own runtime dependency (marked ^4.3.0; the repo

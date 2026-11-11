@@ -205,6 +205,17 @@ a `notPending` name and call again, and require every declared name to be
 unavailable or errors, do not approve anything that turn — report the tool
 failure and ask the user instead.
 
+### Keep the user informed during long work
+
+Group long work into small batches rather than one long-running batch, and post
+a short update to the chat after each batch: what finished and what comes next.
+
+Do not chain activities such as reviews and test runs silently. Before starting
+the next one, say in the chat what the last one found and what you are starting.
+
+These updates need no answer. Carry on, and stop for the user only where the
+rules above require it.
+
 <!-- insrc:guide:triage:start -->
 ## triage — size a feature request and route it (`insrc_triage`)
 

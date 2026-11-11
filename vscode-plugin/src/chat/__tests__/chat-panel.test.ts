@@ -96,6 +96,10 @@ interface AdapterHooks {
   gateBeforeDone?: Promise<void>; // await this before yielding the terminal 'done'
   onDecide?: (turnId: string, requestId: string, decision: 'approve' | 'deny') => void; // S004: decide() relay
 }
+// One wait of a fake adapter's poll loop. A test can end with its turn still in flight, and an
+// abandoned loop must not keep the test process alive.
+const pollTick = (ms: number): Promise<void> => new Promise((r) => { setTimeout(r, ms).unref(); });
+
 function scriptedAdapter(events: TurnEvent[], hooks?: AdapterHooks): StreamAdapter {
   let cancelled = false;
   return {
@@ -103,7 +107,7 @@ function scriptedAdapter(events: TurnEvent[], hooks?: AdapterHooks): StreamAdapt
       hooks?.onRun?.(req);
       try {
         if (hooks?.hangBeforeFirst) {
-          while (!cancelled) await new Promise((r) => setTimeout(r, 5));
+          while (!cancelled) await pollTick(5);
           return;
         }
         for (const ev of events) {
@@ -113,7 +117,7 @@ function scriptedAdapter(events: TurnEvent[], hooks?: AdapterHooks): StreamAdapt
           yield ev;
         }
         if (hooks?.hang) {
-          while (!cancelled) await new Promise((r) => setTimeout(r, 5));
+          while (!cancelled) await pollTick(5);
         }
       } finally {
         hooks?.onReturn?.();
@@ -1037,7 +1041,7 @@ function fedAdapter(): { adapter: StreamAdapter; feed: (ev: TurnEvent) => void; 
       runs++;
       cancelled = false;
       for (;;) {
-        while (queue.length === 0 && !cancelled) await new Promise((r) => setTimeout(r, 2));
+        while (queue.length === 0 && !cancelled) await pollTick(2);
         if (cancelled) return;
         const ev = queue.shift()!;
         yield ev;
@@ -1735,12 +1739,14 @@ test('ISSUE-0d3939248a956860: changing the model or effort of a draft does not w
   const fc = fakeChannel();
   const store = createInMemoryChatSessionStore();
   const host = createChatPanelHost({
+    definitions: async () => PICKER_DEFINITIONS,
     createPanel: () => fc.channel,
     providers: registry({ claude: scriptedAdapter([{ kind: 'done', turnId: 't', ok: true }]) }, ['claude']),
     store,
     cwd: () => '/repo',
   });
   host.open();
+  await Promise.resolve();
   fc.send(env('set-run-config', { model: 'sonnet', effort: 'max' }));
   assert.equal(store.list().length, 0, 'set-run-config on a draft does not persist it');
   fc.send(env('submit-turn', { text: 'hi' }));
@@ -1969,9 +1975,9 @@ test('run-config popup bootstrap: catalog parse + button wiring posts new-chat /
   // Both buttons are wired.
   assert.match(html, /if\(rb\)rb\.onclick=function\(e\)\{e\.stopPropagation\(\);/, 'run button opens the popup');
   assert.match(html, /if\(gb\)gb\.onclick=function\(e\)\{e\.stopPropagation\(\);/, 'gauge button opens the slider');
-  // A provider change posts new-chat carrying the current effort; a model change on the SAME
+  // A provider change starts with the default model and effort; a model change on the SAME
   // provider posts set-run-config.
-  assert.match(html, /type:'new-chat',provider:f\.id,model:'',effort:rstate\(\)\.effort/, 'provider pick posts new-chat');
+  assert.match(html, /type:'new-chat',provider:f\.id,model:''/, 'provider pick posts new-chat');
   assert.match(html, /type:'new-chat',provider:f\.id,model:id,effort:s\.effort/, 'cross-provider model pick posts new-chat');
   assert.match(html, /type:'set-run-config',model:id/, 'same-provider model pick posts set-run-config');
   assert.match(html, /type:'set-run-config',effort:e/, 'effort slider posts set-run-config');
@@ -2004,12 +2010,16 @@ test('run-config popup bootstrap: catalog parse + button wiring posts new-chat /
 
 test('regression: the history trigger still opens/new-chats, and session-restored still clears + replays', () => {
   const html = fidelityHtml();
-  // Picking a persisted session posts open-chat; picking 'new…' posts new-chat with the current
-  // provider (curProv). pickChat/newChatPick are the two message splits.
+  // Picking a persisted session posts open-chat; the chrome new-chat button posts new-chat with the
+  // current provider (curProv). pickChat/newChatPick are the two message splits.
   assert.match(html, /function pickChat\(id,trigger\)/, 'pickChat() exists (persisted row activation)');
   assert.match(html, /type:'open-chat',chatId:id/, 'a picked session posts open-chat');
-  assert.match(html, /function newChatPick\(trigger\)/, "newChatPick() exists (the 'new…' row)");
-  assert.match(html, /type:'new-chat',provider:curProv\|\|''/, "'new…' posts new-chat with the current provider");
+  assert.match(html, /function newChatPick\(trigger\)/, 'newChatPick() exists (the #insrc-newchat button)');
+  assert.match(html, /type:'new-chat',provider:curProv\|\|''/, 'newChatPick posts new-chat with the current provider');
+  // Story e0821209d94791d0/s1: the history menu lists persisted chats only; the new-chat affordance
+  // is the #insrc-newchat chrome button left of .histchip, wired to newChatPick(nc).
+  assert.match(html, /function renderHistoryMenu\(\)\{histMenu\.innerHTML='';for\(var i=0;i<histEntries\.length;i\+\+\)histMenu\.appendChild\(historyRow\(histEntries\[i\]\)\);\}/, 'renderHistoryMenu lists persisted rows only — no new… row');
+  assert.match(html, /if\(nc\)nc\.addEventListener\('click',function\(e\)\{if\(e&&e\.stopPropagation\)e\.stopPropagation\(\);newChatPick\(nc\);\}\)/, 'the #insrc-newchat button click posts new-chat via newChatPick(nc)');
   // session-restored still clears, resets keys and replays.
   assert.match(html, /t\.textContent='';reg\.resetKeys\(\);var _rows=m\.transcript\|\|\[\]/, 'session-restored still clears, resets keys and replays the transcript');
   assert.match(html, /_rows\.forEach\(function\(x,i\)/, 'every posted row is replayed');
@@ -2329,6 +2339,14 @@ test('UI: the #insrc-history session dropdown carries a leading history/clock gl
   // Story E202610137fefc3fc:S001: the chip is a wrapper around the select, and the glyph is a mask
   // in the chip's ::before, filled with the current text colour so it follows the theme.
   assert.match(html, /<span class="histchip"><button type="button" id="insrc-history" class="chatbtn [^"]*" aria-haspopup="menu"[^>]*><span class="pico"><\/span><span class="chatlbl">new…<\/span>/, 'one wrapper holds the trigger button');
+  // Story e0821209d94791d0/s1: the new-chat button sits inside .right BEFORE the history chip and
+  // carries the bubble-plus inline SVG in its .pico slot.
+  const rightAt = html.indexOf('class="right"');
+  const ncAt = html.indexOf('id="insrc-newchat"');
+  const chipAt = html.indexOf('<span class="histchip">');
+  assert.ok(rightAt !== -1 && ncAt > rightAt && ncAt < chipAt, '#insrc-newchat sits left of .histchip inside .right');
+  assert.match(html, /<button type="button" id="insrc-newchat" class="newchatbtn" aria-label="new chat" title="new chat"><span class="pico"><svg viewBox="0 0 16 16"/, 'the new-chat button carries an inline SVG in its .pico slot');
+  assert.match(html, /M8 6v4M6 8h4/, 'the icon carries the plus strokes (bubble-plus glyph)');
   const rule = html.slice(html.indexOf('.histchip{'));
   const decl = rule.slice(0, rule.indexOf('}') + 1);
   const icon = /\.histchip::before\{([^}]*)\}/.exec(html);
@@ -4542,7 +4560,7 @@ test('the shell embeds the pager: line() appends through it, session-restored re
   assert.match(html, /else if\(m\.type==='user-row'\)\{pager\.track\(m\.rowIndex,function\(\)\{reg\.appendKeyed\(reg\.toViewModel\(\{role:'user',text:m\.text,attachments:m\.attachments\}\),m\.key\);\}\);\}/);
   assert.match(html, /else if\(m\.type==='transcript-row'\)\{pager\.track\(m\.rowIndex,function\(\)\{var r=m\.row;if\(r&&r\.role==='diff'&&r\.replaces!=null\)\{reg\.redrawDiff\(r\);\}else if\(r\)\{reg\.renderRow\(reg\.toViewModel\(r\)\);\}\}\);\}/, 'a row the host pushed is tracked with its index too');
   assert.match(html, /function track\(rowIndex,fn\)\{var from=term\.children\.length;try\{return fn\(\);\}finally\{stamp\(from,rowIndex\);if\(!rendering&&following\(\)\)toBottom\(\);trimIfNeeded\(\);showJump\(\);\}\}/, 'track stamps the new nodes, moves a following view to the bottom once the row is filled, and then trims');
-  assert.match(html, /else if\(m\.type==='run-config'\)\{curProv=m\.provider\|\|'';if\(rb\)\{rb\.setAttribute\('data-provider',m\.provider\|\|''\);rb\.setAttribute\('data-model',m\.model\|\|''\);rb\.setAttribute\('data-effort',m\.effort\|\|''\);\}rlabel\(\);elabel\(\);\}/, 'the run-config echo branch settles the buttons from the session');
+  assert.match(html, /else if\(m\.type==='run-config'\)\{curProv=m\.provider\|\|'';if\(rb\)\{rb\.setAttribute\('data-provider',m\.provider\|\|''\);rb\.setAttribute\('data-model',m\.model\|\|''\);rb\.setAttribute\('data-effort',m\.effort\|\|''\);\}rlabel\(\);elabel\(\);updatePickers\(\);\}/, 'the run-config echo branch settles the buttons from the session');
 });
 
 test("the shell is still one nonce'd inline script, with no direct scrollTop write outside the pager, no innerHTML outside the guarded markdown path and no remote origin", () => {
@@ -5401,7 +5419,7 @@ function gatedAdapter(): { adapter: StreamAdapter; runs: GatedRun[]; resumes: Ga
       const born = cancelled;
       runs.push({ req, feed: (ev) => void queue.push(ev) });
       for (;;) {
-        while (queue.length === 0 && cancelled === born) await new Promise((r) => setTimeout(r, 2));
+        while (queue.length === 0 && cancelled === born) await pollTick(2);
         if (queue.length === 0) return;
         const ev = queue.shift()!;
         yield ev;
@@ -5413,7 +5431,7 @@ function gatedAdapter(): { adapter: StreamAdapter; runs: GatedRun[]; resumes: Ga
       let failure: string | undefined;
       resumes.push({ feed: (ev) => void queue.push(ev), fail: (m) => void (failure = m) });
       for (;;) {
-        while (queue.length === 0 && failure === undefined && o?.signal?.aborted !== true) await new Promise((r) => setTimeout(r, 2));
+        while (queue.length === 0 && failure === undefined && o?.signal?.aborted !== true) await pollTick(2);
         if (failure !== undefined) throw new Error(failure);
         if (queue.length === 0) return;
         const ev = queue.shift()!;
@@ -5855,10 +5873,26 @@ test('runCatalogView: maps cliKind→provider, keeps only installed providers, d
   assert.deepEqual(view[1]!.models[0], { id: 'zai-glm-5-3', name: 'zai-glm-5-3', alias: 'glm-5-3', efforts: ['low', 'max'] });
 });
 
+const PICKER_DEFINITIONS = {
+  version: 1,
+  defaultFamily: 'cli-claude',
+  families: [
+    { id: 'cli-claude', cliKind: 'claude', displayName: 'Claude', rejectedModels: [], models: [
+      { id: 'claude-opus', aliases: ['opus', 'opus-old'], efforts: ['low', 'high'], source: 'shipped' },
+      { id: 'claude-sonnet', aliases: ['sonnet'], efforts: ['low', 'max'], source: 'shipped' },
+      { id: 'claude-no-effort', aliases: [], efforts: [], source: 'shipped' },
+    ] },
+    { id: 'cli-codex', cliKind: 'codex', displayName: 'Codex', rejectedModels: [], models: [
+      { id: 'gpt-6.1-sol', aliases: [], efforts: ['low', 'medium'], source: 'shipped' },
+    ] },
+  ],
+} as never;
+
 test('new-chat with model/effort: the draft carries them and the next turn request includes them', async () => {
   const fc = fakeChannel();
   const reqs: TurnRequest[] = [];
   const host = createChatPanelHost({
+    definitions: async () => PICKER_DEFINITIONS,
     createPanel: () => fc.channel,
     providers: registry({ claude: scriptedAdapter([{ kind: 'done', turnId: 't', ok: true }], { onRun: (r) => reqs.push(r) }) }, ['claude']),
     store: createInMemoryChatSessionStore(),
@@ -5866,6 +5900,7 @@ test('new-chat with model/effort: the draft carries them and the next turn reque
     genNonce: () => 'FIXEDNONCE',
   });
   host.open();
+    await Promise.resolve();
   fc.send(env('new-chat', { provider: 'claude', model: 'opus', effort: 'high' }));
   await new Promise((r) => setTimeout(r, 0));
   fc.send(env('submit-turn', { text: 'hi' }));
@@ -5882,6 +5917,7 @@ test('set-run-config: updates the session for subsequent turns and echoes run-co
   const reqs: TurnRequest[] = [];
   const store = createInMemoryChatSessionStore();
   const host = createChatPanelHost({
+    definitions: async () => PICKER_DEFINITIONS,
     createPanel: () => fc.channel,
     providers: registry({ claude: scriptedAdapter([{ kind: 'done', turnId: 't', ok: true }], { onRun: (r) => reqs.push(r) }) }, ['claude']),
     store,
@@ -5889,6 +5925,7 @@ test('set-run-config: updates the session for subsequent turns and echoes run-co
     genNonce: () => 'FIXEDNONCE',
   });
   host.open();
+    await Promise.resolve();
   fc.send(env('new-chat', { provider: 'claude' }));
   await new Promise((r) => setTimeout(r, 0));
   fc.send(env('set-run-config', { model: 'sonnet' }));
@@ -7345,7 +7382,7 @@ test('E202611031bd72813:S001 t6/MR3-R5: an async delivery failure for chat A’s
         for (;;) { await new Promise((r) => setTimeout(r, 5)); yield { kind: 'token', turnId: 'origA', text: 'parked' }; }
       } else if (runs.length === 2) { // chat B's turn: runs while the async failure for A arrives
         opts?.onSpawn?.({ ...procB, cursor: { sessionId: 'x', turnId: 'turnB', generation: 1, offset: 0 } });
-        while (!bDone) { await new Promise((r) => setTimeout(r, 5)); yield { kind: 'token', turnId: 'turnB', text: 'working' }; }
+        while (!bDone) { await pollTick(5); yield { kind: 'token', turnId: 'turnB', text: 'working' }; }
         procB.exitNow();
         yield { kind: 'done', turnId: 'turnB', ok: true };
       } else { // the continuation for A's decision
@@ -7412,11 +7449,11 @@ test('E202611031bd72813:S001 t6/MR3-R5 fail-closed: when no per-turn handle exis
       if (runs.length === 1) {
         opts?.onSpawn?.({ ...procA, cursor: { sessionId: 'x', turnId: 'origA', generation: 1, offset: 0 } });
         yield { kind: 'approval-request', turnId: 'origA', requestId: 'reqA2', title: 'act', detail: 'd', command: 'cmd-A2', resolution: 'in-turn' };
-        while (!aDone) { await new Promise((r) => setTimeout(r, 5)); yield { kind: 'token', turnId: 'origA', text: 'parked' }; }
+        while (!aDone) { await pollTick(5); yield { kind: 'token', turnId: 'origA', text: 'parked' }; }
         yield { kind: 'done', turnId: 'origA', ok: true };
       } else if (runs.length === 2) {
         opts?.onSpawn?.({ ...procB, cursor: { sessionId: 'x', turnId: 'turnB', generation: 1, offset: 0 } });
-        while (!bDone) { await new Promise((r) => setTimeout(r, 5)); yield { kind: 'token', turnId: 'turnB', text: 'working' }; }
+        while (!bDone) { await pollTick(5); yield { kind: 'token', turnId: 'turnB', text: 'working' }; }
         procB.exitNow();
         yield { kind: 'done', turnId: 'turnB', ok: true };
       } else {
@@ -8246,6 +8283,7 @@ test('history reopen from disk preserves each provider model effort and next-tur
   const reqs: TurnRequest[] = [];
   const adapter = scriptedAdapter([{ kind: 'done', turnId: 't', ok: true }], { onRun: (r) => reqs.push(r) });
   const host = createChatPanelHost({
+    definitions: async () => PICKER_DEFINITIONS,
     createPanel: () => fc.channel,
     providers: registry({ claude: adapter, codex: adapter }, ['claude', 'codex']),
     store: createFileChatSessionStore({ root: '/sessions', fs: fs.fs }),
@@ -8253,6 +8291,7 @@ test('history reopen from disk preserves each provider model effort and next-tur
   });
   try {
     host.open();
+    await Promise.resolve();
     for (const s of [a, b, a]) {
       fc.send(env('open-chat', { chatId: s.id }));
       const echo = fc.posted.filter((m) => m.payload.type === 'run-config').at(-1)!.payload;
@@ -8267,4 +8306,146 @@ test('history reopen from disk preserves each provider model effort and next-tur
     const echo = fc.posted.filter((m) => m.payload.type === 'run-config').at(-1)!.payload;
     assert.deepEqual(echo, { type: 'run-config', provider: 'claude', model: '', effort: '' });
   } finally { host.dispose(); }
+});
+
+test('catalog reconciliation drops incompatible effort on model, provider and history changes', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const invalid = store.create('claude', { model: 'opus-old', effort: 'max' });
+  const calls: TurnRequest[] = [];
+  const adapter = scriptedAdapter([{ kind: 'done', turnId: 't', ok: true }], { onRun: request => calls.push(request) });
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel, store, cwd: () => '/repo',
+    definitions: async () => PICKER_DEFINITIONS,
+    providers: registry({ claude: adapter, codex: adapter }, ['claude', 'codex']),
+  });
+  try {
+    host.open();
+    await Promise.resolve();
+    const config = () => fc.posted.filter(message => message.payload.type === 'run-config').at(-1)?.payload;
+    fc.send(env('new-chat', { provider: 'claude', model: 'opus', effort: 'high' }));
+    fc.send(env('set-run-config', { model: 'claude-no-effort' }));
+    assert.deepEqual(config(), { type: 'run-config', provider: 'claude', model: 'claude-no-effort', effort: '' });
+    fc.send(env('new-chat', { provider: 'codex', model: 'gpt-6.1-sol', effort: 'high' }));
+    assert.deepEqual(config(), { type: 'run-config', provider: 'codex', model: 'gpt-6.1-sol', effort: '' });
+    fc.send(env('open-chat', { chatId: invalid.id }));
+    assert.deepEqual(config(), { type: 'run-config', provider: 'claude', model: 'opus-old', effort: '' });
+    assert.equal(store.get(invalid.id)?.effort, undefined);
+    fc.send(env('set-run-config', { effort: 'high' }));
+    fc.send(env('submit-turn', { text: 'check the model' }));
+    await waitFor(() => calls.length === 1);
+    assert.equal(calls[0]?.provider, 'claude');
+    assert.equal(calls[0]?.model, 'opus-old');
+    assert.equal(calls[0]?.effort, 'high');
+  } finally { host.dispose(); }
+});
+
+test('unavailable catalog preserves restored selection and blocks unsupported edits and dispatch', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const saved = store.create('claude', { model: 'opus', effort: 'high' });
+  const calls: TurnRequest[] = [];
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel, store, cwd: () => '/repo',
+    definitions: async () => { throw new Error('catalog temporarily offline'); },
+    providers: registry({ claude: scriptedAdapter([{ kind: 'done', turnId: 't', ok: true }], { onRun: request => calls.push(request) }) }, ['claude']),
+  });
+  try {
+    host.open();
+    fc.send(env('open-chat', { chatId: saved.id }));
+    fc.send(env('set-run-config', { model: 'sonnet', effort: 'max' }));
+    assert.equal(store.get(saved.id)?.model, 'opus');
+    assert.equal(store.get(saved.id)?.effort, 'high');
+    fc.send(env('submit-turn', { text: 'check the model' }));
+    await waitFor(() => fc.posted.some(message => message.payload.type === 'turn-event' && message.payload.event.kind === 'error'
+      && /Model catalog unavailable/.test(message.payload.event.message)));
+    assert.equal(calls.length, 0);
+    fc.send(env('set-run-config', { model: '' }));
+    fc.send(env('submit-turn', { text: 'use the default' }));
+    await waitFor(() => calls.length === 1);
+    assert.equal(calls[0]?.model, undefined);
+    assert.equal(calls[0]?.effort, undefined);
+  } finally { host.dispose(); }
+});
+
+test('catalog refresh coalesces requests, retains good data and rejects disposed generation results', async () => {
+  const first = fakeChannel();
+  const second = fakeChannel();
+  const stale = { version: 1, families: [] } as never;
+  const deferred: Array<{ resolve: (value: never) => void; reject: (error: Error) => void }> = [];
+  let probes = 0;
+  const host = createChatPanelHost({
+    createPanel: () => first.channel, store: createInMemoryChatSessionStore(), cwd: () => '/repo',
+    definitions: () => new Promise((resolve, reject) => deferred.push({ resolve, reject })),
+    catalogReachable: async () => { probes += 1; return false; },
+    catalogRetryMs: 15,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+  });
+  try {
+    host.open();
+    first.send(env('ready'));
+    first.send(env('open-run-picker'));
+    first.send(env('open-run-picker'));
+    assert.equal(deferred.length, 1);
+    host.adopt(second.channel);
+    second.send(env('ready'));
+    assert.equal(deferred.length, 2);
+    deferred[1]!.resolve(PICKER_DEFINITIONS);
+    await Promise.resolve();
+    const snapshots = () => second.posted.filter(message => message.payload.type === 'run-catalog');
+    const good = snapshots().at(-1)?.payload;
+    assert.equal(good?.status, 'ready');
+    const count = snapshots().length;
+    deferred[0]!.resolve(stale);
+    first.send(env('open-run-picker'));
+    first.fireDispose();
+    await Promise.resolve();
+    assert.equal(snapshots().length, count);
+    assert.equal(deferred.length, 2);
+    second.send(env('open-run-picker'));
+    second.send(env('open-run-picker'));
+    assert.equal(deferred.length, 3);
+    deferred[2]!.reject(new Error('catalog unavailable'));
+    await Promise.resolve();
+    const unavailable = snapshots().at(-1)?.payload;
+    assert.equal(unavailable?.status, 'unavailable');
+    assert.deepEqual(unavailable?.providers, good?.providers);
+    second.fireDispose();
+    await new Promise(resolve => setTimeout(resolve, 30));
+    assert.equal(probes, 0);
+  } finally { host.dispose(); }
+});
+
+test('ISSUE-7dc5ecde2730fb17: an open panel keeps both repeating timers without holding the process open, and dispose clears them', () => {
+  const realSet = globalThis.setInterval;
+  const realClear = globalThis.clearInterval;
+  const started: NodeJS.Timeout[] = [];
+  const cleared: unknown[] = [];
+  globalThis.setInterval = ((...args: Parameters<typeof setInterval>) => {
+    const timer = realSet(...args);
+    started.push(timer);
+    return timer;
+  }) as typeof setInterval;
+  globalThis.clearInterval = ((timer: Parameters<typeof clearInterval>[0]) => {
+    cleared.push(timer);
+    realClear(timer);
+  }) as typeof clearInterval;
+  try {
+    const fc = fakeChannel();
+    const host = createChatPanelHost({
+      createPanel: () => fc.channel,
+      providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+      store: createInMemoryChatSessionStore(),
+      cwd: () => '/repo',
+      sessionOutput: {} as never,
+    });
+    host.open();
+    assert.equal(started.length, 2, 'the active-list and observer timers both start');
+    assert.deepEqual(started.map((timer) => timer.hasRef()), [false, false]);
+    fc.fireDispose();
+    assert.deepEqual(cleared, started);
+  } finally {
+    globalThis.setInterval = realSet;
+    globalThis.clearInterval = realClear;
+  }
 });

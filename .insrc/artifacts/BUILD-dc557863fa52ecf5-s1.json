@@ -6,18 +6,27 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
-        "number": 7,
-        "contentHash": "077e090eb74eac091a815f309b5e62c78e1028bf622103cfc92e09021d1e3fb6",
-        "at": "2026-11-08T11:54:24.806Z",
+        "number": 14,
+        "contentHash": "3c2d8a4ee21fd4485a16b3ada355efd0e523755c9f5577dedb4b4137f8b28cf7",
+        "at": "2026-11-08T13:17:21.563Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 14,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T16:23:17.457Z"
+      }
     },
     "workflow": "build",
     "runId": "store-69c2ea70-24a5-4c13-b1b6-a95617017065",
@@ -29,8 +38,8 @@
     "schemaVersion": 1,
     "epicHash": "dc557863fa52ecf5",
     "storyId": "s1",
-    "revision": 7,
-    "updatedAt": "2026-11-08T11:53:32.753Z",
+    "revision": 14,
+    "updatedAt": "2026-11-08T13:16:40.885Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicSlug": "fix-16-pre-existing-vs-code"
@@ -51,10 +60,10 @@
       },
       {
         "id": "t4",
-        "passed": false
+        "passed": true
       }
     ],
-    "summary": "The daemon routes approval subscriptions and answers outside the session FIFO. The running daemon reproduced Tracker timing out only while the subscription was open. The regression test checks Tracker reads and approval answers while the subscription remains open. All 41 focused tests and TypeScript passed.",
+    "summary": "After the coverage correction passed the Tracker task gate, the full VS Code sweep passed 1699, skipped 9 gated cases, and failed none. TypeScript and both user-confirmed manual checks passed.",
     "testRecord": {
       "md": "docs/standalone/fix-16-pre-existing-vs-code-E20261108dc557863/S001/TESTS.md"
     },
@@ -64,171 +73,192 @@
           "file": "vscode-plugin/src/extension.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T11:53:32.753Z"
+        "timestamp": "2026-11-08T13:16:40.885Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/panels/__tests__/detail-renderers.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T11:53:32.753Z"
+        "timestamp": "2026-11-08T13:16:40.885Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/panels/__tests__/repo-fields-contract.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T11:53:32.753Z"
+        "timestamp": "2026-11-08T13:16:40.885Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/panels/__tests__/webview-host.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T11:53:32.753Z"
+        "timestamp": "2026-11-08T13:16:40.885Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/panels/repo-config.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T11:53:32.753Z"
+        "timestamp": "2026-11-08T13:16:40.885Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/panels/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T11:53:32.753Z"
+        "timestamp": "2026-11-08T13:16:40.885Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/panels/webview-host.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T11:53:32.753Z"
+        "timestamp": "2026-11-08T13:16:40.885Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/workspace/__tests__/activation.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T11:53:32.753Z"
+        "timestamp": "2026-11-08T13:16:40.885Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/approval-subscribe.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T11:53:32.753Z"
+        "timestamp": "2026-11-08T13:16:40.885Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/approval-subscribe.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T11:53:32.753Z"
+        "timestamp": "2026-11-08T13:16:40.885Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/__tests__/activation.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T11:53:32.753Z"
+        "timestamp": "2026-11-08T13:16:40.885Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T11:53:32.753Z"
+        "timestamp": "2026-11-08T13:16:40.885Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/exec-path-scan.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T11:53:32.753Z"
+        "timestamp": "2026-11-08T13:16:40.885Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/panels/__tests__/repo-config.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T11:53:32.753Z"
+        "timestamp": "2026-11-08T13:16:40.885Z"
       },
       {
         "target": {
           "file": "src/config/repo-fields.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T11:53:32.753Z"
+        "timestamp": "2026-11-08T13:16:40.885Z"
       },
       {
         "target": {
           "file": "src/workflow/config/github-names.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T11:53:32.753Z"
+        "timestamp": "2026-11-08T13:16:40.885Z"
       },
       {
         "target": {
           "file": "src/workflow/config/github.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T11:53:32.753Z"
+        "timestamp": "2026-11-08T13:16:40.885Z"
       },
       {
         "target": {
           "file": "src/shared/__tests__/ipc-client-timeout.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T11:53:32.753Z"
+        "timestamp": "2026-11-08T13:16:40.885Z"
       },
       {
         "target": {
           "file": "src/shared/ipc-client.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T11:53:32.753Z"
+        "timestamp": "2026-11-08T13:16:40.885Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/config/gateway.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T11:53:32.753Z"
+        "timestamp": "2026-11-08T13:16:40.885Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/config/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T11:53:32.753Z"
+        "timestamp": "2026-11-08T13:16:40.885Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/panels/daemon-gateway.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T11:53:32.753Z"
+        "timestamp": "2026-11-08T13:16:40.885Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/router-session.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T11:53:32.753Z"
+        "timestamp": "2026-11-08T13:16:40.885Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/method-class.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-08T11:53:32.753Z"
+        "timestamp": "2026-11-08T13:16:40.885Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T13:16:40.885Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/config/__tests__/gateway.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T13:16:40.885Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/fix-16-pre-existing-vs-code-E20261108dc557863/S001/VS-CODE-SMOKE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T13:16:40.885Z"
       }
     ],
-    "commit": "8217afd2d"
+    "commit": "dcc0f03b3"
   },
   "citations": []
 }

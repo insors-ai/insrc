@@ -1,0 +1,353 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1794219438811-m29xiv",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T10:18:54.505Z",
+    "epicCreatedAt": "2026-11-09T06:00:04.355Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 95393,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "206db3426ffd4428",
+    "epicSlug": "show-long-running-task-progress-chat",
+    "storyId": "s1",
+    "lldRunId": "wf-1794217074628-a5xufy",
+    "lldEffectiveHash": "48a6a5468b45d758c2f607734dcbfdf65a0d1476d8c409eeed1ac09aa037dec9",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5464872be9ad28a8caf6159db895e0d091879232a852391243cd824f8c140567",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T12:31:22.273Z"
+      }
+    },
+    "rangeBase": "eb394725c6f8a89bf8caeb2bfbe53feebbe2534d"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Build the daemon foundation for observing long-running tasks without taking ownership of their execution. Add bounded durable observations, trusted origin admission, fenced updates, and a shared 60-second fallback schedule. Verify the foundation through targeted tests, then run one full sweep."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "order": 1,
+        "title": "Define shared progress contracts and bounded task storage",
+        "summary": "Add the daemon-private versioned per-task record, codecs, reservation accounting and durable publication seam.",
+        "size": "M",
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Persist one validated envelope per task using private paths, exclusive temporary files, flush–rename–directory flush, and restart-safe reads. Do not expose raw credentials, prompts or logs.",
+          "Reserve encoded snapshot and terminal capacity before admitting observation. Enforce per-project and global limits, recover or quarantine corrupt records within budget, and fail observation visibly without stopping the executor.",
+          "Preserve existing IPC, workflow and executor state. Retain deterministic file-fault tests for failures before and after rename."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Recover bounded snapshots across storage failure, restart and owner revalidation"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "order": 2,
+        "title": "Implement producer admission, ownership and measurement normalization",
+        "summary": "Connect trusted internal producer registration, attempt rollover and owner fencing to scoped snapshots and a shared progress revision.",
+        "size": "M",
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Admit a producer only through an in-process trusted launch, retry or survival decision. Commit identity before issuing an owner handle. Fence asynchronous refresh, duplicates, obsolete owner epochs and terminal transitions.",
+          "With two independent tasks, prove phase or count changes advance only the affected task's meaningful revision and retain declared units, unknown totals and milestones. A duplicate sample with a newer query timestamp, a heartbeat or a read keeps the prior revision and original measurement age.",
+          "Persist authoritative lifecycle and terminal results before publication. Keep delegate reads side-effect free and keep concrete adapters with their sibling stories."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Fence async refresh, duplicate registration and old attempt callbacks"
+          },
+          {
+            "level": "unit",
+            "name": "Meaningful measurement normalization across two tasks with phase and count changes, declared units, unknown totals, duplicate samples, reads and heartbeats"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "order": 3,
+        "title": "Bootstrap trusted IPC origins and enforce scoped observer access",
+        "summary": "Define and implement the first-grant authorization boundary and the read, subscribe and reattach surface.",
+        "size": "M",
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Use daemon-generated socket identity and the canonical registered project. Permit a live local connection to create a fresh origin under its admitted project. The daemon mints the origin identity and returns a scoped capability on that connection. Existing origins can be bound only through a server-held ownership binding or a validated capability issued at creation. A repo path, label, PID, chat ID or task ID alone never authorizes an existing origin.",
+          "Mint first task grants only after trusted launch binds the originating connection to the daemon-owned invocation. Deny forged and cross-conversation claims, and cover ordinary unauthorized IPC and valid bootstrap with integration tests.",
+          "Recheck scope and permission on every read, subscription, detail or control. Persist only bounded grant digests, bind each reattachment to its current connection, and revoke conversation access durably while preserving an independently scoped read-only project-history grant."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Reject cross-project and cross-conversation reads, controls and raw details"
+          },
+          {
+            "level": "integration",
+            "name": "Verify trusted launch, denial of forged ordinary IPC scopes, grants across reconnect and restart, revocation and scoped project-history access after removal"
+          },
+          {
+            "level": "integration",
+            "name": "First observer grant requires daemon-owned origin bootstrap or an existing origin capability"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "order": 4,
+        "title": "Implement activity leases, restart recovery and fallback scheduling",
+        "summary": "Keep executor-owned activity distinct from the fixed 60-second fallback scheduler and reclaim stale observation capacity.",
+        "size": "M",
+        "dependsOn": [
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Verify 30-second owner renewal and 120-second expiry without observers, including multiple tasks in one conversation, selective release, and stale callbacks. Readers cannot renew owner activity.",
+          "Recover the last verified committed snapshot, preserve the first bounded owner-loss deadline across restarts and fence old epochs. After expiry release active capacity and retain an explicit bounded unknown observation when capacity allows. Never infer a terminal execution result or relaunch work.",
+          "Keep one opted-in scheduler per stable task. Verify anchored 60-second slots, 120-second scheduler lease expiry, disconnect and handoff, in-flight fencing, no catch-up burst, and separate terminal shutdown."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Verify monotonic 60-second fallback, transfer, suspension and unchanged suppression"
+          },
+          {
+            "level": "unit",
+            "name": "Verify 30-second owner renewal and 120-second expiry with no observers, separate tasks in one chat, removal, and stale callbacks"
+          },
+          {
+            "level": "unit",
+            "name": "Fence scheduler claim, renew, release, duplicate slots and late replies across transfer with deterministic 60-second cadence and 120-second expiry"
+          },
+          {
+            "level": "integration",
+            "name": "Restart repeatedly without owners, preserve the recovery deadline, release expired reservations and refuse stale revalidation without inventing termination"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "order": 5,
+        "title": "Wire scoped observation controls and qualify end-to-end behavior",
+        "summary": "Finish the daemon foundation over normal entry points and verify cross-task recovery and predecessor traceability.",
+        "size": "M",
+        "dependsOn": [
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Expose authorized stop-observation and explicit cancellation through normal daemon entry points. Stop detaches only its observer. Persist cancel-pending, suppress duplicate requests, and keep verified terminal outcomes immutable.",
+          "With a full subscriber queue, coalesce progress, give explicit resync and preserve terminal delivery. Exercise fail-open execution at observation admission limits and file failure.",
+          "Verify July S001/#42 maps to s1–s2, S002/#43 to s6, and S003/#44 to s5 using the predecessor story records and current scope. Leave tracker disposition separate."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Check stop, cancel replay and verified completion races"
+          },
+          {
+            "level": "integration",
+            "name": "Saturate per-project active/inactive and global reservations, coalesce full observer queues, and preserve terminal delivery and running execution"
+          },
+          {
+            "level": "integration",
+            "name": "Verify S001/#42 to s1–s2, S002/#43 to s6 and S003/#44 to s5 from local predecessor records and successor scope"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "order": 6,
+        "title": "Run the final build and full sweep",
+        "summary": "After targeted validation is complete, run the root build and the combined backend and project-memory test sweep once.",
+        "size": "S",
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Record build and full-sweep commands, revision, results, failures, skips and cancellations. Investigate any in-scope regression before code review and retain the original sweep outcome.",
+          "Keep unrelated baseline failure evidence separate and require explicit disposition for any gate exception. Document any skipped live environments and the remaining sibling scope."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "Verify merged-baseline root build and single full repository sweep with recorded results and disposition of any failures"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "Fence async refresh, duplicate registration and old attempt callbacks",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Verify monotonic 60-second fallback, transfer, suspension and unchanged suppression",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Check stop, cancel replay and verified completion races",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Verify 30-second owner renewal and 120-second expiry with no observers, separate tasks in one chat, removal, and stale callbacks",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Fence scheduler claim, renew, release, duplicate slots and late replies across transfer with deterministic 60-second cadence and 120-second expiry",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Recover bounded snapshots across storage failure, restart and owner revalidation",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Reject cross-project and cross-conversation reads, controls and raw details",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Saturate per-project active/inactive and global reservations, coalesce full observer queues, and preserve terminal delivery and running execution",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Restart repeatedly without owners, preserve the recovery deadline, release expired reservations and refuse stale revalidation without inventing termination",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Verify trusted launch, denial of forged ordinary IPC scopes, grants across reconnect and restart, revocation and scoped project-history access after removal",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Verify S001/#42 to s1–s2, S002/#43 to s6 and S003/#44 to s5 from local predecessor records and successor scope",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/S001/LLD.md#2-contract-details"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/S001/LLD.md#3-data-model-changes"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/S001/LLD.md#6-error-paths"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/S001/LLD.md#7-test-strategy"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/S001/LLD.md#5-interaction-with-shared-contracts"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/S001/LLD.md#8-migration"
+    }
+  ]
+}

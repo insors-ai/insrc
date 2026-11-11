@@ -38,11 +38,15 @@ import { onUtf8Data } from '../../../src/shared/utf8-stream.js';
 import { spawn as nodeChildSpawn, execFileSync } from 'node:child_process';
 import { closeSync, openSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 import { ollamaClaudeEnv, type ChatOllamaTarget } from './ollama-routing.js';
 import type { TurnEvent, UnifiedDiff } from './stream-events.js';
 import type { PermissionMode } from './protocol.js';
 import { DEFAULT_GRACE_MS, defaultKillGroup, observeProcess, processDeparted, signalGroup, stopProcess } from './session-lock.js';
 import { parseMarker, SegmentGone, type SegmentCursor, type SessionOutput } from './session-output.js';
+
+import type { VibeChatJob } from './vibe-session-process.js';
+import type { VibeCatalogModel } from '../../../src/shared/vibe-session.js';
 
 export type ProviderId = 'claude' | 'codex' | 'vibe';
 
@@ -80,11 +84,13 @@ export interface TurnRequest {
   /**
    * Run config from the chat panel's bottom-right controls: `model` is an id/alias of
    * the provider's family (absent = the CLI's own default), `effort` a level the
-   * model accepts (absent = the CLI's default). Mapped per CLI in buildArgs; vibe
-   * pins the model via VIBE_ACTIVE_MODEL (see envFor) and cannot take an effort.
+   * model accepts (absent = the CLI's default). Explicit Vibe choices are
+   * applied through its local app-server session.
    */
   readonly model?: string | undefined;
   readonly effort?: string | undefined;
+  /** Snapshot supplied by the trusted chat host for this Vibe turn. */
+  readonly vibeCatalog?: readonly VibeCatalogModel[] | undefined;
 }
 
 /** The started CLI process of a turn, handed to the caller so it can tie a session lease to it. */
@@ -300,6 +306,8 @@ export type SpawnFn = (
      * prompt text until it ends, an open pipe means it never starts the turn.
      */
     readonly closeInput?: boolean | undefined;
+    /** Let the supervisor interrupt its worker before a group-wide hard stop. */
+    readonly gracefulLeader?: boolean | undefined;
     /** Full child environment (merged over nothing — pass a complete env). Absent -> inherit. */
     readonly env?: NodeJS.ProcessEnv | undefined;
   },
@@ -319,6 +327,9 @@ export interface AdapterDeps {
   readonly isInstalled: BinaryProbe;
   /** Resolve the selected model at launch, never from webview-supplied endpoint/auth data. */
   readonly resolveOllamaTarget?: ((request: TurnRequest) => Promise<ChatOllamaTarget | undefined>) | undefined;
+  readonly vibeCatalog?: (() => Promise<readonly VibeCatalogModel[]>) | undefined;
+  readonly vibeAppServerPath?: string | undefined;
+  readonly vibeWorkerPath?: string | undefined;
   readonly logger?: AdapterLogger;
   /** cancel()'s wait after SIGTERM, and again after SIGKILL. Default 5000 ms. */
   readonly stopGraceMs?: number;
@@ -1020,14 +1031,7 @@ const vibeMapper: ProviderMapper = {
     if (req.permissionMode === 'auto') args.push('--auto-approve');
     else if (req.permissionMode === 'manual') args.push('--agent', 'ask');
     else if (req.permissionMode === 'edit-auto') args.push('--agent', 'accept-edits');
-    // Run config: vibe has no --model/--effort flags — the model is pinned via
-    // VIBE_ACTIVE_MODEL in envFor(); effort is not forwardable (the model's own
-    // `thinking` setting in the user's vibe config applies).
     return args;
-  },
-  envFor(req: TurnRequest): NodeJS.ProcessEnv | undefined {
-    if (req.model === undefined || req.model === '') return undefined;
-    return { ...process.env, VIBE_ACTIVE_MODEL: req.model };
   },
   mapLine(line: string, turnId: string, state: TurnState): TurnEvent[] {
     const trimmed = line.trim();
@@ -1037,6 +1041,14 @@ const vibeMapper: ProviderMapper = {
       state.sessionId = obj['sessionId'] as string;
     }
     const type = typeof obj['type'] === 'string' ? (obj['type'] as string) : '';
+    if (type === 'insrc-vibe-thinking') return [{ kind: 'status', turnId, phase: 'thinking' }];
+    if (type === 'insrc-vibe-result') {
+      return [{
+        kind: 'done', turnId, ok: obj['ok'] === true,
+        ...(typeof obj['message'] === 'string' ? { message: obj['message'] } : {}),
+        ...(obj['replayUnsafe'] === true ? { replayUnsafe: true } : {}),
+      }];
+    }
     // An approval-shaped entry (if a future vibe emits one): normalize; idless -> [].
     if (type.includes('approval')) {
       const ev = normalizeApprovalEvent(turnId, obj);
@@ -1170,11 +1182,16 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       effectiveReq = rest;
     }
     let ollama: ChatOllamaTarget | undefined;
+    let vibeCatalog: readonly VibeCatalogModel[] | undefined;
     try {
       if (deps.resolveOllamaTarget !== undefined) ollama = await deps.resolveOllamaTarget(effectiveReq);
       if (ollama !== undefined) {
         if (mapper.id !== 'claude') throw new Error('Ollama chat routing is supported only for Claude.');
         effectiveReq = { ...effectiveReq, model: ollama.model };
+      }
+      if (mapper.id === 'vibe' && (effectiveReq.model || effectiveReq.effort)) {
+        vibeCatalog = effectiveReq.vibeCatalog ?? await deps.vibeCatalog?.();
+        if (vibeCatalog === undefined) throw new Error('Vibe model selections require the daemon catalog');
       }
     } catch (err) {
       yield { kind: 'error', turnId, message: err instanceof Error ? err.message : String(err) };
@@ -1213,14 +1230,18 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     }
     let proc: SpawnedProcess;
     try {
-      proc = deps.spawn(BINARY[mapper.id], mapper.buildArgs(effectiveReq), {
-        cwd: effectiveReq.cwd,
-        ...(output !== undefined ? { output } : {}),
-        ...(mapper.inputIsPrompt === true ? { closeInput: true } : {}),
-        ...(ollama !== undefined
-          ? { env: ollamaClaudeEnv(process.env, ollama.host) }
-          : mapper.envFor !== undefined ? (() => { const env = mapper.envFor!(effectiveReq); return env !== undefined ? { env } : {}; })() : {}),
-      });
+      proc = vibeCatalog !== undefined
+        ? deps.spawn(process.execPath, [deps.vibeWorkerPath ?? fileURLToPath(new URL('./vibe-session-worker.js', import.meta.url)), '--owned-process-group'], {
+          cwd: effectiveReq.cwd, output, gracefulLeader: true, env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' },
+        })
+        : deps.spawn(BINARY[mapper.id], mapper.buildArgs(effectiveReq), {
+          cwd: effectiveReq.cwd,
+          ...(output !== undefined ? { output } : {}),
+          ...(mapper.inputIsPrompt === true ? { closeInput: true } : {}),
+          ...(ollama !== undefined
+            ? { env: ollamaClaudeEnv(process.env, ollama.host) }
+            : mapper.envFor !== undefined ? (() => { const env = mapper.envFor!(effectiveReq); return env !== undefined ? { env } : {}; })() : {}),
+        });
     } catch (err) {
       if (segment !== undefined && sessionOutput !== undefined && sessionId !== undefined) {
         void sessionOutput.endTurn(sessionId, turnId, { code: null, signal: null }).catch(() => {});
@@ -1253,12 +1274,13 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     let terminal = false;
     // Stamp the captured native session id onto a terminal `done` so the caller
     // (S005) can persist the resume handle; a dead capture would strand resume.
-    const doneEvent = (ok: boolean, message?: string): TurnEvent => ({
+    const doneEvent = (ok: boolean, message?: string, replayUnsafe?: true): TurnEvent => ({
       kind: 'done',
       turnId,
       ok,
       ...(state.sessionId !== undefined ? { sessionId: state.sessionId } : {}),
       ...(!ok && message !== undefined ? { message } : {}),
+      ...(replayUnsafe === true ? { replayUnsafe } : {}),
     });
     const stdout = proc.lines()[Symbol.asyncIterator]();
     try {
@@ -1269,18 +1291,27 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         yield { kind: 'error', turnId, message: spawnErr.code === 'ENOENT' ? `${BINARY[mapper.id]} CLI not found — install it or check your PATH` : failureMessage(mapper.id, spawnErr) };
         return;
       }
-      if (mapper.formatInput !== undefined && requestUuid !== undefined) {
+      if (vibeCatalog !== undefined || (mapper.formatInput !== undefined && requestUuid !== undefined)) {
         if (proc.write === undefined) throw new Error('CLI stdin unavailable for correlated input');
+        const job: VibeChatJob | undefined = vibeCatalog === undefined ? undefined : {
+          command: deps.vibeAppServerPath ?? 'vibe-app-server',
+          request: effectiveReq,
+          catalog: vibeCatalog,
+        };
+        const input = job === undefined
+          ? mapper.formatInput!(effectiveReq, requestUuid!)
+          : JSON.stringify(job) + '\n';
         // The turn's one user message goes through the same seam as the approval decisions: false is a
         // dead or absent stdin, and an asynchronous failure arrives on onError. Either one fails the turn.
         let accepted = false;
         try {
-          accepted = proc.write(mapper.formatInput(effectiveReq, requestUuid), (err) => {
+          accepted = proc.write(input, (err) => {
             if (inputFailure === undefined) inputFailure = new Error(`CLI stdin write failed: ${err instanceof Error ? err.message : String(err)}`);
             proc.kill('SIGTERM');
           });
         } catch { /* a seam that throws is a seam that did not deliver */ }
         if (!accepted) throw new Error('CLI stdin is closed');
+        if (job !== undefined) proc.endInput?.();
       }
       opts?.onSpawn?.({
         pid: proc.pid,
@@ -1329,7 +1360,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
             opts?.onProgress?.(proc.cursor);
           }
           // Enrich a mapper-produced done with the session id captured so far.
-          yield ev.kind === 'done' ? doneEvent(ev.ok, ev.message) : ev;
+          yield ev.kind === 'done' ? doneEvent(ev.ok, ev.message, ev.replayUnsafe) : ev;
           if (sawDone || sawError) return;
         }
         // Every event of this line has been handed over: report the position after it, and the
@@ -1349,6 +1380,10 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       // stdout closed without a terminal event: the process is ending; report how.
       const { code, signal } = await proc.exit;
       terminal = true;
+      if (vibeCatalog !== undefined) {
+        yield doneEvent(false, 'Vibe worker exited without a terminal result', true);
+        return;
+      }
       if (signal !== null) {
         // Killed (e.g. via cancel()) without a terminal event from the stream.
         yield doneEvent(false);
@@ -1372,7 +1407,8 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       if (!terminal) {
         terminal = true;
         proc.kill('SIGTERM');
-        yield { kind: 'error', turnId, message: failureMessage(mapper.id, err) };
+        if (vibeCatalog !== undefined) yield doneEvent(false, failureMessage(mapper.id, err), true);
+        else yield { kind: 'error', turnId, message: failureMessage(mapper.id, err) };
       }
     } finally {
       // A correlated Claude turn waits for more input after its answer, so a reader that is
@@ -1560,12 +1596,13 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     // tool_use and tool_result cannot drop them
     if (req.decoderState?.toolCommands !== undefined) state.toolCommands = { ...req.decoderState.toolCommands };
     if (req.decoderState?.editPaths !== undefined) state.editPaths = { ...req.decoderState.editPaths };
-    const doneEvent = (ok: boolean, message?: string): TurnEvent => ({
+    const doneEvent = (ok: boolean, message?: string, replayUnsafe?: true): TurnEvent => ({
       kind: 'done',
       turnId,
       ok,
       ...(state.sessionId !== undefined ? { sessionId: state.sessionId } : {}),
       ...(!ok && message !== undefined ? { message } : {}),
+      ...(replayUnsafe === true ? { replayUnsafe } : {}),
     });
     let sawTerminalInDrain = req.sawTerminal === true;
     try {
@@ -1586,7 +1623,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         // The terminal line may have been checkpointed immediately before a reload.
         if (state.result !== undefined) {
           if (!await waitForDeparture()) return;
-          yield doneEvent(state.result.ok, state.result.message);
+          yield doneEvent(state.result.ok, state.result.message, state.result.replayUnsafe);
           return;
         }
       }
@@ -1611,7 +1648,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
             opts?.onDecoderState?.(decoderSnapshot(state));
             opts?.onProgress?.(cursor);
           }
-          yield ev.kind === 'done' ? doneEvent(ev.ok, ev.message) : ev;
+          yield ev.kind === 'done' ? doneEvent(ev.ok, ev.message, ev.replayUnsafe) : ev;
           // Default: end at the first terminal event. With drain (the observer), keep reading to the
           // segment's end so nothing after the terminal is abandoned.
           if (ev.kind === 'done' || ev.kind === 'error') {
@@ -1766,7 +1803,7 @@ export async function deriveChatTitle(
       const ev = res.value;
       turnId = ev.turnId;
       if (ev.kind === 'assistant-delta') text += ev.text;
-      else if (ev.kind === 'error') return stop(undefined);
+      else if (ev.kind === 'error' || (ev.kind === 'done' && !ev.ok)) return stop(undefined);
     }
   } catch {
     return stop(undefined);
@@ -1845,6 +1882,11 @@ export const nodeSpawner: SpawnFn = (command, args, opts) => {
     if (!spawned) resolveSpawnErr(err);
     resolveExit({ code: null, signal: null });
   });
+  if (opts.gracefulLeader === true) {
+    // The worker's death is confirmed at exit even if a paused reader has
+    // not drained its pipe yet. Waiting for close would stall cancellation.
+    child.on('exit', (code, signal) => resolveExit({ code, signal }));
+  }
   child.on('close', (code, signal) => {
     exited = true;
     resolveExit({ code, signal });
@@ -1889,7 +1931,7 @@ export const nodeSpawner: SpawnFn = (command, args, opts) => {
     kill: (signal = 'SIGTERM') => {
       const pid = child.pid;
       // The CLI leads its group (detached): signal the group; else, or once it is gone, the child.
-      if (ownGroup && pid !== undefined && signalGroup(pid, signal)) return;
+      if (ownGroup && pid !== undefined && (signal === 'SIGKILL' || opts.gracefulLeader !== true) && signalGroup(pid, signal)) return;
       child.kill(signal);
     },
     endInput: () => {

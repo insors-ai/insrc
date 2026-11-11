@@ -1,0 +1,1022 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1794322741020-5p52i9",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T14:59:26.044Z",
+    "epicCreatedAt": "2026-11-10T04:52:20.369Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 24639,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3992d2e1e26124dc",
+    "epicSlug": "restore-reliable-daemon-restart-macos",
+    "storyId": "s1",
+    "lldRunId": "wf-1794309468868-i54ru4",
+    "lldEffectiveHash": "623425ce0d85bbdcf4636a6c1511b6c182f3c5f7590b42c0978e4e34f70b96f3",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 3,
+        "contentHash": "a92659df120fac0808bf1261cd81314612d13d971c2f15ad56350fcaa5907b45",
+        "at": "2026-11-10T14:59:26.148Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-10T15:00:23.622Z"
+      }
+    },
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "revision": 3,
+    "rangeBase": "cff400b05ea3fa0a01fdcbcee117732828e1ebe1"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Build the installed macOS supervisor and route existing shell, TUI, and daemon lifecycle paths through it. Add rollback-compatible update validation, durable recovery, and correlated completion in VS Code and JetBrains. Run targeted tests per task, then qualify the installed route and run the full sweep."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Define the managed lifecycle wire contract",
+        "summary": "Implement bounded frame parsing, stable hello negotiation, typed requests and receipts, operation-specific field validation, and the controller and inherited channel roles.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A mismatched release or version cannot issue a lifecycle command",
+          "Lease, update and drain fields are accepted only for the documented operations"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Wrong peer, root and generation"
+          },
+          {
+            "level": "unit",
+            "name": "Protocol version, frame bounds, channel role and request correlation"
+          },
+          {
+            "level": "unit",
+            "name": "Discriminated ownership-conflict, exit-unconfirmed, supervisor-unavailable and watchdog errors"
+          },
+          {
+            "level": "unit",
+            "name": "Lease token, channel and generation mismatch"
+          },
+          {
+            "level": "unit",
+            "name": "Update lock, version refusal and terminal outcome"
+          },
+          {
+            "level": "unit",
+            "name": "Missing, misplaced, reused and stale lease tokens"
+          },
+          {
+            "level": "unit",
+            "name": "Hello negotiates the highest common version and rejects peer identity mismatch, malformed hello and empty overlap"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add Darwin job and peer identity primitives",
+        "summary": "Implement the narrow Darwin support for Unix peer PID and UID, process incarnation, read-only exit observation and verified per-user launch-job ownership. Package the platform-specific entry points and keep the Linux process broker unchanged.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Peer mismatch, reused PID, wrong launch domain and unverified job removal fail closed",
+          "Darwin observations work without a Mach task right and Linux packaging remains intact"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Compares peer identity and scopes job labels by installation root"
+          },
+          {
+            "level": "unit",
+            "name": "Validates idle job evidence and refuses the wrong domain or relative program"
+          },
+          {
+            "level": "unit",
+            "name": "Rejects a reused PID with a different start incarnation"
+          },
+          {
+            "level": "integration",
+            "name": "Legacy exit observation rejects PID reuse, owner mismatch and timeout without invoking the Mach broker"
+          },
+          {
+            "level": "integration",
+            "name": "Uses separate labels for test roots and rejects a foreign registered root"
+          },
+          {
+            "level": "integration",
+            "name": "Legacy socket peer UID or PID differs from the registered process incarnation"
+          },
+          {
+            "level": "unit",
+            "name": "Rejects a foreign peer PID or executable"
+          },
+          {
+            "level": "integration",
+            "name": "Verifies recovery job registration against the pinned descriptor and argv"
+          },
+          {
+            "level": "integration",
+            "name": "Observes exact exit of a disposable child with the read-only Darwin helper"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Implement the installation mutation gate and journal",
+        "summary": "Add installation-local arbitration, durable controller identity and reservations, transaction stages and recovery decisions. Serialize ordinary restart as a single reservation. Bind each mutation to the current owner and update ID where applicable.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Stale sockets, reused owner PID, unrelated controllers and orphan reservations cannot mutate",
+          "Recovery branches on the matching durable outcome before any destructive action"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Durable update reservation blocks competing mutations and binds the owner"
+          },
+          {
+            "level": "unit",
+            "name": "Admission rejects foreign update IDs, owner PID reuse and connections opened before lease publication"
+          },
+          {
+            "level": "unit",
+            "name": "Recovery classification distinguishes uncommitted, committed, rolled-back and fenced transactions"
+          },
+          {
+            "level": "integration",
+            "name": "Two independent processes cannot reserve the same installation or clear an unverified orphan reservation"
+          },
+          {
+            "level": "integration",
+            "name": "Controller death releases short arbitration but preserves the durable reservation"
+          },
+          {
+            "level": "integration",
+            "name": "Public lifecycle admission remains busy while an update owns the installation"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Implement the supervisor child lifecycle",
+        "summary": "Build the per-user parent state machine, pinned child spawn, inherited channel, start/stop deadlines, exact escalation and reap, confirmed receipts and predecessor-bound replay. Start the supervisor idle and require journaled predecessor evidence during replacement.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "A hung or partially initialized child cannot be replaced before exact reap",
+          "An old stop or readiness frame cannot act on a newer generation"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Monotonic deadline, repeated requests and grace versus forced outcome"
+          },
+          {
+            "level": "unit",
+            "name": "Supervisor classifies idle stop, unavailable runtime, and confirmed failed exit"
+          },
+          {
+            "level": "unit",
+            "name": "Late ready cannot beat startup timeout or allow replacement before confirmed reap"
+          },
+          {
+            "level": "integration",
+            "name": "Delayed controller cannot stop the replacement generation"
+          },
+          {
+            "level": "integration",
+            "name": "Fresh supervisor first start requires durable predecessor evidence and an admitted owner"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Delegate the run-file guard for managed children",
+        "summary": "Have the supervisor own the existing guard and issue generation-scoped grants for child startup and listener close. Capture partial publication and reconcile only identity-proven files before releasing the guard.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Forced close and partial startup release the supervisor-owned guard only after verified reap and reconciliation",
+          "Foreign or orphan guard and legacy Linux behavior remain fail-closed"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Guarded stale run files and replacement ownership"
+          },
+          {
+            "level": "unit",
+            "name": "Run-file mutation rejects a mismatched grant, channel or generation"
+          },
+          {
+            "level": "unit",
+            "name": "Partially published run files stay fenced while startup reap is unconfirmed"
+          },
+          {
+            "level": "unit",
+            "name": "Repeated or stale lease release cannot change the physical run-file guard"
+          },
+          {
+            "level": "unit",
+            "name": "Queued release before and after escalation preserves shutdown guard"
+          },
+          {
+            "level": "integration",
+            "name": "Kill startup child before PID, after PID, and after socket publication before ready"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Wire managed daemon readiness, shutdown and watchdog",
+        "summary": "Integrate inherited ready/drain/arm and public shutdown admission in the daemon and both dispatch modes. Preserve local-signal emergency behavior and legacy/Linux broker routes. Avoid enabling installed rollout until the controller and updater are wired.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t3",
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Public shutdown cannot bypass an update reservation",
+          "Admitted drains and local signals keep independent generation-bound deadlines, with no managed Mach broker call"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Managed watchdog arm has reserved capacity during a controller request burst"
+          },
+          {
+            "level": "integration",
+            "name": "IPC and signal shutdown with no controller"
+          },
+          {
+            "level": "integration",
+            "name": "Hung before shutdown reply and hung native close after watchdog readiness"
+          },
+          {
+            "level": "smoke",
+            "name": "Linux existing pidfd and watchdog suites"
+          },
+          {
+            "level": "integration",
+            "name": "Hold a client connection open during managed server.close and confirm forced reap releases the supervisor guard and permits exactly one restart"
+          },
+          {
+            "level": "integration",
+            "name": "Public RPC arm gets busy during update while an admitted drain and local signal preserve their watchdog path"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Route installed shell and TUI lifecycle through the supervisor",
+        "summary": "Use one predecessor-bound restart in both entry points, stage the per-user launch job and require verified quiescence for legacy cutover. Add status and operator recovery access independent of a live daemon. Keep installed activation gated on end-to-end rollout readiness.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t2",
+          "t3",
+          "t4",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "Start, stop and restart share the installation gate and do not issue a second stop",
+          "CLI status shows recovery state when the daemon socket is unavailable"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Normal CLI and shell restart"
+          },
+          {
+            "level": "integration",
+            "name": "Supervisor loss, concurrent restart and stale files"
+          },
+          {
+            "level": "integration",
+            "name": "Managed Darwin never invokes the Mach broker from either the controller or shutdown watchdog"
+          },
+          {
+            "level": "integration",
+            "name": "Installed controller refuses a verified job belonging to another test root"
+          },
+          {
+            "level": "integration",
+            "name": "Kill the supervisor while it owns the guard and verify fail-closed operator recovery"
+          },
+          {
+            "level": "integration",
+            "name": "Installed shell restart sends one stop and one start bound to the same predecessor"
+          },
+          {
+            "level": "integration",
+            "name": "Race competing start, stop, raw shutdown and update against both supervisor versions"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Enforce rollback-compatible startup and probation",
+        "summary": "Define the release compatibility declarations and read-only quiesced checks. Validate before live boot effects. Gate graph migrations, cleanup, indexing and normal IPC until the candidate observes matching durable success.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t3",
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "A newer graph schema or an unqualified release is refused before candidate writes",
+          "Candidate readiness verifies store opens and paused indexer initialization with no production indexing"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Compatibility declaration and read-only quiesced check refuse unknown or migration-bearing pairs"
+          },
+          {
+            "level": "integration",
+            "name": "Inject upgrade with a newer graph schema and verify the old daemon can still open the unchanged store"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Stage releases and hand off the launch job",
+        "summary": "Pin releases, stage the detached helper behind the acknowledgement handoff and journal job admission separately from child launch. Verify old job exit and new handshake, then start and validate the candidate in probation. Return exact stage receipts for commit and rollback.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t3",
+          "t7",
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "The helper cannot mutate before acknowledgement handoff",
+          "An ambiguous launch registration or failed hello produces a bounded, identity-scoped handoff receipt",
+          "Candidate admission records exact predecessor evidence and keeps the release selector provisional"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Candidate job handoff records registration before child admission and keeps release selection provisional"
+          },
+          {
+            "level": "integration",
+            "name": "A failed candidate hello yields an exact job receipt without admitting a daemon child"
+          },
+          {
+            "level": "integration",
+            "name": "A lost or unwritten update acknowledgement keeps the detached helper behind its launch gate"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "order": 10,
+        "title": "Commit or recover the managed update transaction",
+        "size": "M",
+        "dependsOn": [
+          "t9"
+        ],
+        "summary": "Use the journal to commit, roll back or retain a recovery fence. Verify candidate job removal and predecessor restoration, atomically write one outcome, and allow post-commit recovery to finish activation without rollback.",
+        "acceptanceChecks": [
+          "Failed hello after registration removes only the verified candidate job before restoring the prior release",
+          "Controller loss before commit rolls back only with verified ownership; loss after commit preserves the selected release",
+          "Unresolved ownership remains fenced and a terminal outcome appears only after the verified decision"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Incompatible supervisor version produces one terminal failure after reconciliation"
+          },
+          {
+            "level": "unit",
+            "name": "Terminal outcome and marker ordering, including persistence failure"
+          },
+          {
+            "level": "unit",
+            "name": "Recovery applies only the operations permitted by the matching outcome"
+          },
+          {
+            "level": "integration",
+            "name": "Recovery job and legacy migration"
+          },
+          {
+            "level": "integration",
+            "name": "Rollback after legacy stop but before managed readiness restores the saved service"
+          },
+          {
+            "level": "integration",
+            "name": "Fail hello after candidate job registration before child start, remove the candidate job and restore the prior release"
+          },
+          {
+            "level": "integration",
+            "name": "Kill the controller at reservation, job registration, probation, and after outcome publication"
+          },
+          {
+            "level": "integration",
+            "name": "Relaunch supervisor after provisional release selection and verify recovery restores the old selector before uncommitted rollback, or preserves the candidate after success"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "Project managed update state through daemon IPC",
+        "summary": "Publish optional update IDs in managed acknowledgements and outcomes. Use a shared request-time installed-commit projection for threaded and non-threaded status. Preserve the existing fields and unmanaged behavior.",
+        "size": "M",
+        "order": 11,
+        "dependsOn": [
+          "t8",
+          "t10"
+        ],
+        "acceptanceChecks": [
+          "The candidate commit remains hidden from old clients until durable success",
+          "A matching terminal outcome and status report the committed or restored release consistently"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Daemon-initiated update survives supervisor unload and writes one terminal result across a protocol version change"
+          },
+          {
+            "level": "integration",
+            "name": "Observe in-flight status throughout injected rollback, then exactly one terminal outcome after restored readiness or a durable operator-recovery decision"
+          },
+          {
+            "level": "integration",
+            "name": "Hold application RPCs and indexing until matching durable success across threaded and non-threaded status paths"
+          },
+          {
+            "level": "integration",
+            "name": "Managed update helper waits for acknowledgement write before destructive work"
+          },
+          {
+            "level": "integration",
+            "name": "Threaded and non-threaded status publish the same committed release for the matching outcome"
+          }
+        ]
+      },
+      {
+        "id": "t12",
+        "title": "Correlate update confirmation in VS Code and JetBrains",
+        "summary": "Both IDEs confirm managed transactions only on their acknowledged update ID and show pending confirmation when the outcome cannot be retrieved. Keep the existing fallback for legacy responses.",
+        "size": "M",
+        "order": 12,
+        "dependsOn": [
+          "t11"
+        ],
+        "acceptanceChecks": [
+          "Changed installedCommit and unrelated terminal results do not confirm a managed update",
+          "Both IDEs handle rollback, lost acknowledgement and a legacy daemon"
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Correlated update outcomes ignore unrelated terminal records and changed installedCommit"
+          },
+          {
+            "level": "integration",
+            "name": "Candidate status projects the prior commit during validation and a later rollback in both IDE confirmation flows"
+          },
+          {
+            "level": "integration",
+            "name": "Lost update acknowledgement does not trigger an automatic duplicate request"
+          }
+        ]
+      },
+      {
+        "id": "t13",
+        "title": "Qualify installed rollout and run the final sweep",
+        "summary": "Exercise the installed macOS LaunchAgent on disposable roots and regular Apple Silicon, including hung close, partial boot, legacy cutover, version-changing rollback and recovery. Verify Linux regressions, then run the complete sweep after all implementation tasks.",
+        "size": "M",
+        "order": 13,
+        "dependsOn": [
+          "t7",
+          "t10",
+          "t11",
+          "t12"
+        ],
+        "acceptanceChecks": [
+          "Installed smoke proves verified generation change and safe rollback",
+          "All implementation tasks have relevant targeted test evidence before the final sweep",
+          "Managed installed activation is release-qualified only after the installed smoke and regression checks pass"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c6",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "Install or upgrade into supported launchd domain"
+          },
+          {
+            "level": "smoke",
+            "name": "Normal and blocked shutdown complete with verified generation change"
+          },
+          {
+            "level": "smoke",
+            "name": "Restart leaves one daemon and serves status and indexing"
+          },
+          {
+            "level": "smoke",
+            "name": "Stopped daemon remains stopped and rollback preserves state"
+          },
+          {
+            "level": "smoke",
+            "name": "On the installed Apple Silicon build recover stale owned PID and socket files and refuse files belonging to a replacement"
+          },
+          {
+            "level": "smoke",
+            "name": "Real macOS migration exit observation and restoration after injected pre-readiness failure"
+          },
+          {
+            "level": "smoke",
+            "name": "Apple Silicon real blocked-close guard recovery and boot timeout after partial publication"
+          },
+          {
+            "level": "smoke",
+            "name": "Apple Silicon installed update across a supervisor version change with injected rollback"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "Wrong peer, root and generation",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Monotonic deadline, repeated requests and grace versus forced outcome",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Guarded stale run files and replacement ownership",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Protocol version, frame bounds, channel role and request correlation",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Discriminated ownership-conflict, exit-unconfirmed, supervisor-unavailable and watchdog errors",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Idle stop, launch-domain refusal, missing runtime, reserved watchdog capacity and confirmed failed-exit classification",
+        "coveredByTaskIds": [
+          "t2",
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Lease token, channel and generation mismatch",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Startup readiness race and unconfirmed forced reap",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Update lock, version refusal and terminal outcome",
+        "coveredByTaskIds": [
+          "t1",
+          "t3",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "Missing, misplaced, reused and stale lease tokens",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Queued release before and after escalation preserves shutdown guard",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Terminal outcome and marker ordering, including persistence failure",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "Hello negotiates the highest common version and rejects peer identity mismatch, malformed hello and empty overlap",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Correlated update outcomes ignore unrelated terminal records and changed installedCommit",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "Admission rejects foreign update IDs, owner PID reuse and connections opened before lease publication",
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Compatibility declaration and read-only quiesced check refuse unknown or migration-bearing pairs",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Crash recovery classifies the durable outcome before deciding rollback or activation",
+        "coveredByTaskIds": [
+          "t3",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "Normal CLI and shell restart",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "IPC and signal shutdown with no controller",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Hung before shutdown reply and hung native close after watchdog readiness",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Supervisor loss, concurrent restart and stale files",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "Recovery job and legacy migration",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "Linux existing pidfd and watchdog suites",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Delayed controller cannot stop the replacement generation",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Managed Darwin never invokes the Mach broker from either the controller or shutdown watchdog",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "Legacy exit observation rejects PID reuse, owner mismatch and timeout without invoking the Mach broker",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Rollback after legacy stop but before managed readiness restores the saved service",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "Distinct test roots reject cross-root control and label collisions",
+        "coveredByTaskIds": [
+          "t2",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "Hold a client connection open during managed server.close and confirm forced reap releases the supervisor guard and permits exactly one restart",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Kill startup child before PID, after PID, and after socket publication before ready",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Kill the supervisor while it owns the guard and verify fail-closed operator recovery",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "Legacy socket peer UID or PID differs from the registered process incarnation",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Installed shell restart sends one stop and one start bound to the same predecessor",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "Daemon-initiated update survives supervisor unload and writes one terminal result across a protocol version change",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "Observe in-flight status throughout injected rollback, then exactly one terminal outcome after restored readiness or a durable operator-recovery decision",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "Fail hello after candidate job registration before child start, remove the candidate job and restore the prior release",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "Candidate status projects the prior commit during validation and a later rollback in both IDE confirmation flows",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "Hold application RPCs and indexing until matching durable success across threaded and non-threaded status paths",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "Inject upgrade with a newer graph schema and verify the old daemon can still open the unchanged store",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Race competing start, stop, raw shutdown and update against both supervisor versions",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "Kill the controller at reservation, job registration, probation, and after outcome publication",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "Relaunch supervisor after provisional release selection and verify recovery restores the old selector before uncommitted rollback, or preserves the candidate after success",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "Fresh supervisor first start requires durable predecessor evidence and an admitted owner",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Public RPC arm gets busy during update while an admitted drain and local signal preserve their watchdog path",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Lost update acknowledgement neither permits an unacknowledged helper to mutate before response write nor triggers duplicate admission",
+        "coveredByTaskIds": [
+          "t11",
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "Install or upgrade into supported launchd domain",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "Normal and blocked shutdown complete with verified generation change",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "Restart leaves one daemon and serves status and indexing",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "Stopped daemon remains stopped and rollback preserves state",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "On the installed Apple Silicon build recover stale owned PID and socket files and refuse files belonging to a replacement",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "Real macOS migration exit observation and restoration after injected pre-readiness failure",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "Apple Silicon real blocked-close guard recovery and boot timeout after partial publication",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "Apple Silicon installed update across a supervisor version change with injected rollback",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 §3.2 Supervisor lifecycle and stop receipt and §2 lifecycle contracts"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 §3.1 Managed macOS daemon instance and §7 launch domain and legacy identity"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 §3.3 PID and socket run files"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 §3.5 Installation update admission and recovery and §5 error paths"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 §3.6 Managed update storage preflight"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 §7 Migration and rollback"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 §3.4 Managed update confirmation"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 §6 Test strategy"
+    }
+  ]
+}

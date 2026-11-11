@@ -35,6 +35,7 @@ import {
 import { renderNarrativeBand } from './narrative.js';
 import {
 	DIAGRAM_OVERRIDES_CSS, THEME_VERSION, asDiagramRole, diagramRoles, fontFaceCssForArtifacts, legendSlotHtml, mermaidConfigFor, pageStyleTags, viewerBootScript,
+	PAN_ZOOM_CONTROLS_CSS,
 } from '../../artifact-theme/theme.js';
 
 /** The single source of truth for where the docgen runtime assets live
@@ -208,7 +209,7 @@ function docgenPageStyle(): string {
 	].join('\n');
 	// The branded page chrome is composed by the ONE shared helper (R1), so the
 	// docgen shell cannot drift from the companion shell.
-	return pageStyleTags(base);
+	return pageStyleTags(`${base}\n${PAN_ZOOM_CONTROLS_CSS}`);
 }
 
 function buildHtml(

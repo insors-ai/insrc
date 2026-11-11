@@ -1,0 +1,104 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-28422ae7-cf81-41ea-aa53-f75e69cb5c69",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T15:17:26.334Z",
+    "epicCreatedAt": "2026-11-09T05:00:05.847Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "eedc4519199b24b4",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Plugin shows the new status",
+      "parent": {
+        "entityId": "STORY-eedc4519199b24b4-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-eedc4519199b24b4-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-eedc4519199b24b4-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-eedc4519199b24b4-s1-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5709ed9cf3d96754f8e7e9cd5a41060df12dccd3d7a8f73efc50bce6e35ff44f",
+        "at": "2026-11-09T15:17:26.334Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T15:17:26.337Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Plugin shows the new status",
+    "summary": "Carry the new fields through the delivery contract, join plan rows on planRowId, render tasks in the order given, show an Epic complete only from its unit status, and add labels and the Task status in the webview.",
+    "size": "M",
+    "order": 10,
+    "acceptanceChecks": [
+      "The plugin reads the new snapshot fields",
+      "An Epic shows complete only when its unit status is completed",
+      "A Task row shows its unit status beside its validation result, including unmigrated, in the real webview"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "taskShortIdOf shows R004 for a row id"
+      },
+      {
+        "level": "unit",
+        "name": "board-details joins on planRowId, falling back to sourceIds only when it is null"
+      },
+      {
+        "level": "unit",
+        "name": "board-views shows an Epic complete only from its unit status"
+      },
+      {
+        "level": "unit",
+        "name": "TaskRowView carries a Task's unit status, including unmigrated"
+      },
+      {
+        "level": "integration",
+        "name": "vscode-plugin/src/delivery/__tests__/delivery-client.test.ts reads the same shape and opens a sequenced DIAG evidence row"
+      },
+      {
+        "level": "smoke",
+        "name": "Render the board webview during the build and confirm a Task row shows its unit status beside its validation result, including an unmigrated one"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

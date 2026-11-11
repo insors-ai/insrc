@@ -1103,6 +1103,37 @@ function compactionPaths(path: string): { compactPath: string; bakPath: string; 
 	return { compactPath: `${path}.compact`, bakPath: `${path}.bak`, manifestPath: `${path}.compact-manifest`, lockPath: `${path}-lock` };
 }
 
+/** Inspect a stopped installation without creating a graph or resuming compaction. */
+export async function inspectQuiescedGraphSchema(path: string): Promise<number> {
+	assertMayOpen(path);
+	const { compactPath, bakPath, manifestPath, lockPath } = compactionPaths(path);
+	for (const leftover of [compactPath, bakPath, manifestPath]) {
+		try {
+			lstatSync(leftover);
+		} catch (error) {
+			if ((error as NodeJS.ErrnoException).code === 'ENOENT') continue;
+			throw error;
+		}
+		throw new Error('graph compaction recovery is pending');
+	}
+	for (const file of [path, lockPath]) {
+		if (!lstatSync(file).isFile()) throw new Error('graph or graph lock is not an existing regular file');
+	}
+	// LMDB may use the existing lock file for its reader slot. The data file
+	// itself is opened read-only and missing named DBs are never created.
+	const root = open({ path, readOnly: true, maxDbs: MAX_DBS });
+	try {
+		const meta = root.openDB({ name: 'meta', keyEncoding: 'ordered-binary' });
+		const version: unknown = meta.get(META_SCHEMA_VERSION);
+		if (typeof version !== 'number' || !Number.isSafeInteger(version) || version < 1) {
+			throw new Error('graph schema version is missing or invalid');
+		}
+		return version;
+	} finally {
+		await root.close();
+	}
+}
+
 /** Entries per named database of the open store. */
 function entryCounts(store: GraphStore): Record<string, number> {
 	const counts: Record<string, number> = {};

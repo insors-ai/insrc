@@ -234,6 +234,17 @@ export async function listRepos(_db: DbClient): Promise<RegisteredRepo[]> {
 	return out;
 }
 
+/** Identity of a workspace registration. Removing and re-adding allocates a new id. */
+export async function workspaceRepoIds(): Promise<ReadonlyMap<string, number>> {
+	const store = await getGraphStore();
+	const projects = new Map<string, number>();
+	for (const { value } of store.repo.getRange()) {
+		const row = decodeRepoRow(value as Buffer);
+		if (row.kind === 'workspace') projects.set(row.path, row.id);
+	}
+	return projects;
+}
+
 /** The registered repo whose path CONTAINS `cwd` — either equal to it, or an
  *  ancestor directory at a path-segment boundary (so `/foo` does NOT contain
  *  `/foobar`). On nested registrations the longest (most-specific) containing

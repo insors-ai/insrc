@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f0448cf8-837b-44f2-804f-8b8986472075",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T17:21:09.383Z",
+    "epicCreatedAt": "2026-11-09T16:34:12.401Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "97adabf6bd47b036",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Apply verified selection in VS Code Vibe turns",
+      "parent": {
+        "entityId": "STORY-97adabf6bd47b036-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-97adabf6bd47b036-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-97adabf6bd47b036-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b26a3392a024d5c7ca2ff92ec3a60a8664a19dc5ee9030b0f68944f963124e90",
+        "at": "2026-11-09T17:21:09.383Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T17:21:09.386Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Apply verified selection in VS Code Vibe turns",
+    "summary": "Wire the existing Vibe adapter to shared explicit selection. Preserve native resume identity, working directory, attachments, approvals, text and reasoning events, cancellation, terminal state and lease cleanup. Ensure the shared module is included in the extension bundle.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "New and resumed turns confirm the requested selection and retain chat event behavior",
+      "Unsupported selection or uncertain dispatch releases the lease without automatic replay",
+      "The normal extension bundle includes the shared Vibe code"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "VS Code Vibe adapter preserves resume identity, attachments, permissions, streaming and cancellation"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-75c1059f-2ccb-4769-8a4d-cd6a4191bcd3",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T17:21:09.389Z",
+    "epicCreatedAt": "2026-11-09T16:34:12.401Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "97adabf6bd47b036",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Reconcile model and effort together",
+      "parent": {
+        "entityId": "STORY-97adabf6bd47b036-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-97adabf6bd47b036-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "bc45c1b351733b9abbaf2527d5b2152cfa061579afbabdb81fd730fdfb2b2af3",
+        "at": "2026-11-09T17:21:09.390Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T17:21:09.392Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Reconcile model and effort together",
+    "summary": "Use the selected provider's catalog models and efforts for new chat, updates, restores and pre-turn validation. Persist one compatible selection. Preserve stored values while definitions are unavailable, and keep provider and model changes consistent with the existing session rules.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Switching to an incompatible model or provider resets effort to default",
+      "An unavailable catalog preserves restored choices and prevents unsupported edits",
+      "A validated run receives one coherent provider, model and effort selection"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Provider and model changes, history restore and turn dispatch reconcile effort"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

@@ -16,6 +16,7 @@ import assert from 'node:assert/strict';
 
 import { uxDefinitionToPage, validateUxDefinition, type UxDefinition } from '../ux.js';
 import { renderCompanionPage, type DescriptionCell } from '../shell.js';
+import { SURFACES, themeBootScript } from '../../../../artifact-theme/theme.js';
 
 /** The S002 document review pane, as in the approved ux-mock. */
 const S002: UxDefinition = {
@@ -125,4 +126,40 @@ test('d9f85b3c t7 — the visual is HTML with its own card CSS, so the page inli
 	);
 	assert.ok(!out.includes('/*MERMAID*/'));
 	assert.doesNotMatch(out, /mermaid\./);
+});
+
+// ISSUE-f0b3baec4baccdd9: a UX mock follows the page theme.
+test('a UX mock page carries the theme switch', () => {
+	const html = renderCompanionPage(
+		{ projectName: 'p', workItemId: 'w', sourceDoc: { id: 'd', href: './d.md' }, date: 'd', user: 'u', contextLine: 'c' },
+		uxDefinitionToPage(S002, 'Mock'), { panzoom: '/*pz*/' },
+	);
+	assert.ok(html.includes(themeBootScript('light')), 'the page must run the theme switch');
+	assert.ok(html.includes('<div class="iv-bar">'), 'the toolbar uses the class the theme styles');
+});
+
+test('the UX card colours come from the theme, and the status colours per mode are readable', () => {
+	const style = uxDefinitionToPage(S002, 'Mock').visual;
+	assert.equal(style.kind, 'html');
+	const css = style.kind === 'html' ? style.style ?? '' : '';
+	const modeBlocks = /\.insrc-viewer(?:\[data-theme="dark"\])? \.ux-card\{--ux-accent:[^}]*\}/g;
+	const blocks = css.match(modeBlocks) ?? [];
+	assert.equal(blocks.length, 2, 'one status palette per mode');
+	const rest = css.replace(modeBlocks, '').replace(/var\(--[a-z-]+,#[0-9a-fA-F]{3,6}\)/g, '');
+	assert.equal(rest.match(/#[0-9a-fA-F]{3,6}\b/g), null, 'no colour outside the theme variables');
+	const lum = (hex: string): number => {
+		const c = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255).map(v => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+		return 0.2126 * c[0]! + 0.7152 * c[1]! + 0.0722 * c[2]!;
+	};
+	const ratio = (a: string, b: string): number => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05);
+	const modes = [['light', blocks[0]!], ['dark', blocks[1]!]] as const;
+	for (const [mode, block] of modes) {
+		for (const name of ['good', 'warning']) {
+			const fg = new RegExp(`--ux-${name}:(#[0-9a-fA-F]{6})`).exec(block)?.[1];
+			assert.ok(fg !== undefined, `${mode} ${name}`);
+			for (const bg of [SURFACES[mode].panel, SURFACES[mode].inset]) {
+				assert.ok(ratio(fg, bg) >= 4.5, `${mode} ${name} on ${bg}: ${ratio(fg, bg).toFixed(2)}`);
+			}
+		}
+	}
 });

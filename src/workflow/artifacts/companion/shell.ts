@@ -29,7 +29,7 @@ import { fileURLToPath } from 'node:url';
 
 import { docgenAssetDir } from '../../../docgen/render/shell.js';
 import {
-	DIAGRAM_OVERRIDES_CSS, THEME_VERSION, diagramRoles, fontFaceCssForArtifacts, legendSlotHtml, mermaidConfigFor, pageStyleTags, viewerBootScript,
+	DIAGRAM_OVERRIDES_CSS, THEME_VERSION, themeBootScript, diagramRoles, fontFaceCssForArtifacts, legendSlotHtml, mermaidConfigFor, pageStyleTags, viewerBootScript,
 } from '../../../artifact-theme/theme.js';
 import { CODE_REF_SCRIPT } from '../../../docgen/render/code-ref-script.js';
 import { DiagramGenerationError } from './render.js';
@@ -206,7 +206,7 @@ function exportCssAttr(): string {
  *  re-render, initial framing, export and error states. */
 function bootScript(visual: CompanionVisual): string {
 	if (visual.kind === 'html') {
-		return `window.insrcPanZoom.init({${PANZOOM_IDS},fitOnLoad:true,minFitScale:${MIN_FIT_SCALE}});`;
+		return `window.insrcPanZoom.init({${PANZOOM_IDS},fitOnLoad:true,minFitScale:${MIN_FIT_SCALE}});\n${themeBootScript('light')}`;
 	}
 	return [
 		`var pz=window.insrcPanZoom.init({${PANZOOM_IDS},minFitScale:${MIN_FIT_SCALE}});`,
@@ -257,7 +257,7 @@ ${pageStyle()}<style>${visualStyle}</style></head>
 </header>
 <section class="blk narr"><h2>Narrative</h2><p class="context">${esc(header.contextLine)}</p>${narrativeHtml(page.narrative)}</section>
 <section class="blk"><h2>View</h2><div class="vp-wrap">
-<div class="vp-bar"><span>Drag to pan · scroll to zoom · double-click to zoom in</span><span class="sp"></span><button id="zout" title="Zoom out" aria-label="zoom out">−</button><span class="zl" id="zl">100%</span><button id="zin" title="Zoom in" aria-label="zoom in">+</button><button id="zfit" title="Fit to view (overview)" aria-label="fit to view">Fit</button><button id="z100" title="Actual size" aria-label="actual size">1:1</button><button id="iv-export" title="Export SVG" aria-label="export svg">⇩</button><button id="iv-srcbtn" title="Show diagram source" aria-label="show diagram source">src</button></div>
+<div class="iv-bar"><span>Drag to pan · scroll to zoom · double-click to zoom in</span><span class="sp"></span><button id="zout" title="Zoom out" aria-label="zoom out">−</button><span class="zl" id="zl">100%</span><button id="zin" title="Zoom in" aria-label="zoom in">+</button><button id="zfit" title="Fit to view (overview)" aria-label="fit to view">Fit</button><button id="z100" title="Actual size" aria-label="actual size">1:1</button><button id="iv-export" title="Export SVG" aria-label="export svg">⇩</button><button id="iv-srcbtn" title="Show diagram source" aria-label="show diagram source">src</button></div>
 <div class="iv-err" id="iv-err" role="alert"></div>
 <div class="vp iv-vp" id="vp"><div class="stage iv-stage insrc-viewer-diagram" id="stage">${visualHtml}</div></div>
 ${legend}

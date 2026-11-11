@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "45e6b0a4daf512a0e7c8a0e2f99630d485241bd0eef2f34e4f7db25fe33939b3",
+        "at": "2026-11-11T04:39:23.912Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T04:43:02.756Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-1183bbbb-1be7-47d8-b773-a1933f75ff4b",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T04:34:47.332Z",
+    "epicCreatedAt": "2026-11-10T19:29:54.698Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e0821209d94791d0",
+    "storyId": "s1",
+    "revision": 2,
+    "updatedAt": "2026-11-11T04:37:48.073Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "sizeClass": "small",
+    "epicSlug": "move-new-chat-out-history-dropdown"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Implemented LLD-e0821209d94791d0-s1 in vscode-plugin/src/chat/chat-panel.ts: added the #insrc-newchat icon button (bubble-plus inline SVG in the .pico slot) left of .histchip in .chrome .right with .newchatbtn chip-matching CSS, wired its click to stopPropagation + newChatPick(nc), and removed the trailing new… row from renderHistoryMenu. The new-chat message payload is byte-identical, so host/store/protocol are untouched. Updated the two pinning tests in chat-panel.test.ts and the three chat-shell.test.ts cases that exercised the removed row. Gates: chat-panel+chat-shell 275/275, cli-adapter 106/106, extension-chat-wiring 26/26, tsc --noEmit clean. Code committed as f636a30c0 with the Insrc-Story trailer.",
+    "testRecord": {
+      "md": "docs/standalone/move-new-chat-out-history-dropdown-E20261110e0821209/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T04:37:48.073Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T04:37:48.073Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T04:37:48.073Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/EPIC-e0821209d94791d0.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T04:37:48.073Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/EPIC-e0821209d94791d0.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T04:37:48.073Z"
+      }
+    ],
+    "commit": "b0ef7d8da"
+  },
+  "citations": []
+}

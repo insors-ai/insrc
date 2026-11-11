@@ -31,7 +31,7 @@ import { spawn } from 'node:child_process';
 import type { DocumentIR, RenderedDocumentShell } from '../types.js';
 import { renderNarrativeBand } from './narrative.js';
 import {
-	DIAGRAM_OVERRIDES_CSS, SURFACES, THEME_VERSION, diagramRoles, exportableSvg, fontFaceCssForArtifacts, legendSlotHtml, pageStyleTags,
+	DIAGRAM_OVERRIDES_CSS, PAN_ZOOM_CONTROLS_CSS, SURFACES, THEME_VERSION, diagramRoles, exportableSvg, fontFaceCssForArtifacts, legendSlotHtml, pageStyleTags,
 } from '../../artifact-theme/theme.js';
 import { CODE_REF_SCRIPT } from './code-ref-script.js';
 
@@ -267,6 +267,7 @@ export function assembleFallbackShell(
   #docgen-diagram { width: 100%; height: 100vh; background: var(--iv-bg); }
   #docgen-diagram svg { width: 100%; height: 100%; }
   [data-insrc-path] { cursor: pointer; }
+${PAN_ZOOM_CONTROLS_CSS}
 `);
 	const html = `<!doctype html>
 <html lang="en">

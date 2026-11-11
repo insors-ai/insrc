@@ -27,6 +27,7 @@ class DaemonFreshnessFlowTest {
         var commit: String? = INSTALLED
         var updateResult: DaemonActionResult = DaemonActionResult.Ok()
         var outcome: DaemonUpdateOutcomeResult = DaemonUpdateOutcomeResult.None
+        var outcomeScript: (() -> DaemonUpdateOutcomeResult)? = null
         var commitAfterUpdate: String? = null
         var updateCalls = 0
         override fun installedCommit(): String? = commit
@@ -35,7 +36,7 @@ class DaemonFreshnessFlowTest {
             commitAfterUpdate?.let { commit = it }
             return updateResult
         }
-        override fun updateOutcome(): DaemonUpdateOutcomeResult = outcome
+        override fun updateOutcome(): DaemonUpdateOutcomeResult = outcomeScript?.invoke() ?: outcome
     }
 
     private class RecordingNotify(private val clickUpdate: Boolean = false) : FreshnessNotify {
@@ -82,6 +83,57 @@ class DaemonFreshnessFlowTest {
         beginUpdate = beginUpdate,
         endUpdate = endUpdate,
     )
+
+    @Test
+    fun `Correlated update outcomes ignore unrelated terminal records and changed installedCommit`() {
+        val gateway = FakeGateway().apply {
+            updateResult = DaemonActionResult.Ok(updateId = "current")
+            commitAfterUpdate = UPSTREAM
+            outcome = DaemonUpdateOutcomeResult.Loaded("succeeded", null, isoAt(2_000), "another")
+        }
+        val notify = RecordingNotify(clickUpdate = true)
+        DaemonFreshnessFlow.check(deps(gateway, notify, FakeVersionState("1", "1"), budget = 0))
+        assertEquals(1, gateway.updateCalls)
+        assertTrue(notify.messages.last().contains("confirmation is pending"))
+        assertFalse(notify.messages.contains(DaemonFreshnessFlow.RELOAD_NUDGE_MESSAGE))
+    }
+
+    @Test
+    fun `Candidate status projects the prior commit during validation and a later rollback in both IDE confirmation flows`() {
+        var reads = 0
+        val gateway = FakeGateway().apply {
+            updateResult = DaemonActionResult.Ok(updateId = "current")
+            outcomeScript = {
+                if (++reads == 1) DaemonUpdateOutcomeResult.None
+                else DaemonUpdateOutcomeResult.Loaded("failed", "predecessor restored", isoAt(100), "current")
+            }
+        }
+        val notify = RecordingNotify(clickUpdate = true)
+        DaemonFreshnessFlow.check(deps(gateway, notify, FakeVersionState("1", "1")))
+        assertEquals(2, reads)
+        assertEquals(NotifyKind.FAILURE, notify.kinds.last())
+        assertTrue(notify.messages.last().contains("predecessor restored"))
+    }
+
+    @Test
+    fun `Lost update acknowledgement does not trigger an automatic duplicate request`() {
+        var reads = 0
+        val gateway = FakeGateway().apply {
+            updateResult = DaemonActionResult.Failed("disconnected", acknowledgementLost = true)
+            outcomeScript = {
+                reads++
+                DaemonUpdateOutcomeResult.Loaded("succeeded", null, isoAt(2_000), "unconfirmed")
+            }
+        }
+        val notify = RecordingNotify()
+        val state = FakeVersionState("2", "1")
+        DaemonFreshnessFlow.check(deps(gateway, notify, state))
+        assertEquals(1, gateway.updateCalls)
+        assertEquals(1, reads)
+        assertEquals(listOf("2"), state.saved)
+        assertTrue(notify.messages.last().contains("launch is unconfirmed"))
+        assertFalse(notify.messages.contains(DaemonFreshnessFlow.RELOAD_NUDGE_MESSAGE))
+    }
 
     // ---- startup-check drift (ac1) ------------------------------------------
 

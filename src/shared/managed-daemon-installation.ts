@@ -3,7 +3,7 @@
 import { execFile } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { constants } from 'node:fs';
-import { access, lstat, mkdir, open, readFile, realpath, rename, rm, unlink, writeFile } from 'node:fs/promises';
+import { access, link, lstat, mkdir, open, readFile, realpath, rename, rm, unlink, writeFile } from 'node:fs/promises';
 import { createConnection } from 'node:net';
 import { dirname, isAbsolute, join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -223,6 +223,79 @@ export async function publishManagedSelector(installation: ManagedInstallation, 
 	await revalidate();
 	await publishPrivateFile(paths.manifest, JSON.stringify(installation) + '\n');
 	await verifyManagedSelectorFiles(installation);
+}
+
+/** Install or reconcile one fresh selector member without overwriting a conflicting file. */
+export async function installFreshSelectorMember(
+	installation: ManagedInstallation, member: 'descriptor' | 'manifest', activationId: string, revalidate: () => Promise<void>,
+): Promise<void> {
+	if (!installation.enabled || !/^[a-f0-9-]{36}$/.test(activationId)) failure('invalid fresh activation pin');
+	const paths = installationPaths(installation.stateRoot);
+	await privateDirectory(paths.directory);
+	const path = paths[member];
+	const temporary = `${path}.activate-${activationId}`;
+	const expected = member === 'descriptor'
+		? descriptor(supervisorJob(installation), installation) : JSON.stringify(installation) + '\n';
+	const inspect = async (target: string) => {
+		if (!await exists(target)) return undefined;
+		const info = await lstat(target);
+		if (!info.isFile() || info.uid !== uid() || (info.mode & 0o077) !== 0 || info.size > 8192 || info.nlink > 2) {
+			failure('fresh activation file is not an owned private file');
+		}
+		return info;
+	};
+	const same = (a: NonNullable<Awaited<ReturnType<typeof inspect>>>, b: typeof a) => a.dev === b.dev && a.ino === b.ino;
+	let staged = await inspect(temporary);
+	const published = await inspect(path);
+	if (published !== undefined) {
+		if (await readFile(path, 'utf8') !== expected || (staged === undefined ? published.nlink !== 1 : !same(staged, published))) {
+			failure('fresh activation publication belongs to a different installation');
+		}
+	} else {
+		if (staged !== undefined) {
+			if (staged.nlink !== 1) failure('fresh activation staging file has another owner');
+			await revalidate();
+			await unlink(temporary);
+			staged = undefined;
+		}
+		await revalidate();
+		const file = await open(temporary, 'wx', 0o600);
+		try { await file.writeFile(expected); await file.sync(); } finally { await file.close(); }
+		staged = await inspect(temporary);
+		await revalidate();
+		await link(temporary, path);
+	}
+	if (staged !== undefined) {
+		const current = await inspect(temporary);
+		const target = await inspect(path);
+		if (current === undefined || target === undefined || !same(staged, current) || !same(current, target)) {
+			failure('fresh activation staging identity changed');
+		}
+		await revalidate();
+		await unlink(temporary);
+	}
+	const directory = await open(paths.directory, constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW);
+	try { await directory.sync(); } finally { await directory.close(); }
+}
+
+/** Undo a receipted fresh publication after the supervisor has been verified absent. */
+export async function removeFreshSelectorMember(
+	installation: ManagedInstallation, member: 'descriptor' | 'manifest', revalidate: () => Promise<void>,
+): Promise<void> {
+	const paths = installationPaths(installation.stateRoot);
+	const path = paths[member];
+	const before = runFileIdentity(path);
+	if (before === undefined) return;
+	await privateFile(path);
+	const expected = member === 'descriptor'
+		? descriptor(supervisorJob(installation), installation) : JSON.stringify(installation) + '\n';
+	if (await readFile(path, 'utf8') !== expected) failure('fresh activation cleanup refuses a foreign publication');
+	await revalidate();
+	const current = runFileIdentity(path);
+	if (current === undefined || !sameRunFile(before, current)) failure('fresh activation publication changed before cleanup');
+	await unlink(path);
+	const directory = await open(paths.directory, constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW);
+	try { await directory.sync(); } finally { await directory.close(); }
 }
 
 /** Unload the pinned job after its child has exited and retain exact proof of the job's own exit. */

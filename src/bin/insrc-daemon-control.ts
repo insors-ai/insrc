@@ -4,7 +4,7 @@ import { access, realpath } from 'node:fs/promises';
 import { isDeepStrictEqual } from 'node:util';
 import { stopDaemon } from '../cli/services/daemon.js';
 import { captureDaemon, cleanupStoppedDaemon } from '../cli/services/lifecycle.js';
-import { ManagedDaemonControl } from '../cli/services/managed-daemon-control.js';
+import { accepted, ManagedDaemonControl, openManagedSupervisorLink } from '../cli/services/managed-daemon-control.js';
 import { readDarwinIncarnation } from '../shared/darwin-lifecycle.js';
 import { SupervisorLifecycleError } from '../shared/daemon-supervisor-protocol.js';
 import { InstallationMutationGate } from '../shared/installation-mutation-gate.js';
@@ -16,6 +16,8 @@ import { inspectLegacyJob, pinLegacyLaunchJob, verifyLegacyService } from '../da
 import { readQualifiedReleasePairs, releaseDeclaration } from '../daemon/managed-update-launch.js';
 import { requireQualifiedReleasePair } from '../daemon/release-compatibility.js';
 import { readInstalledCommit } from '../daemon/installed-commit.js';
+import { activateFreshManagedDaemon } from '../daemon/fresh-managed-activation.js';
+import { captureManagedReleasePin } from '../daemon/managed-release-staging.js';
 import { PATHS } from '../shared/paths.js';
 
 const NOT_MANAGED = 10;
@@ -96,12 +98,58 @@ async function migrate([release, releaseId, runtime, descriptor]: readonly strin
 }
 
 async function main(command: string): Promise<void> {
+	if (command === 'activate-fresh') {
+		const [release, intent] = process.argv.slice(3);
+		if (release === undefined || (intent !== 'start' && intent !== 'idle')) throw new Error('activate-fresh requires a release and start or idle intent');
+		const stateRoot = await realpath(PATHS.insrc);
+		const pin = await captureManagedReleasePin(await realpath(release), process.execPath);
+		await activateFreshManagedDaemon({
+			installation: { version: 1, stateRoot, releaseRoot: pin.root, releaseId: pin.commit, runtime: pin.runtime,
+				pathEnv: process.env['PATH'] ?? '/usr/bin:/bin', enabled: true },
+			startChild: intent === 'start',
+			fingerprint: pin.fingerprint,
+		});
+		process.stdout.write(intent === 'start' ? 'managed daemon started\n' : 'managed daemon installed and idle\n');
+		return;
+	}
+	if (command === 'resume-fresh') {
+		const stateRoot = await realpath(PATHS.insrc);
+		const active = (await new InstallationMutationGate(stateRoot).read()).active;
+		if (active?.kind !== 'start' || active.activation === undefined) {
+			const release = process.argv[3];
+			const selected = release === undefined ? undefined : await readInstallationSelector(stateRoot);
+			if (active === null && release !== undefined && selected?.enabled === true && selected.releaseRoot === await realpath(release)) {
+				const link = await openManagedSupervisorLink(selected);
+				try {
+					const status = accepted(await link.call({ op: 'status', generation: null }));
+					if (status.state !== 'idle' && status.state !== 'running') throw new Error('completed fresh installation is not settled');
+				} finally { link.close(); }
+				return;
+			}
+			process.exitCode = NOT_MANAGED;
+			return;
+		}
+		await activateFreshManagedDaemon(active.activation);
+		process.stdout.write('managed daemon activation recovered\n');
+		return;
+	}
 	if (command === 'stage' || command === 'stage-legacy') return stage(process.argv[3], process.argv[4], command === 'stage-legacy');
 	if (command === 'migrate') return migrate(process.argv.slice(3));
 	if (!['start', 'stop', 'restart', 'update', 'status', 'recover'].includes(command)) return legacyStop(command);
 
 	const installation = await readInstallationSelector(PATHS.insrc);
-	if (installation === undefined) { process.exitCode = NOT_MANAGED; return; }
+	if (installation === undefined) {
+		if (process.platform === 'darwin' && await access(installationPaths(PATHS.insrc).directory).then(() => true, () => false)) {
+			const active = (await new InstallationMutationGate(PATHS.insrc).read()).active;
+			if (active?.kind === 'start' && active.activation !== undefined) {
+				if (command !== 'recover') throw new Error('fresh daemon activation is in progress; retry the installer to recover');
+				await activateFreshManagedDaemon(active.activation);
+				return;
+			}
+		}
+		process.exitCode = NOT_MANAGED;
+		return;
+	}
 	const control = new ManagedDaemonControl(installation);
 	const gate = new InstallationMutationGate(installation.stateRoot);
 	const active = (await gate.read()).active;
@@ -113,6 +161,10 @@ async function main(command: string): Promise<void> {
 		return;
 	}
 	if (command === 'recover') {
+		if (active?.kind === 'start' && active.activation !== undefined) {
+			await activateFreshManagedDaemon(active.activation);
+			return;
+		}
 		if (active?.kind === 'update') {
 			const outcome = await recoverInstalledManagedUpdate(gate, active.id, await readDarwinIncarnation(process.pid));
 			process.stdout.write(`${outcome.decision}: ${outcome.detail}\n`);

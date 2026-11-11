@@ -33,8 +33,15 @@ export interface UpdatePredecessor {
 }
 
 export type MutationRequest =
-	| { readonly kind: 'start' | 'stop' | 'restart'; readonly owner: DarwinIncarnation }
+	| { readonly kind: 'start'; readonly owner: DarwinIncarnation; readonly activation?: FreshActivation }
+	| { readonly kind: 'stop' | 'restart'; readonly owner: DarwinIncarnation }
 	| { readonly kind: 'update'; readonly owner: DarwinIncarnation; readonly predecessor: UpdatePredecessor };
+
+export interface FreshActivation {
+	readonly installation: ManagedInstallation;
+	readonly startChild: boolean;
+	readonly fingerprint: string;
+}
 
 export interface MutationAuthority {
 	readonly id: string;
@@ -132,8 +139,19 @@ function validPredecessor(value: unknown): value is UpdatePredecessor {
 }
 
 function validRequest(value: unknown): value is MutationRequest {
-	return object(value) && validOwner(value.owner) && (value.kind === 'start' || value.kind === 'stop'
+	return object(value) && validOwner(value.owner) && ((value.kind === 'start'
+		&& (value.activation === undefined || validActivation(value.activation))) || value.kind === 'stop'
 		|| value.kind === 'restart' || (value.kind === 'update' && validPredecessor(value.predecessor)));
+}
+
+function validActivation(value: unknown): value is FreshActivation {
+	if (!object(value) || typeof value.startChild !== 'boolean' || !object(value.installation)) return false;
+	const pin = value.installation;
+	return pin.version === 1 && pin.enabled === true && typeof pin.releaseId === 'string'
+		&& /^(?:[a-f0-9]{40}|[a-f0-9]{64})$/.test(pin.releaseId)
+		&& [pin.stateRoot, pin.releaseRoot, pin.runtime].every(path => text(path) && isAbsolute(path))
+		&& typeof pin.pathEnv === 'string' && !/[\r\n\0]/.test(pin.pathEnv)
+		&& typeof value.fingerprint === 'string' && /^[a-f0-9]{64}$/.test(value.fingerprint);
 }
 
 function validEntries(value: unknown): value is readonly JournalEntry[] {
@@ -163,6 +181,8 @@ function readJournal(bytes: string, root: string, uid: number): InstallationJour
 		|| !text(outcome.detail) || (outcome.finishedAt !== undefined
 			&& (typeof outcome.finishedAt !== 'string' || !Number.isFinite(Date.parse(outcome.finishedAt)))))) conflict('invalid installation outcome');
 	const journal = parsed as unknown as InstallationJournal;
+	if (journal.active?.kind === 'start' && journal.active.activation !== undefined
+		&& journal.active.activation.installation.stateRoot !== root) conflict('fresh activation names another installation root');
 	if (journal.active !== null && journal.outcome !== null && journal.active.id === journal.outcome.id
 		&& journal.active.kind !== 'update') {
 		conflict('update outcome belongs to an ordinary lifecycle reservation');
@@ -278,6 +298,8 @@ export class InstallationMutationGate {
 		return this.arbitrate(async (state, uid) => {
 			if (state.active !== null) busy();
 			if (!validRequest(request) || request.owner.uid !== uid) conflict('invalid installation owner');
+			if (request.kind === 'start' && request.activation !== undefined
+				&& request.activation.installation.stateRoot !== this.root) conflict('fresh activation names another installation root');
 			const active: MutationReservation = { ...request, id: randomUUID(), entries: [] };
 			await this.write({ ...state, active });
 			return active;

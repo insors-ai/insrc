@@ -260,7 +260,8 @@ socket_status() {
 supervised_lifecycle() {
 	[ "$(uname -s)" = "Darwin" ] || return 10
 	local manifest="$HOME/.insrc/managed-lifecycle/installation.json"
-	[ -e "$manifest" ] || [ -L "$manifest" ] || return 10
+	local journal="$HOME/.insrc/managed-lifecycle/journal.json"
+	[ -e "$manifest" ] || [ -L "$manifest" ] || [ -e "$journal" ] || [ -L "$journal" ] || return 10
 	local helper="$DAEMON_ROOT/out/bin/insrc-daemon-control.js" result rc
 	[ -f "$helper" ] || { log "ERROR: managed lifecycle helper missing at $helper"; return 4; }
 	if result=$(node "$helper" "$1" "$STOP_WAIT_SECS" 2>&1); then

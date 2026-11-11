@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1794286314085-je1m1w",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T04:52:20.369Z",
+    "epicCreatedAt": "2026-11-10T04:52:20.369Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 26281,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "3992d2e1e26124dc",
+    "epicSlug": "restore-reliable-daemon-restart-macos",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b01c3975b1ebe53a2fcc519a67cb1214b4d796b5adec873747c3ae889a99b252",
+        "at": "2026-11-10T04:52:20.384Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-10T04:52:54.900Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "parentRef": {
+      "epicHash": "3992d2e1e26124dc",
+      "slug": "EPIC-3992d2e1e26124dc"
+    }
+  },
+  "body": {
+    "title": "Restore reliable daemon restart on macOS",
+    "reproduction": "Start the installed v2 daemon on Apple Silicon macOS as the logged-in user with Homebrew Node. Run scripts/daemon-ctl.sh restart while that daemon is running. The stop helper reports “process capability broker refused: denied (errno 1)” and withholds restart. A direct, read-only broker probe against that daemon outside the sandbox returns ERROR denied 1. Requesting shutdown over the existing socket reaches the watchdog but logs the same denial before the graceful drain. Expected behavior is to drain and stop the old daemon, verify its exit, and start exactly one replacement. A temporary per-user LaunchAgent restored service on the affected machine.",
+    "rootCause": "Both the CLI stop path and the daemon's independent shutdown watchdog require the same native retained process capability. The Darwin backend acquires a Mach task right and validates the process identity before readiness. A permission denial is reported without distinguishing the failed native operation. The CLI then withholds the stop before sending shutdown IPC. The daemon itself also arms the watchdog before stopping background work, so capture failure triggers emergency exit before the graceful drain.",
+    "fixIntent": "Provide a supported same-user macOS lifecycle that can complete graceful stop and restart without requiring a debugger task right. Preserve bounded recovery when the daemon hangs, verified exit before replacement, and guarded PID and socket ownership. Cover CLI, shell and daemon shutdown entry points while preserving Linux behavior and existing IPC compatibility. Evaluate per-user supervision during design, including migration from a live legacy installation and the temporary recovery job. Qualify a normal restart, blocked shutdown, stale runtime files and replacement ownership on real macOS using isolated test instances."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/cli/services/lifecycle.ts:57"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/bin/insrc-shutdown-watchdog.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/shutdown.ts:169"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/run-file-ownership.ts:103"
+    },
+    {
+      "id": "c5",
+      "kind": "doc",
+      "ref": "/tmp/insrc/daemon-ctl-20261109-145703-15150.log"
+    },
+    {
+      "id": "c6",
+      "kind": "doc",
+      "ref": "/tmp/.insrc/daemon.log"
+    },
+    {
+      "id": "c7",
+      "kind": "stakeholder",
+      "ref": "In-chat macOS restart reproduction and same-user broker probe"
+    }
+  ]
+}

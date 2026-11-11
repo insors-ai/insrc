@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-26bc8653-9d03-4f2f-a380-91bf4c26f4ce",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T18:01:41.560Z",
+    "epicCreatedAt": "2026-11-10T17:43:51.648Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3ec4189b758be646",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Invariant guard: claude/codex activity args unchanged",
+      "parent": {
+        "entityId": "STORY-3ec4189b758be646-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3ec4189b758be646-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-3ec4189b758be646-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "9fc242e09163a756e6b1422a99442ef23548b5b049aecf27d890fb407e07c300",
+        "at": "2026-11-10T18:01:41.569Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-10T18:01:41.575Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Invariant guard: claude/codex activity args unchanged",
+    "summary": "Regression-guard that claude/codex activity arg construction is byte-identical after the t1 edit (invariant c2 of the LLD): only the runInProcessGroup opts gain env.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "claudeReviewSessionArgs + stream-json/--verbose/--include-partial-messages arg construction unchanged",
+      "codexReviewSessionArgs tmp-schema flow unchanged",
+      "no opts/env changes alter args; only opts.env is added"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "T5-claude-codex-activity-args-unchanged"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

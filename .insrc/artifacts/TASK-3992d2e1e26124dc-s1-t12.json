@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-66a20362-4984-4acb-8102-e6dce6cc480b",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T11:23:35.748Z",
+    "epicCreatedAt": "2026-11-10T04:52:20.369Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3992d2e1e26124dc",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Correlate update confirmation in VS Code and JetBrains",
+      "parent": {
+        "entityId": "STORY-3992d2e1e26124dc-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3992d2e1e26124dc-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-3992d2e1e26124dc-s1-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "621361ad35dcd870831ebb62b2870d6cbf4ee442bdb425bd9721a5beeb8fa1ee",
+        "at": "2026-11-10T14:07:39.290Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-10T11:23:35.751Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Correlate update confirmation in VS Code and JetBrains",
+    "summary": "Both IDEs confirm managed transactions only on their acknowledged update ID and show pending confirmation when the outcome cannot be retrieved. Keep the existing fallback for legacy responses.",
+    "size": "M",
+    "order": 12,
+    "acceptanceChecks": [
+      "Changed installedCommit and unrelated terminal results do not confirm a managed update",
+      "Both IDEs handle rollback, lost acknowledgement and a legacy daemon"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Correlated update outcomes ignore unrelated terminal records and changed installedCommit"
+      },
+      {
+        "level": "integration",
+        "name": "Candidate status projects the prior commit during validation and a later rollback in both IDE confirmation flows"
+      },
+      {
+        "level": "integration",
+        "name": "Lost update acknowledgement does not trigger an automatic duplicate request"
+      }
+    ],
+    "planTaskId": "t12"
+  },
+  "citations": []
+}

@@ -1,0 +1,664 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1794414767042-nsonkp",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T16:36:11.393Z",
+    "epicCreatedAt": "2026-11-11T16:00:50.440Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 203464,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5d5478c61a25ac8f",
+    "epicSlug": "enable-managed-daemon-lifecycle-macos-install",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1794414767042-nsonkp",
+    "hldEffectiveHash": "72b5eb5ef17cbb9823d7868cf0edd7d2bdf6fe4687172a74f0414d28ce6fa2dc",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Design the approved macOS installer and automatic existing-install migration fix from ISSUE-5d5478c61a25ac8f",
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "abc5eb009b462bf0a67fbb2f09474ce6399e2cb73d9ada068adfb266a7f8b943",
+        "at": "2026-11-11T16:36:11.729Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 2,
+        "reviewer": {
+          "id": "agent:design-review-daemon",
+          "kind": "agent",
+          "properties": {
+            "party": "daemon"
+          }
+        },
+        "party": "daemon",
+        "verdict": "block",
+        "counts": {
+          "HIGH": 2,
+          "MED": 8,
+          "LOW": 2
+        },
+        "at": "2026-11-11T16:51:02.469Z",
+        "report": {
+          "entityId": "LLD-5d5478c61a25ac8f-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "f0d16393970871b97ea74f6c79d99ddf4d10b54c44712223dba61e8c89845a21"
+        }
+      },
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T16:53:38.368Z",
+        "override": {
+          "reason": "The user explicitly approved the whole design-review override after presentation, including the open functional findings. Waive independent visual verification and accept the unresolved design findings for update acknowledgement timing before detached preparation, journaled run-file guard transfer and recovery, and restoration of a previously registered stopped LaunchAgent without starting its daemon. The review also carries earlier findings because verification was incomplete. Local rendering was verified; the generated linear diagram does not express mutually exclusive paths."
+        }
+      }
+    },
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "revision": 2,
+    "rangeBase": "ab6a96296ea6f2bde948636424218c0a23136c74"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "The normal macOS installer provisions a per-user supervisor. The first upgrade stages and qualifies a separate release, then switches the supported legacy entry points to a guarded launcher before touching the running daemon. Existing configuration, data, and running state are preserved through verified rollback."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Design the approved macOS installer and automatic existing-install migration fix from ISSUE-5d5478c61a25ac8f"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "stageManagedInstallation",
+          "signature": "stageManagedInstallation(installation: ManagedInstallation, revalidate: () => Promise<void>, legacyCutover?: boolean): Promise<void>",
+          "parameters": [
+            {
+              "name": "installation",
+              "type": "ManagedInstallation",
+              "purpose": "Identifies the owned state root, release, runtime and selector.",
+              "optional": false
+            },
+            {
+              "name": "revalidate",
+              "type": "() => Promise<void>",
+              "purpose": "Verifies transaction ownership before a write.",
+              "optional": false
+            },
+            {
+              "name": "legacyCutover",
+              "type": "boolean",
+              "purpose": "Selects staging for a verified predecessor.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Writes the staged disabled selector and its descriptor only."
+          },
+          "errors": [
+            {
+              "type": "SupervisorLifecycleError",
+              "condition": "Selector, descriptor, or state root conflicts with the reservation."
+            }
+          ],
+          "preconditions": [
+            "The installer controller owns an activation reservation with the explicit start intent and candidate pin. It has verified the canonical root, GUI launchd domain and quiescent fresh state."
+          ],
+          "postconditions": [
+            "The installer controller journals descriptor and provisional-selector publication, exact job registration and idle handshake, and optional child readiness. Enable the selector under the reservation before controller admission. Release the reservation only after a verified idle or running result is durable. --no-start leaves an enabled selector and an idle supervisor. Recovery replays an exact matching partial pair or removes only artifacts created by the activation and restores prior absence."
+          ]
+        },
+        {
+          "name": "completeLegacyMigration",
+          "signature": "completeLegacyMigration(gate: InstallationMutationGate, update: UpdateReservation, pins: ManagedUpdatePins): Promise<DaemonUpdateOutcome>",
+          "parameters": [
+            {
+              "name": "gate",
+              "type": "InstallationMutationGate",
+              "purpose": "Owns the cutover and recovery reservation.",
+              "optional": false
+            },
+            {
+              "name": "update",
+              "type": "UpdateReservation",
+              "purpose": "Identifies verified predecessor, release, fence and desired state.",
+              "optional": false
+            },
+            {
+              "name": "pins",
+              "type": "ManagedUpdatePins",
+              "purpose": "Carries the qualified prior and candidate releases.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<DaemonUpdateOutcome>",
+            "meaning": "Verified committed cutover, verified rollback, or fenced recovery."
+          },
+          "errors": [
+            {
+              "type": "SupervisorLifecycleError",
+              "condition": "A release, launch route, exact exit, or recovery state cannot be verified."
+            }
+          ],
+          "preconditions": [
+            "Use the migration-capable installer or updater to prepare the release before invoking any shutdown path. Freeze the canonical legacy launch and checkout paths and verify old mutating helpers are absent before cutover. Verify the pinned predecessor and public socket before sending shutdown."
+          ],
+          "postconditions": [
+            "Use the journaled predecessor variant for exit, launchd job removal when applicable, and rollback. Publish a provisional selector before bootstrap. Mark terminal success only after exact candidate registration and verified idle or ready state. Retain a fenced reservation after uncertain outcome publication until recovery has read the matching durable outcome."
+          ]
+        },
+        {
+          "name": "launchManagedUpdate",
+          "signature": "launchManagedUpdate(entry: string, args: readonly string[], awaitReply: () => Promise<boolean>): Promise<{ launched: true; updateId: string }>",
+          "parameters": [
+            {
+              "name": "entry",
+              "type": "string",
+              "purpose": "Pins the detached controller executable.",
+              "optional": false
+            },
+            {
+              "name": "args",
+              "type": "readonly string[]",
+              "purpose": "Carries the owned release and operation inputs.",
+              "optional": false
+            },
+            {
+              "name": "awaitReply",
+              "type": "() => Promise<boolean>",
+              "purpose": "Confirms that the update acknowledgement was written.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<{ launched: true; updateId: string }>",
+            "meaning": "Returns the admitted update identity while the helper owns completion."
+          },
+          "errors": [
+            {
+              "type": "SupervisorLifecycleError",
+              "condition": "An update is already active or the helper cannot qualify the candidate."
+            }
+          ],
+          "preconditions": [
+            "The running managed daemon routes daemon.update to the transactional helper after candidate preparation and retains its response-written handshake. Shell and TUI update have a local controller route for a stopped installation."
+          ],
+          "postconditions": [
+            "Managed updates use the same release preparation and transaction for running and stopped cases. A stopped install stays stopped. Preserve existing IPC result shapes and omit the legacy self-shutdown timer for managed requests."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "InstallationMutationGate activation reservation",
+        "change": "field-add",
+        "details": "Persist one activation reservation per state root with exact owner, candidate and explicit start intent. Journal descriptor, provisional selector, exact registration, child admission, readiness and terminal outcome with identities. Previous journals remain decodable. Activation cleanup reverses only receipted owned mutations.",
+        "callSites": [
+          "src/shared/installation-mutation-gate.ts",
+          "src/shared/managed-daemon-installation.ts",
+          "src/bin/insrc-daemon-control.ts"
+        ]
+      },
+      {
+        "entity": "UpdatePredecessor",
+        "change": "invariant-change",
+        "details": "Persist a tagged managed, legacy-job, legacy-direct, or legacy-stopped predecessor. All variants bind canonical state root, prior release/runtime and candidate pin, selector baseline or absence, and prior running state. Managed carries supervisor generation. Legacy-job carries descriptor path/hash, verified label, UID, launchd domain, program argv, working directory and RunAtLoad policy. Running legacy-job and legacy-direct carry exact process incarnation, authenticated socket peer and pinned PID/socket identities. Legacy-direct also carries rollback argv, cwd and a release-qualified environment recipe reconstructed from the supported launcher, without persisting credentials. Legacy-stopped carries proof of no live process and either a pinned idle job or verified absence. Decode historical predecessor.legacy as legacy-job and older enabled prior without legacy as managed. Reject unknown or contradictory variants. Persist each observed exit, its drain classification, and ownership-fence evidence before candidate bootstrap.",
+        "callSites": [
+          "src/shared/installation-mutation-gate.ts",
+          "src/daemon/managed-update-recovery.ts",
+          "src/daemon/legacy-launch-job.ts",
+          "src/daemon/legacy-daemon-cutover.ts"
+        ]
+      },
+      {
+        "entity": "Release qualification and launcher fence",
+        "change": "invariant-change",
+        "details": "One stable launcher location dispatches to one immutable selected release. The updater builds and verifies candidate and rollback copies under owner-private commit-addressed release roots. Preserve the prior executable, native dependencies, runtime path, configuration references and release identity before mutating the old checkout. Release metadata tied to the trusted configured origin and tested release pair supplies writable-format declarations and the exact legacy commit allowlist, including known predecessors that lack a declaration. Local observations establish identity, not qualification. Unqualified or modified prior releases are refused before mutation. Keep immutable pins and journaled launcher exchanges until settlement.",
+        "callSites": [
+          "scripts/insrc-daemon-install.sh",
+          "src/shared/managed-daemon-installation.ts",
+          "src/daemon/release-compatibility.ts",
+          "src/daemon/managed-update-launch.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "An older launcher or updater can still mutate the legacy install",
+          "detection": "Resolve the canonical checkout and every supported launch route. Atomically exchange the canonical checkout entry with a gate-aware dispatcher on the same filesystem while the old daemon is still running. Preserve the displaced checkout separately. Before stopping, verify the dispatcher and archived checkout identities, an absent or owned legacy update marker, and absence of known old shell, detached helper and installer processes bound to the retired root, using verified argv and cwd. Repeat admission after the swap. An unrecognized launch path, unresolved process identity, live old mutator, or exchange failure makes exclusivity unproven.",
+          "response": "The dispatcher rejects concurrent mutation while cutover owns the reservation. Qualify only predecessors that acquire the shared run-file guard before opening data and whose shipped old commands use the canonical absolute entry. Keep that guard through owned cleanup and transfer it to candidate startup before the legacy route can reacquire it. Refuse when another legacy route cannot be fenced. Preserve or restore the old service before releasing a failed admission.",
+          "userImpact": "The supported update retries safely after a concurrent operation ends.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Predecessor job or runtime does not match the qualified route",
+          "detection": "Match the verified launchd registration against its owned descriptor bytes and approved exact argv. Match direct socket peer and executable against the qualified launch recipe. Accept the documented recovery LaunchAgent only with its pinned tsx loader arguments, canonical entry, matching working directory, bounded owned descriptor and passive restart policy.",
+          "response": "Reject foreign jobs, unknown loaders or args, conflicting restart policy and unverifiable direct rollback settings before disruption. Recheck the descriptor, PID incarnation and run-file identities immediately before each action.",
+          "userImpact": "The updater reports the unsupported predecessor while preserving the current service.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Exit is unconfirmed or graceful drain cannot be classified",
+          "detection": "Observe the exact predecessor exit independently of the broker and bind any qualified terminal evidence to the authenticated shutdown request and process incarnation. An RPC acknowledgement, socket close, PID disappearance, or generic log entry alone does not prove a graceful drain.",
+          "response": "Withhold candidate admission until exact exit is proved. Journal the exit plus graceful, broker-denied, or unknown. Use graceful only for a qualified positive completion signal, broker-denied only for correlated watchdog evidence, and unknown otherwise. Both broker-denied and unknown require a release pair explicitly qualified for crash-consistent reopening. Report the observed classification in the update detail.",
+          "userImpact": "The user can distinguish a verified shutdown from an exit whose drain could not be confirmed.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Candidate bootstrap or readiness fails before a durable outcome",
+          "detection": "Registration, startup generation, owned run files, or candidate idle/readiness cannot be verified.",
+          "response": "Reconcile the candidate under the reservation, restore the prior selector or absence and the canonical launcher, then restore and verify the exact previous job or direct launch only if it was running. Retain a fence when restoration is unverified.",
+          "userImpact": "Verified rollback restores the previous service state and reports the failed update.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Outcome publication throws or its acknowledgement is lost",
+          "detection": "Publication fails, or retry sees an active reservation without a verified terminal reply.",
+          "response": "Keep the reservation. Re-read the exact matching durable outcome through existing recovery. A durable success verifies or completes activation without rollback. A durable rollback verifies the old state. Only a proven uncommitted transaction can unwind. Unknown ownership remains fenced.",
+          "userImpact": "The updater reports an unconfirmed result until recovery determines the terminal state.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Fresh --no-start",
+          "expected": "Register the supervisor, enable the selector and verify idle with no daemon child. Subsequent normal start uses the same supervisor."
+        },
+        {
+          "input": "Already-managed update when the daemon is stopped",
+          "expected": "The external controller prepares and commits the update using supervisor status; no daemon RPC is required. Keep the candidate idle."
+        },
+        {
+          "input": "Legacy daemon remains running while the candidate is staged",
+          "expected": "Build outside the live root, preserve the running predecessor and only then acquire a cutover reservation. Failed fetch, build, or qualification leaves the running install unchanged."
+        },
+        {
+          "input": "An unchanged older shell or IDE freshness client invokes legacy restart or daemon.update",
+          "expected": "An old client cannot acquire new preflight behavior before executing its existing shutdown sequence. The first upgrade is delivered by the current standard installer or the ordinary update action in updated IDE clients. The installer may be rerun on an existing installation without launchctl or file edits. Never present an old acknowledgement as migration success."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "One state root has at most one daemon process admitted to use its stores.",
+          "source": "c2"
+        },
+        {
+          "text": "Committed success is never rolled back because the publication reply was lost.",
+          "source": "c4"
+        },
+        {
+          "text": "Linux keeps its current lifecycle and update behavior.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Verify admission, qualification, journal compatibility and outcome recovery.",
+          "subjects": [
+            "Predecessor variants and backward decoding",
+            "Explicit fresh activation start intent and owned partial publication",
+            "Release provenance, changed bytes and absent legacy declaration",
+            "Graceful, broker-denied and unknown drain evidence",
+            "Uncertain publication with durable success versus no outcome"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Drive supported entry points and competing legacy operations through the real controller boundaries.",
+          "subjects": [
+            "Installer and updated CLI, VS Code and JetBrains route matrix",
+            "Running managed update IPC and stopped local managed update",
+            "Old shell/helper concurrent with canonical launcher exchange and old child attempting to open stores",
+            "Startup guard transfer, candidate bootstrap failure, rollback and repeated recovery",
+            "Linux normal install, update and restart unchanged"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Verify actual launchd and daemon state on macOS.",
+          "subjects": [
+            "Fresh install and verified ordinary restart",
+            "Fresh --no-start and later supervisor start",
+            "First supported update of a qualified prior build with broker denial",
+            "Direct install and passive recovery job with exact loader argv",
+            "Verified stopped and running rollback with configuration and store integrity"
+          ],
+          "fixturesNeeded": [
+            "Disposable macOS state roots and isolated launchd labels",
+            "Pinned released predecessors, including the regression and clean-drain cases"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "Fresh install and verified ordinary restart",
+            "Fresh --no-start and later supervisor start"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "Installer and updated CLI, VS Code and JetBrains route matrix",
+            "First supported update of a qualified prior build with broker denial",
+            "Direct install and passive recovery job with exact loader argv",
+            "Old shell/helper concurrent with canonical launcher exchange and old child attempting to open stores"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "Running managed update IPC and stopped local managed update",
+            "Verified stopped and running rollback with configuration and store integrity",
+            "Uncertain publication with durable success versus no outcome",
+            "Linux normal install, update and restart unchanged"
+          ]
+        }
+      ],
+      "testFramework": "Node.js test runner via tsx, installed shell integration fixtures, and real macOS launchd smoke tests in disposable state roots."
+    },
+    "migration": {
+      "stateBefore": "The installed shell restarts by stopping before preparing a new release, and daemon.update launches its helper and schedules shutdown. The normal installer mutates the checkout in place. The supervisor and transactional update exist but ordinary fresh install and managed update do not provision their inputs. See the s1 discovery bundle.",
+      "stateAfter": "Current install and update entry points share a migration-capable controller and immutable releases. A supported first upgrade retains the previous release and establishes one verified per-user supervisor. User data remains in the existing state root.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Use the current standard installer for both fresh installs and first upgrades. Updated VS Code and JetBrains lifecycle Update on unmanaged Darwin dispatch the packaged migration-capable installer in existing-install mode with the configured branch and root. Updated freshness clients route unmanaged Darwin to that same action before sending any daemon.update RPC. A migration-capable shell or TUI starts the same external preflight on ordinary Update. For already-installed binaries that cannot obtain new code before shutdown, the supported first-upgrade action is the current standard installer, including the normal Install action in an updated IDE. No manual service administration is part of that path.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Fetch the configured origin into a separate staging root, build the candidate, and validate release metadata and runtime. Pin the exact predecessor commit, compatibility record and rollback artifacts before changing any installed pathname. Use the trusted release allowlist for old builds missing an on-disk declaration. Confirm launchd and supported predecessor route. Fresh install enters the activation reservation with explicit start intent.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "For legacy cutover, reserve and atomically replace the canonical installed checkout entry with a gate-aware dispatcher while preserving its original directory identity. Recover either side of the exchange by journaled inode evidence. Recheck for in-flight old helpers, update markers, unsupported launch routes, and mismatched job registrations. The dispatcher has no old executable or mutable checkout target. Refuse when the old launcher or writer cannot be excluded. Keep the prior checkout pinned until rollback is no longer needed.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Authenticate the running predecessor over the pinned socket and observe exact exit. While the canonical launcher remains fenced, acquire the legacy-compatible run-file guard before cleanup, reconcile only the recorded publications, and retain the guard until a verified supervisor has adopted it for startup. Transfer owner evidence under the same directory identity with no unguarded interval. Remove a verified passive old job after its child exits. Apply the stored outcome policy for graceful, broker-denied, or unknown exit.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Journal the provisional selector and register the supervisor. Start a child for a normal fresh install or previously running update. Verify idle for --no-start or previously stopped update. Publish the matching durable terminal record before release. An already-managed shell/TUI update uses the external transaction even when stopped, and the running managed RPC uses the detached helper and acknowledgement handshake.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Recover from interrupted activation or cutover using the matching durable outcome. Restore an uncommitted predecessor by reversing owned mutations, restoring the canonical legacy entry and revalidating the predecessor's exact original launch route. Retain a fence on uncertainty. Do not roll back a verified durable success.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Preserve the CLI flags, configured source, IDE IPC result shapes, supported user settings, Linux behavior and historical journal decoding. Existing binaries that stop before they can fetch the migration use the current normal installer for the first upgrade. The canonical installed launcher remains a compatible entry point after migration.",
+      "zeroDowntime": false,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Stage a bridge before cutover",
+        "oneLineSummary": "A common updater prepares releases and fences the old entry point before changing ownership.",
+        "approach": "Reuse the supervisor and outcome transactions with explicit install, stopped legacy, live legacy, and already-managed admissions. Ship the bridge through the normal installer and updated clients.",
+        "pros": [
+          "Retains the old executable for rollback.",
+          "Provides a single place to enforce preflight across current entry points."
+        ],
+        "cons": [
+          "Requires a qualified predecessor and a provable cutover fence."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Migrate at a later start",
+        "oneLineSummary": "Apply the new supervisor only after the daemon has stopped.",
+        "approach": "Defer all lifecycle changes to a later start after a verified legacy stop.",
+        "pros": [
+          "Simplifies handling a stopped installation."
+        ],
+        "cons": [
+          "Leaves broker-denied live installations unable to complete ordinary update."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Requires a stopped predecessor and can strand an affected user."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "id": "macos-install-cutover",
+      "narrative": "The success routes cover running and stopped installs. The final messages show the alternative uncommitted failure route and the fence retained when recovery remains uncertain.",
+      "participants": [
+        {
+          "id": "entry",
+          "label": "Installer / update",
+          "description": "Stages a release through a supported entry point."
+        },
+        {
+          "id": "control",
+          "label": "Controller",
+          "description": "Owns the journal and cutover fence."
+        },
+        {
+          "id": "old",
+          "label": "Legacy service",
+          "description": "Pinned predecessor process and job, if present."
+        },
+        {
+          "id": "new",
+          "label": "Supervisor",
+          "description": "Owns the candidate daemon or verifies idle."
+        },
+        {
+          "id": "child",
+          "label": "Daemon",
+          "description": "Candidate serving only after admission."
+        }
+      ],
+      "messages": [
+        {
+          "from": "entry",
+          "to": "control",
+          "label": "Stage and qualify",
+          "description": "Pin both releases before shutting down the predecessor."
+        },
+        {
+          "from": "control",
+          "to": "control",
+          "label": "Reserve and fence",
+          "description": "Journal the entry switch and exclude older writers."
+        },
+        {
+          "from": "control",
+          "to": "old",
+          "label": "If running: request exit",
+          "description": "Authenticate the socket and observe exact exit."
+        },
+        {
+          "from": "old",
+          "to": "control",
+          "label": "Verified exit",
+          "description": "Keep the launcher fenced and reconcile owned publications."
+        },
+        {
+          "from": "control",
+          "to": "new",
+          "label": "Publish selector, register job",
+          "description": "Verify the exact supervisor and admit the requested state."
+        },
+        {
+          "from": "new",
+          "to": "child",
+          "label": "Running route: start",
+          "description": "Start one child if requested or previously running."
+        },
+        {
+          "from": "child",
+          "to": "new",
+          "label": "Running route: readiness",
+          "description": "Verify authenticated child and publication identities."
+        },
+        {
+          "from": "new",
+          "to": "control",
+          "label": "Stopped route: verify idle",
+          "description": "No child is admitted and no daemon readiness is expected."
+        },
+        {
+          "from": "control",
+          "to": "entry",
+          "label": "Success: commit result",
+          "description": "Persist verified running or stopped state."
+        },
+        {
+          "from": "control",
+          "to": "new",
+          "label": "Before commit: reconcile candidate",
+          "description": "On verified uncommitted failure, stop the exact candidate and remove its owned job."
+        },
+        {
+          "from": "control",
+          "to": "old",
+          "label": "Rollback: restore prior state",
+          "description": "Restore the selector or absence, launcher and prior service state."
+        },
+        {
+          "from": "control",
+          "to": "entry",
+          "label": "Report rollback or keep fence",
+          "description": "Report restored state only when verified. Retain the fence on ambiguous ownership or terminal publication."
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/enable-managed-daemon-lifecycle-macos-install-E202611115d5478c6/S001/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "scripts/insrc-daemon-install.sh"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/shared/managed-daemon-installation.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/managed-update-recovery.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/managed-update-transaction.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/bin/insrc-daemon-control.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/daemon/legacy-launch-job.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/daemon/legacy-daemon-cutover.ts"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/daemon/update-runner.ts"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/daemon/admin-handlers.ts"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/daemon/release-compatibility.ts"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/daemon/index.ts"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "src/shared/daemon-run-files.ts"
+    },
+    {
+      "id": "c13",
+      "kind": "code",
+      "ref": "scripts/daemon-ctl.sh"
+    },
+    {
+      "id": "c14",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-5d5478c61a25ac8f"
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-44462ec4-b8a7-47c4-9a82-2146653189ca",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T18:01:41.627Z",
+    "epicCreatedAt": "2026-11-10T17:43:51.648Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3ec4189b758be646",
+    "storyId": "s1",
+    "envelope": {
+      "description": "cli-vibe catalog: mistral-large-4 entry with verified efforts",
+      "parent": {
+        "entityId": "STORY-3ec4189b758be646-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3ec4189b758be646-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "8b86269b2887fdd63215ff26b8e5c3bc81bda379586b054c870cadd3ef9ef773",
+        "at": "2026-11-10T18:01:41.636Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-10T18:01:41.641Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "cli-vibe catalog: mistral-large-4 entry with verified efforts",
+    "summary": "Add the versioned mistral-large-4 entry (verified efforts only) to the cli-vibe family in cloud-model-catalog.json; catalog validation unchanged and still rejects unverified selections.",
+    "size": "S",
+    "order": 7,
+    "acceptanceChecks": [
+      "cli-vibe family gains { id: 'mistral-large-4', displayName: 'Mistral Large 4', efforts: [<runtime-verified only>] } in src/assets/models/cloud-model-catalog.json",
+      "model-catalog.ts cliKind/family validation passes on the new entry",
+      "uncatalogued model or unverified effort still throws VibeSelectionError before any turn (vibe-session.ts:385,403-404)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "T9-catalog-large4-entry-verified-efforts"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

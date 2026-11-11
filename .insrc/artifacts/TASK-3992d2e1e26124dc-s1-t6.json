@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-573a92c6-03cd-4f2a-baa1-138dc99c36fc",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T11:23:35.710Z",
+    "epicCreatedAt": "2026-11-10T04:52:20.369Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3992d2e1e26124dc",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Wire managed daemon readiness, shutdown and watchdog",
+      "parent": {
+        "entityId": "STORY-3992d2e1e26124dc-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3992d2e1e26124dc-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-3992d2e1e26124dc-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-3992d2e1e26124dc-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-3992d2e1e26124dc-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 3,
+        "contentHash": "cf7e2c071c1da30f65522f6230cb028aae98dac6a5331115d1bcffa4882e75b4",
+        "at": "2026-11-10T15:00:26.698Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-10T11:23:35.712Z"
+      }
+    },
+    "revision": 3
+  },
+  "body": {
+    "title": "Wire managed daemon readiness, shutdown and watchdog",
+    "summary": "Integrate inherited ready/drain/arm and public shutdown admission in the daemon and both dispatch modes. Preserve local-signal emergency behavior and legacy/Linux broker routes. Avoid enabling installed rollout until the controller and updater are wired.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "Public shutdown cannot bypass an update reservation",
+      "Admitted drains and local signals keep independent generation-bound deadlines, with no managed Mach broker call"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Managed watchdog arm has reserved capacity during a controller request burst"
+      },
+      {
+        "level": "integration",
+        "name": "IPC and signal shutdown with no controller"
+      },
+      {
+        "level": "integration",
+        "name": "Hung before shutdown reply and hung native close after watchdog readiness"
+      },
+      {
+        "level": "smoke",
+        "name": "Linux existing pidfd and watchdog suites"
+      },
+      {
+        "level": "integration",
+        "name": "Hold a client connection open during managed server.close and confirm forced reap releases the supervisor guard and permits exactly one restart"
+      },
+      {
+        "level": "integration",
+        "name": "Public RPC arm gets busy during update while an admitted drain and local signal preserve their watchdog path"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

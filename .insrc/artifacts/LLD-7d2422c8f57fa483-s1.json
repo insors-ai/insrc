@@ -1,0 +1,575 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1794410314395-9seizo",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T15:22:35.447Z",
+    "epicCreatedAt": "2026-11-11T14:26:38.657Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "claude-opus-5-5"
+        }
+      ]
+    },
+    "elapsedMs": 240609,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7d2422c8f57fa483",
+    "epicSlug": "code-review-reuse-refused-when-only",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1794410314395-9seizo",
+    "hldEffectiveHash": "8d914e7749757415268bf2e0dd5a5b0a2f6dbed3582a0f945a42e555daf4e71a",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Let code-review reuse survive provenance-only test-row changes",
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "triageRationale": "Sized bugfix ISSUE-7d2422c8f57fa483, approved 2026-11-11; revised after design review rounds 1 and 2.",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 3,
+        "contentHash": "9cf1a5d44b0fc842b3a9d3b692ec84b1cc22c8f155e17e8d23646ad59605276b",
+        "at": "2026-11-11T15:22:35.583Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "envelope": {
+      "attachments": []
+    },
+    "revision": 3
+  },
+  "body": {
+    "summary": {
+      "prose": "A code-review correction attempt may reuse an earlier task result only when the task's inputs are unchanged, but today that check also covers free-text provenance in each test row, so rewording or re-running tests blocks reuse; and each refused task costs a separate submission of a three-submission budget. This Story versions the task identity: new attempts use a format whose test entries carry only the committed test file, its cases and its result, and record that format on the attempt. Attempts saved before the change keep their original format and validate exactly as before, reuse across the two formats is refused with the usual reassess feedback, and every refused task in one submission is reported in a single rejection.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Let code-review reuse survive provenance-only test-row changes"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "taskFinalIdentity",
+          "signature": "taskFinalIdentity(prepared: PreparedReviewPacket, assignment: TaskAssignment, format?: TaskIdentityFormat): string  // exported type TaskIdentityFormat = 'final-task-v1' | 'final-task-v2'",
+          "parameters": [
+            {
+              "name": "format",
+              "type": "TaskIdentityFormat",
+              "purpose": "Which input the hash covers. 'final-task-v1' (default, today's input) hashes each assigned test as { detail: <whole submitted row>, blobOid }. 'final-task-v2' hashes each assigned test as { file, cases, result, blobOid }; requirements (taskId, title, summary, acceptanceChecks), changes and documents are hashed exactly as in v1. A task with no assigned tests hashes an empty tests list in both formats.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "Hex sha256 of the canonical task input in the given format; the format name is part of the hashed input, so v1 and v2 identities never coincide. cases are hashed in submitted order."
+          },
+          "errors": [
+            {
+              "type": "TaskReviewInputError field=attribution",
+              "condition": "Existing checks: missing final task source identities, unknown assigned test, historical scope."
+            }
+          ],
+          "preconditions": [
+            "prepared has a projection and finalTestBlobs for every packet test (unchanged)."
+          ],
+          "postconditions": [
+            "With format 'final-task-v1' the result is byte-identical to today's taskFinalIdentity."
+          ]
+        },
+        {
+          "name": "bindTaskFinalIdentities",
+          "signature": "bindTaskFinalIdentities(review: AdmittedReview, input: readonly AcceptedTaskAttribution[]): Promise<readonly TaskAssignment[]>",
+          "parameters": [],
+          "returns": {
+            "type": "Promise<readonly TaskAssignment[]>",
+            "meaning": "Unchanged result. The bind format is the attempt header's taskIdentityFormat when present; otherwise 'final-task-v1' when the attempt is already accepted (saved before this change) and 'final-task-v2' when the attempt is pending. Identities are computed in the bind format; a pending attempt's candidate also carries taskIdentityFormat: 'final-task-v2'; a re-bound accepted attempt must reproduce every stored key. The reuse check is given the bind format explicitly, because the header field is written only after the check. The existing source checks (reuse decision present, earlier, same-party accepted source) still throw at once, unchanged, because they reject a malformed decision rather than changed inputs. Every reuse assignment that passes them is checked for format and identity before anything fails, through a module-internal, non-throwing per-task check shared with requireReuseIdentity that returns a { field, message } refusal or nothing. No refusals: the candidate is applied as today. Exactly one refusal: one TaskReviewInputError with today's field origins/tasks/<index>/sourceAttempt/<n> and today's text. Several refusals: one TaskReviewInputError whose field is the first refused task's field (in selectedTaskIds order) and whose message starts with 'N tasks cannot reuse their source attempt: <task ids>.' followed by each task's own refusal text, so the listing of every refused task id comes first and survives the existing 8192-byte feedback bound."
+          },
+          "errors": [
+            {
+              "type": "TaskReviewInputError field=attribution",
+              "condition": "Existing: 'Accepted mapping cannot change within an attempt' when a re-bound attempt does not reproduce its stored identities or format."
+            },
+            {
+              "type": "TaskReviewInputError field=origins/tasks/<index>/sourceAttempt/<n>",
+              "condition": "One or more reuse assignments are refused for a format or identity difference; raised once per bind."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "Saved accepted attempts without taskIdentityFormat re-bind with v1 identities exactly as today.",
+            "One bind raises at most one reuse rejection, so it consumes at most one of the MAX_ATTRIBUTION_SUBMISSIONS = 3 submissions however many tasks are refused."
+          ]
+        },
+        {
+          "name": "requireReuseIdentity",
+          "signature": "requireReuseIdentity(review: AdmittedReview, assignment: TaskAssignment, format?: TaskIdentityFormat): void",
+          "parameters": [
+            {
+              "name": "format",
+              "type": "TaskIdentityFormat",
+              "purpose": "The current attempt's identity format. bindTaskFinalIdentities passes its bind format; when omitted (sourceAssessment, after acceptance) it is the header's taskIdentityFormat, or 'final-task-v1' when absent.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Throws the one refusal for this task, if any. Existing source checks are unchanged and throw at once. Then: if the source attempt's format (its taskIdentityFormat, or 'final-task-v1' when absent) differs from format, refusal with feedback 'Task <id> cannot reuse attempt <n>: its result was recorded under an earlier task identity format. Set action to \"reassess\" and omit sourceAttempt for this task; retain eligible reuse for other tasks.'; else if the source's stored identity differs from taskFinalIdentity(prepared, assignment, format), today's refusal with the reuseMismatch text."
+          },
+          "errors": [
+            {
+              "type": "TaskReviewInputError field=origins",
+              "condition": "Existing source checks."
+            },
+            {
+              "type": "TaskReviewInputError field=origins/tasks/<index>/sourceAttempt/<n>",
+              "condition": "Format differs, or identity differs."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "A published reuse row and its source always carry identities of the same format, so the string-equality check in src/workflow/code-review/task-review/record.ts:73-77 stays like-for-like."
+          ]
+        },
+        {
+          "name": "taskInputFingerprint",
+          "signature": "taskInputFingerprint(prepared: PreparedReviewPacket, assignment: TaskAssignment): TaskInputFingerprint  // tests: readonly { path: string; identity: string; provenance: string }[]",
+          "parameters": [],
+          "returns": {
+            "type": "TaskInputFingerprint",
+            "meaning": "Transient diagnostic, not persisted. Signature unchanged (admission.ts:50 keeps calling it as today). Each tests entry carries identity, the digest of the v2 test fields { file, cases, result, blobOid }, and provenance, the digest of the whole submitted row with its blobOid (today's identity)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "requirements, sources and documents entries are unchanged."
+          ]
+        },
+        {
+          "name": "reuseMismatch",
+          "signature": "reuseMismatch(review: AdmittedReview, assignment: TaskAssignment, sourceAttempt: number, format: TaskIdentityFormat): string",
+          "parameters": [
+            {
+              "name": "format",
+              "type": "TaskIdentityFormat",
+              "purpose": "The shared format of the compared attempts. A tests entry counts as changed when identity differs, or, only for 'final-task-v1', when provenance differs.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "Today's text ('Task <id> cannot reuse attempt <n>: relevant task inputs changed (<details>). Set action to \"reassess\" ...'), naming only fields that differ under the compared format: under v2 a provenance-only edit never appears; under v1 it names the test. The generic fallback text is unchanged."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The message format from ISSUE-146084d04395b88b is unchanged."
+          ]
+        },
+        {
+          "name": "validateSavedAttribution",
+          "signature": "validateSavedAttribution(attempt: ReviewAttempt): void",
+          "parameters": [],
+          "returns": {
+            "type": "void",
+            "meaning": "Unchanged checks, plus: taskIdentityFormat must be absent on an unpinned attempt and on a pending or failed attempt, like the other accepted-only fields; on an accepted attempt it is absent (v1) or 'final-task-v2'."
+          },
+          "errors": [
+            {
+              "type": "TaskReviewInputError field=attribution",
+              "condition": "Existing messages ('Unpinned history cannot carry final-scope authority', 'Unmapped phase cannot carry accepted task bindings') when taskIdentityFormat is present where it is not allowed."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "Saved attempts written before the change carry no taskIdentityFormat and validate exactly as today."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ReviewAttempt.header (code-review checkpoint)",
+        "change": "field-add",
+        "details": "Optional taskIdentityFormat: 'final-task-v2', written in the candidate when a pending mapping is accepted; absent means 'final-task-v1'. Added to the header interface and to the strict header schema. Ownership: one per attempt; all of the attempt's taskScopeIdentities share it. CR summaries, history snapshots and record schemas are unchanged: they copy and compare stored identity strings without recomputing them.",
+        "callSites": [
+          "src/workflow/code-review/task-review/contracts.ts:112",
+          "src/workflow/code-review/task-review/contracts.ts:130",
+          "src/workflow/code-review/task-review/attribution-binding.ts:121-140",
+          "src/workflow/code-review/task-review/attribution-binding.ts:63-78"
+        ]
+      },
+      {
+        "entity": "taskFinalInput (task reuse identity input)",
+        "change": "invariant-change",
+        "details": "New 'final-task-v2' input: each assigned test contributes { file, cases, result, blobOid } instead of the whole row. 'final-task-v1' is kept unchanged for saved attempts.",
+        "callSites": [
+          "src/workflow/code-review/task-review/attribution-binding.ts:23-34",
+          "src/workflow/code-review/task-review/attribution-binding.ts:109-119"
+        ]
+      },
+      {
+        "entity": "TaskInputFingerprint.tests entry (transient)",
+        "change": "field-add",
+        "details": "Adds provenance beside identity; identity becomes the v2 test digest. Built in memory by admission.ts and the reuse check; never stored.",
+        "callSites": [
+          "src/workflow/code-review/task-review/attribution-binding.ts:42-62",
+          "src/workflow/code-review/task-review/admission.ts:50",
+          "src/workflow/code-review/task-review/execution.ts:11"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A correction attempt reuses one or more tasks whose source attempt was recorded under the earlier identity format (the transition after deploy, e.g. projection-scope-66d4-s1 reusing t1, t2 and t4 from attempt 1).",
+          "detection": "The per-task reuse check compares the source attempt's taskIdentityFormat (absent = 'final-task-v1') with the bind format passed in by bindTaskFinalIdentities; the bind runs the check for every reuse assignment before failing.",
+          "response": "One TaskReviewInputError for the whole submission: field origins/tasks/<index>/sourceAttempt/<n> of the first refused task; text listing every refused task id, then each task's 'recorded under an earlier task identity format ... set action to \"reassess\"' text.",
+          "userImpact": "The reviewer reassesses every such task in its next submission; the transition costs one of the three attribution submissions in total, not one per task. Later attempts can reuse those results under the new format.",
+          "recoverable": true
+        },
+        {
+          "scenario": "One or more reused tasks' committed test file, cases or result (or requirements, changes, documents) changed.",
+          "detection": "The v2 identity of each current task differs from its source attempt's stored v2 identity; checked for every reuse assignment.",
+          "response": "One rejection naming every refused task; each task's part is today's 'cannot reuse attempt N: relevant task inputs changed (tests <file>)' text, naming only fields that changed under the compared format. A single refusal is byte-identical to today.",
+          "userImpact": "Those tasks are reassessed in one resubmission.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A reuse decision is malformed: no decision, a source attempt that is not earlier, or a missing or other-party source.",
+          "detection": "The existing source checks in the reuse check, run before format and identity.",
+          "response": "Existing TaskReviewInputError at field origins, thrown at once and not collected with the format and identity refusals.",
+          "userImpact": "Unchanged.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A saved accepted attempt is re-bound and its stored identities or format no longer reproduce.",
+          "detection": "bindTaskFinalIdentities' existing deep-equality of every candidate key against the saved header.",
+          "response": "Existing 'Accepted mapping cannot change within an attempt' error.",
+          "userImpact": "Unchanged fail-closed behaviour.",
+          "recoverable": false
+        },
+        {
+          "scenario": "A checkpoint header carries an unknown taskIdentityFormat value.",
+          "detection": "The strict header schema accepts only 'final-task-v2' for the optional field.",
+          "response": "Existing schema rejection of the checkpoint.",
+          "userImpact": "The checkpoint is refused rather than silently mis-hashed.",
+          "recoverable": false
+        },
+        {
+          "scenario": "A saved unpinned, pending or failed attempt carries taskIdentityFormat.",
+          "detection": "validateSavedAttribution's existing absence check for accepted-only fields, extended to taskIdentityFormat.",
+          "response": "Existing 'Unpinned history cannot carry final-scope authority' or 'Unmapped phase cannot carry accepted task bindings' error.",
+          "userImpact": "The inconsistent checkpoint is refused, as for the other accepted-only fields.",
+          "recoverable": false
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Correction attempt on the same pin whose test rows differ only in evidenceReferences, executionDetails or command, source attempt in the new format.",
+          "expected": "Reuse is accepted; identities match."
+        },
+        {
+          "input": "Three tasks reused from a v2 source after evidence references are removed from their test rows (the projection-scope-66d4-s1 shape).",
+          "expected": "All three accepted in one submission; no rejection recorded."
+        },
+        {
+          "input": "Saved attempt (no taskIdentityFormat) resumed or re-prepared after the change.",
+          "expected": "Re-binds with v1 identities and validates as today; no format is added."
+        },
+        {
+          "input": "Two saved v1 attempts where attempt 2 reused attempt 1, re-prepared after the change.",
+          "expected": "Both re-bind in v1; the reuse check compares v1 with v1 and passes as before."
+        },
+        {
+          "input": "Attempt saved as pending before the change and accepted after it.",
+          "expected": "Accepted with v2 identities and taskIdentityFormat recorded."
+        },
+        {
+          "input": "A task with no assigned tests.",
+          "expected": "v2 identity covers requirements, changes and documents only, as v1 does."
+        },
+        {
+          "input": "Two tasks share one test row and one of them is reused.",
+          "expected": "Each task's identity covers its own assigned tests; unchanged shared rows keep both reusable."
+        },
+        {
+          "input": "Test row cases reordered.",
+          "expected": "Treated as a change (cases are hashed as submitted), so reuse is refused; no reordering normalisation is added."
+        },
+        {
+          "input": "Many tasks refused at once, so the combined text would exceed the 8192-byte feedback bound.",
+          "expected": "The listing of every refused task id comes first and is kept; only later per-task detail can be cut by the existing bound."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Saved accepted attempts recompute exactly the identities they stored when re-bound (bindTaskFinalIdentities deep-equality).",
+          "source": "c1"
+        },
+        {
+          "text": "A published reuse row's identity equals its source attempt's stored identity for that task, compared as stored strings (record.ts:73-77).",
+          "source": "c2"
+        },
+        {
+          "text": "History snapshots and CR summaries copy stored identities without recomputing them.",
+          "source": "c2"
+        },
+        {
+          "text": "The three-submission attribution budget (MAX_ATTRIBUTION_SUBMISSIONS) and each task's reassess feedback from ISSUE-146084d04395b88b are unchanged.",
+          "source": "c3"
+        },
+        {
+          "text": "The attempt header schema stays strict (additionalProperties false); only the one optional field is added.",
+          "source": "c4"
+        },
+        {
+          "text": "Committed sources, documents, requirements and each test's committed file content remain part of the reuse identity.",
+          "source": "c1"
+        },
+        {
+          "text": "Accepted-only header fields are absent on unpinned, pending and failed attempts (validateSavedAttribution).",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run through npx tsx --test (Node 22), using the existing task-review publication fixture (src/workflow/code-review/task-review/__tests__/publication-fixture.ts) as in src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Pin the two identity formats and the fingerprint: v1 byte-identical to the pre-change identity; v2 ignores provenance-only test-row fields, reacts to file blob, cases (including order) and result, and covers requirements, changes and documents for a task with no tests; the fingerprint carries identity and provenance per test. The v1 identity is pinned to constants computed with the pre-change code on a hand-built prepared packet, so a change to the v1 input fails the test.",
+          "subjects": [
+            "taskFinalIdentity",
+            "taskInputFingerprint",
+            "reuseMismatch"
+          ],
+          "fixturesNeeded": [
+            "prepared review from the publication fixture with one task and one test row",
+            "the same task with no assigned tests",
+            "a hand-built PreparedReviewPacket and TaskAssignment (one test row with command, executionDetails and evidenceReferences; and the same task with no tests), with v1 identities 7b854ad9e2e64cb264d9d32e5f9680c201e002faec9a15f59a7c58a0f141ab95 and 93a44cddf3b97cb48249894b044e9bd0672bc7d12787ab0472f94ea974c7a489 computed by the pre-change code"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Exercise bindTaskFinalIdentities, restoreAcceptedAssignments and requireReuseIdentity across attempts on real fixture checkpoints: v2 sources reused after provenance-only edits (one task and three tasks in one submission); a v2 source refused after a real change; three tasks refused in one rejection because their source is v1; saved v1 attempts (including a v1 attempt reusing a v1 attempt) re-binding unchanged; the rejection text naming a provenance-only change between two v1 attempts; a published v2 reuse row passing validateTaskBody's reuse-identity check; the attribution budget counting one rejection per submission.",
+          "subjects": [
+            "bindTaskFinalIdentities",
+            "requireReuseIdentity",
+            "restoreAcceptedAssignments",
+            "recordAttributionRejection",
+            "validateTaskBody"
+          ],
+          "fixturesNeeded": [
+            "publication fixture checkpoint with an accepted v2 attempt 1 over three tasks and a correction attempt 2 whose test rows differ only in evidenceReferences, executionDetails and command",
+            "same, with attempt 2 changing a test's cases",
+            "a saved accepted attempt 1 without taskIdentityFormat whose stored identities were computed by the v1 formula, and a v1 attempt 2 that reused it",
+            "a CR body built from the published v2 attempts"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: a correction attempt reuses a task when only provenance text in its test rows changed",
+            "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: the v2 task identity ignores command, execution details and evidence references",
+            "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: a published v2 reuse row passes the record reuse-identity check"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: the v2 task identity changes with the test file, cases or result",
+            "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: reordered test cases refuse reuse",
+            "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: a task with no assigned tests keeps a v2 identity over requirements, changes and documents",
+            "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: reuse is still refused with reassess feedback when a test's cases changed",
+            "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: the rejection names a provenance-only change between two v1 attempts"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: the v1 task identity equals the identity pinned from the pre-change code",
+            "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: an identity format on an unaccepted attempt is refused",
+            "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: a saved attempt without an identity format re-binds with its stored v1 identities",
+            "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: a saved v1 attempt that reused a v1 attempt still re-binds",
+            "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts: existing tests pass unchanged",
+            "src/workflow/code-review/task-review/__tests__/compatibility.test.ts: existing tests pass unchanged"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: reuse from an attempt recorded under the earlier identity format is refused with reassess feedback",
+            "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: three tasks whose source used the earlier identity format are refused in one rejection naming all three"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: three tasks reused after their evidence references are removed are accepted in one submission"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The task reuse identity hashes the whole submitted test row (src/workflow/code-review/task-review/attribution-binding.ts:23-34, s1 bundle 1); saved attempts store those identities in taskScopeIdentities and are re-bound against them on restore; the reuse check throws at the first refused task (src/workflow/code-review/task-review/attribution-binding.ts:136, s1 bundle 1), each throw costing one of three submissions (src/workflow/code-review/task-review/attribution-repair.ts:6-16, s1 bundle 2); publication compares stored identity strings (src/workflow/code-review/task-review/record.ts:73-77, s1 bundle 2).",
+      "stateAfter": "New accepted mappings store 'final-task-v2' identities and taskIdentityFormat on the attempt header; unmarked saved attempts keep 'final-task-v1'; reuse requires matching formats and identities; one bind raises at most one reuse rejection naming every refused task.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the optional taskIdentityFormat field ('final-task-v2') to the attempt header interface and strict schema, and require it absent on unpinned, pending and failed attempts.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the v2 identity input, the provenance digest on fingerprint test entries, the format parameter on the reuse check, and collect every format or identity refusal of a bind into one rejection; v1 stays the default for unmarked accepted attempts.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Deploy by daemon update/restart. No stored data is rewritten; existing checkpoints and CR history read as before. The first correction attempt of a review whose earlier attempts are v1 reassesses its formerly reused tasks in one extra submission.",
+          "rollbackable": false,
+          "prerequisiteFlags": [
+            "Before rolling back to code without the field, search the code-review checkpoints under .insrc/tmp for \"taskIdentityFormat\"; roll back only when none is found, because the older strict schema refuses a checkpoint that carries the field."
+          ]
+        }
+      ],
+      "backwardCompat": "Internal daemon contract only (no IPC or plugin surface). Saved attempts and CR history written before the change keep validating unchanged. Results from those attempts cannot be reused by attempts accepted after the change; all such tasks are refused in one rejection and reassessed together, costing one attribution submission in total. Older daemon builds cannot read checkpoints that carry the new optional field (see the rollback check in step 3).",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Versioned task identity recorded on the attempt, refusals collected per bind",
+        "oneLineSummary": "New attempts compute a 'final-task-v2' identity (test entries carry only file, cases, result and the committed test blob) and record taskIdentityFormat on the header; saved attempts without the marker keep 'final-task-v1'; the bind collects every reuse refusal and raises one rejection.",
+        "approach": "taskFinalInput takes a format; 'final-task-v1' is today's input unchanged, 'final-task-v2' replaces each test entry's detail with { file, cases, result } plus the committed blobOid. bindTaskFinalIdentities resolves its format (header taskIdentityFormat when present; else v1 for an already accepted attempt, v2 for a pending one), records taskIdentityFormat: 'final-task-v2' in the candidate of a newly accepted mapping, and passes that format to the reuse check. A non-throwing reuseRefusal(review, assignment, format) returns { field, message } or undefined: format refusal when the source attempt's format (taskIdentityFormat or v1) differs, else identity refusal with today's reuseMismatch text. The bind evaluates every reuse assignment and raises one TaskReviewInputError: a single refusal keeps today's field and text, several list every refused task id first and then each task's text, with the first refused task's field. requireReuseIdentity(review, assignment, format?) throws the one refusal and serves sourceAssessment, defaulting to the header format. taskInputFingerprint test entries keep path and identity (now the v2 digest) and add provenance (digest of the whole row); reuseMismatch compares provenance only when the comparison format is v1.",
+        "pros": [
+          "Saved attempts recompute exactly what they stored.",
+          "Published reuse rows always compare identities of one format.",
+          "Any number of refused tasks costs one attribution submission, so the format transition and ordinary mismatches cannot exhaust the budget task by task.",
+          "admission.ts keeps calling taskInputFingerprint unchanged."
+        ],
+        "cons": [
+          "Adds one optional header field and its schema entry.",
+          "Results saved before the change cannot be reused by new attempts and are reassessed (all in one rejection)."
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Infer the format by trial",
+        "oneLineSummary": "Compute both v1 and v2 identities on restore and accept whichever matches the stored values; no stored marker.",
+        "approach": "On restore, accept the saved taskScopeIdentities when every one equals either the v1 or the v2 recomputation. New attempts store v2. Reuse compares in the format that matched for the source; cross-format reuse is refused; refusals collected as in a1.",
+        "pros": [
+          "No schema change."
+        ],
+        "cons": [
+          "The format is rediscovered by trial on every restore and reuse check.",
+          "The rule that all tasks of one attempt share a format has nowhere to be recorded, so a mixed match must be detected by trial.",
+          "Two hash computations per task on every restore."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Avoids a schema field but leaves the format implicit: it is rediscovered by trial on every restore and reuse check, and the rule that all of an attempt's tasks share one format has nowhere to be recorded (ac4 partial). record.ts compares stored strings under both a1 and a2, so it is not a difference."
+      },
+      {
+        "id": "a3",
+        "name": "Separate reuse identity beside the integrity identity",
+        "oneLineSummary": "Keep taskScopeIdentities as today and add a second stored per-task reuse identity used only for reuse equality.",
+        "approach": "Add taskReuseIdentities (v2 inputs) to the attempt header, the CR summary and history snapshots; requireReuseIdentity and the record.ts reuse check compare reuse identities when both sides have them and fall back to the old identities otherwise; refusals collected as in a1.",
+        "pros": [
+          "The full-row integrity identity is kept for every attempt."
+        ],
+        "cons": [
+          "New stored field in three schemas and a fallback path in publication checks.",
+          "More code and data than a1 for the same reuse outcome."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Correct but adds stored data in three schemas and a publication fallback for the same reuse outcome."
+      },
+      {
+        "id": "a4",
+        "name": "Narrow the single identity in place",
+        "oneLineSummary": "Change 'final-task-v1' itself to hash only file, cases, result and blob, with no format marker.",
+        "approach": "Replace the tests entry of the one identity input with the v2 fields and keep everything else, including the format name.",
+        "pros": [
+          "Smallest change; no schema field."
+        ],
+        "cons": [
+          "Every saved accepted attempt recomputes a different identity on restore and fails 'Accepted mapping cannot change within an attempt', so saved attempts no longer re-bind (breaks ac3)."
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "Saved accepted attempts would recompute a different identity on restore and fail 'Accepted mapping cannot change within an attempt' (violates ac3)."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/attribution-binding.ts:23-145",
+      "quotedText": "Task identity input, fingerprint, reuse check, bind deep-equality and re-bind."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/record.ts:73-77",
+      "quotedText": "A published reuse row's identity must equal the source review's stored task identity, compared as strings."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/attribution-repair.ts:6",
+      "quotedText": "MAX_ATTRIBUTION_SUBMISSIONS = 3; each TaskReviewInputError counts one rejection."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/contracts.ts:130",
+      "quotedText": "The attempt header schema is strict (additionalProperties false)."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/ISSUE.md"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+      "quotedText": "Existing tests pinning the reuse rejection text and saved identities."
+    },
+    {
+      "id": "c7",
+      "kind": "doc",
+      "ref": "docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/LLD-SELF-REVIEW.md",
+      "quotedText": "Design review rounds 1 (daemon) and 2 (controller self-review) and their changes."
+    }
+  ]
+}

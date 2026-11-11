@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1b69b7ca-dd26-47f2-bc51-9e1e1fe75901",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T18:01:41.547Z",
+    "epicCreatedAt": "2026-11-10T17:43:51.648Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3ec4189b758be646",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Vendor-login stripping + Ollama env contents on activity children",
+      "parent": {
+        "entityId": "STORY-3ec4189b758be646-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3ec4189b758be646-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-3ec4189b758be646-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "deca04dad35ab59c750f6d05a8105c63e3e87a97a7d5310fc0c34b88e5cc12a3",
+        "at": "2026-11-10T18:01:41.556Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-10T18:01:41.558Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Vendor-login stripping + Ollama env contents on activity children",
+    "summary": "Verify/lock the withOllama env contract at the activity call site: Ollama endpoint + auth present, ANTHROPIC_API_KEY blanked, vendor login keys stripped regardless of daemon env contents.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "withOllama output contains ANTHROPIC_BASE_URL/ANTHROPIC_AUTH_TOKEN from this.ollama, ANTHROPIC_API_KEY=''",
+      "CLAUDE_CODE_OAUTH_TOKEN / CLAUDE_CODE_USE_BEDROCK / CLAUDE_CODE_USE_VERTEX are deleted even when present in the daemon env",
+      "unit test proves both env contents and vendor stripping through the activity call site"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "T2-ollama-activity-no-vendor-inherit"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c1869ea2-94fd-43b2-8a7f-5ddf6be41836",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T11:23:35.723Z",
+    "epicCreatedAt": "2026-11-10T04:52:20.369Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3992d2e1e26124dc",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Stage releases and hand off the launch job",
+      "parent": {
+        "entityId": "STORY-3992d2e1e26124dc-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3992d2e1e26124dc-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-3992d2e1e26124dc-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-3992d2e1e26124dc-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-3992d2e1e26124dc-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "d342dfbceef82badecd813e27977ac2d6b479e4816a90c4ed76636af97887c76",
+        "at": "2026-11-10T14:07:39.261Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-10T11:23:35.727Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Stage releases and hand off the launch job",
+    "summary": "Pin releases, stage the detached helper behind the acknowledgement handoff and journal job admission separately from child launch. Verify old job exit and new handshake, then start and validate the candidate in probation. Return exact stage receipts for commit and rollback.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "The helper cannot mutate before acknowledgement handoff",
+      "An ambiguous launch registration or failed hello produces a bounded, identity-scoped handoff receipt",
+      "Candidate admission records exact predecessor evidence and keeps the release selector provisional"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Candidate job handoff records registration before child admission and keeps release selection provisional"
+      },
+      {
+        "level": "integration",
+        "name": "A failed candidate hello yields an exact job receipt without admitting a daemon child"
+      },
+      {
+        "level": "integration",
+        "name": "A lost or unwritten update acknowledgement keeps the detached helper behind its launch gate"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

@@ -1,0 +1,182 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 4,
+        "contentHash": "d4fbaa5cb4256099cf4e1dea4c2a04f848320a0a9dd66398b9c317d53b7b2930",
+        "at": "2026-11-11T12:46:50.339Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 4,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T15:07:11.754Z",
+        "override": {
+          "reason": "The story owner explicitly accepted the failed independent code review and the open T5 validation gate. Review attempt 2 failed at task attribution before assessment. T1–T4 passed daemon validation. The backend build and all 24 focused tests, including the three T5 integration cases, passed on the corrected qualification revision. T5 has no passing daemon validation and the original full regression sweep reported 249 failures and 6 cancellations."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-ad451e86-caa9-4051-98d5-19279c3b6fed",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T12:19:05.191Z",
+    "epicCreatedAt": "2026-11-09T06:00:04.355Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "206db3426ffd4428",
+    "storyId": "s2",
+    "revision": 4,
+    "updatedAt": "2026-11-11T12:45:34.126Z",
+    "authoredBy": "controller",
+    "epicSlug": "show-long-running-task-progress-chat"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      }
+    ],
+    "summary": "Wired analysis typed events and actual terminal outcomes. The main thread binds the requested registered project and verifies the classified scope before accepting post-classification updates. Preserved legacy frames and persisted run results. All 61 focused tests and TypeScript passed on the host.",
+    "testRecord": {
+      "md": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/S002/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/handler-runtime.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T12:45:34.126Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T12:45:34.126Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/task-progress/__tests__/executor-measurements.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T12:45:34.126Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/task-progress/coordinator.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T12:45:34.126Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/task-progress/executor-measurements.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T12:45:34.126Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/request-context.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T12:45:34.126Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/task-progress/__tests__/executor-relay.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T12:45:34.126Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/task-progress/__tests__/helpers/executor-worker.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T12:45:34.126Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/task-progress/access.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T12:45:34.126Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/task-progress/executor-relay.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T12:45:34.126Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/channel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T12:45:34.126Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/router.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T12:45:34.126Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/workflow-rpc.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T12:45:34.126Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/workflow-run-registry.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T12:45:34.126Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/analyze-rpc.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T12:45:34.126Z"
+      }
+    ],
+    "commit": "61f7b29ab"
+  },
+  "citations": []
+}

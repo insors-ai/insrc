@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-bd7b1c79-4701-40f2-82d8-eeaad2fde6e5",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T18:01:41.592Z",
+    "epicCreatedAt": "2026-11-10T17:43:51.648Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3ec4189b758be646",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Widen diagnostics provider type in lockstep (LLD §3.4)",
+      "parent": {
+        "entityId": "STORY-3ec4189b758be646-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3ec4189b758be646-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-3ec4189b758be646-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "9bca695eef7d1cee65f74f3d15ba3dd854556dc4f74dc449b9e5b224faa1feff",
+        "at": "2026-11-10T18:01:41.599Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-10T18:01:41.604Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Widen diagnostics provider type in lockstep (LLD §3.4)",
+    "summary": "Widen ReviewDiagnosticCollector.provider / ReviewDiagnosticSnapshot.provider to include 'vibe' in lockstep with ReviewActivityStream.kind (LLD §3.4, revision 2) so the vibe branch type-checks and invariant c3 holds.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "ReviewDiagnosticCollector constructor param and ReviewDiagnosticSnapshot.provider widened to 'claude'|'codex'|'vibe' (review-diagnostics.ts:9,33,35)",
+      "type-checks with ReviewActivityStream feeding kind into the collector (:28)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "T12-failure-diagnostic-carries-backend-detail"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

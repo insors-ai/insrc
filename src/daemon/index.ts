@@ -22,7 +22,7 @@ import { runBootSteeringRefresh } from './steering-inject.js';
 import { PATHS } from '../shared/paths.js';
 import { openProgressRuntime } from './task-progress/runtime.js';
 import { registerExecutorProducers, validateExecutorDetails } from './task-progress/executor-measurements.js';
-import { analysisProgressPath, ExecutorProgressRelay, executorProgressKind } from './task-progress/executor-relay.js';
+import { ExecutorProgressRelay } from './task-progress/executor-relay.js';
 import { setLogMode, getLogger } from '../shared/logger.js';
 
 setLogMode('daemon');
@@ -531,6 +531,7 @@ async function main(): Promise<void> {
 	const local = router !== undefined ? lazyForward(buildRuntime).forward : buildRuntime();
 	localForward = local;
 	const normalForward = router?.forward ?? local;
+	const progressForward = executorProgress.forward(normalForward);
 	const managedUpdate = directDispatch({
 		'daemon.update': async (_params, context) => {
 			if (context?.awaitUpdateReply === undefined) throw new Error('managed update requires a unary socket request');
@@ -538,17 +539,8 @@ async function main(): Promise<void> {
 			return launchManagedUpdate(entry, [], context.awaitUpdateReply);
 		},
 	});
-	const forward = connectionSessionRuntime.forward((request, deliver) => {
-		if (managed !== undefined && request.method === 'daemon.update') return managedUpdate(request, deliver);
-		const kind = executorProgressKind(request.method);
-		const context = request.trustedContext;
-		const params = request.params as { repo?: unknown; scopeRef?: unknown } | null;
-		const repo = kind === 'analysis' ? analysisProgressPath(params?.scopeRef) : params?.repo;
-		if (kind === undefined || context === undefined || typeof repo !== 'string') return normalForward(request, deliver);
-		const port = executorProgress.reserve(kind, repo, context);
-		return normalForward(port === undefined ? request
-			: { ...request, trustedContext: { ...context, executorProgressPort: port } }, deliver);
-	});
+	const forward = connectionSessionRuntime.forward((request, deliver) =>
+		(managed !== undefined && request.method === 'daemon.update' ? managedUpdate : progressForward)(request, deliver));
 	const server = probation?.server ?? new IpcServer(forward);
 	server.onConnectionClose(context => {
 		connectionSessionRuntime.disconnect(context);

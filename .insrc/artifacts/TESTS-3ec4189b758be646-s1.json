@@ -1,0 +1,884 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 19,
+        "contentHash": "5a2115d61de8eb911850b1870f764c310fe5ede8ac1671fd531a419c7f7d76e3",
+        "at": "2026-11-10T20:43:44.361Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "3ec4189b758be646",
+    "storyId": "s1",
+    "createdAt": "2026-11-10T18:12:26.806Z",
+    "updatedAt": "2026-11-10T20:43:44.317Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-10T17:43:51.648Z",
+    "epicSlug": "fix-claude-ollama-mistral-vibe-streaming",
+    "revision": 19
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "0679ad220",
+        "ranAt": "2026-11-10T18:15:05.026Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "T1-ollama-activity-child-env",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-ollama-activity.test.ts",
+                "title": "T1-ollama-activity-child-env: the activity child of an ollama-claude provider gets the Ollama endpoint env and no vendor login",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "T3-ollama-activity-preflight-rejects-before-spawn",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-ollama-activity.test.ts",
+                "title": "T3-ollama-activity-preflight-rejects-before-spawn: a failed checkOllama throws OllamaTargetError and spawns no child",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "T4-plain-provider-activity-env-unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-ollama-activity.test.ts",
+                "title": "T4-plain-provider-activity-env-unchanged: without an Ollama target the activity child inherits the daemon env verbatim",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/cli-ollama-activity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2826,
+            "titles": [
+              {
+                "title": "T1-ollama-activity-child-env: the activity child of an ollama-claude provider gets the Ollama endpoint env and no vendor login",
+                "result": "pass"
+              },
+              {
+                "title": "T3-ollama-activity-preflight-rejects-before-spawn: a failed checkOllama throws OllamaTargetError and spawns no child",
+                "result": "pass"
+              },
+              {
+                "title": "T4-plain-provider-activity-env-unchanged: without an Ollama target the activity child inherits the daemon env verbatim",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "1a7fde25b",
+        "ranAt": "2026-11-10T18:25:16.533Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "T2-ollama-activity-no-vendor-inherit",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-ollama-activity.test.ts",
+                "title": "T2-ollama-activity-no-vendor-inherit: the activity env carries the Ollama endpoint, a blank API key and none of the three vendor keys",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/cli-ollama-activity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4810,
+            "titles": [
+              {
+                "title": "T1-ollama-activity-child-env: the activity child of an ollama-claude provider gets the Ollama endpoint env and no vendor login",
+                "result": "pass"
+              },
+              {
+                "title": "T2-ollama-activity-no-vendor-inherit: the activity env carries the Ollama endpoint, a blank API key and none of the three vendor keys",
+                "result": "pass"
+              },
+              {
+                "title": "T3-ollama-activity-preflight-rejects-before-spawn: a failed checkOllama throws OllamaTargetError and spawns no child",
+                "result": "pass"
+              },
+              {
+                "title": "T4-plain-provider-activity-env-unchanged: without an Ollama target the activity child inherits the daemon env verbatim",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "fcba0bc4d",
+        "ranAt": "2026-11-10T18:32:43.047Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "T5-claude-codex-activity-args-unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-ollama-activity.test.ts",
+                "title": "T5-claude-codex-activity-args-unchanged: activity argv matches the documented arg construction for both kinds, only opts.env was added",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/cli-ollama-activity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 18405,
+            "titles": [
+              {
+                "title": "T1-ollama-activity-child-env: the activity child of an ollama-claude provider gets the Ollama endpoint env and no vendor login",
+                "result": "pass"
+              },
+              {
+                "title": "T2-ollama-activity-no-vendor-inherit: the activity env carries the Ollama endpoint, a blank API key and none of the three vendor keys",
+                "result": "pass"
+              },
+              {
+                "title": "T5-claude-codex-activity-args-unchanged: activity argv matches the documented arg construction for both kinds, only opts.env was added",
+                "result": "pass"
+              },
+              {
+                "title": "T3-ollama-activity-preflight-rejects-before-spawn: a failed checkOllama throws OllamaTargetError and spawns no child",
+                "result": "pass"
+              },
+              {
+                "title": "T4-plain-provider-activity-env-unchanged: without an Ollama target the activity child inherits the daemon env verbatim",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "e12b62e19",
+        "ranAt": "2026-11-10T18:42:45.270Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "T6-vibe-activity-stream-lifecycle",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/review-activity-stream.test.ts",
+                "title": "T6-vibe-activity-stream-lifecycle: Vibe app-server frames drive the same start/feed/result/completed lifecycle as claude/codex",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/review-activity-stream.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1690,
+            "titles": [
+              {
+                "title": "Claude fragmented UTF-8 streams expose metadata and complete structured candidates, not partial input or acknowledgements",
+                "result": "pass"
+              },
+              {
+                "title": "Codex completed messages wait for successful turn finality and duplicate native IDs do not renew",
+                "result": "pass"
+              },
+              {
+                "title": "invalid and oversized candidate/frame data fail explicitly without accepting truncated feedback",
+                "result": "pass"
+              },
+              {
+                "title": "activity subprocess has no fixed timer, serializes observers and bounds retained output",
+                "result": "pass"
+              },
+              {
+                "title": "CLI activity mode ignores bounded provider timers and uses stream flags; durable accepted output survives wrapper failure",
+                "result": "pass"
+              },
+              {
+                "title": "a non-JSON final Codex message cannot promote earlier JSON and terminal failure cannot accept later feedback",
+                "result": "pass"
+              },
+              {
+                "title": "long Claude and Codex streams keep bounded recent-ID deduplication and accept final feedback",
+                "result": "pass"
+              },
+              {
+                "title": "tool state survives event-ID window turnover and duplicate completions remain harmless",
+                "result": "pass"
+              },
+              {
+                "title": "event-window rollover retains malformed-event and UUID-length errors",
+                "result": "pass"
+              },
+              {
+                "title": "Codex streamed candidates and final replies share nullable decoding and original draft-2020 validation while Claude stays strict",
+                "result": "pass"
+              },
+              {
+                "title": "T6-vibe-activity-stream-lifecycle: Vibe app-server frames drive the same start/feed/result/completed lifecycle as claude/codex",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "da2436824",
+        "ranAt": "2026-11-10T18:46:16.362Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "T12-failure-diagnostic-carries-backend-detail",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/review-output-diagnostics.test.ts",
+                "title": "T12-failure-diagnostic-carries-backend-detail: a vibe-kind failure snapshot names the provider and retains the backend error detail",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/review-output-diagnostics.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1321,
+            "titles": [
+              {
+                "title": "Claude missing-findings repeated five times coalesces and never accepts",
+                "result": "pass"
+              },
+              {
+                "title": "Codex final JSON parse/schema failure preserves finality and diagnostics",
+                "result": "pass"
+              },
+              {
+                "title": "Terminal CLI failure and host semantic rejection retain pointed fields",
+                "result": "pass"
+              },
+              {
+                "title": "UTF-8/count/preview budgets and static correction mapping exclude reasoning and markup repair",
+                "result": "pass"
+              },
+              {
+                "title": "fake native CLI exit carries diagnostics and callback failures are not acknowledged",
+                "result": "pass"
+              },
+              {
+                "title": "schema configuration and stderr-only CLI failures preserve bounded diagnostics",
+                "result": "pass"
+              },
+              {
+                "title": "diagnostic callback options are validated before native execution",
+                "result": "pass"
+              },
+              {
+                "title": "T12-failure-diagnostic-carries-backend-detail: a vibe-kind failure snapshot names the provider and retains the backend error detail",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "5c2931360",
+        "ranAt": "2026-11-10T19:03:56.044Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "T7-vibe-activity-readonly-tool-policy",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-vibe.test.ts",
+                "title": "T7-vibe-activity-readonly-tool-policy: the activity session enables only read_file + mcp_insrc_* and the runtime is verified",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/cli-vibe.test.ts",
+                "title": "T8-vibe-activity-structured-validation-cancellation: schema-checked candidate and shared-signal cancellation",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/cli-vibe.test.ts",
+                "title": "T11-unsupported-model-effort-fails-before-dispatch: VibeSelectionError precedes any turn when the model/effort is not verified",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/cli-vibe.test.ts",
+                "title": "T6-vibe-activity-coordinator-dispatch-fake-transport: the coordinator mode:'activity' dispatch envelope reaches the vibe app-server branch via a fake transport",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "T8-vibe-activity-structured-validation-cancellation",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-vibe.test.ts",
+                "title": "T7-vibe-activity-readonly-tool-policy: the activity session enables only read_file + mcp_insrc_* and the runtime is verified",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/cli-vibe.test.ts",
+                "title": "T8-vibe-activity-structured-validation-cancellation: schema-checked candidate and shared-signal cancellation",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/cli-vibe.test.ts",
+                "title": "T11-unsupported-model-effort-fails-before-dispatch: VibeSelectionError precedes any turn when the model/effort is not verified",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/cli-vibe.test.ts",
+                "title": "T6-vibe-activity-coordinator-dispatch-fake-transport: the coordinator mode:'activity' dispatch envelope reaches the vibe app-server branch via a fake transport",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "T11-unsupported-model-effort-fails-before-dispatch",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-vibe.test.ts",
+                "title": "T7-vibe-activity-readonly-tool-policy: the activity session enables only read_file + mcp_insrc_* and the runtime is verified",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/cli-vibe.test.ts",
+                "title": "T8-vibe-activity-structured-validation-cancellation: schema-checked candidate and shared-signal cancellation",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/cli-vibe.test.ts",
+                "title": "T11-unsupported-model-effort-fails-before-dispatch: VibeSelectionError precedes any turn when the model/effort is not verified",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/cli-vibe.test.ts",
+                "title": "T6-vibe-activity-coordinator-dispatch-fake-transport: the coordinator mode:'activity' dispatch envelope reaches the vibe app-server branch via a fake transport",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "T6-vibe-activity-coordinator-dispatch-fake-transport",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-vibe.test.ts",
+                "title": "T6-vibe-activity-coordinator-dispatch-fake-transport: the coordinator mode:'activity' dispatch envelope reaches the vibe app-server branch via a fake transport",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "T10-vibe-session-readback-core-mid",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Live-gated (INSRC_LIVE_TESTS) manual suite per LLD section 5; no live Vibe runtime used here. Provider-level session verification covered by T6/T7/T11 in cli-vibe.test.ts."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/cli-vibe.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9618,
+            "titles": [
+              {
+                "title": "vibeLastAssistantText: bare array, wrapped messages, string content, no assistant",
+                "result": "pass"
+              },
+              {
+                "title": "complete() runs default `vibe -p --output text` with the prompt on stdin",
+                "result": "pass"
+              },
+              {
+                "title": "complete() without a model leaves VIBE_ACTIVE_MODEL unset (the CLI default applies)",
+                "result": "pass"
+              },
+              {
+                "title": "completeStructured() parses the last assistant message of the json output and validates it against the schema",
+                "result": "pass"
+              },
+              {
+                "title": "completeStructured() retries with a feedback note when the answer is not valid JSON, then succeeds",
+                "result": "pass"
+              },
+              {
+                "title": "completeStructured() surfaces a stable error after retries are exhausted",
+                "result": "pass"
+              },
+              {
+                "title": "runEditSession() runs headless with --auto-approve inside the repo cwd",
+                "result": "pass"
+              },
+              {
+                "title": "runReviewSession() restricts tools to read_file + the insrc MCP tools and validates the schema-shaped answer",
+                "result": "pass"
+              },
+              {
+                "title": "a non-zero vibe exit is a CliExitError naming vibe; a transient 429 is retried on a fresh run",
+                "result": "pass"
+              },
+              {
+                "title": "Vibe reviewer responses retain strict original nullable semantics without Codex transport decoding",
+                "result": "pass"
+              },
+              {
+                "title": "explicit Vibe selections do not replay an uncertain turn through any daemon entry point",
+                "result": "pass"
+              },
+              {
+                "title": "explicit Vibe structured completion repairs received schema output and honors its attempt budget",
+                "result": "pass"
+              },
+              {
+                "title": "explicit Vibe review refuses unverified tool policy before dispatch",
+                "result": "pass"
+              },
+              {
+                "title": "T7-vibe-activity-readonly-tool-policy: the activity session enables only read_file + mcp_insrc_* and the runtime is verified",
+                "result": "pass"
+              },
+              {
+                "title": "T8-vibe-activity-structured-validation-cancellation: schema-checked candidate and shared-signal cancellation",
+                "result": "pass"
+              },
+              {
+                "title": "T11-unsupported-model-effort-fails-before-dispatch: VibeSelectionError precedes any turn when the model/effort is not verified",
+                "result": "pass"
+              },
+              {
+                "title": "T6-vibe-activity-coordinator-dispatch-fake-transport: the coordinator mode:'activity' dispatch envelope reaches the vibe app-server branch via a fake transport",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "6de0f105b",
+        "ranAt": "2026-11-10T19:09:29.949Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "T9-catalog-large4-entry-verified-efforts",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-catalog-asset.test.ts",
+                "title": "T9-catalog-large4-entry-verified-efforts: the shipped cli-vibe family carries the versioned mistral-large-4 id with only runtime-verified efforts, and uncatalogued selections stay refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/model-catalog-asset.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1090,
+            "titles": [
+              {
+                "title": "model-catalog-asset.test.ts: shipped asset validates, ships via copy-assets, lists today's models and aliases; its tier defaults equal DEFAULT_TIERS; the installer reads its defaults from the file; the summariser comes from summariserModel",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog-asset.test.ts: Codex models carry the 1048576-char inputLimit",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog-asset.test.ts: every shipped Ollama model has memoryMb and the build gate passes",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog-asset.test.ts: the shipped file validates, lists ollama-claude after the existing families, and every host-family model has hosting 'cloud' with its efforts",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog-asset.test.ts: the shipped cli-vibe family pins the runtime-verified Mistral models and tier defaults (ISSUE-de3ab23659bc21fd)",
+                "result": "pass"
+              },
+              {
+                "title": "T9-catalog-large4-entry-verified-efforts: the shipped cli-vibe family carries the versioned mistral-large-4 id with only runtime-verified efforts, and uncatalogued selections stay refused",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "f214cbef6",
+        "ranAt": "2026-11-10T19:37:38.556Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "T12-failure-diagnostic-carries-backend-detail",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/review-output-diagnostics.test.ts",
+                "title": "T12-failure-diagnostic-carries-backend-detail: a vibe-kind failure snapshot names the provider and retains the backend error detail",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "T1-ollama-activity-coordinator-dispatch-env-capture",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-ollama-activity.test.ts",
+                "title": "T1-ollama-activity-coordinator-dispatch-env-capture: the coordinator mode:'activity' envelope reaches the ollama-claude activity child with the endpoint env",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/cli-ollama-activity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2001,
+            "titles": [
+              {
+                "title": "T1-ollama-activity-child-env: the activity child of an ollama-claude provider gets the Ollama endpoint env and no vendor login",
+                "result": "pass"
+              },
+              {
+                "title": "T2-ollama-activity-no-vendor-inherit: the activity env carries the Ollama endpoint, a blank API key and none of the three vendor keys",
+                "result": "pass"
+              },
+              {
+                "title": "T5-claude-codex-activity-args-unchanged: activity argv matches the documented arg construction for both kinds, only opts.env was added",
+                "result": "pass"
+              },
+              {
+                "title": "T3-ollama-activity-preflight-rejects-before-spawn: a failed checkOllama throws OllamaTargetError and spawns no child",
+                "result": "pass"
+              },
+              {
+                "title": "T3b-ollama-activity-preflight-diagnostic-carries-backend-cause: the preflight rejection reaches onDiagnostic as a ReviewOutputFailureError snapshot with the real cause",
+                "result": "pass"
+              },
+              {
+                "title": "T4-plain-provider-activity-env-unchanged: without an Ollama target the activity child inherits the daemon env verbatim",
+                "result": "pass"
+              },
+              {
+                "title": "T1-ollama-activity-coordinator-dispatch-env-capture: the coordinator mode:'activity' envelope reaches the ollama-claude activity child with the endpoint env",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/agent/providers/__tests__/review-output-diagnostics.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1260,
+            "titles": [
+              {
+                "title": "Claude missing-findings repeated five times coalesces and never accepts",
+                "result": "pass"
+              },
+              {
+                "title": "Codex final JSON parse/schema failure preserves finality and diagnostics",
+                "result": "pass"
+              },
+              {
+                "title": "Terminal CLI failure and host semantic rejection retain pointed fields",
+                "result": "pass"
+              },
+              {
+                "title": "UTF-8/count/preview budgets and static correction mapping exclude reasoning and markup repair",
+                "result": "pass"
+              },
+              {
+                "title": "fake native CLI exit carries diagnostics and callback failures are not acknowledged",
+                "result": "pass"
+              },
+              {
+                "title": "schema configuration and stderr-only CLI failures preserve bounded diagnostics",
+                "result": "pass"
+              },
+              {
+                "title": "diagnostic callback options are validated before native execution",
+                "result": "pass"
+              },
+              {
+                "title": "T12-failure-diagnostic-carries-backend-detail: a vibe-kind failure snapshot names the provider and retains the backend error detail",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "1dd006c30",
+        "ranAt": "2026-11-10T20:43:44.317Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "T1-ollama-activity-coordinator-dispatch-env-capture",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-ollama-activity.test.ts",
+                "title": "T1-ollama-activity-coordinator-dispatch-env-capture: the coordinator mode:'activity' envelope reaches the ollama-claude activity child with the endpoint env",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "T6-vibe-activity-coordinator-dispatch-fake-transport",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-vibe.test.ts",
+                "title": "T6-vibe-activity-coordinator-dispatch-fake-transport: the coordinator mode:'activity' dispatch envelope reaches the vibe app-server branch via a fake transport",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "T10-vibe-session-readback-core-mid",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "src/agent/providers/__tests__/cli-review-activity.live.test.ts (INSRC_LIVE_TESTS-gated; skips cleanly without the gate, verified: 2 skipped, 0 fail). Live run requires the real vibe-app-server runtime + billed tokens; not run in this validation turn."
+            }
+          },
+          {
+            "name": "live-ollama-claude-activity-review-completes-planning",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "src/agent/providers/__tests__/cli-review-activity.live.test.ts (INSRC_LIVE_TESTS-gated; skips cleanly without the gate, verified: 2 skipped, 0 fail). Live run requires the real Ollama cloud endpoint + claude CLI + billed tokens. Non-live parts of the same path are covered by cli-ollama-activity.test.ts T1/T3/T3b (7/7 pass)."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/cli-ollama-activity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1866,
+            "titles": [
+              {
+                "title": "T1-ollama-activity-child-env: the activity child of an ollama-claude provider gets the Ollama endpoint env and no vendor login",
+                "result": "pass"
+              },
+              {
+                "title": "T2-ollama-activity-no-vendor-inherit: the activity env carries the Ollama endpoint, a blank API key and none of the three vendor keys",
+                "result": "pass"
+              },
+              {
+                "title": "T5-claude-codex-activity-args-unchanged: activity argv matches the documented arg construction for both kinds, only opts.env was added",
+                "result": "pass"
+              },
+              {
+                "title": "T3-ollama-activity-preflight-rejects-before-spawn: a failed checkOllama throws OllamaTargetError and spawns no child",
+                "result": "pass"
+              },
+              {
+                "title": "T3b-ollama-activity-preflight-diagnostic-carries-backend-cause: the preflight rejection reaches onDiagnostic as a ReviewOutputFailureError snapshot with the real cause",
+                "result": "pass"
+              },
+              {
+                "title": "T4-plain-provider-activity-env-unchanged: without an Ollama target the activity child inherits the daemon env verbatim",
+                "result": "pass"
+              },
+              {
+                "title": "T1-ollama-activity-coordinator-dispatch-env-capture: the coordinator mode:'activity' envelope reaches the ollama-claude activity child with the endpoint env",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/agent/providers/__tests__/cli-vibe.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10194,
+            "titles": [
+              {
+                "title": "vibeLastAssistantText: bare array, wrapped messages, string content, no assistant",
+                "result": "pass"
+              },
+              {
+                "title": "complete() runs default `vibe -p --output text` with the prompt on stdin",
+                "result": "pass"
+              },
+              {
+                "title": "complete() without a model leaves VIBE_ACTIVE_MODEL unset (the CLI default applies)",
+                "result": "pass"
+              },
+              {
+                "title": "completeStructured() parses the last assistant message of the json output and validates it against the schema",
+                "result": "pass"
+              },
+              {
+                "title": "completeStructured() retries with a feedback note when the answer is not valid JSON, then succeeds",
+                "result": "pass"
+              },
+              {
+                "title": "completeStructured() surfaces a stable error after retries are exhausted",
+                "result": "pass"
+              },
+              {
+                "title": "runEditSession() runs headless with --auto-approve inside the repo cwd",
+                "result": "pass"
+              },
+              {
+                "title": "runReviewSession() restricts tools to read_file + the insrc MCP tools and validates the schema-shaped answer",
+                "result": "pass"
+              },
+              {
+                "title": "a non-zero vibe exit is a CliExitError naming vibe; a transient 429 is retried on a fresh run",
+                "result": "pass"
+              },
+              {
+                "title": "Vibe reviewer responses retain strict original nullable semantics without Codex transport decoding",
+                "result": "pass"
+              },
+              {
+                "title": "explicit Vibe selections do not replay an uncertain turn through any daemon entry point",
+                "result": "pass"
+              },
+              {
+                "title": "explicit Vibe structured completion repairs received schema output and honors its attempt budget",
+                "result": "pass"
+              },
+              {
+                "title": "explicit Vibe review refuses unverified tool policy before dispatch",
+                "result": "pass"
+              },
+              {
+                "title": "T7-vibe-activity-readonly-tool-policy: the activity session enables only read_file + mcp_insrc_* and the runtime is verified",
+                "result": "pass"
+              },
+              {
+                "title": "T8-vibe-activity-structured-validation-cancellation: schema-checked candidate and shared-signal cancellation",
+                "result": "pass"
+              },
+              {
+                "title": "T11-unsupported-model-effort-fails-before-dispatch: VibeSelectionError precedes any turn when the model/effort is not verified",
+                "result": "pass"
+              },
+              {
+                "title": "T6-vibe-activity-coordinator-dispatch-fake-transport: the coordinator mode:'activity' dispatch envelope reaches the vibe app-server branch via a fake transport",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

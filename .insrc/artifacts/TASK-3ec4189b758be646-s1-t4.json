@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7f5dc7ec-1b96-4fca-b84b-530f7bdb4992",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T18:01:41.579Z",
+    "epicCreatedAt": "2026-11-10T17:43:51.648Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3ec4189b758be646",
+    "storyId": "s1",
+    "envelope": {
+      "description": "ReviewActivityStream kind 'vibe' + vibe frame mapping",
+      "parent": {
+        "entityId": "STORY-3ec4189b758be646-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3ec4189b758be646-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "1c4c01a624bf7fa6a4d267315459be955a95b8b170d5e63746788f982e6e4b3c",
+        "at": "2026-11-10T18:01:41.586Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-10T18:01:41.590Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "ReviewActivityStream kind 'vibe' + vibe frame mapping",
+    "summary": "Widen ReviewActivityStream (src/agent/providers/review-activity-stream.ts:14) kind to include 'vibe' and add the vibe frame-decode branch so Vibe app-server frames drive the same lifecycle/events as claude/codex.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "ReviewActivityStream kind widened to 'claude'|'codex'|'vibe'",
+      "decode() gains a vibe branch mapping Vibe app-server frames onto tool_started/tool_completed/result/feedback",
+      "start/feed/failure/result/completed lifecycle identical across kinds (LLD invariant c3); 128-tool cap and NATIVE_CLI_FAILURE diagnostic preserved"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "T6-vibe-activity-stream-lifecycle"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

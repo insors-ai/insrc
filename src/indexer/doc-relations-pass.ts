@@ -1,11 +1,11 @@
 /**
- * The document-relations pass (Epic c2ba6fa6 s10): the mid-tier model's
+ * The document-relations pass (Epic c2ba6fa6 s10): the configured model's
  * proposed relationships for a graph-complete repository's new or changed
  * markdown documents, in their own table, stamped with the generation they
  * were computed at.
  *
  *   - It starts only from a complete graph (sc1); otherwise it groups nothing.
- *   - The provider is the mid tier's CLI provider (selectDocRelationsProvider);
+ *   - The provider is the role's configured provider (selectDocRelationsProvider);
  *     when there is none, or the provider call throws, the pass stops, records
  *     the extraction as 'unavailable' with the cause, writes no row and returns
  *     a non-outcome, which the scheduler counts as a failed pass (retry).
@@ -65,7 +65,7 @@ export interface DocRelationsPassDeps {
 	readonly waitForCodeIdle?: (() => Promise<void>) | undefined;
 	readonly isCodeIdle?:      (() => boolean) | undefined;
 	readonly shouldStop?:      (() => boolean) | undefined;
-	/** The provider selection (a seam): the mid tier's CLI provider by default. */
+	/** The provider selection (a seam): the role's configured provider by default. */
 	readonly select?:          ((repoPath: string) => DocRelationsSelection) | undefined;
 	/** Test seam: runs after a document's value is validated, before its row is published. */
 	readonly beforePublish?:   ((relFile: string) => Promise<void>) | undefined;

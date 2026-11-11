@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1794407147343-rot521",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T14:26:38.657Z",
+    "epicCreatedAt": "2026-11-11T14:26:38.657Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "claude-opus-5-5"
+        }
+      ]
+    },
+    "elapsedMs": 51311,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "7d2422c8f57fa483",
+    "epicSlug": "code-review-reuse-refused-when-only",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "188aed974feb6f84af90728084ce9772248a854915fd4c88dcd84136a3d00096",
+        "at": "2026-11-11T14:26:38.677Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T14:32:32.098Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "parentRef": {
+      "epicHash": "7d2422c8f57fa483",
+      "slug": "EPIC-7d2422c8f57fa483"
+    }
+  },
+  "body": {
+    "title": "Code-review reuse is refused when only provenance text in a test row changed",
+    "reproduction": "1. Run a whole-story code review whose packet lists test rows with file, cases, command, result, executionDetails and evidenceReferences; let attempt 1 pass some tasks.\n2. Start a correction attempt on the same pin whose test rows differ only in provenance text, for example one evidence reference removed, or executionDetails reworded after re-running the same tests.\n3. Observed: every task whose assigned tests changed only in that text is refused reuse (\"cannot reuse attempt 1: relevant task inputs changed (tests ...)\"). The rejection names one task per submission, so a reviewer that reuses several such tasks exhausts the three-submission attribution budget and the attempt fails with no task assessed. Seen on review projection-scope-66d4-s1 (Story 66d4d41d99f805af/s1) on 2026-11-11: removing one unresolvable evidence reference from the three test rows made t1, t2 and t4, which passed in attempt 1, unreusable, and attempts 2 and 3 both failed in attribution.\n4. Expected: a task whose sources, documents, requirements and assigned tests' committed file, cases and result are unchanged can reuse its earlier result; a real change to any of those still forces reassessment.",
+    "rootCause": "The reuse identity of a task is the hash of taskFinalInput (src/workflow/code-review/task-review/attribution-binding.ts:23-34), whose tests entry carries the whole submitted test row as detail (src/workflow/code-review/task-review/attribution-binding.ts:29). The row includes free-text provenance: command, executionDetails (which embeds the pin it was run on) and evidenceReferences. requireReuseIdentity compares the stored identity with the recomputed one (src/workflow/code-review/task-review/attribution-binding.ts:109-118), so any wording change in those fields makes reuse ineligible even though the committed test file blob (also in the identity), cases and result are unchanged. It throws at the first such task, and the attribution repair budget is three submissions (src/workflow/code-review/task-review/attribution-repair.ts:6), so several such tasks cannot all be corrected within one attempt.",
+    "fixIntent": "Make reuse eligibility follow what a task's review actually relied on: its committed sources, documents and requirements, and for each assigned test its committed file content, cases and result. Provenance-only wording in a test row (command text, execution details, evidence references) no longer blocks reuse; a real change to a test's file, cases or result still does. Saved attempts and stored task identities written before the change stay readable and keep validating, and admission refuses nothing it accepts today for unchanged inputs.\n\nConstraints from related work:\n- ISSUE-146084d04395b88b made rejected reuse actionable and kept the fingerprints as they were; this revises what the fingerprint covers, keeping its rejection feedback, the three-submission budget and fail-closed acceptance.\n- ISSUE-e4af63128c7cbec2 (review worker isolation, in progress) is changing src/workflow/code-review/task-review/admission.ts; this fix avoids editing that file."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/attribution-binding.ts:23-34",
+      "quotedText": "tests: assignment.tests.map(test => { ... return { detail: test, blobOid: prepared.finalTestBlobs![index] }; })"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/attribution-binding.ts:109-118",
+      "quotedText": "if(source.header.taskScopeIdentities?.find(b => b.taskId === assignment.taskId)?.identity !== taskFinalIdentity(review.prepared, assignment)){"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/attribution-repair.ts:6",
+      "quotedText": "export const MAX_ATTRIBUTION_SUBMISSIONS = 3;"
+    },
+    {
+      "id": "c4",
+      "kind": "stakeholder",
+      "ref": "Review projection-scope-66d4-s1 attempts 2 and 3, 2026-11-11",
+      "quotedText": "Task \"t1\" cannot reuse attempt 1: relevant task inputs changed (tests \"src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts\")"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-146084d04395b88b",
+      "quotedText": "Keep current fingerprints, three-submission budget and fail-closed scope acceptance."
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-e4af63128c7cbec2"
+    },
+    {
+      "id": "c7",
+      "kind": "stakeholder",
+      "ref": "User direction 2026-11-11",
+      "quotedText": "my packet edit made all reuse invalid <- this needs to be fixed."
+    }
+  ]
+}

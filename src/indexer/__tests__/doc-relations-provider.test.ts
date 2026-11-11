@@ -1,10 +1,6 @@
 /**
- * Epic c2ba6fa6, Story s10, t4 -- the model that proposes document
- * relationships: the role indexer.docRelations (peripheral, mid); a selection
- * that refuses any tier but mid -- with and without a routing context -- and a
- * family with no CLI or no listed model, before any call; and the
- * classification of failures: everything the provider call throws is a
- * provider failure, only DocRelationsOutputInvalid is the document's.
+ * Document relationships default to cheap, including local Ollama, and
+ * preserve explicitly configured mid-tier CLI providers.
  *
  * The registry reads the shipped definitions and an empty temp store.
  *
@@ -23,6 +19,7 @@ import { createRoleRouter } from '../../analyze/context/role-router.js';
 import { runWithRoutingContext } from '../../analyze/context/shaper-provider.js';
 import { _resetModelRegistryForTests, _setApprovedModelsPathForTests, getModelRegistry } from '../../daemon/model-registry.js';
 import { CliExitError, CliProvider, CliStallError } from '../../agent/providers/cli-provider.js';
+import { OllamaProvider } from '../../agent/providers/ollama.js';
 import { ModelCallFailedError } from '../../agent/providers/model-call-error.js';
 import {
 	classifyDocRelationsFailure,
@@ -48,43 +45,48 @@ after(() => {
 	rmSync(store, { recursive: true, force: true });
 });
 
-function config(extra: Record<string, unknown> = {}, mid: Record<string, unknown> = { runner: 'cli-claude', model: 'sonnet' }): AnalyzeConfig {
+function config(extra: Record<string, unknown> = {}, cheap: Record<string, unknown> = { runner: 'cli-claude', model: 'haiku' }): AnalyzeConfig {
 	return assembleConfig(parseTiering({
 		tiers: {
 			core:  { runner: 'cli-codex',  model: 'gpt-6.1-sol' },
-			mid,
-			cheap: { runner: 'cli-claude', model: 'haiku' },
+			mid: { runner: 'cli-claude', model: 'sonnet' },
+			cheap,
 		},
 		...extra,
 	}), SHAPER, DEPTH);
 }
 
-test('s10 t4: role taxonomy has indexer.docRelations as peripheral mid', () => {
+test('document relationships default to the peripheral cheap tier', () => {
 	const role = reasoningRoleTaxonomy().roles.find(r => r.id === DOC_RELATIONS_ROLE);
-	assert.deepEqual(role, { id: 'indexer.docRelations', criticality: 'peripheral', defaultTier: 'mid' });
+	assert.deepEqual(role, { id: 'indexer.docRelations', criticality: 'peripheral', defaultTier: 'cheap' });
+	const chosen = selectDocRelationsProvider(config(), REPO);
+	assert.ok(chosen.ok);
+	assert.ok(chosen.provider instanceof CliProvider);
+	assert.match(chosen.modelId, /haiku/);
 });
 
-test('s10 t4: a cheap-tier override is refused with and without a routing context', async () => {
-	// The default assignment is accepted, and builds a CLI provider of the mid tier's model.
-	const ok = selectDocRelationsProvider(config(), REPO);
-	assert.equal(ok.ok, true);
-	if (ok.ok) { assert.ok(ok.provider instanceof CliProvider); assert.equal(ok.modelId, 'claude-sonnet-5'); }
+test('cheap Ollama and explicit mid CLI selection work with and without a router', async () => {
+	const local = config({}, { runner: 'ollama', model: 'qwen3.8:27b' });
+	const mid = config({ byRepo: { [REPO]: { tasks: { [DOC_RELATIONS_ROLE]: 'mid' } } } });
+	for (const route of [false, true]) {
+		const select = async (cfg: AnalyzeConfig) => route
+			? runWithRoutingContext({ router: createRoleRouter({}), repoPath: '/other-repo' }, async () => selectDocRelationsProvider(cfg, REPO))
+			: selectDocRelationsProvider(cfg, REPO);
+		const ollama = await select(local);
+		assert.ok(ollama.ok);
+		assert.ok(ollama.provider instanceof OllamaProvider);
+		assert.equal(ollama.modelId, 'qwen3.8:27b');
 
-	const overrides: [string, AnalyzeConfig][] = [
-		['global', config({ tasks: { [DOC_RELATIONS_ROLE]: 'cheap' } })],
-		['per-repo', config({ byRepo: { [REPO]: { tasks: { [DOC_RELATIONS_ROLE]: 'cheap' } } } })],
-	];
-	for (const [label, cfg] of overrides) {
-		const without = selectDocRelationsProvider(cfg, REPO);
-		assert.deepEqual(without, { ok: false, reason: 'indexer.docRelations is assigned to tier cheap; this capability runs only on the mid tier' }, `${label}, no routing context`);
-		const within = await runWithRoutingContext({ router: createRoleRouter({}), repoPath: REPO }, async () => selectDocRelationsProvider(cfg, REPO));
-		assert.equal(within.ok, false, `${label}, under a routing context`);
-		if (!within.ok) assert.match(within.reason, /tier cheap; this capability runs only on the mid tier/);
+		const cli = await select(mid);
+		assert.ok(cli.ok);
+		assert.ok(cli.provider instanceof CliProvider);
+		assert.equal(cli.modelId, 'claude-sonnet-5');
 	}
+});
 
-	// Under a routing context the default assignment takes the router's provider.
-	const routed = await runWithRoutingContext({ router: createRoleRouter({}), repoPath: REPO }, async () => selectDocRelationsProvider(config(), REPO));
-	assert.equal(routed.ok, true);
+test('an explicit core assignment is refused before provider construction', () => {
+	const selected = selectDocRelationsProvider(config({ tasks: { [DOC_RELATIONS_ROLE]: 'core' } }), REPO);
+	assert.deepEqual(selected, { ok: false, reason: 'indexer.docRelations is assigned to tier core; this capability supports cheap and mid' });
 });
 
 test('s10 t4: a CLI family with no listed model is refused before any call', () => {
@@ -99,9 +101,6 @@ test('s10 t4: a CLI family with no listed model is refused before any call', () 
 		const unlisted = selectDocRelationsProvider(config(), REPO, { registry: noModels });
 		assert.equal(unlisted.ok, false);
 		if (!unlisted.ok) assert.match(unlisted.reason, /names no model the definitions list for cli-claude/);
-		const local = selectDocRelationsProvider(config({}, { runner: 'ollama', model: 'qwen3.6:27b' }), REPO);
-		assert.equal(local.ok, false);
-		if (!local.ok) assert.match(local.reason, /runs ollama, which is not a CLI provider/);
 	} finally {
 		CliProvider.prototype.completeStructured = original;
 	}

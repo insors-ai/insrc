@@ -1,0 +1,104 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f713b235-3083-485f-aeb0-8988b74e04a2",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T11:23:35.700Z",
+    "epicCreatedAt": "2026-11-10T04:52:20.369Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3992d2e1e26124dc",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement the supervisor child lifecycle",
+      "parent": {
+        "entityId": "STORY-3992d2e1e26124dc-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3992d2e1e26124dc-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-3992d2e1e26124dc-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-3992d2e1e26124dc-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-3992d2e1e26124dc-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "09e81f582ca6e1df8fdd3b9697cfef30f373662f0294084db5e0e04b39f57616",
+        "at": "2026-11-10T14:07:39.221Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-10T11:23:35.702Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Implement the supervisor child lifecycle",
+    "summary": "Build the per-user parent state machine, pinned child spawn, inherited channel, start/stop deadlines, exact escalation and reap, confirmed receipts and predecessor-bound replay. Start the supervisor idle and require journaled predecessor evidence during replacement.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "A hung or partially initialized child cannot be replaced before exact reap",
+      "An old stop or readiness frame cannot act on a newer generation"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Monotonic deadline, repeated requests and grace versus forced outcome"
+      },
+      {
+        "level": "unit",
+        "name": "Supervisor classifies idle stop, unavailable runtime, and confirmed failed exit"
+      },
+      {
+        "level": "unit",
+        "name": "Late ready cannot beat startup timeout or allow replacement before confirmed reap"
+      },
+      {
+        "level": "integration",
+        "name": "Delayed controller cannot stop the replacement generation"
+      },
+      {
+        "level": "integration",
+        "name": "Fresh supervisor first start requires durable predecessor evidence and an admitted owner"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

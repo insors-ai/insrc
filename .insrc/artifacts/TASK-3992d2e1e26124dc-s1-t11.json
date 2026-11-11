@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1c480c5a-b0e5-463d-af03-386bd9724ed4",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T11:23:35.740Z",
+    "epicCreatedAt": "2026-11-10T04:52:20.369Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3992d2e1e26124dc",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Project managed update state through daemon IPC",
+      "parent": {
+        "entityId": "STORY-3992d2e1e26124dc-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3992d2e1e26124dc-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-3992d2e1e26124dc-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-3992d2e1e26124dc-s1-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "366836272600b9e2554a5d72f4919e813afdba32cd934a2d2d18d10b158c6ed3",
+        "at": "2026-11-10T14:07:39.281Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-10T11:23:35.745Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Project managed update state through daemon IPC",
+    "summary": "Publish optional update IDs in managed acknowledgements and outcomes. Use a shared request-time installed-commit projection for threaded and non-threaded status. Preserve the existing fields and unmanaged behavior.",
+    "size": "M",
+    "order": 11,
+    "acceptanceChecks": [
+      "The candidate commit remains hidden from old clients until durable success",
+      "A matching terminal outcome and status report the committed or restored release consistently"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Daemon-initiated update survives supervisor unload and writes one terminal result across a protocol version change"
+      },
+      {
+        "level": "integration",
+        "name": "Observe in-flight status throughout injected rollback, then exactly one terminal outcome after restored readiness or a durable operator-recovery decision"
+      },
+      {
+        "level": "integration",
+        "name": "Hold application RPCs and indexing until matching durable success across threaded and non-threaded status paths"
+      },
+      {
+        "level": "integration",
+        "name": "Managed update helper waits for acknowledgement write before destructive work"
+      },
+      {
+        "level": "integration",
+        "name": "Threaded and non-threaded status publish the same committed release for the matching outcome"
+      }
+    ],
+    "planTaskId": "t11"
+  },
+  "citations": []
+}

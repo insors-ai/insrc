@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1794287044919-uy0gm3",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T05:04:33.252Z",
+    "epicCreatedAt": "2026-11-10T05:04:33.252Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 28332,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "738d62b848fd173f",
+    "epicSlug": "preserve-ollama-routing-claude-streaming-reviews",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "ecc9237ca31a130f44ca52baf6bee30d6dae6e4a36dc7749715ebdeca3e0b09f",
+        "at": "2026-11-10T05:16:45.205Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-10T17:28:50.945Z"
+      }
+    },
+    "revision": 2,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "parentRef": {
+      "epicHash": "738d62b848fd173f",
+      "slug": "EPIC-738d62b848fd173f"
+    }
+  },
+  "body": {
+    "title": "Fix Claude on Ollama and Mistral Vibe streaming reviews",
+    "reproduction": "Set the daemon core tier to ollama-claude with glm-5.3:cloud and high effort, then start an independent design review. The review selects the model but planning ends with NATIVE_CLI_FAILURE and pauses after the initial dispatch and three retries. A local fake Claude executable reproduces the dispatch difference. Bounded review receives the Ollama endpoint and auth, strips the vendor login environment and runs one preflight. Activity-mode review passes the same model argument, receives neither Ollama launch setting and skips preflight. The checkpoint stores a generic CLI failure, so the exact backend response is unavailable.\n\n**Mistral Vibe.** Configure the core and mid tiers to use Mistral Large 4 via Mistral Vibe. The installed insrc Vibe catalog does not include the versioned Large 4 model that Mistral documents. Explicit selection of an uncataloged model is refused before a Vibe turn starts. Separately, the activity-mode review entry point rejects Vibe before dispatch, so a catalog entry alone cannot enable independent reviews.",
+    "rootCause": "The activity-mode review branch spawns Claude directly through the process-group runner. It bypasses both the preflight and the per-child Ollama environment applied by the bounded Claude path. An Ollama model selection therefore does not bind the child to Ollama, and the child can inherit vendor routing or credentials.\n\nVibe has an existing bounded review path. The streaming path has Claude and Codex implementations and explicitly rejects Vibe. Explicit Vibe selection also requires a matching entry in the shared model catalog and a verified model and effort in the installed Vibe runtime.",
+    "fixIntent": "Preserve Ollama preflight and per-child routing and auth in streaming review while preserving normal Claude and Codex behavior. Validate the endpoint, model and hosting before dispatch. Test that an Ollama-targeted activity child uses the expected environment, does not inherit vendor routing, and is never spawned after preflight rejection. Keep existing daemon retry and structured-output behavior.\n\nDeliver Vibe streaming review in the same change. Preserve the read-only review tool policy, structured feedback validation, activity tracking, cancellation and resumable checkpoint semantics. Add the exact Mistral Large 4 entry to the shared Vibe model catalog with only verified effort values. Verify both catalog resolution and native session readback for the requested model and supported effort, including core and mid tier configurations. Exercise both provider paths through independent review and verify that unsupported model or effort settings fail before model dispatch."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts:611"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts:803"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts:825"
+    },
+    {
+      "id": "c4",
+      "kind": "stakeholder",
+      "ref": "Observed design-review failure and local bounded-versus-activity subprocess reproduction"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/assets/models/cloud-model-catalog.json:43"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/shared/vibe-session.ts:382"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts:642"
+    },
+    {
+      "id": "c8",
+      "kind": "doc",
+      "ref": "https://docs.mistral.ai/vibe/code/cli/configuration"
+    }
+  ]
+}

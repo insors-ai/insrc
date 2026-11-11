@@ -98,7 +98,7 @@ const ROLES: readonly RoleDescriptor[] = [
 
 	// (C) Indexing — PERIPHERAL → cheap (the cheapest CLI model by default).
 	{ id: 'indexer.summarise',             criticality: 'peripheral', defaultTier: 'cheap' }, // summariser
-	{ id: 'indexer.docRelations',          criticality: 'peripheral', defaultTier: 'mid'  },  // model-proposed document relationships (Epic c2ba6fa6 s10)
+	{ id: 'indexer.docRelations',          criticality: 'peripheral', defaultTier: 'cheap' }, // model-proposed document relationships (Epic c2ba6fa6 s10)
 	{ id: 'understanding.classify', criticality: 'critical', defaultTier: 'core' },
 	{ id: 'understanding.generate', criticality: 'critical', defaultTier: 'core' },
 	{ id: 'understanding.grade', criticality: 'critical', defaultTier: 'core' },

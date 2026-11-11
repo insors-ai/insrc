@@ -1,0 +1,107 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1a7660a6-d268-4778-9143-a281e44bf5bd",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T11:23:35.731Z",
+    "epicCreatedAt": "2026-11-10T04:52:20.369Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3992d2e1e26124dc",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Commit or recover the managed update transaction",
+      "parent": {
+        "entityId": "STORY-3992d2e1e26124dc-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3992d2e1e26124dc-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-3992d2e1e26124dc-s1-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "6391482de13fe51b7a00a0b6acd884a614111d9d4e2f25378a30be28d12a1e65",
+        "at": "2026-11-10T14:07:39.270Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-10T11:23:35.735Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Commit or recover the managed update transaction",
+    "summary": "Use the journal to commit, roll back or retain a recovery fence. Verify candidate job removal and predecessor restoration, atomically write one outcome, and allow post-commit recovery to finish activation without rollback.",
+    "size": "M",
+    "order": 10,
+    "acceptanceChecks": [
+      "Failed hello after registration removes only the verified candidate job before restoring the prior release",
+      "Controller loss before commit rolls back only with verified ownership; loss after commit preserves the selected release",
+      "Unresolved ownership remains fenced and a terminal outcome appears only after the verified decision"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Incompatible supervisor version produces one terminal failure after reconciliation"
+      },
+      {
+        "level": "unit",
+        "name": "Terminal outcome and marker ordering, including persistence failure"
+      },
+      {
+        "level": "unit",
+        "name": "Recovery applies only the operations permitted by the matching outcome"
+      },
+      {
+        "level": "integration",
+        "name": "Recovery job and legacy migration"
+      },
+      {
+        "level": "integration",
+        "name": "Rollback after legacy stop but before managed readiness restores the saved service"
+      },
+      {
+        "level": "integration",
+        "name": "Fail hello after candidate job registration before child start, remove the candidate job and restore the prior release"
+      },
+      {
+        "level": "integration",
+        "name": "Kill the controller at reservation, job registration, probation, and after outcome publication"
+      },
+      {
+        "level": "integration",
+        "name": "Relaunch supervisor after provisional release selection and verify recovery restores the old selector before uncommitted rollback, or preserves the candidate after success"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

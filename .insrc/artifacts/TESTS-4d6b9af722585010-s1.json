@@ -1,0 +1,45 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "66bb64e0d4e99fe6b5fca6563406a6183aa9ebd4a7603136aba31074a22a368c",
+        "at": "2026-11-10T19:12:24.935Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "4d6b9af722585010",
+    "storyId": "s1",
+    "createdAt": "2026-11-10T19:12:24.882Z",
+    "updatedAt": "2026-11-10T19:12:24.882Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-10T19:05:52.393Z",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "eac117220",
+        "ranAt": "2026-11-10T19:12:24.882Z",
+        "testsPassed": true,
+        "tests": [],
+        "files": [],
+        "note": "no tests named for a trivial build"
+      }
+    ]
+  },
+  "citations": []
+}

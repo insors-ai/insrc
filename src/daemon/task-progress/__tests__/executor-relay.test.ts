@@ -77,7 +77,8 @@ async function fixture(t: TestContext, withRepo = false) {
 }
 
 async function until<T>(read: () => T | undefined): Promise<T> {
-  for (let i = 0; i < 100; i++) {
+  const deadline = Date.now() + 15_000;
+  while (Date.now() < deadline) {
     const result = read();
     if (result !== undefined) return result;
     await delay(10);

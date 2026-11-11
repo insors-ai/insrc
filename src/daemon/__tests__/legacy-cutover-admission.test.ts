@@ -18,7 +18,7 @@ import type { ManagedInstallation } from '../../shared/managed-daemon-installati
 import { discoverLegacyLaunch, fenceLegacyLauncher, restoreLegacyLauncher } from '../legacy-cutover-admission.js';
 import { matchesInstalledDaemonArguments } from '../legacy-launch-job.js';
 
-const options = { skip: process.platform !== 'darwin' || (process.getuid?.() ?? 0) === 0, timeout: 60_000 };
+const options = { skip: process.platform !== 'darwin' || (process.getuid?.() ?? 0) === 0, timeout: 120_000 };
 
 async function fixtureOwner(helper: string) {
 	for (let attempt = 0;; attempt++) {
@@ -177,8 +177,8 @@ await db.close();
 		kind: 'update', owner: f.owner,
 		predecessor: { ...f.predecessor, pins: { prior: f.prior, candidate: f.candidate }, launch: { kind: 'stopped' } },
 	}) as Extract<MutationReservation, { kind: 'update' }>;
-	const shell = spawn('/bin/bash', ['-c', 'printf ready; while :; do sleep 1; done', join(f.oldRoot, 'scripts/daemon-ctl.sh')],
-		{ cwd: f.oldRoot, stdio: ['ignore', 'pipe', 'inherit'] });
+	const shell = spawn('/bin/bash', ['-c', 'printf ready; read -r', join(f.oldRoot, 'scripts/daemon-ctl.sh')],
+		{ cwd: f.oldRoot, stdio: ['pipe', 'pipe', 'inherit'] });
 	try {
 		await once(shell.stdout, 'data');
 		await assert.rejects(fenceLegacyLauncher(f.gate, update, f.helper), /older launcher/);

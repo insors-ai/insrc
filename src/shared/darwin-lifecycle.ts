@@ -55,12 +55,23 @@ export async function readDarwinLaunchContext(pid: number, executable = HELPER):
 	return { cwd, argv: args };
 }
 
-export async function readDarwinWorkingDirectory(pid: number, executable = HELPER): Promise<string> {
+export async function readDarwinWorkingDirectories(
+	pids: readonly number[], executable = HELPER,
+): Promise<readonly { pid: number; cwd?: string; errno?: number }[]> {
 	requireDarwin();
-	const { stdout } = await exec(executable, ['cwd', pidArgument(pid)], { encoding: 'utf8', timeout: ATTACH_TIMEOUT_MS, maxBuffer: 8192 });
-	const [cwd, end, ...rest] = stdout.split('\0');
-	if (cwd === undefined || !isAbsolute(cwd) || end !== '' || rest.length !== 0) throw new Error('invalid Darwin working directory');
-	return cwd;
+	if (pids.length === 0) return [];
+	if (pids.length > 256) throw new Error('too many working directory probes');
+	const { stdout } = await exec(executable, ['cwd-batch', ...pids.map(pidArgument)], {
+		encoding: 'utf8', timeout: 5_000, maxBuffer: 1024 * 1024,
+	});
+	const fields = stdout.split('\0');
+	if (fields.length !== 3 * pids.length + 1 || fields.at(-1) !== '') throw new Error('invalid Darwin working directories');
+	return pids.map((pid, index) => {
+		const [reported, cwd, error] = fields.slice(index * 3, index * 3 + 3);
+		if (reported !== String(pid) || cwd === undefined || error === undefined || !/^\d+$/.test(error)
+			|| (error === '0' ? !isAbsolute(cwd) : cwd !== '')) throw new Error('invalid Darwin working directory');
+		return error === '0' ? { pid, cwd } : { pid, errno: Number(error) };
+	});
 }
 
 /** Exchange owned directories on the same volume in one rename operation. */

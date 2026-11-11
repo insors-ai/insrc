@@ -170,6 +170,20 @@ static long positive(const char *text) {
 	return errno == 0 && *text != '\0' && *end == '\0' && result > 0 && result <= INT_MAX ? result : 0;
 }
 
+static int print_working_directories(int count, char **values) {
+	if (count < 1 || count > 256) return -1;
+	for (int index = 0; index < count; ++index) {
+		const long pid = positive(values[index]);
+		if (pid <= 0 || printf("%ld", pid) < 0 || putchar('\0') == EOF) return -1;
+		errno = 0;
+		const int result = print_cwd((pid_t)pid);
+		const int error = result == 0 ? 0 : errno != 0 ? errno : EIO;
+		if (result != 0 && putchar('\0') == EOF) return -1;
+		if (printf("%d", error) < 0 || putchar('\0') == EOF) return -1;
+	}
+	return fflush(stdout);
+}
+
 int main(int argc, char **argv) {
 	int result = -1;
 	errno = EINVAL;
@@ -179,11 +193,11 @@ int main(int argc, char **argv) {
 		if (errno == EWOULDBLOCK) return 75;
 	} else if (argc == 2 && strcmp(argv[1], "peer") == 0) result = print_peer();
 	else if (argc == 7 && strcmp(argv[1], "swap-directories") == 0) result = swap_directories(argv[2], argv[3], argv[4], argv[5], argv[6]);
+	else if (argc >= 3 && strcmp(argv[1], "cwd-batch") == 0) result = print_working_directories(argc - 2, argv + 2);
 	else if (argc >= 3) {
 		long pid = positive(argv[2]);
 		if (pid > 0 && argc == 3 && strcmp(argv[1], "identity") == 0) result = print_identity((pid_t)pid);
 		if (pid > 0 && argc == 3 && strcmp(argv[1], "context") == 0) result = print_context((pid_t)pid);
-		if (pid > 0 && argc == 3 && strcmp(argv[1], "cwd") == 0) result = print_cwd((pid_t)pid);
 		if (pid > 0 && argc == 6 && strcmp(argv[1], "observe") == 0) {
 			long timeout = positive(argv[5]);
 			if (timeout > 0) result = observe((pid_t)pid, argv[3], argv[4], timeout);

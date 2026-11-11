@@ -8,7 +8,7 @@ import type { Socket } from 'node:net';
 import { basename, dirname, isAbsolute, join, relative, sep } from 'node:path';
 import { promisify } from 'node:util';
 import {
-	matchesDarwinPeer, readDarwinIncarnation, readDarwinLaunchContext, readDarwinPeerCredentials, readDarwinWorkingDirectory, swapDarwinDirectories,
+	matchesDarwinPeer, readDarwinIncarnation, readDarwinLaunchContext, readDarwinPeerCredentials, readDarwinWorkingDirectories, swapDarwinDirectories,
 } from '../shared/darwin-lifecycle.js';
 import type { DarwinIncarnation } from '../shared/darwin-lifecycle.js';
 import { runFileIdentity, sameRunFile } from '../shared/daemon-run-files.js';
@@ -177,6 +177,7 @@ async function layout(fence: Fence): Promise<'original' | 'fenced'> {
 
 async function requireNoLegacyMutator(roots: readonly string[], allowed: DarwinIncarnation | undefined, helper?: string): Promise<void> {
 	const { stdout } = await exec('/bin/ps', ['-axww', '-o', 'uid=,pid=,stat=,command='], { encoding: 'utf8', timeout: 5_000, maxBuffer: 1024 * 1024 });
+	const pids: number[] = [];
 	for (const line of stdout.split('\n')) {
 		const match = /^\s*(\d+)\s+(\d+)\s+(\S+)\s+(.+)$/.exec(line);
 		if (match === null || Number(match[1]) !== process.getuid?.() || match[3]!.startsWith('Z')) continue;
@@ -187,9 +188,15 @@ async function requireNoLegacyMutator(roots: readonly string[], allowed: DarwinI
 		if (roots.some(root => command.includes(`${root}/`) || command.endsWith(` ${root}`))) {
 			fail('an older launcher, updater or daemon still references the legacy checkout');
 		}
-		let cwd: string;
-		try { cwd = await readDarwinWorkingDirectory(pid, helper); }
-		catch (error) {
+		pids.push(pid);
+	}
+	for (let first = 0; first < pids.length; first += 256) {
+		const observations = await readDarwinWorkingDirectories(pids.slice(first, first + 256), helper);
+		for (const { pid, cwd, errno } of observations) {
+			if (cwd !== undefined) {
+				if (roots.some(root => inside(root, cwd))) fail('an older launcher, updater or daemon still references the legacy checkout');
+				continue;
+			}
 			try { process.kill(pid, 0); }
 			catch (probe) { if ((probe as NodeJS.ErrnoException).code === 'ESRCH') continue; }
 			const state = await exec('/bin/ps', ['-p', String(pid), '-o', 'stat='], { timeout: 2_000 }).catch(probe => {
@@ -198,10 +205,7 @@ async function requireNoLegacyMutator(roots: readonly string[], allowed: DarwinI
 				throw probe;
 			});
 			if (state === null || state.stdout.trim().startsWith('Z')) continue;
-			throw error;
-		}
-		if (roots.some(root => inside(root, cwd))) {
-			fail('an older launcher, updater or daemon still references the legacy checkout');
+			fail(`cannot establish the working directory of process ${pid} (errno ${errno})`);
 		}
 	}
 }

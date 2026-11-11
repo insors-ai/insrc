@@ -1,18 +1,21 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 
 import assert from 'node:assert/strict';
-import { execFile, execFileSync } from 'node:child_process';
+import { execFile, execFileSync, spawn } from 'node:child_process';
+import { once } from 'node:events';
 import { mkdir, mkdtemp, readFile, readdir, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { createConnection } from 'node:net';
+import { dirname, join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import test from 'node:test';
 import type { TestContext } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { open } from 'lmdb';
-import { accepted, openManagedSupervisorLink } from '../../cli/services/managed-daemon-control.js';
+import { accepted, ManagedDaemonControl, openManagedSupervisorLink } from '../../cli/services/managed-daemon-control.js';
 import { InstallationMutationGate } from '../../shared/installation-mutation-gate.js';
+import { rpc } from '../../shared/ipc-client.js';
 import { installFreshSelectorMember, inspectManagedJob, installationPaths, readInstallationSelector, registerManagedJob, removeManagedJob } from '../../shared/managed-daemon-installation.js';
 import { captureManagedReleasePin, stageManagedRelease, verifyStagedReleasePin } from '../managed-release-staging.js';
 import type { ManagedReleaseQualification } from '../managed-release-staging.js';
@@ -29,7 +32,7 @@ function profile(releaseId: string): ReleaseCompatibility {
 	};
 }
 
-async function fixture(t: TestContext, supervisor?: string) {
+async function fixture(t: TestContext, supervisor?: string, programs?: { daemon: string; controller: string; updater: string }) {
 	const scratch = await realpath(await mkdtemp(join(supervisor === undefined ? tmpdir() : '/tmp', 'insrc-release-stage-')));
 	t.after(() => rm(scratch, { recursive: true, force: true }));
 	const stateRoot = supervisor === undefined ? scratch : join(scratch, '.insrc');
@@ -49,8 +52,12 @@ async function fixture(t: TestContext, supervisor?: string) {
 		'build.mjs': [
 			"import { mkdir, writeFile } from 'node:fs/promises';",
 			"for (const dir of ['out/daemon', 'out/bin', 'node_modules', 'packages/project-memory/dist']) await mkdir(dir, { recursive: true });",
-			"await writeFile('out/daemon/index.js', 'process.stdout.write(\"candidate daemon\");');",
+			`await writeFile('out/daemon/index.js', ${JSON.stringify(programs?.daemon ?? 'process.stdout.write("candidate daemon");')});`,
 			`await writeFile('out/bin/insrc-daemon-supervisor.js', ${JSON.stringify(supervisor ?? 'process.stdout.write("candidate supervisor");')});`,
+			...(programs === undefined ? [] : [
+				`await writeFile('out/bin/insrc-daemon-control.js', ${JSON.stringify(programs.controller)});`,
+				`await writeFile('out/bin/insrc-daemon-update.js', ${JSON.stringify(programs.updater)});`,
+			]),
 		].join('\n'),
 		'version.txt': 'prior',
 	};
@@ -83,7 +90,7 @@ async function fixture(t: TestContext, supervisor?: string) {
 		source, candidate, pairs: [{ prior: profile(priorCommit), candidate, priorFingerprint }],
 	};
 	const options = { stateRoot, runtime, source, qualification, prior: { root: old, runtime } };
-	return { options, entry, dependency, old, priorCommit, priorFingerprint, priorDependency, scratch };
+	return { options, entry, dependency, old, qualifiedOld, priorCommit, priorFingerprint, priorDependency, scratch };
 }
 
 test('Release provenance, changed bytes and absent legacy declaration', async t => {
@@ -124,6 +131,7 @@ await listenForSupervisorControllers(join(directory, 'control.sock'), { installa
     return { v: request.v, id: request.id, ok: true, generation: null, state: 'idle' };
   },
 });
+
 `;
 	const f = await fixture(t, supervisor);
 	const { stateRoot, runtime, source, qualification } = f.options;
@@ -163,6 +171,137 @@ await listenForSupervisorControllers(join(directory, 'control.sock'), { installa
 	} finally {
 		const selected = await readInstallationSelector(stateRoot);
 		if (selected !== undefined && await inspectManagedJob(selected) !== undefined) await removeManagedJob(selected, async () => {});
+	}
+});
+
+test('First supported update of a qualified prior build with broker denial', {
+	skip: process.platform !== 'darwin' || (process.getuid?.() ?? 0) === 0, timeout: 210_000,
+}, async t => {
+	const loader = JSON.stringify(import.meta.resolve('tsx/esm/api'));
+	const url = (path: string) => JSON.stringify(new URL(path, import.meta.url).href);
+	const program = (path: string) => `import { register } from ${loader};\nregister();\nawait import(${url(path)});\n`;
+	const supervisor = program('../../bin/insrc-daemon-supervisor.ts');
+	const controller = program('../../bin/insrc-daemon-control.ts');
+	const updater = program('../../bin/insrc-daemon-update.ts');
+	const candidateDaemon = `
+import { register } from ${loader};
+import { fileURLToPath } from 'node:url';
+register();
+const { ManagedDaemonLifecycle } = await import(${url('../managed-daemon-lifecycle.ts')});
+const { daemonRunFiles } = await import(${url('../run-file-ownership.ts')});
+const { PATHS } = await import(${url('../../shared/paths.ts')});
+const { IpcServer, directDispatch } = await import(${url('../server.ts')});
+const { launchManagedUpdate } = await import(${url('../managed-update-launch.ts')});
+const managed = ManagedDaemonLifecycle.open();
+const lease = await managed.borrow(daemonRunFiles, PATHS.daemonRunGuard);
+daemonRunFiles.writePid();
+const server = new IpcServer(directDispatch({
+  'daemon.status': async () => ({ pid: process.pid }),
+  'daemon.update': async (_params, context) => launchManagedUpdate(fileURLToPath(new URL('../bin/insrc-daemon-update.js', import.meta.url)), [], context.awaitUpdateReply),
+}));
+await server.listen();
+await lease.returnGrant();
+managed.setShutdownHandler(async () => { await managed.watchdog(); process.exit(0); });
+await managed.ready();
+`;
+	const f = await fixture(t, supervisor, { daemon: candidateDaemon, controller, updater });
+	const { stateRoot, runtime, source, qualification } = f.options;
+	const paths = installationPaths(stateRoot);
+	const broker = join(f.scratch, 'denied-broker');
+	await writeFile(broker, '#!/bin/sh\nprintf "ERROR denied 1\\n"\n', { mode: 0o700 });
+	const watchdog = join(f.scratch, 'watchdog.mjs');
+	await writeFile(watchdog, program('../../bin/insrc-shutdown-watchdog.ts'));
+	const predecessor = `
+import { register } from ${loader};
+import { createServer } from 'node:net';
+import { writeFileSync } from 'node:fs';
+register();
+const { armShutdownWatchdog } = await import(${url('../shutdown-watchdog.ts')});
+const { PATHS } = await import(${url('../../shared/paths.ts')});
+writeFileSync(PATHS.pidFile, String(process.pid));
+createServer(connection => {
+  connection.on('error', () => {});
+  connection.on('data', async raw => {
+    if (JSON.parse(raw.toString()).method !== 'daemon.shutdown') return;
+    try {
+      const result = await armShutdownWatchdog({ timeoutMs: 10000, readyTimeoutMs: 5000,
+        helperPath: ${JSON.stringify(watchdog)}, brokerPath: ${JSON.stringify(broker)}, logPath: PATHS.daemonLog });
+      result.disarm();
+      process.exit(70);
+    } catch { process.kill(process.pid, 'SIGKILL'); }
+  });
+}).listen(PATHS.sockFile, () => console.log('ready'));
+`;
+	await writeFile(f.entry, predecessor);
+	await writeFile(join(f.qualifiedOld, 'out/daemon/index.js'), predecessor);
+	const independent = await captureManagedReleasePin(f.qualifiedOld, runtime);
+	const published = { ...qualification, pairs: [{ ...qualification.pairs[0]!, priorFingerprint: independent.fingerprint }] };
+	git(source.repoUrl, 'notes', '--ref=insrc-daemon-updates', 'add', '-m', JSON.stringify(published), qualification.candidate.releaseId);
+	const graphPath = join(stateRoot, 'graph.lmdb');
+	const graph = open({ path: graphPath, noSubdir: true, maxDbs: 32 });
+	const meta = graph.openDB({ name: 'meta', keyEncoding: 'ordered-binary' });
+	meta.putSync('schema_version', 10);
+	meta.putSync('fixture_record', 'survives');
+	await graph.close();
+	await mkdir(join(stateRoot, 'lance'));
+	const config = join(stateRoot, 'config.json');
+	await writeFile(config, JSON.stringify({ daemonUpdate: source, fixture: 'preserved' }));
+	const env = { ...process.env, HOME: f.scratch, PATH: `${dirname(runtime)}:${process.env['PATH'] ?? '/usr/bin:/bin'}` };
+	const old = spawn(runtime, [f.entry], { env, cwd: f.old, stdio: ['ignore', 'pipe', 'inherit'] });
+	const exited = once(old, 'exit');
+	const gate = new InstallationMutationGate(stateRoot);
+	try {
+		const [ready] = await Promise.race([once(old.stdout, 'data'), exited]);
+		assert.match(String(ready), /ready/);
+		const installer = fileURLToPath(new URL('../../../scripts/insrc-daemon-install.sh', import.meta.url));
+		const result = await promisify(execFile)('/bin/bash', [installer, '--target', f.old, '--repo', source.repoUrl, '--branch', source.branch, '-y'],
+			{ env, cwd: f.scratch, timeout: 105_000 });
+		assert.match(result.stdout, /committed/);
+		assert.deepEqual(await exited, [null, 'SIGKILL']);
+		const selected = await readInstallationSelector(stateRoot);
+		assert.equal(selected?.releaseId, qualification.candidate.releaseId);
+		assert.ok(selected?.enabled);
+		const link = await openManagedSupervisorLink(selected);
+		try { assert.equal(accepted(await link.call({ op: 'status', generation: null })).state, 'running'); }
+		finally { link.close(); }
+		const log = await readFile('/tmp/.insrc/daemon.log', 'utf8');
+		assert.ok(log.split('\n').some(line => line.includes(`"pid":${old.pid}`)
+			&& line.includes('broker capture failed: process capability broker refused: denied (errno 1)')));
+		assert.equal((await gate.read()).outcome?.decision, 'committed');
+		assert.equal(JSON.parse(await readFile(config, 'utf8')).fixture, 'preserved');
+		const inspect = open({ path: graphPath, readOnly: true, maxDbs: 32 });
+		try { assert.equal(inspect.openDB({ name: 'meta', keyEncoding: 'ordered-binary' }).get('fixture_record'), 'survives'); }
+		finally { await inspect.close(); }
+		assert.equal(Number((await readFile(paths.daemonPid, 'utf8')).trim()) === old.pid, false);
+		const independentlyBuilt = join(f.scratch, 'independent-managed');
+		git(f.scratch, 'clone', '-q', '--', source.repoUrl, independentlyBuilt);
+		await promisify(execFile)('npm', ['ci', '--no-fund', '--no-audit'], { cwd: independentlyBuilt, env, timeout: 20_000 });
+		await promisify(execFile)('npm', ['run', 'build'], { cwd: independentlyBuilt, env, timeout: 20_000 });
+		await writeFile(join(independentlyBuilt, 'out/release-compatibility.json'), JSON.stringify(qualification.candidate) + '\n', { mode: 0o600 });
+		const managedFingerprint = (await captureManagedReleasePin(independentlyBuilt, runtime)).fingerprint;
+		await writeFile(join(source.repoUrl, 'version.txt'), 'subsequent managed update');
+		git(source.repoUrl, 'commit', '-qam', 'subsequent managed update');
+		const next = profile(git(source.repoUrl, 'rev-parse', 'HEAD'));
+		git(source.repoUrl, 'notes', '--ref=insrc-daemon-updates', 'add', '-m', JSON.stringify({ source, candidate: next,
+			pairs: [{ prior: qualification.candidate, candidate: next, priorFingerprint: managedFingerprint }] }), next.releaseId);
+		const ack = await rpc<{ launched: boolean; updateId: string }>('daemon.update', {}, () => createConnection(paths.daemonSocket), { timeoutMs: 20_000 });
+		assert.equal(ack.launched, true);
+		const deadline = performance.now() + 40_000;
+		for (;;) {
+			const { active, outcome } = await gate.read();
+			if (outcome?.id === ack.updateId && active === null) { assert.equal(outcome.decision, 'committed', outcome.detail); break; }
+			assert.ok(performance.now() < deadline, 'running managed update did not settle');
+			await delay(100);
+		}
+		assert.equal((await readInstallationSelector(stateRoot))?.releaseId, next.releaseId);
+	} finally {
+		if (old.exitCode === null && old.signalCode === null) old.kill();
+		await exited;
+		const selected = await readInstallationSelector(stateRoot);
+		if (selected?.enabled && await inspectManagedJob(selected) !== undefined) {
+			await new ManagedDaemonControl(selected).run('stop', 5_000);
+			await removeManagedJob(selected, async () => {});
+		}
 	}
 });
 

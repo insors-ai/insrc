@@ -118,9 +118,24 @@ logs a clear error explaining the dim mismatch + recovery steps.
 
 ## Install & build
 
-The daemon lives in the `insrc-ide` monorepo under `src/insrc/`
-and installs to `~/.insrc/daemon/` (a git clone of the same
-repo, kept in sync with `origin`).
+The daemon lives in the standalone `insors-ai/insrc` repository. The default
+installation is `~/.insrc/daemon/`.
+
+### macOS installed lifecycle
+
+Run the current `scripts/insrc-daemon-install.sh` for a fresh installation or
+the first upgrade of an existing installation. The installer registers one
+per-user supervisor. `--no-start` leaves it registered and idle. Updated
+VS Code and JetBrains installations also use the bundled installer for the
+first upgrade. Later updates preserve the daemon's running or stopped state.
+
+The configured Git origin publishes a note under
+`refs/notes/insrc-daemon-updates` for the exact target commit. Its JSON names the
+configured origin and branch, the candidate's writable-format declaration,
+and each qualified predecessor's declaration and independently captured
+`priorFingerprint`. Qualification is specific to the installed build and
+runtime bytes. If no matching qualification is available, the updater keeps
+the incumbent in its current state and reports the preparation failure.
 
 ### First-time install
 

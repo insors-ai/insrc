@@ -2,12 +2,13 @@
 
 import assert from 'node:assert/strict';
 import { execFile, execFileSync } from 'node:child_process';
-import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { copyFile, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import test from 'node:test';
 import type { TestContext } from 'node:test';
 import { promisify } from 'node:util';
+import { fileURLToPath } from 'node:url';
 import { ManagedDaemonControl, openManagedSupervisorLink } from '../../cli/services/managed-daemon-control.js';
 import { readDarwinIncarnation } from '../../shared/darwin-lifecycle.js';
 import { InstallationMutationGate } from '../../shared/installation-mutation-gate.js';
@@ -56,6 +57,7 @@ async function fixture(t: TestContext, startChild: boolean, failChild = false) {
 		pathEnv: process.env['PATH'] ?? '/usr/bin:/bin', enabled: true };
 	await writeFile(join(releaseRoot, 'out/bin/insrc-daemon-supervisor.js'), `
 import { register } from ${JSON.stringify(loader)};
+import { readFile } from 'node:fs/promises';
 register();
 const { DaemonSupervisor } = await import(${reference('../supervisor.ts')});
 const { listenForSupervisorControllers } = await import(${reference('../supervisor-socket.ts')});
@@ -67,8 +69,9 @@ const supervisor = new DaemonSupervisor({
   allowInitialStart: async () => true,
   verifyReady: async () => {}, reconcileExit: async () => {}, publicArm: async () => {},
 });
+const selected = JSON.parse(await readFile(${JSON.stringify(paths.manifest)}, 'utf8'));
 await listenForSupervisorControllers(${JSON.stringify(paths.socket)}, {
-  installationRoot: ${JSON.stringify(stateRoot)}, releaseId: ${JSON.stringify(installation.releaseId)},
+  installationRoot: ${JSON.stringify(stateRoot)}, releaseId: selected.releaseId,
 }, supervisor);
 `);
 	await writeFile(join(releaseRoot, 'out/daemon/index.js'), failChild ? 'process.exit(42);' : `
@@ -99,6 +102,69 @@ setInterval(() => { if (existsSync(${JSON.stringify(exitTrigger)})) process.exit
 	});
 	return { scratch, paths, activation, installation, gate, exitTrigger };
 }
+
+async function runFreshInstaller(t: TestContext, startChild: boolean) {
+	const f = await fixture(t, startChild);
+	const { installation, scratch } = f;
+	const origin = join(scratch, 'origin');
+	await mkdir(origin);
+	await mkdir(join(origin, 'scripts'));
+	await mkdir(join(origin, 'src/assets/models'), { recursive: true });
+	await copyFile(fileURLToPath(new URL('../../assets/models/cloud-model-catalog.json', import.meta.url)),
+		join(origin, 'src/assets/models/cloud-model-catalog.json'));
+	await copyFile(fileURLToPath(new URL('../../../scripts/daemon-ctl.sh', import.meta.url)), join(origin, 'scripts/daemon-ctl.sh'));
+	const manifest = { name: 'insrc-fresh-fixture', version: '1.0.0', type: 'module', scripts: { build: 'node build.mjs' } };
+	await writeFile(join(origin, 'package.json'), JSON.stringify(manifest));
+	await writeFile(join(origin, 'package-lock.json'), JSON.stringify({ ...manifest, lockfileVersion: 3,
+		packages: { '': { name: manifest.name, version: manifest.version } } }));
+	await writeFile(join(origin, '.gitignore'), 'out/\nnode_modules/\ndist/\n');
+	const controller = `import { register } from ${JSON.stringify(loader)};\nregister();\nawait import(${reference('../../bin/insrc-daemon-control.ts')});\n`;
+	const supervisor = await readFile(join(installation.releaseRoot, 'out/bin/insrc-daemon-supervisor.js'), 'utf8');
+	const daemon = await readFile(join(installation.releaseRoot, 'out/daemon/index.js'), 'utf8');
+	await writeFile(join(origin, 'build.mjs'), `
+import { mkdir, writeFile } from 'node:fs/promises';
+for (const dir of ['out/bin', 'out/daemon', 'node_modules', 'packages/project-memory/dist']) await mkdir(dir, { recursive: true });
+await writeFile('out/bin/insrc-daemon-control.js', ${JSON.stringify(controller)});
+await writeFile('out/bin/insrc-daemon-supervisor.js', ${JSON.stringify(supervisor)});
+await writeFile('out/daemon/index.js', ${JSON.stringify(daemon)});
+`);
+	const git = (...args: string[]) => execFileSync('git', ['-C', origin, ...args], { encoding: 'utf8' }).trim();
+	git('init', '-q', '-b', 'v2');
+	git('add', '.');
+	git('-c', 'user.name=insrc tests', '-c', 'user.email=tests@example.invalid', 'commit', '-qm', 'fixture release');
+	installation.releaseId = git('rev-parse', 'HEAD');
+	await rm(installation.releaseRoot, { recursive: true });
+	const env = { ...process.env, HOME: scratch, INSRC_DAEMON_ROOT: installation.releaseRoot,
+		PATH: `${dirname(installation.runtime)}:${installation.pathEnv}` };
+	const installer = fileURLToPath(new URL('../../../scripts/insrc-daemon-install.sh', import.meta.url));
+	await exec('/bin/bash', [installer, '--target', installation.releaseRoot, '--repo', origin, '--branch', 'v2', '-y',
+		'--embedder', 'onnx', ...(startChild ? [] : ['--no-start'])], { env, timeout: 75_000 });
+	const status = async () => {
+		const link = await connectFixture(installation);
+		try { return await link.call({ op: 'status', generation: null }); }
+		finally { link.close(); }
+	};
+	const command = (action: string) => exec('/bin/bash', [join(installation.releaseRoot, 'scripts/daemon-ctl.sh'), action], { env, timeout: 75_000 });
+	return { status, command };
+}
+
+test('Fresh install and verified ordinary restart', { ...platform, timeout: 120_000 }, async t => {
+	const f = await runFreshInstaller(t, true);
+	const before = await f.status();
+	assert.ok(before.ok && before.state === 'running');
+	await f.command('restart');
+	const after = await f.status();
+	assert.ok(after.ok && after.state === 'running' && after.generation !== before.generation);
+});
+
+test('Fresh --no-start and later supervisor start', { ...platform, timeout: 120_000 }, async t => {
+	const f = await runFreshInstaller(t, false);
+	const before = await f.status();
+	assert.ok(before.ok && before.state === 'idle' && before.generation === null);
+	await f.command('start');
+	const after = await f.status();
+	assert.ok(after.ok && after.state === 'running' && after.generation !== null);
+});
 
 test('Explicit fresh activation start intent and owned partial publication', platform, async t => {
 	const { activation, gate, installation, paths } = await fixture(t, false);

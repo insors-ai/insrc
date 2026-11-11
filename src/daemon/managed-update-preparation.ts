@@ -1,10 +1,9 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 
-import { execFile } from 'node:child_process';
 import { mkdtemp, readFile, realpath, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { isDeepStrictEqual, promisify } from 'node:util';
+import { isDeepStrictEqual } from 'node:util';
 import { accepted, openManagedSupervisorLink } from '../cli/services/managed-daemon-control.js';
 import { readDarwinIncarnation } from '../shared/darwin-lifecycle.js';
 import { runFileIdentity } from '../shared/daemon-run-files.js';
@@ -15,7 +14,7 @@ import type { ManagedInstallation } from '../shared/managed-daemon-installation.
 import { checkUpdateSource, readUpdateSource } from '../shared/update-source.js';
 import type { UpdateSource } from '../shared/update-source.js';
 import { discoverLegacyLaunch } from './legacy-cutover-admission.js';
-import { stageManagedRelease, verifyStagedReleasePin } from './managed-release-staging.js';
+import { managedReleaseGit as git, stageManagedRelease, verifyStagedReleasePin } from './managed-release-staging.js';
 import type { ManagedReleaseQualification } from './managed-release-staging.js';
 import { completeLegacyMigration, completeManagedUpdate } from './managed-update-recovery.js';
 import { readReleaseCompatibility } from './release-compatibility.js';
@@ -23,13 +22,6 @@ import { readReleaseCompatibility } from './release-compatibility.js';
 type Update = Extract<MutationReservation, { kind: 'update' }>;
 type Source = { readonly repoUrl: string; readonly branch: string };
 const NOTES = 'refs/notes/insrc-daemon-updates';
-const exec = promisify(execFile);
-
-async function git(root: string, args: readonly string[]): Promise<string> {
-	const env = { ...process.env, GIT_TERMINAL_PROMPT: '0' } as NodeJS.ProcessEnv;
-	for (const key of ['GIT_DIR', 'GIT_WORK_TREE', 'GIT_INDEX_FILE', 'GIT_COMMON_DIR', 'GIT_OBJECT_DIRECTORY', 'GIT_ALTERNATE_OBJECT_DIRECTORIES']) delete env[key];
-	return (await exec('git', ['-C', root, ...args], { env, timeout: 120_000, maxBuffer: 1024 * 1024 })).stdout.trim();
-}
 
 async function sourceFor(stateRoot: string, releaseRoot: string, override?: UpdateSource): Promise<Source> {
 	const config = readUpdateSource(join(stateRoot, 'config.json'));

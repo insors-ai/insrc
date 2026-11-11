@@ -9,6 +9,8 @@ import { test } from 'node:test';
 import type { TestContext } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
+import { open } from 'lmdb';
+import { connect } from '@lancedb/lancedb';
 import type { ManagedSupervisorLink } from '../../cli/services/managed-daemon-control.js';
 import { readDarwinIncarnation } from '../../shared/darwin-lifecycle.js';
 import type { DarwinIncarnation } from '../../shared/darwin-lifecycle.js';
@@ -516,6 +518,20 @@ async function installedLegacyFixture(t: TestContext) {
 	const next = { ...common, releaseId: 'next', releaseRoot: join(root, 'next'), enabled: true };
 	await mkdir(join(prior.releaseRoot, 'out', 'daemon'), { recursive: true });
 	await mkdir(next.releaseRoot);
+	const config = join(root, 'config.json');
+	const configBytes = '{"existing":"configuration"}\n';
+	await writeFile(config, configBytes);
+	const graphPath = join(root, 'graph.lmdb');
+	const graph = open({ path: graphPath, noSubdir: true, maxDbs: 32 });
+	const meta = graph.openDB({ name: 'meta', keyEncoding: 'ordered-binary' });
+	meta.putSync('schema_version', 10);
+	meta.putSync('fixture_marker', 'keep graph row');
+	await graph.close();
+	const lancePath = join(root, 'lance');
+	const lance = await connect(lancePath);
+	const table = await lance.createTable('fixture', [{ id: 'keep lance row' }]);
+	table.close();
+	lance.close();
 	const paths = installationPaths(root);
 	const entry = join(prior.releaseRoot, 'out', 'daemon', 'index.js');
 	let controller: DarwinIncarnation;
@@ -571,6 +587,14 @@ async function installedLegacyFixture(t: TestContext) {
 		assert.deepEqual(await recoverInstalledManagedUpdate(gate, reservation.id, controller, handoff, services), (await gate.read()).outcome);
 		requireAbsentManagedSelector(root);
 		assert.equal(runFileIdentity(paths.runGuard), undefined);
+		assert.equal(await readFile(config, 'utf8'), configBytes);
+		const stored = open({ path: graphPath, readOnly: true, maxDbs: 32 });
+		try { assert.equal(stored.openDB({ name: 'meta', keyEncoding: 'ordered-binary' }).get('fixture_marker'), 'keep graph row'); }
+		finally { await stored.close(); }
+		const vectors = await connect(lancePath);
+		const restored = await vectors.openTable('fixture');
+		try { assert.equal((await restored.query().toArray())[0]?.id, 'keep lance row'); }
+		finally { restored.close(); vectors.close(); }
 	}
 	return { scratch, root, gate, runtime, prior, baseline, controller, paths, entry, legacyHost, migrate };
 }

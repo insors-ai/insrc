@@ -65,7 +65,7 @@ function commandEnvironment(): NodeJS.ProcessEnv {
 	return env;
 }
 
-async function git(root: string, args: readonly string[]): Promise<string> {
+export async function managedReleaseGit(root: string, args: readonly string[]): Promise<string> {
 	const result = await exec('git', ['-C', root, ...args], {
 		env: commandEnvironment(), timeout: 120_000, maxBuffer: 1024 * 1024,
 	});
@@ -73,11 +73,11 @@ async function git(root: string, args: readonly string[]): Promise<string> {
 }
 
 async function cleanCheckoutCommit(root: string): Promise<string> {
-	if (await realpath(root) !== root || await git(root, ['rev-parse', '--show-toplevel']) !== root) {
+	if (await realpath(root) !== root || await managedReleaseGit(root, ['rev-parse', '--show-toplevel']) !== root) {
 		throw new Error('release root is not the canonical checkout');
 	}
-	const commit = await git(root, ['rev-parse', '--verify', 'HEAD^{commit}']);
-	if (!COMMIT.test(commit) || await git(root, ['status', '--porcelain', '--untracked-files=normal'])) {
+	const commit = await managedReleaseGit(root, ['rev-parse', '--verify', 'HEAD^{commit}']);
+	if (!COMMIT.test(commit) || await managedReleaseGit(root, ['status', '--porcelain', '--untracked-files=normal'])) {
 		throw new Error('release checkout has uncommitted changes or an invalid commit');
 	}
 	return commit;
@@ -199,7 +199,7 @@ export async function stageManagedRelease(options: StageOptions): Promise<{
 	let destination: string | undefined;
 	try {
 		const checkout = join(staging, 'checkout');
-		await git(staging, ['clone', '--no-local', '--single-branch', '--branch', source.branch, '--', source.repoUrl, checkout]);
+		await managedReleaseGit(staging, ['clone', '--no-local', '--single-branch', '--branch', source.branch, '--', source.repoUrl, checkout]);
 		if (await cleanCheckoutCommit(checkout) !== candidateProfile.releaseId) {
 			throw new Error('fetched branch does not match the qualified candidate commit');
 		}

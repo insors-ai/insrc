@@ -3,7 +3,6 @@
 import { access, lstat, realpath, rm } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import { basename, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
 import { stopDaemon } from '../cli/services/daemon.js';
 import { captureDaemon, cleanupStoppedDaemon } from '../cli/services/lifecycle.js';
@@ -126,7 +125,7 @@ async function main(command: string): Promise<void> {
 			const root = await realpath(bootstrap);
 			if (!info.isDirectory() || info.uid !== process.getuid?.() || (info.mode & 0o077) !== 0
 				|| !basename(root).startsWith('insrc-upgrade-')
-				|| await realpath(fileURLToPath(import.meta.url)) !== join(root, 'checkout/out/bin/insrc-daemon-control.js')) {
+				|| process.argv[1] === undefined || await realpath(process.argv[1]) !== join(root, 'checkout/out/bin/insrc-daemon-control.js')) {
 				throw new Error('invalid temporary upgrade bridge');
 			}
 			ownedBridge = root;

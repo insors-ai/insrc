@@ -70,7 +70,7 @@ async function verifyDescriptor(legacy: Legacy): Promise<void> {
 
 export async function inspectLegacyJob(legacy: Legacy) {
 	await verifyDescriptor(legacy);
-	return inspectPinnedLaunchJob(legacy.job);
+	return inspectPinnedLaunchJob({ ...legacy.job, runAtLoad: legacy.runAtLoad });
 }
 
 export function matchesInstalledDaemonArguments(argv: readonly string[], runtime: string, entry: string): boolean {
@@ -87,7 +87,7 @@ export async function removeLegacyJob(legacy: Legacy, authorize: () => Promise<v
 	const observer = target === undefined ? undefined : await observeDarwinExit(target, 10_000);
 	try {
 		await authorize();
-		if (target !== undefined) await verifyDarwinJobProcess(legacy.job, target);
+		if (target !== undefined) await verifyDarwinJobProcess({ ...legacy.job, runAtLoad: legacy.runAtLoad }, target);
 		else if ((await inspectLegacyJob(legacy))?.pid !== null) throw new Error('legacy LaunchAgent changed before removal');
 		try { await launchctl(['bootout', registered.target]); } catch { /* Resolve lost acknowledgement using the exact job. */ }
 		if (observer !== undefined && !await observer.exited) throw new Error('legacy LaunchAgent process exit is unconfirmed');

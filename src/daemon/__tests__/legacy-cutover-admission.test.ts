@@ -59,7 +59,7 @@ async function finish(child: ChildProcess): Promise<void> {
 	await once(child, 'exit');
 }
 
-async function registerJob(f: Awaited<ReturnType<typeof fixture>>, suffix: string, args: string[], run: boolean) {
+async function registerJob(f: Awaited<ReturnType<typeof fixture>>, suffix: string, args: string[], run: boolean, keepAlive = false) {
 	const label = `ai.insrc.test.${basename(f.scratch)}.${suffix}`;
 	const path = join(f.scratch, `${suffix}.plist`);
 	const text = (value: string) => `<string>${value.replaceAll('&', '&amp;').replaceAll('<', '&lt;')}</string>`;
@@ -69,7 +69,7 @@ async function registerJob(f: Awaited<ReturnType<typeof fixture>>, suffix: strin
 <key>ProgramArguments</key><array>${args.map(text).join('')}</array>
 <key>WorkingDirectory</key>${text(f.oldRoot)}
 <key>RunAtLoad</key>${run ? '<true/>' : '<false/>'}
-<key>KeepAlive</key><false/>
+<key>KeepAlive</key>${keepAlive ? '<true/>' : '<false/>'}
 </dict></plist>\n`, { mode: 0o600 });
 	const domain = `gui/${f.owner.uid}`;
 	await launchctl(['bootstrap', domain, path]);
@@ -135,6 +135,15 @@ createServer(socket => socket.on('error', () => {})).listen(${JSON.stringify(joi
 		await writeFile(passive.path, descriptor.replace(f.oldRoot + '</string>', '/private/tmp</string>'));
 		await assert.rejects(discoverLegacyLaunch(f.prior, baseline, { ...deps, labels: [passive.label] }), /changing restart policy or descriptor/);
 	} finally { await passive.remove(); }
+	const active = await registerJob(f, 'keepalive', [f.runtime, entry], false, true);
+	try {
+		const descriptor = await readFile(active.path, 'utf8');
+		await writeFile(active.path, descriptor.replace('<key>KeepAlive</key><true/>', '<key>KeepAlive</key><false/>'));
+		await assert.rejects(discoverLegacyLaunch(f.prior, baseline, { ...deps, labels: [active.label] }), /registered job restart policy/);
+	} finally {
+		await active.remove();
+		for (const name of ['daemon.pid', 'daemon.sock']) await rm(join(f.stateRoot, name), { force: true });
+	}
 	await mkdir(join(f.oldRoot, 'node_modules'));
 	await symlink(fileURLToPath(new URL('../../../node_modules/tsx', import.meta.url)), join(f.oldRoot, 'node_modules/tsx'));
 	const recovery = await registerJob(f, 'recovery', [f.runtime, '--import', 'tsx/esm', entry], true);

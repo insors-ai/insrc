@@ -184,6 +184,8 @@ export interface DarwinLaunchJob {
 	readonly program: string;
 	readonly args: readonly string[];
 	readonly workingDirectory?: string;
+	/** When supplied, only a passive registration with this RunAtLoad policy is allowed. */
+	readonly runAtLoad?: boolean;
 }
 
 export function darwinLaunchLabel(canonicalRoot: string, uid: number): string {
@@ -239,6 +241,14 @@ export async function verifyDarwinLaunchJob(
 		|| start < 0 || end < 0 || args.length !== job.args.length
 		|| args.some((line, index) => line !== `\t\t${job.args[index]}`)) {
 		throw new Error('registered job does not match pinned descriptor');
+	}
+	if (job.runAtLoad !== undefined) {
+		const properties = field('properties')?.split(' | ');
+		const hasTrigger = lines.some(line => /^\t(?:event triggers|endpoints|sockets|run interval|start calendar interval)\s*=/.test(line));
+		if (properties === undefined || properties.some(value => !['inferred program', 'runatload', '(none)'].includes(value))
+			|| properties.includes('runatload') !== job.runAtLoad || hasTrigger) {
+			throw new Error('registered job restart policy does not match its passive descriptor');
+		}
 	}
 	const pidText = field('pid');
 	const state = field('state');

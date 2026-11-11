@@ -8,7 +8,8 @@ import { join } from 'node:path';
 import { registerGitTools } from '../../../../daemon/tools/builtins/git/index.js';
 import { RegistryReviewSources } from '../sources.js';
 import type { ReviewSources } from '../sources.js';
-import { projectReviewScope } from '../projection.js';
+import { projectReviewScope, ProjectionBudget, boundedProjectionSources } from '../projection.js';
+import { TaskReviewInputError } from '../contracts.js';
 import type { SelectedChange } from '../packet.js';
 
 registerGitTools();
@@ -63,4 +64,34 @@ test('projection identity matches the identity pinned from the code before the c
   assert.deepEqual(one.projection.entries.map(e => e.path), ['moved.js', 'moved.js']);
   assert.equal(one.projection.identity, PINNED_IDENTITY);
  } finally { one.r.cleanup(); two.r.cleanup(); }
+});
+
+test('pathChanges lists the commits that changed the path and refuses a failed or malformed listing as a source error', async () => {
+ const { r, first, moved } = await identityFixture();
+ try {
+  const sources = new RegistryReviewSources({ repoPath: r.repo, sessionId: 'projection-lineage', requestId: 1, send: () => {} });
+  const base = r.git('rev-list', '--max-parents=0', 'HEAD');
+  assert.deepEqual(new Set(await sources.pathChanges(base, moved, 'source.js')), new Set([first, moved]), 'the merge and the commits that touch other files are not listed');
+  assert.deepEqual(new Set(await sources.pathChanges(base, moved, 'side.txt')), new Set([r.git('rev-parse', 'side'), r.git('rev-parse', `${moved}^`)]), 'the merge differs from its main parent at side.txt, so it is listed');
+  const source = (error: unknown) => error instanceof TaskReviewInputError && error.field === 'source';
+  await assert.rejects(sources.pathChanges('f'.repeat(40), moved, 'source.js'), source, 'a listing git cannot produce is a source error');
+  await assert.rejects(sources.pathChanges(base.slice(0, 12), moved, 'source.js'), source, 'a listed sha whose length differs from the range OIDs is refused');
+ } finally { r.cleanup(); }
+});
+
+test('boundedProjectionSources caches pathChanges and charges one read per uncached listing', async () => {
+ const { r, moved } = await identityFixture();
+ try {
+  const registry = new RegistryReviewSources({ repoPath: r.repo, sessionId: 'projection-lineage', requestId: 1, send: () => {} });
+  let listings = 0;
+  const counting: ReviewSources = { commit: registry.commit.bind(registry), isAncestor: registry.isAncestor.bind(registry), file: registry.file.bind(registry),
+   changedRanges: registry.changedRanges.bind(registry), pathChanges: async (...args) => { listings++; return registry.pathChanges(...args); } };
+  const base = r.git('rev-list', '--max-parents=0', 'HEAD');
+  const bounded = boundedProjectionSources(counting, new ProjectionBudget({ reads: 1 }));
+  const once = await bounded.pathChanges(base, moved, 'source.js');
+  assert.deepEqual(await bounded.pathChanges(base, moved, 'source.js'), once);
+  assert.equal(listings, 1, 'a repeated listing is served from the cache');
+  await assert.rejects(bounded.pathChanges(base, moved, 'other.txt'), (error: unknown) => error instanceof TaskReviewInputError && error.field === 'projection_limit', 'an uncached listing is charged as a read');
+  assert.equal(listings, 1);
+ } finally { r.cleanup(); }
 });

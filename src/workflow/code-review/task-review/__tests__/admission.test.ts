@@ -74,7 +74,7 @@ test('zero-segment fresh admission rejects before history source work, checkpoin
   const packet = structuredClone(f.packet); packet.reviewSet[0]!.files[0]!.segments = [];
   let reads = 0, providers = 0, publications = 0;
   const unexpected = async (): Promise<never> => { reads++; throw new Error('Unexpected source read'); };
-  const coordinator = new TaskReviewCoordinator({ sources: { commit: unexpected, file: unexpected, changedRanges: unexpected, isAncestor: unexpected },
+  const coordinator = new TaskReviewCoordinator({ sources: { commit: unexpected, file: unexpected, changedRanges: unexpected, isAncestor: unexpected, pathChanges: unexpected },
    provider: () => { providers++; throw new Error('Unexpected provider dispatch'); },
    publish: async () => { publications++; throw new Error('Unexpected publication'); } });
   for (const party of ['daemon', 'controller'] as const) for (const existing of [false, true]) {

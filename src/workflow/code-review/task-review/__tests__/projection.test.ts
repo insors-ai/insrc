@@ -138,7 +138,7 @@ test('projection budgets refuse before exceeding limits, preserve source fields 
   }
   let active = 0, calls = 0;
   const serial = <A extends unknown[], R>(fn: (...args: A) => Promise<R>) => async (...args: A) => { assert.equal(active++, 0); calls++; try { await Promise.resolve(); return await fn(...args); } finally { active--; } };
-  const sources: ReviewSources = { commit: serial(f.deps.sources.commit.bind(f.deps.sources)), file: serial(f.deps.sources.file.bind(f.deps.sources)), changedRanges: serial(f.deps.sources.changedRanges.bind(f.deps.sources)), isAncestor: serial(f.deps.sources.isAncestor.bind(f.deps.sources)) };
+  const sources: ReviewSources = { commit: serial(f.deps.sources.commit.bind(f.deps.sources)), file: serial(f.deps.sources.file.bind(f.deps.sources)), changedRanges: serial(f.deps.sources.changedRanges.bind(f.deps.sources)), isAncestor: serial(f.deps.sources.isAncestor.bind(f.deps.sources)), pathChanges: serial(f.deps.sources.pathChanges.bind(f.deps.sources)) };
   await projectReviewScope(origins, f.revision, sources); assert.ok(calls > 0); assert.equal(active, 0);
   for (const field of ['changes', 'source']) {
    const failure = new TaskReviewInputError(field, 'Existing transport or truncated diff failure');
@@ -152,7 +152,7 @@ test('actual diff truncation stays changes while oversized JSON refuses input be
   const path = checkpointPath(f.repo, 'publication'), bytes = readFileSync(path, 'utf8');
   let calls = 0;
   const unexpected = async (): Promise<never> => { calls++; throw new Error('Unexpected source read'); };
-  const coordinator = new TaskReviewCoordinator({ sources: { commit: unexpected, file: unexpected, changedRanges: unexpected, isAncestor: unexpected }, provider: () => { calls++; throw new Error('Unexpected provider'); } });
+  const coordinator = new TaskReviewCoordinator({ sources: { commit: unexpected, file: unexpected, changedRanges: unexpected, isAncestor: unexpected, pathChanges: unexpected }, provider: () => { calls++; throw new Error('Unexpected provider'); } });
   await assert.rejects(coordinator.start(f.repo, 'oversized', 1, { ...f.packet, functionalSummary: 'x'.repeat(reviewJsonLimit()) }), error => error instanceof TaskReviewInputError && error.field === 'input');
   assert.equal(calls, 0); assert.equal(existsSync(checkpointPath(f.repo, 'oversized')), false); assert.equal(readFileSync(path, 'utf8'), bytes);
   f.put('large.txt', `${'old content\n'.repeat(250000)}`); f.git('add', 'large.txt'); f.git('commit', '-qm', 'large old blob'); const parent = f.git('rev-parse', 'HEAD');

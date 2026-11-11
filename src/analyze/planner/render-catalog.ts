@@ -20,7 +20,8 @@
  * catalogs go at the tail).
  */
 
-import type { AnalyzeTaskTemplate } from '../../shared/analyze-types.js';
+import type { AnalyzeScope, AnalyzeTaskTemplate } from '../../shared/analyze-types.js';
+import { focusedLowerBound, SCOPE_BAND } from './scope-band.js';
 import { slotLabel, type SlotPath } from './wire-schema.js';
 
 /**
@@ -72,20 +73,13 @@ function renderTemplate(t: AnalyzeTaskTemplate, slots: readonly SlotPath[]): str
  * Render the per-scope depth-policy band reminder the prompt
  * includes between the catalog and the OUTPUT SHAPE block.
  *
- * Mirrors SCOPE_BAND from validate.ts; importing that constant
- * would create a cycle (validate.ts -> ... -> driver.ts ->
- * render-catalog.ts), so we duplicate the small lookup here.
+ * The range printed is the range the validator enforces (INV-13), read from
+ * the same table; it is stated once, as a final range with nothing left to
+ * adjust, so the model does not apply a reduction of its own to it.
  */
-export function renderDepthPolicy(scope: 'XS' | 'S' | 'M' | 'L' | 'XL', focused: boolean): string {
-	const BAND: Readonly<Record<string, { lo: number; hi: number }>> = {
-		XS: { lo: 3,  hi: 8  },
-		S:  { lo: 10, hi: 20 },
-		M:  { lo: 20, hi: 40 },
-		L:  { lo: 30, hi: 60 },
-		XL: { lo: 40, hi: 80 },
-	};
-	const band = BAND[scope]!;
-	const lo = focused ? Math.floor(band.lo / 2) : band.lo;
+export function renderDepthPolicy(scope: AnalyzeScope, focused: boolean): string {
+	const lo = focused ? focusedLowerBound(scope) : SCOPE_BAND[scope].lo;
+	const hi = SCOPE_BAND[scope].hi;
 	const depthHint = scope === 'XS'
 		? 'most detailed per-unit; the plan is small but each task drills deeply.'
 		: scope === 'XL'
@@ -93,7 +87,7 @@ export function renderDepthPolicy(scope: 'XS' | 'S' | 'M' | 'L' | 'XL', focused:
 			: 'balanced. Pick a count near the middle of the band unless the focus genuinely needs more or less.';
 	return (
 		`scope: **${scope}**\n` +
-		`expected task count: **${lo}-${band.hi}**${focused ? ' (focused intent reduces the lower bound to half)' : ''}\n` +
+		`expected task count: **${lo}-${hi}** (the final range: a plan with fewer than ${lo} or more than ${hi} tasks is rejected)\n` +
 		`depth policy: ${depthHint}\n`
 	);
 }

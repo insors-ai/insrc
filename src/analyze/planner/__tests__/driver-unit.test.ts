@@ -21,6 +21,7 @@ import '../../orchestrator/__tests__/private-paths.js';
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { ModelCallFailedError } from '../../../agent/providers/model-call-error.js';
 
 import {
@@ -35,6 +36,9 @@ import {
 	renderDepthPolicy,
 	runPlanner,
 } from '../index.js';
+import { SCOPE_BAND } from '../scope-band.js';
+import { taskCountFailure } from '../validate.js';
+import type { PlanTask } from '../../../shared/analyze-types.js';
 import { _resetAnalyzeConfigCacheForTests } from '../../../config/analyze.js';
 import type { AnalyzeContextBundle } from '../../context/types.js';
 import type { LLMProvider } from '../../../shared/types.js';
@@ -140,10 +144,35 @@ test('renderDepthPolicy: M scope reports 20-40 band', () => {
 	assert.match(out, /expected task count.*20-40/);
 });
 
-test('renderDepthPolicy: focused intent halves the lower bound only', () => {
+test('renderDepthPolicy: focused intent prints the lower bound that is enforced', () => {
 	const out = renderDepthPolicy('M', true);
 	assert.match(out, /expected task count.*10-40/);
-	assert.match(out, /focused intent reduces the lower bound to half/);
+});
+
+test('renderDepthPolicy prints the INV-13 range for every scope and focus value, without halving wording', () => {
+	for (const scope of ['XS', 'S', 'M', 'L', 'XL'] as const) {
+		for (const focused of [false, true]) {
+			const lo = focused ? Math.floor(SCOPE_BAND[scope].lo / 2) : SCOPE_BAND[scope].lo;
+			const hi = SCOPE_BAND[scope].hi;
+			const out = renderDepthPolicy(scope, focused);
+			const label = `${scope} focused=${focused}`;
+			assert.equal(out.match(/\*\*\d+-\d+\*\*/g)?.length, 1, `${label}: range printed once`);
+			assert.match(out, new RegExp(`expected task count: \\*\\*${lo}-${hi}\\*\\*`), label);
+			assert.doesNotMatch(out, /half|halv|reduc/i, label);
+			// the plan at the printed bounds is the plan the validator accepts, and one task outside is refused
+			for (const [n, ok] of [[lo, true], [hi, true], [lo - 1, false], [hi + 1, false]] as const) {
+				const plan = { scope, tasks: new Array(n) } as unknown as PlanTask;
+				assert.equal(taskCountFailure(plan, { focused }) === null, ok, `${label} n=${n}`);
+			}
+		}
+	}
+});
+
+test('no duplicate band table in the renderer', () => {
+	const source = readFileSync(new URL('../render-catalog.ts', import.meta.url), 'utf8');
+	assert.doesNotMatch(source, /\bXS:\s*\{\s*lo/, 'a band table literal remains');
+	assert.doesNotMatch(source, /Math\.floor\([^)]*\/\s*2\)/, 'a copy of the focused lower bound remains');
+	assert.match(source, /from '\.\/scope-band\.js'/);
 });
 
 test('renderDepthPolicy: XS depth hint mentions detailed per-unit', () => {

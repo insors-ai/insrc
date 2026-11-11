@@ -1,0 +1,386 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1794370888746-51o06i",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T04:23:42.853Z",
+    "epicCreatedAt": "2026-11-10T19:29:54.698Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "unknown",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 133720,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e0821209d94791d0",
+    "epicSlug": "move-new-chat-out-history-dropdown",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1794370888746-51o06i",
+    "hldEffectiveHash": "71e6c90a5ff73939d89d6fe93c80f9221bc582a9ead5ba29c869714fad49d109",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Move new-chat out of the history dropdown into an icon button left of the history widget",
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "One webview module, one obvious approach: the history menu trailing new… row is removed and a dedicated button is placed before .histchip, reusing the .pico icon slot and the existing newChatPick() message; the host new-chat contract is untouched. Two files change: chat-panel.ts and chat-panel.test.ts.",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "bf0ebebcf6fd3754dfaa2e824bc354608a9095f06dec82f645d73e39fa173eda",
+        "at": "2026-11-11T04:23:43.048Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T04:24:13.095Z",
+        "override": {
+          "reason": "User approved with override in chat: review stopped at paused attempt 2 (final-consistency retries exhausted, user declined resume and chose to present the LLD as-is). Attempt 1 MED findings were corrected and re-emitted as revision 2 through design.story; attempt 2 passed test-coverage and migration/alternatives."
+        }
+      }
+    },
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "revision": 2,
+    "rangeBase": "1dd006c30fc0d1e2991178ec11f58099dd01ca9d"
+  },
+  "body": {
+    "summary": {
+      "prose": "This story moves the chat panel's new-chat action out of the history dropdown menu and into a dedicated icon button sitting immediately left of the history widget in the chrome bar. The button carries a chat-bubble-with-plus glyph and posts the exact same new-chat message as before, so session creation and all host-side handling are untouched; only the webview trigger and its pinning tests change.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Move new-chat out of the history dropdown into an icon button left of the history widget"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "VS Code chat webview shell (vscode-plugin/src/chat/chat-panel.ts): the .chrome header's right-aligned cluster (.right > #insrc-newchat button + .histchip > #insrc-history + #insrc-histmenu popup) [[c2]]. The history menu becomes a pure session list; new-chat is a first-class chrome button. No change to the host message protocol, the session store, or provider adapters.",
+      "api": [
+        {
+          "name": "renderHistoryMenu",
+          "signature": "() => void — rebuilds #insrc-histmenu rows from histEntries (webview bootstrap function in the nonce'd shell script)",
+          "parameters": [],
+          "returns": "void (mutates #insrc-histmenu children: one mitem row per histEntries entry, no trailing row)",
+          "errors": [
+            "none — DOM-only; an empty histEntries yields an empty menu"
+          ],
+          "preconditions": [
+            "histMenu element exists in the shell",
+            "histEntries populated from history-list messages"
+          ],
+          "postconditions": [
+            "#insrc-histmenu contains exactly one role=menuitem row per persisted chat and NO 'new…' row (the row this story removes)"
+          ]
+        },
+        {
+          "name": "newChatPick",
+          "signature": "newChatPick(trigger: HTMLElement | null) => void — closes popups, refocuses trigger, posts the new-chat message (webview bootstrap function)",
+          "parameters": [
+            {
+              "name": "trigger",
+              "type": "HTMLElement | null",
+              "purpose": "element to refocus after posting (the #insrc-newchat button)"
+            }
+          ],
+          "returns": "void (side effect: vs.postMessage)",
+          "errors": [
+            "none"
+          ],
+          "preconditions": [
+            "vs message channel open"
+          ],
+          "postconditions": [
+            "posts {v:1, payload:{type:'new-chat', provider: curProv || ''}} — identical payload to the old menu row, so the host's new-chat handler is unchanged"
+          ]
+        },
+        {
+          "name": "#insrc-newchat click listener",
+          "signature": "(click on the chrome button) => stopPropagation(); newChatPick(nc) — new wiring added by this story",
+          "parameters": [
+            {
+              "name": "event",
+              "type": "MouseEvent",
+              "purpose": "stopPropagation so document click-close does not race the post"
+            }
+          ],
+          "returns": "void",
+          "errors": [
+            "none — native <button> also fires click on Enter/Space, giving keyboard activation without extra handlers"
+          ],
+          "preconditions": [
+            "#insrc-newchat exists in the shell markup, placed before .histchip in .right [[c2]], with the shared .pico 14px icon slot for its SVG [[c4]]"
+          ],
+          "postconditions": [
+            "popups closed, new-chat posted, button keeps focus"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ChatSession / history-list / new-chat message envelope",
+        "change": "invariant-change",
+        "details": "No persisted or protocol change: the new-chat payload {type:'new-chat', provider} is byte-identical, history-list is unchanged, and no store schema is touched. The only data change is presentational: the history menu's row set loses its synthetic 'new…' entry.",
+        "callSites": [
+          "vscode-plugin/src/chat/chat-panel.ts:2564",
+          "vscode-plugin/src/chat/chat-panel.ts:2568",
+          "vscode-plugin/src/chat/chat-panel.ts:2751",
+          "vscode-plugin/src/chat/__tests__/chat-panel.test.ts:2017-2018",
+          "vscode-plugin/src/chat/__tests__/chat-panel.test.ts:2337"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "User clicks #insrc-newchat while a history/active popup is open",
+          "detection": "the button's own click listener stopPropagation()s before document click-close runs; newChatPick then calls closePops() itself",
+          "response": "all popups close, new-chat is posted once, focus moves to the button",
+          "userImpact": "none — single new-chat post, no double-fire",
+          "recoverable": true
+        },
+        {
+          "scenario": "Host rejects the new-chat (e.g. cross-provider new-chat on a started session)",
+          "detection": "the host’s new-chat provider-rejection branch calls only postRunConfig (chat-panel.ts:3309-3313), so the webview receives a ‘run-config’ message; that handler (chat-panel.ts:2693) re-syncs the curProv/run-button labels but does not call reconcile() — reconcile() fires only from ‘history-list’ (chat-panel.ts:2698, the rejected open-chat path) and ‘session-restored’",
+          "response": "webview state unchanged — the click never wrote to the trigger selections, so there is nothing to snap back; no menu row involved anymore",
+          "userImpact": "same as before the change — the refusal path is host-side and untouched",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "empty history list (no persisted chats yet)",
+          "expected": "history menu opens with zero rows (no 'new…' row anymore); the #insrc-newchat button remains the only new-chat affordance and works identically"
+        },
+        {
+          "input": "keyboard user focuses #insrc-newchat and presses Enter/Space",
+          "expected": "native <button> fires click -> newChatPick(nc) posts new-chat; no custom key handler needed"
+        },
+        {
+          "input": "Escape while focus is on #insrc-newchat",
+          "expected": "document keydown closes popups (closePops); button is not a popup trigger, nothing else happens"
+        },
+        {
+          "input": "CSP of the webview",
+          "expected": "inline SVG in static shell markup is allowed under the webview CSP (default-src ‘none’; style-src ‘unsafe-inline’ — the shell already carries a static inline SVG at chat-panel.ts:2782); the icon renders with currentColor"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The new-chat message payload {type:'new-chat', provider: curProv||''} is unchanged, so the host's session-creation handler and all env('new-chat') host tests keep passing.",
+          "source": "c1"
+        },
+        {
+          "text": "The history trigger’s empty label stays ‘new…’ (renderTriggers, chat-panel.ts:2561) — only the MENU row is removed, not the chip label.",
+          "source": "c1"
+        },
+        {
+          "text": "closePops() still closes every popup and clears aria-expanded on both triggers; the new button needs no popup state.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test + assert/strict via npx tsx --test, with the panel's fidelityHtml() shell snapshot and fakeChannel() host-message capture (existing chat-panel.test.ts conventions)",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Pin the shell markup and bootstrap wiring for the relocated new-chat trigger and the row-less history menu.",
+          "subjects": [
+            "vscode-plugin/src/chat/__tests__/chat-panel.test.ts — update the 'regression: the history trigger still opens/new-chats…' test (lines ~2011-2021): newChatPick still posts {type:'new-chat',provider:curProv||''}, now triggered by the #insrc-newchat click listener; renderHistoryMenu output contains no 'new…'/'starts a new chat' row",
+            "vscode-plugin/src/chat/__tests__/chat-panel.test.ts — update the '#insrc-history session dropdown' markup test (line ~2337): .right contains <button id=\"insrc-newchat\"> BEFORE <span class=\"histchip\">; the button carries the bubble-plus SVG in its .pico slot and aria-label/title 'new chat'",
+            "vscode-plugin/src/chat/__tests__/chat-panel.test.ts — add assertions: doesNotMatch 'starts a new chat'; match on id=\"insrc-newchat\" click wiring calling newChatPick; match on the bubble path + plus strokes of the icon SVG"
+          ],
+          "fixturesNeeded": [
+            "fidelityHtml() snapshot (existing)"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the host contract is unchanged: env('new-chat', ...) host tests still pass unmodified.",
+          "subjects": [
+            "vscode-plugin/src/chat/__tests__/chat-panel.test.ts — existing new-chat host tests (representative sample: lines 229, 648, 659, 735, 792, 869, 1101, 1144, 1573, 3514, 3952, 4431, 4505, 4524, 4619) run unchanged; the guarantee is ac5’s full-suite run, not this enumerated list. Cross-file note: chat-shell.test.ts:717-724 renders the same .right/.histchip chrome with an index-based assertion (histAt > rightAt) that still holds after the insertion — verified unaffected"
+          ],
+          "fixturesNeeded": [
+            "fakeChannel() + createChatPanelHost with scriptedAdapter (existing)"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "updated history-trigger regression test: doesNotMatch /starts a new chat/ in renderHistoryMenu; history menu rows = histEntries only (also covers the empty-history edge case: zero rows, no ‘new…’ row)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "markup test: /<button type=\"button\" id=\"insrc-newchat\"[^>]*><span class=\"pico\">/ appears before /<span class=\"histchip\">/ in the .right span"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "markup test: the #insrc-newchat .pico contains the inline bubble-plus SVG (bubble path + two plus strokes), fill/stroke currentColor"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "wiring test: /insrc-newchat/ listener calls newChatPick with the button element itself (nc) as the trigger argument (proves the ‘button keeps focus’ postcondition), and newChatPick posts /type:’new-chat’,provider:curProv\\|\\|’’/; clicking while a popup is open posts exactly once (stopPropagation + closePops); all existing env(’new-chat’) host tests pass unchanged"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "full suite: npx tsx --test vscode-plugin/src/chat/__tests__/chat-panel.test.ts passes (plus cli-adapter.test.ts), tsc --noEmit clean"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The chat chrome's .right cluster contains only the .histchip history widget; its dropdown menu (#insrc-histmenu) ends with a synthetic 'new…' / 'starts a new chat' row that posts {type:'new-chat'} via newChatPick (chat-panel.ts:2568). No dedicated new-chat button exists in the chrome.",
+      "stateAfter": "The history menu lists only persisted chats (no 'new…' row), and a dedicated icon button #insrc-newchat sits immediately left of .histchip in .right, carrying a chat-bubble-plus inline SVG and posting the identical {type:'new-chat', provider: curProv||''} message on click (native button keyboard semantics). Host, store and message protocol unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the #insrc-newchat button markup before .histchip in .chrome .right with the bubble-plus SVG in a .pico slot, plus .newchatbtn CSS (chip-matching ground/border/radius, hover/focus-visible states)",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Wire the button's click listener (stopPropagation + newChatPick(nc)) in the bootstrap script and remove the trailing mitem row from renderHistoryMenu",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Update the two pinning tests in chat-panel.test.ts (history-trigger regression test, histchip markup test) and add assertions for the button placement, icon, wiring and the row-less menu",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Fully backward compatible: the new-chat webview->host message payload is byte-identical, history-list is unchanged, no persisted schema exists for the chrome, and all host-side env('new-chat') tests pass unmodified. Older webview shells are not persisted (the shell is rebuilt on every panel open), so there is no mixed-version state.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Icon button left of the history chip (chosen shape)",
+        "oneLineSummary": "A real <button id=insrc-newchat> in .chrome .right immediately before .histchip; click posts the unchanged {type:'new-chat'} via newChatPick; the history menu loses its trailing new… row.",
+        "approach": "Markup: insert the button into the .right span before the histchip (chat-panel.ts:2751) [[c2]]. CSS: a compact bordered icon button reusing the chip's ground/border/radius and the existing .pico 14px slot [[c4]] for a bubble-plus inline SVG (currentColor). JS: const nc=getElementById('insrc-newchat'); nc click -> stopPropagation + newChatPick(nc); renderHistoryMenu drops the appended mitem row. Native <button> gives Enter/Space activation and focus for free; aria-label/title 'new chat'.",
+        "pros": [
+          "Matches the requested UX exactly (button left of the history widget, bubble-plus icon)",
+          "Message contract {type:'new-chat'} and all host handling unchanged — zero host-side diff",
+          "Reuses existing primitives (.pico slot, .histchip look, newChatPick, closePops)",
+          "Keyboard accessible via native button semantics",
+          "Smallest diff that fully meets the story"
+        ],
+        "cons": [
+          "One more control in the chrome row (space is ample — .right is right-aligned with the actchip on the left)"
+        ],
+        "costEstimate": "XS"
+      },
+      {
+        "id": "a2",
+        "name": "Keep the row, add a header button too (dual affordance)",
+        "oneLineSummary": "Add the icon button left of .histchip but ALSO keep the new… row at the bottom of the history menu.",
+        "approach": "Same as a1 for the button, plus renderHistoryMenu keeps its trailing mitem row.",
+        "pros": [
+          "New-chat reachable from two places"
+        ],
+        "cons": [
+          "Keeps the duplicated new… row the story asks to remove"
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "Violates the primary requirement — keeps the duplicated 'new…' row the story asks to remove"
+      },
+      {
+        "id": "a3",
+        "name": "Icon button inside the input bar",
+        "oneLineSummary": "Place the new-chat button at the left edge of .inputbar next to the ❯ prompt instead of the chrome.",
+        "approach": "Markup in the .inputbar div; same click wiring; history menu row removed.",
+        "pros": [
+          "Keeps chrome compact"
+        ],
+        "cons": [
+          "Places the button in the input bar instead of left of the history widget; adds layout risk"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Places the button in the input bar instead of left of the history widget; adds layout risk"
+      },
+      {
+        "id": "a4",
+        "name": "Status quo (row only)",
+        "oneLineSummary": "Keep the trailing new… row in the history menu; change nothing.",
+        "approach": "No change.",
+        "pros": [
+          "Zero diff"
+        ],
+        "cons": [
+          "Does not meet the story at all"
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "No change at all — does not meet the story"
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:2526-2590",
+      "quotedText": "bootstrap JS wiring: hs=#insrc-history, renderHistoryMenu with the trailing new… row, newChatPick posting {type:'new-chat',provider:curProv||''}, closePops"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:2747-2752",
+      "quotedText": "chrome markup: .right > .histchip > #insrc-history button + #insrc-histmenu popup — the placement point for the new button"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts:2017-2018",
+      "quotedText": "pinning assertions for newChatPick/'new…' row and the histchip markup (line 2337) that this story updates"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:2282-2283",
+      "quotedText": ".pico{...14px...} .pico svg{width:14px;height:14px;display:block;} — the icon slot the bubble-plus SVG reuses"
+    }
+  ]
+}

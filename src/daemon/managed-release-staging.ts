@@ -21,7 +21,10 @@ const DECLARATION = 'out/release-compatibility.json';
 export interface ManagedReleaseQualification {
 	readonly source: Required<Pick<UpdateSource, 'repoUrl' | 'branch'>>;
 	readonly candidate: ReleaseCompatibility;
-	readonly pairs: readonly QualifiedReleasePair[];
+	readonly pairs: readonly (QualifiedReleasePair & {
+		/** Captured from the qualified predecessor build and runtime, outside the live installation. */
+		readonly priorFingerprint: string;
+	})[];
 }
 
 export interface StagedReleasePin {
@@ -97,10 +100,11 @@ async function fingerprint(root: string, runtime: string): Promise<string> {
 	const hash = createHash('sha256');
 	async function visit(path: string, name: string): Promise<void> {
 		const info = await lstat(path);
-		hash.update(JSON.stringify([name, info.mode, info.size]) + '\n');
+		hash.update(JSON.stringify([name, info.mode, info.isFile() ? info.size : null]) + '\n');
 		if (info.isSymbolicLink()) {
 			if (!inside(root, await realpath(path))) throw new Error('release link escapes its checkout');
-			hash.update(JSON.stringify(await readlink(path)) + '\n');
+			const link = await readlink(path);
+			hash.update(JSON.stringify(isAbsolute(link) ? relative(dirname(path), link) : link) + '\n');
 		} else if (info.isDirectory()) {
 			for (const child of (await readdir(path)).sort()) await visit(join(path, child), join(name, child));
 		} else if (info.isFile()) {
@@ -132,6 +136,11 @@ async function fingerprint(root: string, runtime: string): Promise<string> {
 async function pin(root: string, runtime: string, commit: string): Promise<StagedReleasePin> {
 	await access(join(root, 'out/daemon/index.js'), constants.R_OK);
 	return { root, runtime, commit, fingerprint: await fingerprint(root, runtime) };
+}
+
+/** Capture the fingerprint of an independently built and qualified rollback release. */
+export async function captureManagedReleasePin(root: string, runtime: string): Promise<StagedReleasePin> {
+	return pin(root, await realpath(runtime), await cleanCheckoutCommit(root));
 }
 
 /** Recheck the installed pin before a later cutover can move the launcher or stop the daemon. */
@@ -180,6 +189,9 @@ export async function stageManagedRelease(options: StageOptions): Promise<{
 		const qualifiedCandidate = readReleaseCompatibility(qualified.candidate);
 		compatibility = requireQualifiedReleasePair(priorProfile, candidateProfile, [{ prior: priorProfile, candidate: qualifiedCandidate }]);
 		prior = await pin(priorRoot, await realpath(priorRuntime), commit);
+		if (prior.fingerprint !== qualified.priorFingerprint) {
+			throw new Error('installed executable bytes differ from trusted qualification');
+		}
 	}
 	await privateDirectory(directory);
 	await privateDirectory(releases);

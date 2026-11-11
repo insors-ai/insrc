@@ -1,0 +1,146 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 4,
+        "contentHash": "0250f102fafce4b4bd14e82840be62b9d64c1944350eea5e6cec5eaddef7b6ac",
+        "at": "2026-11-11T18:09:04.185Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-c40215d3-ffd0-493a-a407-053ad26028c5",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T17:34:49.769Z",
+    "epicCreatedAt": "2026-11-11T14:26:38.657Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7d2422c8f57fa483",
+    "storyId": "s1",
+    "revision": 4,
+    "updatedAt": "2026-11-11T18:08:08.542Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "code-review-reuse-refused-when-only"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      }
+    ],
+    "summary": "t3 makes binding format-aware (recorded format, else v1 for accepted, v2 for pending), records taskIdentityFormat on new acceptances, refuses cross-format reuse, and raises every format/identity refusal of a submission as one rejection. Deviation from the LLD: reviewAssignments in assessment.ts (the pending scope-submission path) also collects refusals and the reuse check defaults to the attempt's bind format. Fixtures that demote accepted attempts drop the new field; the publication fixture now resolves its temp repo path (macOS /var symlink). Commits c34ae2cd9 and 9acbf7d3d.",
+    "testRecord": {
+      "md": "docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T18:08:08.542Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/attribution-binding.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T18:08:08.542Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/contracts.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T18:08:08.542Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/admission-history.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T18:08:08.542Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/admission.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T18:08:08.542Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/attribution-scope.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T18:08:08.542Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T18:08:08.542Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T18:08:08.542Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/publication-fixture.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T18:08:08.542Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/selected-code.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T18:08:08.542Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/transition.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T18:08:08.542Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/assessment.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T18:08:08.542Z"
+      }
+    ],
+    "commit": "9acbf7d3d"
+  },
+  "citations": []
+}

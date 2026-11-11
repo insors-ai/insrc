@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cd8d36ba-a421-4fc7-8e39-edea201c2fbc",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T17:27:53.119Z",
+    "epicCreatedAt": "2026-11-11T14:26:38.657Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7d2422c8f57fa483",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Record the task identity format on the attempt header",
+      "parent": {
+        "entityId": "STORY-7d2422c8f57fa483-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7d2422c8f57fa483-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3e229c92599cd5ea7ae2491e1f3c319e8205b98770414b1723dccc1491762ede",
+        "at": "2026-11-11T17:27:53.119Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T17:27:53.123Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Record the task identity format on the attempt header",
+    "summary": "Add the optional taskIdentityFormat: 'final-task-v2' field to the attempt header interface and its strict schema in src/workflow/code-review/task-review/contracts.ts, export the TaskIdentityFormat type, and extend validateSavedAttribution so the field must be absent on unpinned, pending and failed attempts.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "A header with taskIdentityFormat 'final-task-v2' passes the strict schema; any other value is refused.",
+      "An unpinned, pending or failed attempt carrying taskIdentityFormat is refused with the existing messages.",
+      "Saved attempts without the field validate exactly as before."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: the attempt header schema accepts only the v2 identity format"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: an identity format on an unaccepted attempt is refused"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

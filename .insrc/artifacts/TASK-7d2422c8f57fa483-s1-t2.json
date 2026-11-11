@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2e5e478a-a2cf-4c1a-bcaa-7c9d2d8ee43d",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T17:27:53.129Z",
+    "epicCreatedAt": "2026-11-11T14:26:38.657Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7d2422c8f57fa483",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the v2 task identity and a provenance-aware fingerprint",
+      "parent": {
+        "entityId": "STORY-7d2422c8f57fa483-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7d2422c8f57fa483-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-7d2422c8f57fa483-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1f6f9b555edb12ed737f3f2be130ee776b84b088023f6c20533b77e83b8db8a4",
+        "at": "2026-11-11T17:27:53.129Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T17:27:53.136Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the v2 task identity and a provenance-aware fingerprint",
+    "summary": "Give taskFinalInput and taskFinalIdentity an optional format: 'final-task-v1' (default) stays byte-identical; 'final-task-v2' hashes each test as { file, cases, result, blobOid }. Fingerprint test entries carry identity (v2 digest) and provenance (whole-row digest), and reuseMismatch takes the comparison format and compares provenance only under v1. Until t3, requireReuseIdentity passes 'final-task-v1' so behaviour is unchanged.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "v1 identities equal the constants pinned from the pre-change code.",
+      "v2 identity ignores command, executionDetails and evidenceReferences and changes with test file blob, cases (including order) and result.",
+      "A task with no tests has a v2 identity over requirements, changes and documents.",
+      "Under v1 the rejection text names a provenance-only test change; under v2 it does not.",
+      "After t2 alone, existing reuse behaviour and rejection text are unchanged."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: the v1 task identity equals the identity pinned from the pre-change code"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: the v2 task identity ignores command, execution details and evidence references"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: the v2 task identity changes with the test file, cases or result"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: a task with no assigned tests keeps a v2 identity over requirements, changes and documents"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: the rejection names a provenance-only change between two v1 attempts"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

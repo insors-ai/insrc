@@ -1,0 +1,511 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 4,
+        "contentHash": "64c47ee253ba04f710c38f91b23a8b02d2821ea0ba14f244e4497a21f58d943e",
+        "at": "2026-11-11T18:08:08.614Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "7d2422c8f57fa483",
+    "storyId": "s1",
+    "createdAt": "2026-11-11T17:34:49.769Z",
+    "updatedAt": "2026-11-11T18:08:08.542Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-11T14:26:38.657Z",
+    "epicSlug": "code-review-reuse-refused-when-only",
+    "revision": 4
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "453462b94",
+        "ranAt": "2026-11-11T17:34:49.769Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: the attempt header schema accepts only the v2 identity format",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                "title": "the attempt header schema accepts only the v2 identity format",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: an identity format on an unaccepted attempt is refused",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                "title": "an identity format on an unaccepted attempt is refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2636,
+            "titles": [
+              {
+                "title": "the attempt header schema accepts only the v2 identity format",
+                "result": "pass"
+              },
+              {
+                "title": "an identity format on an unaccepted attempt is refused",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "aeffb3a7a",
+        "ranAt": "2026-11-11T17:39:54.264Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: the v1 task identity equals the identity pinned from the pre-change code",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                "title": "the v1 task identity equals the identity pinned from the pre-change code",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: the v2 task identity ignores command, execution details and evidence references",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                "title": "the v2 task identity ignores command, execution details and evidence references",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: the v2 task identity changes with the test file, cases or result",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                "title": "the v2 task identity changes with the test file, cases or result",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: a task with no assigned tests keeps a v2 identity over requirements, changes and documents",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                "title": "a task with no assigned tests keeps a v2 identity over requirements, changes and documents",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: the rejection names a provenance-only change between two v1 attempts",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                "title": "the rejection names a provenance-only change between two v1 attempts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4475,
+            "titles": [
+              {
+                "title": "the attempt header schema accepts only the v2 identity format",
+                "result": "pass"
+              },
+              {
+                "title": "an identity format on an unaccepted attempt is refused",
+                "result": "pass"
+              },
+              {
+                "title": "the v1 task identity equals the identity pinned from the pre-change code",
+                "result": "pass"
+              },
+              {
+                "title": "the v2 task identity ignores command, execution details and evidence references",
+                "result": "pass"
+              },
+              {
+                "title": "the v2 task identity changes with the test file, cases or result",
+                "result": "pass"
+              },
+              {
+                "title": "a task with no assigned tests keeps a v2 identity over requirements, changes and documents",
+                "result": "pass"
+              },
+              {
+                "title": "the rejection names a provenance-only change between two v1 attempts",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "9acbf7d3d",
+        "ranAt": "2026-11-11T18:08:08.542Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: a correction attempt reuses a task when only provenance text in its test rows changed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                "title": "a correction attempt reuses a task when only provenance text in its test rows changed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: three tasks reused after their evidence references are removed are accepted in one submission",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                "title": "three tasks reused after their evidence references are removed are accepted in one submission",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: reuse is still refused with reassess feedback when a test's cases changed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                "title": "reuse is still refused with reassess feedback when a test's cases changed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: reordered test cases refuse reuse",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                "title": "reordered test cases refuse reuse",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: reuse from an attempt recorded under the earlier identity format is refused with reassess feedback",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                "title": "reuse from an attempt recorded under the earlier identity format is refused with reassess feedback",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: three tasks whose source used the earlier identity format are refused in one rejection naming all three",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                "title": "three tasks whose source used the earlier identity format are refused in one rejection naming all three",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: a saved attempt without an identity format re-binds with its stored v1 identities",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                "title": "a saved attempt without an identity format re-binds with its stored v1 identities",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: a saved v1 attempt that reused a v1 attempt still re-binds",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                "title": "a saved v1 attempt that reused a v1 attempt still re-binds",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: a published v2 reuse row passes the record reuse-identity check",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                "title": "a published v2 reuse row passes the record reuse-identity check",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts: existing tests pass unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+                "title": "both routes durably accept direct/model mapping before acknowledgement or assessment without diagnostics",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+                "title": "offline binding rejects index-only, decision-only, selected task, state and test count tampering",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+                "title": "task identity binds relevant code requirements documents and full tests but excludes unrelated revision movement",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+                "title": "changed evidence names the affected reuse task and both routes accept corrected reassessment without losing eligible reuse",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+                "title": "fresh native/controller resume restores exact mixed decisions and summary before a planned reuse completes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/compatibility.test.ts: existing tests pass unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/compatibility.test.ts",
+                "title": "old checkpoint and CR compatibility: absent origin fields mean containing-attempt assessment",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/compatibility.test.ts",
+                "title": "migration compatibility: preserve origin-bearing history and reject unsupported downgrade readers",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 96029,
+            "titles": [
+              {
+                "title": "both routes durably accept direct/model mapping before acknowledgement or assessment without diagnostics",
+                "result": "pass"
+              },
+              {
+                "title": "offline binding rejects index-only, decision-only, selected task, state and test count tampering",
+                "result": "pass"
+              },
+              {
+                "title": "task identity binds relevant code requirements documents and full tests but excludes unrelated revision movement",
+                "result": "pass"
+              },
+              {
+                "title": "changed evidence names the affected reuse task and both routes accept corrected reassessment without losing eligible reuse",
+                "result": "pass"
+              },
+              {
+                "title": "fresh native/controller resume restores exact mixed decisions and summary before a planned reuse completes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/compatibility.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 47100,
+            "titles": [
+              {
+                "title": "recovery end-to-end: real IPC/Git, both adapters, interruption boundaries and correct attempt metadata",
+                "result": "pass"
+              },
+              {
+                "title": "unavailable pinned source rejects recovery without mutation or provider use and releases reservation",
+                "result": "pass"
+              },
+              {
+                "title": "old checkpoint and CR compatibility: absent origin fields mean containing-attempt assessment",
+                "result": "pass"
+              },
+              {
+                "title": "migration compatibility: preserve origin-bearing history and reject unsupported downgrade readers",
+                "result": "pass"
+              },
+              {
+                "title": "committed test-record evidence receives exact native read grants without widening design defaults",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 74122,
+            "titles": [
+              {
+                "title": "the attempt header schema accepts only the v2 identity format",
+                "result": "pass"
+              },
+              {
+                "title": "an identity format on an unaccepted attempt is refused",
+                "result": "pass"
+              },
+              {
+                "title": "the v1 task identity equals the identity pinned from the pre-change code",
+                "result": "pass"
+              },
+              {
+                "title": "the v2 task identity ignores command, execution details and evidence references",
+                "result": "pass"
+              },
+              {
+                "title": "the v2 task identity changes with the test file, cases or result",
+                "result": "pass"
+              },
+              {
+                "title": "a task with no assigned tests keeps a v2 identity over requirements, changes and documents",
+                "result": "pass"
+              },
+              {
+                "title": "the rejection names a provenance-only change between two v1 attempts",
+                "result": "pass"
+              },
+              {
+                "title": "a correction attempt reuses a task when only provenance text in its test rows changed",
+                "result": "pass"
+              },
+              {
+                "title": "three tasks reused after their evidence references are removed are accepted in one submission",
+                "result": "pass"
+              },
+              {
+                "title": "reuse is still refused with reassess feedback when a test's cases changed",
+                "result": "pass"
+              },
+              {
+                "title": "reordered test cases refuse reuse",
+                "result": "pass"
+              },
+              {
+                "title": "reuse from an attempt recorded under the earlier identity format is refused with reassess feedback",
+                "result": "pass"
+              },
+              {
+                "title": "three tasks whose source used the earlier identity format are refused in one rejection naming all three",
+                "result": "pass"
+              },
+              {
+                "title": "a saved attempt without an identity format re-binds with its stored v1 identities",
+                "result": "pass"
+              },
+              {
+                "title": "a saved v1 attempt that reused a v1 attempt still re-binds",
+                "result": "pass"
+              },
+              {
+                "title": "a published v2 reuse row passes the record reuse-identity check",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

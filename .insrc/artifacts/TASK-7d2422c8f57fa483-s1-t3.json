@@ -1,0 +1,123 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3a5bf336-3032-4a9b-a215-37694e11bb34",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T17:27:53.140Z",
+    "epicCreatedAt": "2026-11-11T14:26:38.657Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7d2422c8f57fa483",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Bind in the attempt's format and report all reuse refusals at once",
+      "parent": {
+        "entityId": "STORY-7d2422c8f57fa483-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7d2422c8f57fa483-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-7d2422c8f57fa483-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fd8c40be2379b46a5a5694beec381baf2b9d956a563a8edef89da3b476afc448",
+        "at": "2026-11-11T17:27:53.140Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T17:27:53.146Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Bind in the attempt's format and report all reuse refusals at once",
+    "summary": "bindTaskFinalIdentities resolves its format (header field, else v1 for accepted, v2 for pending), records taskIdentityFormat on a newly accepted candidate, and passes the format to the reuse check. requireReuseIdentity gains the optional format parameter and refuses a cross-format source. Source checks still throw at once; format and identity refusals are collected and raised as one TaskReviewInputError (single refusal unchanged).",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Provenance-only edits keep reuse of a v2 source, for one task and for three tasks in one submission.",
+      "A real test change still refuses reuse with the existing reassess text.",
+      "Three tasks whose source is v1 are refused in one rejection naming all three, costing one attribution submission.",
+      "Malformed reuse decisions (not earlier, foreign-party) still fail at once with the existing origins error.",
+      "Saved v1 attempts, including a v1 attempt that reused a v1 attempt, re-bind unchanged.",
+      "A published v2 reuse row passes validateTaskBody's reuse-identity check.",
+      "Existing attribution-binding and compatibility tests pass unchanged."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: a correction attempt reuses a task when only provenance text in its test rows changed"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: three tasks reused after their evidence references are removed are accepted in one submission"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: reuse is still refused with reassess feedback when a test's cases changed"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: reordered test cases refuse reuse"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: reuse from an attempt recorded under the earlier identity format is refused with reassess feedback"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: three tasks whose source used the earlier identity format are refused in one rejection naming all three"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: a saved attempt without an identity format re-binds with its stored v1 identities"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: a saved v1 attempt that reused a v1 attempt still re-binds"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: a published v2 reuse row passes the record reuse-identity check"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts: existing tests pass unchanged"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/task-review/__tests__/compatibility.test.ts: existing tests pass unchanged"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

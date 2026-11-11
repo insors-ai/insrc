@@ -22,7 +22,7 @@
           "entityId": "PLAN-e4af63128c7cbec2-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 4"
+          "fragment": "revision 5"
         },
         {
           "entityId": "TASK-e4af63128c7cbec2-s1-t4",
@@ -50,9 +50,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 2,
-        "contentHash": "55e4afb48c6f2cf62006d4e8e28b54d08239564491bcd1990780408cbbe8e565",
-        "at": "2026-11-11T17:01:40.240Z",
+        "number": 3,
+        "contentHash": "dba0cf86bdf318cf5cc9304fe47a355d033f96c84674b144772684f09b08a464",
+        "at": "2026-11-11T17:21:06.736Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -70,11 +70,11 @@
         "at": "2026-11-09T07:42:48.096Z"
       }
     },
-    "revision": 2
+    "revision": 3
   },
   "body": {
     "title": "Implement targeted daemon-crash fences and local clearance",
-    "summary": "Implement request-scoped resourceGuard discovery and exact local-broker clearance as a registered ReviewWorkers component, using a metadata-only recovery worker and the existing family checkpoint writers. Prove the component before production cutover; t13 integrates shared consumers, t14 installs clearance on production code resume/design recover routes, and t15 verifies full production-daemon crash recovery. Clearance always requires a separate subsequent explicit review resume.",
+    "summary": "Implement request-scoped resourceGuard discovery and exact local-broker clearance as a registered ReviewWorkers component, using a metadata-only recovery worker and the existing family checkpoint writers. Prove the component before production cutover; t13 integrates shared consumers, t14 installs clearance on production code resume/design recover routes, and t15 verifies full production-daemon crash recovery. Clearance alone never dispatches review work. After clearance, a resumable interrupted attempt requires a separate explicit resume/recover; a failed attempt instead requires a separate explicit new-attempt submission, which satisfies the post-clearance recovery requirement. Failed attempts and their pinned input/feedback remain unchanged.",
     "size": "L",
     "order": 11,
     "acceptanceChecks": [
@@ -82,8 +82,9 @@
       "Through the real existing local broker and socket/client contract, valid human-UI and automated local-client answers are equally accepted; caller-provided receipts and stale/wrong-review/lease-set approval are refused. Existing broker/client authentication is unchanged; production resume/recover route installation is mandatory t14 acceptance.",
       "No-client, decline, expiry, disconnect, lost pending broker request or changed guard state retains the fence. Re-read all unresolved retained-attempt guards before applying a decision.",
       "Persist exact bounded request/guard/lease approval receipt and authorized closure idempotently; metadata-only recovery cannot call native tools/providers or grant artifact approval.",
-      "A disposable complete daemon-host process using the real registered ReviewWorkers/bootstrap/native-lease component is crashed while its owned native child survives. A replacement host keeps only that review fenced, allows unrelated reviews and permits work only after clearance plus separate explicit resume. This is component evidence, not installed production-daemon qualification; the full production-daemon route/crash test is mandatory t15 acceptance. Never crash the live user daemon.",
-      "Partial clearance leaves remaining leases blocking; repeated clearances and response-loss replay preserve audit evidence without duplicate inference."
+      "A disposable complete daemon-host process using the real registered ReviewWorkers/bootstrap/native-lease component is crashed while its owned native child survives. A replacement host keeps only that review fenced, allows unrelated reviews and permits work only after clearance plus a separate explicit recovery action (resume/recover for a resumable interrupted attempt, or a new-attempt submission for a failed attempt). This is component evidence, not installed production-daemon qualification; the full production-daemon route/crash test is mandatory t15 acceptance. Never crash the live user daemon.",
+      "Partial clearance leaves remaining leases blocking; repeated clearances and response-loss replay preserve audit evidence without duplicate inference.",
+      "Clearance alone never dispatches review work. After clearance, a resumable interrupted attempt requires a separate explicit resume/recover; a failed attempt instead requires a separate explicit new-attempt submission, which satisfies the post-clearance recovery requirement. Failed attempts and their pinned input/feedback remain unchanged. Ordinary same-attempt start replay after clearance remains refused; new-attempt submission does not silently retry or replace the failed attempt."
     ],
     "tests": [
       {

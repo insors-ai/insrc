@@ -155,6 +155,10 @@ export async function activateFreshManagedDaemon(activation: FreshActivation): P
 			const status = accepted(await link.call({ op: 'status', generation: null }));
 			const receipt = (await gate.admit(reservation)).entries.find(entry => entry.step === 'activation-state')?.receipt;
 			const confirmed = JSON.parse(receipt ?? 'null') as { state?: string; generation?: string | null } | null;
+			if (confirmed?.state === 'running' && status.state === 'exited'
+				&& status.generation === confirmed.generation && status.exit !== undefined) {
+				throw new SupervisorLifecycleError('daemon-exit-failed', 'fresh daemon exited before activation settled', status.generation, status.exit);
+			}
 			if (status.state !== confirmed?.state || status.generation !== confirmed.generation) {
 				conflict('fresh supervisor state changed after readiness was recorded');
 			}
@@ -163,9 +167,9 @@ export async function activateFreshManagedDaemon(activation: FreshActivation): P
 	} catch (error) {
 		const last = (await gate.admit(reservation)).entries.at(-1);
 		// Only a known pre-readiness failure can unwind. Other attempts can resume the original intent.
-		if (last?.step === 'activation-state' && last.receipt === undefined && error instanceof SupervisorLifecycleError
+		if (last?.step === 'activation-state' && error instanceof SupervisorLifecycleError
 			&& error.code === 'daemon-exit-failed') {
-			await gate.recordReceipt(reservation, last.step, 'candidate exited before readiness');
+			if (last.receipt === undefined) await gate.recordReceipt(reservation, last.step, 'candidate exited before readiness');
 			await rollback();
 		}
 		throw error;

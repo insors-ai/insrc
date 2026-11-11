@@ -264,6 +264,8 @@ Replace the single band lookup with one that depends on the template family, so 
   - **resolved**: Confirm derived criteria — User approved resolving all three as recommended. _(2026-11-11T15:52:48.291Z)_
 - `qa7830c69` — invariantsToPreserve cite c1..c3, which map to the code citations in References (validate.ts:418, driver.ts:524, driver.ts:241); the s1 bundles carry no ids of their own.
   - **resolved**: Keep reference citation IDs — User approved resolving all three as recommended. _(2026-11-11T15:53:20.429Z)_
+- `q4dd7cc85` — The planner attempt limit of 5 gives the reproduced sequence two attempts of slack; it is not measured. The live regression and the stated band revisit trigger cover it.
+  - **resolved**: Keep limit at 5 — User approved resolving all three as recommended. _(2026-11-11T15:53:39.194Z)_
 
 ## Citations
 

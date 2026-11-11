@@ -95,6 +95,13 @@
         "choice": "Keep reference citation IDs",
         "rationale": "User approved resolving all three as recommended.",
         "resolvedAt": "2026-11-11T15:53:20.429Z"
+      },
+      "q4dd7cc85": {
+        "question": "The planner attempt limit of 5 gives the reproduced sequence two attempts of slack; it is not measured. The live regression and the stated band revisit trigger cover it.",
+        "status": "resolved",
+        "choice": "Keep limit at 5",
+        "rationale": "User approved resolving all three as recommended.",
+        "resolvedAt": "2026-11-11T15:53:39.194Z"
       }
     }
   },

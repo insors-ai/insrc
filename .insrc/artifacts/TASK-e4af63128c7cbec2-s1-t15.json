@@ -22,7 +22,7 @@
           "entityId": "PLAN-e4af63128c7cbec2-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 3"
+          "fragment": "revision 4"
         },
         {
           "entityId": "TASK-e4af63128c7cbec2-s1-t14",
@@ -35,9 +35,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 3,
-        "contentHash": "b26a467e6a47b59d39d4efc6a2ac589083fd9ba8b91b698b7439a62c6025aa2d",
-        "at": "2026-11-11T15:00:24.594Z",
+        "number": 4,
+        "contentHash": "29454818cd820d26188b0288def9ae595362fce0e0d71daa688da5d9af04fce5",
+        "at": "2026-11-11T17:01:40.283Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -55,7 +55,7 @@
         "at": "2026-11-09T07:42:48.112Z"
       }
     },
-    "revision": 3
+    "revision": 4
   },
   "body": {
     "title": "Qualify real concurrent worker isolation and failure recovery",
@@ -69,7 +69,8 @@
       "Whole-history resource fences and clearance/publication/cleanup replay are exercised through real routing; unrelated review files and processes remain untouched.",
       "Run existing relevant ownership/admission/progress/checkpoint/recovery/publication/approval suites alongside these regressions with no live-cloud requirement.",
       "End-to-end fixtures through the actual worker registry and production review routes prove both code/design families use the CLI and tool/Git adapters with host-owned leases, durable intent, bounded byte backpressure and cleanup after real worker loss; unbound or bypassed native execution refuses.",
-      "Through installed production construction, prove host-derived reviewer routing, trusted successful controller exchanges, permission-denied native operations causing zero spawn, and cross-worker design-subject/story-artifact cleanup exclusions for both families."
+      "Through installed production construction, prove host-derived reviewer routing, trusted successful controller exchanges, permission-denied native operations causing zero spawn, and cross-worker design-subject/story-artifact cleanup exclusions for both families.",
+      "Run a disposable full production-daemon crash/replacement test through installed public review routes: persist intent before spawn, crash only the fixture daemon with its native child surviving, retain the exact review fence before native work and allow unrelated review traffic. After the test owner verifies the child ended, use the unchanged normal local broker approval and durable exact-guard receipt; only a separate explicit resume permits review work. Verify both review families and reject stale/wrong-review/lease-set requests. Never terminate the user's live daemon. This discharges Task 11's deferred installed full-daemon recovery qualification."
     ],
     "tests": [
       {

@@ -22,7 +22,7 @@
           "entityId": "PLAN-e4af63128c7cbec2-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 3"
+          "fragment": "revision 4"
         },
         {
           "entityId": "TASK-e4af63128c7cbec2-s1-t9",
@@ -55,9 +55,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 3,
-        "contentHash": "a86a854e66fe813d0a90d4cb51b9527968db2e179daf3074840b035deee1eeca",
-        "at": "2026-11-11T15:00:24.586Z",
+        "number": 4,
+        "contentHash": "150b6119c89c508b6cd0630aef1243288bef3a14519cdc7c27f14ff7bf8787f1",
+        "at": "2026-11-11T17:01:40.273Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -75,7 +75,7 @@
         "at": "2026-11-09T07:42:48.108Z"
       }
     },
-    "revision": 3
+    "revision": 4
   },
   "body": {
     "title": "Switch all supported review entrypoints to dedicated workers",
@@ -89,7 +89,8 @@
       "Existing retired review endpoints keep their current refusal behavior; no legacy engine is restored.",
       "The plan/deployment contract forbids installing an intermediate partial build before final qualification.",
       "Through every supported production review route, CLI and tool/Git native work uses the installed transport and registered host lease with verified durable intent; no review-worker local spawn/exec/binary-lookup bypass remains. This gate discharges the production integration deliberately deferred from component acceptance in t5/t6.",
-      "Install the registry and concrete host-derived reviewer/scope resolution, controller authority, binary resolution, and native permission/provenance policies in daemon production construction. Every supported family/control/recovery/cleanup route consumes these bindings and the shared exclusions. Required callbacks and component fixtures from t8 alone are insufficient for this production gate."
+      "Install the registry and concrete host-derived reviewer/scope resolution, controller authority, binary resolution, and native permission/provenance policies in daemon production construction. Every supported family/control/recovery/cleanup route consumes these bindings and the shared exclusions. Required callbacks and component fixtures from t8 alone are insufficient for this production gate.",
+      "Install Task 11 resource discovery and exact existing-local-broker clearance on production code resume and design recover entrypoints. Re-read all retained attempts before work; unresolved previous-daemon or legacy uncertainty fences only its review. No caller-provided receipt, PID-absence inference, or clearance-triggered automatic resume is permitted. This discharges Task 11's deliberately deferred production-route integration."
     ],
     "tests": [
       {

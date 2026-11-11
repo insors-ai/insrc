@@ -128,7 +128,7 @@ Run at 2026-11-11T12:23:50.106Z on commit `4fc8bee23`. Tests check: **passed**. 
 
 ## t6
 
-Run at 2026-11-11T12:42:24.614Z on commit `38163fd3c`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-11T12:51:57.103Z on commit `43d69ad70`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/daemon/tools/__tests__/review-worker-shell.test.ts: Git shell and raw-byte commands preserve output bounds and abort semantics through leases**
 
@@ -147,4 +147,4 @@ Run at 2026-11-11T12:42:24.614Z on commit `38163fd3c`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/threads/__tests__/review-spawn-inventory.test.ts` | 0 | 1 | 0.7 s |  |
-| `src/daemon/tools/__tests__/review-worker-shell.test.ts` | 0 | 1 | 3.7 s |  |
+| `src/daemon/tools/__tests__/review-worker-shell.test.ts` | 0 | 1 | 5.9 s |  |

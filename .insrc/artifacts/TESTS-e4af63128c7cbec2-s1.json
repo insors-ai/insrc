@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 11,
-        "contentHash": "f432a2b479a6f29ac1986c9927e47dd574b8e7b557b2fccb864cb4ff7819ba0e",
-        "at": "2026-11-11T12:42:24.839Z",
+        "number": 12,
+        "contentHash": "dd91b34188fd57a1304da8b317366e08e261d77aff9cd0ab22c90280b08e883e",
+        "at": "2026-11-11T12:51:57.351Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "e4af63128c7cbec2",
     "storyId": "s1",
     "createdAt": "2026-11-09T07:52:13.312Z",
-    "updatedAt": "2026-11-11T12:42:24.614Z",
+    "updatedAt": "2026-11-11T12:51:57.103Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-09T04:29:20.389Z",
     "epicSlug": "isolate-each-code-design-review-its",
-    "revision": 11
+    "revision": 12
   },
   "body": {
     "tasks": [
@@ -367,8 +367,8 @@
       },
       {
         "taskId": "t6",
-        "commit": "38163fd3c",
-        "ranAt": "2026-11-11T12:42:24.614Z",
+        "commit": "43d69ad70",
+        "ranAt": "2026-11-11T12:51:57.103Z",
         "testsPassed": true,
         "tests": [
           {
@@ -403,7 +403,7 @@
             "file": "src/daemon/threads/__tests__/review-spawn-inventory.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 694,
+            "durationMs": 747,
             "titles": [
               {
                 "title": "all review-reachable native spawn and exec paths use the host bridge",
@@ -416,7 +416,7 @@
             "file": "src/daemon/tools/__tests__/review-worker-shell.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3734,
+            "durationMs": 5923,
             "titles": [
               {
                 "title": "Git shell and raw-byte commands preserve output bounds and abort semantics through leases",

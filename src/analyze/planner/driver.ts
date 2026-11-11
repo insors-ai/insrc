@@ -434,6 +434,11 @@ function appendCorrectionTurn(
 	rejected:      PlanTask,
 	failure:       PlanValidationFailure,
 	priorFailures: readonly PlanValidationFailure[],
+	/**
+	 * The task-count failure (INV-13), stated after the primary one so a single reply can fix both.
+	 * It is only text for the model: it never enters the failure history or the repetition banner.
+	 */
+	alsoFailing?:  PlanValidationFailure | undefined,
 ): LLMMessage[] {
 	const hint = invariantFixHint(failure.invariantId);
 	const fixHintBlock = renderFixHint(hint);
@@ -457,7 +462,13 @@ function appendCorrectionTurn(
 				offendingTaskBlock +
 				fixHintBlock +
 				`\n\n` +
-				`Emit the corrected PlanTask JSON. Fix ONLY the named issue -- keep the ` +
+				(alsoFailing === undefined ? '' :
+					`## ALSO FAILING\n` +
+					`The same plan also fails invariant **${alsoFailing.invariantId}**:\n` +
+					`> ${alsoFailing.message}\n` +
+					`\n` +
+					`Fix both in the same reply.\n\n`) +
+				`Emit the corrected PlanTask JSON. Fix ONLY the named issue${alsoFailing === undefined ? '' : 's'} -- keep the ` +
 				`rest of the plan intact. Respond with ONLY the JSON object -- no markdown ` +
 				`fences, no prose.`,
 		},

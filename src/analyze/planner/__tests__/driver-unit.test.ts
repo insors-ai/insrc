@@ -369,6 +369,44 @@ test('appendCorrectionTurn without alsoFailing is byte-identical to the pre-chan
 	}
 });
 
+const COUNT_FAILURE: PlanValidationFailure = {
+	invariantId: 'INV-13',
+	message:     'task count 15 is outside the scope band for XL (20-80 focused)',
+	target:      { count: 15, scope: 'XL', band: { lo: 20, hi: 80 } },
+};
+
+function lastUserTurn(messages: LLMMessage[]): string {
+	return messages[messages.length - 1]!.content as string;
+}
+
+test('appendCorrectionTurn with alsoFailing states the primary first and the count second', () => {
+	const { prior, rejected, failure } = CORRECTION_TURN_FIXTURE;
+	const body = lastUserTurn(_appendCorrectionTurnForTest(prior, rejected, failure, [], COUNT_FAILURE));
+	const primaryAt = body.indexOf('failed invariant **INV-7**');
+	const alsoAt = body.indexOf('also fails invariant **INV-13**');
+	assert.ok(primaryAt >= 0 && alsoAt > primaryAt, 'the count comes after the primary failure');
+	assert.ok(body.indexOf('HOW TO FIX') < alsoAt, 'the primary failure keeps its fix hint before the count');
+	assert.ok(body.includes(COUNT_FAILURE.message));
+	assert.match(body, /Fix both in the same reply/);
+	// the primary message itself is the same text as without the count
+	const plain = lastUserTurn(_appendCorrectionTurnForTest(prior, rejected, failure, []));
+	assert.ok(body.startsWith(plain.slice(0, plain.indexOf('Emit the corrected'))));
+});
+
+test('repetition banner follows primary failures only, including the secondary-to-primary transition', () => {
+	const { prior, rejected, failure } = CORRECTION_TURN_FIXTURE;
+	// attempt 1: INV-7 primary, the count is only a note, and no history yet
+	const first = lastUserTurn(_appendCorrectionTurnForTest(prior, rejected, failure, [], COUNT_FAILURE));
+	assert.doesNotMatch(first, /REPEATED FAILURE/);
+	// attempt 2: the count is now the primary failure; the history holds INV-7 only, so no banner
+	const second = lastUserTurn(_appendCorrectionTurnForTest(prior, rejected, COUNT_FAILURE, [failure]));
+	assert.doesNotMatch(second, /REPEATED FAILURE/);
+	assert.doesNotMatch(second, /ALSO FAILING/);
+	// attempt 3: the count is the primary failure again, so the banner appears
+	const third = lastUserTurn(_appendCorrectionTurnForTest(prior, rejected, COUNT_FAILURE, [failure, COUNT_FAILURE]));
+	assert.match(third, /REPEATED FAILURE/);
+});
+
 // ---------------------------------------------------------------------------
 // MaxPlanDepthExceededError + depth-cap pre-check
 // ---------------------------------------------------------------------------

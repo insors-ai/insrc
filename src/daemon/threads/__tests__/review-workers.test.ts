@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp,mkdir,readFile,rm,symlink } from 'node:fs/promises';
+import { mkdtemp,mkdir,readFile,writeFile,chmod,rm,symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Worker } from 'node:worker_threads';
@@ -28,11 +28,13 @@ async function until(check:()=>Promise<boolean>){const end=Date.now()+10000;whil
 async function fixture(t:{after:(fn:()=>Promise<void>)=>void},reviewer:'daemon'|'controller'){
  const old=process.env['INSRC_TEST_HOOKS'];process.env['INSRC_TEST_HOOKS']='1';
  const root=await mkdtemp(join(tmpdir(),'review-registry-'));const repo=join(root,'repo');await mkdir(repo);
+ const binary=join(root,'review-cli');
+ await writeFile(binary,'#!/usr/bin/env node\nprocess.stdin.resume();process.stdin.on("end",()=>process.stdout.write(JSON.stringify({type:"assistant",message:{content:[{type:"tool_use",id:"out",name:"StructuredOutput",input:{ok:true}}]}})+"\\n"));');await chmod(binary,0o755);
  const started=new Map<string,StartedReviewWorker>(),tracked=new Set<Worker>();let authorizations=0;
  const registry=new ReviewWorkers({services,
   resolveScope:async key=>({reviewer,subject:'same-design-subject',cleanupScope:`${key.project}:s1`}),
-  authorizeNative:async(key,command,_context,signal)=>{assert.equal(key.project,repo);assert.equal(command.command,process.execPath);assert.equal(signal.aborted,false);authorizations++;},
-  resolveBinary:async()=>process.execPath,
+  authorizeNative:async(key,command,_context,signal)=>{assert.equal(key.project,repo);assert.ok([binary,process.execPath].includes(command.command));assert.equal(signal.aborted,false);authorizations++;},
+  resolveBinary:async command=>{assert.equal(command,'bootstrap-fixture-cli');return binary;},
   track:worker=>{tracked.add(worker);},
   start:async(...args)=>{const s=await startReviewWorkerBootstrap(...args);started.set(s.admission.key.reviewId,s);return s;},
  });
@@ -54,10 +56,11 @@ test('canonical identities own one incarnation and preserve subject and cleanup 
  assert.ok(await f.registry.progress(a.key,context('new-observer').context));
  for(const id of ['code-a','design-b']){
   const s=f.started.get(id)!;await Promise.all([rpc(s,'tool'),rpc(s,'tool')]);
+  await rpc(s,'cli');
   const cp=JSON.parse(await readFile(reviewWorkerCheckpoint(s.admission.key),'utf8'));
   assert.deepEqual(cp.attempts.at(-1).resourceGuard.openLeases,[]);
  }
- assert.equal(f.authorizations(),4);
+ assert.equal(f.authorizations(),6);
  await f.registry.shutdown();
  const release=f.registry.claimCleanup(`${f.repo}:s1`);
  await assert.rejects(f.registry.admit(f.submit('code-cleaning'),context('new').context),/cleanup busy/);
@@ -74,6 +77,9 @@ test('stale owner messages and targeted disconnects cannot mutate another review
  assert.equal(f.registry.acceptProgress(sb.worker,b,progress),false);
  await assert.rejects(f.registry.progress(a.key,two.context),/owner mismatch/);
  await assert.rejects(f.registry.control({...a,attempt:1,phase:'result',actionId:'a',executionId:'e',sequence:1,input:{}},two.context),/owner mismatch/);
+ // The trusted assignment reaches the real family handler. Unqualified
+ // admission must still refuse execution until Task 9 installs qualification.
+ await assert.rejects(f.registry.control({...a,attempt:1,phase:'assignment',actionId:'a',executionId:'e',sequence:1,input:{}},one.context),/Admission checkpoint requires a version-2-aware consumer/);
  const holding=rpc(sa,'hold').catch(()=>undefined);
  await until(async()=>{const cp=JSON.parse(await readFile(reviewWorkerCheckpoint(a.key),'utf8'));return cp.attempts.at(-1).resourceGuard?.openLeases.length===1;});
  one.abort.abort();await holding;await sa.reclaimed;

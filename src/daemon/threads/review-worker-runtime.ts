@@ -37,6 +37,7 @@ export async function runReviewWorker(init:ReviewWorkerInit):Promise<void>{
  setLiveRunPublisher((runId,live)=>board.markAnalyzeRun(runId,threadId,live));
  registerBuiltinTools();registerBuiltinTemplates();registerBuiltinRuntimes();
  const transport=new ReviewWorkerNativeTransport(init.nativePort,init.review);
+ const controllerLifetime=new AbortController();
  await withReviewNativeTransport(transport,async()=>{
   const provider=()=>createRoleRouter({cliTimeoutMs:900000}).resolveProviderForRole('review',loadAnalyzeConfig(),init.review.key.project).provider;
   const coordinator=init.review.key.family==='code'
@@ -47,6 +48,23 @@ export async function runReviewWorker(init:ReviewWorkerInit):Promise<void>{
    return raw as Record<string,unknown>;
   };
   const handlers:RpcHandlers={
+   'review.worker.control':async(raw,context)=>{
+    const p=identity(raw);
+    if(init.review.reviewer!=='controller'||!context?.reviewOwnerNonce||p['attempt']!==init.review.attempt)throw new Error('Trusted reviewing owner required');
+    const owner={id:context.reviewOwnerNonce,signal:controllerLifetime.signal};
+    const phase=p['phase'],project=init.review.key.project,id=init.review.key.reviewId,attempt=init.review.attempt;
+    if(coordinator instanceof TaskReviewCoordinator){
+     const envelope={taskId:p['taskId'],executionId:p['executionId'],sequence:p['sequence']};
+     if(phase==='assignment')return coordinator.controllerAssignment(project,id,attempt,owner);
+     if(phase==='scope')return coordinator.controllerScope(project,id,attempt,p['input'],owner,envelope);
+     if(phase==='result')return coordinator.controllerResult(project,id,attempt,p['input'],owner,envelope);
+     if(phase==='activity')return coordinator.controllerActivity(project,id,attempt,p['input'],owner,envelope);
+     throw new Error('Invalid code control phase');
+    }
+    if(!['assignment','plan','impact','result','activity','failure'].includes(String(phase)))throw new Error('Invalid design control phase');
+    const payload=p['input'];
+    return coordinator.exchange({...((payload&&typeof payload==='object')?payload:{}),phase,repo:project,reviewId:id,attempt,...(phase==='assignment'?{}:{actionId:p['actionId'],executionId:p['executionId'],sequence:p['sequence']})},owner);
+   },
    'review.worker.matchAdmission':async(raw:unknown)=>{const p=identity(raw);if(p['attempt']!==init.review.attempt||p['reviewer']!==init.review.reviewer||p['actionId']!==init.review.actionId||!isDeepStrictEqual(p['submitted'],init.review.submitted))throw new Error('Conflicting review admission replay');return persistReviewWorkerAdmission(init.review);},
    'review.worker.resource.open':async(raw:unknown)=>{const p=identity(raw);return updateReviewWorkerResource(init.review,'open',p['reservation'] as ReviewProcessReservation);},
    'review.worker.resource.close':async(raw:unknown)=>{const p=identity(raw);return updateReviewWorkerResource(init.review,'close',p['reservation'] as ReviewProcessReservation,p['closure'] as ConfirmedReviewLeaseClosure);},

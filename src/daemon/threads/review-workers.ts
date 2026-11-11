@@ -38,7 +38,8 @@ export interface ReviewWorkerProgress extends ReviewWorkerIdentity {
 }
 export interface ReviewWorkerControl extends ReviewWorkerIdentity {
  readonly attempt:number;
- readonly phase:'assignment'|'scope'|'result'|'activity';
+ readonly phase:'assignment'|'scope'|'plan'|'impact'|'result'|'activity'|'failure';
+ readonly taskId?:string|undefined;
  readonly actionId:string;readonly executionId:string;readonly sequence:number;
  readonly input:unknown;
 }
@@ -146,8 +147,9 @@ export class ReviewWorkers {
   const e=this.entries.get(keyOf(request.key));
   if(!e||!sameReviewWorker(e.input,request)||request.attempt!==e.input.attempt||e.scope.reviewer!=='controller')throw new Error('Foreign review control');
   this.assertController(e,context);this.active(e);
-  if(!['assignment','scope','result','activity'].includes(request.phase)||typeof request.actionId!=='string'||!request.actionId||request.actionId.length>128||typeof request.executionId!=='string'||!request.executionId||request.executionId.length>128||!Number.isSafeInteger(request.sequence)||request.sequence<1)throw new Error('Invalid review control envelope');
-  return this.call(e,'review.worker.control',{attempt:request.attempt,phase:request.phase,actionId:request.actionId,executionId:request.executionId,sequence:request.sequence,input:request.input});
+  const phases=e.input.key.family==='code'?['assignment','scope','result','activity']:['assignment','plan','impact','result','activity','failure'];
+  if(!phases.includes(request.phase)||typeof request.actionId!=='string'||!request.actionId||request.actionId.length>128||typeof request.executionId!=='string'||!request.executionId||request.executionId.length>128||!Number.isSafeInteger(request.sequence)||request.sequence<1||request.taskId!==undefined&&(typeof request.taskId!=='string'||!request.taskId||request.taskId.length>256))throw new Error('Invalid review control envelope');
+  return this.call(e,'review.worker.control',{attempt:request.attempt,phase:request.phase,actionId:request.actionId,executionId:request.executionId,sequence:request.sequence,taskId:request.taskId,input:request.input});
  }
  acceptProgress(source:Worker,identity:ReviewWorkerIdentity,progress:ReviewWorkerProgress):boolean{
   const e=this.entries.get(keyOf(identity.key));

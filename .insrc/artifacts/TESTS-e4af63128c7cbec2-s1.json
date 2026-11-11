@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 14,
-        "contentHash": "916776894b2ab35960aee8843b9eb7b3fac6945bee211476e1fbab2537c0dc94",
-        "at": "2026-11-11T13:38:50.223Z",
+        "number": 15,
+        "contentHash": "0e89786376e90a8b772894939025101144d1444879770529ba8768448f06bbbb",
+        "at": "2026-11-11T14:14:50.937Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "e4af63128c7cbec2",
     "storyId": "s1",
     "createdAt": "2026-11-09T07:52:13.312Z",
-    "updatedAt": "2026-11-11T13:38:50.061Z",
+    "updatedAt": "2026-11-11T14:14:50.780Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-09T04:29:20.389Z",
     "epicSlug": "isolate-each-code-design-review-its",
-    "revision": 14
+    "revision": 15
   },
   "body": {
     "tasks": [
@@ -477,6 +477,59 @@
               },
               {
                 "title": "native byte replies retain the originating review async context",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "2b4d3a339",
+        "ranAt": "2026-11-11T14:14:50.780Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/threads/__tests__/review-workers.test.ts: canonical identities own one incarnation and preserve subject and cleanup exclusions",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-workers.test.ts",
+                "title": "canonical identities own one incarnation and preserve subject and cleanup exclusions",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/threads/__tests__/review-workers.test.ts: stale owner messages and targeted disconnects cannot mutate another review",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-workers.test.ts",
+                "title": "stale owner messages and targeted disconnects cannot mutate another review",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/review-workers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4255,
+            "titles": [
+              {
+                "title": "canonical identities own one incarnation and preserve subject and cleanup exclusions",
+                "result": "pass"
+              },
+              {
+                "title": "stale owner messages and targeted disconnects cannot mutate another review",
                 "result": "pass"
               }
             ],

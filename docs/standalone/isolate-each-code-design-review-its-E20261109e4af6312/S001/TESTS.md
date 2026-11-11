@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 15 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -170,3 +170,25 @@ Run at 2026-11-11T13:38:50.061Z on commit `8e26d2c88`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/threads/__tests__/review-worker-bootstrap.test.ts` | 0 | 3 | 19.6 s |  |
+
+## t8
+
+Run at 2026-11-11T14:14:50.780Z on commit `2b4d3a339`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: src/daemon/threads/__tests__/review-workers.test.ts: canonical identities own one incarnation and preserve subject and cleanup exclusions**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | canonical identities own one incarnation and preserve subject and cleanup exclusions | `src/daemon/threads/__tests__/review-workers.test.ts` |
+
+**integration: src/daemon/threads/__tests__/review-workers.test.ts: stale owner messages and targeted disconnects cannot mutate another review**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | stale owner messages and targeted disconnects cannot mutate another review | `src/daemon/threads/__tests__/review-workers.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/review-workers.test.ts` | 0 | 2 | 4.3 s |  |

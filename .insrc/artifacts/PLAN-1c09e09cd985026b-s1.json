@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1794412427921-p6nhlv",
+    "runId": "wf-1794413731693-1euaer",
     "repoPath": "/home/subho/work/dev/insors/insrc",
-    "createdAt": "2026-11-11T15:56:04.515Z",
+    "createdAt": "2026-11-11T16:17:27.551Z",
     "epicCreatedAt": "2026-11-11T14:35:39.306Z",
     "standalone": true,
     "attribution": {
@@ -16,7 +16,7 @@
         }
       ]
     },
-    "elapsedMs": 131070,
+    "elapsedMs": 110219,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "1c09e09cd985026b",
@@ -28,9 +28,9 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 1,
-        "contentHash": "18feaa2d084a7ad55f37143d0ec9f7459110c87a8cbb217bd8781286ea8f2c11",
-        "at": "2026-11-11T15:56:06.409Z",
+        "number": 2,
+        "contentHash": "d581aa4e842a420b9e512298669198b3d8ecb2250669741201a3f9d70a0ae6e4",
+        "at": "2026-11-11T16:17:29.380Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -39,22 +39,22 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 1,
+        "revision": 2,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-11T16:06:12.851Z"
+        "at": "2026-11-11T16:31:41.159Z"
       }
     },
-    "revision": 1,
     "envelope": {
       "description": "",
       "references": [],
       "attachments": []
     },
-    "rangeBase": "aa9aa072f7f491ef4f3271a9a152f148d081cc0c"
+    "revision": 2,
+    "rangeBase": "8440ab56d0973c6bf7539bcca12761f52a2340b1"
   },
   "body": {
     "summary": {
@@ -99,7 +99,7 @@
           "t1"
         ],
         "acceptanceChecks": [
-          "for every scope XS..XL, focused and not, at lo-1, lo, hi and hi+1, the function and validatePlan agree on INV-13 (message and target included)",
+          "for every scope XS..XL, focused and not, at lo-1, lo, hi and hi+1, the function and validatePlan agree on INV-13 (message and target included), with one exception: an empty plan (0 tasks, reached only at lo-1 for focused XS), where validatePlan reports INV-1 first, as it does today, and the function alone reports INV-13",
           "validatePlan invariant order and results are unchanged for the existing validator tests"
         ],
         "derivedFrom": [

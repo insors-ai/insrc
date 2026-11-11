@@ -4,7 +4,7 @@ import { diagnosticText } from '../../../shared/review-diagnostics.js';
 import { createHash } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
 import { decodeReview, reviewJsonLimit, requireReview } from './contracts.js';
-import type { ReviewAttempt } from './contracts.js';
+import type { ReviewAttempt, TaskIdentityFormat } from './contracts.js';
 import { AcceptedTaskAttributionSchema, AcceptedDecisionSchema } from './final-scope-contracts.js';
 import type { AcceptedTaskAttribution } from './final-scope-contracts.js';
 import { deriveTaskAssignments } from './packet.js';
@@ -20,23 +20,27 @@ const digest = (value: unknown) => createHash('sha256').update(canonical(value))
 export function attributionIdentity(state: 'accepted' | 'unmapped_failure', finalScopeIdentity: string, selectedTaskIds: readonly string[], testCount: number, rows: readonly (AcceptedTaskAttribution & { identity: string })[]): string {
  return digest({ format: 'final-attribution-v1', state, finalScopeIdentity, selectedTaskIds, testCount, rows });
 }
-function taskFinalInput(prepared: PreparedReviewPacket, assignment: TaskAssignment) {
+type TestRow = PreparedReviewPacket['packet']['tests'][number];
+/** v2 test entry: only what the committed test proves (file, its cases, the result and the committed file blob), not provenance text. */
+const v2TestEntry = (test: TestRow, blobOid: string | null | undefined) => ({ file: test.file, cases: test.cases, result: test.result, blobOid });
+function taskFinalInput(prepared: PreparedReviewPacket, assignment: TaskAssignment, format: TaskIdentityFormat = 'final-task-v1') {
  requireReview(prepared.projection && prepared.finalTestBlobs?.length === prepared.packet.tests.length, 'attribution', 'Missing final task source identities');
  const task = prepared.tasks.find(t => t.id === assignment.taskId)!;
- return { format: 'final-task-v1', taskId: task.id, title: task.title, summary: task.summary, acceptanceChecks: assignment.acceptanceChecks,
+ return { format, taskId: task.id, title: task.title, summary: task.summary, acceptanceChecks: assignment.acceptanceChecks,
   changes: assignment.changes.map(c => { requireReview('origin' in c, 'attribution', 'Historical scope cannot authorize pinned reuse'); return { path: c.path, blobOid: c.after?.oid ?? null, findingScope: c.findingScope, segments: c.segments }; }),
   documents: Object.entries(prepared.packet.documents).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([role, ref]) => ({ role, ...ref, contentIdentity: digest(prepared.documents[role as keyof typeof prepared.documents]) })),
-  tests: assignment.tests.map(test => { const index = prepared.packet.tests.indexOf(test); requireReview(index >= 0, 'attribution', 'Unknown assigned test'); return { detail: test, blobOid: prepared.finalTestBlobs![index] }; }),
+  tests: assignment.tests.map(test => { const index = prepared.packet.tests.indexOf(test); requireReview(index >= 0, 'attribution', 'Unknown assigned test'); const blobOid = prepared.finalTestBlobs![index]; return format === 'final-task-v1' ? { detail: test, blobOid } : v2TestEntry(test, blobOid); }),
  };
 }
-export function taskFinalIdentity(prepared: PreparedReviewPacket, assignment: TaskAssignment): string {
- return digest(taskFinalInput(prepared, assignment));
+export function taskFinalIdentity(prepared: PreparedReviewPacket, assignment: TaskAssignment, format: TaskIdentityFormat = 'final-task-v1'): string {
+ return digest(taskFinalInput(prepared, assignment, format));
 }
 export interface TaskInputFingerprint {
  readonly requirements: string;
  readonly sources: readonly { path: string; identity: string }[];
  readonly documents: readonly { path: string; identity: string }[];
- readonly tests: readonly { path: string; identity: string }[];
+ /** identity: v2 test fields; provenance: the whole submitted row (the v1 test entry). */
+ readonly tests: readonly { path: string; identity: string; provenance: string }[];
 }
 /** Small transient diagnostics: retain hashes, never historical source buffers. */
 export function taskInputFingerprint(prepared: PreparedReviewPacket, assignment: TaskAssignment): TaskInputFingerprint {
@@ -44,16 +48,18 @@ export function taskInputFingerprint(prepared: PreparedReviewPacket, assignment:
  return {requirements:digest([input.taskId,input.title,input.summary,input.acceptanceChecks]),
   sources:input.changes.map(c=>({path:c.path,identity:digest(c)})),
   documents:input.documents.map(d=>({path:`${d.role}:${d.path}`,identity:digest(d)})),
-  tests:input.tests.map(t=>({path:t.detail.file,identity:digest(t)}))};
+  tests:assignment.tests.map(test=>{const blobOid=prepared.finalTestBlobs![prepared.packet.tests.indexOf(test)];return {path:test.file,identity:digest(v2TestEntry(test,blobOid)),provenance:digest({detail:test,blobOid})};})};
 }
-function reuseMismatch(review: AdmittedReview, assignment: TaskAssignment, sourceAttempt: number): string {
+/** Rejection text naming what changed under the compared format; provenance-only test edits count only under v1. */
+export function reuseMismatch(review: AdmittedReview, assignment: TaskAssignment, sourceAttempt: number, format: TaskIdentityFormat): string {
  const before=review.priorTaskInputs?.get(sourceAttempt)?.get(assignment.taskId),after=taskInputFingerprint(review.prepared,assignment);
  const changed:string[]=[];
  if(before){
   if(before.requirements!==after.requirements)changed.push('requirements');
   for(const kind of ['sources','documents','tests'] as const){
+   const compared=(entries:readonly {path:string;identity:string;provenance?:string}[],path:string)=>entries.filter(x=>x.path===path).map(x=>kind==='tests'&&format!=='final-task-v1'?{path:x.path,identity:x.identity}:x);
    for(const path of new Set([...before[kind],...after[kind]].map(x=>x.path))){
-    if(!isDeepStrictEqual(before[kind].filter(x=>x.path===path),after[kind].filter(x=>x.path===path)))changed.push(`${kind} ${JSON.stringify(path)}`);
+    if(!isDeepStrictEqual(compared(before[kind],path),compared(after[kind],path)))changed.push(`${kind} ${JSON.stringify(path)}`);
    }
   }
  }
@@ -114,7 +120,7 @@ export function requireReuseIdentity(review: AdmittedReview, assignment: TaskAss
  validateSavedAttribution(source);
  if(source.header.taskScopeIdentities?.find(b => b.taskId === assignment.taskId)?.identity !== taskFinalIdentity(review.prepared, assignment)){
   const taskIndex=review.attempt.header.selectedTaskIds.indexOf(assignment.taskId);
-  requireReview(false, `origins/tasks/${taskIndex}/sourceAttempt/${decision.sourceAttempt}`, reuseMismatch(review,assignment,decision.sourceAttempt));
+  requireReview(false, `origins/tasks/${taskIndex}/sourceAttempt/${decision.sourceAttempt}`, reuseMismatch(review,assignment,decision.sourceAttempt,'final-task-v1'));
  }
 }
 /** Mutate one complete candidate; caller MUST await its save before ACK/dispatch. */

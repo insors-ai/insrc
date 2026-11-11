@@ -86,12 +86,13 @@ export class AnalysisMeasurements {
   private total: number | undefined;
   private readonly settled = new Set<string>();
 
-  onEvent(event: AnalyzeRunEvent): void {
+  onEvent(event: AnalyzeRunEvent): boolean {
     switch (event.type) {
       case 'stage-started': {
         const position = analysisStages.indexOf(event.stage);
-        if (position > (this.stage === undefined ? -1 : analysisStages.indexOf(this.stage))) this.stage = event.stage;
-        break;
+        if (position <= (this.stage === undefined ? -1 : analysisStages.indexOf(this.stage))) return false;
+        this.stage = event.stage;
+        return true;
       }
       case 'plan-accepted':
         if (this.stage === 'plan' && this.total === undefined && Value.Check(ProgressId, event.planId) &&
@@ -104,6 +105,7 @@ export class AnalysisMeasurements {
             event.total === this.total && event.index === this.settled.size + 1 && event.index <= this.total &&
             Value.Check(ProgressId, event.taskId) && this.activeTask === null && !this.settled.has(event.taskId)) {
           this.activeTask = event.taskId;
+          return true;
         }
         break;
       case 'task-completed':
@@ -111,9 +113,11 @@ export class AnalysisMeasurements {
             (event.status === 'ok' || event.status === 'failed' || event.status === 'skipped-dependency-unavailable')) {
           this.settled.add(this.activeTask);
           this.activeTask = null;
+          return true;
         }
         break;
     }
+    return false;
   }
 
   read(): AnalysisDetails | null {

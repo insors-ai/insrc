@@ -1,4 +1,7 @@
 import { assertNoSessionPersistence } from '../shared/connection-persistence.js';
+import type { MessagePort } from 'node:worker_threads';
+import { AnalysisMeasurements } from './task-progress/executor-measurements.js';
+import { analysisProgressPath, beginExecutorProgress } from './task-progress/executor-relay.js';
 import { currentStepContext } from '../shared/step-context.js';
 import type { ConnectionExecutionContext } from '../shared/step-context.js';
 import { captureAnalysisDiagnostics } from '../analyze/connection-access.js';
@@ -581,6 +584,7 @@ export async function runStart(
 	send: (msg: IpcStreamMessage) => void,
 	signal: AbortSignal,
 	execution?: ConnectionExecutionContext,
+	progressPort?: MessagePort,
 ): Promise<void> {
 	assertNoSessionPersistence(execution);
 	const start = Date.now();
@@ -614,12 +618,20 @@ export async function runStart(
 		...(parsed.scopeHint !== undefined ? { scopeHint: parsed.scopeHint } : {}),
 	};
 
-	const onEvent = makeProgressEmitter(send, parsed.runId);
+	const legacyEvent = makeProgressEmitter(send, parsed.runId);
+	const observation = beginExecutorProgress(progressPort);
+	const measurements = observation === undefined ? undefined : new AnalysisMeasurements();
+	const onEvent = (event: AnalyzeRunEvent) => {
+		if (event.type === 'classified') observation?.confirmScope(analysisProgressPath(event.intent.scopeRef));
+		if (measurements?.onEvent(event)) observation?.sample(measurements.read());
+		legacyEvent(event);
+	};
 
 	let result: RunAnalyzeResult;
 	try {
 		result = await runAnalyzeImpl(args, { onEvent, signal });
 	} catch (err) {
+		observation?.settle('failed', parsed.runId);
 		// runAnalyze captures every typed error as a failure result, and
 		// records an error nothing inside it catches. A throw that still
 		// escapes means a bug or an OS-level failure; surface it as a
@@ -658,6 +670,8 @@ export async function runStart(
 		return;
 	}
 
+	if (result.intent !== undefined) observation?.confirmScope(analysisProgressPath(result.intent.scopeRef));
+	observation?.settle(result.ok ? 'completed' : result.error.code === 'aborted' ? 'cancelled' : 'failed', parsed.runId);
 	const terminal = shapeTerminalFrame(result);
 	if (result.ok) {
 		log.info(

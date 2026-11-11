@@ -1,3 +1,4 @@
+import '../../../analyze/orchestrator/__tests__/private-paths.js';
 import assert from 'node:assert/strict';
 import { mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -7,6 +8,9 @@ import test from 'node:test';
 import type { TestContext } from 'node:test';
 import { MessageChannel, Worker } from 'node:worker_threads';
 import type { MessagePort } from 'node:worker_threads';
+import { purgeRunForTests, writeRunRecord } from '../../../analyze/orchestrator/index.js';
+import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
+import { _setRunAnalyzeForTest, runStart as runAnalysis, runStatus } from '../../analyze-rpc.js';
 import type { IpcStreamMessage, LLMProvider } from '../../../shared/types.js';
 import { writeRepoSchema } from '../../../workflow/artifact-core/repo-schema.js';
 import { _setWorkflowDriverForTests, prepareWorkflowRun, runStart } from '../../workflow-rpc.js';
@@ -15,7 +19,7 @@ import { ProgressAccess } from '../access.js';
 import { createProgressAuthority, OWNER_RENEWAL_MS, ProgressCoordinator } from '../coordinator.js';
 import { registerExecutorProducers, validateExecutorDetails } from '../executor-measurements.js';
 import type { ExecutorDetails } from '../executor-measurements.js';
-import { beginExecutorProgress, ExecutorProgressRelay } from '../executor-relay.js';
+import { analysisProgressPath, beginExecutorProgress, ExecutorProgressRelay } from '../executor-relay.js';
 import { FallbackScheduler } from '../fallback.js';
 import { ProgressStore } from '../store.js';
 
@@ -63,8 +67,8 @@ async function fixture(t: TestContext, withRepo = false) {
   return {
     runtime, store, coordinator, access, projects, repoPath,
     advance(ms: number) { mono += ms; now += ms; },
-    port(relay: ExecutorProgressRelay, repo = repoPath, origin = context) {
-      const port = relay.reserve('workflow', repo, origin);
+    port(relay: ExecutorProgressRelay, repo = repoPath, origin = context, kind: ExecutorDetails['kind'] = 'workflow') {
+      const port = relay.reserve(kind, repo, origin);
       assert.ok(port);
       ports.push(port);
       return port;
@@ -245,4 +249,96 @@ test('S2 quiet owner renews activity and worker loss fences stale evidence', asy
   port.postMessage({ type: 'terminal', sequence: 99, state: 'completed' });
   assert.equal(f.store.get(running.task)?.state, 'interrupted');
   assert.equal(f.coordinator.hasLiveOwner(running.task), false);
+});
+
+function analysisIntent(repo: string): ClassifiedIntent {
+  return { target: 'docs', scope: 'XS', focused: false, scopeRef: { kind: 'repo', value: repo }, reasoning: 'fixture' };
+}
+
+test('S2 analysis progress preserves stage frames and the analyze.result then done sequence', async t => {
+  const f = await fixture(t, true);
+  const relay = new ExecutorProgressRelay(async () => f.runtime);
+  await f.access.openOrigin(f.repoPath, context);
+  const intent = analysisIntent(f.repoPath);
+  let observedIntent = intent;
+  const params = { runId: 's2-analysis', userPrompt: 'fixture', scopeRef: intent.scopeRef };
+  _setRunAnalyzeForTest(async (args, opts) => {
+    opts?.onEvent?.({ type: 'stage-started', stage: 'classify' });
+    opts?.onEvent?.({ type: 'classified', intent: observedIntent });
+    opts?.onEvent?.({ type: 'stage-started', stage: 'plan' });
+    opts?.onEvent?.({ type: 'plan-accepted', planId: 'p1', taskCount: 1 });
+    opts?.onEvent?.({ type: 'stage-started', stage: 'execute' });
+    opts?.onEvent?.({ type: 'llm-token', stage: 'execute', substep: 'emit', preview: 'private preview' });
+    opts?.onEvent?.({ type: 'task-started', taskId: 't1', template: 'private template', index: 1, total: 1 });
+    opts?.onEvent?.({ type: 'task-completed', taskId: 't1', status: 'ok' });
+    return { ok: true, runId: args.runId, intent: observedIntent, finalReport: { summary: 'result' },
+      tasksCompleted: 1, tasksFailed: [], durationMs: 4 };
+  });
+  t.after(() => _setRunAnalyzeForTest());
+  const baseline: IpcStreamMessage[] = [];
+  const frames: IpcStreamMessage[] = [];
+  await runAnalysis(params, frame => baseline.push(frame), new AbortController().signal);
+  await runAnalysis(params, frame => frames.push(frame), new AbortController().signal, undefined,
+    f.port(relay, f.repoPath, context, 'analysis'));
+  assert.deepEqual(frames, baseline);
+  assert.deepEqual(frames.slice(-2).map(frame => frame.stream), ['analyze.result', 'done']);
+  const terminal = await until(() => f.store.list().find(record => record.state === 'completed'));
+  assert.deepEqual(terminal.measurement?.details, {
+    kind: 'analysis', stageId: 'execute', activeUnit: null, production: null,
+    stagePosition: { unit: 'tasks', completed: 1, total: 1 },
+  });
+
+  assert.equal(analysisProgressPath({ kind: 'symbol', value: f.repoPath + '/file.ts#name' }), f.repoPath + '/file.ts');
+  assert.equal(analysisProgressPath({ kind: 'connection', value: f.repoPath }), undefined);
+  observedIntent = analysisIntent('/other');
+  const redirected: IpcStreamMessage[] = [];
+  await runAnalysis({ ...params, repo: '/other', runId: 's2-analysis-redirected' },
+    frame => redirected.push(frame), new AbortController().signal, undefined, f.port(relay, f.repoPath, context, 'analysis'));
+  assert.deepEqual(redirected.slice(-2).map(frame => frame.stream), ['analyze.result', 'done']);
+  const refused = await until(() => f.store.list().find(record => record.state === 'interrupted'));
+  assert.notEqual(refused.measurement?.details.stageId, 'execute');
+});
+
+test('S2 analysis preserves cached completion cancellation and persisted status', async t => {
+  const f = await fixture(t, true);
+  const relay = new ExecutorProgressRelay(async () => f.runtime);
+  await f.access.openOrigin(f.repoPath, context);
+  const intent = analysisIntent(f.repoPath);
+  const params = { runId: 's2-cache', userPrompt: 'fixture', scopeRef: intent.scopeRef };
+  const time = new Date().toISOString();
+  writeRunRecord({
+    runId: params.runId, userPrompt: params.userPrompt, initialScopeRef: params.scopeRef,
+    createdAt: time, updatedAt: time, stage: 'done', status: 'ok', intent,
+    finalReport: { summary: 'cached' }, tasksCompleted: 1, tasksFailed: [],
+  });
+  t.after(() => purgeRunForTests(params.runId));
+  const prior = await runStatus({ runId: params.runId });
+  const frames: IpcStreamMessage[] = [];
+  const cancelledBeforeCache = new AbortController();
+  cancelledBeforeCache.abort();
+  await runAnalysis(params, frame => frames.push(frame), cancelledBeforeCache.signal, undefined,
+    f.port(relay, f.repoPath, context, 'analysis'));
+  assert.deepEqual(frames.map(frame => frame.stream), ['analyze.result', 'done']);
+  const cached = await until(() => f.store.list().find(record => record.resultRef === params.runId));
+  assert.equal(cached.state, 'completed');
+  assert.equal(cached.measurement, null);
+  assert.deepEqual(await runStatus({ runId: params.runId }), prior);
+
+  _setRunAnalyzeForTest(async (args, opts) => {
+    assert.equal(opts?.signal?.aborted, true);
+    return { ok: false, runId: args.runId, intent, stage: 'plan', durationMs: 1,
+      error: { code: 'aborted', message: 'owner cancelled' } };
+  });
+  t.after(() => _setRunAnalyzeForTest());
+  const aborted = { ...params, runId: 's2-cancelled' };
+  await runAnalysis(aborted, frame => frames.push(frame), cancelledBeforeCache.signal, undefined,
+    f.port(relay, f.repoPath, context, 'analysis'));
+  assert.equal((await until(() => f.store.list().find(record => record.resultRef === aborted.runId))).state, 'cancelled');
+
+  _setRunAnalyzeForTest(async () => { throw new Error('unexpected fixture failure'); });
+  const thrown = { ...params, runId: 's2-thrown' };
+  await runAnalysis(thrown, frame => frames.push(frame), cancelledBeforeCache.signal, undefined,
+    f.port(relay, f.repoPath, context, 'analysis'));
+  assert.equal((await until(() => f.store.list().find(record => record.resultRef === thrown.runId))).state, 'failed');
+  assert.deepEqual(frames.slice(-2).map(frame => frame.stream), ['analyze.result', 'done']);
 });

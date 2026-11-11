@@ -160,6 +160,16 @@ export class ProgressAccess<D extends Details> {
     return this.launch(path, originId, ownerId, context);
   }
 
+  /** Use the same deepest registered path rule as analysis scope resolution. */
+  async projectForScope(path: string): Promise<string | undefined> {
+    let selected: string | undefined;
+    for (const candidate of (await this.projects()).keys()) {
+      if ((candidate === path || path.startsWith(candidate.endsWith('/') ? candidate : candidate + '/')) &&
+          (selected === undefined || candidate.length > selected.length)) selected = candidate;
+    }
+    return selected;
+  }
+
   /** Called by a trusted executor entry point. There is no IPC method to mint this port. */
   async launch(path: string, originId: string, ownerId: string, context: TrustedRpcContext): Promise<{
     authorization: ProducerAuthorization;

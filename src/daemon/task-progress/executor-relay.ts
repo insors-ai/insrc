@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { MessageChannel } from 'node:worker_threads';
 import type { MessagePort } from 'node:worker_threads';
+import { isAbsolute, resolve } from 'node:path';
 import { Type } from '@sinclair/typebox';
 import type { Static } from '@sinclair/typebox';
 import { Value } from '@sinclair/typebox/value';
@@ -17,12 +18,33 @@ export function executorProgressKind(method: string): ExecutorProgressKind | und
   if (method === 'workflow.run' || method === 'workflow.run.start') return 'workflow';
   return method === 'analyze.run.start' ? 'analysis' : undefined;
 }
+
+/** Extract only the file-system identity that can be checked against the registry. */
+export function analysisProgressPath(scope: unknown): string | undefined {
+  if (scope === null || typeof scope !== 'object') return undefined;
+  const { kind, value } = scope as { kind?: unknown; value?: unknown };
+  if (typeof value !== 'string' || value.length > 4096 || value.includes('\0')) return undefined;
+  let path = value;
+  switch (kind) {
+    case 'repo': case 'module': case 'file': case 'manifest-dir': case 'workspace':
+      break;
+    case 'symbol': {
+      const separator = value.lastIndexOf('#');
+      if (separator <= 0 || separator === value.length - 1) return undefined;
+      path = value.slice(0, separator);
+      break;
+    }
+    default: return undefined;
+  }
+  return isAbsolute(path) ? resolve(path) : undefined;
+}
 type ExecutorRuntime = ProgressRuntime<ExecutorDetails> & { producers: ReturnType<typeof registerExecutorProducers> };
 const TERMINAL = Type.Union([Type.Literal('completed'), Type.Literal('failed'), Type.Literal('cancelled')]);
 type Terminal = Static<typeof TERMINAL>;
 const EventSchema = Type.Union([
   progressObject({ type: Type.Literal('start') }),
   progressObject({ type: Type.Literal('sample'), sequence: ProgressSequence, details: Type.Unknown() }),
+  progressObject({ type: Type.Literal('scope'), path: Type.Union([Type.String({ minLength: 1, maxLength: 4096 }), Type.Null()]) }),
   progressObject({
     type: Type.Literal('terminal'), sequence: ProgressSequence, state: TERMINAL,
     resultRef: Type.Optional(ProgressId), details: Type.Optional(Type.Unknown()),
@@ -48,6 +70,7 @@ export function beginExecutorProgress(port: MessagePort | undefined) {
   let awaiting: number | undefined;
   let latest: ExecutorDetails | undefined;
   let ended = false;
+  let scopeConfirmed = false;
   const flush = () => {
     if (latest === undefined || awaiting !== undefined || ended) return;
     awaiting = ++sequence;
@@ -66,6 +89,11 @@ export function beginExecutorProgress(port: MessagePort | undefined) {
   port.unref();
   send(port, { type: 'start' });
   return {
+    confirmScope(path: string | undefined): void {
+      if (ended || scopeConfirmed) return;
+      scopeConfirmed = true;
+      send(port, { type: 'scope', path: path ?? null });
+    },
     sample(details: ExecutorDetails | null): void {
       if (details === null || ended) return;
       latest = details;
@@ -124,6 +152,7 @@ export class ExecutorProgressRelay {
     let pumping = false;
     let probeNumber = 0;
     let waiting: { id: number; resolve: (sequence: number | null) => void } | undefined;
+    let scope: 'unconfirmed' | 'pending' | 'verified' | 'rejected' = 'unconfirmed';
 
     const release = () => {
       if (released) return;
@@ -161,7 +190,7 @@ export class ExecutorProgressRelay {
       if (owner === undefined || pumping || (released && !expired)) return;
       pumping = true;
       try {
-        while (latest !== undefined && !expired) {
+        while (latest !== undefined && !expired && (scope === 'unconfirmed' || scope === 'verified')) {
           const details = latest;
           latest = undefined;
           const at = new Date().toISOString();
@@ -175,6 +204,8 @@ export class ExecutorProgressRelay {
           };
           await owner.signal(revision).catch(() => {});
         }
+        if (scope === 'pending') return;
+        if (scope === 'rejected') { final = undefined; closed = true; }
         if (final !== undefined || closed) {
           const evidence: OwnerEvidence = final === undefined
             ? { sequence: ++sequence, state: 'interrupted' }
@@ -192,7 +223,9 @@ export class ExecutorProgressRelay {
     const admit = async () => {
       const runtime = await this.runtime();
       if (released) return;
-      const launch = await runtime.access.launchBound(repo, ownerId, context);
+      const project = kind === 'analysis' ? await runtime.access.projectForScope(repo) : repo;
+      if (released || project === undefined) { release(); return; }
+      const launch = await runtime.access.launchBound(project, ownerId, context);
       if (released) return;
       const delegate = <D extends ExecutorDetails>(matches: (value: ExecutorDetails) => value is D): TaskProgressDelegate<D> => ({
         progress: async task => snapshot !== null && matches(snapshot.details) &&
@@ -240,14 +273,40 @@ export class ExecutorProgressRelay {
         if (waiting?.id === event.probe) waiting.resolve(++sequence);
         return;
       }
+      if (event.type === 'scope') {
+        if (kind !== 'analysis' || scope !== 'unconfirmed') return;
+        scope = 'pending';
+        const finish = (verified: boolean) => {
+          if (scope !== 'pending') return;
+          clearTimeout(timeout);
+          scope = verified ? 'verified' : 'rejected';
+          schedule();
+        };
+        const timeout = setTimeout(() => finish(false), this.admissionMs);
+        timeout.unref();
+        const path = event.path;
+        if (path === null) finish(false);
+        else void this.runtime().then(async current => {
+          const requested = await current.access.projectForScope(repo);
+          return requested !== undefined && requested === await current.access.projectForScope(path);
+        }).then(finish, () => finish(false));
+        return;
+      }
       if (event.sequence <= lastEvent) return;
       if (event.type === 'sample') {
         if (!validateExecutorDetails(kind, event.details)) return;
+        if (event.details.kind === 'analysis' && event.details.stageId !== 'classify' && scope === 'unconfirmed') return;
         latest = event.details;
         send(port, { type: 'ack', sequence: event.sequence });
       } else {
+        if (kind === 'analysis' && event.state === 'completed' && scope === 'unconfirmed') {
+          closed = true;
+          schedule();
+          return;
+        }
         final = event;
-        if (validateExecutorDetails(kind, event.details)) latest = event.details;
+        if (validateExecutorDetails(kind, event.details) &&
+            (event.details.kind !== 'analysis' || event.details.stageId === 'classify' || scope !== 'unconfirmed')) latest = event.details;
         waiting?.resolve(null);
       }
       lastEvent = event.sequence;

@@ -1805,7 +1805,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		'analyze.run.start': async (params, send, signal, context) => {
 			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
 			const mod = await import('./analyze-rpc.js');
-			return mod.runStart(params, send, signal, context?.connectionExecution);
+			return mod.runStart(params, send, signal, context?.connectionExecution, context?.executorProgressPort);
 		},
 		// Daemon-side workflow runner: drives one workflow (define / design.* /
 		// plan / stub) end-to-end through the LLMProvider (config → invoking

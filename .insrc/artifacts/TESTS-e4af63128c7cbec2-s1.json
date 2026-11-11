@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 22,
-        "contentHash": "cc85b275d1f34eec1725e3d512685d57e9233dac3023e9fed023834b7bd3dc69",
-        "at": "2026-11-11T16:37:26.868Z",
+        "number": 24,
+        "contentHash": "03645c5ee79ad440757e5007998bd793ef0a42913a2dd365eedf3baeea2bf6d1",
+        "at": "2026-11-11T17:07:07.100Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "e4af63128c7cbec2",
     "storyId": "s1",
     "createdAt": "2026-11-09T07:52:13.312Z",
-    "updatedAt": "2026-11-11T16:37:26.694Z",
+    "updatedAt": "2026-11-11T17:07:06.921Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-09T04:29:20.389Z",
     "epicSlug": "isolate-each-code-design-review-its",
-    "revision": 22
+    "revision": 24
   },
   "body": {
     "tasks": [
@@ -653,8 +653,8 @@
       },
       {
         "taskId": "t11",
-        "commit": "58667fd89",
-        "ranAt": "2026-11-11T16:37:26.694Z",
+        "commit": "11aaac85d",
+        "ranAt": "2026-11-11T17:07:06.921Z",
         "testsPassed": true,
         "tests": [
           {
@@ -702,7 +702,7 @@
             "file": "src/daemon/threads/__tests__/review-worker-clearance.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 9689,
+            "durationMs": 9836,
             "titles": [
               {
                 "title": "code",
@@ -735,7 +735,7 @@
             "file": "src/daemon/threads/__tests__/review-worker-recovery.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 4500,
+            "durationMs": 5289,
             "titles": [
               {
                 "title": "disposable daemon crash reconstructs unresolved guards and leaves unrelated reviews usable",

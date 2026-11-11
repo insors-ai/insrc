@@ -29,6 +29,17 @@
           "revision": 1,
           "at": "2026-11-10T03:59:43.918Z",
           "externalId": "6758589548"
+        },
+        {
+          "target": {
+            "entityId": "PLAN-206db3426ffd4428-s2",
+            "type": "PLAN",
+            "relation": "documents",
+            "fragment": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/S002/PLAN.md"
+          },
+          "revision": 1,
+          "at": "2026-11-11T12:14:19.979Z",
+          "externalId": "6795507851"
         }
       ],
       "binding": {

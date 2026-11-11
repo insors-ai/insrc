@@ -231,11 +231,12 @@ export class DesignReviewCoordinator {
    requireDesign(request.attempt===source.number+1||request.attempt===this.deps.acceptedAttempt&&request.attempt>source.number,'review_conflict','Expected the next sequential attempt');
    requireDesign(!active&&!this.subjects.has(this.subjectKey(saved.subject)),'review_conflict','Subject already has an active review');
    requireDesign(!this.uncertain.has(key),'persistence_failed','Prior terminal state could not be persisted');
-   requireDesign(['passed','changes_requested','incomplete'].includes(source.status)&&source.report?.status===source.status,'review_conflict','Correction requires a complete terminal report; unfinished work uses explicit recovery');
-   requireDesign(!this.deps.publish||source.publication?.state==='complete','publication_incomplete','Finish pending publication before starting a correction attempt');
+   const failedResubmission=source.status==='failed'&&!!source.failure&&!source.report&&!source.publication;
+   requireDesign(failedResubmission||['passed','changes_requested','incomplete'].includes(source.status)&&source.report?.status===source.status,'review_conflict','New attempt requires a complete terminal report or a failed technical predecessor; interrupted work uses explicit recovery');
+   requireDesign(failedResubmission||!this.deps.publish||source.publication?.state==='complete','publication_incomplete','Finish pending publication before starting a correction attempt');
    const retained=new Set(source.impact?.retainedCoverage.map(r=>r.chunkId)??[]);
    const fresh=source.plan?.chunks.filter(c=>!retained.has(c.id));
-   requireDesign(source.plan&&fresh&&JSON.stringify(source.report.chunks)===JSON.stringify(source.completedChunks)&&fresh.length===source.completedChunks.length&&fresh.every((c,i)=>c.id===source.completedChunks[i]?.chunkId),'invalid_checkpoint','Terminal report must match the accepted plan and results');
+   requireDesign(failedResubmission||source.plan&&fresh&&JSON.stringify(source.report!.chunks)===JSON.stringify(source.completedChunks)&&fresh.length===source.completedChunks.length&&fresh.every((c,i)=>c.id===source.completedChunks[i]?.chunkId),'invalid_checkpoint','Terminal report must match the accepted plan and results');
    const prepared=(this.deps.prepare??prepareDesignSubject)(request.repo,request.artifactPath);
    requireDesign(prepared.subject.artifactId===saved.artifactId&&prepared.subject.project===saved.project,'foreign_checkpoint','Correction resolved another artifact');
    if(prepared.subject.reviewer==='controller')requireDesign(context.owner&&!context.owner.signal.aborted,'wrong_owner','A live trusted reviewer connection is required');
@@ -243,7 +244,7 @@ export class DesignReviewCoordinator {
    try{
     const tracker=new DesignProgressTracker(designCheckpointPath(request.repo,request.reviewId));
     const checkpoint:DesignReviewCheckpoint={...structuredClone(saved),subject:prepared.subject};
-    checkpoint.attempts.push({number:request.attempt,status:'pending',preparationKind:'impact',baseline:prepared.baseline,inventory:prepared.inventory,completedChunks:[],progress:tracker.snapshot(),startedAt:new Date().toISOString(),reviewer:prepared.subject.reviewer});
+    checkpoint.attempts.push({number:request.attempt,status:'pending',preparationKind:failedResubmission?'planning':'impact',baseline:prepared.baseline,inventory:prepared.inventory,completedChunks:[],progress:tracker.snapshot(),startedAt:new Date().toISOString(),reviewer:prepared.subject.reviewer});
     await this.deps.admit?.(checkpoint);
     await(this.deps.save??saveDesignCheckpoint)(request.repo,checkpoint);
     this.launch(checkpoint,tracker,context);return this.ack(checkpoint,true);

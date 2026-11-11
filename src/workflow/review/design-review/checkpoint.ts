@@ -57,7 +57,9 @@ function checkEvolution(previous:DesignReviewCheckpoint,next:DesignReviewCheckpo
   const restart=old.status==='invalidated'&&source?.status==='invalidated'&&
    (added.preparationKind??'planning')==='planning'&&!added.impact&&
    source.actions?.some(a=>qualifiedDesignAction(a)&&a.operation==='restart_full'&&a.userDecision?.action==='restart_full'&&a.resultAttempt===added.number);
-  requireDesign(correction||restart,'immutable_history','New attempt requires a complete terminal correction or approved full restart of invalidated work');
+  const failedResubmission=old.status==='failed'&&!!old.failure&&!old.report&&!old.publication&&
+   (added.preparationKind??'planning')==='planning'&&!added.impact&&previous.attempts.every((a,i)=>same(a,next.attempts[i]));
+  requireDesign(correction||restart||failedResubmission,'immutable_history','New attempt requires a terminal correction, explicit failed-attempt resubmission or approved full restart');
  }
  if(next.attempts.length===previous.attempts.length)requireDesign(same(previous.subject,next.subject),'immutable_history','Cannot replace an active subject');
  for(const [index,old] of previous.attempts.entries()){

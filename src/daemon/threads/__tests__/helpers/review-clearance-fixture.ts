@@ -52,9 +52,10 @@ export async function clearanceFixture(t:{after:(fn:()=>Promise<void>)=>void},fa
  const guard={daemonInstance:'old-daemon',openLeases:['op-a','op-b'].map(operationId=>({operationId,workerIncarnation:'old-worker',kind:'cli',openedAt:new Date().toISOString()}))};
  if(family==='code')await updateStoredCodeCheckpoint(join(repo,'.insrc/tmp/code-review',`${key.reviewId}.json`),cp=>({...cp!,schemaVersion:2,attempts:cp!.attempts.map(a=>({...a,resourceGuard:guard}))}));
  else await updateStoredDesignCheckpoint(repo,key.reviewId,cp=>({...cp!,schemaVersion:2,attempts:cp!.attempts.map(a=>({...a,resourceGuard:guard}))}));
- const started=new Map<string,StartedReviewWorker>();let nativeCalls=0;
+ const started=new Map<string,StartedReviewWorker>(),barriers=new Map<string,Int32Array>();let nativeCalls=0;
  const registry=new ReviewWorkers({services,resolveScope:async request=>{assert.equal(request.project,repo);return{reviewer:'daemon',subject:d?.id??`${repo}:s1`,cleanupScope:`${repo}:s1`,epicHash:d?'aaaaaaaaaaaaaaaa':hash};},authorizeNative:async(_key,command)=>{nativeCalls++;assert.equal(command.command,'git');},resolveBinary:async command=>command,track:()=>{},start:async(svc,review,port,deps)=>{
-  const s=await startReviewWorkerBootstrap(svc,review,port,{...deps,start:(services,name,_script,extra,created)=>startWorker(services,name,family==='code'?'../../workflow/code-review/task-review/__tests__/helpers/worker-admission':'../../workflow/review/design-review/__tests__/helpers/worker-admission',{workerData:{...extra!.workerData,fixtureResult:f.result,fixtureBarrier:new SharedArrayBuffer(32)},transferList:extra!.transferList},created)});started.set(review.key.reviewId,s);return s;
+  const barrier=new Int32Array(new SharedArrayBuffer(32));barriers.set(review.key.reviewId,barrier);
+  const s=await startReviewWorkerBootstrap(svc,review,port,{...deps,start:(services,name,_script,extra,created)=>startWorker(services,name,family==='code'?'../../workflow/code-review/task-review/__tests__/helpers/worker-admission':'../../workflow/review/design-review/__tests__/helpers/worker-admission',{workerData:{...extra!.workerData,fixtureResult:f.result,fixtureBarrier:barrier.buffer},transferList:extra!.transferList},created)});started.set(review.key.reviewId,s);return s;
  }});
  const lifecycle=createRepoLifecycle(repo),artifactId=d?.id??`CR-${hash}-s1`,broker=new ApprovalBroker();let failAudit=false;
  const recovery=registry.resourceRecovery(broker,async(k,rows)=>{if(failAudit)throw new Error('Fixture audit unavailable');await persistReviewResourceAudit(lifecycle.store,artifactId,k,rows);},approvalWaitMs);
@@ -63,5 +64,5 @@ export async function clearanceFixture(t:{after:(fn:()=>Promise<void>)=>void},fa
  const peer=await LocalPeer.connect(socketPath);
  const local={connectionIdentity:'fixture-local',daemonEpoch:'epoch',connectionSignal:new AbortController().signal};
  t.after(async()=>{peer.close();await server.close();await recovery.drained();await registry.shutdown();removeDesign();f.cleanup();});
- return{f,d,repo,key,input,registry,recovery,broker,peer,local,started,lifecycle,artifactId,nativeCalls:()=>nativeCalls,failAudit:(value:boolean)=>{failAudit=value;}};
+ return{f,d,repo,key,input,registry,recovery,broker,peer,local,started,barriers,lifecycle,artifactId,nativeCalls:()=>nativeCalls,failAudit:(value:boolean)=>{failAudit=value;}};
 }

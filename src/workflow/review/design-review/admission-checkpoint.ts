@@ -85,6 +85,6 @@ export function checkDesignAdmissionEvolution(previous: StoredDesignCheckpoint, 
    requireDesign(added.status==='pending'&&!added.plan&&!added.impact&&!added.report&&!added.completedChunks.length&&freshReservation&&!added.publication,'invalid_checkpoint','Restart qualification cannot supply review results or duplicate dispatch');
    return;
   }
-  requireDesign(isDesignAdmission(last) ? last.status === 'failed' || last.status === 'interrupted' : ['passed','changes_requested','incomplete'].includes(last.status) && last.report?.status === last.status && last.publication?.state === 'complete', 'invalid_checkpoint', 'New admission requires an explicit terminal predecessor');
+  requireDesign(isDesignAdmission(last) ? last.status === 'failed' || last.status === 'interrupted' : last.status==='failed'&&!!last.failure&&!last.report&&!last.publication || ['passed','changes_requested','incomplete'].includes(last.status) && last.report?.status === last.status && last.publication?.state === 'complete', 'invalid_checkpoint', 'New admission requires an explicit terminal predecessor');
  }
 }

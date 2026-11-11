@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "unit-STORY-206db3426ffd4428-s1",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T09:40:04.822Z",
+    "epicCreatedAt": "2026-11-09T06:00:04.355Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "206db3426ffd4428",
+    "storyId": "s1",
+    "envelope": {
+      "description": "",
+      "parent": {
+        "entityId": "EPIC-206db3426ffd4428",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": [
+        {
+          "target": {
+            "entityId": "LLD-206db3426ffd4428-s1",
+            "type": "LLD",
+            "relation": "documents",
+            "fragment": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/S001/LLD.md"
+          },
+          "revision": 3,
+          "at": "2026-11-09T10:12:23.966Z",
+          "externalId": "6737463389"
+        },
+        {
+          "target": {
+            "entityId": "PLAN-206db3426ffd4428-s1",
+            "type": "PLAN",
+            "relation": "documents",
+            "fragment": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/S001/PLAN.md"
+          },
+          "revision": 1,
+          "at": "2026-11-09T12:32:58.997Z",
+          "externalId": "6740150105"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#147",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": [
+          {
+            "kind": "task-list",
+            "at": "2026-11-09T10:12:13.192Z"
+          },
+          {
+            "kind": "design",
+            "at": "2026-11-09T10:12:15.340Z"
+          },
+          {
+            "kind": "review",
+            "at": "2026-11-09T10:12:17.696Z"
+          }
+        ]
+      }
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "7f67311f00c6101c952763f219208b46e606b381c765f6354708dffd623980a3",
+        "at": "2026-11-09T09:40:04.822Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

@@ -1,0 +1,14 @@
+{
+  "configuredDefault": {
+    "alias": "insrc-probe-default",
+    "effort": "low"
+  },
+  "effective": {
+    "name": "insrc-selected-model",
+    "alias": "insrc-probe-selected",
+    "effort": "high"
+  },
+  "beforeSha256": "d0247b4f7a195a6ecb2288ebec91202babf5746083f4a3e72a4d6afddda544a6",
+  "afterSha256": "d0247b4f7a195a6ecb2288ebec91202babf5746083f4a3e72a4d6afddda544a6",
+  "modelPromptSent": false
+}

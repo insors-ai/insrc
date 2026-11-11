@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "fdf0c0ea28774ea1abd320ed65090fcc122d7e9c8ea259478965ea20e88cad1e",
+        "at": "2026-11-09T18:46:40.557Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T18:47:58.672Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-9158f2ce-4ee9-4f0e-b93a-ed5454129010",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T18:44:00.932Z",
+    "epicCreatedAt": "2026-11-09T18:44:00.932Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1edbd158094bdd7b",
+    "storyId": "s1",
+    "revision": 2,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "A short wording addition to one steering file. The user has fixed the content (two points, no thresholds, no new approval stops), so there is no design choice. Sections are addressed by marker pairs, so a new front-door section outside the markers does not change what the guide sections serve.",
+    "updatedAt": "2026-11-09T18:45:16.073Z"
+  },
+  "body": {
+    "focus": "Add a short rule to the insrc steering (src/prompts/steering-block.md) so agents keep the user informed during long work. Two points only: (1) group activities into small batches with intermediate updates rather than one long-running batch; (2) no silent chaining of activities such as reviews and test runs. It adds no new stops for user approval beyond the existing guidelines and no thresholds; agents publish progress to chat and carry on.",
+    "producesLld": false,
+    "commit": "114ade9f2",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Added a short front-door section to src/prompts/steering-block.md: group long work into small batches with a chat update after each, do not chain reviews and test runs silently, and carry on without new approval stops. No test was added for this prose. Of the 10 steering-related test files run, 8 tests failed: 7 also fail on the previous commit, and the eighth in task-review.test.ts is intermittent (passed 2 of 3 runs alone on this commit).",
+    "testRecord": {
+      "md": "docs/standalone/1edbd158094bdd7b-E202611091edbd158/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/prompts/steering-block.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T18:45:16.073Z"
+      }
+    ]
+  },
+  "citations": []
+}

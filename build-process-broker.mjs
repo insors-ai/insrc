@@ -8,15 +8,24 @@ const root = dirname(fileURLToPath(import.meta.url));
 const source = join(root, 'src/native/process-broker');
 const output = join(root, 'out/bin/insrc-process-broker');
 const temporary = `${output}.${process.pid}.tmp`;
+const observer = join(root, 'out/bin/insrc-darwin-lifecycle');
+const temporaryObserver = `${observer}.${process.pid}.tmp`;
 try {
 	if (!['linux', 'darwin'].includes(process.platform)) throw new Error(`stable process capabilities are unsupported on ${process.platform}`);
 	mkdirSync(dirname(output), { recursive: true });
 	execFileSync(process.env['CC'] || 'cc', ['-std=c11', '-O2', '-Wall', '-Wextra', '-Werror', join(source, 'main.c'), join(source, `${process.platform}.c`), '-o', temporary, ...(process.platform === 'darwin' ? ['-lbsm'] : [])], { stdio: 'pipe', timeout: 60_000 });
+	if (process.platform === 'darwin') {
+		execFileSync(process.env['CC'] || 'cc', ['-std=c11', '-O2', '-Wall', '-Wextra', '-Werror',
+			join(root, 'src/native/darwin-lifecycle/identity.c'), '-o', temporaryObserver], { stdio: 'pipe', timeout: 60_000 });
+		chmodSync(temporaryObserver, 0o755);
+		renameSync(temporaryObserver, observer);
+	}
 	chmodSync(temporary, 0o755);
 	renameSync(temporary, output);
 	process.stdout.write(`[build-process-broker] built ${process.platform} capability broker\n`);
 } catch (error) {
 	rmSync(temporary, { force: true });
+	rmSync(temporaryObserver, { force: true });
 	process.stderr.write(`Cannot build the internal process-capability broker. A local C compiler and supported OS headers are required; runtime compilation and PID-kill fallbacks are disabled.\n${error instanceof Error ? error.message : String(error)}\n`);
 	process.exitCode = 1;
 }

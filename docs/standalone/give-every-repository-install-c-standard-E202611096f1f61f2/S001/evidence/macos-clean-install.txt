@@ -1,0 +1,8 @@
+Clean install with the flag the build instructions now give.
+Tree: origin/v2 at f3e340fa1256cbd58feda8167c1d24e7a9f9726c
+Platform: Darwin arm64, Apple clang version 21.0.0 (clang-2100.3.34.2)
+Node: v22.23.2
+Command: CXXFLAGS=-std=c++17 npm ci --no-audit --no-fund
+Exit code: 0
+Elapsed seconds: 42
+fs-ext loads: true

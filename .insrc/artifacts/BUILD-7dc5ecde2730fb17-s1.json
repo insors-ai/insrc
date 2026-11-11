@@ -1,0 +1,81 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 3,
+        "contentHash": "f78649061e56dd24dec856343f188bbec4ee2726b1a8c538c38183e4458d1344",
+        "at": "2026-11-09T18:17:33.155Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T18:24:38.816Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-4355109d-57d2-4c77-9708-4e887232ea72",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T17:57:36.097Z",
+    "epicCreatedAt": "2026-11-09T09:10:15.201Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7dc5ecde2730fb17",
+    "storyId": "s1",
+    "revision": 3,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "A defect with one obvious fix in one file: the two panel-lifetime intervals in createChatPanelHost hold the Node event loop open after tests finish. Both are created in chat-panel.ts, started only from wireChannel, and cleared on dispose; the module already calls unref on comparable timers, so no design choice or new contract is involved.",
+    "epicSlug": "stop-chat-panel-timers-from-keeping",
+    "updatedAt": "2026-11-09T18:15:58.409Z"
+  },
+  "body": {
+    "focus": "A chat panel's repeating timers must no longer keep the Node process alive on their own, while still firing on the same schedule for as long as the process runs and still being cleared on dispose. After the change the chat panel test file vscode-plugin/src/chat/__tests__/chat-panel.test.ts must exit on its own with every test still passing and no test weakened or removed. Because only timers were logged, the fix must confirm by re-running the file that no other open handle still prevents exit.",
+    "producesLld": false,
+    "commit": "e46593f65",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Unref'd the chat panel's active-list and observer intervals, and made the eight poll loops in chat-panel.test.ts use an unref'd wait, because abandoned fake-adapter turns were the remaining handle after the first change. Added a regression test. A plain re-run without --test-force-exit exits on its own with code 0 in 12 seconds, 233 of 233 passing; the output is saved in docs/standalone/stop-chat-panel-timers-from-keeping-E202611097dc5ecde/S001/evidence/plain-rerun.txt.",
+    "testRecord": {
+      "md": "docs/standalone/stop-chat-panel-timers-from-keeping-E202611097dc5ecde/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T18:15:58.409Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T18:15:58.409Z"
+      }
+    ]
+  },
+  "citations": []
+}

@@ -25,6 +25,7 @@ test('Crash recovery preserves personal history, leaves delivery unchanged and n
     { id: `DEF-${hash}`, meta: { ...meta, workflow: 'define' }, body: { stories: [{ id: 's1', title: 'Completed story' }] } },
     { id: `PLAN-${hash}-s1`, meta: { ...meta, workflow: 'plan', storyId: 's1' }, body: { tasks: [{ id: 't1', title: 'First task' }, { id: 't2', title: 'Second task' }] } },
     { id: `BUILD-${hash}-s1`, meta: { ...meta, workflow: 'build', storyId: 's1' }, body: { tasks: [{ id: 't1', passed: true }, { id: 't2', passed: true }] } },
+    { id: `STORY-${hash}-s1`, meta: { ...meta, workflow: 'define', storyId: 's1', lifecycle: { ...(meta.lifecycle as object), status: 'completed' } }, body: {} },
   ];
   for (const artifact of artifacts) writeAtomic(artifactJsonPath(dir, artifact.id), JSON.stringify({ meta: artifact.meta, body: artifact.body, citations: [] }));
   const beforeBytes = artifacts.map(a => readFileSync(artifactJsonPath(dir, a.id), 'utf8'));

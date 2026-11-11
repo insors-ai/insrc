@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c1693c6c-e162-4bcd-9080-fb3ee84dff49",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T15:17:26.316Z",
+    "epicCreatedAt": "2026-11-09T05:00:05.847Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "eedc4519199b24b4",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Repair creates missing units and Tasks",
+      "parent": {
+        "entityId": "STORY-eedc4519199b24b4-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-eedc4519199b24b4-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-eedc4519199b24b4-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "524858f21a60d6acc52b945ac6fa242a32422d1a36334a4c65a23c36919c3700",
+        "at": "2026-11-09T15:17:26.316Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T15:17:26.317Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Repair creates missing units and Tasks",
+    "summary": "Extend unit and Task discovery to Stories known from any record, accept a PLAN past approved with createFromPlan's option, match BUILD results by planTaskId alone, list missing rounds in the preview, and report a Story whose Task set cannot be made.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Missing EPIC, STORY, TASKS and TASK heads are created on an already converted repository",
+      "Crossed Task numbers and plan rows give each BUILD result to the right Task and existing rounds are left alone",
+      "A TASKS head listing a missing Task or made from another plan revision is reported failed while other Stories continue"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "repair on an already converted repository creates missing EPIC, STORY, TASKS and TASK heads, including from signed-off and completed PLANs, and finishes a part-way Task set"
+      },
+      {
+        "level": "integration",
+        "name": "repair with crossed Task numbers and plan rows gives each BUILD result to the Task with that planTaskId and leaves existing rounds alone, before the live rule settles the Story"
+      },
+      {
+        "level": "integration",
+        "name": "a failure injected while Task rounds are back-filled lists the rounds already written"
+      },
+      {
+        "level": "integration",
+        "name": "a TASKS head listing a missing Task, or made from a different plan revision, is reported failed and not settled, and other Stories continue"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

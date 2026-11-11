@@ -1,0 +1,946 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1794235361742-0lg96w",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T14:46:41.488Z",
+    "epicCreatedAt": "2026-11-09T05:00:05.847Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "claude-opus-5-5"
+        }
+      ]
+    },
+    "elapsedMs": 239497,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "eedc4519199b24b4",
+    "epicSlug": "make-delivery-board-read-common-artifact",
+    "storyId": "s1",
+    "lldRunId": "wf-1794233694387-yokqfz",
+    "lldEffectiveHash": "c67150e9bcc311baffbceeba5fee105eaca5a5e57ae01d42a1d1339e4b8d6d45",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3816703fee121b5b430216921eaa24014c614ccce0928601d8ab5abb3e31a458",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T15:17:21.035Z"
+      }
+    },
+    "rangeBase": "ae92ae4b53ab8017256adba0f7947864c95a2c61"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "The build changes three areas in dependency order. It first makes Story and Epic completion real in the lifecycle and approval paths, and closes the path that writes records with no lifecycle. It then adds the repair modes in three steps: running the conversion's steps with exact reporting, creating missing units and Tasks, and settling units. Finally the board reads every record kind, publishes unit status and stable Task identity, and the plugin shows them."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Story completion rule",
+        "summary": "Add storyBuildApproved, storyApprovalOverride, declaredStories and storyTasks to the evidence; make the STORY and EPIC roll-ups use them; add TASK heads to a Story's cascade.",
+        "size": "L",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A Story completes only when its BUILD is approved, its review is clean or overridden, and its Tasks pass or the approval carries an override",
+          "A listed Task with no head, a part-way Task set and a TASKS head from an older plan revision each hold the Story",
+          "A held Story leaves every Task unchanged, and an Epic waits for every declared Story",
+          "Existing assertions that Tasks complete before their Story now describe the Story-owned cascade"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "rollUp for STORY: approved BUILD with clean review and all listed Tasks' latest rounds passed completes"
+          },
+          {
+            "level": "unit",
+            "name": "rollUp for STORY: an earlier pass followed by a failing latest round holds back, and an explicit override completes it"
+          },
+          {
+            "level": "unit",
+            "name": "rollUp for STORY: a listed Task with no head holds back"
+          },
+          {
+            "level": "unit",
+            "name": "rollUp for STORY: an approved PLAN with no TASKS head holds back, with no TASK heads and with a part-way set whose Tasks passed"
+          },
+          {
+            "level": "unit",
+            "name": "rollUp for STORY: a TASKS head from an older plan revision holds back even when every listed Task passed, and an explicit override completes it"
+          },
+          {
+            "level": "unit",
+            "name": "storyTasks: a qualifying PLAN at stored revision 0 matches a TASKS head at planRevision 1; an empty current listing answers not-created; with no qualifying PLAN a TASKS listing, then child TASK heads, then none-required apply in that order"
+          },
+          {
+            "level": "unit",
+            "name": "rollUp for STORY: a Story with no PLAN and no Tasks completes, and child TASK heads with no PLAN are the listed set"
+          },
+          {
+            "level": "unit",
+            "name": "rollUp for STORY: a listed withdrawn or superseded Task is not counted; a clean review is not an override"
+          },
+          {
+            "level": "unit",
+            "name": "rollUp for EPIC: a declared Story without a terminal head holds it; an Epic with no DEF rolls up from its counted Stories"
+          },
+          {
+            "level": "unit",
+            "name": "unitMembers includes TASK heads, and a held Story leaves every Task unchanged"
+          },
+          {
+            "level": "unit",
+            "name": "reopening a Story reopens only the Tasks it froze"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Approval completes the Story and keeps a later override",
+        "summary": "Add the record-override operation, use a stored override at the outer code-review gate, make completeThroughService ensure heads and report a story-completion outcome, and merge outcomes through handleWorkflowApprove and the CLI.",
+        "size": "L",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Approving a BUILD completes its Story, Tasks and Epic when the rule holds, or reports why not",
+          "A second approval with an override records it with an audit entry and leaves status, revision and approval time unchanged",
+          "A re-approval with no override passes the gate on the stored one, and a draft BUILD does not",
+          "The story-completion outcome reaches daemon and CLI callers"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "record-override keeps status, revision and approval time, logs the actor and reason, and is refused from a completed BUILD"
+          },
+          {
+            "level": "integration",
+            "name": "handleWorkflowApprove on a BUILD: the outcome merges the approval's own followOn with the seam's, and the Story, its Tasks and its Epic complete"
+          },
+          {
+            "level": "integration",
+            "name": "a walk failure leaves the approval standing and reports ok false"
+          },
+          {
+            "level": "integration",
+            "name": "a live approval with a listed Task missing its head is held and named in the note"
+          },
+          {
+            "level": "integration",
+            "name": "a live approval after a failed reconcile, and after one that stopped part-way with newly created unlisted Tasks, is held and leaves those Tasks unfrozen"
+          },
+          {
+            "level": "integration",
+            "name": "initial approval held, then re-approval with an override records it and completes the Story"
+          },
+          {
+            "level": "integration",
+            "name": "a BUILD approved over a blocking code review with an override, a failure injected in completion, then re-approval with no override in the request passes the outer gate on the stored override and completes"
+          },
+          {
+            "level": "integration",
+            "name": "a draft BUILD at a new revision is not passed by an earlier revision's override"
+          },
+          {
+            "level": "integration",
+            "name": "a held Story in signoff completes later from the stored override"
+          },
+          {
+            "level": "integration",
+            "name": "an Epic with a signoff hold stays open after its Story completes"
+          },
+          {
+            "level": "integration",
+            "name": "the CLI adapter exposes the story-completion outcome"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Every workflow head has a lifecycle",
+        "summary": "Add the storage helper that settles meta.lifecycle, call it from both finished-artifact write sites, and add the guard test.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A first write gets a draft lifecycle",
+          "A rewrite keeps the lifecycle for unchanged content and starts a draft keeping Signoff entries for changed content",
+          "A production content write of a delivery kind cannot create a head without a lifecycle"
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "the storage helper: a first write gets a draft lifecycle; a rewrite with unchanged content keeps the lifecycle; a rewrite with changed content gets a draft and keeps Signoff entries, with no Signoff entries and with them"
+          },
+          {
+            "level": "integration",
+            "name": "both first-write sites give a new head a draft lifecycle"
+          },
+          {
+            "level": "integration",
+            "name": "guard: a production content write of a delivery kind cannot create a head without a lifecycle"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Repair modes and step-by-step reporting",
+        "summary": "Add repair-preview and repair to handleRepoConvert, run the conversion's steps in order at any schema version, add the RepairRecorder at commit points, and return a RepairReport with written, remaining and stoppedAt.",
+        "size": "L",
+        "order": 4,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "repair-preview writes nothing",
+          "Repair runs renames, stamps, amendments, feedback, migration, units, Tasks and Story history in order and leaves the schema marker alone",
+          "A step that throws stops the run and the report lists exactly what was committed",
+          "A write committed inside a nested operation is recorded even when the outer operation then fails",
+          "A plan with a problem writes nothing and answers an error"
+        ],
+        "derivedFrom": [
+          "c6",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "repair on a store with an uppercase head holding body.feedback and an approved flat amendment: the head is renamed, the feedback survives under the new id, and the amendment stays approved"
+          },
+          {
+            "level": "integration",
+            "name": "a failure injected in the head migration step answers a RepairReport whose written lists the committed feedback lines and migration entries, with stoppedAt and remaining, and settles nothing; the next run finishes with no feedback line added twice"
+          },
+          {
+            "level": "integration",
+            "name": "a plan with a rename collision answers an error and writes nothing"
+          },
+          {
+            "level": "integration",
+            "name": "an unknown mode answers an error and writes nothing"
+          },
+          {
+            "level": "integration",
+            "name": "rollback: after a staged write fails before head replacement, restoring the copied artifacts, journal and docs with the daemon stopped leaves no pending operation to replay"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Repair creates missing units and Tasks",
+        "summary": "Extend unit and Task discovery to Stories known from any record, accept a PLAN past approved with createFromPlan's option, match BUILD results by planTaskId alone, list missing rounds in the preview, and report a Story whose Task set cannot be made.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Missing EPIC, STORY, TASKS and TASK heads are created on an already converted repository",
+          "Crossed Task numbers and plan rows give each BUILD result to the right Task and existing rounds are left alone",
+          "A TASKS head listing a missing Task or made from another plan revision is reported failed while other Stories continue"
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "repair on an already converted repository creates missing EPIC, STORY, TASKS and TASK heads, including from signed-off and completed PLANs, and finishes a part-way Task set"
+          },
+          {
+            "level": "integration",
+            "name": "repair with crossed Task numbers and plan rows gives each BUILD result to the Task with that planTaskId and leaves existing rounds alone, before the live rule settles the Story"
+          },
+          {
+            "level": "integration",
+            "name": "a failure injected while Task rounds are back-filled lists the rounds already written"
+          },
+          {
+            "level": "integration",
+            "name": "a TASKS head listing a missing Task, or made from a different plan revision, is reported failed and not settled, and other Stories continue"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Repair settles units",
+        "summary": "Add the settle step with COMPLETION_RULE_FROM: approvals before it are settled with the attributed override, later ones by the live rule, with held and failed outcomes per unit.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t1",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "An approval strictly before the cutoff is settled with the insrc:migration override",
+          "An approval at or after it is settled only by the live rule, using any stored explicit override, and otherwise is listed as held",
+          "A settlement that fails part-way lists completedMembers and the next run finishes it",
+          "A second repair lists no changes"
+        ],
+        "derivedFrom": [
+          "c7",
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "repair-preview writes nothing, and every write repair makes belongs to a change the preview listed, including proposed head creation, round back-fill and settlement"
+          },
+          {
+            "level": "integration",
+            "name": "repair settles a BUILD approved before COMPLETION_RULE_FROM with the attributed override"
+          },
+          {
+            "level": "integration",
+            "name": "repair holds a BUILD approved exactly at COMPLETION_RULE_FROM, and a later one, whose latest round failed, and lists them in result.held"
+          },
+          {
+            "level": "integration",
+            "name": "repair completes a later BUILD whose latest round failed when its approval carries a stored explicit override"
+          },
+          {
+            "level": "integration",
+            "name": "failures injected inside nested Task-set creation, settlement and completing a pending operation, after a log append and before head replacement, are recorded accurately and the pending operation is finished on the next run"
+          },
+          {
+            "level": "integration",
+            "name": "a failure injected after earlier members commit is listed with completedMembers, and the next repair run finishes the unit"
+          },
+          {
+            "level": "integration",
+            "name": "a second repair lists no changes"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Board loads every record kind",
+        "summary": "Add EPIC, STORY, TASK, TASKS and DIAG to the loader, give a head with no lifecycle the state unmigrated, and let evidence reads accept ids with two suffixes.",
+        "size": "S",
+        "order": 7,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Every common-model kind loads with no notice and TESTS stays skipped",
+          "A head with no lifecycle has approval state unmigrated",
+          "A TASK or sequenced DIAG id can be read as evidence, and malformed or escaping ids are refused"
+        ],
+        "derivedFrom": [
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "liftStoreFile admits EPIC, STORY, TASK, TASKS and a valid DIAG with no notice, gives a head with no lifecycle the state unmigrated, and TESTS stays skipped"
+          },
+          {
+            "level": "unit",
+            "name": "handleDeliveryEvidence reads a valid TASK id and a sequenced DIAG id, still accepts a one-suffix and an uppercase legacy id, and refuses a malformed id and one that escapes the store"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Board shows unit status",
+        "summary": "Publish unit on epics, stories and tasks, including the unmigrated status; derive the Story stage from the STORY head; raise needs-migration for missing or unmigrated units.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "Epic, Story and Task nodes carry their unit status, null only when there is no head",
+          "storyStage is complete only with a completed STORY head",
+          "A missing or unmigrated unit raises needs-migration and not pending-decision"
+        ],
+        "derivedFrom": [
+          "c9",
+          "c11"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "buildWorkItemGraph: unit is null for a missing head and has status unmigrated for a head with no lifecycle"
+          },
+          {
+            "level": "unit",
+            "name": "a missing or unmigrated unit raises needs-migration and not pending-decision"
+          },
+          {
+            "level": "unit",
+            "name": "storyStage is complete only with a completed STORY head, and an approved BUILD otherwise stays build-recorded with text giving the head's status, that it is not migrated, or that there is no head"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Board Task membership, order and ids",
+        "summary": "Take active Tasks from the current TASKS head or the PLAN, publish planRowId and taskOrder, keep unmatched BUILD results, and apply the :T and :R id rule.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "Active Tasks come from a TASKS head made from the current plan revision, else from the PLAN's rows in the PLAN's order",
+          "Unmatched BUILD results keep their validation and conflicts and raise no needs-migration",
+          "No two items in a Story share a board id, and an item that does not collide keeps its id"
+        ],
+        "derivedFrom": [
+          "c9",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "buildWorkItemGraph: TASKS-listed membership, withdrawn and superseded exclusion, PLAN fallback with an absent PLAN and an empty listing, unit, planRowId and taskOrder, and a Task whose number differs from its plan row has no number alias in sourceIds"
+          },
+          {
+            "level": "unit",
+            "name": "buildWorkItemGraph: a TASKS head from an older plan revision yields the PLAN's rows matched by planTaskId, in the PLAN's order even when a matching Task head carries an older order"
+          },
+          {
+            "level": "unit",
+            "name": "board id: Task t4 representing row t9 with a new headless row t4 gives :T004 and :R004 with separate validation and evidence"
+          },
+          {
+            "level": "unit",
+            "name": "board id: Task t4 representing row t9 with an unmatched BUILD result for t4 gives :T004 and :R004"
+          },
+          {
+            "level": "unit",
+            "name": "board id: a headless row and a BUILD result for the same row stay one item; a row whose number no real Task holds keeps :T<nnn>; no two items in a Story share an id"
+          },
+          {
+            "level": "unit",
+            "name": "buildWorkItemGraph and gate: a PLAN plus an extra failed BUILD result, and a BUILD with no PLAN, keep those task items, their failed count and their validation conflict, with no needs-migration"
+          },
+          {
+            "level": "unit",
+            "name": "gate sorts tasks by taskOrder, null last, then id"
+          },
+          {
+            "level": "integration",
+            "name": "verifyConversion keeps passing on a converted fixture with the changed loader, graph and gates"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/__tests__/delivery-handler-contract.test.ts carries unit (including status unmigrated), planRowId, taskOrder, unmigrated and needs-migration through the snapshot"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Plugin shows the new status",
+        "summary": "Carry the new fields through the delivery contract, join plan rows on planRowId, render tasks in the order given, show an Epic complete only from its unit status, and add labels and the Task status in the webview.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t8",
+          "t9"
+        ],
+        "acceptanceChecks": [
+          "The plugin reads the new snapshot fields",
+          "An Epic shows complete only when its unit status is completed",
+          "A Task row shows its unit status beside its validation result, including unmigrated, in the real webview"
+        ],
+        "derivedFrom": [
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "taskShortIdOf shows R004 for a row id"
+          },
+          {
+            "level": "unit",
+            "name": "board-details joins on planRowId, falling back to sourceIds only when it is null"
+          },
+          {
+            "level": "unit",
+            "name": "board-views shows an Epic complete only from its unit status"
+          },
+          {
+            "level": "unit",
+            "name": "TaskRowView carries a Task's unit status, including unmigrated"
+          },
+          {
+            "level": "integration",
+            "name": "vscode-plugin/src/delivery/__tests__/delivery-client.test.ts reads the same shape and opens a sequenced DIAG evidence row"
+          },
+          {
+            "level": "smoke",
+            "name": "Render the board webview during the build and confirm a Task row shows its unit status beside its validation result, including an unmigrated one"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "rollUp for STORY: approved BUILD with clean review and all listed Tasks' latest rounds passed completes",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "rollUp for STORY: an earlier pass followed by a failing latest round holds back, and an explicit override completes it",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "rollUp for STORY: a listed Task with no head holds back",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "rollUp for STORY: an approved PLAN with no TASKS head holds back, with no TASK heads and with a part-way set whose Tasks passed",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "rollUp for STORY: a TASKS head from an older plan revision holds back even when every listed Task passed, and an explicit override completes it",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "storyTasks: a qualifying PLAN at stored revision 0 matches a TASKS head at planRevision 1; an empty current listing answers not-created; with no qualifying PLAN a TASKS listing, then child TASK heads, then none-required apply in that order",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "rollUp for STORY: a Story with no PLAN and no Tasks completes, and child TASK heads with no PLAN are the listed set",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "rollUp for STORY: a listed withdrawn or superseded Task is not counted; a clean review is not an override",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "rollUp for EPIC: a declared Story without a terminal head holds it; an Epic with no DEF rolls up from its counted Stories",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "unitMembers includes TASK heads, and a held Story leaves every Task unchanged",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "reopening a Story reopens only the Tasks it froze",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "record-override keeps status, revision and approval time, logs the actor and reason, and is refused from a completed BUILD",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "liftStoreFile admits EPIC, STORY, TASK, TASKS and a valid DIAG with no notice, gives a head with no lifecycle the state unmigrated, and TESTS stays skipped",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "handleDeliveryEvidence reads a valid TASK id and a sequenced DIAG id, still accepts a one-suffix and an uppercase legacy id, and refuses a malformed id and one that escapes the store",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "buildWorkItemGraph: TASKS-listed membership, withdrawn and superseded exclusion, PLAN fallback with an absent PLAN and an empty listing, unit, planRowId and taskOrder, and a Task whose number differs from its plan row has no number alias in sourceIds",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "buildWorkItemGraph: a TASKS head from an older plan revision yields the PLAN's rows matched by planTaskId, in the PLAN's order even when a matching Task head carries an older order",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "board id: Task t4 representing row t9 with a new headless row t4 gives :T004 and :R004 with separate validation and evidence",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "board id: Task t4 representing row t9 with an unmatched BUILD result for t4 gives :T004 and :R004",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "board id: a headless row and a BUILD result for the same row stay one item; a row whose number no real Task holds keeps :T<nnn>; no two items in a Story share an id",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "taskShortIdOf shows R004 for a row id",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "buildWorkItemGraph and gate: a PLAN plus an extra failed BUILD result, and a BUILD with no PLAN, keep those task items, their failed count and their validation conflict, with no needs-migration",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "buildWorkItemGraph: unit is null for a missing head and has status unmigrated for a head with no lifecycle",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "a missing or unmigrated unit raises needs-migration and not pending-decision",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "gate sorts tasks by taskOrder, null last, then id",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "storyStage is complete only with a completed STORY head, and an approved BUILD otherwise stays build-recorded with text giving the head's status, that it is not migrated, or that there is no head",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "board-details joins on planRowId, falling back to sourceIds only when it is null",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "board-views shows an Epic complete only from its unit status",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "TaskRowView carries a Task's unit status, including unmigrated",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "the storage helper: a first write gets a draft lifecycle; a rewrite with unchanged content keeps the lifecycle; a rewrite with changed content gets a draft and keeps Signoff entries, with no Signoff entries and with them",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "handleWorkflowApprove on a BUILD: the outcome merges the approval's own followOn with the seam's, and the Story, its Tasks and its Epic complete",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a walk failure leaves the approval standing and reports ok false",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a live approval with a listed Task missing its head is held and named in the note",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a live approval after a failed reconcile, and after one that stopped part-way with newly created unlisted Tasks, is held and leaves those Tasks unfrozen",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "initial approval held, then re-approval with an override records it and completes the Story",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a BUILD approved over a blocking code review with an override, a failure injected in completion, then re-approval with no override in the request passes the outer gate on the stored override and completes",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a draft BUILD at a new revision is not passed by an earlier revision's override",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a held Story in signoff completes later from the stored override",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "an Epic with a signoff hold stays open after its Story completes",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "the CLI adapter exposes the story-completion outcome",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "both first-write sites give a new head a draft lifecycle",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "guard: a production content write of a delivery kind cannot create a head without a lifecycle",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "repair-preview writes nothing, and every write repair makes belongs to a change the preview listed, including proposed head creation, round back-fill and settlement",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "repair on a store with an uppercase head holding body.feedback and an approved flat amendment: the head is renamed, the feedback survives under the new id, and the amendment stays approved",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "repair on an already converted repository creates missing EPIC, STORY, TASKS and TASK heads, including from signed-off and completed PLANs, and finishes a part-way Task set",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "repair with crossed Task numbers and plan rows gives each BUILD result to the Task with that planTaskId and leaves existing rounds alone, before the live rule settles the Story",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "repair settles a BUILD approved before COMPLETION_RULE_FROM with the attributed override",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "repair holds a BUILD approved exactly at COMPLETION_RULE_FROM, and a later one, whose latest round failed, and lists them in result.held",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "repair completes a later BUILD whose latest round failed when its approval carries a stored explicit override",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "a failure injected in the head migration step answers a RepairReport whose written lists the committed feedback lines and migration entries, with stoppedAt and remaining, and settles nothing; the next run finishes with no feedback line added twice",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "a failure injected while Task rounds are back-filled lists the rounds already written",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "failures injected inside nested Task-set creation, settlement and completing a pending operation, after a log append and before head replacement, are recorded accurately and the pending operation is finished on the next run",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "a failure injected after earlier members commit is listed with completedMembers, and the next repair run finishes the unit",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "a TASKS head listing a missing Task, or made from a different plan revision, is reported failed and not settled, and other Stories continue",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "a plan with a rename collision answers an error and writes nothing",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "a second repair lists no changes",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "an unknown mode answers an error and writes nothing",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "rollback: after a staged write fails before head replacement, restoring the copied artifacts, journal and docs with the daemon stopped leaves no pending operation to replay",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "verifyConversion keeps passing on a converted fixture with the changed loader, graph and gates",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/__tests__/delivery-handler-contract.test.ts carries unit (including status unmigrated), planRowId, taskOrder, unmigrated and needs-migration through the snapshot",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "vscode-plugin/src/delivery/__tests__/delivery-client.test.ts reads the same shape and opens a sequenced DIAG evidence row",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "Render the board webview during the build and confirm a Task row shows its unit status beside its validation result, including an unmigrated one",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 rollUp"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 unitMembers and CompletionEvidence"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 approveWorkflowTarget, approveArtifactByJsonPath and record-override"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 completeThroughService, handleWorkflowApprove and FollowOnOutcome"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 New and rewritten workflow heads"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 handleRepoConvert and RepairReport"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 Repair order, discovery and eligibility"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 liftStoreFile, handleDeliveryEvidence and DeliveryArtifactKind"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 buildWorkItemGraph and WorkItemNode"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 plugin changes in WorkItemNode, DeliveryItem and TaskValidation"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 storyStage and needs-migration"
+    },
+    {
+      "id": "c12",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 Task board id"
+    }
+  ]
+}

@@ -13,8 +13,8 @@
  * a non-standalone epic; otherwise 'unknown'. A non-standalone BUILD's
  * sizeClass is never read, and nothing is guessed.
  *
- * The stage is the first rule that matches: an approved BUILD (complete); any
- * BUILD (build-recorded); the route's ready gate (an approved PLAN for the
+ * The stage is the first rule that matches: an approved BUILD whose STORY head is
+ * completed (complete); any other BUILD (build-recorded); the route's ready gate (an approved PLAN for the
  * full-chain, feature and sized-bugfix routes; an approved LLD for small; an
  * approved ISSUE for small-bugfix); any LLD or PLAN, or an approved ISSUE on the
  * sized-bugfix route, whose design comes next (design-plan); else scoped. An issue
@@ -36,6 +36,7 @@ import type {
 	StagePassResult,
 	WorkItemGraph,
 	WorkItemNode,
+	WorkItemUnit,
 } from './types.js';
 
 /** Stage order, least advanced first: an issue takes its least advanced fix story's stage. */
@@ -132,6 +133,7 @@ function storyStage(
 	route: DeliveryRoute,
 	evidence: readonly ArtifactRecord[],
 	issue: ArtifactRecord | undefined,
+	unit: WorkItemUnit,
 ): { stage: DeliveryStage; text: string; artifactIds: string[] } {
 	const of = (kind: ArtifactRecord['kind']): ArtifactRecord[] => evidence.filter(r => r.kind === kind);
 	const ids = (records: readonly ArtifactRecord[]): string[] => sorted(records.map(r => r.artifactId));
@@ -140,7 +142,9 @@ function storyStage(
 	const approvedBuilds = builds.filter(isApproved);
 	if (approvedBuilds.length > 0) {
 		const a = ids(approvedBuilds);
-		return { stage: 'complete', text: `${a.join(', ')} approved`, artifactIds: a };
+		if (unit?.status === 'completed') return { stage: 'complete', text: `${unit.artifactId} completed`, artifactIds: sorted([...a, unit.artifactId]) };
+		const held = unit === null ? 'the Story has no head yet' : unit.status === 'unmigrated' ? `${unit.artifactId} is not migrated` : `${unit.artifactId} is ${unit.status}`;
+		return { stage: 'build-recorded', text: `${a.join(', ')} approved; ${held}`, artifactIds: a };
 	}
 	if (builds.length > 0) {
 		const a = ids(builds);
@@ -185,7 +189,7 @@ interface Annotated {
 function storyAnnotation(ctx: PassContext, story: WorkItemNode): Annotated {
 	const evidence = evidenceOf(ctx, story);
 	const { route, consulted } = storyRoute(ctx, story, evidence);
-	const { stage, text, artifactIds } = storyStage(route, evidence, issueOf(ctx, story));
+	const { stage, text, artifactIds } = storyStage(route, evidence, issueOf(ctx, story), story.unit);
 	const suffix = route === 'unknown' ? UNKNOWN_ROUTE_SUFFIX : '';
 	return { annotation: { itemId: story.id, stage, route, reason: { text: `${text}${suffix}`, artifactIds } }, consulted };
 }
@@ -208,7 +212,7 @@ function issueAnnotation(ctx: PassContext, issueItem: WorkItemNode, stories: Rea
 			consulted,
 		};
 	}
-	const { stage, text, artifactIds } = storyStage(route, [], issue);
+	const { stage, text, artifactIds } = storyStage(route, [], issue, null);
 	return { annotation: { itemId: issueItem.id, stage, route, reason: { text: `${text}${suffix}`, artifactIds } }, consulted };
 }
 

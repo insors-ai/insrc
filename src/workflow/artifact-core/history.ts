@@ -18,7 +18,7 @@ import { compareEntries } from './sidecar-store.js';
 
 const OPERATIONS: readonly Operation[] = [
 	'create', 'update', 'delete', 'reparent', 'request-review', 'review', 'approve', 'reject', 'open-signoff',
-	'signoff-changes', 'signed-off', 'complete', 'reopen', 'withdraw', 'supersede', 'mark-stale', 'ack-stale',
+	'signoff-changes', 'signed-off', 'complete', 'reopen', 'withdraw', 'supersede', 'mark-stale', 'ack-stale', 'record-override',
 ];
 const FEEDBACK_KINDS: readonly Feedback['kind'][] = ['comment', 'suggestion', 'revision-request'];
 

@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "4172b05fb5faee1efaf47e002c5de84dcbe676f2803a48bc253ab0724a2aa687",
+        "at": "2026-11-09T19:14:41.953Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "6f1f61f26d4d6169",
+    "storyId": "s1",
+    "createdAt": "2026-11-09T19:14:41.943Z",
+    "updatedAt": "2026-11-09T19:14:41.943Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-09T19:09:28.603Z",
+    "epicSlug": "give-every-repository-install-c-standard",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "3f7b0c0bd",
+        "ranAt": "2026-11-09T19:14:41.943Z",
+        "testsPassed": true,
+        "tests": [],
+        "files": [],
+        "note": "no tests named for a trivial build"
+      }
+    ]
+  },
+  "citations": []
+}

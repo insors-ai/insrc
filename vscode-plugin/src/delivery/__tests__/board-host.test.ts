@@ -1791,6 +1791,26 @@ test("a story's planned tasks are a table: short id, title, result pill, depende
   assert.equal(texts(b.main).some(t => t.includes('☐')), false, 'no checkbox glyphs');
 });
 
+test("a task row shows its unit status beside its result in the real webview script, 'Not migrated' included, and a row with no Task shows only its result", async () => {
+  const task = (id: string, title: string, status: string | null) => item({ id: `S1:${id}`, kind: 'task', parentId: 'S1', title, unit: status === null ? null : { artifactId: `TASK-x-${id}`, status } as never });
+  const b = await liveBoard(fixtureSnapshot([
+    item({
+      id: 'S1', stage: 'build-recorded', childIds: ['S1:T1', 'S1:T2', 'S1:R3'],
+      tasks: [{ taskItemId: 'S1:T1', result: 'passed', planned: true }, { taskItemId: 'S1:T2', result: 'failed', planned: true }, { taskItemId: 'S1:R3', result: 'unrecorded', planned: true }] as never,
+      validation: { passed: 1, failed: 1, unrecorded: 1, unplanned: 0 },
+    }),
+    task('T1', 'Done', 'completed'), task('T2', 'Old', 'unmigrated'), task('R3', 'New row', null),
+  ]));
+  b.ch.send({ v: 1, payload: { type: 'open-item', itemId: 'S1' } });
+  b.pump();
+  const pillsOf = (row: FakeEl) => findAll(row.children[2]!, e => e.attrs['class'] === 'pill').map(p => [p.textContent, p.attrs['data-tone']]);
+  const rows = taskRowsIn(b.w.el['main']!);
+  assert.equal(rows.length, 3);
+  assert.deepEqual(pillsOf(rows[0]!), [['Passed', 'success'], ['Completed', 'success']]);
+  assert.deepEqual(pillsOf(rows[1]!), [['Failed', 'danger'], ['Not migrated', 'warning']]);
+  assert.deepEqual(pillsOf(rows[2]!), [['Unrecorded', 'neutral']]);
+});
+
 test("a task's checks toggle opens them as a plain list under its row, and the open choice survives a re-render", async () => {
   const b = await storyWithPlan(TABLE_PLAN);
   const row = taskRowsIn(b.main)[0]!;

@@ -263,7 +263,7 @@ export function runDetachedUpdate(daemonCtl: string, deps: UpdateRunnerDeps = {}
  *  test process. */
 export interface UpdateHandlerDeps {
   launch:           (deps?: UpdateRunnerDeps) => DaemonUpdateResult;
-  readOutcome:      (deps?: UpdateRunnerDeps) => DaemonUpdateOutcome | null;
+  readOutcome:      (deps?: UpdateRunnerDeps) => DaemonUpdateOutcome | null | Promise<DaemonUpdateOutcome | null>;
   /** Fire the daemon's own shutdown AFTER a successful launch, so the helper's
    *  stop+start step is clean. Never called when the launch throws. */
   scheduleShutdown: () => void;

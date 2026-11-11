@@ -1,0 +1,115 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0445c0c5-161a-4b90-b5a3-510760a128b5",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T15:17:26.304Z",
+    "epicCreatedAt": "2026-11-09T05:00:05.847Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "eedc4519199b24b4",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Story completion rule",
+      "parent": {
+        "entityId": "STORY-eedc4519199b24b4-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-eedc4519199b24b4-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a17c4eb9851be11da71ea73d25dbf3119a8bf6c4453a60650d5441f8186fbc72",
+        "at": "2026-11-09T15:17:26.304Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T15:17:26.306Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Story completion rule",
+    "summary": "Add storyBuildApproved, storyApprovalOverride, declaredStories and storyTasks to the evidence; make the STORY and EPIC roll-ups use them; add TASK heads to a Story's cascade.",
+    "size": "L",
+    "order": 1,
+    "acceptanceChecks": [
+      "A Story completes only when its BUILD is approved, its review is clean or overridden, and its Tasks pass or the approval carries an override",
+      "A listed Task with no head, a part-way Task set and a TASKS head from an older plan revision each hold the Story",
+      "A held Story leaves every Task unchanged, and an Epic waits for every declared Story",
+      "Existing assertions that Tasks complete before their Story now describe the Story-owned cascade"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "rollUp for STORY: approved BUILD with clean review and all listed Tasks' latest rounds passed completes"
+      },
+      {
+        "level": "unit",
+        "name": "rollUp for STORY: an earlier pass followed by a failing latest round holds back, and an explicit override completes it"
+      },
+      {
+        "level": "unit",
+        "name": "rollUp for STORY: a listed Task with no head holds back"
+      },
+      {
+        "level": "unit",
+        "name": "rollUp for STORY: an approved PLAN with no TASKS head holds back, with no TASK heads and with a part-way set whose Tasks passed"
+      },
+      {
+        "level": "unit",
+        "name": "rollUp for STORY: a TASKS head from an older plan revision holds back even when every listed Task passed, and an explicit override completes it"
+      },
+      {
+        "level": "unit",
+        "name": "storyTasks: a qualifying PLAN at stored revision 0 matches a TASKS head at planRevision 1; an empty current listing answers not-created; with no qualifying PLAN a TASKS listing, then child TASK heads, then none-required apply in that order"
+      },
+      {
+        "level": "unit",
+        "name": "rollUp for STORY: a Story with no PLAN and no Tasks completes, and child TASK heads with no PLAN are the listed set"
+      },
+      {
+        "level": "unit",
+        "name": "rollUp for STORY: a listed withdrawn or superseded Task is not counted; a clean review is not an override"
+      },
+      {
+        "level": "unit",
+        "name": "rollUp for EPIC: a declared Story without a terminal head holds it; an Epic with no DEF rolls up from its counted Stories"
+      },
+      {
+        "level": "unit",
+        "name": "unitMembers includes TASK heads, and a held Story leaves every Task unchanged"
+      },
+      {
+        "level": "unit",
+        "name": "reopening a Story reopens only the Tasks it froze"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -34,7 +34,7 @@ import {
 const log = getLogger('delivery-load');
 
 /** Every store-file prefix the delivery read model knows. */
-export const DELIVERY_ARTIFACT_KINDS: readonly DeliveryArtifactKind[] = ['SPEC', 'DEF', 'HLD', 'LLD', 'PLAN', 'BUILD', 'CR', 'ISSUE', 'EXT', 'AMD'];
+export const DELIVERY_ARTIFACT_KINDS: readonly DeliveryArtifactKind[] = ['SPEC', 'DEF', 'HLD', 'LLD', 'PLAN', 'BUILD', 'CR', 'ISSUE', 'EXT', 'AMD', 'EPIC', 'STORY', 'TASK', 'TASKS', 'DIAG'];
 
 /** The node:fs implementation of the read-only store port. */
 export const nodeStoreFs: ReadonlyStoreFs = {
@@ -56,9 +56,10 @@ const APPROVED_STATUSES: readonly string[] = ['approved', 'in-signoff', 'changes
 /** Approval as the lifecycle records it: the status decides, and the time is that of the approval. A rejection has no time on the head. */
 function approvalOf(meta: Readonly<Record<string, unknown>>): ArtifactRecord['approval'] {
 	const lifecycle = asObject(meta['lifecycle']);
-	const status = lifecycle === null ? null : asString(lifecycle['status']);
+	if (lifecycle === null) return { state: 'unmigrated', at: null };
+	const status = asString(lifecycle['status']);
 	const state: ApprovalState = status !== null && APPROVED_STATUSES.includes(status) ? 'approved' : status === 'rejected' ? 'rejected' : 'pending';
-	const approval = lifecycle === null ? null : asObject(lifecycle['approval']);
+	const approval = asObject(lifecycle['approval']);
 	return { state, at: state === 'approved' && approval !== null ? asString(approval['at']) : null };
 }
 

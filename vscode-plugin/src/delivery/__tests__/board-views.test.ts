@@ -231,12 +231,29 @@ test('the Issues body groups issues into stage sections with the board screens\'
   assert.match(issues(snap, { needsAttentionOnly: true }).fold.text, /stages have nothing needing attention/);
 });
 
+test('board-views shows an Epic complete only from its unit status', () => {
+  const stories = (epic: string) => [item({ id: `${epic}:S001`, parentId: epic, stage: 'complete' })];
+  const m = rollup(snapshot([
+    item({ id: 'E1', kind: 'epic', title: 'Held', unit: { artifactId: 'EPIC-1', status: 'approved' } }), ...stories('E1'),
+    item({ id: 'E2', kind: 'epic', title: 'No head', unit: null }), ...stories('E2'),
+    item({ id: 'E3', kind: 'epic', title: 'Not migrated', unit: { artifactId: 'EPIC-3', status: 'unmigrated' } }), ...stories('E3'),
+    item({ id: 'E4', kind: 'epic', title: 'Done', unit: { artifactId: 'EPIC-4', status: 'completed' } }), ...stories('E4'),
+    item({ id: 'E5', kind: 'epic', title: 'Unit done, story not', unit: { artifactId: 'EPIC-5', status: 'completed' } }), item({ id: 'E5:S001', parentId: 'E5', stage: 'design-plan' }),
+  ]));
+  const at = (stage: string) => m.sections.find(sec => sec.stage === stage)!.rows.map(r => r.epicItemId);
+  assert.deepEqual(at('complete'), ['E4'], 'only the completed unit is Complete');
+  assert.deepEqual(at('build-recorded'), ['E1', 'E2', 'E3'], 'every Story done does not complete a held Epic');
+  assert.deepEqual(at('design-plan'), ['E5'], 'a completed unit still sits at its least-advanced story');
+  const held = m.sections.flatMap(sec => sec.rows).find(r => r.epicItemId === 'E1')!;
+  assert.equal(held.completionLabel, '1 of 1 story complete', 'the child count stays as progress');
+});
+
 test('the Epics body places each epic at the stage of its least-advanced story, by the board screens\' section rule, and epics with no stories after the sections', () => {
   const snap = snapshot([
     item({ id: 'E1', kind: 'epic', title: 'Mixed' }),
     item({ id: 'E1:S001', parentId: 'E1', stage: 'complete' }),
     item({ id: 'E1:S002', parentId: 'E1', stage: 'design-plan', needsAttention: true }),
-    item({ id: 'E2', kind: 'epic', title: 'Done' }),
+    item({ id: 'E2', kind: 'epic', title: 'Done', unit: { artifactId: 'EPIC-2', status: 'completed' } }),
     item({ id: 'E2:S001', parentId: 'E2', stage: 'complete', needsAttention: true }),
     item({ id: 'E2:S002', parentId: 'E2', stage: 'complete' }),
     item({ id: 'E3', kind: 'epic', title: 'Empty' }),

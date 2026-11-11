@@ -8,8 +8,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { deriveGates } from '../gate.js';
 import { buildWorkItemGraph, groupRecordsByWorkItem } from '../graph.js';
-import type { WorkItemGraph, WorkItemNode } from '../types.js';
+import type { ArtifactRecord, WorkItemGraph, WorkItemNode } from '../types.js';
 import {
 	CREATED,
 	buildRecord,
@@ -23,8 +24,7 @@ import {
 	stampedRealRecords,
 	recordFromFile,
 	recordSet,
-	specRecord,
-} from './fixtures.js';
+	specRecord, unitHead, unmigratedRecord } from './fixtures.js';
 
 const EPIC = 'aaaaaaaaaaaaaaaa';
 const EPIC_ID = 'E20261007aaaaaaaa';
@@ -42,6 +42,44 @@ function storyIds(graph: WorkItemGraph): string[] {
 function noticeCodes(graph: WorkItemGraph): string[] {
 	return graph.notices.map(n => n.code);
 }
+
+test('a DIAG head is evidence of the Story its id names, and a draft one asks nobody for a decision', () => {
+	const H = '1111111111111111';
+	const diagram = unitHeadOfDiagram(H);
+	const set = recordSet([defRecord(H, ['s1']), unitHead('EPIC', H, undefined, 'draft'), unitHead('STORY', H, 's1', 'draft'), diagram]);
+	const graph = buildWorkItemGraph(set);
+	const story = [...graph.items.values()].find(i => i.kind === 'story');
+	assert.ok(story !== undefined);
+	assert.deepEqual(story.evidenceArtifactIds, [diagram.artifactId], 'grouped by the Story in its id, though its meta names none');
+	assert.equal(diagram.approval.state, 'pending', 'control: it is a draft');
+	assert.ok(!deriveGates(graph, set).items.get(story.id)?.attentionReasons.includes('pending-decision'));
+});
+
+function unitHeadOfDiagram(hash: string): ArtifactRecord {
+	return recordFromFile(`DIAG-${hash}-s1-1.json`, { meta: { createdAt: CREATED, epicCreatedAt: CREATED, epicHash: hash, lifecycle: unitHead('STORY', hash, 's1', 'draft').meta['lifecycle'] }, body: {} });
+}
+
+test('buildWorkItemGraph: unit is null for a missing head and has status unmigrated for a head with no lifecycle', () => {
+	const H = '1111111111111111';
+	const noLifecycle = (name: string, storyId?: string): ArtifactRecord => unmigratedRecord(name, { epicHash: H, ...(storyId !== undefined ? { storyId } : {}) });
+	const base = [defRecord(H, ['s1', 's2']), planRecord(H, 's1', ['t1', 't2'], { approvedAt: CREATED })];
+	const graph = buildWorkItemGraph(recordSet([...base, noLifecycle(`EPIC-${H}.json`), unitHead('STORY', H, 's1', 'in-signoff'), noLifecycle(`STORY-${H}-s2.json`, 's2'), unitHead('TASK', H, 's1-t1', 'completed')]));
+	const items = [...graph.items.values()];
+	const find = (kind: WorkItemNode['kind'], source: string | null): WorkItemNode => {
+		const found = items.find(i => i.kind === kind && (source === null || i.sourceIds.includes(source)));
+		assert.ok(found !== undefined, `${kind} ${source}`);
+		return found;
+	};
+	assert.deepEqual(find('epic', null).unit, { artifactId: `EPIC-${H}`, status: 'unmigrated' });
+	assert.deepEqual(find('story', 's1').unit, { artifactId: `STORY-${H}-s1`, status: 'in-signoff' });
+	assert.deepEqual(find('story', 's2').unit, { artifactId: `STORY-${H}-s2`, status: 'unmigrated' });
+	assert.deepEqual(find('task', 't1').unit, { artifactId: `TASK-${H}-s1-t1`, status: 'completed' });
+	assert.equal(find('task', 't2').unit, null, 'no TASK head');
+	const bare = buildWorkItemGraph(recordSet([defRecord(H, ['s1'])]));
+	const bareItems = [...bare.items.values()];
+	assert.equal(bareItems.find(i => i.kind === 'epic')?.unit, null, 'no EPIC head');
+	assert.equal(bareItems.find(i => i.kind === 'story')?.unit, null, 'no STORY head');
+});
 
 test('a story with LLD, PLAN, BUILD and CR is one item with all four as evidence', () => {
 	const graph = buildWorkItemGraph(recordSet([

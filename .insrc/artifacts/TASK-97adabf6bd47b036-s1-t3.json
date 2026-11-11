@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-27e85dec-60eb-45ff-bbe6-54cf9b21c878",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T17:21:09.374Z",
+    "epicCreatedAt": "2026-11-09T16:34:12.401Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "97adabf6bd47b036",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Apply verified selection in daemon execution",
+      "parent": {
+        "entityId": "STORY-97adabf6bd47b036-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-97adabf6bd47b036-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-97adabf6bd47b036-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f9303f5d59264fc18ee696b389707ec6480f09ad51aaaa370e84e59eeab79ded",
+        "at": "2026-11-09T17:21:09.374Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T17:21:09.380Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Apply verified selection in daemon execution",
+    "summary": "Wire the existing daemon completion, structured completion, edit and review callers to shared explicit selection. Preserve prompt, policy, working directory, limits and output shape. Propagate possibly-sent and accepted failures through transient and structured retry paths. Keep schema correction for received invalid output.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Each daemon entry point dispatches at most once on lost acknowledgement or post-acceptance transport failure",
+      "Structured completion still corrects invalid responses and honors cancellation and retry budgets",
+      "Default runs and non-Vibe providers retain current behavior"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Daemon CliProvider Vibe completion, edit, review and structured retries never replay uncertain turns"
+      },
+      {
+        "level": "integration",
+        "name": "Vibe structured schema correction remains enabled for received invalid output"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

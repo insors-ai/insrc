@@ -125,7 +125,7 @@ test('all-reuse attempts and invalid attribution preserve route parity without e
 test('failed accepted reuse publishes truthful failure without invented provenance on both routes',async()=>{
  for(const party of ['daemon','controller']as const){
   const f=await historyFixture(party,false,true);let failNext=false;
-  const sources={commit:f.deps.sources.commit.bind(f.deps.sources),isAncestor:f.deps.sources.isAncestor.bind(f.deps.sources),changedRanges:f.deps.sources.changedRanges.bind(f.deps.sources),file:async(commit:string,path:string)=>{
+  const sources={commit:f.deps.sources.commit.bind(f.deps.sources),isAncestor:f.deps.sources.isAncestor.bind(f.deps.sources),changedRanges:f.deps.sources.changedRanges.bind(f.deps.sources),pathChanges:f.deps.sources.pathChanges.bind(f.deps.sources),file:async(commit:string,path:string)=>{
    if(failNext&&path==='reuse-evidence.js'){failNext=false;throw new Error('Reuse source temporarily unavailable');}return f.deps.sources.file(commit,path);
   }};
   const c=new TaskReviewCoordinator({sources,save:async(path,state)=>{await saveCheckpoint(path,state);if(state.attempts.at(-1)!.header.attributionState==='accepted'&&!state.attempts.at(-1)!['review-response'].tasks.length)failNext=true;},provider:()=>provider(async prompt=>prompt.startsWith('Derive task attribution')?f.scope():f.fresh('t2')),publish:(repo,id,_hash,baseline)=>publishTaskCheckpoint(repo,hash,id,{...f.deps,...(baseline?{baseline}:{})})});

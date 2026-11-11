@@ -1,0 +1,1205 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "store-4f4b449d-8254-4337-965e-485ba824343a",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T19:50:17.333Z",
+    "epicCreatedAt": "2026-11-09T19:36:01.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 2,
+    "epicHash": "f0b3baec4baccdd9",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicSlug": "make-ux-mocks-zoom-controls-follow",
+    "standalone": true,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "32329bfb216180d528a092563b62901f456aaf4044fedbd1194b8b858238df03",
+        "at": "2026-11-09T19:50:17.334Z",
+        "by": {
+          "id": "insrc:code-review",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "kind": "code-review",
+    "format": "task-based",
+    "storyId": "s1",
+    "status": "passed",
+    "reviews": [
+      {
+        "reviewId": "artifact-theme-ux-zoom-s1",
+        "attempt": 1,
+        "storyId": "s1",
+        "reviewer": "daemon",
+        "status": "passed",
+        "finalScopeIdentity": "026b54726db47f152be549a93b453f25eae47002f4c2ae2ebe585411e4342e76",
+        "attributionIdentity": "33a2f484ecd3d865333bf598dd3cc546962eaea626c9c6823bedc95a7c708556",
+        "taskScopeIdentities": [
+          {
+            "taskId": "s1",
+            "identity": "27b6dab42901650ab2e6e275029e24577cec0e2fb52f91e5eeffcec87e47d485"
+          }
+        ],
+        "scope": {
+          "reviewRevision": "6fe820535029249eead2d5d7a1a88a1497620e83",
+          "finalScope": {
+            "revision": "6fe820535029249eead2d5d7a1a88a1497620e83",
+            "identity": "026b54726db47f152be549a93b453f25eae47002f4c2ae2ebe585411e4342e76",
+            "entries": [
+              {
+                "originChangeIndex": 0,
+                "path": "src/artifact-theme/theme.ts",
+                "blobOid": "f01757e06a89d6a80499d1f2b081cc53132e3ea4",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      327,
+                      335
+                    ]
+                  },
+                  {
+                    "after": [
+                      481,
+                      501
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 1,
+                "path": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+                "blobOid": "5b919dadfa63c38a2b5378c0f3880efa79b188ac",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      6491,
+                      6491
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 2,
+                "path": "src/docgen/render/__tests__/fallback.test.ts",
+                "blobOid": "0adc179b4195f6f4cdec393443dd2c5e649dcaf0",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      260,
+                      266
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 3,
+                "path": "src/docgen/render/__tests__/shell.test.ts",
+                "blobOid": "6ac47e1a7a81dc7af5a0f53953a304edfc48ff79",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      145,
+                      145
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 4,
+                "path": "src/docgen/render/fallback.ts",
+                "blobOid": "87b1ac6d297c9965b222c28819c901f45fed9ac8",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      34,
+                      34
+                    ]
+                  },
+                  {
+                    "after": [
+                      270,
+                      270
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 5,
+                "path": "src/docgen/render/shell.ts",
+                "blobOid": "37aaaa3f6cdde0b73bb92bfbc7707dbd7a3552ad",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      38,
+                      38
+                    ]
+                  },
+                  {
+                    "after": [
+                      212,
+                      212
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 6,
+                "path": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "blobOid": "0219eba3a25362ee57faff41674dfba371dff050",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      239,
+                      239
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 7,
+                "path": "src/workflow/artifacts/companion/__tests__/ux-page.test.ts",
+                "blobOid": "f574bc31f3ab9a7214a0b7399f0a285ea871db81",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      19,
+                      19
+                    ]
+                  },
+                  {
+                    "after": [
+                      130,
+                      165
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 8,
+                "path": "src/workflow/artifacts/companion/shell.ts",
+                "blobOid": "2439261767121ed99c1c66ed6c2cef3cda385501",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      32,
+                      32
+                    ]
+                  },
+                  {
+                    "after": [
+                      209,
+                      209
+                    ]
+                  },
+                  {
+                    "after": [
+                      260,
+                      260
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 9,
+                "path": "src/workflow/artifacts/companion/ux.ts",
+                "blobOid": "ce0ca23b2a375dd9c04820abfb7bcd7e2a42c3ba",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      427,
+                      427
+                    ]
+                  },
+                  {
+                    "after": [
+                      431,
+                      431
+                    ]
+                  },
+                  {
+                    "after": [
+                      434,
+                      436
+                    ]
+                  },
+                  {
+                    "after": [
+                      441,
+                      442
+                    ]
+                  },
+                  {
+                    "after": [
+                      446,
+                      446
+                    ]
+                  },
+                  {
+                    "after": [
+                      450,
+                      452
+                    ]
+                  },
+                  {
+                    "after": [
+                      456,
+                      456
+                    ]
+                  },
+                  {
+                    "after": [
+                      460,
+                      461
+                    ]
+                  },
+                  {
+                    "after": [
+                      463,
+                      468
+                    ]
+                  },
+                  {
+                    "after": [
+                      600,
+                      602
+                    ]
+                  },
+                  {
+                    "after": [
+                      606,
+                      606
+                    ]
+                  }
+                ]
+              }
+            ],
+            "dispositions": [
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    327,
+                    335
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      327,
+                      335
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    481,
+                    501
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      481,
+                      501
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    6491,
+                    6491
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      6491,
+                      6491
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    260,
+                    266
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      260,
+                      266
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    145,
+                    145
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      145,
+                      145
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    34,
+                    34
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      34,
+                      34
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    270,
+                    270
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      270,
+                      270
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    38,
+                    38
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      38,
+                      38
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    212,
+                    212
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      212,
+                      212
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 6,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    239,
+                    239
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      239,
+                      239
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 7,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    19,
+                    19
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      19,
+                      19
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 7,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    130,
+                    165
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      130,
+                      165
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    32,
+                    32
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      32,
+                      32
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    209,
+                    209
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      209,
+                      209
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    260,
+                    260
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      260,
+                      260
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    427,
+                    427
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      427,
+                      427
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    431,
+                    431
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      431,
+                      431
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    434,
+                    436
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      434,
+                      436
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    441,
+                    442
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      441,
+                      442
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    446,
+                    446
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      446,
+                      446
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 5
+                },
+                "sourcePart": {
+                  "after": [
+                    450,
+                    452
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      450,
+                      452
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 6
+                },
+                "sourcePart": {
+                  "after": [
+                    456,
+                    456
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      456,
+                      456
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 7
+                },
+                "sourcePart": {
+                  "after": [
+                    460,
+                    461
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      460,
+                      461
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 8
+                },
+                "sourcePart": {
+                  "after": [
+                    463,
+                    468
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      463,
+                      468
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 9
+                },
+                "sourcePart": {
+                  "after": [
+                    600,
+                    602
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      600,
+                      602
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 10
+                },
+                "sourcePart": {
+                  "after": [
+                    606,
+                    606
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      606,
+                      606
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              }
+            ],
+            "selectedTaskIds": [
+              "s1"
+            ],
+            "testCount": 3,
+            "attributionIdentity": "33a2f484ecd3d865333bf598dd3cc546962eaea626c9c6823bedc95a7c708556",
+            "attributionState": "accepted",
+            "tasks": [
+              {
+                "taskId": "s1",
+                "changeIndexes": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9
+                ],
+                "testIndexes": [
+                  0,
+                  1,
+                  2
+                ],
+                "decision": {
+                  "action": "initial"
+                },
+                "identity": "27b6dab42901650ab2e6e275029e24577cec0e2fb52f91e5eeffcec87e47d485"
+              }
+            ]
+          },
+          "storyId": "s1",
+          "documents": {
+            "issue": {
+              "path": "docs/standalone/make-ux-mocks-zoom-controls-follow-E20261109f0b3baec/ISSUE.md",
+              "commit": "6fe820535029249eead2d5d7a1a88a1497620e83"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "7f22642c8c550cc80215700147f80548e35509e7",
+              "parent": "5f422dfa194f2ddd2e456e773121ecdeaf9af208",
+              "files": [
+                {
+                  "path": "src/artifact-theme/theme.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        327,
+                        335
+                      ]
+                    },
+                    {
+                      "after": [
+                        481,
+                        501
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+                  "segments": [
+                    {
+                      "after": [
+                        6491,
+                        6491
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/docgen/render/__tests__/fallback.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        260,
+                        266
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/docgen/render/__tests__/shell.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        145,
+                        145
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/docgen/render/fallback.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        34,
+                        34
+                      ]
+                    },
+                    {
+                      "after": [
+                        270,
+                        270
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/docgen/render/shell.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        38,
+                        38
+                      ]
+                    },
+                    {
+                      "after": [
+                        212,
+                        212
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        239,
+                        239
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/artifacts/companion/__tests__/ux-page.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        19,
+                        19
+                      ]
+                    },
+                    {
+                      "after": [
+                        130,
+                        165
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/artifacts/companion/shell.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        32,
+                        32
+                      ]
+                    },
+                    {
+                      "after": [
+                        209,
+                        209
+                      ]
+                    },
+                    {
+                      "after": [
+                        260,
+                        260
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/artifacts/companion/ux.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        427,
+                        427
+                      ]
+                    },
+                    {
+                      "after": [
+                        431,
+                        431
+                      ]
+                    },
+                    {
+                      "after": [
+                        434,
+                        436
+                      ]
+                    },
+                    {
+                      "after": [
+                        441,
+                        442
+                      ]
+                    },
+                    {
+                      "after": [
+                        446,
+                        446
+                      ]
+                    },
+                    {
+                      "after": [
+                        450,
+                        452
+                      ]
+                    },
+                    {
+                      "after": [
+                        456,
+                        456
+                      ]
+                    },
+                    {
+                      "after": [
+                        460,
+                        461
+                      ]
+                    },
+                    {
+                      "after": [
+                        463,
+                        468
+                      ]
+                    },
+                    {
+                      "after": [
+                        600,
+                        602
+                      ]
+                    },
+                    {
+                      "after": [
+                        606,
+                        606
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "s1",
+            "status": "passed",
+            "summary": "Inspected all submitted changes, requirements, acceptance checks and relevant test bodies. No blocking implementation defects found. Committed screenshots confirm theme changes for UX mocks and fallback controls; primary docgen controls have static assertions only.",
+            "findings": [
+              {
+                "severity": "LOW",
+                "location": "src/workflow/artifacts/companion/__tests__/ux-page.test.ts:137",
+                "message": "The theme-switch test checks inclusion without asserting switch behavior.",
+                "rationale": "The expected script comes from the same themeBootScript helper as production. Removing its click handler or stylesheet toggling would still satisfy this assertion. Existing viewer-script behavioral tests exercise viewerBootScript, not this new helper. Add assertions for initial mode, enabled stylesheets and a button-triggered mode change.",
+                "evidenceReferences": [
+                  "6fe820535029249eead2d5d7a1a88a1497620e83:src/workflow/artifacts/companion/__tests__/ux-page.test.ts",
+                  "6fe820535029249eead2d5d7a1a88a1497620e83:src/artifact-theme/theme.ts",
+                  "6fe820535029249eead2d5d7a1a88a1497620e83:src/artifact-theme/__tests__/viewer-script.test.ts"
+                ]
+              }
+            ],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Coverage assessment is complete. Inspected all changed test assertions and relevant theme, contrast, standalone-renderer, browser and pan/zoom tests. New assertions cover shell composition, toolbar class, CSS inclusion and good/warning contrast on both card surfaces. Existing pan/zoom tests assert transform arithmetic and dragging, but do not establish interaction behavior across every themed page. Inspected all four committed screenshots after verifying their bytes against the reviewed commit. They support UX/fallback rendering in both modes; they do not prove pan/zoom interactions or primary docgen rendering. The new helper's behavioral coverage gap is recorded above. Reported gate runs target 7f22642c8; inspected rendering sources and tests are unchanged between that version and the reviewed commit.",
+              "evidenceReferences": [
+                "6fe820535029249eead2d5d7a1a88a1497620e83:src/workflow/artifacts/companion/__tests__/ux-page.test.ts",
+                "6fe820535029249eead2d5d7a1a88a1497620e83:src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "6fe820535029249eead2d5d7a1a88a1497620e83:src/docgen/render/__tests__/fallback.test.ts",
+                "6fe820535029249eead2d5d7a1a88a1497620e83:src/docgen/render/__tests__/shell.test.ts",
+                "6fe820535029249eead2d5d7a1a88a1497620e83:src/workflow/artifacts/companion/__tests__/panzoom.test.ts",
+                "6fe820535029249eead2d5d7a1a88a1497620e83:src/artifact-theme/__tests__/viewer-script.test.ts",
+                "6fe820535029249eead2d5d7a1a88a1497620e83:src/artifact-theme/__tests__/theme-browser.live.test.ts",
+                "6fe820535029249eead2d5d7a1a88a1497620e83:src/artifact-theme/__tests__/contrast.test.ts",
+                "6fe820535029249eead2d5d7a1a88a1497620e83:src/workflow/artifacts/companion/__tests__/ux-mock-render.test.ts",
+                "6fe820535029249eead2d5d7a1a88a1497620e83:docs/standalone/make-ux-mocks-zoom-controls-follow-E20261109f0b3baec/S001/TESTS.md",
+                "6fe820535029249eead2d5d7a1a88a1497620e83:docs/standalone/make-ux-mocks-zoom-controls-follow-E20261109f0b3baec/S001/evidence/README.txt"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: I did not run tests, typechecks, builds or browser checks. Gate passes at 7f22642c8 are reported evidence, not my executions.",
+              "Optional execution: Primary Mermaid docgen rendering was unsuccessful in the supplied evidence. Capture it in both modes and exercise pan/zoom across page types when a working browser route is available."
+            ],
+            "inspectedReferences": [
+              "6fe820535029249eead2d5d7a1a88a1497620e83:docs/standalone/make-ux-mocks-zoom-controls-follow-E20261109f0b3baec/ISSUE.md",
+              "6fe820535029249eead2d5d7a1a88a1497620e83:docs/standalone/make-ux-mocks-zoom-controls-follow-E20261109f0b3baec/S001/BUILD.md",
+              "6fe820535029249eead2d5d7a1a88a1497620e83:docs/standalone/make-ux-mocks-zoom-controls-follow-E20261109f0b3baec/S001/TESTS.md",
+              "6fe820535029249eead2d5d7a1a88a1497620e83:docs/standalone/make-ux-mocks-zoom-controls-follow-E20261109f0b3baec/S001/evidence/README.txt",
+              "6fe820535029249eead2d5d7a1a88a1497620e83:docs/standalone/make-ux-mocks-zoom-controls-follow-E20261109f0b3baec/S001/evidence/ux-mock-light.png",
+              "6fe820535029249eead2d5d7a1a88a1497620e83:docs/standalone/make-ux-mocks-zoom-controls-follow-E20261109f0b3baec/S001/evidence/ux-mock-dark.png",
+              "6fe820535029249eead2d5d7a1a88a1497620e83:docs/standalone/make-ux-mocks-zoom-controls-follow-E20261109f0b3baec/S001/evidence/docgen-fallback-light.png",
+              "6fe820535029249eead2d5d7a1a88a1497620e83:docs/standalone/make-ux-mocks-zoom-controls-follow-E20261109f0b3baec/S001/evidence/docgen-fallback-dark.png",
+              "6fe820535029249eead2d5d7a1a88a1497620e83:src/artifact-theme/theme.ts",
+              "6fe820535029249eead2d5d7a1a88a1497620e83:src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+              "6fe820535029249eead2d5d7a1a88a1497620e83:src/docgen/render/fallback.ts",
+              "6fe820535029249eead2d5d7a1a88a1497620e83:src/docgen/render/shell.ts",
+              "6fe820535029249eead2d5d7a1a88a1497620e83:src/docgen/render/__tests__/fallback.test.ts",
+              "6fe820535029249eead2d5d7a1a88a1497620e83:src/docgen/render/__tests__/shell.test.ts",
+              "6fe820535029249eead2d5d7a1a88a1497620e83:src/workflow/artifacts/companion/shell.ts",
+              "6fe820535029249eead2d5d7a1a88a1497620e83:src/workflow/artifacts/companion/ux.ts",
+              "6fe820535029249eead2d5d7a1a88a1497620e83:src/workflow/artifacts/companion/__tests__/shell.test.ts",
+              "6fe820535029249eead2d5d7a1a88a1497620e83:src/workflow/artifacts/companion/__tests__/ux-page.test.ts",
+              "6fe820535029249eead2d5d7a1a88a1497620e83:src/workflow/artifacts/companion/__tests__/panzoom.test.ts",
+              "6fe820535029249eead2d5d7a1a88a1497620e83:src/workflow/artifacts/companion/__tests__/ux-mock-render.test.ts",
+              "6fe820535029249eead2d5d7a1a88a1497620e83:src/artifact-theme/__tests__/viewer-script.test.ts",
+              "6fe820535029249eead2d5d7a1a88a1497620e83:src/artifact-theme/__tests__/theme-browser.live.test.ts",
+              "6fe820535029249eead2d5d7a1a88a1497620e83:src/artifact-theme/__tests__/contrast.test.ts",
+              "6fe820535029249eead2d5d7a1a88a1497620e83:src/assets/docgen/svg-pan-zoom.min.js"
+            ],
+            "executedTests": []
+          }
+        ],
+        "summary": "1 selected task assessment(s): passed.",
+        "completedAt": "2026-11-09T19:50:16.595Z",
+        "buildFingerprint": "9610056381023a85c59f0b7bb111417d5243d1b7eba528cb07eaeaaae69fd666"
+      }
+    ]
+  },
+  "citations": []
+}

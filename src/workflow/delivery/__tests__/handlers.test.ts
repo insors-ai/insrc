@@ -40,6 +40,31 @@ function repoWith(files: Readonly<Record<string, unknown>>): string {
 
 const store = (name: string): string => `${ARTIFACTS_DIR}/${name}`;
 
+test('handleDeliveryEvidence reads a valid TASK id and a sequenced DIAG id, still accepts a one-suffix and an uppercase legacy id, and refuses a malformed id and one that escapes the store', () => {
+	const h = '2222222222222222';
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-delivery-evidence-'));
+	try {
+		const store = join(dir, ARTIFACTS_DIR);
+		mkdirSync(store, { recursive: true });
+		const ids = [`TASK-${h}-s1-t1`, `DIAG-${h}-s1-1`, `LLD-${h}-s1`, `LLD-${h}-S001`];
+		for (const id of ids) writeFileSync(join(store, `${id}.json`), JSON.stringify({ meta: { epicHash: h, storyId: 's1', createdAt: 't', epicCreatedAt: 't' }, body: { of: id } }));
+		for (const id of ids) {
+			const read = handleDeliveryEvidence({ repo: dir, artifactId: id }, undefined);
+			assert.ok(!('error' in read), `${id}: ${JSON.stringify(read)}`);
+			assert.deepEqual(read.body, { of: id }, id);
+		}
+		assert.deepEqual(handleDeliveryEvidence({ repo: dir, artifactId: `TASK-${h}-s1` }, undefined), { error: 'not found' }, 'the one-suffix form is well formed, and no such file exists');
+		for (const bad of [`TASK-${h}-s1-t1-x`, `DIAG-${h}-s1-x-y`, `TASKS-${h}-s1/../x`, `../${'TASK'}-${h}-s1-t1`, `${'TASK'}-${h}-s1-t1.json`, 'nope']) {
+			assert.deepEqual(handleDeliveryEvidence({ repo: dir, artifactId: bad }, undefined), { error: 'invalid artifact id' }, bad);
+		}
+		// a store file that is a link out of the store is refused, even under a valid id
+		const outside = join(dir, 'outside.json');
+		writeFileSync(outside, JSON.stringify({ meta: {}, body: {} }));
+		symlinkSync(outside, join(store, `TASK-${h}-s1-t2.json`));
+		assert.deepEqual(handleDeliveryEvidence({ repo: dir, artifactId: `TASK-${h}-s1-t2` }, undefined), { error: 'invalid artifact id' });
+	} finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
 test("resolveDocsMarkdown keeps workflow.artifactContent's containment errors word for word", async () => {
 	const repo = repoWith({ 'docs/x/LLD.md': '# x\n', 'docs/x/notes.txt': 'n', 'outside.md': '# out\n' });
 	try {

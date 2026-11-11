@@ -1,7 +1,7 @@
 import type { Kit } from './store-kit.js';
 import { H, alice, artifact, clock } from './store-kit.js';
 import { LifecycleService } from '../lifecycle-service.js';
-import type { CodeReviewEvidence, CompletionEvidence } from '../lifecycle.js';
+import type { CodeReviewEvidence, CompletionEvidence, StoryTasks } from '../lifecycle.js';
 import type { Reference } from '../types.js';
 
 export const EPIC = `EPIC-${H}`;
@@ -14,12 +14,28 @@ export const DIAGS = [`DIAG-${H}-s1-1`, `DIAG-${H}-s1-2`];
 
 const parent = (entityId: string, type: string): Reference => ({ entityId, type, relation: 'derived-from' });
 
-/** An evidence stub: the listed Tasks passed their build, and the Story's code review is whatever is set. */
-export function stubEvidence(passed: string[], review: CodeReviewEvidence = { kind: 'clean' }): CompletionEvidence & { review: CodeReviewEvidence } {
-	const evidence = {
+export interface StubEvidence extends CompletionEvidence {
+	review: CodeReviewEvidence;
+	buildApproved: boolean;
+	override: string | undefined;
+	declared: readonly string[];
+	tasks: StoryTasks;
+}
+
+/** An evidence stub: the listed Tasks passed their build, the BUILD is approved, the Story lists T1 and T2, and the rest is whatever is set. */
+export function stubEvidence(passed: string[], review: CodeReviewEvidence = { kind: 'clean' }): StubEvidence {
+	const evidence: StubEvidence = {
 		review,
+		buildApproved: true,
+		override: undefined,
+		declared: [],
+		tasks: { kind: 'listed', taskIds: [T1, T2] },
 		taskBuildPassed: async (id: string) => passed.includes(id),
 		storyCodeReview: async () => evidence.review,
+		storyBuildApproved: async () => evidence.buildApproved,
+		storyApprovalOverride: async () => evidence.override,
+		declaredStories: async () => evidence.declared,
+		storyTasks: async () => evidence.tasks,
 	};
 	return evidence;
 }

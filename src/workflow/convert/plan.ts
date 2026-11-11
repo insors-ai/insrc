@@ -29,8 +29,8 @@ import type {
 
 /** The order the applier runs the rules in, which is also the order a plan lists its changes. */
 export const RULE_ORDER: readonly ConversionRule[] = [
-	'rename-id', 'stamp-epic-created-at', 'convert-amendment', 'convert-feedback', 'migrate-head',
-	'create-epic', 'create-story', 'create-tasks', 'move-binding', 'move-story-history', 'relabel-issue',
+	'repo-rules', 'rename-id', 'stamp-epic-created-at', 'convert-amendment', 'convert-feedback', 'migrate-head',
+	'create-epic', 'create-story', 'create-tasks', 'backfill-round', 'move-binding', 'set-parent', 'move-story-history', 'settle-unit', 'relabel-issue',
 ];
 
 /** What a rule sees: the heads as read, the repository, and the optional tracker. */
@@ -59,6 +59,8 @@ export interface PlanOptions {
 	readonly rules?:   readonly PlanRule[] | undefined;
 	/** A rerun of an apply that stopped part-way: the tree is expected to hold the earlier run's changes, so it is not required to be clean. */
 	readonly resume?:  boolean | undefined;
+	/** A repair: plan at any schema version, where a conversion plans nothing once the marker is written. */
+	readonly anySchema?: boolean | undefined;
 }
 
 const PROTECTED_PATHS = ['.insrc/artifacts', 'docs/epics'] as const;
@@ -122,7 +124,7 @@ export async function planConversion(repo: string, options: PlanOptions = {}): P
 	let version: number;
 	try { version = RepoSchemaGate.read(repo).version; }
 	catch (err) { throw new ConversionRefused(`the repository marker cannot be read: ${(err as Error).message}`); }
-	if (version >= 2) return EMPTY_PLAN;
+	if (version >= 2 && options.anySchema !== true) return EMPTY_PLAN;
 	if (options.resume !== true) await assertCleanTree(repo);
 
 	const read = readRawHeads(repo);

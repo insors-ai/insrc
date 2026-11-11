@@ -13,7 +13,7 @@ const ref = { entityId: 'x', type: 'ISSUE', relation: 'cites' as const };
 
 describe('lifecycle table', () => {
 	it('every lifecycle operation from every status lands where the closed table says or throws IllegalTransitionError', () => {
-		assert.equal(LIFECYCLE_OPERATIONS.length, 13);
+		assert.equal(LIFECYCLE_OPERATIONS.length, 14);
 		assert.equal(STATUSES.length, 10);
 		for (const op of LIFECYCLE_OPERATIONS) {
 			for (const from of STATUSES) {

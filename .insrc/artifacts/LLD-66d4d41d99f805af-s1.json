@@ -1,0 +1,581 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1794388416311-k9tkvg",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T09:16:57.769Z",
+    "epicCreatedAt": "2026-11-11T05:24:15.548Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "claude-opus-5-5"
+        }
+      ]
+    },
+    "elapsedMs": 200939,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "66d4d41d99f805af",
+    "epicSlug": "code-review-refuses-correction-packet-because",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1794388416311-k9tkvg",
+    "hldEffectiveHash": "d15c0d69afa283a19f897de25b57c770b3adb8a6502a227165f5507a5dfe4fb1",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Scope code-review projection to the packet instead of walking every interleaved commit",
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "triageRationale": "Sized bugfix ISSUE-66d4d41d99f805af, approved 2026-11-11; revised after design review rounds 1 and 2.",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 3,
+        "contentHash": "2f76646db408d06d1e617726b6f302482dbb47c3538b58979ab909a1448ed16b",
+        "at": "2026-11-11T09:16:57.897Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T09:40:51.418Z",
+        "override": {
+          "reason": "Daemon design review broken (round 2 paused technical_retry_exhausted: impact output omitted prior finding origins); rounds 2-3 were controller self-reviews per user instruction 2026-11-11, recorded in docs/standalone/code-review-refuses-correction-packet-because-E2026111166d4d41d/S001/LLD-SELF-REVIEW.md; no open MED/HIGH. User approved with override in chat 2026-11-11."
+        }
+      }
+    },
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "revision": 3,
+    "rangeBase": "92491bba943e2a8212a5ac52407d3e9fdcba9fd3"
+  },
+  "body": {
+    "summary": {
+      "prose": "Code-review admission proves that each selected change still exists at the pinned revision by checking that no unselected commit deleted or recreated the selected file. Today it does this by reading the file at every commit between the selected commit and the pin, so a busy branch with unrelated merges exhausts the projection budget. This Story asks git once per selected file for the commits that actually changed that file (full history, merges included) and checks only those, so cost follows changes to the reviewed files rather than unrelated work. Every existing outcome, limit and stored identity stays the same.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Scope code-review projection to the packet instead of walking every interleaved commit"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "git_path_history",
+          "signature": "git_path_history(input: { cwd?: string; path?: string; rev?: string; diffFilter?: 'A' | 'D' | 'M' | 'R'; firstParent?: boolean; reverse?: boolean; limit?: number; pickaxe?: string; fullHistory?: boolean }): ToolResult<GitPathHistoryData>",
+          "parameters": [
+            {
+              "name": "fullHistory",
+              "type": "boolean",
+              "purpose": "New. When true, pass --full-history so git does not simplify history: every commit whose path differs from at least one parent is listed, merges included, and side branches are followed even where a merge matches one parent. Absent or false keeps today's behaviour exactly.",
+              "optional": true
+            },
+            {
+              "name": "rev",
+              "type": "string",
+              "purpose": "Existing. A ref or a range such as '<from>..<to>'.",
+              "optional": true
+            },
+            {
+              "name": "path",
+              "type": "string",
+              "purpose": "Existing. Matched literally from the repository top (:(top,literal)).",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "GitPathHistoryData",
+            "meaning": "Unchanged shape: { commits: [{ sha, committerTime, subject }] }."
+          },
+          "errors": [
+            {
+              "type": "git failure (existing readGit / parseOutput failure kinds)",
+              "condition": "git log exits non-zero, cannot spawn or times out, or its output is cut at the shell byte limit (parseOutput refuses a cut list); unchanged."
+            }
+          ],
+          "preconditions": [
+            "rev passes assertSafeArg('ref'); path passes assertSafeArg('path') (unchanged)."
+          ],
+          "postconditions": [
+            "With fullHistory absent, argv is identical to today's, so existing callers (src/workflow/git-calls.ts) are unaffected."
+          ]
+        },
+        {
+          "name": "ReviewSources",
+          "signature": "interface ReviewSources { commit(oid: string, field?: string): Promise<readonly string[]>; isAncestor(origin: string, revision: string): Promise<boolean>; file(commit: string, path: string): Promise<PinnedBlob | null>; changedRanges(commit: string, parent: string | null, paths: readonly string[]): Promise<readonly ChangedRange[]>; pathChanges(from: string, to: string, path: string): Promise<readonly string[]> }",
+          "parameters": [
+            {
+              "name": "from",
+              "type": "string",
+              "purpose": "Full commit OID where the lineage leg starts (excluded from the result).",
+              "optional": false
+            },
+            {
+              "name": "to",
+              "type": "string",
+              "purpose": "Full commit OID where the leg ends (included when it qualifies).",
+              "optional": false
+            },
+            {
+              "name": "path",
+              "type": "string",
+              "purpose": "Repository-relative path, matched literally.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "readonly string[]",
+            "meaning": "New required method pathChanges: the full OIDs of every commit reachable from `to` and not from `from` whose entry at `path` differs from at least one of its parents (git log --full-history from..to -- :(top,literal)path). Any commit not listed has the same entry at `path` as each of its parents. Order is not significant."
+          },
+          "errors": [
+            {
+              "type": "TaskReviewInputError field=source",
+              "condition": "The git listing fails (including output cut at the byte limit), or a listed line is not a full hexadecimal commit OID of the repository's hash length."
+            }
+          ],
+          "preconditions": [
+            "from and to are full commit OIDs already verified by the caller."
+          ],
+          "postconditions": [
+            "No file contents are read."
+          ]
+        },
+        {
+          "name": "RegistryReviewSources",
+          "signature": "class RegistryReviewSources implements ReviewSources { pathChanges(from: string, to: string, path: string): Promise<readonly string[]> }",
+          "parameters": [],
+          "returns": {
+            "type": "readonly string[]",
+            "meaning": "Implements pathChanges with callTool(gitPathHistoryTool, { cwd: this.deps.repoPath, rev: `${from}..${to}`, path, fullHistory: true }, this.deps), passing cwd explicitly exactly like its other methods (never relying on process.cwd()), and returns data.commits[].sha after validating each as a full OID."
+          },
+          "errors": [
+            {
+              "type": "TaskReviewInputError field=source",
+              "condition": "Tool call unsuccessful (git failure, timeout or cut output) or an invalid sha in the result (same field as the existing commit/file source errors)."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "Uses no subprocess path other than the typed tool, so the daemon's tool authority and the review worker's spawn bridge apply unchanged."
+          ]
+        },
+        {
+          "name": "boundedProjectionSources",
+          "signature": "boundedProjectionSources(source: ReviewSources, budget: ProjectionBudget): ReviewSources",
+          "parameters": [],
+          "returns": {
+            "type": "ReviewSources",
+            "meaning": "The wrapper gains pathChanges: cached per JSON key [from, to, path]; an uncached call charges budget.read() once, like the other wrapped methods. No change to the other methods or to LIMITS."
+          },
+          "errors": [
+            {
+              "type": "TaskReviewInputError field=projection_limit",
+              "condition": "Existing read limit exceeded (unchanged message 'Projection object/diff read limit')."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "Reads are still awaited serially."
+          ]
+        },
+        {
+          "name": "pathContinuity",
+          "signature": "pathContinuity(path: string, from: string, to: string, origins: readonly SelectedChange[], sources: ReviewSources): Promise<void>",
+          "parameters": [],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Same outcome as today. New procedure: if from === to return. For each commit c in sources.pathChanges(from, to, path) with sources.isAncestor(from, c) true, and for each parent p of c (sources.commit(c)) with p === from or sources.isAncestor(from, p), read sources.file(p, path) and sources.file(c, path) and require equal existence unless c is a selected origin for this path (o.commit === c and o.path or o.previousPath equals path); otherwise scope_conflict."
+          },
+          "errors": [
+            {
+              "type": "TaskReviewInputError field=scope_conflict",
+              "condition": "Unchanged message 'Unselected path disappearance or recreation interrupts lineage' on an existence flip at an unselected commit."
+            }
+          ],
+          "preconditions": [
+            "Called by finalPath exactly as today."
+          ],
+          "postconditions": [
+            "The edge set examined equals today's edge set restricted to edges where the path differs, which are the only edges where existence can differ; the comment above the function is updated to say why the full-history listing replaces the walk."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ReviewSources",
+        "change": "field-add",
+        "details": "Adds required method pathChanges(from, to, path). Every implementer must provide it: RegistryReviewSources (production) and the test object literals that implement the interface; literals built from a fixture's sources bind it the same way they bind the other four methods, and stubs that throw when called add a throwing pathChanges.",
+        "callSites": [
+          "src/workflow/code-review/task-review/sources.ts:44-98",
+          "src/workflow/code-review/task-review/projection.ts:27-37",
+          "src/workflow/code-review/task-review/__tests__/contracts.test.ts:69",
+          "src/workflow/code-review/task-review/__tests__/selected-code.test.ts:24",
+          "src/workflow/code-review/task-review/__tests__/admission-checkpoint.test.ts:43",
+          "src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts:75",
+          "src/workflow/code-review/task-review/__tests__/projection.test.ts:141",
+          "src/workflow/code-review/task-review/__tests__/coordinator.test.ts:31",
+          "src/workflow/code-review/task-review/__tests__/history.test.ts:128",
+          "src/workflow/code-review/task-review/__tests__/admission.test.ts:77",
+          "src/workflow/code-review/task-review/__tests__/ownership.test.ts:59"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The full-history listing fails: git error, unreadable repository, timeout, or output cut at the shell byte limit.",
+          "detection": "RegistryReviewSources.pathChanges sees callTool(gitPathHistoryTool, ...) return success false; git_path_history already fails on a non-zero exit, spawn error or timeout (readGit) and refuses stdout cut at the byte limit (parseOutput), so a partial list never reaches pathChanges.",
+          "response": "Throw TaskReviewInputError with field 'source' and the tool's message, the same field the existing commit/file reads use; it is never relabeled as projection_limit or as a lineage conflict.",
+          "userImpact": "Review start is refused with a source error naming the git failure; nothing is saved.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The listing returns a value that is not a full commit OID.",
+          "detection": "pathChanges checks every data.commits[].sha against /^[0-9a-f]{40}$|^[0-9a-f]{64}$/ and the length of the from/to OIDs.",
+          "response": "Throw TaskReviewInputError field 'source' ('Unexpected Git path history entry'); the listing is not used.",
+          "userImpact": "Refused start; no partial projection.",
+          "recoverable": false
+        },
+        {
+          "scenario": "A listed commit or its parent cannot be read.",
+          "detection": "Existing sources.commit / sources.file errors.",
+          "response": "Unchanged existing source errors.",
+          "userImpact": "Unchanged.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An unselected commit on any branch between origin and pin deletes or recreates the selected path.",
+          "detection": "That commit's entry differs from a parent, so the full-history listing includes it; the existence comparison on that edge differs.",
+          "response": "scope_conflict 'Unselected path disappearance or recreation interrupts lineage' (unchanged).",
+          "userImpact": "Unchanged outcome.",
+          "recoverable": false
+        },
+        {
+          "scenario": "Read limit is reached because many commits really changed the selected files.",
+          "detection": "Existing ProjectionBudget.read / decode checks.",
+          "response": "Unchanged projection_limit errors; limits are not raised.",
+          "userImpact": "Refused start, now only when the reviewed files themselves changed that often.",
+          "recoverable": false
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "from equals to (selected commit is the pin).",
+          "expected": "No listing call; returns immediately, as today."
+        },
+        {
+          "input": "A merge whose path matches one parent and differs from the other, where the differing parent descends from the origin.",
+          "expected": "Listed by --full-history; the differing edge is compared; a flip fails with scope_conflict."
+        },
+        {
+          "input": "A merge whose path matches every parent.",
+          "expected": "Not listed; no reads; today's walk would also find equal existence on every edge, so the outcome is the same."
+        },
+        {
+          "input": "A listed commit on a side branch that forked before the origin (not a descendant of the origin).",
+          "expected": "Skipped by isAncestor(from, c), exactly as today's walk never reaches it."
+        },
+        {
+          "input": "A listed merge with one parent outside the origin's descendants.",
+          "expected": "That edge is skipped, as today."
+        },
+        {
+          "input": "A selected origin commit for this path that adds or deletes it (selected move boundaries).",
+          "expected": "Exempt exactly as today (origins.some(o => o.commit === c && (o.path === path || o.previousPath === path)))."
+        },
+        {
+          "input": "A path with characters git treats as glob or magic.",
+          "expected": "Matched literally through git_path_history's existing :(top,literal) pathspec."
+        },
+        {
+          "input": "Root commit in the range.",
+          "expected": "No parents, so nothing to compare, as today."
+        },
+        {
+          "input": "git_path_history called by existing callers without fullHistory.",
+          "expected": "Identical argv and output to today."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Every descendant edge between origin and pin where the selected path's existence differs is examined, merges and side branches included; simplified or first-parent history must not be used (the comment above pathContinuity).",
+          "source": "c2"
+        },
+        {
+          "text": "Projection limits stay 10000 reads, 100000 fragments and 64 MiB decoded bytes, and every uncached source call is charged and awaited serially.",
+          "source": "c2"
+        },
+        {
+          "text": "The only production ReviewSources implementer reaches git through typed tools via callTool, passing cwd: this.deps.repoPath.",
+          "source": "c1"
+        },
+        {
+          "text": "projectReviewScope's result and projectionIdentity depend only on revision, review set, entries and dispositions, so saved attempts keep the same identity; admission refuses a saved attempt whose re-prepared identity differs.",
+          "source": "c1"
+        },
+        {
+          "text": "Existing git_path_history callers see no behaviour change, and a cut or failed git listing is refused rather than returned partially.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run through npx tsx --test (Node 22); real temporary git repositories as fixtures, as in the existing projection.test.ts",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Pin git_path_history's new fullHistory flag against real git semantics and keep its default unchanged.",
+          "subjects": [
+            "git_path_history"
+          ],
+          "fixturesNeeded": [
+            "temporary repo: base commit with f; side branch deletes then recreates f, merged; second side branch deletes f, merged with -s ours"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Exercise pathContinuity through projectReviewScope with RegistryReviewSources on real repositories. The ac1 test measures cost directly: it builds two fixtures that are identical except for the number of interleaved commits and merges after the selected change that touch only other files (N = 4 and N = 40), runs projectReviewScope on each with RegistryReviewSources wrapped by a counting ReviewSources, and records (a) the number of file() calls whose path is the selected path, (b) the sum of bytes.byteLength those calls return (the decoded bytes), and (c) the number of pathChanges calls. It asserts (a), (b) and (c) are equal between N = 4 and N = 40, that (c) equals the number of lineage legs (one per selected origin with no selected move), and, as a control showing the measurement can detect growth, that the number of commits between origin and pin differs between the fixtures by at least 36. The ac2 tests assert scope_conflict with the existing message. The ac4 identity test builds a deterministic repository (fixed GIT_AUTHOR_NAME/EMAIL/DATE and GIT_COMMITTER_NAME/EMAIL/DATE, so every commit OID is stable) with a selected change, interleaved commits and a merge that leave the selected path untouched, and a selected rename; the projectionIdentity of its projection is computed with the pre-change code before pathContinuity is switched, written into the test as a constant, and asserted equal after the switch, so a change to the projection outcome fails the test.",
+          "subjects": [
+            "pathContinuity",
+            "boundedProjectionSources",
+            "RegistryReviewSources",
+            "ReviewSources",
+            "projectReviewScope"
+          ],
+          "fixturesNeeded": [
+            "two temporary repos built by one helper parameterised by N: a selected change to source.js, then N commits and two merges of a side branch that touch only other files (N = 4 and N = 40)",
+            "temporary repo where a side branch forked after the origin deletes the selected file and is merged back keeping it",
+            "temporary repo where a side branch deletes and recreates the selected file and is merged",
+            "deterministic temporary repo with fixed author and committer identity and dates, used for the pinned-identity test"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Replay Story eedc4519199b24b4/s1's correction packet (pin 92491bba9) against this repository: first through prepareReviewPacket with RegistryReviewSources and the default ProjectionBudget, then as a real start of attempt 4 of review board-common-model-s1 on the rebuilt daemon. Recorded at validate as reported { result, evidence }; the evidence is the replay output (projection entry count, reads and decoded bytes used, or the error) and the start result showing admission re-prepared saved attempts 1-3 to their stored final-scope identities (admission refuses a mismatch), because it depends on this repository's real history and saved checkpoint.",
+          "subjects": [
+            "projectReviewScope",
+            "prepareReviewPacket"
+          ],
+          "fixturesNeeded": [
+            "the attempt-4 packet saved from the refused start",
+            ".insrc/tmp/code-review/board-common-model-s1.json with its 3 saved attempts"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts: lineage reads do not grow with interleaved commits that leave the selected path untouched",
+            "src/daemon/tools/builtins/git/__tests__/git-path-history-full.test.ts: fullHistory lists a side-branch deletion and the merge that default history omits"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts: a side-branch deletion merged back with the file kept still interrupts lineage",
+            "src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts: a side-branch deletion and recreation merged back still interrupts lineage",
+            "src/workflow/code-review/task-review/__tests__/projection.test.ts: identical final blobs cannot hide an unselected rename-away and recreation",
+            "src/workflow/code-review/task-review/__tests__/projection.test.ts: selected rename chains compare exact blobs independently of rename similarity and reject unselected moves"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts: a path history failure is a source error, not a projection limit or lineage conflict",
+            "src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts: the read limit still refuses with projection_limit when the selected file itself changed too often",
+            "src/workflow/code-review/task-review/__tests__/projection.test.ts: production projection budgets accept their exact ceilings and refuse the next unit",
+            "src/daemon/tools/builtins/git/__tests__/git-path-history-full.test.ts: without fullHistory the listing is unchanged"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts: projection identity matches the identity pinned from the code before the change",
+            "smoke (reported): starting attempt 4 of board-common-model-s1 re-prepares saved attempts 1-3 to their stored final-scope identities",
+            "src/workflow/code-review/task-review/__tests__/history.test.ts: existing saved-attempt tests pass unchanged"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "smoke (reported at validate as { result, evidence }): the eedc4519199b24b4/s1 correction packet at pin 92491bba9 prepares through prepareReviewPacket with RegistryReviewSources and the default ProjectionBudget without projection_limit"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "pathContinuity (src/workflow/code-review/task-review/projection.ts:51-64) walks every commit between a selected origin and the pin and reads the selected file at each commit and parent; reads are charged to ProjectionBudget (src/workflow/code-review/task-review/projection.ts:9), so a packet on a busy branch is refused with projection_limit (s1 bundles 1 and 2). git_path_history has no full-history option (s1 bundle 3).",
+      "stateAfter": "pathContinuity examines only commits from a full-history listing of the selected path (ReviewSources.pathChanges via git_path_history fullHistory), with identical outcomes, limits and projection identities. No stored data changes.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Before changing pathContinuity, compute the projectionIdentity of the deterministic fixture with the current code and pin it in the new test.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the optional fullHistory flag to git_path_history; existing callers pass nothing and get the same argv.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add pathChanges to ReviewSources, implement it in RegistryReviewSources (with cwd: this.deps.repoPath) and wrap it in boundedProjectionSources; bind it in every test literal.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Switch pathContinuity to the listing-driven edge set and update its comment; the pinned identity must still match.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Deploy by daemon update/restart; saved review attempts need no rewrite because their projection identity does not depend on the walk, which the real attempt-4 start re-checks for board-common-model-s1.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "git_path_history: additive optional input; default behaviour unchanged. ReviewSources is internal to the daemon (no IPC or plugin exposure); its only production implementer is updated in the same change. Stored review checkpoints and history are not rewritten and re-prepare to the same identity.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Full-history touch list through git_path_history",
+        "oneLineSummary": "One full-history, path-limited listing per lineage leg names the only commits whose edges can change the path's existence; only those edges are read.",
+        "approach": "Add an optional fullHistory flag to the typed git_path_history tool (passes --full-history). Add a required pathChanges(from, to, path) method to ReviewSources that returns the commits in from..to whose literal path differs from at least one parent; RegistryReviewSources implements it with git_path_history { cwd: repoPath, rev: 'from..to', path, fullHistory: true }. boundedProjectionSources caches it per (from, to, path) and charges one read. pathContinuity replaces its walk: for each listed commit that descends from the origin, and each parent that is the origin or descends from it, it compares existence exactly as today. Commits not listed leave the path identical on every edge, so they cannot interrupt lineage.",
+        "pros": [
+          "Cost follows the commits that touch the selected path, not the number of interleaved commits.",
+          "Keeps every edge check, merges included; git's full-history mode lists side-branch deletions that default history drops (probed).",
+          "Reuses an existing typed git tool, so daemon tool authority and the worker spawn bridge are unchanged.",
+          "Limits, errors and projection identity are untouched."
+        ],
+        "cons": [
+          "Adds a required ReviewSources method, so about nine test literals must bind it.",
+          "Correctness rests on git's full-history semantics, which the tests must pin."
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Existence by object id, same walk",
+        "oneLineSummary": "Keep the per-commit walk but test existence with a content-free object lookup instead of reading whole blobs.",
+        "approach": "Add a ReviewSources method that reports whether commit:path exists (object id only, no content), and make pathContinuity call it instead of file(). The walk still visits every commit from origin to pin; only the decoded bytes disappear.",
+        "pros": [
+          "Smallest change to pathContinuity's structure.",
+          "Removes the decoded-byte growth."
+        ],
+        "cons": [
+          "Reads still grow with every interleaved commit (commits x selected files), so a busy branch hits the 10000-read limit instead of the byte limit.",
+          "Does not meet ac1."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Moves the failure from bytes to reads; does not fix the cause (violates ac1: reads still grow per commit)."
+      },
+      {
+        "id": "a3",
+        "name": "Commit graph plus per-commit diffs",
+        "oneLineSummary": "List the ancestry-path graph once with git_rev_list, then diff each edge for the path with git_diff_tree.",
+        "approach": "Use git_rev_list --parents over from..to to get the graph and descendant set locally, then for each edge ask git_diff_tree whether the path was added or deleted.",
+        "pros": [
+          "Exact per-edge answers without decoding blobs.",
+          "Descendant test needs no isAncestor calls."
+        ],
+        "cons": [
+          "Still one diff call per edge, so reads grow with interleaved commits.",
+          "Two tools and more code than a1 for no accuracy gain."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Exact but still linear in interleaved commits, with more code than a1 (violates ac1: one diff per edge)."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 analyzeBundles[0]: callers of projectReviewScope and boundedProjectionSources; implementers of ReviewSources",
+      "quotedText": "The only production ReviewSources implementer is RegistryReviewSources"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 analyzeBundles[1]: the continuity walk and its limits",
+      "quotedText": "Its comment requires inspecting every descendant edge, not log's simplified or first-parent history."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 analyzeBundles[2]: typed git tools available for a path-limited history listing",
+      "quotedText": "parses through parseOutput, which refuses stdout cut at the shell byte limit (10 MiB default) rather than returning a partial list"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 analyzeBundles[3]: existing projection tests, their fixture and the real saved review"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-66d4d41d99f805af"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD-599f1d0bd42e0c37-s1",
+      "quotedText": "New internal projection counters are capped at 10000 distinct object/diff reads, 100000 projected fragments and 64 MiB cumulative decoded source bytes"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD-e4af63128c7cbec2-s1",
+      "quotedText": "projection budget increases/optimization"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/projection.ts:48-64"
+    },
+    {
+      "id": "c9",
+      "kind": "stakeholder",
+      "ref": "Design review round 1 (lld-66d4d41d99f805af-s1)",
+      "quotedText": "the LLD never states what quantity is measured or how the two runs are compared"
+    },
+    {
+      "id": "c10",
+      "kind": "stakeholder",
+      "ref": "Design review round 2 (controller self-review, user instruction 2026-11-11)",
+      "quotedText": "design review is broken, use the process defined to do a manual self-review"
+    }
+  ]
+}

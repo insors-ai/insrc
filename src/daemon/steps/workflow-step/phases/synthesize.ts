@@ -22,7 +22,7 @@ import { familyForClient } from '../../../model-registry.js';
 import { clientAttribution } from '../../../../workflow/attribution.js';
 import { finalizeArtifact } from '../../../../workflow/orchestrator.js';
 import { unresolvedOpen } from '../../../../workflow/questions.js';
-import { appendRunLog, pathsForWorkflow, writeArtifact, writeAtomic } from '../../../../workflow/storage.js';
+import { appendRunLog, pathsForWorkflow, withWorkflowLifecycle, writeArtifact, writeAtomic } from '../../../../workflow/storage.js';
 import { assertStage, decodeState } from '../state.js';
 import { releaseState } from '../state-store.js';
 import type {
@@ -90,7 +90,7 @@ export async function handleSynthesize(
 	// raw-write: markdown render of the draft.
 	writeAtomic(paths.md,   result.finalized.renderedMd);
 	// content: a draft mints a revision and keeps a replaced draft's tracker block.
-	writeArtifact(paths.json, JSON.parse(result.finalized.renderedJson), 'content');
+	writeArtifact(paths.json, withWorkflowLifecycle(paths.json, JSON.parse(result.finalized.renderedJson)), 'content');
 	// Team mode: make sure every unit of the draft has its issue. Never throws; the draft stays whatever it returns.
 	const readiness = readinessFields(await ensureDraftIssues(paths.json));
 	appendRunLog(state.epicKey, state.intent.workflow, state.runId, {

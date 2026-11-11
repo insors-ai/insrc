@@ -17,7 +17,7 @@ import { ARTIFACTS_DIR, writeAtomic } from '../storage.js';
 import type { PlanRule, RulePlan } from './plan.js';
 import { readRawHeads } from './raw-heads.js';
 import { anchorOf } from './stamps.js';
-import type { ConversionChange, ConversionProblem, RawHead } from './types.js';
+import type { ConversionChange, ConversionProblem, RawHead, RepairRecorder } from './types.js';
 
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -79,8 +79,11 @@ export const amendmentRule: PlanRule = (ctx): RulePlan => {
 };
 
 /** Writes each flat amendment as a head; returns how many were written. */
-export function applyAmendments(repo: string): number {
+export function applyAmendments(repo: string, onWrite?: RepairRecorder): number {
 	const { converted } = convertAll(readRawHeads(repo).heads);
-	for (const { id, head } of converted) writeAtomic(join(repo, ARTIFACTS_DIR, `${id}.json`), JSON.stringify(head, null, 2) + '\n');
+	for (const { id, head } of converted) {
+		writeAtomic(join(repo, ARTIFACTS_DIR, `${id}.json`), JSON.stringify(head, null, 2) + '\n');
+		onWrite?.(id, 'head');
+	}
 	return converted.length;
 }

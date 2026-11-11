@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cc91404d-f1a3-4841-9547-9ff6d0518881",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T17:21:09.397Z",
+    "epicCreatedAt": "2026-11-09T16:34:12.401Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "97adabf6bd47b036",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Recover the chat catalog without reloading",
+      "parent": {
+        "entityId": "STORY-97adabf6bd47b036-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-97adabf6bd47b036-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-97adabf6bd47b036-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2cfd01776e0f96e745f13777e1d0c98611dfaf5be1deb3edf857e371b84929b2",
+        "at": "2026-11-09T17:21:09.397Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T17:21:09.400Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Recover the chat catalog without reloading",
+    "summary": "Add host-owned single-flight refresh, cache, generation, reachability recovery and picker-open intent. Publish the catalog snapshot after the ready handshake and update controls in place. Preserve the transcript, selection and active turn and stop recovery on success or disposal.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "Initial failure and reconnect recover through actual host and webview messages",
+      "Concurrent and stale responses cannot replace newer picker state",
+      "The view and in-flight turn survive catalog updates without a reload"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Drive the actual webview picker intent and ready handshake through catalog failure and recovery"
+      },
+      {
+        "level": "unit",
+        "name": "Catalog cache, refresh coalescing, disposal and stale-generation handling"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

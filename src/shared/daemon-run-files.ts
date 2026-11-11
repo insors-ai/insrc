@@ -91,6 +91,27 @@ export function acquireRunFileGuard(path: string, owner: ProcessIdentity = requi
 	};
 }
 
+/** Local view of a supervisor-owned guard. The child never removes the guard or owner record. */
+export function borrowRunFileGuard(path: string, supervisorPid: number, assertGrant: () => void): RunFileGuard {
+	const directory = runFileIdentity(path);
+	const recordPath = join(path, 'owner.json');
+	const recordIdentity = runFileIdentity(recordPath);
+	const record = ownerRecord(path);
+	if (directory === undefined || recordIdentity === undefined || record.owner.pid !== supervisorPid) {
+		throw new Error('run-file guard does not belong to the supervisor');
+	}
+	const assertOwned = (): void => {
+		assertGrant();
+		const current = runFileIdentity(path), currentRecord = runFileIdentity(recordPath);
+		if (process.ppid !== supervisorPid || current?.dev !== directory.dev || current.ino !== directory.ino
+			|| currentRecord === undefined || !sameRunFile(currentRecord, recordIdentity)
+			|| ownerRecord(path).nonce !== record.nonce) throw new Error('borrowed run-file guard changed');
+	};
+	assertOwned();
+	return { path, owner: record.owner, nonce: record.nonce, assertOwned,
+		release() { throw new Error('only the supervisor can release the run-file guard'); } };
+}
+
 /**
  * Caller must hold the SAME guard used by every cooperating managed publisher
  * of this path through verification and unlink. Observed mismatches fail closed.

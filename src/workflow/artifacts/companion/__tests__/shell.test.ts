@@ -236,7 +236,7 @@ test('companion/__tests__/shell.test.ts: the theme switch is a direct child of t
 	const html = renderCompanionPage(HEADER, MERMAID_PAGE, RUNTIME_MERMAID);
 	assert.match(html, /<body[^>]*>\s*<button id="iv-theme"/, 'first child of the body');
 	assert.equal((html.match(/id="iv-theme"/g) ?? []).length, 1);
-	const bar = html.slice(html.indexOf('<div class="vp-bar">'), html.indexOf('</div>', html.indexOf('<div class="vp-bar">')));
+	const bar = html.slice(html.indexOf('<div class="iv-bar">'), html.indexOf('</div>', html.indexOf('<div class="iv-bar">')));
 	assert.doesNotMatch(bar, /iv-theme/, 'not inside the pan/zoom bar');
 	assert.match(html, /@media \(max-width:480px\)\{\.insrc-viewer header\.hdr\{flex-direction:column/);
 	assert.match(html, /\.insrc-viewer table\.ref\{min-width:0;width:100%\}/);

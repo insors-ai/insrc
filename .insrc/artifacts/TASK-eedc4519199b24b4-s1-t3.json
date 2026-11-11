@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c8e29830-d3d4-4140-a1ef-a150455002bc",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T15:17:26.310Z",
+    "epicCreatedAt": "2026-11-09T05:00:05.847Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "eedc4519199b24b4",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Every workflow head has a lifecycle",
+      "parent": {
+        "entityId": "STORY-eedc4519199b24b4-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-eedc4519199b24b4-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c82061d6f80c1748df9e7b8a74b321eb180eda88c081543fab6d0bde00d4e1c0",
+        "at": "2026-11-09T15:17:26.310Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T15:17:26.311Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Every workflow head has a lifecycle",
+    "summary": "Add the storage helper that settles meta.lifecycle, call it from both finished-artifact write sites, and add the guard test.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "A first write gets a draft lifecycle",
+      "A rewrite keeps the lifecycle for unchanged content and starts a draft keeping Signoff entries for changed content",
+      "A production content write of a delivery kind cannot create a head without a lifecycle"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "the storage helper: a first write gets a draft lifecycle; a rewrite with unchanged content keeps the lifecycle; a rewrite with changed content gets a draft and keeps Signoff entries, with no Signoff entries and with them"
+      },
+      {
+        "level": "integration",
+        "name": "both first-write sites give a new head a draft lifecycle"
+      },
+      {
+        "level": "integration",
+        "name": "guard: a production content write of a delivery kind cannot create a head without a lifecycle"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -31,6 +31,8 @@ import { checkUpdateSource, readUpdateSource } from '../../shared/update-source.
 import type { UpdateSource } from '../../shared/update-source.js';
 import type { RegisteredRepo } from '../../shared/types.js';
 import { describeStop, startDaemon, stopDaemon } from './daemon.js';
+import { readManagedInstallation } from '../../shared/managed-daemon-installation.js';
+import { ManagedDaemonControl } from './managed-daemon-control.js';
 import type { StartResult, StopOutcome } from './daemon.js';
 import { loadBuiltCatalog } from '../../config/config-catalog-loader.js';
 import { reconcileConfigFile, type ConfigIoOutcome } from '../../config/reconcile-io.js';
@@ -106,6 +108,9 @@ export type LogFn = (line: string) => void;
 /** Fast-forward sync + conditional install + build against DAEMON_ROOT.
  *  Never starts the daemon. Faithful to `daemon-ctl.sh cmd_update`. */
 export async function update(opts: UpdateOptions, onLog: LogFn): Promise<MaintenanceResult> {
+	if (await readManagedInstallation() !== undefined) {
+		return { ok: false, steps: [], error: 'managed installation requires the transactional updater' };
+	}
 	const root = DAEMON_ROOT;
 	const steps: string[] = [];
 
@@ -365,7 +370,25 @@ export function summarizeReconcile(outcome: ConfigIoOutcome, onLog: LogFn): Reco
 }
 
 /** Drained stop then start. Faithful to `daemon-ctl.sh cmd_restart`. */
-export async function restart(onLog: LogFn, deps: RestartDeps = { stopDaemon, startDaemon }): Promise<MaintenanceResult> {
+async function installedControl(): Promise<ManagedDaemonControl | undefined> {
+	const installation = await readManagedInstallation();
+	return installation === undefined ? undefined : new ManagedDaemonControl(installation);
+}
+
+export async function restart(onLog: LogFn, deps?: RestartDeps): Promise<MaintenanceResult> {
+	if (deps === undefined || deps.managed !== undefined) {
+		try {
+			const control = await (deps?.managed ?? installedControl)();
+			if (control !== undefined) {
+				onLog('restarting managed daemon');
+				const result = await control.run('restart');
+				return { ok: true, steps: result.forced ? ['stop', 'force-stop', 'start'] : ['stop', 'start'] };
+			}
+		} catch (error) {
+			return { ok: false, steps: [], error: error instanceof Error ? error.message : String(error) };
+		}
+	}
+	deps ??= { stopDaemon, startDaemon };
 	onLog('stopping daemon');
 	const steps = ['stop'];
 	try {
@@ -391,6 +414,7 @@ export async function restart(onLog: LogFn, deps: RestartDeps = { stopDaemon, st
 export interface RestartDeps {
 	readonly stopDaemon:  () => Promise<StopOutcome>;
 	readonly startDaemon: () => Promise<StartResult>;
+	readonly managed?: () => Promise<Pick<ManagedDaemonControl, 'run'> | undefined>;
 }
 
 /** The registered repositories, asked of the daemon. Exported so a test can

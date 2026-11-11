@@ -40,7 +40,7 @@ test('unverified admission and resource guards preserve pinned code history and 
   await assert.rejects(publishTaskCheckpoint(f.repo, hash, checkpoint.reviewId, f.deps));
   let reads = 0;
   const unexpected = async (): Promise<never> => { reads++; throw new Error('Unexpected source call'); };
-  await assert.rejects(prepareReviewAdmission(f.repo, checkpoint.reviewId, 1, undefined, 'daemon', { commit: unexpected, file: unexpected, changedRanges: unexpected, isAncestor: unexpected }, { operation: 'resume' }), /version-2-aware/);
+  await assert.rejects(prepareReviewAdmission(f.repo, checkpoint.reviewId, 1, undefined, 'daemon', { commit: unexpected, file: unexpected, changedRanges: unexpected, isAncestor: unexpected, pathChanges: unexpected }, { operation: 'resume' }), /version-2-aware/);
   assert.equal(reads, 0, 'qualified-only consumers fail before source/model work');
   assert.equal(readFileSync(path, 'utf8'), bytes, 'refusals preserve the exact saved submission');
   for (const patch of [

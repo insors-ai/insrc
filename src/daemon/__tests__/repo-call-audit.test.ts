@@ -16,7 +16,7 @@ const DAEMON = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 /** The RPC method names the handler registry declares, read from its source (a quoted dotted key at the start of an entry). */
 function registeredMethods(): string[] {
-	const text = readFileSync(join(DAEMON, 'handler-runtime.ts'), 'utf8');
+	const text = ['handler-runtime.ts', 'task-progress/rpc.ts'].map(file => readFileSync(join(DAEMON, file), 'utf8')).join('\n');
 	return [...new Set([...text.matchAll(/^\s*'([a-zA-Z]+(?:\.[a-zA-Z]+)+)':\s*(?:async|\()/gm)].map(m => m[1]!))].sort();
 }
 

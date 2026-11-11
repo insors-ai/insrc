@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f13786db-5733-46f3-9335-837635b6114f",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T15:17:26.326Z",
+    "epicCreatedAt": "2026-11-09T05:00:05.847Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "eedc4519199b24b4",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Board shows unit status",
+      "parent": {
+        "entityId": "STORY-eedc4519199b24b4-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-eedc4519199b24b4-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-eedc4519199b24b4-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "be408ffd9b7567131ed47e57714b81df19426805f3e7e6ef5e19f4bf4a334fc9",
+        "at": "2026-11-09T15:17:26.326Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T15:17:26.328Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Board shows unit status",
+    "summary": "Publish unit on epics, stories and tasks, including the unmigrated status; derive the Story stage from the STORY head; raise needs-migration for missing or unmigrated units.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "Epic, Story and Task nodes carry their unit status, null only when there is no head",
+      "storyStage is complete only with a completed STORY head",
+      "A missing or unmigrated unit raises needs-migration and not pending-decision"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "buildWorkItemGraph: unit is null for a missing head and has status unmigrated for a head with no lifecycle"
+      },
+      {
+        "level": "unit",
+        "name": "a missing or unmigrated unit raises needs-migration and not pending-decision"
+      },
+      {
+        "level": "unit",
+        "name": "storyStage is complete only with a completed STORY head, and an approved BUILD otherwise stays build-recorded with text giving the head's status, that it is not migrated, or that there is no head"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

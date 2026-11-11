@@ -4,11 +4,11 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 26 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+**Totals:** 30 pass, 0 fail, 0 skipped, 0 not found; 3 reported by the builder and not run by the gate.
 
 ## t1
 
-Run at 2026-11-08T11:26:05.830Z on commit `ef63d9b9a`. Tests check: **passed**. 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-08T13:12:24.745Z on commit `9d86fb9f5`. Tests check: **passed**. 14 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: vscode-plugin/src/panels/__tests__/detail-renderers.test.ts**
 
@@ -24,6 +24,7 @@ Run at 2026-11-08T11:26:05.830Z on commit `ef63d9b9a`. Tests check: **passed**. 
 | pass | VS Code rows equal the shared catalog fixture and a new row appears | `vscode-plugin/src/panels/__tests__/repo-fields-contract.test.ts` |
 | pass | Tracker validates catalog values and rechecks selection and registration after consent | `vscode-plugin/src/panels/__tests__/repo-fields-contract.test.ts` |
 | pass | Tracker escapes catalog and setting text and degrades without removing model controls | `vscode-plugin/src/panels/__tests__/repo-fields-contract.test.ts` |
+| pass | Tracker write outcomes refresh saved values and only accepted consent reaches the daemon | `vscode-plugin/src/panels/__tests__/repo-fields-contract.test.ts` |
 
 **unit: vscode-plugin/src/panels/__tests__/webview-host.test.ts**
 
@@ -33,20 +34,25 @@ Run at 2026-11-08T11:26:05.830Z on commit `ef63d9b9a`. Tests check: **passed**. 
 | pass | Story s3: a throwing tracker write sink is caught and logged; errors never reach the webview | `vscode-plugin/src/panels/__tests__/webview-host.test.ts` |
 | pass | a delayed repo render never replaces the current selection | `vscode-plugin/src/panels/__tests__/webview-host.test.ts` |
 | pass | Repo Configuration paints model controls while Tracker and Providers are still loading | `vscode-plugin/src/panels/__tests__/webview-host.test.ts` |
+| pass | Tracker stays expanded across repaints and resets when the repo changes | `vscode-plugin/src/panels/__tests__/webview-host.test.ts` |
 
 **unit: vscode-plugin/src/workspace/__tests__/activation.test.ts**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | S007 sc9: extension.ts wires the repo renderer + the consent-gated per-repo write over the shared sc8 gateway | `vscode-plugin/src/workspace/__tests__/activation.test.ts` |
+| pass | extension wiring: the repo-config panel probes mcp.status WITH the selected repo path, so the project-layer .vibe/config.toml counts for vibe | `vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts` |
+| pass | gateway.test.ts: panel reads forward their deadline through the VS Code read boundary | `vscode-plugin/src/config/__tests__/gateway.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `vscode-plugin/src/panels/__tests__/detail-renderers.test.ts` | 0 | 11 | 0.5 s |  |
-| `vscode-plugin/src/panels/__tests__/repo-fields-contract.test.ts` | 0 | 3 | 0.4 s |  |
-| `vscode-plugin/src/panels/__tests__/webview-host.test.ts` | 0 | 43 | 0.6 s |  |
+| `vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts` | 0 | 26 | 0.5 s |  |
+| `vscode-plugin/src/config/__tests__/gateway.test.ts` | 0 | 2 | 0.4 s |  |
+| `vscode-plugin/src/panels/__tests__/detail-renderers.test.ts` | 0 | 11 | 0.4 s |  |
+| `vscode-plugin/src/panels/__tests__/repo-fields-contract.test.ts` | 0 | 4 | 0.4 s |  |
+| `vscode-plugin/src/panels/__tests__/webview-host.test.ts` | 0 | 44 | 0.5 s |  |
 | `vscode-plugin/src/workspace/__tests__/activation.test.ts` | 0 | 8 | 0.4 s |  |
 
 ## t2
@@ -127,18 +133,18 @@ Run at 2026-11-08T10:49:42.626Z on commit `f77007caa`. Tests check: **passed**. 
 
 ## t4
 
-Run at 2026-11-08T11:00:38.256Z on commit `f698182f9`. Tests check: **failed**. 0 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+Run at 2026-11-08T13:16:40.885Z on commit `dcc0f03b3`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 3 reported by the builder and not run by the gate.
 
-named tests matched no test file: Manual Tracker read, write and native approval notification (pass a `tests` mapping at the validate turn: for each named test, the file and title of the test cases that carry it)
+the gate ran no test: every named test of this Task was reported by the builder
 
 **smoke: node --import tsx --test --test-force-exit --test-reporter=tap 'vscode-plugin/src/**/__tests__/*.test.ts'**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: docs/standalone/fix-16-pre-existing-vs-code-E20261108dc557863/S001/VS-CODE-SMOKE.md and /tmp/insrc-vs16-final.tap. Serialized full sweep at f698182f9, 1695 pass, 9 skips, 0 fail.
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/standalone/fix-16-pre-existing-vs-code-E20261108dc557863/S001/VS-CODE-SMOKE.md; /tmp/insrc-103-final.txfKIp/vscode.tap. Started 2026-11-08T13:13:39Z, finished 2026-11-08T13:15:18Z, after the recorded passing verdicts for t1 through t3. Serial full sweep on Node 26.5.1: 1699 pass, 9 gated skips, 0 fail.
 
 **smoke: VS Code extension TypeScript check**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: docs/standalone/fix-16-pre-existing-vs-code-E20261108dc557863/S001/VS-CODE-SMOKE.md. node_modules/.bin/tsc -p vscode-plugin/tsconfig.json --pretty false exited 0.
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/standalone/fix-16-pre-existing-vs-code-E20261108dc557863/S001/VS-CODE-SMOKE.md; /tmp/insrc-103-final.txfKIp/vscode.tap. The vscode-bundle-catalog test ran and passed the extension typecheck.
 
 **smoke: Manual Tracker read, write and native approval notification**
 
-Not mapped: no test case was named for this test, and nothing was run for it.
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/standalone/fix-16-pre-existing-vs-code-E20261108dc557863/S001/VS-CODE-SMOKE.md. The user confirmed both manual checks passed. Only automated test coverage and verification documentation changed in response to the first review.

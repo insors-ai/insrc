@@ -55,7 +55,7 @@ export async function handleWorkflowApprove(
 	// the seam itself, never failing the approval. Skipped when there is nothing completed or no repo to resolve inference.
 	if (result.approved.length === 0 || deps.followOn === undefined) return result;
 	const followOn = await deps.followOn(result.approved, repoForStore);
-	return followOn !== undefined && followOn.length > 0 ? { ...result, followOn } : result;
+	return followOn !== undefined && followOn.length > 0 ? { ...result, followOn: [...(result.followOn ?? []), ...followOn] } : result;
 }
 
 /**

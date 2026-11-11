@@ -1,0 +1,106 @@
+TAP version 13
+# Subtest: Progress coordinator fences duplicate admission, old owners and a delayed delegate after terminal commit
+ok 1 - Progress coordinator fences duplicate admission, old owners and a delayed delegate after terminal commit
+  ---
+  duration_ms: 60.481625
+  type: 'test'
+  ...
+# Subtest: Meaningful progress revisions isolate tasks and preserve original measurements on repeats and heartbeats
+ok 2 - Meaningful progress revisions isolate tasks and preserve original measurements on repeats and heartbeats
+  ---
+  duration_ms: 104.778417
+  type: 'test'
+  ...
+# Subtest: Progress coordinator publishes no terminal outcome when the durable write fails
+ok 3 - Progress coordinator publishes no terminal outcome when the durable write fails
+  ---
+  duration_ms: 49.1675
+  type: 'test'
+  ...
+# Subtest: Recovery publishes an ambiguously committed terminal result exactly once
+ok 4 - Recovery publishes an ambiguously committed terminal result exactly once
+  ---
+  duration_ms: 30.503417
+  type: 'test'
+  ...
+# Subtest: Recovery fences conflicting lifecycle evidence at the recovered nonterminal sequence
+ok 5 - Recovery fences conflicting lifecycle evidence at the recovered nonterminal sequence
+  ---
+  duration_ms: 30.012583
+  type: 'test'
+  ...
+# Subtest: The complete delivered snapshot fits the byte limit and preserves the terminal result
+ok 6 - The complete delivered snapshot fits the byte limit and preserves the terminal result
+  ---
+  duration_ms: 26.651667
+  type: 'test'
+  ...
+# Subtest: Progress coordinator requires trusted revalidation to bind a recovered attempt to a new epoch
+ok 7 - Progress coordinator requires trusted revalidation to bind a recovered attempt to a new epoch
+  ---
+  duration_ms: 42.825959
+  type: 'test'
+  ...
+# Subtest: Verify 30-second owner renewal and 120-second expiry with no observers, separate tasks in one chat, removal, and stale callbacks
+ok 8 - Verify 30-second owner renewal and 120-second expiry with no observers, separate tasks in one chat, removal, and stale callbacks
+  ---
+  duration_ms: 59.106541
+  type: 'test'
+  ...
+# Subtest: Restart repeatedly without owners, preserve the recovery deadline, release expired reservations and refuse stale revalidation without inventing termination
+ok 9 - Restart repeatedly without owners, preserve the recovery deadline, release expired reservations and refuse stale revalidation without inventing termination
+  ---
+  duration_ms: 37.571666
+  type: 'test'
+  ...
+# Subtest: Observation refusal at project and global capacity or on file failure leaves execution running
+ok 10 - Observation refusal at project and global capacity or on file failure leaves execution running
+  ---
+  duration_ms: 60.091042
+  type: 'test'
+  ...
+# Subtest: Progress storage recovers a populated snapshot and revalidates only the matching durable owner
+ok 11 - Progress storage recovers a populated snapshot and revalidates only the matching durable owner
+  ---
+  duration_ms: 47.515
+  type: 'test'
+  ...
+# Subtest: Progress storage withholds ambiguous publication and reconciles the replaced record
+ok 12 - Progress storage withholds ambiguous publication and reconciles the replaced record
+  ---
+  duration_ms: 39.563542
+  type: 'test'
+  ...
+# Subtest: Progress storage reserves active and terminal capacity without evicting active tasks
+ok 13 - Progress storage reserves active and terminal capacity without evicting active tasks
+  ---
+  duration_ms: 70.65125
+  type: 'test'
+  ...
+# Subtest: Inactive retention evicts only the oldest record for the saturated project
+ok 14 - Inactive retention evicts only the oldest record for the saturated project
+  ---
+  duration_ms: 86.492625
+  type: 'test'
+  ...
+# Subtest: Progress storage quarantines bounded corrupt records and rejects path substitution
+ok 15 - Progress storage quarantines bounded corrupt records and rejects path substitution
+  ---
+  duration_ms: 32.497125
+  type: 'test'
+  ...
+# Subtest: Progress storage rejects unsafe or oversized measurements before writing
+ok 16 - Progress storage rejects unsafe or oversized measurements before writing
+  ---
+  duration_ms: 8.543625
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 866.796375

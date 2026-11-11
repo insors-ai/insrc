@@ -67,7 +67,7 @@ export async function rpc<T = unknown>(
   method: string,
   params: unknown = {},
   connect: () => Socket = connectToDaemon,
-  opts?: { readonly timeoutMs?: number | undefined; readonly closeAware?: boolean | undefined },
+  opts?: { readonly timeoutMs?: number | undefined; readonly closeAware?: boolean | undefined; readonly uncertainAfterWrite?: boolean | undefined },
 ): Promise<T> {
   return new Promise<T>((resolveReply, rejectReply) => {
     const socket = connect();
@@ -94,7 +94,10 @@ export async function rpc<T = unknown>(
     const resolve = (v: T): void => settle(() => resolveReply(v));
     const reject = (e: Error): void => settle(() => rejectReply(e));
 
-    if (timeoutMs !== undefined) timer = setTimeout(() => reject(new Error(`daemon did not reply within ${timeoutMs} ms (timeout)`)), timeoutMs);
+    if (timeoutMs !== undefined) timer = setTimeout(() => {
+      const timeout = new Error(`daemon did not reply within ${timeoutMs} ms (timeout)`);
+      reject(sent && opts?.uncertainAfterWrite ? new DaemonDisconnectedError(method, timeout) : timeout);
+    }, timeoutMs);
 
     socket.on('connect', () => {
       // Self-identify to the daemon's attached-client registry (Story s4).
@@ -133,7 +136,7 @@ export async function rpc<T = unknown>(
 
     // A connection that ends or closes with no reply would otherwise leave the promise pending forever.
     // A watched call (a deadline or closeAware) keeps its own error text; any other is a disconnect.
-    const lost = (): void => reject(watched
+    const lost = (): void => reject(sent && opts?.uncertainAfterWrite ? new DaemonDisconnectedError(method) : watched
       ? new Error('daemon closed the connection before replying (closed)')
       : sent ? new DaemonDisconnectedError(method) : new Error(`the daemon closed the connection before ${method} was sent`));
     socket.on('end', lost);
@@ -238,8 +241,8 @@ export function createIpcClient(connect?: () => Socket): IpcClient {
         return message.startsWith(DAEMON_DOWN_PREFIX) ? 'stopped' : 'errored';
       }
     },
-    update: () => call<DaemonUpdateResult>('daemon.update'),
-    updateOutcome: () => call<DaemonUpdateOutcome | null>('daemon.updateOutcome'),
+    update: () => rpc<DaemonUpdateResult>('daemon.update', {}, connect, { timeoutMs: 20_000, uncertainAfterWrite: true }),
+    updateOutcome: () => rpc<DaemonUpdateOutcome | null>('daemon.updateOutcome', {}, connect, { timeoutMs: 4_000 }),
     stream: (method, params, onFrame, onClose) => openStream(method, params, onFrame, onClose, connect),
   };
 }

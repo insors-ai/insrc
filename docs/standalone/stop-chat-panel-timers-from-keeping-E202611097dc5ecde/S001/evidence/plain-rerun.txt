@@ -1,0 +1,18 @@
+Plain re-run of the chat panel test file, without --test-force-exit.
+Source commit of chat-panel.ts: e46593f65e1308ce475427beb7da694c3486904e
+Command: perl -e 'alarm 150; exec @ARGV' node --import tsx --test --test-reporter=tap vscode-plugin/src/chat/__tests__/chat-panel.test.ts
+The 150 second alarm would end the run with exit code 142 if the process did not exit by itself.
+Node: v26.5.1
+Exit code: 0
+Elapsed seconds: 12
+
+Summary lines from the TAP output:
+# tests 233
+# pass 233
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 12009.354375
+
+Lines starting 'not ok': 0

@@ -128,6 +128,13 @@ export function workItemBoardId(key: WorkItemKey, task?: string): string {
 	return `${storyPart}:T${String(t).padStart(3, '0')}`;
 }
 
+/** The board id of a plan row or BUILD result whose number a real Task in the Story already holds: `...:S001:R004`, so the two items stay apart. */
+export function workItemRowBoardId(key: WorkItemKey, row: string): string {
+	const t = ArtifactIds.taskOrdinal(row);
+	if (t === null) throw new InvalidArtifactKeyError(`workItemRowBoardId: row must be t<n> (got '${row}')`);
+	return `${workItemBoardId(key)}:R${String(t).padStart(3, '0')}`;
+}
+
 /** `E<YYYYMMDD><hash8>`: the folder key, identical for every artifact of one
  *  Epic because it reads only the hash and the Epic's anchor time.
  *  @throws {InvalidArtifactKeyError} when the hash is not lowercase hex or the time is not a valid ISO time. */

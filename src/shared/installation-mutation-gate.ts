@@ -1,0 +1,399 @@
+/* Copyright (c) Procix Software India. Licensed under the MIT License. */
+
+import { spawn } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
+import { constants } from 'node:fs';
+import { lstat, mkdir, open, realpath, rename, rm } from 'node:fs/promises';
+import { isAbsolute, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { matchesDarwinPeer, readDarwinIncarnation } from './darwin-lifecycle.js';
+import type { DarwinIncarnation, DarwinLaunchJob } from './darwin-lifecycle.js';
+import { SupervisorLifecycleError } from './daemon-supervisor-protocol.js';
+import type { ManagedInstallation } from './managed-daemon-installation.js';
+
+const HELPER = fileURLToPath(new URL('../../out/bin/insrc-darwin-lifecycle', import.meta.url));
+const MAX_BYTES = 128 * 1024;
+const MAX_STEPS = 128;
+const LOCK_BUSY_EXIT = 75;
+
+export interface UpdatePredecessor {
+	readonly priorRelease: string;
+	readonly candidateRelease: string;
+	readonly priorCommit: string;
+	readonly wasRunning: boolean;
+	readonly generation?: string | null;
+	readonly pins?: { readonly prior: ManagedInstallation; readonly candidate: ManagedInstallation };
+	readonly legacy?: {
+		readonly job: DarwinLaunchJob;
+		readonly descriptorHash: string;
+		readonly runAtLoad: boolean;
+		readonly entry: string;
+		readonly baseline: ManagedInstallation;
+	};
+}
+
+export type MutationRequest =
+	| { readonly kind: 'start' | 'stop' | 'restart'; readonly owner: DarwinIncarnation }
+	| { readonly kind: 'update'; readonly owner: DarwinIncarnation; readonly predecessor: UpdatePredecessor };
+
+export interface MutationAuthority {
+	readonly id: string;
+	/** Captured from the current OS peer, never from a protocol request body. */
+	readonly owner: DarwinIncarnation;
+}
+
+interface JournalEntry {
+	readonly step: string;
+	readonly intent: string;
+	readonly receipt?: string;
+}
+
+export type MutationReservation = MutationRequest & {
+	readonly id: string;
+	readonly entries: readonly JournalEntry[];
+	readonly recovery?: true;
+};
+
+export type UpdateDecision = 'committed' | 'rolled-back' | 'operator-recovery';
+
+export interface DurableUpdateOutcome {
+	readonly id: string;
+	readonly decision: UpdateDecision;
+	readonly detail: string;
+	readonly finishedAt?: string;
+}
+
+export interface InstallationJournal {
+	readonly version: 1;
+	readonly root: string;
+	readonly active: MutationReservation | null;
+	readonly outcome: DurableUpdateOutcome | null;
+}
+
+export type RecoveryDecision = 'idle' | 'uncommitted' | 'activate' | 'finish-rollback' | 'fenced';
+type MutationPurpose = 'lifecycle' | 'activate' | 'reconcile';
+
+export function classifyMutationRecovery(journal: InstallationJournal): RecoveryDecision {
+	if (journal.active === null) return 'idle';
+	if (journal.active.id !== journal.outcome?.id) return 'uncommitted';
+	switch (journal.outcome.decision) {
+		case 'committed': return 'activate';
+		case 'rolled-back': return 'finish-rollback';
+		case 'operator-recovery': return 'fenced';
+	}
+}
+
+function conflict(message: string): never {
+	throw new SupervisorLifecycleError('ownership-conflict', message);
+}
+
+function busy(): never {
+	throw new SupervisorLifecycleError('busy', 'installation lifecycle operation is already reserved');
+}
+
+function object(value: unknown): value is Record<string, unknown> {
+	return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function text(value: unknown): value is string {
+	return typeof value === 'string' && value.length > 0 && !value.includes('\0');
+}
+
+function validOwner(value: unknown): value is DarwinIncarnation {
+	return object(value) && typeof value.pid === 'number' && Number.isSafeInteger(value.pid) && value.pid > 0
+		&& typeof value.uid === 'number' && Number.isSafeInteger(value.uid) && value.uid > 0
+		&& text(value.startedAt) && text(value.executable) && isAbsolute(value.executable);
+}
+
+function validPredecessor(value: unknown): value is UpdatePredecessor {
+	if (!object(value) || !text(value.priorRelease) || !text(value.candidateRelease)
+		|| typeof value.priorCommit !== 'string' || typeof value.wasRunning !== 'boolean'
+		|| (value.generation !== undefined && value.generation !== null && !text(value.generation))) return false;
+	if (value.pins === undefined) return value.legacy === undefined;
+	if (!object(value.pins)) return false;
+	const { prior, candidate } = value.pins;
+	const pin = (item: unknown, releaseId: string, enabled: boolean): item is ManagedInstallation =>
+		object(item) && item.releaseId === releaseId && item.version === 1 && item.enabled === enabled
+		&& text(item.stateRoot) && isAbsolute(item.stateRoot) && text(item.releaseRoot) && isAbsolute(item.releaseRoot)
+		&& text(item.runtime) && isAbsolute(item.runtime) && typeof item.pathEnv === 'string';
+	if (!pin(prior, value.priorRelease, value.legacy === undefined) || !pin(candidate, value.candidateRelease, true)
+		|| prior.stateRoot !== candidate.stateRoot) return false;
+	if (value.legacy === undefined) return true;
+	if (!object(value.legacy)) return false;
+	const { job, descriptorHash, entry, baseline, runAtLoad } = value.legacy;
+	return object(job) && typeof job.uid === 'number' && Number.isSafeInteger(job.uid) && job.uid > 0
+		&& text(job.label) && /^[A-Za-z0-9][A-Za-z0-9.-]*$/.test(job.label)
+		&& text(job.descriptor) && isAbsolute(job.descriptor) && text(job.program) && isAbsolute(job.program)
+		&& Array.isArray(job.args) && job.args.length > 0 && job.args.every(text) && job.args[0] === job.program
+		&& typeof descriptorHash === 'string' && /^[a-f0-9]{64}$/.test(descriptorHash)
+		&& typeof runAtLoad === 'boolean'
+		&& text(entry) && isAbsolute(entry) && pin(baseline, value.candidateRelease, false)
+		&& baseline.stateRoot === candidate.stateRoot && baseline.releaseRoot === candidate.releaseRoot && baseline.runtime === candidate.runtime;
+}
+
+function validRequest(value: unknown): value is MutationRequest {
+	return object(value) && validOwner(value.owner) && (value.kind === 'start' || value.kind === 'stop'
+		|| value.kind === 'restart' || (value.kind === 'update' && validPredecessor(value.predecessor)));
+}
+
+function validEntries(value: unknown): value is readonly JournalEntry[] {
+	if (!Array.isArray(value) || value.length > MAX_STEPS) return false;
+	const steps = new Set<string>();
+	return value.every((entry: unknown, index) => {
+		if (!object(entry) || !text(entry.step) || !text(entry.intent) || steps.has(entry.step)
+			|| (entry.receipt === undefined ? index !== value.length - 1 : !text(entry.receipt))) return false;
+		steps.add(entry.step);
+		return true;
+	});
+}
+
+function validDecision(value: unknown): value is UpdateDecision {
+	return value === 'committed' || value === 'rolled-back' || value === 'operator-recovery';
+}
+
+function readJournal(bytes: string, root: string, uid: number): InstallationJournal {
+	let parsed: unknown;
+	try { parsed = JSON.parse(bytes); } catch { conflict('invalid installation journal'); }
+	if (!object(parsed) || parsed.version !== 1 || parsed.root !== root) conflict('invalid installation journal identity');
+	const { active, outcome } = parsed;
+	if (active !== null && (!object(active) || !text(active.id) || !validEntries(active.entries)
+		|| (active.recovery !== undefined && active.recovery !== true)
+		|| !validRequest(active) || active.owner.uid !== uid)) conflict('invalid installation reservation');
+	if (outcome !== null && (!object(outcome) || !text(outcome.id) || !validDecision(outcome.decision)
+		|| !text(outcome.detail) || (outcome.finishedAt !== undefined
+			&& (typeof outcome.finishedAt !== 'string' || !Number.isFinite(Date.parse(outcome.finishedAt)))))) conflict('invalid installation outcome');
+	const journal = parsed as unknown as InstallationJournal;
+	if (journal.active !== null && journal.outcome !== null && journal.active.id === journal.outcome.id
+		&& journal.active.kind !== 'update') {
+		conflict('update outcome belongs to an ordinary lifecycle reservation');
+	}
+	return journal;
+}
+
+async function lockFile(fd: number, helper: string): Promise<void> {
+	const result = await new Promise<number | null>((resolve, reject) => {
+		const child = spawn(helper, ['lock'], { stdio: ['ignore', 'ignore', 'ignore', fd], timeout: 2_000 });
+		child.once('error', reject);
+		child.once('close', resolve);
+	});
+	if (result === LOCK_BUSY_EXIT) busy();
+	if (result !== 0) conflict('installation arbitration lock is unavailable');
+}
+
+async function ownerGone(owner: DarwinIncarnation, helper: string): Promise<boolean> {
+	try {
+		const current = await readDarwinIncarnation(owner.pid, helper);
+		// A changed executable with the same birth marker can be an exec, not a death.
+		return current.startedAt !== owner.startedAt;
+	} catch {
+		// Signal 0 observes existence only. Permission errors and failed reads stay fenced.
+		try { process.kill(owner.pid, 0); }
+		catch (error) { return (error as NodeJS.ErrnoException).code === 'ESRCH'; }
+		return false;
+	}
+}
+
+async function assertLiveOwner(owner: DarwinIncarnation, helper: string): Promise<void> {
+	if (!validOwner(owner)) conflict('invalid installation owner');
+	const current = await readDarwinIncarnation(owner.pid, helper).catch(() => undefined);
+	if (current === undefined || !matchesDarwinPeer(owner, current, owner)) conflict('installation owner incarnation changed');
+}
+
+export class InstallationMutationGate {
+	private readonly directory: string;
+	private readonly journalPath: string;
+
+	constructor(private readonly root: string, private readonly helper = HELPER) {
+		if (!isAbsolute(root)) conflict('installation root must be absolute');
+		this.directory = join(root, 'managed-lifecycle');
+		this.journalPath = join(this.directory, 'journal.json');
+	}
+
+	private async directoryOwner(): Promise<number> {
+		const uid = process.getuid?.();
+		if (process.platform !== 'darwin' || uid === undefined || uid <= 0) conflict('managed lifecycle requires a macOS user');
+		if (await realpath(this.root) !== this.root) conflict('installation root must be canonical');
+		try { await mkdir(this.directory, { mode: 0o700 }); }
+		catch (error) { if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error; }
+		const identity = await lstat(this.directory);
+		if (!identity.isDirectory() || identity.uid !== uid || (identity.mode & 0o077) !== 0) {
+			conflict('installation journal directory is not private and owned');
+		}
+		return uid;
+	}
+
+	private async readOwned(uid: number): Promise<InstallationJournal> {
+		const file = await open(this.journalPath, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK)
+			.catch((error: NodeJS.ErrnoException) => { if (error.code !== 'ENOENT') throw error; });
+		if (file === undefined) return { version: 1, root: this.root, active: null, outcome: null };
+		try {
+			const identity = await file.stat();
+			if (!identity.isFile() || identity.uid !== uid || identity.nlink !== 1 || (identity.mode & 0o077) !== 0
+				|| identity.size > MAX_BYTES) conflict('installation journal is not a bounded private file');
+			const bytes = Buffer.alloc(identity.size + 1);
+			const { bytesRead } = await file.read(bytes);
+			if (bytesRead !== identity.size) conflict('installation journal changed during read');
+			return readJournal(bytes.subarray(0, bytesRead).toString('utf8'), this.root, uid);
+		} finally { await file.close(); }
+	}
+
+	async read(): Promise<InstallationJournal> {
+		return this.readOwned(await this.directoryOwner());
+	}
+
+	private async write(state: InstallationJournal): Promise<void> {
+		const bytes = JSON.stringify(state) + '\n';
+		if (Buffer.byteLength(bytes) > MAX_BYTES) conflict('installation journal exceeds its size bound');
+		const tmp = join(this.directory, `.journal-${randomUUID()}`);
+		const file = await open(tmp, 'wx', 0o600);
+		try {
+			try { await file.writeFile(bytes); await file.sync(); }
+			finally { await file.close(); }
+			await rename(tmp, this.journalPath);
+			for (const path of [this.directory, this.root]) {
+				const dir = await open(path, constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW);
+				try { await dir.sync(); } finally { await dir.close(); }
+			}
+		} finally { await rm(tmp, { force: true }); }
+	}
+
+	private async arbitrate<T>(change: (state: InstallationJournal, uid: number) => Promise<T>): Promise<T> {
+		const uid = await this.directoryOwner();
+		const path = join(this.directory, 'arbitration.lock');
+		const file = await open(path, constants.O_RDWR | constants.O_CREAT | constants.O_NOFOLLOW | constants.O_NONBLOCK, 0o600);
+		try {
+			const identity = await file.stat();
+			if (!identity.isFile() || identity.uid !== uid || identity.nlink !== 1 || (identity.mode & 0o077) !== 0) {
+				conflict('installation arbitration file is not private and owned');
+			}
+			await lockFile(file.fd, this.helper);
+			const current = await lstat(path);
+			if (current.dev !== identity.dev || current.ino !== identity.ino) conflict('installation arbitration file changed');
+			return await change(await this.readOwned(uid), uid);
+		} finally { await file.close(); }
+	}
+
+	async reserve(request: MutationRequest): Promise<MutationReservation> {
+		await assertLiveOwner(request.owner, this.helper);
+		return this.arbitrate(async (state, uid) => {
+			if (state.active !== null) busy();
+			if (!validRequest(request) || request.owner.uid !== uid) conflict('invalid installation owner');
+			const active: MutationReservation = { ...request, id: randomUUID(), entries: [] };
+			await this.write({ ...state, active });
+			return active;
+		});
+	}
+
+	private admitted(state: InstallationJournal, authority: MutationAuthority): MutationReservation {
+		const active = state.active;
+		if (active === null || active.id !== authority.id
+			|| !matchesDarwinPeer(authority.owner, authority.owner, active.owner)) conflict('installation reservation owner does not match');
+		return active;
+	}
+
+	private permit(state: InstallationJournal, active: MutationReservation, purpose: MutationPurpose): void {
+		const decision = classifyMutationRecovery(state);
+		if ((decision === 'uncommitted' && purpose === 'lifecycle')
+			|| (decision === 'activate' && purpose === 'activate')
+			|| (decision === 'fenced' && purpose === 'reconcile' && active.recovery)) return;
+		conflict('installation outcome does not permit this mutation');
+	}
+
+	/** Called at the admission boundary for every mutation, including on an already-open socket. */
+	async admit(authority: MutationAuthority, purpose: MutationPurpose = 'lifecycle'): Promise<MutationReservation> {
+		await assertLiveOwner(authority.owner, this.helper);
+		return this.arbitrate(async state => {
+			const active = this.admitted(state, authority);
+			this.permit(state, active, purpose);
+			return active;
+		});
+	}
+
+	private async append(
+		authority: MutationAuthority, step: string, kind: 'intent' | 'receipt', detail: string, purpose: MutationPurpose,
+	): Promise<void> {
+		if (!text(step) || !text(detail)) conflict('invalid installation journal step');
+		await this.arbitrate(async state => {
+			const active = this.admitted(state, authority);
+			const last = active.entries.at(-1);
+			this.permit(state, active, purpose);
+			if (kind === 'intent' && ((last !== undefined && last.receipt === undefined)
+				|| active.entries.some(entry => entry.step === step) || active.entries.length >= MAX_STEPS)) {
+				conflict('installation journal has an unresolved, repeated or excess intent');
+			}
+			if (kind === 'receipt' && (last?.step !== step || last.receipt !== undefined)) {
+				conflict('installation receipt has no matching outstanding intent');
+			}
+			const entries = kind === 'intent' ? [...active.entries, { step, intent: detail }]
+				: [...active.entries.slice(0, -1), { step, intent: last!.intent, receipt: detail }];
+			await this.write({ ...state, active: { ...active, entries } });
+		});
+	}
+
+	recordIntent(authority: MutationAuthority, step: string, detail: string, purpose: MutationPurpose = 'lifecycle'): Promise<void> {
+		return this.append(authority, step, 'intent', detail, purpose);
+	}
+
+	recordReceipt(authority: MutationAuthority, step: string, evidence: string, purpose: MutationPurpose = 'lifecycle'): Promise<void> {
+		return this.append(authority, step, 'receipt', evidence, purpose);
+	}
+
+	async publishOutcome(authority: MutationAuthority, decision: UpdateDecision, detail: string): Promise<void> {
+		await this.arbitrate(async state => {
+			const active = this.admitted(state, authority);
+			const last = active.entries.at(-1);
+			if (active.kind !== 'update' || !validDecision(decision) || !text(detail)
+				|| state.outcome?.id === active.id || (last !== undefined && last.receipt === undefined && decision !== 'operator-recovery')) {
+				conflict('installation outcome cannot be published');
+			}
+			await this.write({ ...state, outcome: { id: active.id, decision, detail, finishedAt: new Date().toISOString() } });
+		});
+	}
+
+	async release(authority: MutationAuthority): Promise<void> {
+		await this.arbitrate(async state => {
+			const active = this.admitted(state, authority);
+			const last = active.entries.at(-1);
+			if ((last !== undefined && last.receipt === undefined) || (active.kind === 'update'
+				&& (state.outcome?.id !== active.id || (state.outcome.decision === 'operator-recovery' && !active.recovery)))) {
+				conflict('installation reservation has unresolved work');
+			}
+			await this.write({ ...state, active: null });
+		});
+	}
+
+	/** A helper whose private launch channel closed may cancel its untouched reservation. */
+	async cancelUnstartedUpdate(authority: MutationAuthority): Promise<void> {
+		await this.arbitrate(async state => {
+			const active = this.admitted(state, authority);
+			if (active.kind !== 'update' || active.entries.length !== 0 || state.outcome?.id === active.id) {
+				conflict('cannot cancel an update that has started');
+			}
+			await this.write({ ...state, active: null });
+		});
+	}
+
+	/** Physical evidence is collected outside the short lock and then bound to the unchanged journal. */
+	async claimRecovery(
+		id: string,
+		newOwner: DarwinIncarnation,
+		reconcile: (state: InstallationJournal, decision: Exclude<RecoveryDecision, 'idle'>) => Promise<boolean>,
+	): Promise<RecoveryDecision> {
+		const snapshot = await this.read();
+		const active = snapshot.active;
+		const decision = classifyMutationRecovery(snapshot);
+		if (active === null || active.id !== id || decision === 'idle' || !await ownerGone(active.owner, this.helper)) {
+			conflict('previous installation owner is not verified dead');
+		}
+		const snapshotBytes = JSON.stringify(snapshot);
+		if (!await reconcile(snapshot, decision)) conflict('installation ownership evidence is unresolved');
+		await assertLiveOwner(newOwner, this.helper);
+		return this.arbitrate(async (current, uid) => {
+			if (!validOwner(newOwner) || newOwner.uid !== uid || JSON.stringify(current) !== snapshotBytes) {
+				conflict('installation recovery evidence is stale');
+			}
+			await this.write({ ...current, active: { ...active, owner: newOwner, recovery: true } });
+			return decision;
+		});
+	}
+}

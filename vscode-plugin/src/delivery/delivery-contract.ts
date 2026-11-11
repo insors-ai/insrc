@@ -31,6 +31,7 @@ import type {
 	DeliverySnapshotResponse,
 	DeliveryStage,
 	NoticeCode,
+	UnitStatus,
 	ReviewVerdict,
 	TaskResult,
 } from '../../../src/workflow/delivery/types.js';
@@ -53,6 +54,7 @@ export type {
 	DeliverySnapshotResponse,
 	DeliveryStage,
 	NoticeCode,
+	UnitStatus,
 	ReviewVerdict,
 	TaskResult,
 };
@@ -67,7 +69,7 @@ export interface DeliveryMethods {
 export type DeliveryItemView = Pick<DeliveryItem,
 	'id' | 'kind' | 'title' | 'standalone' | 'sourceIds' | 'parentId' | 'childIds' | 'stage' | 'evidence' |
 	'tasks' | 'validation' | 'storyLevelResult' | 'conflict' | 'correctsRef' | 'needsAttention' | 'attentionReasons' | 'notices' |
-	'description' | 'feedback'>;
+	'description' | 'feedback' | 'unit' | 'planRowId' | 'taskOrder'>;
 
 /**
  * Fails the contract typecheck when the view stops carrying what the item is about or its recorded feedback

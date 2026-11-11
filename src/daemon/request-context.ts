@@ -1,4 +1,5 @@
 import type { ConnectionExecutionContext } from '../shared/step-context.js';
+import type { MessagePort } from 'node:worker_threads';
 import type { ConnectionAccessContext, ConnectionSessionAudience } from '../shared/connection-management.js';
 export interface TrustedConnectionSession {
 	readonly role: 'control' | 'data';
@@ -10,6 +11,8 @@ export interface TrustedConnectionSession {
 }
 /** Server-owned transport metadata; never deserialized from request params or client labels. */
 export interface TrustedRpcContext {
+	/** Private channel for this verified executor launch. */
+	readonly executorProgressPort?: MessagePort | undefined;
 	/** Main-thread minted request nonce; the only review authority carried over the worker wire. */
 	readonly reviewOwnerNonce?: string | undefined;
 	readonly connectionIdentity: string;
@@ -22,6 +25,10 @@ export interface TrustedRpcContext {
 	readonly signal?: AbortSignal | undefined;
 	readonly assertRequestActive?: (() => void) | undefined;
 	readonly registerDrain?: ((work: PromiseLike<unknown>) => void) | undefined;
+	/** Completion of the last frame written by this main-thread progress subscription. */
+	readonly awaitProgressWrite?: (() => Promise<boolean>) | undefined;
+	/** True only after the main-thread socket writes this update acknowledgement. */
+	readonly awaitUpdateReply?: (() => Promise<boolean>) | undefined;
 }
 /** A response can finish while admitted work is still being disposed. */
 export class RequestLifetime {

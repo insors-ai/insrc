@@ -25,6 +25,14 @@ export interface AuditEntry {
 }
 
 export const RPC_AUDIT: Readonly<Record<string, AuditEntry>> = {
+	'progress.origin.open': { kind: 'daemon-store', evidence: 'task-progress/rpc.ts opens a daemon-owned observation origin' },
+	'progress.origin.bind': { kind: 'daemon-store', evidence: 'task-progress/rpc.ts binds a socket to a daemon-owned origin' },
+	'progress.origin.revoke': { kind: 'daemon-store', evidence: 'task-progress/rpc.ts revokes capabilities in the private progress store' },
+	'progress.attach': { kind: 'daemon-store', evidence: 'task-progress/rpc.ts binds an observer to the authenticated socket' },
+	'progress.read': { kind: 'read-only', evidence: 'task-progress/rpc.ts reads a scoped progress snapshot' },
+	'progress.detach': { kind: 'daemon-store', evidence: 'task-progress/rpc.ts drops an in-memory observer binding' },
+	'progress.control': { kind: 'daemon-store', evidence: 'task-progress/rpc.ts dispatches scoped stop and durable cancellation controls' },
+	'progress.subscribe': { kind: 'read-only', evidence: 'task-progress/rpc.ts subscribes to scoped progress snapshots' },
 	'agent.discard': { kind: 'daemon-store', evidence: 'writes the daemon\'s own stores (LMDB graph, Lance, session, config, keys, todos or connection stores under ~/.insrc), not files of a user repository (handler group agent)' },
 	'agent.list': { kind: 'daemon-store', evidence: 'writes the daemon\'s own stores (LMDB graph, Lance, session, config, keys, todos or connection stores under ~/.insrc), not files of a user repository (handler group agent)' },
 	'analyze.classify': { kind: 'read-only', evidence: 'reads the graph, registry, config or model lists; writes nothing in a user repository (handler group analyze)' },

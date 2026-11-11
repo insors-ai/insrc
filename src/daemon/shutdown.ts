@@ -110,6 +110,8 @@ export interface ShutdownParts {
 	/** Fires whether or not the queue drained. Must stay below the IDE's
 	 *  terminate grace (30 s) so the daemon clears its pid before a SIGKILL. */
 	readonly hardExitMs?: number;
+	/** A managed supervisor owns the accepted deadline, including any controller override. */
+	readonly parentOwnsDeadline?: boolean;
 	/** Explicit seam for tests; production always awaits the native-capability handshake. */
 	readonly armWatchdog?: ((options: WatchdogOptions) => Promise<ShutdownWatchdog>) | undefined;
 }
@@ -177,14 +179,14 @@ export function createShutdown(parts: ShutdownParts): (signal: string) => void {
 				setTimeout(() => { if (ended) return; ended = true; endAfterStoreFailure(`shutdown (${signal})`, health, end); }, REPLY_FLUSH_MS);
 				return;
 			}
-			const backstop = setTimeout(() => {
+			const backstop = parts.parentOwnsDeadline ? undefined : setTimeout(() => {
 				if (ended) return; ended = true;
 				stage('in-process deadline fallback');
 				const current = end.storeHealth();
 				if (current.state === 'locks-lost') endAfterStoreFailure(`shutdown (${signal}), hard-exit backstop`, current, end);
 				else failClosed(new Error('shutdown deadline exceeded'));
 			}, hardExitMs);
-			backstop.unref();
+			backstop?.unref();
 			stage('queue drain');
 			const finish = async (queueFailed: boolean): Promise<void> => {
 				if (ended) return;

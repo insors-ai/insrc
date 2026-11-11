@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-135319bd-79f2-4067-b72d-10f49f6b6a7f",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T17:21:09.403Z",
+    "epicCreatedAt": "2026-11-09T16:34:12.401Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "97adabf6bd47b036",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Qualify installed Vibe and verify the integrated build",
+      "parent": {
+        "entityId": "STORY-97adabf6bd47b036-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-97adabf6bd47b036-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-97adabf6bd47b036-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-97adabf6bd47b036-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-97adabf6bd47b036-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3bc53f3d61ae8a0017f936d902db1dd993c7f4bb7c4ae79186bd862f7294d8cb",
+        "at": "2026-11-09T17:21:09.403Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T17:21:09.406Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Qualify installed Vibe and verify the integrated build",
+    "summary": "Run the isolated no-prompt Vibe smoke probe and retain sanitized effective selection and unchanged-config evidence. After all tasks pass their focused tests, run the affected builds and full sweep. Record release instructions and manual VS Code checks, including native resume and catalog recovery. Use two local fixture aliases to verify a model change as well as an effort change.",
+    "size": "S",
+    "order": 7,
+    "acceptanceChecks": [
+      "The installed CLI confirms a different fixture alias and effort without a config rewrite or cloud prompt",
+      "The daemon and VS Code artifacts build and the full sweep runs only after task validation",
+      "Evidence distinguishes fixture verification from end-to-end manual checks"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "Installed Vibe changes fixture alias and effort for one isolated session with config bytes unchanged"
+      },
+      {
+        "level": "smoke",
+        "name": "Daemon build and extension packaging include the shared Vibe execution path"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

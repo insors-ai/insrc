@@ -1290,6 +1290,8 @@ export interface DaemonUpdateResult {
   launched: boolean;
   /** human-readable status (e.g. which branch is being updated) */
   message?: string;
+  /** Correlates a managed update with its durable terminal outcome. */
+  updateId?: string;
 }
 
 /**
@@ -1304,6 +1306,8 @@ export interface DaemonUpdateOutcome {
   error?:     string;
   /** ISO-8601 timestamp of when the helper finished */
   finishedAt: string;
+  /** Omitted by legacy updaters. */
+  updateId?: string;
 }
 
 /** The index status of a registered repo — the same union `RegisteredRepo.status` uses. */

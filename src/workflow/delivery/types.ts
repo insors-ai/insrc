@@ -11,7 +11,7 @@
  * so IDE clients can import the shapes without pulling in node:fs.
  */
 
-import type { Feedback } from '../artifact-core/types.js';
+import type { Feedback, Status } from '../artifact-core/types.js';
 import type { StoredReviewRecord } from '../review/report-log.js';
 import type { ReviewVerdict } from '../review/types.js';
 import type { SignoffView } from '../team/signoff.js';
@@ -23,9 +23,16 @@ export type { ReviewVerdict };
 // sc1 — ArtifactRecordSet
 // ---------------------------------------------------------------------------
 
-export type DeliveryArtifactKind = 'SPEC' | 'DEF' | 'HLD' | 'LLD' | 'PLAN' | 'BUILD' | 'CR' | 'ISSUE' | 'EXT' | 'AMD';
+export type DeliveryArtifactKind = 'SPEC' | 'DEF' | 'HLD' | 'LLD' | 'PLAN' | 'BUILD' | 'CR' | 'ISSUE' | 'EXT' | 'AMD' | 'EPIC' | 'STORY' | 'TASK' | 'TASKS' | 'DIAG';
 
-export type ApprovalState = 'approved' | 'rejected' | 'pending';
+/** A unit's status as its head records it; `unmigrated` when the head has no lifecycle. */
+export type UnitStatus = Status | 'unmigrated';
+
+/** An Epic's, Story's or Task's own head and its status; null on a node only when it has no head. */
+export type WorkItemUnit = { readonly artifactId: string; readonly status: UnitStatus } | null;
+
+/** `unmigrated`: the head has no lifecycle, so nothing about its approval can be read until a repair has given it one. */
+export type ApprovalState = 'approved' | 'rejected' | 'pending' | 'unmigrated';
 
 export interface ArtifactRecord {
 	/** File stem, e.g. 'LLD-<hash>-s1'. */
@@ -104,6 +111,12 @@ export interface WorkItemNode {
 	readonly evidenceArtifactIds: readonly string[];
 	/** Stories only: task ids from the PLAN. */
 	readonly plannedTaskIds:      readonly string[];
+	/** Set for epics, stories and tasks; null only when there is no head. */
+	readonly unit:                WorkItemUnit;
+	/** Tasks only: the plan row the item stands for; null for a BUILD result that matches no Task. */
+	readonly planRowId:           string | null;
+	/** Tasks only: its position in the Story; null when no record gives one. */
+	readonly taskOrder:           number | null;
 	/** Issues only, from meta.parentRef; null otherwise or when the issue names only itself. */
 	readonly correctsRef:         CorrectsRef | null;
 	/** 'SPEC-' + meta.seededFromSpec when the item was seeded from a spec. */
@@ -134,7 +147,8 @@ export type NoticeCode =
 	| 'validation-conflict'        // s3: completion approved while a task failed
 	| 'incomplete-evidence'        // s4 / s5: expected evidence absent
 	| 'review-currency-unknown'    // s4: no recorded field settles whether a review is current
-	| 'base-predates-extension';   // s4: an accepted extension is newer than the epic framing
+	| 'base-predates-extension'    // s4: an accepted extension is newer than the epic framing
+	| 'needs-migration';           // a record with no lifecycle, or a unit with no head or an unmigrated one: a repair brings it in
 
 export interface DeliveryNotice {
 	readonly code:        NoticeCode;
@@ -188,7 +202,7 @@ export interface StagePassResult {
  */
 export interface ArtifactGate {
 	readonly artifactId: string;
-	readonly approval:   { readonly state: 'approved' | 'rejected' | 'pending'; readonly at: string | null };
+	readonly approval:   { readonly state: ApprovalState; readonly at: string | null };
 	/** The record's signoff, shown apart from its review and approval and never counted as a review (Story s7); absent when it has none. */
 	readonly signoff?:   SignoffView | undefined;
 	readonly review: {
@@ -212,14 +226,16 @@ export interface TaskValidation {
 	readonly result:     TaskResult;
 	/** False for a build-only task. */
 	readonly planned:    boolean;
+	/** Its position in the Story; null when no record gives one. */
+	readonly taskOrder:  number | null;
 }
 
 /** 'validation-failed' is raised by a failed task result or a failed storyLevelResult alike. */
-export type AttentionReason = 'pending-decision' | 'rejected' | 'review-blocked' | 'validation-failed' | 'validation-conflict';
+export type AttentionReason = 'pending-decision' | 'rejected' | 'review-blocked' | 'validation-failed' | 'validation-conflict' | 'needs-migration';
 
 export interface ItemGates {
 	readonly itemId:           string;
-	/** Sorted by taskItemId. */
+	/** Sorted by taskOrder, null last, then taskItemId. */
 	readonly tasks:            readonly TaskValidation[];
 	readonly validation:       { readonly passed: number; readonly failed: number; readonly unrecorded: number; readonly unplanned: number };
 	/** A build result recorded against the story itself; not a task, never unplanned. */
@@ -257,7 +273,7 @@ export interface ArtifactCurrency {
 export interface EffectiveAmendment {
 	/** e.g. 'AMD-<hash>-1'. */
 	readonly amendmentId:  string;
-	readonly status:       'pending' | 'approved' | 'rejected';
+	readonly status:       ApprovalState;
 	/** The amendment's recorded type, e.g. 'storyBoundary.addStory'. */
 	readonly type:         string | null;
 	readonly storyId:      string | null;
@@ -287,7 +303,7 @@ export interface DeliveryEvidenceEntry {
 	readonly mdPath:         string | null;
 	/** review-view when the markdown carries the artifact marker. */
 	readonly openWith:       'review-view' | 'evidence-read';
-	readonly approval:       { readonly state: 'approved' | 'rejected' | 'pending'; readonly at: string | null };
+	readonly approval:       { readonly state: ApprovalState; readonly at: string | null };
 	readonly review:         ArtifactGate['review'];
 	readonly reviewCurrency: ReviewCurrency | null;
 	/** The record's signoff, apart from its review and approval; absent when it has none (Story s7). */
@@ -346,6 +362,12 @@ export interface DeliveryItem {
 	readonly notices:          readonly DeliveryNotice[];
 	readonly needsAttention:   boolean;
 	readonly attentionReasons: readonly (AttentionReason | NoticeCode)[];
+	/** The item's own head and its status; null when it has none (and always on an issue). */
+	readonly unit:             WorkItemUnit;
+	/** Tasks only: the plan row the item stands for. */
+	readonly planRowId:        string | null;
+	/** Tasks only: its position in the Story. */
+	readonly taskOrder:        number | null;
 	/** What the item is about, from its own records; see DeliveryItemDescription. */
 	readonly description:      DeliveryItemDescription;
 	/** The feedback recorded on the item's own design records (an epic's DEF and HLD, a story's LLD and PLAN); never inherited. */

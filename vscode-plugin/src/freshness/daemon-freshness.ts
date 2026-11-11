@@ -17,6 +17,7 @@
  * terminal path so the self-update path fires exactly once per plugin version.
  */
 import type { IpcClient } from '../../../src/shared/ipc-client.js';
+import { DaemonDisconnectedError } from '../../../src/shared/ipc-client.js';
 
 /**
  * The ref to `git ls-remote` against — the remote's default-branch HEAD. This
@@ -109,7 +110,7 @@ export interface DaemonFreshnessDeps {
 }
 
 interface ConfirmResult {
-  state: 'succeeded' | 'failed';
+  state: 'succeeded' | 'failed' | 'pending';
   error?: string | undefined;
 }
 
@@ -195,7 +196,7 @@ export async function runDaemonFreshnessCheck(deps: DaemonFreshnessDeps): Promis
  * Drive the daemon-owned update+restart (sc1 `client.update()`), then
  * reconnect-and-confirm. A single failure notify on any error, no retry/rollback
  * (k5). `priorCommit` is the pre-update installed commit — success is confirmed
- * by the commit advancing past it, or a fresh `updateOutcome().state`.
+ * by the matching managed outcome. Legacy replies use the commit and timestamp.
  */
 async function performUpdate(deps: DaemonFreshnessDeps, priorCommit: string): Promise<void> {
   const now = deps.now ?? Date.now;
@@ -205,8 +206,14 @@ async function performUpdate(deps: DaemonFreshnessDeps, priorCommit: string): Pr
   try {
     launched = await deps.client.update(); // sc1 — the daemon-owned IPC (k2), NOT a shell-out.
   } catch (err) {
-    // e.g. the S001 concurrent-launch guard ('update already in progress').
-    await deps.notify(failureMessage(err));
+    if (err instanceof DaemonDisconnectedError) {
+      // The request may have reached the daemon. A record without an
+      // acknowledged ID cannot prove it belongs to this launch.
+      try { await deps.client.updateOutcome(); } catch { /* still disconnected */ }
+      await deps.notify('insrc daemon update launch is unconfirmed. Check daemon status before retrying.');
+    } else {
+      await deps.notify(failureMessage(err));
+    }
     return;
   }
   if (launched.launched === false) {
@@ -214,7 +221,7 @@ async function performUpdate(deps: DaemonFreshnessDeps, priorCommit: string): Pr
     return;
   }
 
-  const result = await confirmUpdate(deps, priorCommit, startedAtMs);
+  const result = await confirmUpdate(deps, priorCommit, startedAtMs, launched.updateId);
   if (result.state === 'succeeded') {
     // The daemon is current, but the MCP host held by claude/codex still points at
     // the old daemon process. Nudge the user to reload the window (respawns the MCP
@@ -227,6 +234,8 @@ async function performUpdate(deps: DaemonFreshnessDeps, priorCommit: string): Pr
         /* a reload failure must never surface from the fire-and-forget flow */
       }
     }
+  } else if (result.state === 'pending') {
+    await deps.notify('insrc daemon update confirmation is pending.');
   } else {
     await deps.notify(failureMessage(result.error ?? 'the daemon did not come back'));
   }
@@ -235,13 +244,14 @@ async function performUpdate(deps: DaemonFreshnessDeps, priorCommit: string): Pr
 /**
  * Poll the restarting daemon under `reconnectBudgetMs`. The socket drops during
  * the restart — transient failures are tolerated until the budget elapses. A
- * fresh `updateOutcome` (finished at/after the update started) is authoritative;
- * otherwise the installed commit advancing past `priorCommit` proves success.
+ * managed outcome must match the acknowledged update ID. Legacy replies use
+ * a fresh outcome or an installed commit that advances past `priorCommit`.
  */
 async function confirmUpdate(
   deps: DaemonFreshnessDeps,
   priorCommit: string,
   startedAtMs: number,
+  updateId?: string,
 ): Promise<ConfirmResult> {
   const now = deps.now ?? Date.now;
   const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((resolve) => { setTimeout(resolve, ms); }));
@@ -249,11 +259,12 @@ async function confirmUpdate(
   const deadline = startedAtMs + budget;
 
   for (;;) {
-    // Prefer the explicit terminal outcome record (S001 sc1), but only if it is
-    // fresh — a stale record from a prior update must not decide this one.
+    // Correlate managed replies by ID and legacy replies by timestamp.
     try {
       const outcome = await deps.client.updateOutcome();
-      if (outcome !== null && Date.parse(outcome.finishedAt) >= startedAtMs) {
+      if (outcome !== null && (outcome.state === 'succeeded' || outcome.state === 'failed') && (updateId === undefined
+        ? outcome.updateId === undefined && Date.parse(outcome.finishedAt) >= startedAtMs
+        : outcome.updateId === updateId)) {
         return outcome.state === 'failed'
           ? { state: 'failed', error: outcome.error }
           : { state: 'succeeded' };
@@ -263,16 +274,19 @@ async function confirmUpdate(
     }
 
     // Fallback: the installed commit advanced past the pre-update commit.
-    try {
-      const { installedCommit } = await deps.client.status();
-      if (installedCommit !== '' && installedCommit !== priorCommit) {
-        return { state: 'succeeded' };
+    if (updateId === undefined) {
+      try {
+        const { installedCommit } = await deps.client.status();
+        if (installedCommit !== '' && installedCommit !== priorCommit) {
+          return { state: 'succeeded' };
+        }
+      } catch {
+        /* still restarting — keep polling */
       }
-    } catch {
-      /* still restarting — keep polling */
     }
 
     if (now() >= deadline) {
+      if (updateId !== undefined) return { state: 'pending' };
       return { state: 'failed', error: 'the daemon did not come back within the reconnect budget' };
     }
     await sleep(RECONNECT_POLL_INTERVAL_MS);

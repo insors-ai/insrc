@@ -26,7 +26,8 @@ import { dirname } from 'node:path';
 import { LOCAL_GIT_TIMEOUT_MS, orFallback, revParse } from './git-calls.js';
 import { basename, join } from 'node:path';
 
-import { approvalStateOf, lifecycleReviewOf } from './artifact-core/approval-view.js';
+import { approvalOverrideReasonOf, approvalStateOf, lifecycleReviewOf } from './artifact-core/approval-view.js';
+import { createCompletionEvidence } from './artifact-core/completion-evidence.js';
 import { staleAckOf } from './artifact-core/stale-ack.js';
 import { getEffectiveHld } from './amendments/effective.js';
 import { listApprovedAmendments } from './amendments/store.js';
@@ -38,7 +39,7 @@ import type { HldArtifact }    from './artifacts/hld.js';
 import { computeHldEffectiveHash, extractHldContextSlice } from './artifacts/lld.js';
 import type { HldContextSlice, LldArtifact } from './artifacts/lld.js';
 import type { PlanArtifact } from './artifacts/plan.js';
-import { decodeArtifactHead } from './artifact-core/decode.js';
+import { decodeArtifactHead, emptyLifecycle } from './artifact-core/decode.js';
 import { checkHeadIntegrity } from './artifact-core/lifecycle.js';
 import type { LifecycleService } from './artifact-core/lifecycle-service.js';
 import { IllegalTransitionError, LifecycleConflictError, ReviewRequiredError } from './artifact-core/types.js';
@@ -689,6 +690,10 @@ export async function approveArtifactByJsonPath(jsonPath: string, opts: ApproveO
 	let designCleanup:CleanupResult|undefined;
 	let approvedAt: string;
 	if (seen !== undefined && APPROVED_OR_BEYOND.includes(seen.status)) {
+		// A later override of a standing BUILD approval is recorded on that approval, so it outlives this request.
+		if (overridden && override.trim().length > 0 && ArtifactIds.parse(id)?.kind === 'BUILD' && seen.lifecycle.approval?.override?.reason !== override) {
+			await lifecycle.apply(id, 'record-override', actor, { override: { reason: override } });
+		}
 		if(reviewRequiredFor(jsonPath)==='design')designCleanup=await cleanupDesignArtifact(lifecycle.store.repoPath,id,{store:lifecycle.store});
 		approvedAt = seen.lifecycle.approval?.at ?? new Date().toISOString();   // approved already: it stays as it is
 	} else {
@@ -853,7 +858,7 @@ export interface CodeReviewApprovalOutcome {
  *  seam AFTER this function returns and attaches the outcomes here. */
 export interface FollowOnOutcome {
 	/** `tracker-push`, `artifact-commit`, `document-attach` and `attach-commit` are the steps of the approve pipeline after the Task reconciliation (Story s10). */
-	readonly kind:        'bugfix-advance' | 'bugfix-complete' | 'tracker-attach' | 'tasks-sync' | 'tracker-push' | 'artifact-commit' | 'document-attach' | 'attach-commit';
+	readonly kind:        'bugfix-advance' | 'bugfix-complete' | 'tracker-attach' | 'tasks-sync' | 'tracker-push' | 'artifact-commit' | 'document-attach' | 'attach-commit' | 'story-completion';
 	readonly artifactPath: string;
 	readonly ok:          boolean;
 	readonly note?:       string;
@@ -867,6 +872,8 @@ export interface FollowOnOutcome {
 	readonly tracker?:    unknown;
 	/** For `artifact-commit` and `attach-commit`: the result of the commit and push. */
 	readonly commit?:     { readonly committed: boolean; readonly pushed: boolean; readonly reason?: string };
+	/** For `story-completion`: the units completed by this approval. */
+	readonly completed?:  readonly string[];
 	/** For a step stopped by a denied tool call: which tool and why. */
 	readonly denied?:     { readonly toolId: string; readonly reason: string };
 }
@@ -925,6 +932,7 @@ export async function approveWorkflowTarget(
 	const approved:   { path: string; result: ApprovalResult }[] = [];
 	const skipped:    { path: string; reason: string; kind?: 'review-blocked' | 'team-refused' }[] = [];
 	const codeReview: CodeReviewApprovalOutcome[] = [];
+	const followOn: FollowOnOutcome[] = [];
 
 	/** A BUILD target the team gate refuses goes to skipped[] before its record is created or merged. */
 	const refuseBeforeRecord = async (jsonPath: string): Promise<boolean> => {
@@ -950,13 +958,41 @@ export async function approveWorkflowTarget(
 		await ensureBuildRecordOnCompletion(req.repoPath, ref, undefined, { writer: lifecycle, actor });
 	};
 	/**
-	 * A BUILD approval completes the Story, and then the Epic, once their roll-up is true. The approval itself stands. A unit the
-	 * policy still requires signoff for stays approved (signoffHoldsCompletion), and settling that signoff runs the completion.
+	 * The heads completion needs: the Epic, the Story, and every Story the Define declares. A head that is missing is created as a
+	 * draft, so an Epic can be held by a declared Story nobody has started.
 	 */
-	const completeThroughService = async (jsonPath: string): Promise<void> => {
+	const ensureUnitHeads = async (epicHash: string, storyId: string): Promise<void> => {
+		const epic = ArtifactIds.make({ kind: 'EPIC', epicHash });
+		const ensure = async (id: string, parent?: string): Promise<void> => {
+			if (existsSync(artifactJsonPath(req.repoPath, id))) return;
+			await lifecycle.store.write({
+				id, description: '', references: [], attachments: [], lifecycle: emptyLifecycle(0), payload: { body: {}, citations: [] },
+				...(parent !== undefined ? { parent: { entityId: parent, type: 'EPIC', relation: 'derived-from' } } : {}),
+			}, actor, { operation: 'create' });
+		};
+		await ensure(epic);
+		const declared = await createCompletionEvidence(req.repoPath).declaredStories(epicHash);
+		for (const story of new Set([storyId, ...declared])) await ensure(ArtifactIds.make({ kind: 'STORY', epicHash, story }), epic);
+	};
+	/**
+	 * A BUILD approval completes the Story, and then the Epic, once their roll-up is true. The approval itself stands whatever this
+	 * finds, so it never rejects: a failure is reported and a re-approval retries it. A unit the policy still requires signoff for
+	 * stays approved (signoffHoldsCompletion), and settling that signoff runs the completion.
+	 */
+	const completeThroughService = async (jsonPath: string): Promise<FollowOnOutcome | undefined> => {
 		const key = ArtifactIds.parse(artifactIdOf(jsonPath));
-		if (key?.kind === 'BUILD' && key.story !== undefined) {
-			await lifecycle.completeIfRolledUp(ArtifactIds.make({ kind: 'STORY', epicHash: key.epicHash, story: key.story }), actor, { overrideReview: req.overrideReview, holds: (unitId: string) => signoffHoldsCompletion(req.repoPath, unitId) });
+		if (key?.kind !== 'BUILD' || key.story === undefined) return undefined;
+		const story = ArtifactIds.make({ kind: 'STORY', epicHash: key.epicHash, story: key.story });
+		const epic = ArtifactIds.make({ kind: 'EPIC', epicHash: key.epicHash });
+		const ctx = { overrideReview: req.overrideReview, holds: (unitId: string) => signoffHoldsCompletion(req.repoPath, unitId) };
+		try {
+			await ensureUnitHeads(key.epicHash, key.story);
+			const { completed } = await lifecycle.completeIfRolledUp(story, actor, ctx);
+			const open = (await lifecycle.inspect(story))?.status !== 'completed' ? story : (await lifecycle.inspect(epic))?.status !== 'completed' ? epic : undefined;
+			const note = open === undefined ? (completed.length > 0 ? `completed ${completed.join(', ')}` : `${story} was already completed`) : await lifecycle.holdReason(open, ctx);
+			return { kind: 'story-completion', artifactPath: jsonPath, ok: true, note, completed };
+		} catch (err) {
+			return { kind: 'story-completion', artifactPath: jsonPath, ok: false, note: err instanceof Error ? err.message : String(err), completed: [] };
 		}
 	};
 
@@ -976,9 +1012,12 @@ export async function approveWorkflowTarget(
 		// other status is advisory and falls through to the unchanged approve below.
 		const meta = readArtifactMeta(jsonPath);
 		if (meta !== undefined && meta.epicHash !== undefined && meta.storyId !== undefined) {
+			// A standing BUILD approval keeps the override it was given, so a retry need not repeat it; a draft BUILD is gated on the request alone.
+			const headMeta = (readJsonOrUndefined(jsonPath) as { meta?: unknown } | undefined)?.meta;
+			const gateOverride = req.overrideReview ?? (ArtifactIds.parse(artifactIdOf(jsonPath))?.kind === 'BUILD' && approvalStateOf(headMeta) === 'approved' ? approvalOverrideReasonOf(headMeta) : undefined);
 			const gate = enforceCodeReviewGate(req.repoPath, meta.epicHash, meta.storyId, {
 				checkBuildFreshness: reviewRequiredFor(jsonPath) === 'code',
-				...(req.overrideReview !== undefined ? { overrideReview: req.overrideReview } : {}),
+				...(gateOverride !== undefined ? { overrideReview: gateOverride } : {}),
 			});
 			codeReview.push(projectGateOutcome(jsonPath, meta.storyId, gate));
 			if (gate.status === 'blocked') {
@@ -1007,7 +1046,10 @@ export async function approveWorkflowTarget(
 			}
 		}
 		// The approval stands whatever completing the Story finds: a failure here surfaces to the caller, and a retry finishes it.
-		if (completeAfter) await completeThroughService(jsonPath);
+		if (completeAfter) {
+			const outcome = await completeThroughService(jsonPath);
+			if (outcome !== undefined) followOn.push(outcome);
+		}
 	};
 
 	if (req.artifactPath !== undefined) {
@@ -1037,7 +1079,7 @@ export async function approveWorkflowTarget(
 	} else {
 		throw new Error('approveWorkflowTarget: exactly one of artifactPath | epicHash is required');
 	}
-	return { approved, skipped, codeReview };
+	return { approved, skipped, codeReview, ...(followOn.length > 0 ? { followOn } : {}) };
 }
 
 /** Read `{ epicHash, storyId }` off an artifact JSON's meta. Returns undefined

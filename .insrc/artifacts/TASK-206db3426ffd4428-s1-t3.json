@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-064af42a-3f2b-4698-bb78-17ea57dea92c",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T12:31:24.036Z",
+    "epicCreatedAt": "2026-11-09T06:00:04.355Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "206db3426ffd4428",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Bootstrap trusted IPC origins and enforce scoped observer access",
+      "parent": {
+        "entityId": "STORY-206db3426ffd4428-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-206db3426ffd4428-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-206db3426ffd4428-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#150",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8885a40c2f281ca5d0a7cd8b803586450473e8051f138842af26bcdeba525159",
+        "at": "2026-11-09T12:31:24.036Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T12:31:24.038Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Bootstrap trusted IPC origins and enforce scoped observer access",
+    "summary": "Define and implement the first-grant authorization boundary and the read, subscribe and reattach surface.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Use daemon-generated socket identity and the canonical registered project. Permit a live local connection to create a fresh origin under its admitted project. The daemon mints the origin identity and returns a scoped capability on that connection. Existing origins can be bound only through a server-held ownership binding or a validated capability issued at creation. A repo path, label, PID, chat ID or task ID alone never authorizes an existing origin.",
+      "Mint first task grants only after trusted launch binds the originating connection to the daemon-owned invocation. Deny forged and cross-conversation claims, and cover ordinary unauthorized IPC and valid bootstrap with integration tests.",
+      "Recheck scope and permission on every read, subscription, detail or control. Persist only bounded grant digests, bind each reattachment to its current connection, and revoke conversation access durably while preserving an independently scoped read-only project-history grant."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Reject cross-project and cross-conversation reads, controls and raw details"
+      },
+      {
+        "level": "integration",
+        "name": "Verify trusted launch, denial of forged ordinary IPC scopes, grants across reconnect and restart, revocation and scoped project-history access after removal"
+      },
+      {
+        "level": "integration",
+        "name": "First observer grant requires daemon-owned origin bootstrap or an existing origin capability"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

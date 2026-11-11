@@ -9,16 +9,16 @@
  * the one record the reader opened. Every value is a published field or a
  * label for one; nothing is inferred. Pure; vscode-free.
  *
- * Join rule: a PLAN task belongs to the story's task item whose sourceIds
- * contain the PLAN task's id; a PLAN task with no such item is not a row, and a
- * dependency with no such item is shown by its raw plan id.
+ * Join rule: a PLAN task belongs to the story's task item with that planRowId, or, for an item with
+ * no planRowId, whose sourceIds contain the PLAN task's id; a PLAN task with no such item is not a row, and
+ * a dependency with no such item is shown by its raw plan id.
  */
 
 import type { DeliveryEvidenceView, DeliveryItemView, DeliverySnapshot } from './delivery-contract.js';
 import type { DisplayLabels } from './labels.js';
 import type { BadgeView, ChainRowView, EvidenceRowView, ItemDetailsViewModel, LinkView, TaskRowView } from './board-protocol.js';
 import { badgesOf, compactIdOf, indexItems, isCardKind, taskSummaryOf, titleOf, type ItemIndex } from './board-model.js';
-import { approvalTone, labelOf, plural, readableTime, taskResultTone } from './labels.js';
+import { approvalTone, labelOf, plural, readableTime, taskResultTone, unitStatusTone } from './labels.js';
 
 export interface PlanTaskView {
   readonly id: string;
@@ -45,11 +45,13 @@ export function taskShortIdOf(taskItemId: string): string {
 
 function taskRows(item: DeliveryItemView, plan: PlanRead, byId: ItemIndex, labels: DisplayLabels): TaskRowView[] {
   const taskItems = item.tasks.map(t => byId.get(t.taskItemId)).filter((t): t is DeliveryItemView => t !== undefined);
-  const itemForPlanId = (planId: string): DeliveryItemView | undefined => taskItems.find(t => t.sourceIds.includes(planId));
+  // planRowId is the join; sourceIds are consulted only for an item that does not carry one
+  const stands = (t: DeliveryItemView, planId: string): boolean => (t.planRowId !== null ? t.planRowId === planId : t.sourceIds.includes(planId));
+  const itemForPlanId = (planId: string): DeliveryItemView | undefined => taskItems.find(t => stands(t, planId));
   return item.tasks.map(t => {
     const taskItem = byId.get(t.taskItemId);
     const planTask = plan.state === 'ok' && taskItem !== undefined
-      ? plan.tasks.find(p => taskItem.sourceIds.includes(p.id))
+      ? plan.tasks.find(p => stands(taskItem, p.id))
       : undefined;
     return {
       taskItemId: t.taskItemId,
@@ -59,6 +61,8 @@ function taskRows(item: DeliveryItemView, plan: PlanRead, byId: ItemIndex, label
       resultLabel: t.planned ? labelOf(labels.taskResult, t.result) : labels.unplanned,
       planned: t.planned,
       resultTone: t.planned ? taskResultTone(t.result) : 'neutral',
+      unitLabel: taskItem?.unit == null ? null : labelOf(labels.unitStatus, taskItem.unit.status),
+      unitTone: taskItem?.unit == null ? 'neutral' : unitStatusTone(taskItem.unit.status),
       dependsOn: planTask === undefined ? null : planTask.dependsOn.map(d => {
         const dep = itemForPlanId(d);
         return dep === undefined ? { shortId: d, title: d } : { shortId: taskShortIdOf(dep.id), title: titleOf(dep) };

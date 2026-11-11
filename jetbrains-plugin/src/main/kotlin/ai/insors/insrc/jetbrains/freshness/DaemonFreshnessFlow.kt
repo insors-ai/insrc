@@ -54,7 +54,7 @@ object DaemonFreshnessFlow {
     const val RELOAD_NUDGE_MESSAGE =
         "insrc: daemon updated. Restart your claude / codex session to reconnect the insrc MCP connection to the new daemon."
 
-    private data class ConfirmResult(val succeeded: Boolean, val error: String?)
+    private data class ConfirmResult(val succeeded: Boolean, val error: String?, val pending: Boolean = false)
 
     /**
      * Run one opportunistic freshness check. Never throws (fire-and-forget, k6).
@@ -110,7 +110,7 @@ object DaemonFreshnessFlow {
      * Drive the daemon-owned update+restart (sc1 [FreshnessGateway.update]), then
      * reconnect-and-confirm. A single failure balloon on any error, no retry/rollback
      * (k5). [priorCommit] is the pre-update installed commit — success is confirmed by the
-     * commit advancing past it, or a fresh `updateOutcome().state`.
+     * matching managed outcome. Legacy replies use the commit and timestamp.
      */
     private fun performUpdate(deps: FreshnessDeps, priorCommit: String) {
         // App-scoped single-flight (k5): the daemon can run only one update at a time, and
@@ -124,21 +124,29 @@ object DaemonFreshnessFlow {
             val startedAtMs = deps.now()
             // sc1 — the daemon-owned IPC (k2), never a shell-out. Returns Failed on refusal
             // (e.g. 'update already in progress') / unreachable; never throws.
-            when (val launch = deps.gateway.update()) {
+            val updateId = when (val launch = deps.gateway.update()) {
                 is DaemonActionResult.Failed -> {
-                    deps.notify.show(NotifyKind.FAILURE, failureMessage(launch.reason), null)
+                    if (launch.acknowledgementLost) {
+                        // Without the acknowledged ID, no observed outcome can prove which launch it belongs to.
+                        deps.gateway.updateOutcome()
+                        deps.notify.show(NotifyKind.INFO, "insrc: daemon update launch is unconfirmed. Check daemon status before retrying.", null)
+                    } else {
+                        deps.notify.show(NotifyKind.FAILURE, failureMessage(launch.reason), null)
+                    }
                     return
                 }
-                is DaemonActionResult.Ok -> Unit
+                is DaemonActionResult.Ok -> launch.updateId
             }
 
-            val result = confirmUpdate(deps, priorCommit, startedAtMs)
+            val result = confirmUpdate(deps, priorCommit, startedAtMs, updateId)
             if (result.succeeded) {
                 // The daemon is current, but the MCP connection held by the claude/codex CLI
                 // still points at the pre-update daemon process. There is no in-place MCP
                 // restart from the IDE, so nudge the user to restart their CLI session
                 // (notification-only — no action slot).
                 deps.notify.show(NotifyKind.INFO, RELOAD_NUDGE_MESSAGE, null)
+            } else if (result.pending) {
+                deps.notify.show(NotifyKind.INFO, "insrc: daemon update confirmation is pending.", null)
             } else {
                 deps.notify.show(NotifyKind.FAILURE, failureMessage(result.error ?: "the daemon did not come back"), null)
             }
@@ -150,16 +158,18 @@ object DaemonFreshnessFlow {
     /**
      * Poll the restarting daemon under `reconnectBudgetMs`. The socket drops during the
      * restart — transient Unavailable/None results are tolerated until the budget elapses.
-     * A fresh `updateOutcome` (finished at/after the update started) is authoritative;
-     * otherwise the installed commit advancing past [priorCommit] proves success.
+     * A managed outcome must match the acknowledged update ID. Legacy replies use
+     * a fresh outcome or an installed commit that advances past [priorCommit].
      */
-    private fun confirmUpdate(deps: FreshnessDeps, priorCommit: String, startedAtMs: Long): ConfirmResult {
+    private fun confirmUpdate(deps: FreshnessDeps, priorCommit: String, startedAtMs: Long, updateId: String?): ConfirmResult {
         val deadline = startedAtMs + deps.reconnectBudgetMs
         while (true) {
-            // Prefer the explicit terminal outcome record (sc1), but only if it is fresh —
-            // a stale record from a prior update must not decide this one.
+            // Correlate managed replies by ID and legacy replies by timestamp.
             val outcome = deps.gateway.updateOutcome()
-            if (outcome is DaemonUpdateOutcomeResult.Loaded && isFresh(outcome.finishedAt, startedAtMs)) {
+            if (outcome is DaemonUpdateOutcomeResult.Loaded && (
+                    if (updateId == null) outcome.updateId == null && isFresh(outcome.finishedAt, startedAtMs)
+                    else outcome.updateId == updateId
+                )) {
                 return if (outcome.state == "failed") {
                     ConfirmResult(false, outcome.error)
                 } else {
@@ -168,12 +178,15 @@ object DaemonFreshnessFlow {
             }
 
             // Fallback: the installed commit advanced past the pre-update commit.
-            val commit = deps.gateway.installedCommit()
-            if (commit != null && commit.isNotEmpty() && commit != priorCommit) {
-                return ConfirmResult(true, null)
+            if (updateId == null) {
+                val commit = deps.gateway.installedCommit()
+                if (commit != null && commit.isNotEmpty() && commit != priorCommit) {
+                    return ConfirmResult(true, null)
+                }
             }
 
             if (deps.now() >= deadline) {
+                if (updateId != null) return ConfirmResult(false, null, pending = true)
                 return ConfirmResult(false, "the daemon did not come back within the reconnect budget")
             }
             deps.sleep(deps.pollIntervalMs)

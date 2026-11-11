@@ -29,6 +29,9 @@ import { gateHandlers, gateRepoCall } from './repo-call-gate.js';
 /** The methods gated inside their own handlers (the approval family): the table-wide wrapper leaves them alone. */
 const APPROVAL_FAMILY: ReadonlySet<string> = new Set(['workflow.approve', 'workflow.approvePipeline']);
 import { listRepos, addRepo, removeRepo, repoContainingCwd, InvalidRepoPathError, validateRepoPath } from '../db/repos.js';
+import type { ExecutorDetails } from './task-progress/executor-measurements.js';
+import { createProgressRoutes } from './task-progress/rpc.js';
+import type { ProgressRuntime } from './task-progress/rpc.js';
 import { deleteEntitiesForRepo, findEntitiesByFile, getEntity } from '../db/entities.js';
 import { deleteUnresolvedForRepo } from '../db/relations.js';
 import { collectRepoStats } from './repo-stats.js';
@@ -48,7 +51,7 @@ import { claudeModels, modelDefinitions, resolveRoleWire } from './model-definit
 import { approveCheck, checkModel, rejectCheck } from './model-check.js';
 import { sharedAdminHandlers } from './admin-handlers.js';
 import { getGraphStore } from '../db/graph/store.js';
-import { readInstalledCommit } from './installed-commit.js';
+import { readPublicInstalledCommit } from './managed-update-ipc.js';
 
 import { getModelState } from './lifecycle.js';
 import { resolveClosure, searchEntities, findCallers, findCallees, closureEntities, unreachableEntities } from '../db/search.js';
@@ -140,6 +143,7 @@ export interface RuntimeIndexer {
 }
 
 export interface HandlerRuntimeDeps {
+  readonly progressRuntime?: (() => Promise<ProgressRuntime<ExecutorDetails>>) | undefined;
  readonly stepCallHandler?: StreamHandler | undefined;
 	/** Test seam: the registered repositories' paths (default: the registry in `db`). */
 	readonly registeredRepos?: (() => Promise<ReadonlySet<string>>) | undefined;
@@ -150,7 +154,7 @@ export interface HandlerRuntimeDeps {
 	/** When the daemon started, for daemon.status's uptime. */
 	readonly startedAt: number;
 	/** Called by daemon.shutdown and daemon.update; the shutdown is created after the tables. */
-	readonly shutdown: (reason: string) => void;
+	readonly shutdown: (reason: string) => void | Promise<void>;
 	/** The socket server's attached clients, for daemon.debug-status; the server is created after the tables. */
 	readonly attachedClients: () => AttachedClient[];
 	/** The understanding service once it has opened (after the server listens), else undefined. */
@@ -964,7 +968,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 				modelState: getModelState(),
 				// Story S002 (sc2): the daemon's installed source commit for freshness
 				// checks. Best-effort git read; '' when undeterminable, never throws.
-				installedCommit: readInstalledCommit(),
+				installedCommit: await readPublicInstalledCommit(),
 				lmdbFileSizeMb,
 			});
 			return status;
@@ -1865,6 +1869,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 	});
 	Object.assign(rpcHandlers, understandingRoutes.rpc);
 	Object.assign(streamHandlers, understandingRoutes.streams);
+	const progressRoutes = createProgressRoutes(deps.progressRuntime ?? (async () => { throw new Error('progress-unavailable'); }));
+	Object.assign(rpcHandlers, progressRoutes.rpc);
+	Object.assign(streamHandlers, progressRoutes.streams);
 	// Every other file-modifying call goes through the repo gate too (the approval family is gated inside its handlers above).
 	gateHandlers(rpcHandlers as never, 'rpc', registeredRepos, APPROVAL_FAMILY);
 	gateHandlers(streamHandlers as never, 'stream', registeredRepos);

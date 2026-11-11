@@ -89,6 +89,7 @@ export interface RunModelView {
   readonly id: string;
   readonly name: string;
   readonly alias?: string | undefined;
+  readonly otherAliases?: readonly string[] | undefined;
   readonly efforts: readonly string[];
 }
 
@@ -130,6 +131,7 @@ export function runCatalogView(defs: ModelDefinitions, available: readonly Provi
         id: m.id,
         name: m.displayName ?? m.id,
         ...(m.aliases.length > 0 ? { alias: m.aliases[0] } : {}),
+        ...(m.aliases.length > 1 ? { otherAliases: m.aliases.slice(1) } : {}),
         efforts: m.efforts,
       });
     }
@@ -137,9 +139,21 @@ export function runCatalogView(defs: ModelDefinitions, available: readonly Provi
   return [...byProvider.entries()].map(([id, e]) => ({ id, label: e.label, models: e.models }));
 }
 
+export function reconcileRunConfig(provider: ProviderId, next: RunConfig, catalog: readonly RunProviderView[]): RunConfig {
+  const model = next.model;
+  if (model === undefined || model === '') return {};
+  const selected = catalog.find(entry => entry.id === provider)?.models.find(entry =>
+    entry.id === model || entry.alias === model || entry.otherAliases?.includes(model) === true);
+  if (selected === undefined) return {};
+  return next.effort !== undefined && selected.efforts.includes(next.effort)
+    ? { model, effort: next.effort } : { model };
+}
+
 export interface ChatPanelHostDeps {
   createPanel(opts: { viewType: string; title: string }): ChatPanelChannel;
   readonly providers: ProviderRegistry;
+  readonly catalogReachable?: (() => Promise<boolean>) | undefined;
+  readonly catalogRetryMs?: number | undefined;
   readonly store: ChatSessionStore;
   readonly cwd: () => string;
   readonly renderStyle?: (theme?: TerminalTheme) => string;
@@ -321,19 +335,74 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // break the chat flow. A session's stored mode is left as it is, so it returns when this is lifted.
   let permissionMode: PermissionMode = 'auto';
   const modeOf = (_s: ChatSession | undefined): PermissionMode => 'auto';
-  // Run-config controls (bottom-right popup + gauge): the daemon's model definitions,
-  // loaded once at host start; when they land, a wired panel re-renders with them.
+  // Keep the last usable catalog across failures and webview replacement.
   let runCatalog: readonly RunProviderView[] = deps.providers.available.map((id) => ({ id, label: id, models: [] }));
-  const refreshRunCatalog = (): void => {
-    if (deps.definitions === undefined) return;
-    void deps.definitions().then((d) => {
-      runCatalog = runCatalogView(d, deps.providers.available);
-      if (channel !== undefined && !disposed) channel.setHtml(renderShell());
-    }).catch((err) => {
-      log.warn(`[chat] models.definitions unavailable; run-config popup lists providers only — ${err instanceof Error ? err.message : String(err)}`);
-    });
+  let runCatalogReady = false;
+  let catalogStatus: 'loading' | 'ready' | 'unavailable' = deps.definitions === undefined ? 'unavailable' : 'loading';
+  let catalogGeneration = 0;
+  let catalogRevision = 0;
+  let catalogFlight = false;
+  let catalogTimer: ReturnType<typeof setTimeout> | undefined;
+  const postCatalog = (): void => {
+    if (webviewReady) post({ type: 'run-catalog', revision: catalogRevision, status: catalogStatus, providers: runCatalog });
   };
-  refreshRunCatalog();
+  const publishCatalog = (status: typeof catalogStatus): void => {
+    catalogStatus = status;
+    catalogRevision += 1;
+    postCatalog();
+  };
+  const resetCatalogBinding = (): void => {
+    catalogGeneration += 1;
+    catalogFlight = false;
+    clearTimeout(catalogTimer);
+    catalogTimer = undefined;
+  };
+  const scheduleCatalogRecovery = (): void => {
+    if (catalogTimer !== undefined || deps.catalogReachable === undefined || channel === undefined) return;
+    const generation = catalogGeneration;
+    const revision = catalogRevision;
+    catalogTimer = setTimeout(() => {
+      catalogTimer = undefined;
+      if (generation !== catalogGeneration) return;
+      void (async () => {
+        let reachable = false;
+        try { reachable = await deps.catalogReachable?.() === true; } catch { /* retry while the panel remains open */ }
+        if (generation !== catalogGeneration || revision !== catalogRevision || catalogStatus !== 'unavailable') return;
+        if (reachable) refreshRunCatalog();
+        else scheduleCatalogRecovery();
+      })();
+    }, deps.catalogRetryMs ?? 60_000);
+    catalogTimer.unref();
+  };
+  const refreshRunCatalog = (): void => {
+    const definitions = deps.definitions;
+    if (definitions === undefined || channel === undefined || catalogFlight) return;
+    const generation = catalogGeneration;
+    catalogFlight = true;
+    clearTimeout(catalogTimer);
+    catalogTimer = undefined;
+    publishCatalog('loading');
+    void (async () => {
+      try {
+        const next = runCatalogView(await definitions(), deps.providers.available);
+        if (generation !== catalogGeneration) return;
+        runCatalog = next;
+        runCatalogReady = true;
+        publishCatalog('ready');
+        if (session !== undefined) {
+          reconcileSessionConfig(session);
+          postRunConfig(session);
+        }
+      } catch (err) {
+        if (generation !== catalogGeneration) return;
+        log.warn(`[chat] models.definitions unavailable: ${err instanceof Error ? err.message : String(err)}`);
+        publishCatalog('unavailable');
+        scheduleCatalogRecovery();
+      } finally {
+        if (generation === catalogGeneration) catalogFlight = false;
+      }
+    })();
+  };
   // ISSUE-6a811b8a: the approval queue. Every approval-request a turn raises is queued here and
   // only the oldest undecided one (the head) is shown as an actionable card; the next is shown once
   // it is decided. Each request keeps the facts its decision needs: `toolName` (the tool to
@@ -632,6 +701,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   const startActiveTimer = (): void => {
     if (activeTimer !== undefined) return;
     activeTimer = setInterval(() => { if (!disposed) postActive(); }, deps.activeListTimerMs ?? 60_000);
+    activeTimer.unref?.(); // a panel-lifetime timer must not by itself keep the process alive
   };
 
   // E202611031bd72813:S001 t5 — the 60 s lossless observer for detached chats. For each active
@@ -656,6 +726,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   const startObserverTimer = (): void => {
     if (observerTimer !== undefined || deps.sessionOutput === undefined) return;
     observerTimer = setInterval(() => { void runObserverPass(); }, deps.observerTimerMs ?? 60_000);
+    observerTimer.unref?.(); // same as the active-list timer above
   };
   /** Persists a request onto the fresh record (union by requestId); returns whether it is UNRESOLVED. */
   const persistRequest = (s: ChatSession, r: PersistedRequest): boolean => {
@@ -975,6 +1046,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // of the transcript is sent (never the whole history), with the absolute index of its first row
   // and the transcript's total row count; the webview asks for older pages with 'load-older'.
   const postRestored = (s: ChatSession): void => {
+    reconcileSessionConfig(s);
     const window = latestWindow(s.transcript);
     viewGeneration += 1;
     post({ type: 'session-restored', sessionId: s.id, viewGeneration, progress: readTurnProgress(s), pendingTurnId: runtimes.get(s.id)?.pendingTurnId, transcript: [...window.rows], mode: permissionMode, firstIndex: window.firstIndex, total: s.transcript.length });
@@ -985,6 +1057,17 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   /** Echo the session's run config to the bottom-right buttons ('' = CLI default). */
   const postRunConfig = (s: ChatSession): void => {
     post({ type: 'run-config', provider: s.provider, model: s.model ?? '', effort: s.effort ?? '' });
+  };
+
+  const reconcileSessionConfig = (s: ChatSession, proposed: RunConfig = s): RunConfig => {
+    if (!runCatalogReady) return {};
+    const next = reconcileRunConfig(s.provider, proposed, runCatalog);
+    if (s.model !== next.model || s.effort !== next.effort) {
+      s.model = next.model;
+      s.effort = next.effort;
+      if (deps.store.get(s.id) !== undefined) trySave(s);
+    }
+    return next;
   };
 
   /**
@@ -1975,6 +2058,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
 
   const postInitialState = (): void => {
     post({ type: 'theme', theme });
+    postCatalog();
     const available = deps.providers.available;
     if (available.length === 0) {
       post({ type: 'turn-event', event: { kind: 'error', turnId: 'none', message: 'no agentic CLI (claude/codex) installed' } });
@@ -2269,6 +2353,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `.chatbtn:focus-visible{outline:1px solid var(--focus);outline-offset:1px;}` +
       `.chatbtn .chatlbl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}` +
       `.chatbtn .chev{opacity:.6;font-size:10px;}` +
+      // Story e0821209d94791d0/s1: the dedicated new-chat button left of the history chip — same
+      // ground/border/radius as .histchip, icon-only, glyph in the shared .pico 14px slot.
+      `.newchatbtn{display:inline-flex;align-items:center;justify-content:center;padding:3px 5px;margin:0 6px 0 0;background:var(--dropdown-bg);border:1px solid var(--dropdown-border);border-radius:6px;color:var(--fg);cursor:pointer;}` +
+      `.newchatbtn:hover{color:var(--accent);}` +
+      `.newchatbtn:focus-visible{outline:1px solid var(--focus);outline-offset:1px;}` +
       `.chatmenu{bottom:auto;right:auto;top:calc(100% + 6px);left:0;width:auto;min-width:min(220px,calc(100vw - 28px));max-width:min(360px,calc(100vw - 28px));max-height:min(300px,50vh);overflow:auto;}` +
       // The history chip is RIGHT-aligned: its menu must anchor to the chip's right edge and open
       // leftward, or the left-anchored .chatmenu default pushes it past the right viewport edge.
@@ -2320,7 +2409,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     const runProvider = session?.provider ?? available[0];
     const runModelId = session?.model;
     const runEffort = session?.effort;
-    const runModel = runCatalog.find((p) => p.id === runProvider)?.models.find((m) => runModelId !== undefined && (m.id === runModelId || m.alias === runModelId));
+    const runModel = runCatalog.find((p) => p.id === runProvider)?.models.find((m) => runModelId !== undefined && (m.id === runModelId || m.alias === runModelId || m.otherAliases?.includes(runModelId) === true));
     const runModelLabel = runModel !== undefined ? (runModel.alias ?? runModel.name) : (runModelId || 'default');
     const runEffortLabel = runEffort !== undefined && runEffort !== '' ? runEffort : 'default';
     const catalogJson = attr(JSON.stringify(runCatalog));
@@ -2440,6 +2529,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // S005: history-dropdown wiring (same one nonce'd script).
       `var cur='';var curProv='';` +
       `const hs=document.getElementById('insrc-history');` +
+      // Story e0821209d94791d0/s1: the new-chat chrome button left of .histchip posts the same new-chat.
+      `const nc=document.getElementById('insrc-newchat');` +
       `const actChip=document.getElementById('insrc-actchip');const act=document.getElementById('insrc-active');` +
       `const DOT={ 'waiting-input':'red', working:'yellow', done:'green' };` +
       // Story 546198e11c24c1e3/s1: the two chrome dropdowns are now custom button triggers + .popup
@@ -2451,23 +2542,26 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // Run-config controls (bottom-right): the provider·model popup + effort gauge.
       // State lives in the buttons' data-* attributes (server-rendered from the active
       // session); the model catalog is embedded once in #insrc-catalog.
-      `var catalog=[];try{catalog=JSON.parse(document.getElementById('insrc-catalog').getAttribute('data-catalog')||'[]');}catch(e){catalog=[];}` +
+      `var catalog=[],catalogRevision=-1,catalogStatus=document.getElementById('insrc-catalog').getAttribute('data-status')||'loading';try{catalog=JSON.parse(document.getElementById('insrc-catalog').getAttribute('data-catalog')||'[]');}catch(e){catalog=[];}` +
       `const rb=document.getElementById('insrc-runbtn'),gb=document.getElementById('insrc-effortbtn');` +
       `const rp=document.getElementById('insrc-runpop'),ep=document.getElementById('insrc-effortpop');` +
       `function rstate(){return{provider:rb?rb.getAttribute('data-provider')||'':'',model:rb?rb.getAttribute('data-model')||'':'',effort:rb?rb.getAttribute('data-effort')||'':''};}` +
       `var ICONS=${JSON.stringify(PROVIDER_ICON_SVGS)};function pico(p){return ICONS[p]||'';}` +
       `function rprov(p){return catalog.filter(function(f){return f.id===p;})[0];}` +
-      `function rmodel(p,m){var f=rprov(p);return f?f.models.filter(function(x){return x.id===m||x.alias===m;})[0]:undefined;}` +
+      `function rmodel(p,m){var f=rprov(p);return f?f.models.filter(function(x){return x.id===m||x.alias===m||(x.otherAliases&&x.otherAliases.indexOf(m)>=0);})[0]:undefined;}` +
       `function rtext(v){return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}` +
       `function rlabel(){var s=rstate(),f=rprov(s.provider),m=rmodel(s.provider,s.model);rb.innerHTML='<span class="pico">'+pico(s.provider)+'</span> '+rtext(s.provider||'…')+' · '+rtext(m?(m.alias||m.name):(s.model||'default'))+' <span class="chev">▾</span>';}` +
       `function elabel(){var s=rstate();document.getElementById('insrc-effortlabel').textContent=s.effort||'default';}` +
-      `function rlevels(){var s=rstate(),f=rprov(s.provider),m=rmodel(s.provider,s.model);if(!f)return[];if(m)return m.efforts.slice();var u=[];f.models.forEach(function(x){x.efforts.forEach(function(e){if(u.indexOf(e)<0)u.push(e);});});return u;}` +
+      `function rlevels(){var s=rstate(),m=rmodel(s.provider,s.model);return m?m.efforts.slice():[];}` +
+      `function catalogHint(){return catalogStatus==='loading'?'Loading model catalog…':catalogStatus==='unavailable'?'Model catalog unavailable. Reopen to retry.':'';}` +
+      `function requestCatalog(){vs.postMessage({v:1,payload:{type:'open-run-picker'}});}` +
+      `function updatePickers(){if(rp&&rp.classList.contains('open'))renderProvPane();if(ep&&ep.classList.contains('open'))renderEffortPop();}` +
       `function closePops(){if(rp)rp.classList.remove('open');if(ep)ep.classList.remove('open');if(rb)rb.setAttribute('aria-expanded','false');if(gb)gb.setAttribute('aria-expanded','false');if(actMenu)actMenu.classList.remove('open');if(histMenu)histMenu.classList.remove('open');if(act)act.setAttribute('aria-expanded','false');if(hs)hs.setAttribute('aria-expanded','false');chatFocused=null;}` +
       `function mitem(sel,label,sub,onclick,onhover,dis,icon){var d=document.createElement('div');d.className='item'+(sel?' sel':'')+(dis?' dis':'');d.setAttribute('role','menuitem');if(dis)d.setAttribute('aria-disabled','true');d.innerHTML='<span class="pico">'+(icon||'')+'</span><span class="chk">✓</span><span class="lbl"></span>'+(sub?'<span class="sub"></span>':'');d.querySelector('.lbl').textContent=label;if(sub)d.querySelector('.sub').textContent=sub;if(!dis){if(onhover)d.onmouseenter=onhover;d.onclick=onclick;}return d;}` +
       // Story 546198e11c24c1e3/s1: the chat dropdowns. The two triggers render from selected-id
       // membership (histChatFor/activeChatFor return the entry or undefined); the menus reuse mitem's
       // role=menuitem rows with a roving tabindex. Activation writes actSel/histSel optimistically and
-      // posts open-chat; the 'new…' row posts new-chat. reconcile() snaps BOTH selections to cur.
+      // posts open-chat; new-chat is posted by the #insrc-newchat chrome button. reconcile() snaps BOTH selections to cur.
       `function histChatFor(id){for(var i=0;i<histEntries.length;i++){if(histEntries[i].id===id)return histEntries[i];}return undefined;}` +
       `function activeChatFor(id){for(var i=0;i<actEntries.length;i++){if(actEntries[i].id===id)return actEntries[i];}return undefined;}` +
       `function chatTrig(e,label){return '<span class="pico">'+(e?pico(e.provider):'')+'</span><span class="chatlbl">'+rtext(label)+'</span><span class="chev">▾</span>';}` +
@@ -2478,11 +2572,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `function activeRow(c){var d=mitem(c.id===actSel,c.title||c.id,'●',function(){pickChat(c.id,act);},undefined,false,pico(c.provider));var s=d.querySelector('.sub');if(s)s.setAttribute('data-dot',DOT[c.status]||'green');return d;}` +
       `function historyRow(c){return mitem(c.id===histSel,c.title||c.id,undefined,function(){pickChat(c.id,hs);},undefined,false,pico(c.provider));}` +
       `function renderActiveMenu(){actMenu.innerHTML='';if(actEntries.length===0){actMenu.appendChild(mitem(false,'no active work',undefined,undefined,undefined,true,''));return;}for(var i=0;i<actEntries.length;i++)actMenu.appendChild(activeRow(actEntries[i]));}` +
-      `function renderHistoryMenu(){histMenu.innerHTML='';for(var i=0;i<histEntries.length;i++)histMenu.appendChild(historyRow(histEntries[i]));histMenu.appendChild(mitem(histSel==='','new…','starts a new chat',function(){newChatPick(hs);},undefined,false,''));}` +
+      // Story e0821209d94791d0/s1: the menu lists persisted chats only — new-chat moved to the #insrc-newchat chrome button.
+      `function renderHistoryMenu(){histMenu.innerHTML='';for(var i=0;i<histEntries.length;i++)histMenu.appendChild(historyRow(histEntries[i]));}` +
       `function chatRows(menu){var out=[];for(var i=0;i<menu.children.length;i++){var c=menu.children[i];if(c.getAttribute&&c.getAttribute('role')==='menuitem'&&c.getAttribute('aria-disabled')!=='true')out.push(c);}return out;}` +
       `function focusRow(rows,row,keep){for(var i=0;i<rows.length;i++)rows[i].setAttribute('tabindex',rows[i]===row?'0':'-1');chatFocused=row;if(row&&row.focus){if(keep)row.focus({preventScroll:true});else row.focus();}}` +
       // ISSUE-0d3939248a956860: opening a menu shows its top (the most recent chats) and focuses its
-      // selected row WITHOUT scrolling to it. Focusing the trailing 'new…' row of a fresh chat used
+      // selected row WITHOUT scrolling to it. Focusing the selected row of a fresh chat used
       // to scroll it to its oldest entries, and a hidden menu keeps the offset it was closed at.
       // Arrow keys still scroll to the row they move to.
       `function focusMenu(menu){var rows=chatRows(menu);var sel=null;for(var i=0;i<rows.length;i++){if((' '+(rows[i].className||'')+' ').indexOf(' sel ')>=0){sel=rows[i];break;}}var target=sel||rows[0]||null;if(target)focusRow(rows,target,true);else chatFocused=null;menu.scrollTop=0;}` +
@@ -2491,6 +2586,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `function chatMenuKey(trigger,menu,e){var rows=chatRows(menu);if(e.key==='Escape'){if(e.stopPropagation)e.stopPropagation();closePops();if(trigger&&trigger.focus)trigger.focus();return;}if(e.key==='Tab'){closePops();return;}if(!rows.length)return;var idx=-1;for(var i=0;i<rows.length;i++){if(rows[i]===chatFocused){idx=i;break;}}if(e.key==='ArrowDown'){if(e.preventDefault)e.preventDefault();if(e.stopPropagation)e.stopPropagation();idx=(idx+1)%rows.length;focusRow(rows,rows[idx]);}else if(e.key==='ArrowUp'){if(e.preventDefault)e.preventDefault();if(e.stopPropagation)e.stopPropagation();idx=(idx-1+rows.length)%rows.length;focusRow(rows,rows[idx]);}else if(e.key==='Home'){if(e.preventDefault)e.preventDefault();if(e.stopPropagation)e.stopPropagation();focusRow(rows,rows[0]);}else if(e.key==='End'){if(e.preventDefault)e.preventDefault();if(e.stopPropagation)e.stopPropagation();focusRow(rows,rows[rows.length-1]);}else if(e.key==='Enter'||e.key===' '){if(e.preventDefault)e.preventDefault();if(e.stopPropagation)e.stopPropagation();var r=rows[idx<0?0:idx];if(r&&r.onclick)r.onclick();}}` +
       `if(act)act.addEventListener('click',function(e){if(e&&e.stopPropagation)e.stopPropagation();toggleChatMenu(act,actMenu,renderActiveMenu);});` +
       `if(hs)hs.addEventListener('click',function(e){if(e&&e.stopPropagation)e.stopPropagation();toggleChatMenu(hs,histMenu,renderHistoryMenu);});` +
+      `if(nc)nc.addEventListener('click',function(e){if(e&&e.stopPropagation)e.stopPropagation();newChatPick(nc);});` +
       `function triggerKey(trigger,menu,render,e){if(e.key==='Enter'||e.key===' '){if(e.preventDefault)e.preventDefault();toggleChatMenu(trigger,menu,render);}else if(e.key==='ArrowDown'||e.key==='ArrowUp'){if(e.preventDefault)e.preventDefault();closePops();openChatMenu(trigger,menu,render);}}` +
       `if(act)act.addEventListener('keydown',function(e){triggerKey(act,actMenu,renderActiveMenu,e);});` +
       `if(hs)hs.addEventListener('keydown',function(e){triggerKey(hs,histMenu,renderHistoryMenu,e);});` +
@@ -2498,13 +2594,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `if(histMenu)histMenu.addEventListener('click',function(e){if(e&&e.stopPropagation)e.stopPropagation();});` +
       `if(actMenu)actMenu.addEventListener('keydown',function(e){chatMenuKey(act,actMenu,e);});` +
       `if(histMenu)histMenu.addEventListener('keydown',function(e){chatMenuKey(hs,histMenu,e);});` +
-      `function renderProvPane(hover){var pp=document.getElementById('insrc-provpane');pp.innerHTML='<div class="pane-h">Provider</div>';var s=rstate();document.getElementById('insrc-popfoot').textContent=started?'Provider is fixed once a chat has started · model and effort apply to the next turns.':'Provider change starts a new chat · model change applies to the next turns.';catalog.forEach(function(f){pp.appendChild(mitem(f.id===s.provider,f.label,String(f.models.length),function(){if(f.id!==s.provider){vs.postMessage({v:1,payload:{type:'new-chat',provider:f.id,model:'',effort:rstate().effort}});}},function(){renderModelPane(f);},started&&f.id!==s.provider,pico(f.id)));});renderModelPane(rprov(hover||s.provider));}` +
+      `function renderProvPane(hover){var pp=document.getElementById('insrc-provpane');pp.innerHTML='<div class="pane-h">Provider</div>';var s=rstate();document.getElementById('insrc-popfoot').textContent=catalogHint()||(started?'Provider is fixed once a chat has started · model and effort apply to the next turns.':'Provider change starts a new chat · model change applies to the next turns.');catalog.forEach(function(f){pp.appendChild(mitem(f.id===s.provider,f.label,String(f.models.length),function(){if(f.id!==s.provider){vs.postMessage({v:1,payload:{type:'new-chat',provider:f.id,model:''}});}},function(){renderModelPane(f);},started&&f.id!==s.provider,pico(f.id)));});renderModelPane(rprov(hover||s.provider));}` +
       `function renderModelPane(f){if(!f)return;var mp=document.getElementById('insrc-modelpane');mp.innerHTML='<div class="pane-h"></div>';mp.querySelector('.pane-h').textContent=f.label;var s=rstate();mp.appendChild(mitem(s.model==='', 'default','CLI default',function(){pickModel(f,'');}));f.models.forEach(function(m){mp.appendChild(mitem(f.id===s.provider&&rmodel(s.provider,s.model)===m,m.name,m.alias||m.id,function(){pickModel(f,m.id);}));});}` +
-      `function pickModel(f,id){var s=rstate();if(f.id!==s.provider){vs.postMessage({v:1,payload:{type:'new-chat',provider:f.id,model:id,effort:s.effort}});}else{vs.postMessage({v:1,payload:{type:'set-run-config',model:id}});rb.setAttribute('data-model',id);rlabel();closePops();}}` +
-      `function renderEffortPop(){var s=rstate(),levels=['default'].concat(rlevels()),cur=s.effort?levels.indexOf(s.effort):0;if(cur<0)cur=0;var sl=document.getElementById('insrc-effortslider');sl.max=levels.length-1;sl.value=cur;sl.setAttribute('aria-valuetext',levels[cur]);var tk=document.getElementById('insrc-ticks'),nt=document.getElementById('insrc-notches');tk.innerHTML='';nt.innerHTML='';levels.forEach(function(l,i){var t=document.createElement('i');if(i===cur)t.className='on';tk.appendChild(t);var sp=document.createElement('span');sp.textContent=l;if(i===cur)sp.className='on';sp.onclick=function(){sl.value=i;applyEffort();};nt.appendChild(sp);});document.getElementById('insrc-effortnote').textContent=s.provider==='vibe'?'vibe has no per-call thinking flag — the level is informational; the model’s \`thinking\` in ~/.vibe/config.toml applies.':'Applies to the next turns of this chat.';}` +
-      `function applyEffort(){var s=rstate(),levels=['default'].concat(rlevels()),i=Number(document.getElementById('insrc-effortslider').value);var e=levels[i]==='default'?'':levels[i];vs.postMessage({v:1,payload:{type:'set-run-config',effort:e}});rb.setAttribute('data-effort',e);elabel();renderEffortPop();}` +
-      `if(rb)rb.onclick=function(e){e.stopPropagation();var was=rp.classList.contains('open');closePops();if(!was){renderProvPane();rp.classList.add('open');rb.setAttribute('aria-expanded','true');}};` +
-      `if(gb)gb.onclick=function(e){e.stopPropagation();if(gb.classList.contains('dim'))return;var was=ep.classList.contains('open');closePops();if(!was){renderEffortPop();ep.classList.add('open');gb.setAttribute('aria-expanded','true');}};` +
+      `function pickModel(f,id){var s=rstate();if(f.id!==s.provider){vs.postMessage({v:1,payload:{type:'new-chat',provider:f.id,model:id,effort:s.effort}});}else{vs.postMessage({v:1,payload:{type:'set-run-config',model:id}});closePops();}}` +
+      `function renderEffortPop(){var s=rstate(),levels=['default'].concat(rlevels()),cur=s.effort?levels.indexOf(s.effort):0;if(cur<0)cur=0;var sl=document.getElementById('insrc-effortslider');sl.max=levels.length-1;sl.value=cur;sl.setAttribute('aria-valuetext',levels[cur]);var tk=document.getElementById('insrc-ticks'),nt=document.getElementById('insrc-notches');tk.innerHTML='';nt.innerHTML='';levels.forEach(function(l,i){var t=document.createElement('i');if(i===cur)t.className='on';tk.appendChild(t);var sp=document.createElement('span');sp.textContent=l;if(i===cur)sp.className='on';sp.onclick=function(){sl.value=i;applyEffort();};nt.appendChild(sp);});document.getElementById('insrc-effortnote').textContent=catalogHint()||'Applies to the next turns of this chat.';}` +
+      `function applyEffort(){var s=rstate(),levels=['default'].concat(rlevels()),i=Number(document.getElementById('insrc-effortslider').value);var e=levels[i]==='default'?'':levels[i];vs.postMessage({v:1,payload:{type:'set-run-config',effort:e}});}` +
+      `if(rb)rb.onclick=function(e){e.stopPropagation();var was=rp.classList.contains('open');closePops();if(!was){renderProvPane();rp.classList.add('open');rb.setAttribute('aria-expanded','true');requestCatalog();}};` +
+      `if(gb)gb.onclick=function(e){e.stopPropagation();if(gb.classList.contains('dim'))return;var was=ep.classList.contains('open');closePops();if(!was){renderEffortPop();ep.classList.add('open');gb.setAttribute('aria-expanded','true');requestCatalog();}};` +
       `var esl=document.getElementById('insrc-effortslider');if(esl){esl.addEventListener('change',applyEffort);}` +
       `if(rp)rp.addEventListener('click',function(e){e.stopPropagation();});` +
       `if(ep)ep.addEventListener('click',function(e){e.stopPropagation();});` +
@@ -2603,7 +2699,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // chat has a message — so re-settle the lock here alongside the existing provider re-sync.
       // Run-config echo: the host confirms a session's provider/model/effort (open/switch/
       // restore / set-run-config) — the buttons' labels and data-* follow it.
-      `else if(m.type==='run-config'){curProv=m.provider||'';if(rb){rb.setAttribute('data-provider',m.provider||'');rb.setAttribute('data-model',m.model||'');rb.setAttribute('data-effort',m.effort||'');}rlabel();elabel();}` +
+      `else if(m.type==='run-config'){curProv=m.provider||'';if(rb){rb.setAttribute('data-provider',m.provider||'');rb.setAttribute('data-model',m.model||'');rb.setAttribute('data-effort',m.effort||'');}rlabel();elabel();updatePickers();}` +
+      `else if(m.type==='run-catalog'&&m.revision>=catalogRevision){catalogRevision=m.revision;catalogStatus=m.status;catalog=Array.isArray(m.providers)?m.providers:[];rlabel();elabel();updatePickers();}` +
       // history-list: the persisted chats repopulate the session dropdown; reconcile BOTH triggers
       // against cur (a rejected open-chat arrives as history-list alone, so this also clears a stale
       // active selection — see the LLD errorCases[1]).
@@ -2660,7 +2757,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
             // E202611031bd72813:S001 t4: #insrc-active LEFT-aligned at the chrome start; the history
             // chip stays the sole control of .right (right-aligned).
             `<span class="actchip" id="insrc-actchip" data-urgent=""><button type="button" id="insrc-active" class="chatbtn" aria-haspopup="menu" aria-expanded="false" aria-label="active chats"><span class="pico"></span><span class="chatlbl">no active work</span><span class="chev">▾</span></button><div id="insrc-actmenu" class="popup chatmenu" role="menu" aria-label="active chats"></div></span>` +
-            `<span class="right"><span class="histchip"><button type="button" id="insrc-history" class="chatbtn ${histCls}" aria-haspopup="menu" aria-expanded="false" aria-label="session"><span class="pico"></span><span class="chatlbl">new…</span><span class="chev">▾</span></button><div id="insrc-histmenu" class="popup chatmenu" role="menu" aria-label="session"></div></span></span>` +
+            `<span class="right"><button type="button" id="insrc-newchat" class="newchatbtn" aria-label="new chat" title="new chat"><span class="pico"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M8 3C4.7 3 2 5.2 2 8s2.7 5 6 5c.6 0 1.2-.1 1.8-.2.9.5 1.9.8 3.2.9-.5-.7-.8-1.5-.9-2.2 1-.9 1.9-2.4 1.9-4.5C14 5.2 11.3 3 8 3Z"/><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" d="M8 6v4M6 8h4"/></svg></span></button><span class="histchip"><button type="button" id="insrc-history" class="chatbtn ${histCls}" aria-haspopup="menu" aria-expanded="false" aria-label="session"><span class="pico"></span><span class="chatlbl">new…</span><span class="chev">▾</span></button><div id="insrc-histmenu" class="popup chatmenu" role="menu" aria-label="session"></div></span></span>` +
       `</div>` +
       // Full-width bars (mock): the scrolling transcript, then the live progress bar, then the input
       // bar — each a flex:0 band with its own top border + inset ground, NOT inset inside a .pad.
@@ -2710,7 +2807,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `<div class="notches" id="insrc-notches"></div>` +
       `<div class="foot" id="insrc-effortnote"></div>` +
       `</div>` +
-      `<div id="insrc-catalog" hidden data-catalog="${catalogJson}"></div>` +
+      `<div id="insrc-catalog" hidden data-catalog="${catalogJson}" data-status="${catalogStatus}"></div>` +
       `</span>` +
       `</div>` +
       `</div>` +
@@ -2768,6 +2865,20 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     const s = opts?.session ?? session; // t6: a follow-up fallback may target a non-selected chat
     if ((typed === '' && files.length === 0) || s === undefined) return; // empty submit is a no-op
     const rt = runtimeOf(s);
+    if (!runCatalogReady && (s.model || s.effort)) {
+      const message = 'Model catalog unavailable. Reopen the model picker to retry or choose the default model.';
+      if (rt.queued !== undefined) rt.queued.error = message;
+      postLive(s, { kind: 'error', turnId: pendingTurnId, message }, undefined, false);
+      return;
+    }
+    const runCfg = reconcileSessionConfig(s);
+    const vibe = s.provider === 'vibe' && (runCfg.model || runCfg.effort) ? {
+      vibeCatalog: runCatalog.find(entry => entry.id === 'vibe')?.models.map(model => ({
+        id: model.id, efforts: model.efforts,
+        aliases: model.alias === undefined ? [] : [model.alias, ...(model.otherAliases ?? [])],
+      })) ?? [],
+    } : {};
+    if (s === session) postRunConfig(s);
     const governor = rt.governor;
     // The stored row keeps the user's own words; the paths are named only in what the CLI is sent.
     const prompt = files.length === 0 ? typed : [...(typed === '' ? [] : [typed, '']), ATTACHED_HEADING, ...files.map((f) => f.path)].join('\n');
@@ -2831,10 +2942,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         q.waitTimer = undefined;
       }
     }
-    const runCfg: RunConfig = { ...(s.model !== undefined ? { model: s.model } : {}), ...(s.effort !== undefined ? { effort: s.effort } : {}) };
     const req = s.nativeSessionId !== undefined
-      ? { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode: modeOf(s), ...runCfg, ...grant, ...readable, resume: { provider: s.provider, nativeSessionId: s.nativeSessionId } }
-      : { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode: modeOf(s), ...runCfg, ...grant, ...readable };
+      ? { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode: modeOf(s), ...runCfg, ...vibe, ...grant, ...readable, resume: { provider: s.provider, nativeSessionId: s.nativeSessionId } }
+      : { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode: modeOf(s), ...runCfg, ...vibe, ...grant, ...readable };
 
     // Story E20261013b2e8109f:S001: this turn's diff state, opened in beforeRun.
     let dt: DiffTurn | undefined;
@@ -2967,6 +3077,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         followUpTurns.delete(ev.turnId);
         if (q !== undefined) {
           q.terminal = ev.kind;
+          if (ev.kind === 'done' && ev.replayUnsafe === true) q.acted = true;
           if (ev.kind === 'error') q.error = ev.message;
           // Story S004: a done with ok:false is a failed turn, not a finished one. claude and codex report an overload or
           // a rate limit as an is_error result, which the adapter maps to done(ok:false) with the provider's text.
@@ -3129,6 +3240,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // session-restored; tell it when a turn is still in progress, so the progress widget and Stop come back.
         if (rt !== undefined && (rt.turns.busy() || rt.startingTurns > 0 || rt.queued !== undefined)) postRunning(rt);
         return;
+      case 'open-run-picker':
+        refreshRunCatalog();
+        return;
       case 'submit-turn':
         if (att !== undefined) {
           submitTurn(msg.text);
@@ -3208,10 +3322,15 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         }
         // A DRAFT (unsaved): the new chat is not written to history until its first turn, so
         // repeatedly starting/abandoning new chats never leaves empty sessions behind.
-        session = deps.store.draft(msg.provider, {
-          ...(typeof msg.model === 'string' && msg.model !== '' ? { model: msg.model } : {}),
-          ...(typeof msg.effort === 'string' && msg.effort !== '' ? { effort: msg.effort } : {}),
-        });
+        const proposed = {
+          model: typeof msg.model === 'string' ? msg.model : undefined,
+          effort: typeof msg.effort === 'string' ? msg.effort : undefined,
+        };
+        if (!runCatalogReady && (proposed.model || proposed.effort)) {
+          if (session !== undefined) postRunConfig(session);
+          return;
+        }
+        session = deps.store.draft(msg.provider, reconcileRunConfig(msg.provider, proposed, runCatalog));
         permissionMode = modeOf(session);
         postRestored(session);
         postPending(session.id);
@@ -3224,11 +3343,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         const model = typeof msg.model === 'string' ? msg.model : undefined;
         const effort = typeof msg.effort === 'string' ? msg.effort : undefined;
         if (model === undefined && effort === undefined) return;
-        if (model !== undefined) session.model = model === '' ? undefined : model;
-        if (effort !== undefined) session.effort = effort === '' ? undefined : effort;
-        // ISSUE-0d3939248a956860: a draft keeps its run config in memory and persists it on its
-        // first turn, as set-permission-mode does; saving it here wrote an empty chat to history.
-        if (deps.store.get(session.id) !== undefined) trySave(session);
+        if (runCatalogReady) {
+          reconcileSessionConfig(session, { model: model ?? session.model, effort: effort ?? session.effort });
+        } else if ((model === '' && !effort) || (model === undefined && effort === '')) {
+          if (model === '') session.model = undefined;
+          session.effort = undefined;
+          if (deps.store.get(session.id) !== undefined) trySave(session);
+        }
         postRunConfig(session);
         return;
       }
@@ -3654,10 +3775,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   };
 
   const wireChannel = (ch: ChatPanelChannel): void => {
+    resetCatalogBinding();
     disposed = false;
     channel = ch;
     webviewReady = false; // until this channel's webview posts 'ready'
     channel.onDidDispose(() => {
+      if (channel !== ch) return;
+      resetCatalogBinding();
       if (!superseding) detachRuntimes();
       markViewGone();
       disposed = true;
@@ -3671,9 +3795,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         observerTimer = undefined;
       }
     });
-    channel.onMessage(handleMessage);
+    channel.onMessage(message => { if (channel === ch) void handleMessage(message); });
     channel.setHtml(renderShell());
     postInitialState();
+    refreshRunCatalog();
     postActive();
     startActiveTimer();
     startObserverTimer();
@@ -3716,6 +3841,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       worker?.dispose();
       detachRuntimes();
       markViewGone();
+      resetCatalogBinding();
       disposed = true;
       channel?.dispose();
       channel = undefined;

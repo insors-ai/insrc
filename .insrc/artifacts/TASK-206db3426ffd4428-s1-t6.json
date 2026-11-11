@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b17f9e18-a31e-4745-801b-f068ccf4cb53",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T12:31:24.047Z",
+    "epicCreatedAt": "2026-11-09T06:00:04.355Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "206db3426ffd4428",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Run the final build and full sweep",
+      "parent": {
+        "entityId": "STORY-206db3426ffd4428-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-206db3426ffd4428-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-206db3426ffd4428-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#153",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3775c758d9ef7ba65bdadfede4d8a42f7f76e2e3ea7080f487234e566859bdc0",
+        "at": "2026-11-09T12:31:24.047Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T12:31:24.049Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Run the final build and full sweep",
+    "summary": "After targeted validation is complete, run the root build and the combined backend and project-memory test sweep once.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "Record build and full-sweep commands, revision, results, failures, skips and cancellations. Investigate any in-scope regression before code review and retain the original sweep outcome.",
+      "Keep unrelated baseline failure evidence separate and require explicit disposition for any gate exception. Document any skipped live environments and the remaining sibling scope."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "Verify merged-baseline root build and single full repository sweep with recorded results and disposition of any failures"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

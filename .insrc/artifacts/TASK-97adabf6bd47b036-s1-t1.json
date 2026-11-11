@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-34b0c50a-d40a-4f77-8878-76bc031f3792",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T17:21:09.364Z",
+    "epicCreatedAt": "2026-11-09T16:34:12.401Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "97adabf6bd47b036",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Verify Vibe session settings before dispatch",
+      "parent": {
+        "entityId": "STORY-97adabf6bd47b036-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-97adabf6bd47b036-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0f5f263c22fd67427f2fce913d8f7ea18033bef180a81ab2eb7154599c883aa0",
+        "at": "2026-11-09T17:21:09.364Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T17:21:09.367Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify Vibe session settings before dispatch",
+    "summary": "Add the shared local app-server handshake and open or resume a session without a prompt. Resolve the catalog alias and effort, apply session-only settings and verify runtime read-back. Release a failed preflight process and preserve the headless default path.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Unsupported or mismatched selections stop before a prompt is sent",
+      "New and resumed sessions confirm the effective model and effort",
+      "Cancellation or error during setup releases the local child"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Scripted Vibe handshake, new and resumed preflight, unsupported aliases and settings read-back"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

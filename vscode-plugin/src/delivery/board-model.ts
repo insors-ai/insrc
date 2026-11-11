@@ -109,7 +109,7 @@ const ATTENTION_TONE: Readonly<Record<AttentionReason, Tone>> = {
   'rejected': 'danger',
   'review-blocked': 'danger',
   'validation-failed': 'danger',
-  'validation-conflict': 'danger',
+  'validation-conflict': 'danger', 'needs-migration': 'warning',
 };
 
 const isAttentionReason = (r: string, labels: DisplayLabels): r is AttentionReason => Object.hasOwn(labels.attention, r);

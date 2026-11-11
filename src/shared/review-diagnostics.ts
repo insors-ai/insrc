@@ -6,7 +6,7 @@ export interface ReviewValidationIssue {
  readonly message?: string | undefined;
 }
 export interface ReviewDiagnosticSnapshot {
- readonly provider: 'claude' | 'codex';
+ readonly provider: 'claude' | 'codex' | 'vibe';
  readonly issues: readonly (ReviewValidationIssue & { readonly occurrences: number })[];
  readonly terminal?: { readonly reason: string; readonly exitCode?: number | undefined; readonly message?: string | undefined } | undefined;
  readonly lastRejectedFeedback?: { readonly preview: string; readonly truncated: boolean } | undefined;
@@ -30,9 +30,9 @@ export function diagnosticText(text: string, maxBytes: number): string {
 
 /** One bounded snapshot per native session; callers own task/phase association. */
 export class ReviewDiagnosticCollector {
- private readonly value: { provider: 'claude' | 'codex'; issues: (ReviewValidationIssue & { occurrences: number })[];
+ private readonly value: { provider: 'claude' | 'codex' | 'vibe'; issues: (ReviewValidationIssue & { occurrences: number })[];
   terminal?: ReviewDiagnosticSnapshot['terminal']; lastRejectedFeedback?: ReviewDiagnosticSnapshot['lastRejectedFeedback']; truncated?: boolean };
- constructor(provider: 'claude' | 'codex') { this.value = { provider, issues: [] }; }
+ constructor(provider: 'claude' | 'codex' | 'vibe') { this.value = { provider, issues: [] }; }
  snapshot(): ReviewDiagnosticSnapshot { return structuredClone(this.value); }
  issue(issue: ReviewValidationIssue): void {
   const bounded = { code: diagnosticText(issue.code, 64), field: diagnosticText(issue.field, 256), correction: diagnosticText(issue.correction, 256),

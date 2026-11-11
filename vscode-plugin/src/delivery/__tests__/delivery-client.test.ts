@@ -13,7 +13,10 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 import { handleDelivery, handleDeliveryEvidence } from '../../../../src/workflow/delivery/handlers.js';
+import { buildItemDetails } from '../board-details.js';
 import { createDeliveryClient, type DeliveryClientDeps } from '../delivery-client.js';
+import { DISPLAY_LABELS } from '../labels.js';
+import { evidence, item, snapshot } from './board-fixtures.js';
 
 interface Call { readonly method: string; readonly params: unknown }
 
@@ -29,6 +32,33 @@ function fakeRpc(responder: (method: string, params: unknown) => Promise<unknown
 
 const DEADLINES = { snapshot: 50, evidence: 50 };
 const SNAPSHOT = { schemaVersion: 1, repo: '/ws', takenAt: '2026-10-09T00:00:00.000Z', recordCount: 0, unreadableCount: 0, items: [], rootIds: [], notices: [], counts: {}, attentionRule: '' };
+
+test('vscode-plugin/src/delivery/__tests__/delivery-client.test.ts reads the same shape and opens a sequenced DIAG evidence row', async () => {
+  const hash = 'aaaaaaaaaaaaaaaa';
+  const diag = `DIAG-${hash}-s1-2`;
+  const task = item({ id: 'E1:S001:T001', kind: 'task', parentId: 'E1:S001', planRowId: 't1', taskOrder: 3, unit: { artifactId: `TASK-${hash}-s1-t1`, status: 'unmigrated' } });
+  const story = item({
+    id: 'E1:S001', childIds: [task.id], unit: { artifactId: `STORY-${hash}-s1`, status: 'draft' }, attentionReasons: ['needs-migration'], needsAttention: true,
+    tasks: [{ taskItemId: task.id, result: 'passed', planned: true, taskOrder: 3 }],
+    evidence: [evidence(diag, 'DIAG', { openWith: 'evidence-read', mdPath: null, approval: { state: 'unmigrated', at: null } })],
+  });
+  const sent = snapshot([story, task]);
+  const { rpc, calls } = fakeRpc(async method => (method === 'workflow.delivery' ? JSON.parse(JSON.stringify(sent)) : { artifactId: diag, kind: 'DIAG', meta: {}, body: { of: diag }, renderedMarkdown: null }));
+  const client = createDeliveryClient({ rpc, repo: '/ws', deadlinesMs: DEADLINES });
+
+  const read = await client.snapshot();
+  assert.ok(read.ok);
+  const got = read.value.items.find(i => i.id === task.id)!;
+  assert.deepEqual([got.unit, got.planRowId, got.taskOrder], [{ artifactId: `TASK-${hash}-s1-t1`, status: 'unmigrated' }, 't1', 3]);
+
+  // the row the board shows for the diagram opens read-only, and asks the daemon for exactly that id
+  const row = buildItemDetails(read.value, story.id, { state: 'none' }, null, DISPLAY_LABELS)!.evidence.find(r => r.artifactId === diag);
+  assert.ok(row !== undefined);
+  assert.equal(row.opensIn, 'read-only');
+  assert.equal(row.approvalLabel, 'Not migrated');
+  assert.equal((await client.evidence(row.artifactId)).ok, true);
+  assert.deepEqual(calls.at(-1), { method: 'workflow.deliveryEvidence', params: { repo: '/ws', artifactId: diag } });
+});
 
 test('snapshot and evidence send the workspace repo and nothing is sent without a workspace', async () => {
   const { rpc, calls } = fakeRpc(async (method) => (method === 'workflow.delivery' ? SNAPSHOT : { artifactId: 'LLD-x', kind: 'LLD', meta: {}, body: {}, renderedMarkdown: null }));

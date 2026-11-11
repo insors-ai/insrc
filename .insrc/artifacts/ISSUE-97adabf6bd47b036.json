@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1794242003553-ycvhed",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T16:34:12.401Z",
+    "epicCreatedAt": "2026-11-09T16:34:12.401Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 48829,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "97adabf6bd47b036",
+    "epicSlug": "apply-catalog-model-effort-choices-daemon",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5690e8effe9b7b7ffd271079bcaee423483e1b15788b223f71ad85fa71013027",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T16:36:11.712Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "97adabf6bd47b036",
+      "slug": "EPIC-97adabf6bd47b036"
+    }
+  },
+  "body": {
+    "title": "Apply catalog model and effort choices in daemon and VS Code",
+    "reproduction": "In a daemon tier or a VS Code chat, select a Vibe catalog model with a listed non-default effort and run a turn. Both adapters accept the effort in their inputs but omit it when starting Vibe. Separately, open a chat while the daemon catalog request fails and reconnect the daemon. That panel can remain at provider-only choices because it fetched definitions once. Switching from a model with a selected effort to a model with a different effort list can also retain the prior value. A read-only check of the running daemon returned the model and effort catalog and resolved this repository's build and review roles to GPT-6.1 Sol at medium effort.",
+    "rootCause": "The registry and models.definitions projection already publish the catalog. The daemon CliProvider and the VS Code Vibe adapter launch with a model selector but omit the effort. The VS Code chat host handles catalog load failure by logging it and retaining empty model lists, with no retry. Its run configuration mutation independently stores model and effort, so the selected model's catalog limits are not enforced together.",
+    "fixIntent": "Make the supported catalog choices observable and effective in both daemon and VS Code. Verify the installed CLI's model and effort mechanisms and apply supported selections consistently, with an explicit unsupported result if a choice cannot be applied. Retry chat catalog loading after a transient failure and reconcile effort when the selected model changes. Cover transport and picker regressions without editing the existing daemon configuration."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/assets/models/cloud-model-catalog.json"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/model-definitions.ts:147"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts:715"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/cli-adapter.ts:1023"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:326-336"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:3221-3234"
+    }
+  ]
+}

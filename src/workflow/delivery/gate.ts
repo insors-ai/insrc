@@ -217,7 +217,7 @@ const CHAINS: Readonly<Partial<Record<WorkItemNode['kind'], readonly DeliveryArt
 	story: ['SPEC', 'LLD', 'PLAN', 'BUILD'],
 };
 
-const REASON_ORDER: readonly AttentionReason[] = ['pending-decision', 'rejected', 'review-blocked', 'validation-failed', 'validation-conflict'];
+const REASON_ORDER: readonly AttentionReason[] = ['pending-decision', 'rejected', 'review-blocked', 'validation-failed', 'validation-conflict', 'needs-migration'];
 
 const ATTENTION_RULE = 'A pending record stops counting toward Needs attention once a later gate on the same item is approved '
 	+ '(epic: SPEC < DEF < HLD; story: SPEC < LLD < PLAN < BUILD); ISSUE, EXT and AMD records are never superseded.';
@@ -303,7 +303,7 @@ function storyValidation(
 		const taskOrdinal = firstOrdinal(child.sourceIds, taskOrdinalOf);
 		const slot = taskOrdinal === null ? undefined : byTask.get(taskOrdinal);
 		const isPlanned = taskOrdinal !== null && planned.has(taskOrdinal);
-		tasks.push({ taskItemId: child.id, result: resultOf(slot?.passes ?? []), planned: isPlanned });
+		tasks.push({ taskItemId: child.id, result: resultOf(slot?.passes ?? []), planned: isPlanned, taskOrder: child.taskOrder });
 		if (!isPlanned) {
 			notices.push(makeNotice('unplanned-task',
 				hasPlan
@@ -312,7 +312,7 @@ function storyValidation(
 				{ itemIds: [child.id, story.id], artifactIds: [...(slot?.buildIds ?? [])] }));
 		}
 	}
-	tasks.sort((a, b) => a.taskItemId.localeCompare(b.taskItemId));
+	tasks.sort((a, b) => (a.taskOrder ?? Infinity) - (b.taskOrder ?? Infinity) || a.taskItemId.localeCompare(b.taskItemId));
 
 	const storyLevelResult = storyLevel.length === 0 ? null : resultOf(storyLevel);
 	const failedTaskItemIds = tasks.filter(t => t.result === 'failed').map(t => t.taskItemId);
@@ -350,12 +350,14 @@ function itemGates(
 
 	const reasons = new Set<AttentionReason>();
 	for (const r of counted) {
-		if (r.approval.state === 'pending' && r.kind !== 'CR') reasons.add('pending-decision');
+		if (r.approval.state === 'pending' && r.kind !== 'CR' && r.kind !== 'DIAG') reasons.add('pending-decision');
 		if (r.approval.state === 'rejected') reasons.add('rejected');
 		if (artifacts.get(r.artifactId)?.review?.blocking === true) reasons.add('review-blocked');
 	}
 	if (validation.tasks.some(t => t.result === 'failed') || validation.storyLevelResult === 'failed') reasons.add('validation-failed');
 	if (validation.conflict !== null) reasons.add('validation-conflict');
+	const migration = needsMigration(item, counted, graph, byId);
+	if (migration.length > 0) reasons.add('needs-migration');
 
 	const gates: ItemGates = {
 		itemId:           item.id,
@@ -371,7 +373,43 @@ function itemGates(
 		attentionReasons: REASON_ORDER.filter(r => reasons.has(r)),
 		attentionRule:    `${ATTENTION_RULE} Excluded here: ${superseded.length === 0 ? 'none' : superseded.join(', ')}.`,
 	};
-	return { gates, notices: validation.notices };
+	const migrationNotice = migration.length === 0 ? [] : [makeNotice('needs-migration', `${item.id} needs a repair: ${migration.join(', ')}`, { itemIds: [item.id], artifactIds: [...counted.filter(r => r.approval.state === 'unmigrated').map(r => r.artifactId), ...(unmigratedTasksHead(item, byId) === undefined ? [] : [`TASKS-${item.workItemHash}-s${firstOrdinal(item.sourceIds, storyOrdinalOf)}`])] })];
+	return { gates, notices: [...validation.notices, ...migrationNotice] };
+}
+
+const isUnmigrated = (unit: WorkItemNode['unit']): boolean => unit === null || unit.status === 'unmigrated';
+
+/** A story's TASKS head when it has no lifecycle: it is no evidence and no unit, so nothing else would see it. */
+function unmigratedTasksHead(item: WorkItemNode, byId: ReadonlyMap<string, ArtifactRecord>): ArtifactRecord | undefined {
+	const ordinal = firstOrdinal(item.sourceIds, storyOrdinalOf);
+	const head = item.kind !== 'story' || ordinal === null ? undefined : byId.get(`TASKS-${item.workItemHash}-s${ordinal}`);
+	return head?.approval.state === 'unmigrated' ? head : undefined;
+}
+
+/**
+ * What about an item is still to be brought into the common model, in words: its records with no lifecycle, its own head if an epic or a
+ * story has none or an unmigrated one, its Tasks with an unmigrated head, and its planned Tasks if its plan is approved and they have none.
+ */
+function needsMigration(item: WorkItemNode, counted: readonly ArtifactRecord[], graph: WorkItemGraph, byId: ReadonlyMap<string, ArtifactRecord>): string[] {
+	const out = counted.filter(r => r.approval.state === 'unmigrated').map(r => `${r.artifactId} has no lifecycle`);
+	if ((item.kind === 'epic' || item.kind === 'story') && isUnmigrated(item.unit)) out.push(item.unit === null ? `the ${item.kind} has no head` : `${item.unit.artifactId} has no lifecycle`);
+	if (item.kind === 'story') {
+		// a draft plan's Tasks come with its approval; with no plan at all a Task with no head is one a TASKS head lists
+		// read from all the evidence: a later approved gate takes a draft plan out of the counted records, and its rows still have no Tasks
+		const plans = item.evidenceArtifactIds.flatMap(id => { const r = byId.get(id); return r?.kind === 'PLAN' ? [r] : []; });
+		const draftPlan = plans.length > 0 && !plans.some(r => r.approval.state === 'approved');
+		const tasksHead = unmigratedTasksHead(item, byId);
+		if (tasksHead !== undefined) out.push(`${tasksHead.artifactId} has no lifecycle`);
+		for (const childId of item.childIds) {
+			const child = graph.items.get(childId);
+			if (child?.kind !== 'task') continue;
+			// A Task item with no head and no plan row behind it is a BUILD result that matches no Task: it is not an active Task, so by the
+			// design (LLD 2.12) it keeps its item and its validation result and raises no needs-migration.
+			if (child.unit?.status === 'unmigrated') out.push(`${child.unit.artifactId} has no lifecycle`);
+			else if (child.unit === null && !draftPlan && child.planRowId !== null) out.push(`task ${childId} has no head`);
+		}
+	}
+	return out;
 }
 
 /** The gate pass over one record set and its graph. */

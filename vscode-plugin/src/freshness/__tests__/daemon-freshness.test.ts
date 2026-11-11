@@ -18,6 +18,7 @@ import {
   type DaemonFreshnessDeps,
   type PluginVersionState,
 } from '../daemon-freshness.js';
+import { DaemonDisconnectedError } from '../../../../src/shared/ipc-client.js';
 import type { DaemonReachability } from '../../../../src/shared/ipc-client.js';
 import type { DaemonStatus, DaemonUpdateResult, DaemonUpdateOutcome } from '../../../../src/shared/types.js';
 
@@ -100,6 +101,59 @@ function deps(
     ...overrides,
   };
 }
+
+test('Correlated update outcomes ignore unrelated terminal records and changed installedCommit', async () => {
+  let commit = INSTALLED;
+  let clock = 1_000;
+  const client = fakeClient({
+    installedCommit: () => commit,
+    update: async () => { commit = UPSTREAM; return { launched: true, updateId: 'current' }; },
+    updateOutcome: async () => ({ updateId: 'another', state: 'succeeded', finishedAt: new Date(clock).toISOString() }),
+  });
+  const { notify, rec } = fakeNotify('Update');
+  await runDaemonFreshnessCheck(deps({
+    client, notify, versionState: fakeVersionState('1', '1'), now: () => clock,
+    sleep: async () => { clock += 5_000; },
+  }));
+  assert.equal(client.updateCalls, 1);
+  assert.match(rec.messages.at(-1) ?? '', /confirmation is pending/);
+  assert.ok(!rec.messages.includes(RELOAD_NUDGE_MESSAGE));
+});
+
+test('Candidate status projects the prior commit during validation and a later rollback in both IDE confirmation flows', async () => {
+  let reads = 0;
+  const client = fakeClient({
+    installedCommit: INSTALLED,
+    update: async () => ({ launched: true, updateId: 'current' }),
+    updateOutcome: async () => ++reads === 1 ? null : ({
+      updateId: 'current', state: 'failed', error: 'predecessor restored', finishedAt: new Date(100).toISOString(),
+    }),
+  });
+  const { notify, rec } = fakeNotify('Update');
+  await runDaemonFreshnessCheck(deps({ client, notify, versionState: fakeVersionState('1', '1') }));
+  assert.equal(reads, 2);
+  assert.match(rec.messages.at(-1) ?? '', /predecessor restored/);
+  assert.ok(!rec.messages.includes(RELOAD_NUDGE_MESSAGE));
+});
+
+test('Lost update acknowledgement does not trigger an automatic duplicate request', async () => {
+  let outcomes = 0;
+  const client = fakeClient({
+    update: async () => { throw new DaemonDisconnectedError('daemon.update'); },
+    updateOutcome: async () => {
+      outcomes += 1;
+      return { updateId: 'unconfirmed', state: 'succeeded', finishedAt: new Date(2_000).toISOString() };
+    },
+  });
+  const { notify, rec } = fakeNotify();
+  const versionState = fakeVersionState('2', '1');
+  await runDaemonFreshnessCheck(deps({ client, notify, versionState }));
+  assert.equal(client.updateCalls, 1);
+  assert.equal(outcomes, 1);
+  assert.deepEqual(versionState.saved, ['2']);
+  assert.match(rec.messages.at(-1) ?? '', /launch is unconfirmed/);
+  assert.ok(!rec.messages.includes(RELOAD_NUDGE_MESSAGE));
+});
 
 // ---- startup-check drift (ac1) ---------------------------------------------
 

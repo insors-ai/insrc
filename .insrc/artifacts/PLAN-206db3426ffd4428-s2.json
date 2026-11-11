@@ -1,0 +1,328 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1794283195658-mtuinf",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-10T04:01:08.162Z",
+    "epicCreatedAt": "2026-11-09T06:00:04.355Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 72146,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "206db3426ffd4428",
+    "epicSlug": "show-long-running-task-progress-chat",
+    "storyId": "s2",
+    "lldRunId": "wf-1794254425999-ht2ypo",
+    "lldEffectiveHash": "48a6a5468b45d758c2f607734dcbfdf65a0d1476d8c409eeed1ac09aa037dec9",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "659101b78bd1795097c6abc45e753d3f15c61f6141d50cd9e50ccfac61393d1c",
+        "at": "2026-11-10T04:01:08.256Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T12:13:06.524Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "441cd725ef634530e04945e0e2b18dd8ebd38fe4"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Build typed progress delegates for workflow and analysis, then connect their execution owners to the existing daemon coordinator. Verify routed and in-process execution against the legacy contracts, including cancellation, authorization and terminal delivery."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Define and validate workflow and analysis measurements",
+        "summary": "Add closed sc4 detail schemas and run-local mapping for the existing workflow callbacks and typed analysis events. Feed the production runtime validators and register both producer ports.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Both detail types pass S1 runtime validation and use closed, bounded identifiers. Unsupported or malformed measurements remain unknown.",
+          "Workflow callback counts use output-chunks with unknown total. The legacy token batching and tail remain unchanged. Analysis preview text never becomes progress or a count.",
+          "Workflow stage position does not use legacy event indexes. Analysis positions, if available, count completed work within the same plan. Duplicate or nested task IDs must not corrupt the count."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "S2 workflow measurements count provider output chunks and preserve legacy token batches"
+          },
+          {
+            "level": "unit",
+            "name": "S2 analysis measurements ignore previews and isolate nested task identities"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Bridge verified run ownership to the daemon coordinator",
+        "summary": "Connect routed workflow and analysis runs to the main daemon through a private worker relay. Use the same producer lifecycle in-process. Keep the existing coordinator and access rules as the authority.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "A server-verified launch binds the registered project, invocation, actual worker channel and execution key to one S1 attempt. No client-supplied identity or ambiguous binding can mint a grant.",
+          "Bound the relay to a latest active sample and a reserved terminal update per admitted execution. Reject stale, malformed, foreign and late events. Keep a terminal outcome that arrives before admission within the bounded reservation; expire unresolved admissions.",
+          "Probe the actual execution owner during quiet work. Terminal evidence bypasses active coalescing, persists before S1 delivery and is replayable under the same fence. Verified owner loss without accepted terminal evidence is interrupted.",
+          "Failure or refusal cannot delay or reject legacy execution, and no worker opens a second progress store.",
+          "Verify the origin and registered project at the main daemon before admitting a routed owner. An admitted detached run outlives the initiating socket under the existing registry. Worker exit cleans up the relay."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "S2 producer relay admits only a verified project origin and worker attempt"
+          },
+          {
+            "level": "integration",
+            "name": "S2 producer relay preserves early terminal evidence and releases unresolved admissions"
+          },
+          {
+            "level": "integration",
+            "name": "S2 quiet owner renews activity and worker loss fences stale evidence"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Wire workflow execution owners",
+        "summary": "Connect both workflow.run streaming and workflow.run.start detached execution to the shared workflow delegate. Use the existing driver callbacks and real stream or registry outcome.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Stream stage and delta frames, token batching, tail and terminal payloads are byte-compatible. Detached poll frames, cursor and abort behavior are preserved.",
+          "Both entry paths report stage transitions and measured cumulative output with the declared unit when present. Nested grounding and controller steps do not create separate observations.",
+          "Observer loss leaves detached work active. Accepted completion, rejection and actual cancellation publish exactly one settled status. Cancel requests alone do not certify termination."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "S2 workflow progress preserves streaming frames and terminal result"
+          },
+          {
+            "level": "integration",
+            "name": "S2 detached workflow preserves poll cursor and abort behavior across observer loss"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Wire analysis execution owner",
+        "summary": "Connect analyze.run.start to the analysis delegate at the existing typed event and result seams. Preserve analysis persistence and status retrieval.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Legacy stage mapping and analyze.result/done ordering remain compatible. analyze.run.status returns the existing persisted result.",
+          "Typed stage and task events feed the delegate. Preview and tool text, nested analysis and controller steps do not add progress observations. Cached completion and typed cancellation use the actual result.",
+          "Invalid launches, an unexpected throw, disconnect and a race with completion preserve legacy semantics and do not fabricate successful progress."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "S2 analysis progress preserves stage frames and the analyze.result then done sequence"
+          },
+          {
+            "level": "integration",
+            "name": "S2 analysis preserves cached completion cancellation and persisted status"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Qualify combined progress and legacy compatibility",
+        "summary": "Exercise both producers through real daemon routing and the in-process path with controlled providers and verified test origins. Run the integrated verification sweep after focused task checks.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Concurrent workflow and analysis preserve attempt and project isolation and retain authoritative terminal outcomes. Check a quiet owner, worker exit, observer loss, authorization denial, pending admission and persistence failure.",
+          "Legacy compatibility holds with observation active, absent, refused and failing. Provider invocation counts stay unchanged.",
+          "Run the backend build and full backend test sweep once the tasks are complete. Record the exact tested revision, outcomes and evidence.",
+          "Check that pre-existing S1 records require no rewrite and a daemon without active S2 producers still serves the legacy contract."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "S2 real daemon routes concurrent workflow and analysis progress to isolated observers"
+          },
+          {
+            "level": "integration",
+            "name": "S2 legacy workflow and analysis outcomes survive absent refused and failing observation"
+          },
+          {
+            "level": "integration",
+            "name": "S2 production runtime preserves S1 records and adds no provider calls"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "Workflow phases, retries and known versus absent production units",
+        "coveredByTaskIds": [
+          "t1",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Analysis stages, tasks and ignored previews",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Owner settlement and quiet liveness",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "workflow.run",
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "workflow.run.start/poll/abort",
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "analyze.run.start/status",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Worker exit, rebinding and terminal write failure",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Exact frame sequences and payloads",
+        "coveredByTaskIds": [
+          "t3",
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Cancellation and detached lifetime",
+        "coveredByTaskIds": [
+          "t2",
+          "t3",
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Denial for wrong project or origin and stale worker",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "No extra provider invocations, bounded relay and final cleanup",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/S002/LLD.md#2-contract-details"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/S002/LLD.md#3-data-model-changes"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/S002/LLD.md#5-interaction-with-shared-contracts"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/S002/LLD.md#7-test-strategy"
+    }
+  ]
+}

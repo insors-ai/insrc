@@ -638,12 +638,19 @@ export function activate(context: vscode.ExtensionContext): void {
         void chatAttachments.removeSession(id).catch((e: unknown) => panelLog.warn(`chat attachments of ${id} not removed: ${String(e)}`));
       },
     });
+    const chatModelDefinitions = () => rpc<ModelDefinitions>('models.definitions', undefined, undefined, { timeoutMs: 10_000 });
     const chatProviders = createProviderRegistry({
       spawn: nodeSpawner, isInstalled: defaultBinaryProbe, sessionOutput: chatOutput,
       resolveOllamaTarget: createChatOllamaResolver({
         definitions: () => client.rpc<ModelDefinitions>('models.definitions'),
         rawConfig: () => configGateway.rawConfig(),
       }),
+      vibeCatalog: async () => {
+        const definitions = await chatModelDefinitions();
+        const family = definitions.families.find(entry => entry.id === 'cli-vibe');
+        const rejected = new Set(family?.rejectedModels);
+        return family?.models.filter(model => !rejected.has(model.id)) ?? [];
+      },
     });
     // A session the migration left in globalState is not in the store yet: its files are kept too.
     const chatKeep = new Set([...chatStore.list().map((c) => c.id), ...migratedChats.kept]);
@@ -876,8 +883,12 @@ export function activate(context: vscode.ExtensionContext): void {
       hostPid: process.pid,
       isAlive: processAliveCheck(defaultIsAlive, defaultProcessStartTime),
       // Run-config popup: the daemon's model definitions (per-family models + efforts),
-      // read once at host start; the panel re-renders when they land.
-      definitions: () => client.rpc<ModelDefinitions>('models.definitions'),
+      // refreshed independently of the webview and any active chat turn.
+      definitions: chatModelDefinitions,
+      catalogReachable: async () => {
+        await rpc('daemon.status', undefined, undefined, { timeoutMs: 5_000 });
+        return true;
+      },
       // LLM chat titling: a one-shot over the same CLI (no resume; timeout-bounded) names the
       // chat after its first turn, replacing the truncated-prompt fallback.
       deriveTitle: (input) => deriveChatTitle(chatProviders, input),

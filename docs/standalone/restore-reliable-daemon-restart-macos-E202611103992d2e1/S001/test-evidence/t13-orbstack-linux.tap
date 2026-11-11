@@ -1,0 +1,138 @@
+v22.22.1
+aarch64
+TAP version 13
+# Subtest: Independent watchdog bounds a disposable blocked parent and disarms after healthy exit
+ok 1 - Independent watchdog bounds a disposable blocked parent and disarms after healthy exit
+  ---
+  duration_ms: 3245.934468
+  type: 'test'
+  ...
+# Subtest: Ready handshake reports spawn failure, early exit and timeout
+ok 2 - Ready handshake reports spawn failure, early exit and timeout
+  ---
+  duration_ms: 422.411305
+  type: 'test'
+  ...
+# Subtest: Watchdog never signals after reparenting and imports only Node built-ins
+ok 3 - Watchdog never signals after reparenting and imports only Node built-ins
+  ---
+  duration_ms: 970.023945
+  type: 'test'
+  ...
+# Subtest: Watchdog IPC disconnect during readiness releases its shared broker session without signalling the parent
+ok 4 - Watchdog IPC disconnect during readiness releases its shared broker session without signalling the parent
+  ---
+  duration_ms: 812.157236
+  type: 'test'
+  ...
+# Subtest: IPC transport loss never disarms the deadline for a blocked parent or blocked exit hook
+ok 5 - IPC transport loss never disarms the deadline for a blocked parent or blocked exit hook
+  ---
+  duration_ms: 1150.034879
+  type: 'test'
+  ...
+# Subtest: Backward wall-clock adjustment cannot extend the independent monotonic shutdown duration
+ok 6 - Backward wall-clock adjustment cannot extend the independent monotonic shutdown duration
+  ---
+  duration_ms: 878.982034
+  type: 'test'
+  ...
+# Subtest: native StopTarget remains bound after PID-file replacement and terminates only the original process
+ok 7 - native StopTarget remains bound after PID-file replacement and terminates only the original process
+  ---
+  duration_ms: 40.777467
+  type: 'test'
+  ...
+# Subtest: native close and cancellation release the broker without terminating an unrequested target
+ok 8 - native close and cancellation release the broker without terminating an unrequested target
+  ---
+  duration_ms: 24.970408
+  type: 'test'
+  ...
+# Subtest: chunked readiness and out-of-order replies preserve one immutable identity and request correlation
+ok 9 - chunked readiness and out-of-order replies preserve one immutable identity and request correlation
+  ---
+  duration_ms: 54.986932
+  type: 'test'
+  ...
+# Subtest: spawn, readiness, malformed identity and native permission failures refuse capture and clean helpers
+ok 10 - spawn, readiness, malformed identity and native permission failures refuse capture and clean helpers
+  ---
+  duration_ms: 348.297043
+  type: 'test'
+  ...
+# Subtest: readiness and operation timeouts close a stuck helper without a target-signal fallback
+ok 11 - readiness and operation timeouts close a stuck helper without a target-signal fallback
+  ---
+  duration_ms: 772.276191
+  type: 'test'
+  ...
+# Subtest: abort before capture and during readiness or a pending request leaves no helper
+ok 12 - abort before capture and during readiness or a pending request leaves no helper
+  ---
+  duration_ms: 268.044826
+  type: 'test'
+  ...
+# Subtest: unknown reply IDs, operation mismatches and request errors close the capability session
+ok 13 - unknown reply IDs, operation mismatches and request errors close the capability session
+  ---
+  duration_ms: 108.01806
+  type: 'test'
+  ...
+# Subtest: invalid target IDs and timer bounds are rejected before spawning
+ok 14 - invalid target IDs and timer bounds are rejected before spawning
+  ---
+  duration_ms: 2.132763
+  type: 'test'
+  ...
+# Subtest: oversized readiness and partial request replies never become process-exit evidence
+ok 15 - oversized readiness and partial request replies never become process-exit evidence
+  ---
+  duration_ms: 51.644828
+  type: 'test'
+  ...
+# Subtest: normal build ships the host broker with no numeric-PID kill symbol
+ok 16 - normal build ships the host broker with no numeric-PID kill symbol
+  ---
+  duration_ms: 10.114606
+  type: 'test'
+  ...
+# Subtest: Linux native handle retains the original target through termination and exit without retargeting
+ok 17 - Linux native handle retains the original target through termination and exit without retargeting
+  ---
+  duration_ms: 51.757162
+  type: 'test'
+  ...
+# Subtest: closing or abandoning a native handle does not terminate its target
+ok 18 - closing or abandoning a native handle does not terminate its target
+  ---
+  duration_ms: 23.543774
+  type: 'test'
+  ...
+# Subtest: native framing rejects malformed requests and non-daemon targets without signalling
+ok 19 - native framing rejects malformed requests and non-daemon targets without signalling
+  ---
+  duration_ms: 49.177312
+  type: 'test'
+  ...
+# Subtest: Darwin-style denied and unsupported capability seams fail before readiness and never enable termination
+ok 20 - Darwin-style denied and unsupported capability seams fail before readiness and never enable termination
+  ---
+  duration_ms: 7.534923
+  type: 'test'
+  ...
+# Subtest: missing identity metadata is unverifiable rather than positive process-exit evidence
+ok 21 - missing identity metadata is unverifiable rather than positive process-exit evidence
+  ---
+  duration_ms: 5.946996
+  type: 'test'
+  ...
+1..21
+# tests 21
+# suites 0
+# pass 21
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 87991.468866

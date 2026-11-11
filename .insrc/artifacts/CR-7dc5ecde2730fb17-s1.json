@@ -1,0 +1,593 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "store-1b5784ff-3ac4-4357-950a-acd7ad375ada",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T18:20:11.261Z",
+    "epicCreatedAt": "2026-11-09T09:10:15.201Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 2,
+    "epicHash": "7dc5ecde2730fb17",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicSlug": "stop-chat-panel-timers-from-keeping",
+    "standalone": true,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "2a27b4fa6b9f4b192950812f5fd1c8748b78be5b38f44d21168c536c396e492e",
+        "at": "2026-11-09T18:20:11.262Z",
+        "by": {
+          "id": "insrc:code-review",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "kind": "code-review",
+    "format": "task-based",
+    "storyId": "s1",
+    "status": "passed",
+    "reviews": [
+      {
+        "reviewId": "chat-panel-exit-hang-s1",
+        "attempt": 1,
+        "storyId": "s1",
+        "reviewer": "daemon",
+        "status": "passed",
+        "finalScopeIdentity": "aa4615a2d1b2b1d4e92eb6a3157df65bcd399fe18f4578238fc4f671e9a957cb",
+        "attributionIdentity": "12604fa802a82f59e344ca0e03c9018e0836342df548bd8a8e04366d5ffb164a",
+        "taskScopeIdentities": [
+          {
+            "taskId": "s1",
+            "identity": "c7db17e1df5c0861b4188668f2aec2e888c52de0d49060ba376766443c2eb2b5"
+          }
+        ],
+        "scope": {
+          "reviewRevision": "dd5cb24463c8be50a69700e6d303dbcabed0871a",
+          "finalScope": {
+            "revision": "dd5cb24463c8be50a69700e6d303dbcabed0871a",
+            "identity": "aa4615a2d1b2b1d4e92eb6a3157df65bcd399fe18f4578238fc4f671e9a957cb",
+            "entries": [
+              {
+                "originChangeIndex": 0,
+                "path": "vscode-plugin/src/chat/chat-panel.ts",
+                "blobOid": "e022d55eeffb5846696621108a8db5ceb337ec72",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      704,
+                      704
+                    ]
+                  },
+                  {
+                    "after": [
+                      729,
+                      729
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 1,
+                "path": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                "blobOid": "14d2718f8002760f03ee0f93bc980b30fe6c35d4",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      99,
+                      102
+                    ]
+                  },
+                  {
+                    "after": [
+                      110,
+                      110
+                    ]
+                  },
+                  {
+                    "after": [
+                      120,
+                      120
+                    ]
+                  },
+                  {
+                    "after": [
+                      1044,
+                      1044
+                    ]
+                  },
+                  {
+                    "after": [
+                      5410,
+                      5410
+                    ]
+                  },
+                  {
+                    "after": [
+                      5422,
+                      5422
+                    ]
+                  },
+                  {
+                    "after": [
+                      7373,
+                      7373
+                    ]
+                  },
+                  {
+                    "after": [
+                      7440,
+                      7440
+                    ]
+                  },
+                  {
+                    "after": [
+                      7444,
+                      7444
+                    ]
+                  },
+                  {
+                    "after": [
+                      8406,
+                      8439
+                    ]
+                  }
+                ]
+              }
+            ],
+            "dispositions": [
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    704,
+                    704
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      704,
+                      704
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    729,
+                    729
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      729,
+                      729
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    99,
+                    102
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      99,
+                      102
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    110,
+                    110
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      110,
+                      110
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    120,
+                    120
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      120,
+                      120
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    1044,
+                    1044
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      1044,
+                      1044
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    5410,
+                    5410
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      5410,
+                      5410
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 5
+                },
+                "sourcePart": {
+                  "after": [
+                    5422,
+                    5422
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      5422,
+                      5422
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 6
+                },
+                "sourcePart": {
+                  "after": [
+                    7373,
+                    7373
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      7373,
+                      7373
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 7
+                },
+                "sourcePart": {
+                  "after": [
+                    7440,
+                    7440
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      7440,
+                      7440
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 8
+                },
+                "sourcePart": {
+                  "after": [
+                    7444,
+                    7444
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      7444,
+                      7444
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 9
+                },
+                "sourcePart": {
+                  "after": [
+                    8406,
+                    8439
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      8406,
+                      8439
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              }
+            ],
+            "selectedTaskIds": [
+              "s1"
+            ],
+            "testCount": 1,
+            "attributionIdentity": "12604fa802a82f59e344ca0e03c9018e0836342df548bd8a8e04366d5ffb164a",
+            "attributionState": "accepted",
+            "tasks": [
+              {
+                "taskId": "s1",
+                "changeIndexes": [
+                  0,
+                  1
+                ],
+                "testIndexes": [
+                  0
+                ],
+                "decision": {
+                  "action": "initial"
+                },
+                "identity": "c7db17e1df5c0861b4188668f2aec2e888c52de0d49060ba376766443c2eb2b5"
+              }
+            ]
+          },
+          "storyId": "s1",
+          "documents": {
+            "issue": {
+              "path": "docs/standalone/stop-chat-panel-timers-from-keeping-E202611097dc5ecde/ISSUE.md",
+              "commit": "dd5cb24463c8be50a69700e6d303dbcabed0871a"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "e46593f65e1308ce475427beb7da694c3486904e",
+              "parent": "e5add91e45c1a87b69681008623ee3628dc630b5",
+              "files": [
+                {
+                  "path": "vscode-plugin/src/chat/chat-panel.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        704,
+                        704
+                      ]
+                    },
+                    {
+                      "after": [
+                        729,
+                        729
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        99,
+                        102
+                      ]
+                    },
+                    {
+                      "after": [
+                        110,
+                        110
+                      ]
+                    },
+                    {
+                      "after": [
+                        120,
+                        120
+                      ]
+                    },
+                    {
+                      "after": [
+                        1044,
+                        1044
+                      ]
+                    },
+                    {
+                      "after": [
+                        5410,
+                        5410
+                      ]
+                    },
+                    {
+                      "after": [
+                        5422,
+                        5422
+                      ]
+                    },
+                    {
+                      "after": [
+                        7373,
+                        7373
+                      ]
+                    },
+                    {
+                      "after": [
+                        7440,
+                        7440
+                      ]
+                    },
+                    {
+                      "after": [
+                        7444,
+                        7444
+                      ]
+                    },
+                    {
+                      "after": [
+                        8406,
+                        8439
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "s1",
+            "status": "passed",
+            "summary": "Reviewed every submitted changed segment against the issue and acceptance checks. Both panel intervals retain their callbacks, schedules and disposal clearing while becoming unreferenced. All eight polling replacements preserve their conditions and delays; existing assertions remain unchanged. No material defects found.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Inspected the regression test’s assertions for two started timers, both hasRef() values being false, and disposal clearing both handles. Inspected existing active-list timer and observer behavior tests, changed adapter bodies, related behavioral assertions and the referenced waitFor helper. Polling changes preserve behavioral checks. Recorded rerun evidence reports all 233 tests passing and natural process exit. A committed diff confirms both reviewed files are identical between tested e46593f65 and submitted dd5cb244.",
+              "evidenceReferences": [
+                "dd5cb24463c8be50a69700e6d303dbcabed0871a:vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                "dd5cb24463c8be50a69700e6d303dbcabed0871a:vscode-plugin/src/chat/__tests__/fixtures.ts",
+                "dd5cb24463c8be50a69700e6d303dbcabed0871a:docs/standalone/stop-chat-panel-timers-from-keeping-E202611097dc5ecde/S001/TESTS.md",
+                "dd5cb24463c8be50a69700e6d303dbcabed0871a:docs/standalone/stop-chat-panel-timers-from-keeping-E202611097dc5ecde/S001/evidence/plain-rerun.txt"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: I did not independently run tests, integration checks, typechecks or builds; execution results below are builder-reported and corroborated by inspected committed records."
+            ],
+            "inspectedReferences": [
+              "dd5cb24463c8be50a69700e6d303dbcabed0871a:docs/standalone/stop-chat-panel-timers-from-keeping-E202611097dc5ecde/ISSUE.md",
+              "dd5cb24463c8be50a69700e6d303dbcabed0871a:vscode-plugin/src/chat/chat-panel.ts",
+              "dd5cb24463c8be50a69700e6d303dbcabed0871a:vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+              "dd5cb24463c8be50a69700e6d303dbcabed0871a:vscode-plugin/src/chat/__tests__/fixtures.ts",
+              "dd5cb24463c8be50a69700e6d303dbcabed0871a:docs/standalone/stop-chat-panel-timers-from-keeping-E202611097dc5ecde/S001/TESTS.md",
+              "dd5cb24463c8be50a69700e6d303dbcabed0871a:docs/standalone/stop-chat-panel-timers-from-keeping-E202611097dc5ecde/S001/evidence/plain-rerun.txt",
+              "e46593f65e1308ce475427beb7da694c3486904e:vscode-plugin/src/chat/chat-panel.ts",
+              "e46593f65e1308ce475427beb7da694c3486904e:vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+            ],
+            "executedTests": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                "cases": [
+                  "Full file: 233 tests, including ISSUE-7dc5ecde2730fb17 timer regression"
+                ],
+                "command": "node --import tsx --test --test-reporter=tap vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                "result": "pass",
+                "executionDetails": "Builder-reported execution on e46593f65e1308ce475427beb7da694c3486904e, corroborated by committed records: 233 passed, zero failed/cancelled/skipped; exit code 0 after approximately 12 seconds under a 150-second alarm, without --test-force-exit. Both reviewed source files match submitted dd5cb244. Not executed by this reviewer.",
+                "evidenceReferences": [
+                  "dd5cb24463c8be50a69700e6d303dbcabed0871a:docs/standalone/stop-chat-panel-timers-from-keeping-E202611097dc5ecde/S001/evidence/plain-rerun.txt",
+                  "dd5cb24463c8be50a69700e6d303dbcabed0871a:docs/standalone/stop-chat-panel-timers-from-keeping-E202611097dc5ecde/S001/TESTS.md"
+                ]
+              }
+            ]
+          }
+        ],
+        "summary": "1 selected task assessment(s): passed.",
+        "completedAt": "2026-11-09T18:20:09.731Z",
+        "buildFingerprint": "06ac7325cd99d6387d3a3ce9ce400f319faa69182900cf13d69df4d8390f8a0e"
+      }
+    ]
+  },
+  "citations": []
+}

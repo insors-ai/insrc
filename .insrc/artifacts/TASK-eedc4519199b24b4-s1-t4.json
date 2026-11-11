@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2fa487d5-7ea9-4c20-82aa-24bcf844adc9",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T15:17:26.313Z",
+    "epicCreatedAt": "2026-11-09T05:00:05.847Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "eedc4519199b24b4",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Repair modes and step-by-step reporting",
+      "parent": {
+        "entityId": "STORY-eedc4519199b24b4-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-eedc4519199b24b4-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1d7f2dc08ac0eb8b98c746f88a58fa0142e763128492fb083e173b4e8aea8ba6",
+        "at": "2026-11-09T15:17:26.313Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T15:17:26.314Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Repair modes and step-by-step reporting",
+    "summary": "Add repair-preview and repair to handleRepoConvert, run the conversion's steps in order at any schema version, add the RepairRecorder at commit points, and return a RepairReport with written, remaining and stoppedAt.",
+    "size": "L",
+    "order": 4,
+    "acceptanceChecks": [
+      "repair-preview writes nothing",
+      "Repair runs renames, stamps, amendments, feedback, migration, units, Tasks and Story history in order and leaves the schema marker alone",
+      "A step that throws stops the run and the report lists exactly what was committed",
+      "A write committed inside a nested operation is recorded even when the outer operation then fails",
+      "A plan with a problem writes nothing and answers an error"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "repair on a store with an uppercase head holding body.feedback and an approved flat amendment: the head is renamed, the feedback survives under the new id, and the amendment stays approved"
+      },
+      {
+        "level": "integration",
+        "name": "a failure injected in the head migration step answers a RepairReport whose written lists the committed feedback lines and migration entries, with stoppedAt and remaining, and settles nothing; the next run finishes with no feedback line added twice"
+      },
+      {
+        "level": "integration",
+        "name": "a plan with a rename collision answers an error and writes nothing"
+      },
+      {
+        "level": "integration",
+        "name": "an unknown mode answers an error and writes nothing"
+      },
+      {
+        "level": "integration",
+        "name": "rollback: after a staged write fails before head replacement, restoring the copied artifacts, journal and docs with the daemon stopped leaves no pending operation to replay"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

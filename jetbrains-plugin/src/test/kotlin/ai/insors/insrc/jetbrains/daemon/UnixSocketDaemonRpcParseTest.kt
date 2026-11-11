@@ -5,6 +5,14 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.net.StandardProtocolFamily
+import java.net.UnixDomainSocketAddress
+import java.nio.channels.Channels
+import java.nio.channels.ServerSocketChannel
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 
 /**
  * Real-transport wire-framing tests for [UnixSocketDaemonRpc.parse] — the
@@ -19,6 +27,32 @@ import org.junit.jupiter.api.Test
 class UnixSocketDaemonRpcParseTest {
 
     private val rpc = UnixSocketDaemonRpc()
+
+    @Test
+    fun `update connection loss after writing the request preserves uncertainty`() {
+        val directory = Files.createTempDirectory(Path.of("/tmp"), "insrc-ack-")
+        val socket = directory.resolve("daemon.sock")
+        try {
+            ServerSocketChannel.open(StandardProtocolFamily.UNIX).use { listener ->
+                listener.bind(UnixDomainSocketAddress.of(socket))
+                val daemon = CompletableFuture.runAsync {
+                    listener.accept().use { channel ->
+                        val line = Channels.newInputStream(channel).bufferedReader().readLine()
+                        assertTrue(line.contains("\"method\":\"daemon.update\""))
+                    }
+                }
+                val failure = assertInstanceOf(DaemonActionResult.Failed::class.java, DaemonGatewayImpl(UnixSocketDaemonRpc(socket)).update())
+                assertTrue(failure.acknowledgementLost)
+                daemon.get(2, TimeUnit.SECONDS)
+            }
+            Files.deleteIfExists(socket)
+            val refusal = assertInstanceOf(DaemonActionResult.Failed::class.java, DaemonGatewayImpl(UnixSocketDaemonRpc(socket)).update())
+            assertFalse(refusal.acknowledgementLost)
+        } finally {
+            Files.deleteIfExists(socket)
+            Files.deleteIfExists(directory)
+        }
+    }
 
     @Test
     fun `a normal result object parses to ok=true with its data`() {

@@ -238,6 +238,25 @@ function lifecycleKeepingSignoffs(prior: Record<string, unknown>, next: Record<s
 	return { ...emptyLifecycle(readRevision(prior) + 1), signoffs: [...history] };
 }
 
+/**
+ * A finished workflow artifact with the lifecycle its write should store. No prior head, or one with no lifecycle: a draft. A prior
+ * lifecycle with unchanged content: that lifecycle. A prior lifecycle with changed content: a draft for the new revision that keeps
+ * the Signoff entries, because approval and review belong to the revision they were made at.
+ */
+export function withWorkflowLifecycle<T>(path: string, next: T): T {
+	if (!isRecord(next) || !isRecord(next['meta'])) return next;   // writeArtifact refuses it
+	const prior = readPrior(path, false);
+	const priorLifecycle = isRecord(prior?.['meta']) ? prior['meta']['lifecycle'] : undefined;
+	if (prior === undefined || !isRecord(priorLifecycle)) return { ...next, meta: { ...next['meta'], lifecycle: emptyLifecycle(0) } };
+	const revision = readRevision(prior);
+	const priorView = contentViewOf(prior, revision);
+	const nextView = contentViewOf(next, revision);
+	const lifecycle = contentHash(priorView.description, priorView.payload) === contentHash(nextView.description, nextView.payload)
+		? priorView.lifecycle
+		: { ...emptyLifecycle(revision + 1), signoffs: [...signoffsOfHead(prior['meta'] as Record<string, unknown>)] };
+	return { ...next, meta: { ...next['meta'], lifecycle } };
+}
+
 /** What a write would put on disk. */
 export interface PreparedArtifactWrite {
 	/** The exact file text. */

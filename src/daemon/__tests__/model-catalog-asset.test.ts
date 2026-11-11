@@ -125,3 +125,52 @@ test("model-catalog-asset.test.ts: the shipped file validates, lists ollama-clau
 	// The installer takes the first family per CLI kind: still the vendor claude family.
 	assert.equal(validateModelCatalog().families.find(f => f.cliKind === 'claude')!.id, 'cli-claude');
 });
+
+test("model-catalog-asset.test.ts: the shipped cli-vibe family pins the runtime-verified Mistral models and tier defaults (ISSUE-de3ab23659bc21fd)", () => {
+	const vibe = family('cli-vibe');
+	assert.deepEqual(vibe.models.map(m => [m.id, m.aliases ?? [], m.displayName, m.efforts]), [
+		['mistral-large-4', [], 'Mistral Large 4 (versioned id)', ['low', 'medium', 'high']],
+		['mistral-large-4-0', ['mistral-large-4-0-3'], 'Mistral Large 4', ['low', 'medium', 'high']],
+		['mistral-vibe-cli-latest', ['mistral-medium-3.5'], 'Mistral Medium 3.5 (Vibe default)', ['off', 'high']],
+		['zai-glm-5-3', ['glm-5-3'], 'GLM 5.3 (Mistral-hosted)', ['low', 'high', 'max']],
+		['zai-glm-5-3-flash', ['glm-5-3-flash'], 'GLM 5.3 Flash (Mistral-hosted)', ['low', 'high', 'max']],
+	]);
+	// Retired or runtime-unverifiable ids must not come back silently.
+	const names = new Set(vibe.models.flatMap(m => [m.id, ...(m.aliases ?? [])]));
+	for (const gone of ['devstral-latest', 'mistral-small-latest', 'mistral-large-latest']) {
+		assert.ok(!names.has(gone), `${gone} is absent from the shipped cli-vibe family`);
+	}
+	assert.deepEqual(vibe.tierDefaults, {
+		core: { model: 'mistral-large-4-0' },
+		mid: { model: 'mistral-vibe-cli-latest' },
+		cheap: { model: 'zai-glm-5-3-flash' },
+	});
+	assert.equal(vibe.summariserModel, 'zai-glm-5-3-flash');
+	const registry = buildModelRegistry(validateModelCatalog(), []);
+	assert.equal(registry.tierDefault('cli-vibe', 'core').model, 'mistral-large-4-0');
+	assert.equal(registry.tierDefault('cli-vibe', 'mid').model, 'mistral-vibe-cli-latest');
+	assert.equal(registry.tierDefault('cli-vibe', 'cheap').model, 'zai-glm-5-3-flash');
+	assert.equal(registry.summariserModel('cli-vibe').id, 'zai-glm-5-3-flash');
+});
+
+test('T9-catalog-large4-entry-verified-efforts: the shipped cli-vibe family carries the versioned mistral-large-4 id with only runtime-verified efforts, and uncatalogued selections stay refused', () => {
+	const vibe = family('cli-vibe');
+	// The versioned Mistral Large 4 id is its own catalog entry (ISSUE-738d62b848fd173f):
+	// mistral-large-4-0 keeps the runtime alias mistral-large-4-0-3 but no longer owns
+	// the bare 'mistral-large-4' alias, so an explicit mistral-large-4 resolves here.
+	const large4 = vibe.models.find(m => m.id === 'mistral-large-4');
+	assert.ok(large4, 'cli-vibe family gains the versioned mistral-large-4 entry');
+	assert.equal(large4.displayName, 'Mistral Large 4 (versioned id)');
+	// Only efforts verified in the installed Vibe runtime's thinkingLevels for the model.
+	assert.deepEqual(large4.efforts, ['low', 'medium', 'high']);
+	assert.deepEqual(vibe.models.find(m => m.id === 'mistral-large-4-0')?.aliases, ['mistral-large-4-0-3']);
+	// Registry resolution: the bare versioned id resolves to the new entry, not -4-0.
+	const registry = buildModelRegistry(validateModelCatalog(), []);
+	assert.deepEqual(registry.models('cli-vibe').filter(m => m.id === 'mistral-large-4' || m.aliases?.includes('mistral-large-4')).map(m => m.id), ['mistral-large-4']);
+	assert.deepEqual(registry.rejected('cli-vibe'), []);
+	// Catalog validation discipline is unchanged: ids/aliases stay unique family-wide
+	// (validateModelCatalog above would throw on a duplicate), and a model absent from the
+	// catalog is still not resolvable — the vibe-session preflight refuses it before any turn.
+	assert.ok(!vibe.models.some(m => m.id !== 'mistral-large-4' && m.aliases?.includes('mistral-large-4')));
+	assert.ok(!registry.models('cli-vibe').some(m => m.id === 'not-in-catalog'));
+});

@@ -142,6 +142,7 @@ test('assembleShell: the primary Mermaid shell is branded — shared classes, th
 	assert.match(html, /id="docgen-diagram" class="insrc-viewer-diagram"/, 'shared diagram wrapper class — the override selector matches this DOM too (round-2 fix)');
 	assert.match(html, /<style data-iv-mode="light">/);
 	assert.match(html, /<style data-iv-mode="dark" disabled>/);
+	assert.equal(html.split('.svg-pan-zoom-control{fill:var(--iv-text)').length - 1, 2, 'the pan-zoom controls are themed in both modes');
 	assert.match(html, /@font-face\{font-family:'Poppins'/);
 	assert.match(html, /\.insrc-viewer-diagram svg \.relationshipLabel\{fill:#102D1A!important\}/);
 	for (const id of ['iv-theme', 'iv-export', 'iv-err', 'iv-src', 'iv-zfit']) assert.match(html, new RegExp(`id="${id}"`), id);

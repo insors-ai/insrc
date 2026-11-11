@@ -21,8 +21,7 @@ import {
 	lldRecord,
 	planRecord,
 	realRecords,
-	recordSet,
-} from './fixtures.js';
+	recordSet, unitHead, recordFromFile, unmigratedRecord } from './fixtures.js';
 
 const EPIC  = 'aaaaaaaaaaaaaaaa';
 const ISSUE = 'bbbbbbbbbbbbbbbb';
@@ -74,12 +73,30 @@ test('a story with an unapproved build whose tasks all passed is build-recorded'
 	assert.deepEqual(a.reason.artifactIds, [`BUILD-${EPIC}-s1`]);
 });
 
+test('storyStage is complete only with a completed STORY head, and an approved BUILD otherwise stays build-recorded with text giving the head\'s status, that it is not migrated, or that there is no head', () => {
+	const base = [...epic(), lldRecord(EPIC, 's1', APPROVED), planRecord(EPIC, 's1', ['t1'], APPROVED), buildRecord(EPIC, 's1', [{ id: 't1', passed: true }], APPROVED)];
+	const STORY = `STORY-${EPIC}-s1`;
+	const noHead = storyStage(run(base), EPIC, 1);
+	assert.equal(noHead.stage, 'build-recorded');
+	assert.match(noHead.reason.text, /no head/);
+	const held = storyStage(run([...base, unitHead('STORY', EPIC, 's1', 'draft')]), EPIC, 1);
+	assert.equal(held.stage, 'build-recorded');
+	assert.match(held.reason.text, new RegExp(`${STORY} is draft`));
+	const unmigrated = unmigratedRecord(`${STORY}.json`, { epicHash: EPIC, storyId: 's1' });
+	const notMigrated = storyStage(run([...base, unmigrated]), EPIC, 1);
+	assert.equal(notMigrated.stage, 'build-recorded');
+	assert.match(notMigrated.reason.text, new RegExp(`${STORY} is not migrated`));
+	const done = storyStage(run([...base, unitHead('STORY', EPIC, 's1', 'completed')]), EPIC, 1);
+	assert.equal(done.stage, 'complete');
+	assert.match(done.reason.text, new RegExp(`${STORY} completed`));
+});
+
 test('a story with an approved build is complete whatever its task results and review verdict', () => {
 	const out = run([...epic(), lldRecord(EPIC, 's1', APPROVED), planRecord(EPIC, 's1', ['t1'], APPROVED),
-		buildRecord(EPIC, 's1', [{ id: 't1', passed: false }], APPROVED), crRecord(EPIC, 's1', 'block')]);
+		buildRecord(EPIC, 's1', [{ id: 't1', passed: false }], APPROVED), crRecord(EPIC, 's1', 'block'), unitHead('STORY', EPIC, 's1', 'completed')]);
 	const a = storyStage(out, EPIC, 1);
 	assert.equal(a.stage, 'complete');
-	assert.deepEqual(a.reason.artifactIds, [`BUILD-${EPIC}-s1`]);
+	assert.deepEqual(a.reason.artifactIds, [`BUILD-${EPIC}-s1`, `STORY-${EPIC}-s1`]);
 });
 
 test('a story with no design, plan or build record is scoped', () => {
@@ -147,7 +164,7 @@ test('an unknown or disagreeing stamp gives the unknown route, never a guess', (
 	}
 
 	// An agreeing stamp is read.
-	const trivial = storyStage(run([buildRecord(SOLO, 's1', [{ id: 's1', passed: true }], { standalone: true, sizeClass: 'trivial', ...APPROVED })]), SOLO, 1);
+	const trivial = storyStage(run([buildRecord(SOLO, 's1', [{ id: 's1', passed: true }], { standalone: true, sizeClass: 'trivial', ...APPROVED }), unitHead('STORY', SOLO, 's1', 'completed')]), SOLO, 1);
 	assert.equal(trivial.route, 'trivial');
 	assert.equal(trivial.stage, 'complete');
 });
@@ -224,6 +241,7 @@ test('an issue takes the least advanced stage of its fix stories', () => {
 		lldRecord(ISSUE, 's1', { standalone: true, sizeClass: 'bugfix', ...APPROVED }),
 		planRecord(ISSUE, 's1', ['t1'], APPROVED),
 		buildRecord(ISSUE, 's1', [{ id: 't1', passed: true }], APPROVED),
+		unitHead('STORY', ISSUE, 's1', 'completed'),
 		lldRecord(ISSUE, 's2', { standalone: true, sizeClass: 'bugfix' }),
 	]);
 	assert.equal(storyStage(out, ISSUE, 1).stage, 'complete');

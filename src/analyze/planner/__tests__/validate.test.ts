@@ -622,30 +622,35 @@ function planOfSize(n: number, scope: PlanTask['scope']): PlanTask {
 	return { ...base, scope, tasks };
 }
 
+/** A plan of the aggregator alone. */
+function aggregatorOnly(scope: PlanTask['scope']): PlanTask {
+	const base = buildValidPlan();
+	return { ...base, scope, tasks: [{ ...base.tasks[base.tasks.length - 1]!, taskId: 't01' }] };
+}
+
 test('the task-count check agrees with validatePlan at every band boundary', () => {
 	for (const scope of ['XS', 'S', 'M', 'L', 'XL'] as const) {
 		for (const focused of [false, true]) {
 			const lo = focused ? Math.floor(SCOPE_BAND[scope].lo / 2) : SCOPE_BAND[scope].lo;
 			const hi = SCOPE_BAND[scope].hi;
 			for (const n of [lo - 1, lo, hi, hi + 1]) {
-				// Plans of 0 or 1 tasks cannot pass the earlier invariants (INV-1 / INV-12),
-				// so for them the check is compared with the failure written out by hand.
-				const plan = n < 2
-					? { ...planOfSize(2, scope), tasks: planOfSize(2, scope).tasks.slice(0, n) }
-					: planOfSize(n, scope);
-				const direct = taskCountFailure(plan, { focused });
-				const viaValidate = validatePlan(plan, CATALOG, { focused }); // for n < 2 an earlier invariant answers first
-				const inBand = n >= lo && n <= hi;
 				const label = `${scope} focused=${focused} n=${n}`;
+				// 0 tasks is INV-1's, which validatePlan reports before the count; 1 task is the aggregator alone.
+				const plan = n === 0 ? { ...planOfSize(2, scope), tasks: [] } : n === 1 ? aggregatorOnly(scope) : planOfSize(n, scope);
+				const direct = taskCountFailure(plan, { focused });
+				const viaValidate = validatePlan(plan, CATALOG, { focused });
+				const inBand = n >= lo && n <= hi;
 				if (inBand) {
 					assert.equal(direct, null, label);
-					if (n >= 2) assert.equal(viaValidate, null, label);
+					assert.equal(viaValidate, null, label);
 				} else {
 					assert.equal(direct?.invariantId, 'INV-13', label);
 					assert.equal(direct?.message,
 						`task count ${n} is outside the scope band for ${scope} (${lo}-${hi}${focused ? ' focused' : ''})`, label);
 					assert.deepEqual(direct?.target, { count: n, scope, band: { lo, hi } }, label);
-					if (n >= 2) assert.deepEqual(viaValidate, direct, label);
+					// validatePlan answers with the same failure, except for an empty plan, which INV-1 reports first.
+					if (n === 0) assert.equal(viaValidate?.invariantId, 'INV-1', label);
+					else assert.deepEqual(viaValidate, direct, label);
 				}
 			}
 		}

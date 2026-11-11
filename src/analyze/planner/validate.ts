@@ -149,6 +149,26 @@ function missingConstraintSource(
 	};
 }
 
+/**
+ * INV-13 on its own: the failure for a plan whose task count is outside the
+ * band of its scope (the lower bound halved when `opts.focused`), or null.
+ * `validatePlan` reports it at its INV-13 position; the retry loop also asks
+ * for it directly, so a wrong count can be stated beside an earlier failure.
+ */
+export function taskCountFailure(plan: PlanTask, opts: Pick<ValidateOpts, 'focused'> = {}): PlanValidationFailure | null {
+	const band = SCOPE_BAND[plan.scope];
+	const lo = opts.focused === true ? focusedLowerBound(plan.scope) : band.lo;
+	const hi = band.hi;
+	if (plan.tasks.length >= lo && plan.tasks.length <= hi) return null;
+	return {
+		invariantId: 'INV-13',
+		message:
+			`task count ${plan.tasks.length} is outside the scope band for ${plan.scope} ` +
+			`(${lo}-${hi}${opts.focused === true ? ' focused' : ''})`,
+		target: { count: plan.tasks.length, scope: plan.scope, band: { lo, hi } },
+	};
+}
+
 export interface ValidateOpts {
 	/**
 	 * Pass `true` when the Plan was built for a focused-intent run.
@@ -401,18 +421,8 @@ export function validatePlan(
 	}
 
 	// INV-13: scope policy adherence -- task count within the band.
-	const band = SCOPE_BAND[plan.scope];
-	const lo = opts.focused === true ? focusedLowerBound(plan.scope) : band.lo;
-	const hi = band.hi;
-	if (plan.tasks.length < lo || plan.tasks.length > hi) {
-		return {
-			invariantId: 'INV-13',
-			message:
-				`task count ${plan.tasks.length} is outside the scope band for ${plan.scope} ` +
-				`(${lo}-${hi}${opts.focused === true ? ' focused' : ''})`,
-			target: { count: plan.tasks.length, scope: plan.scope, band: { lo, hi } },
-		};
-	}
+	const countFailure = taskCountFailure(plan, opts);
+	if (countFailure !== null) return countFailure;
 
 	// INV-14: reasoning non-empty. Wire-layer schema already caught
 	// minLength but we re-check here to keep the invariant ids stable

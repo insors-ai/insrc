@@ -24,6 +24,7 @@ import {
 	validatePlan,
 	type PlanInvariantId,
 } from '../index.js';
+import { taskCountFailure } from '../validate.js';
 import type {
 	AnalyzeTaskTemplate,
 	PlanTask,
@@ -606,4 +607,51 @@ test('the band module imports nothing from the validator or the renderer', () =>
 	for (const spec of imports) {
 		assert.ok(!/validate|render-catalog/.test(spec ?? ''), `unexpected import ${spec}`);
 	}
+});
+
+// ---------------------------------------------------------------------------
+// The task-count check on its own
+// ---------------------------------------------------------------------------
+
+/** A valid plan of `n` tasks (n >= 2): discovery, n-2 summaries, aggregator. */
+function planOfSize(n: number, scope: PlanTask['scope']): PlanTask {
+	const base = buildValidPlan();
+	const tasks: PlannedTask[] = [base.tasks[0]!];
+	for (let i = 2; i < n; i++) tasks.push(mkTask(i));
+	tasks.push({ ...base.tasks[base.tasks.length - 1]!, taskId: `t${String(n).padStart(2, '0')}` });
+	return { ...base, scope, tasks };
+}
+
+test('the task-count check agrees with validatePlan at every band boundary', () => {
+	for (const scope of ['XS', 'S', 'M', 'L', 'XL'] as const) {
+		for (const focused of [false, true]) {
+			const lo = focused ? Math.floor(SCOPE_BAND[scope].lo / 2) : SCOPE_BAND[scope].lo;
+			const hi = SCOPE_BAND[scope].hi;
+			for (const n of [lo - 1, lo, hi, hi + 1]) {
+				if (n < 2) continue;
+				const plan = planOfSize(n, scope);
+				const direct = taskCountFailure(plan, { focused });
+				const viaValidate = validatePlan(plan, CATALOG, { focused });
+				const inBand = n >= lo && n <= hi;
+				const label = `${scope} focused=${focused} n=${n}`;
+				if (inBand) {
+					assert.equal(direct, null, label);
+					assert.equal(viaValidate, null, label);
+				} else {
+					assert.equal(direct?.invariantId, 'INV-13', label);
+					assert.deepEqual(viaValidate, direct, label);
+				}
+			}
+		}
+	}
+});
+
+test('validatePlan keeps its invariant order and results for the existing cases', () => {
+	// An earlier invariant still wins over a wrong count...
+	const gapped = planOfSize(15, 'M');
+	gapped.tasks[3] = { ...gapped.tasks[3]!, taskId: 't09' };
+	assert.equal(validatePlan(gapped, CATALOG)?.invariantId, 'INV-2');
+	// ...the count alone is still INV-13, and a valid plan still passes.
+	assert.equal(validatePlan(planOfSize(15, 'M'), CATALOG)?.invariantId, 'INV-13');
+	assert.equal(validatePlan(buildValidPlan(), CATALOG), null);
 });

@@ -330,6 +330,24 @@ export async function removeFreshSelectorMember(
 	try { await directory.sync(); } finally { await directory.close(); }
 }
 
+export function requireAbsentManagedSelector(root: string): void {
+	const paths = installationPaths(root);
+	if (runFileIdentity(paths.manifest) !== undefined || runFileIdentity(paths.descriptor) !== undefined) {
+		failure('managed selector or descriptor appeared before activation');
+	}
+}
+
+export async function restoreAbsentManagedSelector(installation: ManagedInstallation, id: string, revalidate: () => Promise<void>): Promise<void> {
+	await verifyFreshSelectorOwnership(installation, id);
+	const paths = installationPaths(installation.stateRoot);
+	for (const member of ['manifest', 'descriptor'] as const) {
+		const pending = runFileIdentity(`${paths[member]}.activate-${id}`);
+		if (pending !== undefined) await installFreshSelectorMember(installation, member, id, revalidate);
+		await removeFreshSelectorMember(installation, member, revalidate);
+	}
+	requireAbsentManagedSelector(installation.stateRoot);
+}
+
 /** Unload the pinned job after its child has exited and retain exact proof of the job's own exit. */
 export async function removeManagedJob(
 	installation: ManagedInstallation, revalidate: () => Promise<void>, expected?: DarwinIncarnation,

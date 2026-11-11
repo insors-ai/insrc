@@ -7,7 +7,7 @@ import type { SupervisorReply } from '../shared/daemon-supervisor-protocol.js';
 import type { MutationReservation, InstallationMutationGate } from '../shared/installation-mutation-gate.js';
 import type { RunFileGuard } from '../shared/daemon-run-files.js';
 import {
-	publishManagedSelector, registerManagedJob, removeManagedJob, requireQuiescentInstallation,
+	installFreshSelectorMember, publishManagedSelector, registerManagedJob, removeManagedJob, requireQuiescentInstallation,
 } from '../shared/managed-daemon-installation.js';
 import type { ManagedInstallation } from '../shared/managed-daemon-installation.js';
 import {
@@ -155,7 +155,10 @@ export async function stageManagedCandidate(
 	await revalidate();
 	await operations.inspectStores(pins, guard);
 	await intent('provisional-selector', candidate.releaseId);
-	await operations.select(candidate, revalidate);
+	if (update.predecessor.selectorAbsent) {
+		await installFreshSelectorMember(candidate, 'descriptor', update.id, revalidate);
+		await installFreshSelectorMember(candidate, 'manifest', update.id, revalidate);
+	} else await operations.select(candidate, revalidate);
 	await receipt('provisional-selector', candidate.releaseId);
 
 	await intent('candidate-job', candidate.releaseId);

@@ -1,6 +1,6 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { lstat, readFile, realpath } from 'node:fs/promises';
 import { createConnection } from 'node:net';
@@ -10,7 +10,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { promisify } from 'node:util';
 import { matchesDarwinPeer, observeDarwinExit, readDarwinIncarnation, readDarwinLaunchContext, readDarwinPeerCredentials, verifyDarwinJobProcess } from '../shared/darwin-lifecycle.js';
 import { runFileIdentity, sameRunFile } from '../shared/daemon-run-files.js';
-import type { UpdatePredecessor } from '../shared/installation-mutation-gate.js';
+import type { LegacyLaunchPin, UpdatePredecessor } from '../shared/installation-mutation-gate.js';
 import { rpc } from '../shared/ipc-client.js';
 import { inspectPinnedLaunchJob, installationPaths, launchctl, requireQuiescentInstallation, supervisorJob } from '../shared/managed-daemon-installation.js';
 import type { ManagedInstallation } from '../shared/managed-daemon-installation.js';
@@ -103,18 +103,24 @@ export async function verifyLegacyService(legacy: Legacy, prior: ManagedInstalla
 		await requireQuiescentInstallation(prior);
 		return;
 	}
+	const target = await verifyLegacyDaemonReady(prior, legacy.entry);
+	if (registered.pid !== null && registered.pid !== target.pid) throw new Error('legacy registration and daemon readiness name different processes');
+}
+
+async function verifyLegacyDaemonReady(prior: ManagedInstallation, entry: string, argv?: readonly string[]) {
 	const paths = installationPaths(prior.stateRoot);
 	const publication = runFileIdentity(paths.daemonSocket);
 	const pidPublication = runFileIdentity(paths.daemonPid);
 	if (publication === undefined || pidPublication === undefined) throw new Error('legacy daemon readiness is unpublished');
 	const pidInfo = await lstat(paths.daemonPid);
-	if (!pidInfo.isFile() || pidInfo.size > 32 || pidInfo.uid !== legacy.job.uid) throw new Error('legacy PID publication is invalid');
+	if (!pidInfo.isFile() || pidInfo.size > 32 || pidInfo.uid !== process.getuid?.()) throw new Error('legacy PID publication is invalid');
 	const text = (await readFile(paths.daemonPid, 'utf8')).trim();
 	if (!/^\d+$/.test(text)) throw new Error('legacy PID publication is invalid');
 	const target = await readDarwinIncarnation(Number(text));
 	const context = await readDarwinLaunchContext(target.pid);
-	if (target.uid !== legacy.job.uid || await realpath(target.executable) !== prior.runtime
-		|| context.cwd !== prior.releaseRoot || !matchesInstalledDaemonArguments(context.argv, prior.runtime, legacy.entry)) {
+	if (target.uid !== process.getuid?.() || await realpath(target.executable) !== prior.runtime
+		|| context.cwd !== prior.releaseRoot || !matchesInstalledDaemonArguments(context.argv, prior.runtime, entry)
+		|| (argv !== undefined && (argv.length !== context.argv.length || argv.slice(1).some((arg, index) => arg !== context.argv[index + 1])))) {
 		throw new Error('legacy daemon readiness belongs to a different release');
 	}
 	type Peer = Awaited<ReturnType<typeof readDarwinPeerCredentials>>;
@@ -143,6 +149,7 @@ export async function verifyLegacyService(legacy: Legacy, prior: ManagedInstalla
 		|| currentPid === undefined || !sameRunFile(currentPid, pidPublication)) {
 		throw new Error('legacy daemon readiness does not match the saved release');
 	}
+	return target;
 }
 
 export async function restoreLegacyService(legacy: Legacy, prior: ManagedInstallation, wasRunning: boolean, authorize: () => Promise<void>): Promise<void> {
@@ -177,6 +184,48 @@ export async function restoreLegacyService(legacy: Legacy, prior: ManagedInstall
 	for (;;) {
 		try { await verifyLegacyService(legacy, prior, wasRunning); return; }
 		catch (error) {
+			if (performance.now() >= deadline) throw error;
+			await delay(200);
+		}
+	}
+}
+
+/** Restore a direct process with its qualified installed command and pinned working directory. */
+export function verifyDirectLegacyService(prior: ManagedInstallation, launch: Exclude<LegacyLaunchPin, { kind: 'stopped' }>) {
+	return verifyLegacyDaemonReady(prior, join(prior.releaseRoot, 'out/daemon/index.js'), launch.argv);
+}
+
+export async function restoreDirectLegacyService(prior: ManagedInstallation,
+	launch: Exclude<LegacyLaunchPin, { kind: 'stopped' }>, authorize: () => Promise<void>,
+): Promise<void> {
+	const entry = join(prior.releaseRoot, 'out/daemon/index.js');
+	if (launch.kind !== 'direct' || launch.cwd !== prior.releaseRoot || !matchesInstalledDaemonArguments(launch.argv, prior.runtime, entry)
+		|| await realpath(launch.cwd) !== launch.cwd) throw new Error('direct rollback recipe changed');
+	const ready = () => verifyDirectLegacyService(prior, launch);
+	if (await ready().then(() => true, () => false)) return;
+	let spawnedPid: number | undefined;
+	// A prior rollback may have spawned the child just before the controller died.
+	// In that case wait for its exact readiness instead of issuing a second spawn.
+	if (await requireQuiescentInstallation(prior).then(() => true, () => false)) {
+		await authorize();
+		await requireQuiescentInstallation(prior);
+		const env: NodeJS.ProcessEnv = { ...process.env, INSRC_MODE: 'daemon', INSRC_DAEMON_ROOT: prior.releaseRoot,
+			HOME: join(prior.stateRoot, '..'), PATH: prior.pathEnv };
+		delete env['INSRC_SUPERVISOR_GENERATION'];
+		delete env['INSRC_PROBATION_UPDATE'];
+		delete env['INSRC_PROBATION_RELEASE'];
+		const child = spawn(prior.runtime, launch.argv.slice(1), { cwd: launch.cwd, env, detached: true, stdio: 'ignore' });
+		await new Promise<void>((resolve, reject) => { child.once('spawn', resolve); child.once('error', reject); });
+		spawnedPid = child.pid;
+		child.unref();
+	}
+	const deadline = performance.now() + 60_000;
+	for (;;) {
+		try {
+			const target = await ready();
+			if (spawnedPid !== undefined && spawnedPid !== target.pid) throw new Error('direct rollback readiness belongs to another process');
+			return;
+		} catch (error) {
 			if (performance.now() >= deadline) throw error;
 			await delay(200);
 		}

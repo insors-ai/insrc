@@ -57,15 +57,15 @@ async function stage(release: string | undefined, releaseId: string | undefined,
 
 async function migrate([release, releaseId, runtime, descriptor]: readonly string[]): Promise<void> {
 	if (process.platform !== 'darwin' || release === undefined || releaseId === undefined || runtime === undefined
-		|| descriptor === undefined || !/^[a-zA-Z0-9._-]+$/.test(releaseId)) {
-		throw new Error('migrate requires legacy release root, release ID, runtime, and LaunchAgent descriptor');
+		|| !/^[a-zA-Z0-9._-]+$/.test(releaseId)) {
+		throw new Error('migrate requires legacy release root, release ID, and runtime');
 	}
 	const root = await realpath(PATHS.insrc);
 	const baseline = await readInstallationSelector(root);
-	if (baseline === undefined || baseline.enabled) throw new Error('legacy migration requires a disabled staged selector');
+	if (baseline?.enabled === true) throw new Error('legacy migration requires an unmanaged predecessor');
 	const { candidate, qualifications } = await readManagedUpdateInputs(root);
-	if (!isDeepStrictEqual(candidate, { ...baseline, enabled: true })) throw new Error('candidate differs from the staged release');
-	const prior = { ...baseline, releaseRoot: await realpath(release), releaseId, runtime: await realpath(runtime) };
+	if (baseline !== undefined && !isDeepStrictEqual(candidate, { ...baseline, enabled: true })) throw new Error('candidate differs from the staged release');
+	const prior = { ...candidate, enabled: false, releaseRoot: await realpath(release), releaseId, runtime: await realpath(runtime) };
 	if (prior.releaseRoot === candidate.releaseRoot) throw new Error('legacy and candidate releases require separate roots');
 	const qualified = readQualifiedReleasePairs(qualifications);
 	const declaredCandidate = await releaseDeclaration(candidate.releaseRoot);
@@ -74,14 +74,16 @@ async function migrate([release, releaseId, runtime, descriptor]: readonly strin
 	if (declaredPrior === undefined) throw new Error('legacy release has no explicit qualification for the candidate');
 	const compatibility = requireQualifiedReleasePair(declaredPrior, declaredCandidate, qualified);
 	await verifyManagedReleaseRuntime(candidate);
-	const route = await discoverLegacyLaunch(prior, baseline);
-	if (route.legacy?.job.descriptor !== await realpath(descriptor)) throw new Error('legacy LaunchAgent does not match the requested descriptor');
+	const route = await discoverLegacyLaunch(prior, baseline ?? { ...candidate, enabled: false });
+	if (descriptor !== undefined && route.legacy?.job.descriptor !== await realpath(descriptor)) {
+		throw new Error('legacy LaunchAgent does not match the requested descriptor');
+	}
 	const gate = new InstallationMutationGate(root);
 	const reservation = await gate.reserve({
 		kind: 'update', owner: await readDarwinIncarnation(process.pid),
 		predecessor: {
 			priorRelease: prior.releaseId, candidateRelease: candidate.releaseId, priorCommit: readInstalledCommit(prior.releaseRoot),
-			...route, generation: null, pins: { prior, candidate },
+			...route, generation: null, pins: { prior, candidate }, ...(baseline === undefined ? { selectorAbsent: true } : {}),
 		},
 	});
 	if (reservation.kind !== 'update') throw new Error('legacy migration did not reserve an update');
@@ -132,9 +134,16 @@ async function main(command: string): Promise<void> {
 
 	if (command === 'recover' && process.platform === 'darwin'
 		&& await access(installationPaths(PATHS.insrc).directory).then(() => true, () => false)) {
-		const pending = (await new InstallationMutationGate(PATHS.insrc).read()).active;
+		const gate = new InstallationMutationGate(await realpath(PATHS.insrc));
+		const pending = (await gate.read()).active;
 		if (pending?.kind === 'start' && pending.activation !== undefined) {
 			await activateFreshManagedDaemon(pending.activation);
+			return;
+		}
+		if (pending?.kind === 'update') {
+			const outcome = await recoverInstalledManagedUpdate(gate, pending.id, await readDarwinIncarnation(process.pid));
+			process.stdout.write(`${outcome.decision}: ${outcome.detail}\n`);
+			if (outcome.decision === 'operator-recovery' && (await gate.read()).active !== null) process.exitCode = 4;
 			return;
 		}
 	}
@@ -145,6 +154,7 @@ async function main(command: string): Promise<void> {
 			if (active?.kind === 'start' && active.activation !== undefined) {
 				throw new Error('fresh daemon activation is in progress; retry the installer to recover');
 			}
+			if (active?.kind === 'update') throw new Error('legacy cutover owns the installation');
 		}
 		process.exitCode = NOT_MANAGED;
 		return;
@@ -160,12 +170,6 @@ async function main(command: string): Promise<void> {
 		return;
 	}
 	if (command === 'recover') {
-		if (active?.kind === 'update') {
-			const outcome = await recoverInstalledManagedUpdate(gate, active.id, await readDarwinIncarnation(process.pid));
-			process.stdout.write(`${outcome.decision}: ${outcome.detail}\n`);
-			if (outcome.decision === 'operator-recovery' && (await gate.read()).active !== null) process.exitCode = 4;
-			return;
-		}
 		await control.recoverStoppedLifecycle();
 		process.stdout.write('verified stopped lifecycle reservation recovered\n');
 		return;

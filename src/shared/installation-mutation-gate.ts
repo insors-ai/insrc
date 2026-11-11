@@ -25,6 +25,7 @@ export interface UpdatePredecessor {
 	readonly generation?: string | null;
 	readonly pins?: { readonly prior: ManagedInstallation; readonly candidate: ManagedInstallation };
 	readonly launch?: LegacyLaunchPin;
+	readonly selectorAbsent?: true;
 	readonly legacy?: {
 		readonly job: DarwinLaunchJob;
 		readonly descriptorHash: string;
@@ -134,6 +135,7 @@ function validPredecessor(value: unknown): value is UpdatePredecessor {
 	if (!object(value) || !text(value.priorRelease) || !text(value.candidateRelease)
 		|| typeof value.priorCommit !== 'string' || typeof value.wasRunning !== 'boolean'
 		|| (value.generation !== undefined && value.generation !== null && !text(value.generation))) return false;
+	if (value.selectorAbsent !== undefined && (value.selectorAbsent !== true || value.launch === undefined)) return false;
 	if (value.pins === undefined) return value.legacy === undefined && value.launch === undefined;
 	if (!object(value.pins)) return false;
 	const { prior, candidate } = value.pins;

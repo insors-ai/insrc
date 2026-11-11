@@ -57,6 +57,8 @@ interface RecoveryEffects {
 export async function recoverManagedTransaction(
 	gate: RecoveryGate, id: string, owner: DarwinIncarnation, effects: RecoveryEffects,
 ): Promise<DurableUpdateOutcome> {
+	const before = await gate.read();
+	if (before.active === null && before.outcome?.id === id && before.outcome.decision !== 'operator-recovery') return before.outcome;
 	const decision = await gate.claimRecovery(id, owner, async state =>
 		state.active?.kind === 'update' && await effects.verifyOwnership(state));
 	const snapshot = await gate.read();

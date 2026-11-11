@@ -1,12 +1,14 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 
 import { strict as assert } from 'node:assert';
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { mkdtemp, realpath, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import type { TestContext } from 'node:test';
+import { setTimeout as delay } from 'node:timers/promises';
+import { fileURLToPath } from 'node:url';
 import type { ManagedSupervisorLink } from '../../cli/services/managed-daemon-control.js';
 import { readDarwinIncarnation } from '../../shared/darwin-lifecycle.js';
 import type { DarwinIncarnation } from '../../shared/darwin-lifecycle.js';
@@ -16,10 +18,15 @@ import type {
 } from '../../shared/installation-mutation-gate.js';
 import { recoverManagedTransaction, settleManagedUpdate } from '../managed-update-transaction.js';
 import type { ManagedInstallation, RegisteredManagedJob } from '../../shared/managed-daemon-installation.js';
+import { installationPaths, launchctl, requireAbsentManagedSelector, requireQuiescentInstallation } from '../../shared/managed-daemon-installation.js';
+import { runFileIdentity } from '../../shared/daemon-run-files.js';
 import { completeLegacyMigration, completeManagedUpdate, recoverInstalledManagedUpdate } from '../managed-update-recovery.js';
 import { qualifyManagedUpdate, stageManagedUpdate } from '../managed-update-handoff.js';
 import { readReleaseCompatibility } from '../release-compatibility.js';
 import { readPublicInstalledCommit, readPublicUpdateOutcome } from '../managed-update-ipc.js';
+import { discoverLegacyLaunch } from '../legacy-cutover-admission.js';
+import { drainLegacyDaemonForCutover } from '../legacy-daemon-cutover.js';
+import { inspectLegacyJob, removeLegacyJob, restoreLegacyService, verifyLegacyService } from '../legacy-launch-job.js';
 
 const owner: DarwinIncarnation = { pid: 10, uid: 501, startedAt: '0:0', executable: '/usr/bin/node' };
 const update: Extract<MutationReservation, { kind: 'update' }> = {
@@ -75,7 +82,7 @@ test('Terminal outcome and marker ordering, including persistence failure', asyn
 	assert.match(fenced.detail, /ownership unresolved/);
 });
 
-test('Recovery applies only the operations permitted by the matching outcome', async () => {
+test('Uncertain publication with durable success versus no outcome', async () => {
 	const scenarios = [
 		{ outcome: null, expected: ['verify-owner', 'rollback:lifecycle', 'rolled-back', 'release'] },
 		{ outcome: { id: 'older', decision: 'committed' }, expected: ['verify-owner', 'rollback:lifecycle', 'rolled-back', 'release'] },
@@ -494,4 +501,150 @@ test('Rollback after legacy stop but before managed readiness restores the saved
 		'remove candidate', 'restore disabled selector', 'restore saved LaunchAgent and verify readiness',
 	]);
 	assert.equal((await gate.read()).active, null);
+});
+
+async function installedLegacyFixture(t: TestContext) {
+	const scratch = await realpath(await mkdtemp('/tmp/insrc-legacy-transaction-'));
+	t.after(() => rm(scratch, { recursive: true, force: true }));
+	const root = join(scratch, '.insrc');
+	const helper = join(scratch, 'lifecycle');
+	execFileSync('cc', ['-std=c11', '-Wall', '-Wextra', '-Werror',
+		fileURLToPath(new URL('../../native/darwin-lifecycle/identity.c', import.meta.url)), '-o', helper]);
+	const runtime = await realpath(process.execPath);
+	const common = { version: 1, stateRoot: root, runtime, pathEnv: '/usr/bin:/bin' } as const;
+	const prior = { ...common, releaseId: 'old', releaseRoot: join(root, 'daemon'), enabled: false };
+	const next = { ...common, releaseId: 'next', releaseRoot: join(root, 'next'), enabled: true };
+	await mkdir(join(prior.releaseRoot, 'out', 'daemon'), { recursive: true });
+	await mkdir(next.releaseRoot);
+	const paths = installationPaths(root);
+	const entry = join(prior.releaseRoot, 'out', 'daemon', 'index.js');
+	let controller: DarwinIncarnation;
+	for (let attempt = 0;; attempt++) {
+		try { controller = await readDarwinIncarnation(process.pid, helper); break; }
+		catch (error) {
+			if (attempt >= 2 || (error as { killed?: boolean }).killed !== true) throw error;
+			await delay(200);
+		}
+	}
+	const gate = new InstallationMutationGate(root, helper);
+	const profile = (releaseId: string) => readReleaseCompatibility({ version: 1, releaseId, graphSchema: 10,
+		startup: 'rollback-compatible', formats: { lance: '1', repoAndIndexQueue: '1', config: '1', workflowAndSession: '1' } });
+	const pins = { prior, candidate: next, compatibility: { prior: profile(prior.releaseId), candidate: profile(next.releaseId) } };
+	const handoff = {
+		async connect(): Promise<ManagedSupervisorLink> { throw new Error('failed bootstrap has no candidate socket'); },
+		async inspect() { return undefined; },
+		incarnation: readDarwinIncarnation,
+		async verifySelector() { assert.fail('legacy selector baseline was absent'); },
+		async select() { assert.fail('first migration must exclusively publish its selector'); },
+		async register() {
+			assert.ok(runFileIdentity(paths.descriptor));
+			assert.ok(runFileIdentity(paths.manifest));
+			assert.ok(runFileIdentity(paths.runGuard));
+			throw new Error('injected candidate bootstrap failure');
+		},
+		async remove() { return undefined; },
+		quiescent: requireQuiescentInstallation,
+		async inspectStores(_pins: unknown, guard?: { assertOwned(): void }) {
+			assert.ok(guard);
+			guard.assertOwned();
+		},
+	};
+	const baseline = { ...next, enabled: false };
+	const legacyHost = { helper, inspect: inspectLegacyJob, drain: drainLegacyDaemonForCutover,
+		remove: removeLegacyJob, restore: restoreLegacyService, verify: verifyLegacyService,
+		async discover(pin: ManagedInstallation, disabled: ManagedInstallation, deps?: { labels?: readonly string[] }) {
+			return discoverLegacyLaunch(pin, disabled, { helper, ...deps });
+		} };
+	async function migrate(labels?: readonly string[]) {
+		const discover = (pin: ManagedInstallation, disabled: ManagedInstallation) =>
+			legacyHost.discover(pin, disabled, labels === undefined ? undefined : { labels });
+		const route = await discover(prior, baseline);
+		const reservation = await gate.reserve({ kind: 'update', owner: controller,
+			predecessor: { ...route, selectorAbsent: true, priorRelease: prior.releaseId, priorCommit: 'old',
+				candidateRelease: next.releaseId, generation: null, pins: { prior, candidate: next } } });
+		if (reservation.kind !== 'update') throw new Error('expected update reservation');
+		const services = { ...legacyHost, discover };
+		const result = await completeLegacyMigration(gate, reservation, pins, handoff, services, handoff);
+		assert.equal(result.decision, 'rolled-back', result.detail);
+		assert.match(result.detail, /injected candidate bootstrap failure/);
+		assert.equal((await gate.read()).active, null);
+		assert.deepEqual(await recoverInstalledManagedUpdate(gate, reservation.id, controller, handoff, services), (await gate.read()).outcome);
+		requireAbsentManagedSelector(root);
+		assert.equal(runFileIdentity(paths.runGuard), undefined);
+	}
+	return { scratch, root, gate, runtime, prior, baseline, controller, paths, entry, legacyHost, migrate };
+}
+
+test('Startup guard transfer, candidate bootstrap failure, rollback and repeated recovery', { ...mac, timeout: 120_000 }, async t => {
+	const f = await installedLegacyFixture(t);
+	await writeFile(f.entry, `
+const { createServer } = require('node:net');
+const { writeFileSync } = require('node:fs');
+const root = ${JSON.stringify(f.root)};
+writeFileSync(root + '/daemon.pid', String(process.pid));
+createServer(socket => {
+  socket.on('error', () => {});
+  socket.on('data', data => {
+    const request = JSON.parse(data.toString());
+    if (request.method === 'daemon.shutdown') process.exit(0);
+    if (request.method === 'daemon.status') socket.end(JSON.stringify({ id: request.id, result: { pid: process.pid } }) + '\\n');
+  });
+}).listen(root + '/daemon.sock', () => console.log('ready'));
+`);
+	const old = spawn(f.runtime, [f.entry], { cwd: f.prior.releaseRoot, stdio: ['ignore', 'pipe', 'inherit'] });
+	const exited = once(old, 'exit');
+	try {
+		const [ready] = await Promise.race([once(old.stdout, 'data'), exited]);
+		assert.match(String(ready), /ready/);
+		await f.migrate();
+		assert.deepEqual(await exited, [0, null]);
+		const restored = await f.legacyHost.discover(f.prior, f.baseline);
+		assert.ok(restored.launch?.kind === 'direct');
+		assert.notEqual(restored.launch.process.pid, old.pid);
+		assert.deepEqual(restored.launch.argv, [f.runtime, f.entry]);
+		assert.equal(restored.launch.cwd, f.prior.releaseRoot);
+	} finally {
+		if (runFileIdentity(f.paths.daemonPid) !== undefined) {
+			await drainLegacyDaemonForCutover({ stateRoot: f.root, runtime: f.runtime, entry: f.entry }, async () => {});
+		}
+		if (old.exitCode === null && old.signalCode === null) old.kill();
+		await exited;
+	}
+});
+
+test('Rollback restores an idle job without launching and refuses unqualified RunAtLoad', { ...mac, timeout: 120_000 }, async t => {
+	const f = await installedLegacyFixture(t);
+	const marker = join(f.root, 'started');
+	await writeFile(f.entry, `require('node:fs').writeFileSync(${JSON.stringify(marker)}, 'started');\n`);
+	const label = `ai.insrc.test.idle.${f.scratch.split('/').at(-1)}`;
+	const descriptor = join(f.scratch, 'legacy.plist');
+	const domain = `gui/${f.controller.uid}`;
+	const target = `${domain}/${label}`;
+	const plist = (runAtLoad: boolean) => `<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0"><dict><key>Label</key><string>${label}</string>
+<key>ProgramArguments</key><array><string>${f.runtime}</string><string>${f.entry}</string></array>
+<key>WorkingDirectory</key><string>${f.prior.releaseRoot}</string>
+<key>RunAtLoad</key><${runAtLoad}/><key>KeepAlive</key><false/>
+</dict></plist>`;
+	await writeFile(descriptor, plist(true), { mode: 0o600 });
+	await launchctl(['bootstrap', domain, descriptor]);
+	try {
+		for (let attempt = 0; attempt < 40; attempt++) {
+			if (runFileIdentity(marker) !== undefined && (await launchctl(['print', target])).includes('\tstate = not running')) break;
+			await delay(50);
+		}
+		assert.equal(await readFile(marker, 'utf8'), 'started');
+		await assert.rejects(f.legacyHost.discover(f.prior, f.baseline, { labels: [label] }), /cannot be restored in its stopped state/);
+		assert.equal((await f.gate.read()).active, null);
+	} finally { await launchctl(['bootout', target]); }
+	await rm(marker);
+	await writeFile(descriptor, plist(false));
+	await launchctl(['bootstrap', domain, descriptor]);
+	try {
+		const old = await f.legacyHost.discover(f.prior, f.baseline, { labels: [label] });
+		assert.ok(old.legacy && old.launch?.kind === 'stopped');
+		await f.migrate([label]);
+		assert.deepEqual(await f.legacyHost.discover(f.prior, f.baseline, { labels: [label] }), old);
+		assert.equal(runFileIdentity(marker), undefined);
+	} finally { await launchctl(['bootout', target]); }
 });

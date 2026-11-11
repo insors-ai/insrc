@@ -1,0 +1,81 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "9be2ec4f50dad62a93271d434da8cbf7cfea68ae6cd6e41226951f09ea4cdc73",
+        "at": "2026-11-09T10:25:52.886Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T12:22:40.207Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-43a7aea0-a689-43b9-a3e4-0dd8ed2ebe73",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-09T10:17:56.911Z",
+    "epicCreatedAt": "2026-11-09T10:17:04.018Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d6ba77b81bccfc4b",
+    "storyId": "s1",
+    "revision": 2,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "Small bugfix routed issue -> build with no LLD (ISSUE-d6ba77b81bccfc4b).",
+    "epicSlug": "register-analyze-templates-runtimes-each-session",
+    "updatedAt": "2026-11-09T10:25:11.525Z"
+  },
+  "body": {
+    "focus": "ISSUE-d6ba77b81bccfc4b: a session worker thread registers the analyze templates (registerBuiltinTemplates) and the analyze runtimes (registerBuiltinRuntimes) when it starts (src/daemon/threads/session-worker.ts), so the catalog and runtime registry it sees match the main thread's; with a test that a session worker thread has a non-empty template catalog (including docs templates) and a non-empty runtime registry.",
+    "producesLld": false,
+    "commit": "100aba694",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "A session worker thread now registers the analyze templates (registerBuiltinTemplates) and runtimes (registerBuiltinRuntimes) at start, so analyze.run.start, which is served on a session worker, sees the same catalog and runtime registry as the main thread. A test op, test.analyzeRegistry, reports the worker's catalog and runtimes; the s3-acceptance test asserts 27+ templates, 6+ docs templates and non-empty runtimes, and fails (0 templates) with the registration removed.",
+    "testRecord": {
+      "md": "docs/standalone/register-analyze-templates-runtimes-each-session-E20261109d6ba77b8/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/s3-acceptance.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T10:25:11.525Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/session-worker.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T10:25:11.525Z"
+      }
+    ]
+  },
+  "citations": []
+}

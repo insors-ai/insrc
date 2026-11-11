@@ -68,6 +68,7 @@ import type {
 import type { TierEffort } from '../../config/analyze.js';
 import { getLogger } from '../../shared/logger.js';
 import { runInProcessGroup } from '../../shared/process-group.js';
+import { reviewNativeTransport } from '../../shared/review-process-bridge.js';
 import type { ProcessGroupOpts } from '../../shared/process-group.js';
 import type { ReviewExecutionKind, ReviewProviderBudgetProfile } from '../../shared/review-budget.js';
 import { freezeReviewBudgetProfile, REVIEW_BUDGET_DEFAULTS, ReviewBudgetError } from './budget/accounting.js';
@@ -634,7 +635,7 @@ export class CliProvider implements LLMProvider {
   // Model/effort are verified against the catalog + the runtime's
   // thinkingLevels before any turn is dispatched; VibeSelectionError precedes it.
   const session = await openVerifiedVibeSession({
-   command: resolveBin(this.vibeAppServerPath),
+   command: await resolveBin(this.vibeAppServerPath),
    cwd: opts.cwd,
    signal,
    timeoutMs: this.timeoutMs,
@@ -702,7 +703,7 @@ export class CliProvider implements LLMProvider {
     args=codexReviewSessionArgs(path,opts.cwd,this.modelArgs());
    }
    await parser.start();
-   const result=await runInProcessGroup(resolveBin(this.binPath),args,{mode:'activity',cwd:opts.cwd,stdin:prompt,signal,onStdoutChunk:chunk=>parser.feed(chunk),...childEnv?{env:childEnv}:{}});
+   const result=await runInProcessGroup(await resolveBin(this.binPath),args,{mode:'activity',cwd:opts.cwd,stdin:prompt,signal,onStdoutChunk:chunk=>parser.feed(chunk),...childEnv?{env:childEnv}:{}});
    await parser.end();
    const accepted=parser.result();if(accepted.accepted)return accepted.value;
    if(result.aborted)throw abortError();
@@ -822,7 +823,7 @@ export class CliProvider implements LLMProvider {
 			const registry = getModelRegistry();
 			const rejected = new Set(registry.rejected('cli-vibe'));
 			const result = await runVerifiedVibeTurn({
-				command: resolveBin(this.vibeAppServerPath),
+				command: await resolveBin(this.vibeAppServerPath),
 				cwd: exec?.cwd,
 				env: exec?.env,
 				signal: exec?.signal,
@@ -1255,7 +1256,9 @@ function writeCliFailureFile(dir: string, cli: string, stdout: string, stderr: s
  *  rapid spawns (a full workflow run fires 8+ CLI calls). Falls back to the
  *  bare name (PATH lookup at spawn) when `which` can't resolve it. */
 const resolvedBinCache = new Map<string, string>();
-function resolveBin(command: string): string {
+async function resolveBin(command: string): Promise<string> {
+	const review = reviewNativeTransport();
+	if (review) return review.resolveBinary(command);
 	if (command.includes('/')) return command;                 // already an explicit path
 	const cached = resolvedBinCache.get(command);
 	if (cached !== undefined) return cached;
@@ -1284,10 +1287,10 @@ async function runSubprocess(
 	signal?: AbortSignal,
 	env?: NodeJS.ProcessEnv,
 ): Promise<SubprocessResult> {
-	let result = await spawnOnce(resolveBin(command), args, stdin, timeoutMs, cwd, stall, signal, env);
+	let result = await spawnOnce(await resolveBin(command), args, stdin, timeoutMs, cwd, stall, signal, env);
 	if (result.exitCode === -1 && /ENOENT/.test(result.stderr)) {
 		resolvedBinCache.delete(command);
-		result = await spawnOnce(resolveBin(command), args, stdin, timeoutMs, cwd, stall, signal, env);
+		result = await spawnOnce(await resolveBin(command), args, stdin, timeoutMs, cwd, stall, signal, env);
 	}
 	return result;
 }

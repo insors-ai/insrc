@@ -22,7 +22,7 @@
           "entityId": "PLAN-e4af63128c7cbec2-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 1"
+          "fragment": "revision 2"
         }
       ],
       "attachments": []
@@ -30,9 +30,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "83450bcc1580ef013f09e610c208c8ff33145b22afe64448702f718c693ee07a",
-        "at": "2026-11-09T07:42:48.119Z",
+        "number": 2,
+        "contentHash": "0667fcc045c8db6aaa7d02ccc0be930df220c39bc5bb8830d6142bf6dcd7bbf6",
+        "at": "2026-11-11T12:23:32.925Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -41,10 +41,10 @@
       },
       "signoffs": []
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
-    "planRevision": 1,
+    "planRevision": 2,
     "taskIds": [
       "t1",
       "t2",

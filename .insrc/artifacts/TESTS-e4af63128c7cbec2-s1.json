@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 5,
-        "contentHash": "86c6697b78d89d51fa1e46400e8a5f7f8170990b34314c35f5b385a757ba9992",
-        "at": "2026-11-09T09:08:06.377Z",
+        "number": 12,
+        "contentHash": "dd91b34188fd57a1304da8b317366e08e261d77aff9cd0ab22c90280b08e883e",
+        "at": "2026-11-11T12:51:57.351Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "e4af63128c7cbec2",
     "storyId": "s1",
     "createdAt": "2026-11-09T07:52:13.312Z",
-    "updatedAt": "2026-11-09T09:08:06.224Z",
+    "updatedAt": "2026-11-11T12:51:57.103Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-09T04:29:20.389Z",
     "epicSlug": "isolate-each-code-design-review-its",
-    "revision": 5
+    "revision": 12
   },
   "body": {
     "tasks": [
@@ -252,6 +252,174 @@
             "titles": [
               {
                 "title": "technical admission diagnostics remain non-review evidence across publication",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "9f8c8c660",
+        "ranAt": "2026-11-09T10:00:23.617Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/threads/__tests__/review-processes.test.ts: host leases precede spawn and enforce owner-bound replay and disposal",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-processes.test.ts",
+                "title": "host leases precede spawn and enforce owner-bound replay and disposal",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/threads/__tests__/review-processes.test.ts: worker loss and unknown child cleanup fence only the owning review",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-processes.test.ts",
+                "title": "worker loss and unknown child cleanup fence only the owning review",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/review-processes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 968,
+            "titles": [
+              {
+                "title": "host leases precede spawn and enforce owner-bound replay and disposal",
+                "result": "pass"
+              },
+              {
+                "title": "worker loss and unknown child cleanup fence only the owning review",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "4fc8bee23",
+        "ranAt": "2026-11-11T12:23:50.106Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/agent/providers/__tests__/review-worker-process.test.ts: fake native review CLI streams and cancellation use host-owned leases",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/review-worker-process.test.ts",
+                "title": "fake native review CLI streams and cancellation use host-owned leases",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/agent/providers/__tests__/review-worker-process.test.ts: review binary lookup cannot spawn synchronously on the worker",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/review-worker-process.test.ts",
+                "title": "review binary lookup cannot spawn synchronously on the worker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/review-worker-process.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1759,
+            "titles": [
+              {
+                "title": "fake native review CLI streams and cancellation use host-owned leases",
+                "result": "pass"
+              },
+              {
+                "title": "review binary lookup cannot spawn synchronously on the worker",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "43d69ad70",
+        "ranAt": "2026-11-11T12:51:57.103Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/__tests__/review-worker-shell.test.ts: Git shell and raw-byte commands preserve output bounds and abort semantics through leases",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/review-worker-shell.test.ts",
+                "title": "Git shell and raw-byte commands preserve output bounds and abort semantics through leases",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/threads/__tests__/review-spawn-inventory.test.ts: all review-reachable native spawn and exec paths use the host bridge",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-spawn-inventory.test.ts",
+                "title": "all review-reachable native spawn and exec paths use the host bridge",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/review-spawn-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 747,
+            "titles": [
+              {
+                "title": "all review-reachable native spawn and exec paths use the host bridge",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/__tests__/review-worker-shell.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5923,
+            "titles": [
+              {
+                "title": "Git shell and raw-byte commands preserve output bounds and abort semantics through leases",
                 "result": "pass"
               }
             ],

@@ -4,6 +4,9 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { spawn } from 'node:child_process';
+import type { ChildProcessWithoutNullStreams } from 'node:child_process';
+import { reviewNativeTransport } from './review-process-bridge.js';
+import { launchReviewShell } from '../daemon/tools/review-shell-process.js';
 
 import { killProcessGroup } from './process-group.js';
 import { onUtf8Data } from './utf8-stream.js';
@@ -93,8 +96,12 @@ const CLOSE_GRACE_MS = 1_000;
 
 function startTransport(options: VibeSessionOptions): VibeTransport {
 	options.signal?.throwIfAborted();
-	const ownGroup = options.inheritProcessGroup !== true && process.platform !== 'win32';
-	const child = spawn(options.command, options.args ?? [], {
+	const review = reviewNativeTransport();
+	const managed = review ? launchReviewShell(review, options.command, options.args ?? [], {
+		cwd: options.cwd, env: options.env, signal: options.signal, stdio: ['pipe', 'pipe', 'pipe'],
+	}) : undefined;
+	const ownGroup = !review && options.inheritProcessGroup !== true && process.platform !== 'win32';
+	const child = managed ? managed.child as ChildProcessWithoutNullStreams : spawn(options.command, options.args ?? [], {
 		stdio: ['pipe', 'pipe', 'pipe'],
 		detached: ownGroup,
 		cwd: options.cwd,
@@ -215,9 +222,13 @@ function startTransport(options: VibeSessionOptions): VibeTransport {
 			if (failure !== undefined) onFailure(failure);
 		},
 		releaseSetupAbort() { options.signal?.removeEventListener('abort', abort); },
-		close() {
+		async close() {
 			stop(new Error('Vibe app server closed'));
-			return closed;
+			await closed;
+			if (managed) {
+				await managed.settled;
+				if (managed.disposal().state !== 'confirmed') throw new Error('Vibe native disposal is unknown');
+			}
 		},
 	};
 }

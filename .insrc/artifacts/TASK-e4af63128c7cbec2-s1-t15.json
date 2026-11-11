@@ -22,7 +22,7 @@
           "entityId": "PLAN-e4af63128c7cbec2-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 1"
+          "fragment": "revision 2"
         },
         {
           "entityId": "TASK-e4af63128c7cbec2-s1-t14",
@@ -33,11 +33,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "90803c957fc1efb7b5fbcf3a7c056ac18575e09a9a2554bf911f058e03f09ac1",
-        "at": "2026-11-09T07:42:48.110Z",
+        "number": 2,
+        "contentHash": "3f7c3ae626e724b5add778531f8fe87fa17725ba643b4c84d01d02d5e23b92b4",
+        "at": "2026-11-11T12:23:32.911Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -55,7 +55,7 @@
         "at": "2026-11-09T07:42:48.112Z"
       }
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
     "title": "Qualify real concurrent worker isolation and failure recovery",
@@ -67,7 +67,8 @@
       "Valid reviews have distinct runtime threadIds; duplicate same-review start is non-spawning and stale/forged owner messages cannot alter another worker.",
       "Never-ready/pre-save-hung boot, worker death across native-spawn/save boundaries, controller disconnect, observer disconnect and daemon restart retain targeted semantics.",
       "Whole-history resource fences and clearance/publication/cleanup replay are exercised through real routing; unrelated review files and processes remain untouched.",
-      "Run existing relevant ownership/admission/progress/checkpoint/recovery/publication/approval suites alongside these regressions with no live-cloud requirement."
+      "Run existing relevant ownership/admission/progress/checkpoint/recovery/publication/approval suites alongside these regressions with no live-cloud requirement.",
+      "End-to-end fixtures through the actual worker registry and production review routes prove both code/design families use the CLI and tool/Git adapters with host-owned leases, durable intent, bounded byte backpressure and cleanup after real worker loss; unbound or bypassed native execution refuses."
     ],
     "tests": [
       {

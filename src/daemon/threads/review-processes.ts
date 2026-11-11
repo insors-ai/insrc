@@ -10,44 +10,10 @@ import type { ProcessDisposal } from '../../shared/process-group.js';
 import { spawnManaged } from '../tools/shell-helper.js';
 import type { ManagedProcess } from '../tools/shell-helper.js';
 import { runWithoutToolSignal } from '../tools/tool-signal.js';
+import { withoutReviewNativeTransport } from '../../shared/review-process-bridge.js';
 
-export interface ReviewNativeCommand {
- readonly kind: string;
- readonly command: string;
- readonly args: readonly string[];
- readonly cwd: string;
- readonly env?: Readonly<Record<string, string>> | undefined;
- readonly stdin?: Uint8Array | undefined;
- readonly keepStdinOpen?: boolean | undefined;
- readonly timeoutMs?: number | undefined;
-}
-export interface ReviewProcessOwner { readonly key: Readonly<ReviewKey>; readonly incarnation: string; }
-export interface ReviewProcessReservation {
- readonly key: Readonly<ReviewKey>; readonly daemonInstance: string;
- readonly operationId: string; readonly workerIncarnation: string; readonly kind: string;
- readonly openedAt: string; readonly commandDigest: string;
-}
-/** A correlated save acknowledgment, verified by the main's registered worker
- * bridge. A worker-supplied boolean or arbitrary client receipt is insufficient. */
-export interface ReviewIntentReceipt {
- readonly checkpointPath: string; readonly attempt: number;
- readonly operationId: string; readonly workerIncarnation: string; readonly daemonInstance: string;
-}
-export interface ReviewProcessOutput {
- readonly operationId: string; readonly workerIncarnation: string;
- readonly sequence: number; readonly stream: 'stdout' | 'stderr'; readonly bytes: Uint8Array;
-}
-export interface ReviewProcessOutcome {
- readonly code: number | null; readonly signal: string | null;
- readonly aborted: boolean; readonly timedOut: boolean; readonly spawnError: boolean;
- readonly disposal: ProcessDisposal;
- readonly stdoutBytes: number; readonly stderrBytes: number;
- readonly error?: { readonly code: string } | undefined;
-}
-export interface ReviewProcessRun {
- readonly started: Promise<{ readonly spawned: boolean; readonly pid?: number | undefined }>;
- readonly result: Promise<ReviewProcessOutcome>;
-}
+import type { ReviewNativeCommand, ReviewProcessOwner, ReviewProcessReservation, ReviewIntentReceipt, ReviewProcessOutput, ReviewProcessOutcome, ReviewProcessRun } from '../../shared/review-native.js';
+export type { ReviewNativeCommand, ReviewProcessOwner, ReviewProcessReservation, ReviewIntentReceipt, ReviewProcessOutput, ReviewProcessOutcome, ReviewProcessRun } from '../../shared/review-native.js';
 export interface ReviewProcessDeps {
  /** Required host permission/provenance check, not a worker assertion. */
  readonly authorize: (reservation: ReviewProcessReservation, command: ReviewNativeCommand, signal: AbortSignal) => Promise<void> | void;
@@ -141,7 +107,7 @@ export class ReviewProcessLeases {
   requireProcess(!lease.receipt||JSON.stringify(lease.receipt)===JSON.stringify(pinned),'conflicting_intent_replay');
   if(lease.phase==='reserved'){
    requireProcess(!state.closing,'review_resource_fenced'); lease.phase='validating';lease.receipt=pinned;
-   void runWithoutToolSignal(()=>this.launch(state,lease,pinned,consume)).catch(()=>this.finish(state,lease,{code:null,signal:null,aborted:lease.abort.signal.aborted,timedOut:false,spawnError:false,disposal:{state:'unknown',reason:'child_not_closed'},stdoutBytes:0,stderrBytes:0,error:{code:'native_lifecycle_failed'}}));
+   void withoutReviewNativeTransport(()=>runWithoutToolSignal(()=>this.launch(state,lease,pinned,consume))).catch(()=>this.finish(state,lease,{code:null,signal:null,aborted:lease.abort.signal.aborted,timedOut:false,spawnError:false,disposal:{state:'unknown',reason:'child_not_closed'},stdoutBytes:0,stderrBytes:0,error:{code:'native_lifecycle_failed'}}));
   }
   return lease.run;
  }
@@ -177,8 +143,8 @@ export class ReviewProcessLeases {
   const child=handle.child;
   if(child.pid!==undefined)lease.started({spawned:true,pid:child.pid});
   child.once('spawn',()=>lease.started({spawned:true,...(child.pid!==undefined?{pid:child.pid}:{})}));
-  let spawnError=false;
-  child.once('error',()=>{spawnError=true;lease.started({spawned:false});});
+  let spawnError=false,spawnDetail:string|undefined;
+  child.once('error',error=>{spawnError=true;spawnDetail=error.message.slice(0,4096);lease.started({spawned:false});});
   // Managed helpers retain their normal behavior elsewhere. Review ownership
   // additionally sweeps the owned group on parent exit before observing close.
   child.once('exit',()=>{if(child.pid!==undefined)killProcessGroup(child.pid);});
@@ -208,10 +174,13 @@ export class ReviewProcessLeases {
   // These only drain native byte streams; neither branch calls an LLM.
   const streams=Promise.all([forward('stdout'),forward('stderr')]);
   const exit=await handle.settled;
-  if(handle.disposal().state==='unknown')lease.abort.abort();
+  if(exit.timedOut||exit.aborted||handle.disposal().state==='unknown')lease.abort.abort();
   await streams;
   lease.abort.signal.removeEventListener('abort',stopStreams);
-  this.finish(state,lease,{...exit,spawnError,disposal:handle.disposal(),stdoutBytes,stderrBytes,...(consumerLost?{error:{code:'output_consumer_lost'}}:spawnError?{error:{code:'spawn_failed'}}:{})});
+  this.finish(state,lease,{...exit,spawnError,disposal:handle.disposal(),stdoutBytes,stderrBytes,...(consumerLost?{error:{code:'output_consumer_lost'}}:spawnError?{error:{code:'spawn_failed',detail:spawnDetail}}:{})});
+ }
+ async waitStarted(owner:ReviewProcessOwner,sequence:number):Promise<{readonly spawned:boolean}>{
+  const lease=this.owner(owner).leases.get(sequence);requireProcess(lease,'unknown_operation');return{spawned:(await lease.run.started).spawned};
  }
  async write(owner: ReviewProcessOwner, sequence: number, bytes: Uint8Array, end=false): Promise<void> {
   const state=this.owner(owner),lease=state.leases.get(sequence);

@@ -21,6 +21,7 @@
 
 import { spawn } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
+import { reviewNativeTransport, runReviewNativeProcess } from './review-process-bridge.js';
 
 export type ProcessDisposal =
  | { readonly state: 'confirmed'; readonly reason: 'not_started' | 'closed' }
@@ -100,6 +101,8 @@ export function killProcessGroup(pid: number): void {
 /** Spawn `command` in its own process group and wait for it, under a bounded deadline or explicit activity-mode cancellation. Activity observer failures reject. */
 export function runInProcessGroup(command: string, args: readonly string[], opts: ProcessGroupOpts): Promise<ProcessGroupResult> {
 	if (opts.mode === 'activity' && ('timeoutMs' in opts || 'stall' in opts || !(opts.signal instanceof AbortSignal) || typeof opts.onStdoutChunk !== 'function')) throw new TypeError('Invalid activity process options');
+	const review = reviewNativeTransport();
+	if (review) return runReviewNativeProcess(review, command, args, opts);
 	return new Promise((resolve, reject) => {
 		const start = Date.now();
 		if (opts.signal?.aborted === true) {

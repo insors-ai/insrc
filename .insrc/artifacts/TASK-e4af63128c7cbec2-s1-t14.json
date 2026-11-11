@@ -22,7 +22,7 @@
           "entityId": "PLAN-e4af63128c7cbec2-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 1"
+          "fragment": "revision 2"
         },
         {
           "entityId": "TASK-e4af63128c7cbec2-s1-t9",
@@ -53,11 +53,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "13dea4bf741e2e032204f46228cd5fb531f2954a5ab5582c7bf20e071af28e71",
-        "at": "2026-11-09T07:42:48.106Z",
+        "number": 2,
+        "contentHash": "45e4e5602de2ddafffeb9b4b3f7f503ee7fe79a07667f27c6fdb946376cf931e",
+        "at": "2026-11-11T12:23:32.903Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -75,7 +75,7 @@
         "at": "2026-11-09T07:42:48.108Z"
       }
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
     "title": "Switch all supported review entrypoints to dedicated workers",
@@ -87,7 +87,8 @@
       "Both families cut over together only after required lifecycle/recovery dependencies are ready; no activation flag or main/session fallback remains.",
       "Optional chat/session threading disabled still requires safe dedicated review workers or returns explicit unavailable.",
       "Existing retired review endpoints keep their current refusal behavior; no legacy engine is restored.",
-      "The plan/deployment contract forbids installing an intermediate partial build before final qualification."
+      "The plan/deployment contract forbids installing an intermediate partial build before final qualification.",
+      "Through every supported production review route, CLI and tool/Git native work uses the installed transport and registered host lease with verified durable intent; no review-worker local spawn/exec/binary-lookup bypass remains. This gate discharges the production integration deliberately deferred from component acceptance in t5/t6."
     ],
     "tests": [
       {

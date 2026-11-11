@@ -22,7 +22,7 @@
           "entityId": "PLAN-e4af63128c7cbec2-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 1"
+          "fragment": "revision 2"
         },
         {
           "entityId": "TASK-e4af63128c7cbec2-s1-t1",
@@ -48,11 +48,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "c4a59348375131f9ce8a38d9fd5cbcf90ce2c4a2594cf26fa703f2b0cb67a2f9",
-        "at": "2026-11-09T07:42:48.082Z",
+        "number": 2,
+        "contentHash": "a0e99f61faf7a3b5c7387579f4f19fb3d9b2754f8f3444480b9ea73e20c16ae8",
+        "at": "2026-11-11T12:23:32.473Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -70,7 +70,7 @@
         "at": "2026-11-09T07:42:48.084Z"
       }
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
     "title": "Build the dedicated review-worker runtime and bootstrap supervision",
@@ -82,7 +82,8 @@
       "The worker is dedicated to one canonical review identity and rejects other identities/families or stale incarnation messages.",
       "Parent-owned 30-second bootstrap deadline starts before creation and ends after readiness plus durable admission-save acknowledgment; late messages cannot revive a closing instance.",
       "Never-ready and pre-save-hung workers return named failures promptly; resource/lock/store cleanup proceeds with a targeted fence rather than blocking the request indefinitely.",
-      "Failure cannot silently fall back to a main/session worker or introduce an activation flag."
+      "Failure cannot silently fall back to a main/session worker or introduce an activation flag.",
+      "Before invoking a family coordinator, the bootstrap establishes the immutable review worker role and installs both CLI and tool/Git native transport bindings; missing bindings fail closed. Prove bootstrap behavior with the injected host-service contract here; registered host-service connection belongs to t8 and public-route cutover to t14."
     ],
     "tests": [
       {

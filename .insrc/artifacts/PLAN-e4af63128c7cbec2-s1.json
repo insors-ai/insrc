@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1794205357684-f32ouc",
+    "runId": "wf-1794219406470-ni8pkg",
     "repoPath": "/home/subho/work/dev/insors/insrc",
-    "createdAt": "2026-11-09T06:37:57.157Z",
+    "createdAt": "2026-11-09T10:19:25.440Z",
     "epicCreatedAt": "2026-11-09T04:29:20.389Z",
     "standalone": true,
     "attribution": {
@@ -16,7 +16,7 @@
         }
       ]
     },
-    "elapsedMs": 916084,
+    "elapsedMs": 156294,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "e4af63128c7cbec2",
@@ -25,17 +25,17 @@
     "lldRunId": "wf-1794204515305-6q9wbt",
     "lldEffectiveHash": "ccc8515f61bdf184ac15cf0d074be009ad2cff98692ec56305988be1104b55cc",
     "authoredBy": "controller",
-    "revision": 1,
     "envelope": {
       "description": "",
       "references": [],
       "attachments": []
     },
+    "revision": 2,
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 1,
-        "contentHash": "d9c4555042cefe6c43405af2f2bb3965294cf98e8b908a3c5818bf03257ceff9",
+        "number": 2,
+        "contentHash": "33d3bf5fa237913bf22b04bc3c9d3e391fd55a882c32de8ab0a476f061f773c7",
         "at": "",
         "by": {
           "id": "insrc:system",
@@ -45,21 +45,21 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 1,
+        "revision": 2,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-09T07:42:46.476Z"
+        "at": "2026-11-11T12:22:38.774Z"
       }
     },
-    "rangeBase": "33e1833a4f81265be764ad7165f5fbf77696fde7"
+    "rangeBase": "2698f91b78f32f302d515508275a5244290b11d6"
   },
   "body": {
     "summary": {
       "audience": "technical",
-      "prose": "Build dedicated code/design review workers in dependency order, beginning with durable admission/resource contracts and host-owned native subprocess lifecycle. Then integrate both existing review coordinators, exact-review recovery, progress and supported clients before a coordinated public-route cutover. Real worker/process fixtures prove responsiveness and crash isolation; compiled-package checks and release instructions precede one independent whole-story code review and human BUILD approval."
+      "prose": "Build dedicated code/design review workers in dependency order, beginning with durable admission/resource contracts and host-owned native subprocess lifecycle. Then integrate both existing review coordinators, exact-review recovery, progress and supported clients before a coordinated public-route cutover. Real worker/process fixtures prove responsiveness and crash isolation; compiled-package checks and release instructions precede one independent whole-story code review and human BUILD approval. Staged acceptance: before public cutover in t14, each task proves its declared component using bound real-worker/native fixtures and the host-service contract available at that stage. Native adapters are delivered in t5/t6, bootstrap installation in t7, registry/host connection in t8, and both-family production routing and end-to-end qualification in t14/t15. A component pass never claims later production integration is complete."
     },
     "tasks": [
       {
@@ -196,14 +196,14 @@
       {
         "id": "t5",
         "title": "Bridge native review CLI execution and binary resolution",
-        "summary": "Integrate the review-worker bridge with src/shared/process-group.ts and src/agent/providers/cli-provider.ts. Route supported native CLI session spawn/output/cancellation through main-host leases while keeping model selection and structured-output parsing in the worker. Remove the review-worker resolveBin synchronous which spawn by host-supplied/asynchronously bridged resolution.",
+        "summary": "Integrate the review-worker bridge with src/shared/process-group.ts and src/agent/providers/cli-provider.ts. Route supported native CLI session spawn/output/cancellation through main-host leases while keeping model selection and structured-output parsing in the worker. Remove the review-worker resolveBin synchronous which spawn by host-supplied/asynchronously bridged resolution. Deliver and validate the CLI adapter with bound real-worker fixtures in this task; bootstrap installation, registered host-service connection and public-route activation are owned by t7, t8 and t14 respectively.",
         "size": "L",
         "order": 5,
         "dependsOn": [
           "t4"
         ],
         "acceptanceChecks": [
-          "No review CLI starts without a host lease and durable intent receipt; cancellation and worker loss are handled by the surviving host owner.",
+          "Within the CLI adapter exercised by a bound real review worker, no native CLI starts without a host lease and durable intent receipt; cancellation and actual worker termination leave disposal with the surviving host owner. An unbound review-role worker fails before binary lookup or local spawn. Production bootstrap/registry installation is verified in t7/t8 and all supported public routes cut over in t14.",
           "CLI stream bytes use bounded backpressure and owner-scoped cancellation; structured response and model/tool activity parsing remain in the review worker.",
           "Review binary lookup cannot execute execFileSync which in the worker; non-review callers keep current behavior and supported reviewer/provider selection is unchanged.",
           "Fake CLI fixtures cover spawn failure, observer failure, cancellation, late output and worker loss without cloud calls or direct REST access."
@@ -226,14 +226,14 @@
       {
         "id": "t6",
         "title": "Bridge review tool, Git and raw-byte subprocess execution",
-        "summary": "Integrate host leases with src/daemon/tools/shell-helper.ts and review-reachable tool subprocess paths, including runShell, runShellBytes, spawnManaged and streaming/direct spawn sites. Keep permission/provenance checks and output parsing semantics; assemble the complete review-native-spawn inventory with the CLI bridge.",
+        "summary": "Integrate host leases with src/daemon/tools/shell-helper.ts and review-reachable tool subprocess paths, including runShell, runShellBytes, spawnManaged and streaming/direct spawn sites. Keep permission/provenance checks and output parsing semantics; assemble the complete review-native-spawn inventory with the CLI bridge. Deliver and validate tool/Git adapters with bound real-worker fixtures in this task; bootstrap installation, registered host-service connection and public-route activation are owned by t7, t8 and t14 respectively.",
         "size": "L",
         "order": 6,
         "dependsOn": [
           "t4"
         ],
         "acceptanceChecks": [
-          "Git admission, shell/raw-byte/managed-tool commands record durable intent before host spawn and retain exact bytes, exit/error and truncation semantics.",
+          "Within the tool/Git adapters exercised by bound real review workers, Git admission, shell/raw-byte/managed-tool commands record durable intent before host spawn and retain exact bytes, exit/error and truncation semantics. An unbound review-role worker refuses local native execution. Production bootstrap/registry installation is verified in t7/t8 and all supported public routes cut over in t14.",
           "Existing tool approval/provenance and effective abort signals survive the worker bridge; returned output is parsed in the worker.",
           "An executable inventory refuses every unbridged review-reachable spawn/exec path, including provider binary resolution from t5; other callers are unchanged.",
           "Real short-lived command fixtures exercise cancellation, byte bounds/backpressure, worker loss and unknown cleanup without affecting another review's leases."
@@ -270,7 +270,8 @@
           "The worker is dedicated to one canonical review identity and rejects other identities/families or stale incarnation messages.",
           "Parent-owned 30-second bootstrap deadline starts before creation and ends after readiness plus durable admission-save acknowledgment; late messages cannot revive a closing instance.",
           "Never-ready and pre-save-hung workers return named failures promptly; resource/lock/store cleanup proceeds with a targeted fence rather than blocking the request indefinitely.",
-          "Failure cannot silently fall back to a main/session worker or introduce an activation flag."
+          "Failure cannot silently fall back to a main/session worker or introduce an activation flag.",
+          "Before invoking a family coordinator, the bootstrap establishes the immutable review worker role and installs both CLI and tool/Git native transport bindings; missing bindings fail closed. Prove bootstrap behavior with the injected host-service contract here; registered host-service connection belongs to t8 and public-route cutover to t14."
         ],
         "derivedFrom": [
           "c1",
@@ -303,7 +304,8 @@
           "Main derives controller authority/reviewer routing from trusted host context and forwards action/execution/sequence envelopes only to the registered target.",
           "Worker loss/late messages cannot release another incarnation's reservation or mutate its progress; replacement waits for targeted process and store/lock reclamation.",
           "Cross-worker design-subject and story/artifact cleanup exclusions preserve current guarantees without leaving authority in worker-local module globals.",
-          "Daemon reviewer lifetime survives observer disconnect; controller-owner loss interrupts only its owned reviews under current recovery rules."
+          "Daemon reviewer lifetime survives observer disconnect; controller-owner loss interrupts only its owned reviews under current recovery rules.",
+          "Connect both installed native adapters to the main registry's ReviewProcessLeases using the registered worker/port/incarnation identity. Enforce host permission/provenance checks and verify same-family serialized durable open-intent acknowledgment before native launch; on worker loss the main retains cancellation, disposal proof and the exact review fence."
         ],
         "derivedFrom": [
           "c1",
@@ -539,7 +541,8 @@
           "Both families cut over together only after required lifecycle/recovery dependencies are ready; no activation flag or main/session fallback remains.",
           "Optional chat/session threading disabled still requires safe dedicated review workers or returns explicit unavailable.",
           "Existing retired review endpoints keep their current refusal behavior; no legacy engine is restored.",
-          "The plan/deployment contract forbids installing an intermediate partial build before final qualification."
+          "The plan/deployment contract forbids installing an intermediate partial build before final qualification.",
+          "Through every supported production review route, CLI and tool/Git native work uses the installed transport and registered host lease with verified durable intent; no review-worker local spawn/exec/binary-lookup bypass remains. This gate discharges the production integration deliberately deferred from component acceptance in t5/t6."
         ],
         "derivedFrom": [
           "c1",
@@ -572,7 +575,8 @@
           "Valid reviews have distinct runtime threadIds; duplicate same-review start is non-spawning and stale/forged owner messages cannot alter another worker.",
           "Never-ready/pre-save-hung boot, worker death across native-spawn/save boundaries, controller disconnect, observer disconnect and daemon restart retain targeted semantics.",
           "Whole-history resource fences and clearance/publication/cleanup replay are exercised through real routing; unrelated review files and processes remain untouched.",
-          "Run existing relevant ownership/admission/progress/checkpoint/recovery/publication/approval suites alongside these regressions with no live-cloud requirement."
+          "Run existing relevant ownership/admission/progress/checkpoint/recovery/publication/approval suites alongside these regressions with no live-cloud requirement.",
+          "End-to-end fixtures through the actual worker registry and production review routes prove both code/design families use the CLI and tool/Git adapters with host-owned leases, durable intent, bounded byte backpressure and cleanup after real worker loss; unbound or bypassed native execution refuses."
         ],
         "derivedFrom": [
           "c1",

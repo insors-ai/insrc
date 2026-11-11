@@ -22,7 +22,7 @@
           "entityId": "PLAN-e4af63128c7cbec2-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 1"
+          "fragment": "revision 2"
         },
         {
           "entityId": "TASK-e4af63128c7cbec2-s1-t4",
@@ -38,11 +38,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "2b04172557c090a94d6a870a333b2a1e66d327769d16765bfb89fb506ef0b7c7",
-        "at": "2026-11-09T07:42:48.085Z",
+        "number": 2,
+        "contentHash": "2e4bb213f662e893ede6efdbef31ecd018c1b542743c0060709077f8c105fd57",
+        "at": "2026-11-11T12:23:32.479Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -60,7 +60,7 @@
         "at": "2026-11-09T07:42:48.086Z"
       }
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
     "title": "Add the main review-worker registry and trusted control bridge",
@@ -72,7 +72,8 @@
       "Main derives controller authority/reviewer routing from trusted host context and forwards action/execution/sequence envelopes only to the registered target.",
       "Worker loss/late messages cannot release another incarnation's reservation or mutate its progress; replacement waits for targeted process and store/lock reclamation.",
       "Cross-worker design-subject and story/artifact cleanup exclusions preserve current guarantees without leaving authority in worker-local module globals.",
-      "Daemon reviewer lifetime survives observer disconnect; controller-owner loss interrupts only its owned reviews under current recovery rules."
+      "Daemon reviewer lifetime survives observer disconnect; controller-owner loss interrupts only its owned reviews under current recovery rules.",
+      "Connect both installed native adapters to the main registry's ReviewProcessLeases using the registered worker/port/incarnation identity. Enforce host permission/provenance checks and verify same-family serialized durable open-intent acknowledgment before native launch; on worker loss the main retains cancellation, disposal proof and the exact review fence."
     ],
     "tests": [
       {

@@ -17,6 +17,8 @@ import { GIT_READ_ARGS, gitEnvironment } from './git-isolation.js';
 import { effectiveToolSignal } from './tool-signal.js';
 import { observeOwnedProcessDisposal } from '../../shared/process-group.js';
 import type { ProcessDisposal } from '../../shared/process-group.js';
+import { reviewNativeTransport } from '../../shared/review-process-bridge.js';
+import { launchReviewShell } from './review-shell-process.js';
 
 export interface ShellResult {
   stdout: string;
@@ -98,6 +100,8 @@ function launch(command: string, args: readonly string[], options: ManagedSpawnO
   if (signal?.aborted === true) {
     return { spawned: false, settled: Promise.resolve({ code: null, signal: null, timedOut: false, aborted: true }) };
   }
+  const review=reviewNativeTransport();
+  if(review)return launchReviewShell(review,command,args,{...options,signal});
   const child = spawn(command, [...args], {
     cwd: options.cwd,
     env: options.env ?? process.env,

@@ -13,13 +13,17 @@ export interface ReviewNativeTransport {
  reserve(command: ReviewNativeCommand): Promise<ReviewProcessReservation>;
  saveOpenIntent(reservation: ReviewProcessReservation): Promise<ReviewIntentReceipt>;
  start(reservation: ReviewProcessReservation, receipt: ReviewIntentReceipt, consume: (output: ReviewProcessOutput)=>Promise<void>): Promise<ReviewProcessOutcome>;
+ waitStarted(reservation: ReviewProcessReservation): Promise<{readonly spawned:boolean}>;
+ write(reservation: ReviewProcessReservation, bytes: Uint8Array, end: boolean): Promise<void>;
  cancel(reservation: ReviewProcessReservation): Promise<ReviewProcessOutcome>;
  saveClosedIntent(reservation: ReviewProcessReservation): Promise<void>;
 }
-const context=new AsyncLocalStorage<ReviewNativeTransport>();
+const context=new AsyncLocalStorage<ReviewNativeTransport|undefined>();
 /** One scope per review worker. No provider model/response data is parsed by
  * this transport; the existing CliProvider continues to do that in the worker. */
 export function withReviewNativeTransport<T>(transport: ReviewNativeTransport, fn: ()=>T): T { return context.run(transport,fn); }
+/** Host handlers must not inherit a same-process fixture's worker endpoint. */
+export function withoutReviewNativeTransport<T>(fn:()=>T):T{return context.run(undefined,fn);}
 export function reviewNativeTransport(): ReviewNativeTransport | undefined {
  const transport=context.getStore();
  // The review bootstrap (Task 7) identifies its immutable thread role. A
@@ -66,7 +70,7 @@ export async function runReviewNativeProcess(transport: ReviewNativeTransport, c
   if(observerError!==undefined)throw observerError;
   if(outcome.error&&!outcome.spawnError)throw new Error(`Review native operation failed: ${outcome.error.code}`);
   stdout+=stdoutDecoder.end();stderr=opts.mode==='activity'?stderrTail.toString():stderr+stderrDecoder.end();
-  return {stdout,stderr,exitCode:outcome.code??-1,timedOut:outcome.timedOut,durationMs:Date.now()-began,...(outcome.aborted&&!stalled?{aborted:true}:{}),...(stalled?{stalled:true}:{}),...(outcome.spawnError?{spawnError:'Native CLI could not be spawned'}:{})};
+  return {stdout,stderr,exitCode:outcome.code??-1,timedOut:outcome.timedOut,durationMs:Date.now()-began,...(outcome.aborted&&!stalled?{aborted:true}:{}),...(stalled?{stalled:true}:{}),...(outcome.spawnError?{spawnError:outcome.error?.detail??'Native CLI could not be spawned'}:{})};
  }catch(error){
   // An intent-save or observer failure still owns a reservation. Never leave
   // its native command running, and never clear a guard without positive proof.

@@ -10,6 +10,7 @@ import type { ProcessDisposal } from '../../shared/process-group.js';
 import { spawnManaged } from '../tools/shell-helper.js';
 import type { ManagedProcess } from '../tools/shell-helper.js';
 import { runWithoutToolSignal } from '../tools/tool-signal.js';
+import { withoutReviewNativeTransport } from '../../shared/review-process-bridge.js';
 
 import type { ReviewNativeCommand, ReviewProcessOwner, ReviewProcessReservation, ReviewIntentReceipt, ReviewProcessOutput, ReviewProcessOutcome, ReviewProcessRun } from '../../shared/review-native.js';
 export type { ReviewNativeCommand, ReviewProcessOwner, ReviewProcessReservation, ReviewIntentReceipt, ReviewProcessOutput, ReviewProcessOutcome, ReviewProcessRun } from '../../shared/review-native.js';
@@ -106,7 +107,7 @@ export class ReviewProcessLeases {
   requireProcess(!lease.receipt||JSON.stringify(lease.receipt)===JSON.stringify(pinned),'conflicting_intent_replay');
   if(lease.phase==='reserved'){
    requireProcess(!state.closing,'review_resource_fenced'); lease.phase='validating';lease.receipt=pinned;
-   void runWithoutToolSignal(()=>this.launch(state,lease,pinned,consume)).catch(()=>this.finish(state,lease,{code:null,signal:null,aborted:lease.abort.signal.aborted,timedOut:false,spawnError:false,disposal:{state:'unknown',reason:'child_not_closed'},stdoutBytes:0,stderrBytes:0,error:{code:'native_lifecycle_failed'}}));
+   void withoutReviewNativeTransport(()=>runWithoutToolSignal(()=>this.launch(state,lease,pinned,consume))).catch(()=>this.finish(state,lease,{code:null,signal:null,aborted:lease.abort.signal.aborted,timedOut:false,spawnError:false,disposal:{state:'unknown',reason:'child_not_closed'},stdoutBytes:0,stderrBytes:0,error:{code:'native_lifecycle_failed'}}));
   }
   return lease.run;
  }
@@ -142,8 +143,8 @@ export class ReviewProcessLeases {
   const child=handle.child;
   if(child.pid!==undefined)lease.started({spawned:true,pid:child.pid});
   child.once('spawn',()=>lease.started({spawned:true,...(child.pid!==undefined?{pid:child.pid}:{})}));
-  let spawnError=false;
-  child.once('error',()=>{spawnError=true;lease.started({spawned:false});});
+  let spawnError=false,spawnDetail:string|undefined;
+  child.once('error',error=>{spawnError=true;spawnDetail=error.message.slice(0,4096);lease.started({spawned:false});});
   // Managed helpers retain their normal behavior elsewhere. Review ownership
   // additionally sweeps the owned group on parent exit before observing close.
   child.once('exit',()=>{if(child.pid!==undefined)killProcessGroup(child.pid);});
@@ -176,7 +177,10 @@ export class ReviewProcessLeases {
   if(handle.disposal().state==='unknown')lease.abort.abort();
   await streams;
   lease.abort.signal.removeEventListener('abort',stopStreams);
-  this.finish(state,lease,{...exit,spawnError,disposal:handle.disposal(),stdoutBytes,stderrBytes,...(consumerLost?{error:{code:'output_consumer_lost'}}:spawnError?{error:{code:'spawn_failed'}}:{})});
+  this.finish(state,lease,{...exit,spawnError,disposal:handle.disposal(),stdoutBytes,stderrBytes,...(consumerLost?{error:{code:'output_consumer_lost'}}:spawnError?{error:{code:'spawn_failed',detail:spawnDetail}}:{})});
+ }
+ async waitStarted(owner:ReviewProcessOwner,sequence:number):Promise<{readonly spawned:boolean}>{
+  const lease=this.owner(owner).leases.get(sequence);requireProcess(lease,'unknown_operation');return{spawned:(await lease.run.started).spawned};
  }
  async write(owner: ReviewProcessOwner, sequence: number, bytes: Uint8Array, end=false): Promise<void> {
   const state=this.owner(owner),lease=state.leases.get(sequence);

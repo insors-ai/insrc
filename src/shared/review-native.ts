@@ -33,7 +33,7 @@ export interface ReviewProcessOutcome {
  readonly aborted: boolean; readonly timedOut: boolean; readonly spawnError: boolean;
  readonly disposal: ProcessDisposal;
  readonly stdoutBytes: number; readonly stderrBytes: number;
- readonly error?: { readonly code: string } | undefined;
+ readonly error?: { readonly code: string; readonly detail?: string | undefined } | undefined;
 }
 export interface ReviewProcessRun {
  readonly started: Promise<{ readonly spawned: boolean; readonly pid?: number | undefined }>;

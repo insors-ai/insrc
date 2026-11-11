@@ -1,6 +1,8 @@
 import { register } from 'tsx/esm/api';
 import { parentPort, threadId, workerData } from 'node:worker_threads';
 register();
+const { installReviewNativeSpawnGuard } = await import(workerData.guard);
+installReviewNativeSpawnGuard();
 const { CliProvider } = await import(workerData.provider);
 const { withReviewNativeTransport } = await import(workerData.bridge);
 let next=0;
@@ -16,6 +18,7 @@ parentPort.on('message',async message=>{
 const transport={
  resolveBinary:command=>rpc('resolveBinary',command),reserve:command=>rpc('reserve',command),
  saveOpenIntent:r=>rpc('saveOpenIntent',r),saveClosedIntent:r=>rpc('saveClosedIntent',r),cancel:r=>rpc('cancel',r),
+ waitStarted:r=>rpc('waitStarted',r),write:(r,bytes,end)=>rpc('write',{r,bytes,end}),
  start:async(r,receipt,consume)=>{consumers.set(r.operationId,consume);try{return await rpc('start',{r,receipt});}finally{consumers.delete(r.operationId);}},
 };
 const provider=new CliProvider({kind:'claude',binPath:'fixture-cli'});

@@ -1,0 +1,22 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { shellWorkerFixture } from '../../threads/__tests__/helpers/review-shell-host.js';
+test('Git shell and raw-byte commands preserve output bounds and abort semantics through leases',async t=>{
+ const h=await shellWorkerFixture(t),r=await h.result;await h.closed;
+ assert.ok(r.threadId>0);assert.match(r.git.stdout,/git version/);assert.equal(r.git.code,0);
+ assert.deepEqual(r.bytes.stdout,Uint8Array.from({length:8192},(_,i)=>i%256));assert.equal(r.bytes.stdoutTruncated,true);assert.equal(r.bytes.stderr,'warning');assert.equal(r.bytes.code,0);
+ assert.equal(r.text.stdout,'—🙂');assert.equal(r.text.stderr,'warning');assert.equal(r.text.code,7);
+ assert.equal(r.missing.spawnError,true);assert.equal(r.missing.code,null);
+ assert.match(r.missing.stderr,/ENOENT/);assert.equal(r.early.code,0);assert.ok(r.early.stdinError,'early native exit preserves stdin write failure');
+ assert.equal(r.overflow.stderrOverflow,true);assert.equal(r.overflow.aborted,false);
+ assert.equal(r.timeout.timedOut,true);assert.equal(r.timeout.aborted,undefined);
+ assert.equal(r.truncated.stdoutTruncated,true);assert.ok(Buffer.byteLength(r.truncated.stdout)<=10);
+ assert.equal(r.aborted.aborted,true);assert.equal(r.aborted.timedOut,false);
+ assert.equal(r.denied.spawnError,true);assert.match(r.denied.stderr,/permission denied/);
+ assert.equal(r.closedUnknown,0);assert.match(r.uncertain.stderr,/disposal is unknown/);
+ assert.ok(h.events.indexOf('saved')<h.events.indexOf('verified'));
+ const lost=await shellWorkerFixture(t,'loss');await lost.activity;
+ const other=await shellWorkerFixture(t);await lost.worker.terminate();
+ assert.ok((await lost.closed).every(outcome=>outcome.disposal.state==='confirmed'));
+ assert.equal((await other.result).git.code,0);await other.closed;
+});

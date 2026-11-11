@@ -30,6 +30,8 @@ async function fixture(t:{after:(fn:()=>Promise<void>)=>void}){
   reserve:async command=>{events.push('reserved');return leases.reserve(owner,++sequence,command);},
   saveOpenIntent:async r=>{await durable(r);events.push('saved');return{checkpointPath:path,attempt:1,operationId:r.operationId,workerIncarnation:r.workerIncarnation,daemonInstance:r.daemonInstance};},
   start:async(r,receipt,consume)=>leases.start(owner,number(r),receipt,async output=>{events.push('output');assert.ok(output.bytes.byteLength<=65536);await consume(output);}).result,
+  waitStarted:async r=>({spawned:(await leases.waitStarted(owner,number(r))).spawned}),
+  write:(r,bytes,end)=>leases.write(owner,number(r),bytes,end),
   cancel:r=>leases.cancel(owner,number(r)),
   saveClosedIntent:async()=>{events.push('closed');await durable({closed:true});},
  };
@@ -43,7 +45,7 @@ async function fixture(t:{after:(fn:()=>Promise<void>)=>void}){
  return{repo,events,resolved,transport,leases,owner,cli};
 }
 async function threadFixture(t:{after:(fn:()=>Promise<void>)=>void},h:Awaited<ReturnType<typeof fixture>>,noTransport=false){
- const worker=new Worker(new URL('./helpers/review-process-worker.mjs',import.meta.url),{workerData:{role:'review',repo:h.repo,noTransport,provider:new URL('../cli-provider.ts',import.meta.url).href,bridge:new URL('../../../shared/review-process-bridge.ts',import.meta.url).href}});
+ const worker=new Worker(new URL('./helpers/review-process-worker.mjs',import.meta.url),{workerData:{role:'review',repo:h.repo,noTransport,provider:new URL('../cli-provider.ts',import.meta.url).href,bridge:new URL('../../../shared/review-process-bridge.ts',import.meta.url).href,guard:new URL('../../../shared/review-native-guard.ts',import.meta.url).href}});
  let next=0,parsedThread=0;const acknowledgments=new Map<number,{resolve:()=>void;reject:(error:Error)=>void}>();
  let active!:()=>void;const activity=new Promise<void>(r=>{active=r;});
  const done=new Promise<{value?:unknown;error?:string;threadId:number}>((resolve,reject)=>{
@@ -57,6 +59,7 @@ async function threadFixture(t:{after:(fn:()=>Promise<void>)=>void},h:Awaited<Re
     try{
      let value:unknown;
      if(message.op==='start')value=await h.transport.start(message.args.r,message.args.receipt,output=>new Promise<void>((resolve,reject)=>{const id=++next;acknowledgments.set(id,{resolve,reject});worker.postMessage({kind:'output',id,output});}));
+     else if(message.op==='write')value=await h.transport.write(message.args.r,message.args.bytes,message.args.end);
      else{const method=message.op as 'resolveBinary';value=await h.transport[method](message.args);}
      worker.postMessage({kind:'reply',id:message.id,value});
     }catch(error){worker.postMessage({kind:'reply',id:message.id,error:String(error)});}

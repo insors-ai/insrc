@@ -24,7 +24,8 @@ const EventSchema = Type.Union([
   progressObject({ type: Type.Literal('start') }),
   progressObject({ type: Type.Literal('sample'), sequence: ProgressSequence, details: Type.Unknown() }),
   progressObject({
-    type: Type.Literal('terminal'), sequence: ProgressSequence, state: TERMINAL, resultRef: Type.Optional(ProgressId),
+    type: Type.Literal('terminal'), sequence: ProgressSequence, state: TERMINAL,
+    resultRef: Type.Optional(ProgressId), details: Type.Optional(Type.Unknown()),
   }),
   progressObject({ type: Type.Literal('alive'), probe: ProgressSequence }),
 ]);
@@ -73,9 +74,10 @@ export function beginExecutorProgress(port: MessagePort | undefined) {
     settle(state: Terminal, resultRef?: string): void {
       if (ended) return;
       ended = true;
-      latest = undefined;
       send(port, { type: 'terminal', sequence: ++sequence, state,
-        ...(Value.Check(ProgressId, resultRef) ? { resultRef } : {}) });
+        ...(Value.Check(ProgressId, resultRef) ? { resultRef } : {}),
+        ...(latest === undefined ? {} : { details: latest }) });
+      latest = undefined;
     },
   };
 }
@@ -172,7 +174,6 @@ export class ExecutorProgressRelay {
             counts: [details.stagePosition, details.production].filter(count => count !== null),
           };
           await owner.signal(revision).catch(() => {});
-          if (final !== undefined) break;
         }
         if (final !== undefined || closed) {
           const evidence: OwnerEvidence = final === undefined
@@ -246,6 +247,7 @@ export class ExecutorProgressRelay {
         send(port, { type: 'ack', sequence: event.sequence });
       } else {
         final = event;
+        if (validateExecutorDetails(kind, event.details)) latest = event.details;
         waiting?.resolve(null);
       }
       lastEvent = event.sequence;

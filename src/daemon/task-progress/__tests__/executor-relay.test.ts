@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -7,6 +7,10 @@ import test from 'node:test';
 import type { TestContext } from 'node:test';
 import { MessageChannel, Worker } from 'node:worker_threads';
 import type { MessagePort } from 'node:worker_threads';
+import type { IpcStreamMessage, LLMProvider } from '../../../shared/types.js';
+import { writeRepoSchema } from '../../../workflow/artifact-core/repo-schema.js';
+import { _setWorkflowDriverForTests, prepareWorkflowRun, runStart } from '../../workflow-rpc.js';
+import { _resetWorkflowRuns, abortWorkflowRun, pollWorkflowRun, startWorkflowRun } from '../../workflow-run-registry.js';
 import { ProgressAccess } from '../access.js';
 import { createProgressAuthority, OWNER_RENEWAL_MS, ProgressCoordinator } from '../coordinator.js';
 import { registerExecutorProducers, validateExecutorDetails } from '../executor-measurements.js';
@@ -22,8 +26,13 @@ const workflow = {
   production: { unit: 'output-chunks', completed: 7, total: null },
 } as const;
 
-async function fixture(t: TestContext) {
+async function fixture(t: TestContext, withRepo = false) {
   const root = await mkdtemp(join(tmpdir(), 'insrc-executor-relay-'));
+  const repoPath = withRepo ? join(root, 'repo') : project;
+  if (withRepo) {
+    await mkdir(repoPath);
+    writeRepoSchema(repoPath, { version: 2, convertedAt: new Date().toISOString() });
+  }
   const store = await ProgressStore.open(root, validateExecutorDetails);
   const authority = createProgressAuthority();
   let mono = 0;
@@ -40,7 +49,7 @@ async function fixture(t: TestContext) {
     disposition: (task, prior, current) => coordinator.disposition(task, prior, current),
     refresh: (task, signal) => coordinator.refreshForFallback(task, signal),
   });
-  const projects = new Map([[project, 1], ['/other', 2]]);
+  const projects = new Map([[repoPath, 1], ['/other', 2]]);
   const access = new ProgressAccess(store, coordinator, authority.mint, async () => projects, fallback);
   const runtime = { access, coordinator, producers: registerExecutorProducers(coordinator),
     close: () => store.settle() };
@@ -52,9 +61,9 @@ async function fixture(t: TestContext) {
     await rm(root, { recursive: true, force: true });
   });
   return {
-    runtime, store, coordinator, access, projects,
+    runtime, store, coordinator, access, projects, repoPath,
     advance(ms: number) { mono += ms; now += ms; },
-    port(relay: ExecutorProgressRelay, repo = project, origin = context) {
+    port(relay: ExecutorProgressRelay, repo = repoPath, origin = context) {
       const port = relay.reserve('workflow', repo, origin);
       assert.ok(port);
       ports.push(port);
@@ -114,6 +123,74 @@ test('S2 producer relay admits only a verified project origin and worker attempt
   const refused = closed(ambiguous);
   await refused;
   assert.equal(f.store.list().length, 1);
+});
+
+test('S2 workflow progress preserves streaming frames and terminal result', async t => {
+  const f = await fixture(t, true);
+  const relay = new ExecutorProgressRelay(async () => f.runtime);
+  const params = { workflow: 'stub', focus: 'measure stub progress', repo: f.repoPath };
+  await f.access.openOrigin(f.repoPath, context);
+  _setWorkflowDriverForTests(async (_intent, _provider, opts) => {
+    opts.onProgress?.({ phase: 'step-start', stepId: 's1', runner: 'echo.a' });
+    for (let i = 0; i < 17; i++) opts.onToken?.('s1', 'output');
+    opts.onProgress?.({ phase: 'done' });
+    return { path: '/fixture', runId: 'same-run', model: 'fake', artifact: { fixture: true } };
+  });
+  t.after(() => _setWorkflowDriverForTests());
+  const legacy: IpcStreamMessage[] = [];
+  const observed: IpcStreamMessage[] = [];
+  await runStart(params, frame => legacy.push(frame), new AbortController().signal);
+  await runStart(params, frame => observed.push(frame), new AbortController().signal, f.port(relay));
+  assert.deepEqual(observed, legacy);
+  assert.deepEqual(observed.map(frame => frame.stream), ['progress', 'delta', 'progress', 'delta', 'done']);
+  const finished = await until(() => f.store.list().find(record => record.state === 'completed'));
+  assert.equal(finished.measurement?.details.stageId, 'done');
+  assert.deepEqual(finished.measurement?.details.production, { unit: 'output-chunks', completed: 17, total: null });
+});
+
+test('S2 detached workflow preserves poll cursor and abort behavior across observer loss', async t => {
+  const f = await fixture(t, true);
+  t.after(_resetWorkflowRuns);
+  const relay = new ExecutorProgressRelay(async () => f.runtime);
+  const params = { workflow: 'stub', focus: 'measure detached progress', repo: f.repoPath };
+  await f.access.openOrigin(f.repoPath, context);
+  const prepared = prepareWorkflowRun(params);
+  let rejectTurn: ((error: Error) => void) | undefined;
+  const provider: LLMProvider = {
+    supportsTools: false,
+    capabilities: { ...prepared.provider.capabilities, structuredOutput: true },
+    async complete() { throw new Error('unused'); },
+    async *stream() { throw new Error('unused'); },
+    async embed() { return []; },
+    completeStructured<T>(_messages, _schema, opts) {
+      opts?.onToken?.('first chunk');
+      return new Promise<T>((_resolve, reject) => { rejectTurn = reject; });
+    },
+  };
+  const baseRouter = prepared.router;
+  const router = {
+    resolveProviderForRole(...args: Parameters<typeof baseRouter.resolveProviderForRole>) {
+      const base = baseRouter.resolveProviderForRole(...args);
+      return { ...base, provider };
+    },
+    resolveSummariser: () => baseRouter.resolveSummariser(),
+  };
+  const { runId } = startWorkflowRun(params, { progressPort: f.port(relay),
+    prepare: () => ({ ...prepared, provider, router }) });
+  const active = await until(() => f.store.list().find(record => record.measurement?.details.production?.completed === 1));
+  f.access.disconnect(context);
+  const first = pollWorkflowRun(runId);
+  assert.equal(first.status, 'running');
+  assert.equal(first.frames[0]?.phase, 'decompose');
+  assert.deepEqual(pollWorkflowRun(runId, first.cursor).frames, []);
+  assert.deepEqual(abortWorkflowRun(runId), { ok: true });
+  assert.equal(pollWorkflowRun(runId, first.cursor).status, 'aborted');
+  assert.equal(f.store.get(active.task)?.state, 'running');
+  assert.ok(rejectTurn);
+  rejectTurn(new Error('owner observed abort'));
+  const terminal = await until(() => f.store.list().find(record => record.state === 'cancelled'));
+  assert.equal(terminal.resultRef, runId);
+  assert.equal(pollWorkflowRun(runId, first.cursor).cursor, first.cursor);
 });
 
 test('S2 producer relay preserves early terminal evidence and releases unresolved admissions', async t => {

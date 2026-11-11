@@ -20,6 +20,7 @@
  */
 
 import { threadId } from 'node:worker_threads';
+import type { MessagePort } from 'node:worker_threads';
 
 import { getLogger } from '../shared/logger.js';
 import { runWithClientProviderContext, runWithRoutingContext } from '../analyze/context/shaper-provider.js';
@@ -28,6 +29,7 @@ import { MAX_RUNS } from './threads/status-board.js';
 import type { RunRecord, StatusSnapshot } from './threads/status-board.js';
 import {
 	formatProgressDetail,
+	beginWorkflowProgress,
 	prepareWorkflowRun,
 	runWorkflowServerSide,
 	type PreparedWorkflowRun,
@@ -114,6 +116,7 @@ export function _resetWorkflowRuns(): void {
  *  fake provider without touching config/Ollama. */
 export interface StartRunDeps {
 	readonly prepare?: ((rawParams: unknown) => PreparedWorkflowRun) | undefined;
+	readonly progressPort?: MessagePort | undefined;
 }
 
 /** Kick off a workflow run DETACHED and return its `runId` immediately. The
@@ -129,12 +132,19 @@ export function startWorkflowRun(rawParams: unknown, deps: StartRunDeps = {}): {
 	runs.set(runId, state);
 	publish(state);
 	gc();
+	const observation = beginWorkflowProgress(deps.progressPort);
 
 	// Fire-and-forget: build the same drive closure as the streaming handler,
 	// but land progress frames in the state buffer instead of the socket.
 	const drive = (): Promise<RunWorkflowResult> => runWorkflowServerSide(intent, provider, {
 		runId, epicKey, modelLabel, signal: abort.signal, router, cfg, repoPath,
-		onProgress: (f) => { appendProgressLog(runId, 'workflow.run', f.phase, formatProgressDetail(f)); state.frames.push(f); publish(state); },
+		onProgress: (f) => {
+			observation?.stage(f);
+			appendProgressLog(runId, 'workflow.run', f.phase, formatProgressDetail(f));
+			state.frames.push(f);
+			publish(state);
+		},
+		...(observation === undefined ? {} : { onToken: () => observation.chunk() }),
 		...(review !== undefined ? { review } : {}),
 	});
 	// Establish the sc6 RoutingSeamContext (S005) around the drive so the deep
@@ -146,6 +156,7 @@ export function startWorkflowRun(rawParams: unknown, deps: StartRunDeps = {}): {
 		: driveWithSeam();
 	void run.then(
 		(result) => {
+			observation?.settle('completed', runId);
 			state.status = 'done';
 			state.result = result;
 			// Refresh the seeded run-wide label with the artifact's per-output
@@ -155,6 +166,7 @@ export function startWorkflowRun(rawParams: unknown, deps: StartRunDeps = {}): {
 			log.info({ runId, path: result.path }, 'workflow.run (async) done');
 		},
 		(err: unknown) => {
+			observation?.settle(abort.signal.aborted ? 'cancelled' : 'failed', runId);
 			if (abort.signal.aborted) {
 				state.status = 'aborted';
 				state.error  = 'workflow.run: aborted';

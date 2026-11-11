@@ -106,7 +106,7 @@ Run at 2026-11-09T10:00:23.617Z on commit `9f8c8c660`. Tests check: **passed**. 
 
 ## t5
 
-Run at 2026-11-09T10:11:53.272Z on commit `bb08cd12c`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-11T12:23:50.106Z on commit `4fc8bee23`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/agent/providers/__tests__/review-worker-process.test.ts: fake native review CLI streams and cancellation use host-owned leases**
 

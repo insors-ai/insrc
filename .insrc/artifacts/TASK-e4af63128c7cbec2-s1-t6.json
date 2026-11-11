@@ -22,7 +22,7 @@
           "entityId": "PLAN-e4af63128c7cbec2-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 1"
+          "fragment": "revision 2"
         },
         {
           "entityId": "TASK-e4af63128c7cbec2-s1-t4",
@@ -33,11 +33,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "d4f840d7b33258c51673f72c06e5ccda6c385381923d9e52d768ba9bead1c44f",
-        "at": "2026-11-09T07:42:48.080Z",
+        "number": 2,
+        "contentHash": "d66fba3f2b904f02d79c2053a946e6ce56ae9744b9d87a9d46666fbceb37a641",
+        "at": "2026-11-11T12:23:32.467Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -55,15 +55,15 @@
         "at": "2026-11-09T07:42:48.081Z"
       }
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
     "title": "Bridge review tool, Git and raw-byte subprocess execution",
-    "summary": "Integrate host leases with src/daemon/tools/shell-helper.ts and review-reachable tool subprocess paths, including runShell, runShellBytes, spawnManaged and streaming/direct spawn sites. Keep permission/provenance checks and output parsing semantics; assemble the complete review-native-spawn inventory with the CLI bridge.",
+    "summary": "Integrate host leases with src/daemon/tools/shell-helper.ts and review-reachable tool subprocess paths, including runShell, runShellBytes, spawnManaged and streaming/direct spawn sites. Keep permission/provenance checks and output parsing semantics; assemble the complete review-native-spawn inventory with the CLI bridge. Deliver and validate tool/Git adapters with bound real-worker fixtures in this task; bootstrap installation, registered host-service connection and public-route activation are owned by t7, t8 and t14 respectively.",
     "size": "L",
     "order": 6,
     "acceptanceChecks": [
-      "Git admission, shell/raw-byte/managed-tool commands record durable intent before host spawn and retain exact bytes, exit/error and truncation semantics.",
+      "Within the tool/Git adapters exercised by bound real review workers, Git admission, shell/raw-byte/managed-tool commands record durable intent before host spawn and retain exact bytes, exit/error and truncation semantics. An unbound review-role worker refuses local native execution. Production bootstrap/registry installation is verified in t7/t8 and all supported public routes cut over in t14.",
       "Existing tool approval/provenance and effective abort signals survive the worker bridge; returned output is parsed in the worker.",
       "An executable inventory refuses every unbridged review-reachable spawn/exec path, including provider binary resolution from t5; other callers are unchanged.",
       "Real short-lived command fixtures exercise cancellation, byte bounds/backpressure, worker loss and unknown cleanup without affecting another review's leases."

@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 8,
-        "contentHash": "6c2684073a9b4cf6d3cdcbbdedd4b6d2131f209fc7a8e29e7f9c6e07090a0955",
-        "at": "2026-11-09T10:11:53.353Z",
+        "number": 9,
+        "contentHash": "6b15b86300ec3a5e1af36b9c676b33156c96c5de27dd4ffe446953c4a4d76f95",
+        "at": "2026-11-11T12:23:50.297Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "e4af63128c7cbec2",
     "storyId": "s1",
     "createdAt": "2026-11-09T07:52:13.312Z",
-    "updatedAt": "2026-11-09T10:11:53.272Z",
+    "updatedAt": "2026-11-11T12:23:50.106Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-09T04:29:20.389Z",
     "epicSlug": "isolate-each-code-design-review-its",
-    "revision": 8
+    "revision": 9
   },
   "body": {
     "tasks": [
@@ -314,8 +314,8 @@
       },
       {
         "taskId": "t5",
-        "commit": "bb08cd12c",
-        "ranAt": "2026-11-09T10:11:53.272Z",
+        "commit": "4fc8bee23",
+        "ranAt": "2026-11-11T12:23:50.106Z",
         "testsPassed": true,
         "tests": [
           {
@@ -350,7 +350,7 @@
             "file": "src/agent/providers/__tests__/review-worker-process.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1791,
+            "durationMs": 1759,
             "titles": [
               {
                 "title": "fake native review CLI streams and cancellation use host-owned leases",

@@ -26,9 +26,35 @@
     "lldEffectiveHash": "ccc8515f61bdf184ac15cf0d074be009ad2cff98692ec56305988be1104b55cc",
     "authoredBy": "controller",
     "envelope": {
+      "description": "",
+      "references": [],
       "attachments": []
     },
-    "revision": 2
+    "revision": 2,
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "33d3bf5fa237913bf22b04bc3c9d3e391fd55a882c32de8ab0a476f061f773c7",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T12:22:38.774Z"
+      }
+    },
+    "rangeBase": "2698f91b78f32f302d515508275a5244290b11d6"
   },
   "body": {
     "summary": {

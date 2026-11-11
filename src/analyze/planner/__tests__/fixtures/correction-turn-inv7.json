@@ -1,0 +1,111 @@
+{
+	"prior": [
+		{
+			"role": "system",
+			"content": "sys"
+		},
+		{
+			"role": "user",
+			"content": "init"
+		}
+	],
+	"rejected": {
+		"planId": "p-root",
+		"goal": "g",
+		"target": "code",
+		"scope": "M",
+		"reasoning": "r",
+		"tasks": [
+			{
+				"taskId": "t01",
+				"template": "code.discovery.modules",
+				"kind": "leaf",
+				"params": {},
+				"produces": [
+					"modules"
+				],
+				"rationale": "enumerate the modules to summarise"
+			},
+			{
+				"taskId": "t02",
+				"template": "code.summary.module",
+				"kind": "leaf",
+				"params": {
+					"module": "m2"
+				},
+				"produces": [
+					"module-summary"
+				],
+				"consumes": [
+					"t01.docs-inventory"
+				],
+				"rationale": "summarise module m2 for the aggregate"
+			}
+		]
+	},
+	"failure": {
+		"invariantId": "INV-7",
+		"message": "task t02: consumes='t01.docs-inventory' is not produced by any earlier task in this Plan",
+		"target": {
+			"index": 1,
+			"taskId": "t02",
+			"missingDependency": "t01.docs-inventory"
+		}
+	},
+	"cases": [
+		{
+			"name": "no prior failure",
+			"priorFailures": [],
+			"expected": [
+				{
+					"role": "system",
+					"content": "sys"
+				},
+				{
+					"role": "user",
+					"content": "init"
+				},
+				{
+					"role": "assistant",
+					"content": "{\"planId\":\"p-root\",\"goal\":\"g\",\"target\":\"code\",\"scope\":\"M\",\"reasoning\":\"r\",\"tasks\":[{\"taskId\":\"t01\",\"template\":\"code.discovery.modules\",\"kind\":\"leaf\",\"params\":{},\"produces\":[\"modules\"],\"rationale\":\"enumerate the modules to summarise\"},{\"taskId\":\"t02\",\"template\":\"code.summary.module\",\"kind\":\"leaf\",\"params\":{\"module\":\"m2\"},\"produces\":[\"module-summary\"],\"consumes\":[\"t01.docs-inventory\"],\"rationale\":\"summarise module m2 for the aggregate\"}]}"
+				},
+				{
+					"role": "user",
+					"content": "## VALIDATOR FEEDBACK\nThe plan failed invariant **INV-7**:\n> task t02: consumes='t01.docs-inventory' is not produced by any earlier task in this Plan\n\nPointer: `{\"index\":1,\"taskId\":\"t02\",\"missingDependency\":\"t01.docs-inventory\"}`\n\n## OFFENDING TASK (what you emitted)\n```json\n{\n  \"taskId\": \"t02\",\n  \"template\": \"code.summary.module\",\n  \"kind\": \"leaf\",\n  \"produces\": [\n    \"module-summary\"\n  ],\n  \"consumes\": [\n    \"t01.docs-inventory\"\n  ],\n  \"params\": {\n    \"module\": \"m2\"\n  },\n  \"rationale\": \"summarise module m2 for the aggregate\"\n}\n```\n\nWHAT IS BROKEN:\n  A task consumes an item name that no earlier task produces in this Plan.\n\nHOW TO FIX (pick ONE remedy that fits your case):\n  1. REORDER: move the task that produces this item to an earlier index (before the consumer). Renumber every taskId per INV-2 after moving.\n  2. REPLACE CONSUMES: change the offending task's `consumes` array to reference something an earlier task actually produces (check the catalog for producers, or the aggregator does not consume anything).\n  3. ADD PRODUCER: insert a new task earlier in the plan whose template `produces` includes this item. Renumber taskIds per INV-2.\n  4. REMOVE THE CONSUMES ENTRY: if the task doesn't actually need that input, drop it from `consumes`.\n\nEmit the corrected PlanTask JSON. Fix ONLY the named issue -- keep the rest of the plan intact. Respond with ONLY the JSON object -- no markdown fences, no prose."
+				}
+			]
+		},
+		{
+			"name": "same failure on the previous attempt",
+			"priorFailures": [
+				{
+					"invariantId": "INV-7",
+					"message": "task t02: consumes='t01.docs-inventory' is not produced by any earlier task in this Plan",
+					"target": {
+						"index": 1,
+						"taskId": "t02",
+						"missingDependency": "t01.docs-inventory"
+					}
+				}
+			],
+			"expected": [
+				{
+					"role": "system",
+					"content": "sys"
+				},
+				{
+					"role": "user",
+					"content": "init"
+				},
+				{
+					"role": "assistant",
+					"content": "{\"planId\":\"p-root\",\"goal\":\"g\",\"target\":\"code\",\"scope\":\"M\",\"reasoning\":\"r\",\"tasks\":[{\"taskId\":\"t01\",\"template\":\"code.discovery.modules\",\"kind\":\"leaf\",\"params\":{},\"produces\":[\"modules\"],\"rationale\":\"enumerate the modules to summarise\"},{\"taskId\":\"t02\",\"template\":\"code.summary.module\",\"kind\":\"leaf\",\"params\":{\"module\":\"m2\"},\"produces\":[\"module-summary\"],\"consumes\":[\"t01.docs-inventory\"],\"rationale\":\"summarise module m2 for the aggregate\"}]}"
+				},
+				{
+					"role": "user",
+					"content": "## VALIDATOR FEEDBACK\nThe plan failed invariant **INV-7**:\n> task t02: consumes='t01.docs-inventory' is not produced by any earlier task in this Plan\n\nPointer: `{\"index\":1,\"taskId\":\"t02\",\"missingDependency\":\"t01.docs-inventory\"}`\n\n## REPEATED FAILURE\nYou just emitted the SAME violation (`INV-7` on the same target) as your previous attempt. Your last correction did NOT fix the problem -- it re-introduced it.\n\nTry a DIFFERENT remedy from the menu below this time. Do NOT re-emit a plan with the same structural mistake.\n\n## OFFENDING TASK (what you emitted)\n```json\n{\n  \"taskId\": \"t02\",\n  \"template\": \"code.summary.module\",\n  \"kind\": \"leaf\",\n  \"produces\": [\n    \"module-summary\"\n  ],\n  \"consumes\": [\n    \"t01.docs-inventory\"\n  ],\n  \"params\": {\n    \"module\": \"m2\"\n  },\n  \"rationale\": \"summarise module m2 for the aggregate\"\n}\n```\n\nWHAT IS BROKEN:\n  A task consumes an item name that no earlier task produces in this Plan.\n\nHOW TO FIX (pick ONE remedy that fits your case):\n  1. REORDER: move the task that produces this item to an earlier index (before the consumer). Renumber every taskId per INV-2 after moving.\n  2. REPLACE CONSUMES: change the offending task's `consumes` array to reference something an earlier task actually produces (check the catalog for producers, or the aggregator does not consume anything).\n  3. ADD PRODUCER: insert a new task earlier in the plan whose template `produces` includes this item. Renumber taskIds per INV-2.\n  4. REMOVE THE CONSUMES ENTRY: if the task doesn't actually need that input, drop it from `consumes`.\n\nEmit the corrected PlanTask JSON. Fix ONLY the named issue -- keep the rest of the plan intact. Respond with ONLY the JSON object -- no markdown fences, no prose."
+				}
+			]
+		}
+	]
+}

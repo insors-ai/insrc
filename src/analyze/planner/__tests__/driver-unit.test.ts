@@ -41,7 +41,7 @@ import { taskCountFailure } from '../validate.js';
 import type { PlanTask } from '../../../shared/analyze-types.js';
 import { _resetAnalyzeConfigCacheForTests } from '../../../config/analyze.js';
 import type { AnalyzeContextBundle } from '../../context/types.js';
-import type { LLMProvider } from '../../../shared/types.js';
+import type { LLMMessage, LLMProvider } from '../../../shared/types.js';
 
 /**
  * A minimal LLMProvider stub that throws on every call. Used by the
@@ -345,6 +345,28 @@ test('appendCorrectionTurn: re-issues with the assistant turn + VALIDATOR FEEDBA
 	assert.match(userBody, /tasks list must be non-empty/);
 	// I-004: the corrective turn now includes prescriptive fix hints.
 	assert.match(userBody, /HOW TO FIX/);
+});
+
+// The correction turn as it was before the count could be stated beside another failure:
+// captured from the code before that change (fixtures/correction-turn-inv7.json).
+interface CorrectionTurnFixture {
+	readonly prior:    LLMMessage[];
+	readonly rejected: PlanTask;
+	readonly failure:  PlanValidationFailure;
+	readonly cases:    ReadonlyArray<{ name: string; priorFailures: PlanValidationFailure[]; expected: LLMMessage[] }>;
+}
+const CORRECTION_TURN_FIXTURE = JSON.parse(
+	readFileSync(new URL('./fixtures/correction-turn-inv7.json', import.meta.url), 'utf8'),
+) as CorrectionTurnFixture;
+
+test('appendCorrectionTurn without alsoFailing is byte-identical to the pre-change fixture', () => {
+	assert.equal(CORRECTION_TURN_FIXTURE.cases.length, 2);
+	for (const c of CORRECTION_TURN_FIXTURE.cases) {
+		const out = _appendCorrectionTurnForTest(
+			CORRECTION_TURN_FIXTURE.prior, CORRECTION_TURN_FIXTURE.rejected, CORRECTION_TURN_FIXTURE.failure, c.priorFailures,
+		);
+		assert.deepEqual(out, c.expected, c.name);
+	}
 });
 
 // ---------------------------------------------------------------------------

@@ -29,4 +29,6 @@ test('Git shell and raw-byte commands preserve output bounds and abort semantics
  const parallel=await shellWorkerFixture(t,'commands',blocked.leases);assert.equal((await parallel.result).git.code,0);await parallel.closed;
  assert.ok(blocked.frames()<=2,'paused stdout holds host delivery to one bounded outstanding frame');assert.equal(blocked.outstanding(),1);
  blocked.worker.postMessage({kind:'release'});const resumed=await blocked.result;assert.equal(resumed.bytes,2*1024*1024);assert.equal(resumed.exit.code,0);await blocked.closed;
+ const timed=await shellWorkerFixture(t,'blocked-timeout');let timer:ReturnType<typeof setTimeout>|undefined;
+ try{const outcome=await Promise.race([timed.result,new Promise<never>((_,reject)=>{timer=setTimeout(()=>reject(Error('timeout deadlocked behind paused output')),6000);})]);assert.equal(outcome.timedOut,true);}finally{clearTimeout(timer);}await timed.closed;
 });

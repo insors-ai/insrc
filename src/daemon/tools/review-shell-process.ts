@@ -60,7 +60,7 @@ export function launchReviewShell(transport:ReviewNativeTransport,command:string
   }catch(error){
    if(reservation&&!outcome){outcome=await transport.cancel(reservation);disposal=outcome.disposal;if(disposal.state==='confirmed')await transport.saveClosedIntent(reservation);}
    child.emit('error',error instanceof Error?error:new Error(String(error)));
-   return{code:null,signal:null,timedOut:false,aborted:signal.aborted};
+   return{code:null,signal:outcome?.signal??null,timedOut:outcome?.timedOut??false,aborted:outcome?.aborted??signal.aborted};
   }finally{
    finishedRun=true;signal.removeEventListener('abort',cancel);signal.removeEventListener('abort',stopOutput);
    child.stdin?.destroy();stdout.end();stderr.end();

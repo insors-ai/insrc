@@ -174,7 +174,7 @@ export class ReviewProcessLeases {
   // These only drain native byte streams; neither branch calls an LLM.
   const streams=Promise.all([forward('stdout'),forward('stderr')]);
   const exit=await handle.settled;
-  if(handle.disposal().state==='unknown')lease.abort.abort();
+  if(exit.timedOut||exit.aborted||handle.disposal().state==='unknown')lease.abort.abort();
   await streams;
   lease.abort.signal.removeEventListener('abort',stopStreams);
   this.finish(state,lease,{...exit,spawnError,disposal:handle.disposal(),stdoutBytes,stderrBytes,...(consumerLost?{error:{code:'output_consumer_lost'}}:spawnError?{error:{code:'spawn_failed',detail:spawnDetail}}:{})});

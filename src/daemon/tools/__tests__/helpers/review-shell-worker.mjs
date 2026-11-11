@@ -29,6 +29,10 @@ async function checks(){
  return bridge.withReviewNativeTransport(transport,async()=>{
   const node=script=>[process.execPath,'-e',script];
   if(workerData.mode==='unknown')return shell.runShell(['/review-unknown-fixture'],opts);
+  if(workerData.mode==='blocked-timeout'){
+   const m=shell.spawnManaged(process.execPath,['-e',"process.stdout.write(Buffer.alloc(200000));setInterval(()=>{},1000)"],{...opts,timeoutMs:50});
+   m.child.stdout.pause();m.child.stderr.resume();m.child.on('error',()=>{});return m.settled;
+  }
   if(workerData.mode==='blocked'){
    const m=shell.spawnManaged(process.execPath,['-e',"process.stdout.write(Buffer.alloc(2*1024*1024,120))"],opts);let bytes=0;
    m.child.stderr.resume();release=()=>{m.child.stdout.on('data',b=>{bytes+=b.length;});};

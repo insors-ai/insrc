@@ -1,11 +1,12 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 
 import assert from 'node:assert/strict';
-import { execFileSync, spawn } from 'node:child_process';
+import { execFileSync, fork, spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { mkdtemp, realpath, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 import { readDarwinIncarnation } from '../../shared/darwin-lifecycle.js';
 import { acquireRunFileGuard, readRunFileGuardPin } from '../../shared/daemon-run-files.js';
@@ -14,6 +15,16 @@ import { installationPaths } from '../../shared/managed-daemon-installation.js';
 import { classifyLegacyDrain } from '../legacy-drain-evidence.js';
 import { adoptLegacyRunGuard, giveLegacyRunGuard, holdLegacyRunGuard, settleLegacyRunGuard } from '../legacy-run-guard.js';
 import { SupervisorRunFiles } from '../supervisor-run-files.js';
+
+async function fixtureIdentity(pid: number, helper: string) {
+	for (let attempt = 0;; attempt++) {
+		try { return await readDarwinIncarnation(pid, helper); }
+		catch (error) {
+			if (attempt >= 2 || (error as { killed?: boolean }).killed !== true) throw error;
+			await delay(200);
+		}
+	}
+}
 
 test('Graceful, broker-denied and unknown drain evidence', () => {
 	const pid = 820;
@@ -40,16 +51,18 @@ test('Guard adoption binds exact identities and recovers on either side of trans
 			fileURLToPath(new URL('../../native/darwin-lifecycle/identity.c', import.meta.url)), '-o', helper]);
 		const gate = new InstallationMutationGate(root, helper);
 		const paths = installationPaths(root);
-		const owner = await readDarwinIncarnation(process.pid, helper);
-		const child = spawn(process.execPath, ['-e', 'setInterval(() => {}, 5000)'], { stdio: 'ignore' });
+		const owner = await fixtureIdentity(process.pid, helper);
+		const child = spawn(process.execPath, ['-e', 'process.send("ready"); setInterval(() => {}, 5000)'],
+			{ stdio: ['ignore', 'ignore', 'inherit', 'ipc'] });
 		t.after(async () => {
 			if (child.exitCode !== null || child.signalCode !== null) return;
 			const exited = once(child, 'exit');
 			child.kill();
 			await exited;
 		});
-		await once(child, 'spawn');
-		const supervisor = await readDarwinIncarnation(child.pid!, helper);
+		const ready = await Promise.race([once(child, 'message'), once(child, 'exit')]);
+		assert.equal(ready[0], 'ready');
+		const supervisor = await fixtureIdentity(child.pid!, helper);
 		for (const running of [true, false]) {
 			const update = await gate.reserve({ kind: 'update', owner,
 				predecessor: { priorRelease: 'old', candidateRelease: 'new', priorCommit: 'old', wasRunning: running } });
@@ -96,5 +109,23 @@ test('Guard adoption binds exact identities and recovers on either side of trans
 			assert.equal(readRunFileGuardPin(paths.runGuard), undefined);
 			await gate.publishOutcome(update, 'rolled-back', 'test verified the legacy guard was released');
 			await gate.release(update);
+		}
+		for (const boundary of ['before', 'after']) {
+			const controller = fork(fileURLToPath(new URL('./fixtures/legacy-run-guard-crash.ts', import.meta.url)),
+				[root, helper, String(supervisor.pid), boundary], { execArgv: ['--import', 'tsx'] });
+			assert.deepEqual(await once(controller, 'exit'), [null, 'SIGKILL']);
+			const interrupted = (await gate.read()).active;
+			assert.ok(interrupted?.kind === 'update');
+			assert.equal(interrupted.entries.at(-1)?.step, 'legacy-guard-transfer');
+			assert.equal(interrupted.entries.at(-1)?.receipt, undefined);
+			assert.equal(readRunFileGuardPin(paths.runGuard)?.owner.pid, boundary === 'before' ? interrupted.owner.pid : supervisor.pid);
+			assert.equal(await gate.claimRecovery(interrupted.id, owner, async state => state.active?.id === interrupted.id), 'uncommitted');
+			const recovered = (await gate.read()).active;
+			assert.ok(recovered?.kind === 'update');
+			await settleLegacyRunGuard(gate, recovered, root, 'lifecycle', helper);
+			assert.equal(readRunFileGuardPin(paths.runGuard), undefined);
+			await gate.recordReceipt(recovered, 'legacy-guard-transfer', 'idle guard retired during rollback');
+			await gate.publishOutcome(recovered, 'rolled-back', 'idle rollback after controller crash');
+			await gate.release(recovered);
 		}
 	});

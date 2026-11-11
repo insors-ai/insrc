@@ -55,6 +55,14 @@ export async function readDarwinLaunchContext(pid: number, executable = HELPER):
 	return { cwd, argv: args };
 }
 
+export async function readDarwinWorkingDirectory(pid: number, executable = HELPER): Promise<string> {
+	requireDarwin();
+	const { stdout } = await exec(executable, ['cwd', pidArgument(pid)], { encoding: 'utf8', timeout: ATTACH_TIMEOUT_MS, maxBuffer: 8192 });
+	const [cwd, end, ...rest] = stdout.split('\0');
+	if (cwd === undefined || !isAbsolute(cwd) || end !== '' || rest.length !== 0) throw new Error('invalid Darwin working directory');
+	return cwd;
+}
+
 /** Exchange owned directories on the same volume in one rename operation. */
 export async function swapDarwinDirectories(
 	left: string, right: string, expected: { device: string; leftInode: string; rightInode: string }, executable = HELPER,
@@ -164,6 +172,7 @@ export interface DarwinLaunchJob {
 	readonly descriptor: string;
 	readonly program: string;
 	readonly args: readonly string[];
+	readonly workingDirectory?: string;
 }
 
 export function darwinLaunchLabel(canonicalRoot: string, uid: number): string {
@@ -214,6 +223,7 @@ export async function verifyDarwinLaunchJob(
 	const end = lines.indexOf('\t}', start + 1);
 	const args = lines.slice(start + 1, end);
 	if (field('type') !== 'LaunchAgent' || field('path') !== job.descriptor || field('program') !== job.program
+		|| (job.workingDirectory !== undefined && field('working directory') !== job.workingDirectory)
 		|| field('domain')?.split(' ')[0] !== domain
 		|| start < 0 || end < 0 || args.length !== job.args.length
 		|| args.some((line, index) => line !== `\t\t${job.args[index]}`)) {

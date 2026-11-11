@@ -157,6 +157,7 @@ function validPredecessor(value: unknown): value is UpdatePredecessor {
 		&& text(job.label) && /^[A-Za-z0-9][A-Za-z0-9.-]*$/.test(job.label)
 		&& text(job.descriptor) && isAbsolute(job.descriptor) && text(job.program) && isAbsolute(job.program)
 		&& Array.isArray(job.args) && job.args.length > 0 && job.args.every(text) && job.args[0] === job.program
+		&& (job.workingDirectory === undefined || job.workingDirectory === prior.releaseRoot)
 		&& typeof descriptorHash === 'string' && /^[a-f0-9]{64}$/.test(descriptorHash)
 		&& typeof runAtLoad === 'boolean'
 		&& text(entry) && isAbsolute(entry) && pin(baseline, value.candidateRelease, false)

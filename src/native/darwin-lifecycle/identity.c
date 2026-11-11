@@ -55,6 +55,21 @@ static int print_peer(void) {
 	return printf("%ld:%u\n", (long)pid, uid) < 0 ? -1 : fflush(stdout);
 }
 
+static int print_cwd(pid_t pid) {
+	struct proc_bsdinfo before, after;
+	struct proc_vnodepathinfo cwd;
+	if (proc_pidinfo(pid, PROC_PIDTBSDINFO, 0, &before, sizeof(before)) != sizeof(before)) return -1;
+	if (before.pbi_uid != getuid()) { errno = EPERM; return -1; }
+	if (proc_pidinfo(pid, PROC_PIDVNODEPATHINFO, 0, &cwd, sizeof(cwd)) != sizeof(cwd)) return -1;
+	if (proc_pidinfo(pid, PROC_PIDTBSDINFO, 0, &after, sizeof(after)) != sizeof(after)
+		|| after.pbi_uid != before.pbi_uid || after.pbi_start_tvsec != before.pbi_start_tvsec
+		|| after.pbi_start_tvusec != before.pbi_start_tvusec) { errno = ESTALE; return -1; }
+	const size_t length = strnlen(cwd.pvi_cdir.vip_path, sizeof(cwd.pvi_cdir.vip_path));
+	if (length == 0) { errno = ENOENT; return -1; }
+	if (length == sizeof(cwd.pvi_cdir.vip_path)) { errno = EOVERFLOW; return -1; }
+	return fwrite(cwd.pvi_cdir.vip_path, 1, length + 1, stdout) == length + 1 ? fflush(stdout) : -1;
+}
+
 /* Return the exact argv and current directory, without dumping the environment. */
 static int print_context(pid_t pid) {
 	struct identity before, after;
@@ -168,6 +183,7 @@ int main(int argc, char **argv) {
 		long pid = positive(argv[2]);
 		if (pid > 0 && argc == 3 && strcmp(argv[1], "identity") == 0) result = print_identity((pid_t)pid);
 		if (pid > 0 && argc == 3 && strcmp(argv[1], "context") == 0) result = print_context((pid_t)pid);
+		if (pid > 0 && argc == 3 && strcmp(argv[1], "cwd") == 0) result = print_cwd((pid_t)pid);
 		if (pid > 0 && argc == 6 && strcmp(argv[1], "observe") == 0) {
 			long timeout = positive(argv[5]);
 			if (timeout > 0) result = observe((pid_t)pid, argv[3], argv[4], timeout);

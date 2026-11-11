@@ -8,7 +8,7 @@ import type { Socket } from 'node:net';
 import { basename, dirname, isAbsolute, join, relative, sep } from 'node:path';
 import { promisify } from 'node:util';
 import {
-	matchesDarwinPeer, readDarwinIncarnation, readDarwinLaunchContext, readDarwinPeerCredentials, swapDarwinDirectories,
+	matchesDarwinPeer, readDarwinIncarnation, readDarwinLaunchContext, readDarwinPeerCredentials, readDarwinWorkingDirectory, swapDarwinDirectories,
 } from '../shared/darwin-lifecycle.js';
 import type { DarwinIncarnation } from '../shared/darwin-lifecycle.js';
 import { runFileIdentity, sameRunFile } from '../shared/daemon-run-files.js';
@@ -31,38 +31,64 @@ function inside(root: string, path: string): boolean {
 
 function fail(message: string): never { throw new Error(`legacy cutover refused: ${message}`); }
 
-async function registeredLegacyJobs(prior: ManagedInstallation, baseline: ManagedInstallation, pid?: number) {
+async function registeredLegacyJobs(prior: ManagedInstallation, baseline: ManagedInstallation, labels: readonly string[], pid?: number) {
 	const rows = (await launchctl(['list'])).split('\n').slice(1);
 	const jobs: NonNullable<UpdatePredecessor['legacy']>[] = [];
-	for (const line of rows) {
+	const listed = rows.flatMap(line => {
 		const [jobPid, , label] = line.trim().split(/\s+/, 3);
-		const ownsProcess = pid !== undefined && Number(jobPid) === pid;
-		if (label === undefined || (!ownsProcess && !LEGACY_LABELS.includes(label))) continue;
-		if (!LEGACY_LABELS.includes(label)) fail('live daemon belongs to an unsupported launch job');
-		const legacy = await pinLegacyLaunchJob(prior, baseline, await descriptorFor(label));
-		const relevant = ownsProcess || legacy.job.args.some(arg => arg.includes(`${prior.releaseRoot}/`))
-			|| (label === 'ai.insors.daemon' && prior.releaseRoot === join(prior.stateRoot, 'daemon')
-				&& legacy.job.args.includes('~/.insrc/daemon/scripts/daemon-ctl.sh start'));
-		if (!relevant) continue;
-		if (legacy.job.label !== label || !supportedJob(legacy, prior)) fail('legacy launch recipe is unsupported');
-		jobs.push(legacy);
+		return label === undefined ? [] : [{ label, ownsProcess: pid !== undefined && Number(jobPid) === pid }];
+	});
+	for (let first = 0; first < listed.length; first += 12) {
+		const batch = await Promise.all(listed.slice(first, first + 12).map(async item => ({
+			...item, registration: await readJobRegistration(item.label),
+		})));
+		for (const { label, ownsProcess, registration } of batch) {
+			if (ownsProcess && !labels.includes(label)) fail('live daemon belongs to an unsupported launch job');
+			if (registration === undefined) {
+				if (ownsProcess) fail('live daemon launch job disappeared');
+				continue;
+			}
+			const defaultRoot = prior.releaseRoot === join(prior.stateRoot, 'daemon');
+			const relevant = ownsProcess || registration.commands.some(arg => arg.includes(`${prior.releaseRoot}/`) || arg === prior.releaseRoot
+				|| (defaultRoot && /(?:~|\$HOME)\/\.insrc\/daemon\//.test(arg)));
+			if (!relevant) continue;
+			if (!labels.includes(label)) fail('foreign launch job targets the legacy installation');
+			if (registration.descriptor === undefined) fail('legacy job has no canonical descriptor');
+			const legacy = await pinLegacyLaunchJob(prior, baseline, registration.descriptor);
+			if (legacy.job.label !== label || !supportedJob(legacy, prior)) fail('legacy launch recipe is unsupported');
+			jobs.push(legacy);
+		}
 	}
 	if (jobs.length > 1) fail('more than one legacy launch job can own the installation');
 	return jobs[0];
 }
 
-async function descriptorFor(label: string): Promise<string> {
-	if (!LEGACY_LABELS.includes(label)) fail('live daemon belongs to an unsupported launch job');
-	const rows = (await launchctl(['print', `gui/${process.getuid!()}/${label}`])).split('\n');
+async function readJobRegistration(label: string) {
+	const uid = process.getuid?.();
+	if (uid === undefined || !/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(label)) fail('invalid registered launch job identity');
+	let rows: string[];
+	try { rows = (await launchctl(['print', `gui/${uid}/${label}`])).split('\n'); }
+	catch (error) {
+		const missing = error as { code?: number; stderr?: string };
+		if (missing.code === 113 && missing.stderr?.includes(`Could not find service "${label}" in domain for user gui: ${uid}`)) return undefined;
+		throw error;
+	}
 	const paths = rows.filter(line => line.startsWith('\tpath = ')).map(line => line.slice('\tpath = '.length));
 	const path = paths[0];
-	if (paths.length !== 1 || path === undefined || !isAbsolute(path)) fail('legacy job has no canonical descriptor');
-	return path;
+	const descriptor = paths.length === 1 && path !== undefined && isAbsolute(path) ? path : undefined;
+	const start = rows.indexOf('\targuments = {');
+	const end = rows.indexOf('\t}', start + 1);
+	const commands = rows.flatMap(line => {
+		const match = /^\t(?:program|working directory) = (.*)$/.exec(line);
+		return match?.[1] === undefined ? [] : [match[1]];
+	});
+	if (start >= 0 && end > start) commands.push(...rows.slice(start + 1, end).map(line => line.trim()));
+	return { descriptor, commands };
 }
 
 function supportedJob(legacy: NonNullable<UpdatePredecessor['legacy']>, prior: ManagedInstallation): boolean {
 	const args = legacy.job.args;
-	if (matchesInstalledDaemonArguments(args, prior.runtime, legacy.entry)) return true;
+	if (matchesInstalledDaemonArguments(args, prior.runtime, legacy.entry)) return legacy.job.workingDirectory === prior.releaseRoot;
 	const script = join(prior.releaseRoot, 'scripts/daemon-ctl.sh');
 	return legacy.job.label === 'ai.insors.daemon' && args.length === 3 && args[0] === '/bin/bash' && args[1] === '-c'
 		&& (args[2] === `${script} start`
@@ -70,7 +96,10 @@ function supportedJob(legacy: NonNullable<UpdatePredecessor['legacy']>, prior: M
 }
 
 /** Identify the exact legacy route from owned publications and the user's GUI launch domain. */
-export async function discoverLegacyLaunch(prior: ManagedInstallation, baseline: ManagedInstallation, helper?: string): Promise<Route> {
+export async function discoverLegacyLaunch(
+	prior: ManagedInstallation, baseline: ManagedInstallation, deps: { helper?: string; labels?: readonly string[] } = {},
+): Promise<Route> {
+	const { helper, labels = LEGACY_LABELS } = deps;
 	if (prior.enabled || baseline.enabled || prior.stateRoot !== baseline.stateRoot || await realpath(prior.releaseRoot) !== prior.releaseRoot) {
 		fail('legacy and candidate pins do not describe the same canonical state root');
 	}
@@ -89,7 +118,7 @@ export async function discoverLegacyLaunch(prior: ManagedInstallation, baseline:
 		if (!/^\d+$/.test(value)) fail('legacy PID publication is malformed');
 		pid = Number(value);
 	}
-	const legacy = await registeredLegacyJobs(prior, baseline, pid);
+	const legacy = await registeredLegacyJobs(prior, baseline, labels, pid);
 	const job = legacy === undefined ? undefined : await inspectLegacyJob(legacy);
 	if (legacy !== undefined && job === undefined) fail('legacy launch registration changed');
 	if (pid === undefined || pidFile === undefined || socketFile === undefined) {
@@ -147,23 +176,31 @@ async function layout(fence: Fence): Promise<'original' | 'fenced'> {
 }
 
 async function requireNoLegacyMutator(roots: readonly string[], allowed: DarwinIncarnation | undefined, helper?: string): Promise<void> {
-	const { stdout } = await exec('/bin/ps', ['-axww', '-o', 'uid=,pid=,comm='], { encoding: 'utf8', timeout: 5_000, maxBuffer: 1024 * 1024 });
+	const { stdout } = await exec('/bin/ps', ['-axww', '-o', 'uid=,pid=,stat=,command='], { encoding: 'utf8', timeout: 5_000, maxBuffer: 1024 * 1024 });
 	for (const line of stdout.split('\n')) {
-		const match = /^\s*(\d+)\s+(\d+)\s+(.+)$/.exec(line);
-		if (match === null || Number(match[1]) !== process.getuid?.()) continue;
-		const command = basename(match[3]!);
-		if (!/^(?:-?(?:sh|bash|zsh)|node|npm|git|tsx)(?:$|[\s-])/.test(command)) continue;
+		const match = /^\s*(\d+)\s+(\d+)\s+(\S+)\s+(.+)$/.exec(line);
+		if (match === null || Number(match[1]) !== process.getuid?.() || match[3]!.startsWith('Z')) continue;
 		const pid = Number(match[2]);
 		if (pid === process.pid) continue;
 		if (pid === allowed?.pid && matchesDarwinPeer(allowed, await readDarwinIncarnation(pid, helper), allowed)) continue;
-		let context: Awaited<ReturnType<typeof readDarwinLaunchContext>>;
-		try { context = await readDarwinLaunchContext(pid, helper); }
+		const command = match[4]!;
+		if (roots.some(root => command.includes(`${root}/`) || command.endsWith(` ${root}`))) {
+			fail('an older launcher, updater or daemon still references the legacy checkout');
+		}
+		let cwd: string;
+		try { cwd = await readDarwinWorkingDirectory(pid, helper); }
 		catch (error) {
 			try { process.kill(pid, 0); }
 			catch (probe) { if ((probe as NodeJS.ErrnoException).code === 'ESRCH') continue; }
+			const state = await exec('/bin/ps', ['-p', String(pid), '-o', 'stat='], { timeout: 2_000 }).catch(probe => {
+				const failed = probe as { code?: number; stdout?: string; stderr?: string };
+				if (failed.code === 1 && failed.stdout?.trim() === '' && failed.stderr?.trim() === '') return null;
+				throw probe;
+			});
+			if (state === null || state.stdout.trim().startsWith('Z')) continue;
 			throw error;
 		}
-		if (roots.some(root => inside(root, context.cwd) || context.argv.some(arg => arg.includes(`${root}/`) || arg === root))) {
+		if (roots.some(root => inside(root, cwd))) {
 			fail('an older launcher, updater or daemon still references the legacy checkout');
 		}
 	}

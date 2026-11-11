@@ -45,10 +45,12 @@ export async function pinLegacyLaunchJob(
 	const args = plist['ProgramArguments'];
 	const uid = process.getuid?.();
 	const label = plist['Label'];
+	const cwd = plist['WorkingDirectory'];
 	if (uid === undefined || uid <= 0 || typeof label !== 'string' || label === supervisorJob(baseline).label
 		|| !Array.isArray(args) || typeof args[0] !== 'string' || !args[0].startsWith('/')
 		|| args.some(arg => typeof arg !== 'string' || /[\r\n\0]/.test(arg))
 		|| (plist['Program'] !== undefined && plist['Program'] !== args[0])
+		|| (cwd !== undefined && (typeof cwd !== 'string' || cwd !== prior.releaseRoot))
 		|| (plist['KeepAlive'] !== undefined && plist['KeepAlive'] !== false)
 		|| (plist['RunAtLoad'] !== undefined && plist['RunAtLoad'] !== false && plist['RunAtLoad'] !== true)
 		|| Object.keys(plist).some(key => !PASSIVE_KEYS.has(key))
@@ -58,7 +60,7 @@ export async function pinLegacyLaunchJob(
 	return {
 		baseline, entry: join(prior.releaseRoot, 'out/daemon/index.js'), descriptorHash: hash(before),
 		runAtLoad: plist['RunAtLoad'] === true,
-		job: { uid, label, descriptor, program: args[0], args },
+		job: { uid, label, descriptor, program: args[0], args, ...(typeof cwd === 'string' ? { workingDirectory: cwd } : {}) },
 	};
 }
 

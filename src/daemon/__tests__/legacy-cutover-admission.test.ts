@@ -4,19 +4,21 @@ import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { once } from 'node:events';
-import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from 'node:fs/promises';
+import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { setTimeout as delay } from 'node:timers/promises';
 import test from 'node:test';
 import type { TestContext } from 'node:test';
 import { readDarwinIncarnation } from '../../shared/darwin-lifecycle.js';
 import { InstallationMutationGate } from '../../shared/installation-mutation-gate.js';
 import type { MutationReservation, UpdatePredecessor } from '../../shared/installation-mutation-gate.js';
+import { launchctl } from '../../shared/managed-daemon-installation.js';
 import type { ManagedInstallation } from '../../shared/managed-daemon-installation.js';
 import { discoverLegacyLaunch, fenceLegacyLauncher, restoreLegacyLauncher } from '../legacy-cutover-admission.js';
 import { matchesInstalledDaemonArguments } from '../legacy-launch-job.js';
 
-const options = { skip: process.platform !== 'darwin' || (process.getuid?.() ?? 0) === 0, timeout: 25_000 };
+const options = { skip: process.platform !== 'darwin' || (process.getuid?.() ?? 0) === 0, timeout: 60_000 };
 
 async function fixture(t: TestContext) {
 	const scratch = await realpath(await mkdtemp('/tmp/insrc-cutover-'));
@@ -47,11 +49,29 @@ async function finish(child: ChildProcess): Promise<void> {
 	await once(child, 'exit');
 }
 
+async function registerJob(f: Awaited<ReturnType<typeof fixture>>, suffix: string, args: string[], run: boolean) {
+	const label = `ai.insrc.test.${basename(f.scratch)}.${suffix}`;
+	const path = join(f.scratch, `${suffix}.plist`);
+	const text = (value: string) => `<string>${value.replaceAll('&', '&amp;').replaceAll('<', '&lt;')}</string>`;
+	await writeFile(path, `<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0"><dict>
+<key>Label</key>${text(label)}
+<key>ProgramArguments</key><array>${args.map(text).join('')}</array>
+<key>WorkingDirectory</key>${text(f.oldRoot)}
+<key>RunAtLoad</key>${run ? '<true/>' : '<false/>'}
+<key>KeepAlive</key><false/>
+</dict></plist>\n`, { mode: 0o600 });
+	const domain = `gui/${f.owner.uid}`;
+	await launchctl(['bootstrap', domain, path]);
+	return { label, path, remove: () => launchctl(['bootout', `${domain}/${label}`]) };
+}
+
 test('Predecessor variants and backward decoding', options, async t => {
 	const f = await fixture(t);
 	const baseline = { ...f.candidate, enabled: false };
 	const entry = join(f.oldRoot, 'out/daemon/index.js');
-	assert.deepEqual(await discoverLegacyLaunch(f.prior, baseline, f.helper), { launch: { kind: 'stopped' }, wasRunning: false });
+	const deps = { helper: f.helper };
+	assert.deepEqual(await discoverLegacyLaunch(f.prior, baseline, deps), { launch: { kind: 'stopped' }, wasRunning: false });
 	await writeFile(entry, `
 const { createServer } = require('node:net');
 const { writeFileSync } = require('node:fs');
@@ -61,7 +81,7 @@ createServer(socket => socket.on('error', () => {})).listen(${JSON.stringify(joi
 	const child = spawn(f.runtime, [entry], { cwd: f.oldRoot, stdio: ['ignore', 'pipe', 'inherit'] });
 	try {
 		await once(child.stdout, 'data');
-		const direct = await discoverLegacyLaunch(f.prior, baseline, f.helper);
+		const direct = await discoverLegacyLaunch(f.prior, baseline, deps);
 		assert.equal(direct.launch?.kind, 'direct');
 		assert.ok(direct.launch?.kind === 'direct' && direct.launch.process.pid === child.pid);
 		assert.deepEqual(direct.launch.argv, [f.runtime, entry]);
@@ -93,6 +113,37 @@ createServer(socket => socket.on('error', () => {})).listen(${JSON.stringify(joi
 			predecessor: { ...f.predecessor, pins, ...direct, launch: { ...direct.launch, kind: 'job' } },
 		}), /invalid installation/);
 	} finally { await finish(child); }
+	for (const name of ['daemon.pid', 'daemon.sock']) await rm(join(f.stateRoot, name), { force: true });
+	const passive = await registerJob(f, 'passive', [f.runtime, entry], false);
+	try {
+		const route = await discoverLegacyLaunch(f.prior, baseline, { ...deps, labels: [passive.label] });
+		assert.equal(route.launch?.kind, 'stopped');
+		assert.equal(route.legacy?.job.descriptor, passive.path);
+		assert.equal(route.legacy?.job.workingDirectory, f.oldRoot);
+		await assert.rejects(discoverLegacyLaunch(f.prior, baseline, deps), /foreign launch job/);
+		const descriptor = await readFile(passive.path, 'utf8');
+		await writeFile(passive.path, descriptor.replace(f.oldRoot + '</string>', '/private/tmp</string>'));
+		await assert.rejects(discoverLegacyLaunch(f.prior, baseline, { ...deps, labels: [passive.label] }), /changing restart policy or descriptor/);
+	} finally { await passive.remove(); }
+	await mkdir(join(f.oldRoot, 'node_modules'));
+	await symlink(fileURLToPath(new URL('../../../node_modules/tsx', import.meta.url)), join(f.oldRoot, 'node_modules/tsx'));
+	const recovery = await registerJob(f, 'recovery', [f.runtime, '--import', 'tsx/esm', entry], true);
+	try {
+		let route;
+		for (let attempt = 0; attempt < 50 && route === undefined; attempt++) {
+			try {
+				const observed = await discoverLegacyLaunch(f.prior, baseline, { ...deps, labels: [recovery.label] });
+				if (observed.launch?.kind === 'job') route = observed;
+			} catch (error) {
+				if (attempt === 49) throw error;
+			}
+			if (route === undefined) await delay(50);
+		}
+		assert.ok(route?.launch?.kind === 'job');
+		assert.deepEqual(route.launch.argv, [f.runtime, '--import', 'tsx/esm', entry]);
+		assert.equal(route.legacy?.job.descriptor, recovery.path);
+		assert.equal(route.legacy?.job.workingDirectory, f.oldRoot);
+	} finally { await recovery.remove(); }
 });
 
 test('Old shell/helper concurrent with canonical launcher exchange and old child attempting to open stores', options, async t => {
@@ -112,6 +163,18 @@ test('Old shell/helper concurrent with canonical launcher exchange and old child
 		assert.match(await readFile(entry, 'utf8'), /opened-store/);
 		assert.deepEqual((await f.gate.read()).active?.entries, []);
 	} finally { await finish(shell); }
+	const other = spawn('/bin/sleep', ['30'], { cwd: f.oldRoot, stdio: 'ignore' });
+	try {
+		await once(other, 'spawn');
+		await assert.rejects(fenceLegacyLauncher(f.gate, update, f.helper), /older launcher/);
+	} finally { await finish(other); }
+	const pending = spawn(f.runtime, ['-e', 'console.log("ready"); setInterval(() => {}, 1000)', entry],
+		{ cwd: f.oldRoot, stdio: ['ignore', 'pipe', 'inherit'] });
+	try {
+		await once(pending.stdout, 'data');
+		await assert.rejects(fenceLegacyLauncher(f.gate, update, f.helper), /older launcher/);
+		await assert.rejects(readFile(marker), { code: 'ENOENT' });
+	} finally { await finish(pending); }
 	const lostReceipt = {
 		admit: f.gate.admit.bind(f.gate), recordIntent: f.gate.recordIntent.bind(f.gate),
 		recordReceipt: async () => { throw new Error('interrupted after exchange'); },

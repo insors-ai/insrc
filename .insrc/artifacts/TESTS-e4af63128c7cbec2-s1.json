@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 19,
-        "contentHash": "b4c658268b894ec26f7b9d3603be62767d071d51625c2954faa331ff16e9bc74",
-        "at": "2026-11-11T15:27:53.490Z",
+        "number": 20,
+        "contentHash": "5fe3ff7bcacd584f48e8c954ab361ab3582e13554096189355f13d5966de2ef6",
+        "at": "2026-11-11T16:04:20.695Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "e4af63128c7cbec2",
     "storyId": "s1",
     "createdAt": "2026-11-09T07:52:13.312Z",
-    "updatedAt": "2026-11-11T15:27:53.328Z",
+    "updatedAt": "2026-11-11T16:04:20.516Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-09T04:29:20.389Z",
     "epicSlug": "isolate-each-code-design-review-its",
-    "revision": 19
+    "revision": 20
   },
   "body": {
     "tasks": [
@@ -587,6 +587,63 @@
               },
               {
                 "title": "replay and controller admission-to-assignment retain one execution identity",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "aa9aa072f",
+        "ranAt": "2026-11-11T16:04:20.516Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review/design-review/__tests__/worker-admission.test.ts: durable admission and current workflow ancestry run in the owner worker",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/worker-admission.test.ts",
+                "title": "durable admission and current workflow ancestry run in the owner worker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review/design-review/__tests__/worker-admission.test.ts: subject invalidation explicit recovery and impact-selected chunks preserve saved feedback",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/worker-admission.test.ts",
+                "title": "subject invalidation explicit recovery and impact-selected chunks preserve saved feedback",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/worker-admission.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7851,
+            "titles": [
+              {
+                "title": "durable admission and current workflow ancestry run in the owner worker",
+                "result": "pass"
+              },
+              {
+                "title": "subject invalidation explicit recovery and impact-selected chunks preserve saved feedback",
+                "result": "pass"
+              },
+              {
+                "title": "cold unverified design recovery retains its original submission and qualifies before provider dispatch",
                 "result": "pass"
               }
             ],

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 19 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 21 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -214,3 +214,25 @@ Run at 2026-11-11T15:27:53.328Z on commit `76e049edb`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/code-review/task-review/__tests__/worker-admission.test.ts` | 0 | 2 | 7 s |  |
+
+## t10
+
+Run at 2026-11-11T16:04:20.516Z on commit `aa9aa072f`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/workflow/review/design-review/__tests__/worker-admission.test.ts: durable admission and current workflow ancestry run in the owner worker**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | durable admission and current workflow ancestry run in the owner worker | `src/workflow/review/design-review/__tests__/worker-admission.test.ts` |
+
+**integration: src/workflow/review/design-review/__tests__/worker-admission.test.ts: subject invalidation explicit recovery and impact-selected chunks preserve saved feedback**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | subject invalidation explicit recovery and impact-selected chunks preserve saved feedback | `src/workflow/review/design-review/__tests__/worker-admission.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/review/design-review/__tests__/worker-admission.test.ts` | 0 | 3 | 7.9 s |  |

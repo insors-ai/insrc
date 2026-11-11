@@ -1,0 +1,141 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 11,
+        "contentHash": "a2782e37e81967fec0e8fc07523884a1b777f3aaee6901d837b50ab43e620d35",
+        "at": "2026-11-11T18:22:09.032Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-2dd7c9e2-804c-4f0d-8dfd-3a1fc1a0d0cc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-11T16:07:39.723Z",
+    "epicCreatedAt": "2026-11-11T14:35:39.306Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1c09e09cd985026b",
+    "storyId": "s1",
+    "revision": 11,
+    "updatedAt": "2026-11-11T18:21:25.033Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "plan-builder-runs-out-attempts-before"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": false
+      }
+    ],
+    "summary": "Final build and sweeps: tsc --noEmit clean; planner (180 tests, 177 pass, 3 skipped, 0 fail), orchestrator (77/74/3 skipped), classifier, executor, explore, runtimes, summariser, daemon analyze-rpc and the context tests that import the planner all show 0 failures. The wider src/analyze/context sweep did not finish inside 570 s twice and is not tied to this change. Live docs-broad regression run on the daemon at 6e79e62e4 (run docs-broad-live-mwcdxpq5), recorded as a REPORTED FAIL: the plan stage passed (20 tasks, inside the XL focused 20-80 band on all three attempts; attempt 1 INV-7, attempt 2 INV-10, attempt 3 accepted) but the execute stage had produced 6 of 20 task outputs when the test's 40-minute limit ended it, so no final report was reached. Cause seen in the run tree: the XL root plan spawns five L-sized child plans (about 100+ serial model-driven tasks, a 13.7 MB inventory); this is an execute-cost / size-to-depth issue outside this Story and will be triaged separately.",
+    "testRecord": {
+      "md": "docs/standalone/plan-builder-runs-out-attempts-before-E202611111c09e09c/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/analyze/planner/__tests__/validate.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T18:21:25.033Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/scope-band.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T18:21:25.033Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/validate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T18:21:25.033Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/__tests__/driver-unit.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T18:21:25.033Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/render-catalog.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T18:21:25.033Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/__tests__/fixtures/correction-turn-inv7.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T18:21:25.033Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/driver.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T18:21:25.033Z"
+      },
+      {
+        "target": {
+          "file": "src/prompts/analyze/planner.system.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T18:21:25.033Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/__tests__/recursive.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T18:21:25.033Z"
+      }
+    ],
+    "commit": "c5a00524b"
+  },
+  "citations": []
+}

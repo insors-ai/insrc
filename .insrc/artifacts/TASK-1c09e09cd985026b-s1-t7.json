@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-fed6de79-3ce9-432f-a894-f2b9083cb932",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-11T16:06:14.398Z",
+    "epicCreatedAt": "2026-11-11T14:35:39.306Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1c09e09cd985026b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Final build and full sweep",
+      "parent": {
+        "entityId": "STORY-1c09e09cd985026b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1c09e09cd985026b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-1c09e09cd985026b-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-1c09e09cd985026b-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9ef5da9564df4839f1d9a9cee2228ff930794baf9c397ccc3766a05c21dc7058",
+        "at": "2026-11-11T16:06:14.398Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T16:06:14.399Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Final build and full sweep",
+    "summary": "Run tsc and the planner and analyze test sweeps. The live docs-broad regression (INSRC_LIVE_TESTS=1, docs-broad-live.test.ts) needs the new code running in the daemon, so it is run after the push and daemon update, and its outcome is stated in the BUILD record as a reported live result, not a gate-run test. A failure after the count and the exact range were shown triggers the band revisit written in the LLD.",
+    "size": "S",
+    "order": 7,
+    "acceptanceChecks": [
+      "tsc build passes and the planner and analyze tests pass, with unrelated pre-existing failures named separately",
+      "the live regression is recorded as a reported result with its outcome (final report reached, or the failing stage and invariant), or recorded as not yet run with the reason"
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "src/analyze/orchestrator/__tests__/docs-broad-live.test.ts: the broad docs request runs to a final report"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

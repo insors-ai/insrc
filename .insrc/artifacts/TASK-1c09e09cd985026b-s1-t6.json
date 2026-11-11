@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-69967628-6673-45ff-b1a6-f39aae229d92",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-11T16:06:14.396Z",
+    "epicCreatedAt": "2026-11-11T14:35:39.306Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1c09e09cd985026b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Give the planner loop its own attempt limit",
+      "parent": {
+        "entityId": "STORY-1c09e09cd985026b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1c09e09cd985026b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-1c09e09cd985026b-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "739fcfc5e4e2c8c2d5099aeb30d2218949bd93de1eba447aa950815ed40b00b1",
+        "at": "2026-11-11T16:06:14.396Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T16:06:14.397Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Give the planner loop its own attempt limit",
+    "summary": "First search the planner and orchestrator tests for PlanBuilderExhausted, attempts.length and structuredOutputRetries assumptions. Then add a named constant of 5 in the planner and use it for the correction loop only; keep cfg.shaper.structuredOutputRetries as the wire-level maxAttempts given to completeStructured and for every other user. Update only the tests that follow from the new limit.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "the tests that assumed three attempts are listed and each is updated or left with a stated reason",
+      "a script valid only on the fifth reply is accepted on the fifth call",
+      "a script that never passes throws PlanBuilderExhausted with five primary failures after exactly five calls",
+      "every completeStructured call receives the shared structuredOutputRetries value as maxAttempts"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/analyze/planner/__tests__/driver-unit.test.ts: five-call acceptance and exhaustion with the planner limit"
+      },
+      {
+        "level": "integration",
+        "name": "src/analyze/planner/__tests__/driver-unit.test.ts: completeStructured receives the shared maxAttempts, not the planner limit"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

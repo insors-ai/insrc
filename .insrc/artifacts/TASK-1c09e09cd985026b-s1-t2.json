@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-022fff59-15be-4b68-9265-14c3f2515a74",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-11T16:06:14.386Z",
+    "epicCreatedAt": "2026-11-11T14:35:39.306Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1c09e09cd985026b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Expose the task-count check",
+      "parent": {
+        "entityId": "STORY-1c09e09cd985026b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1c09e09cd985026b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-1c09e09cd985026b-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "5fab5c7a8a024eebbe990149c7778fa881b4d55b3b87bf9547a753ee0dc8a0b3",
+        "at": "2026-11-11T16:31:43.159Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T16:06:14.387Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Expose the task-count check",
+    "summary": "Add an exported function that returns the INV-13 PlanValidationFailure for a plan or null, using the leaf module's band and lower bound and the same message and target as today, and make validatePlan call it at its existing INV-13 position without changing any result.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "for every scope XS..XL, focused and not, at lo-1, lo, hi and hi+1, the function and validatePlan agree on INV-13 (message and target included), with one exception: an empty plan (0 tasks, reached only at lo-1 for focused XS), where validatePlan reports INV-1 first, as it does today, and the function alone reports INV-13",
+      "validatePlan invariant order and results are unchanged for the existing validator tests"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/analyze/planner/__tests__/validate.test.ts: the task-count check agrees with validatePlan at every band boundary"
+      },
+      {
+        "level": "unit",
+        "name": "src/analyze/planner/__tests__/validate.test.ts: validatePlan keeps its invariant order and results for the existing cases"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

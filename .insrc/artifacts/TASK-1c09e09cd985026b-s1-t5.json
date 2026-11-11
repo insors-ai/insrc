@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f349829f-7ff4-41a6-8176-e3f1d522fc19",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-11T16:06:14.393Z",
+    "epicCreatedAt": "2026-11-11T14:35:39.306Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1c09e09cd985026b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Wire the secondary count note into the retry loop",
+      "parent": {
+        "entityId": "STORY-1c09e09cd985026b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1c09e09cd985026b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-1c09e09cd985026b-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-1c09e09cd985026b-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "110aa08d10567709767ed2b7d3943080e0ffd86708cdf748877394ef8f6f19c5",
+        "at": "2026-11-11T16:06:14.393Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T16:06:14.394Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire the secondary count note into the retry loop",
+    "summary": "In runPlanner, when the first failure is not INV-13, run the count check on the same stamped plan and pass a non-null result to appendCorrectionTurn. failures[], the feedback files and the thrown error keep the primary failure only. Add the recording-stub-provider tests and, separately, the structuredStageForTest history and persistence tests from the LLD.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "recording-stub group: with a recording stub provider, the message sent on call 2 states INV-7 first and the count second; call 3 names INV-11 only, with no count section and no banner",
+      "hook group: through structuredStageForTest, failures[], feedback.json and the thrown error hold primary failures only",
+      "the INV-1 case states the count as well and keeps INV-1 primary"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/analyze/planner/__tests__/driver-unit.test.ts: with a recording stub provider, the initial prompt carries the enforced range"
+      },
+      {
+        "level": "integration",
+        "name": "src/analyze/planner/__tests__/driver-unit.test.ts: with a recording stub provider, the correction message sent on call 2 states INV-7 and then the count"
+      },
+      {
+        "level": "integration",
+        "name": "src/analyze/planner/__tests__/driver-unit.test.ts: recording-stub replay (INV-7 plus count, INV-11, valid) accepted at call 3 with primary-only feedback"
+      },
+      {
+        "level": "integration",
+        "name": "src/analyze/planner/__tests__/driver-unit.test.ts: through structuredStageForTest, failures and saved feedback hold primary failures only"
+      },
+      {
+        "level": "integration",
+        "name": "src/analyze/planner/__tests__/driver-unit.test.ts: an empty task list states the count and keeps INV-1 primary"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

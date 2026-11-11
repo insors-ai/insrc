@@ -153,7 +153,7 @@ test('S001 t3: the installer builds with -std=c++17 and writes the install marke
 		writeFileSync(join(bin, 'npm'), `#!/bin/sh\necho "$*|$CXXFLAGS" >> '${npmLog}'\necho ' ' >> package-lock.json\nif [ -f '${npmExit}' ]; then exit "$(cat '${npmExit}')"; fi\nexit 0\n`, { mode: 0o755 });
 		const marker = join(src, 'node_modules', '.insrc-install-ok');
 		const prelude = `set -euo pipefail\nlog(){ :; }\nok(){ :; }\ndie(){ echo "FATAL: $*" >&2; exit "\${2:-1}"; }\nDAEMON_SRC='${src}'\n`;
-		const runStep3 = (cxxflags?: string) => spawnSync('bash', ['-c', prelude + step3], {
+		const runStep3 = (cxxflags?: string, freshMac = false) => spawnSync('bash', ['-c', prelude + `FRESH_MAC_INSTALL=${freshMac ? 1 : 0}\n` + step3], {
 			encoding: 'utf8',
 			env: { ...process.env, PATH: `${bin}:${process.env['PATH']}`, ...(cxxflags !== undefined ? { CXXFLAGS: cxxflags } : { CXXFLAGS: '' }) },
 		});
@@ -168,6 +168,10 @@ test('S001 t3: the installer builds with -std=c++17 and writes the install marke
 		assert.equal(runStep3('-O2').status, 0);
 		git('checkout', '--', 'package-lock.json');
 		assert.equal(readFileSync(npmLog, 'utf8').split('\n')[0], 'install --no-fund --no-audit|-O2 -std=c++17', "the caller's CXXFLAGS are kept");
+		rmSync(npmLog);
+		assert.equal(runStep3(undefined, true).status, 0);
+		git('checkout', '--', 'package-lock.json');
+		assert.equal(readFileSync(npmLog, 'utf8').split('\n')[0], 'ci --no-fund --no-audit|-std=c++17');
 
 		// A failed install stops the installer and leaves no marker, though one was there before.
 		writeFileSync(npmExit, '1');

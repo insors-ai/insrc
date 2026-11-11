@@ -8,9 +8,12 @@ import { realpath } from 'node:fs/promises';
 import { matchesDarwinPeer, observeDarwinExit, readDarwinIncarnation, readDarwinLaunchContext, readDarwinPeerCredentials } from '../shared/darwin-lifecycle.js';
 import type { DarwinExitObservation, DarwinIncarnation } from '../shared/darwin-lifecycle.js';
 import { acquireRunFileGuard, removeOwnedRunFile, runFileIdentity, sameRunFile } from '../shared/daemon-run-files.js';
-import type { RunFileIdentity } from '../shared/daemon-run-files.js';
+import type { RunFileGuard, RunFileIdentity } from '../shared/daemon-run-files.js';
 import { installationPaths } from '../shared/managed-daemon-installation.js';
 import type { LegacyLaunchPin } from '../shared/installation-mutation-gate.js';
+import { PATHS } from '../shared/paths.js';
+import { captureLegacyDrainLogs, classifyLegacyDrain, readLegacyDrainLogs } from './legacy-drain-evidence.js';
+import type { LegacyDrain } from './legacy-drain-evidence.js';
 import { matchesInstalledDaemonArguments } from './legacy-launch-job.js';
 
 export interface LegacyDaemonPin {
@@ -27,10 +30,22 @@ function requireSameFile(path: string, expected: RunFileIdentity, mayBeAbsent = 
 	}
 }
 
+export interface LegacyDrainReceipt {
+	readonly exit: DarwinIncarnation;
+	readonly drain: LegacyDrain;
+}
+
+interface DrainOptions {
+	readonly timeoutMs?: number;
+	readonly log?: string;
+	readonly acquireCleanupGuard?: (receipt: LegacyDrainReceipt) => Promise<RunFileGuard>;
+}
+
 /** Drain a cooperative legacy daemon on its authenticated socket. The observer never signals it. */
-export async function drainLegacyDaemonForCutover(
-	pin: LegacyDaemonPin, authorize: () => Promise<void>, timeoutMs = 30_000,
-): Promise<DarwinIncarnation | undefined> {
+export async function observeLegacyDrain(
+	pin: LegacyDaemonPin, authorize: () => Promise<void>, options: DrainOptions = {},
+): Promise<LegacyDrainReceipt | undefined> {
+	const { timeoutMs = 30_000, log = PATHS.daemonLog, acquireCleanupGuard } = options;
 	if (process.platform !== 'darwin' || await realpath(pin.stateRoot) !== pin.stateRoot) {
 		throw new Error('legacy cutover requires a canonical macOS installation root');
 	}
@@ -83,23 +98,33 @@ export async function drainLegacyDaemonForCutover(
 			guard.assertOwned();
 		} finally { guard.release(); }
 
+		const logs = await captureLegacyDrainLogs(log);
 		await authorize();
+		const requestedAt = Date.now();
 		await new Promise<void>((resolve, reject) => {
 			socket!.write(JSON.stringify({ id: 1, method: 'daemon.shutdown', params: {} }) + '\n',
 				error => error ? reject(error) : resolve());
 		});
 		if (!await observer.exited) throw new Error('legacy daemon exit was not observed');
+		const exitedAt = Date.now();
+		const receipt = { exit: target, drain: classifyLegacyDrain(await readLegacyDrainLogs(logs), target.pid, requestedAt, exitedAt) };
 		await authorize();
-		const cleanup = acquireRunFileGuard(paths.runGuard);
+		const cleanup = acquireCleanupGuard === undefined ? acquireRunFileGuard(paths.runGuard) : await acquireCleanupGuard(receipt);
 		try {
 			requireSameFile(paths.daemonPid, pidFile, true);
 			requireSameFile(paths.daemonSocket, socketFile, true);
 			removeOwnedRunFile(paths.daemonPid, pidFile, cleanup);
 			removeOwnedRunFile(paths.daemonSocket, socketFile, cleanup);
-		} finally { cleanup.release(); }
-		return target;
+		} finally { if (acquireCleanupGuard === undefined) cleanup.release(); }
+		return receipt;
 	} finally {
 		socket?.destroy();
 		await observer?.close();
 	}
+}
+
+export async function drainLegacyDaemonForCutover(
+	pin: LegacyDaemonPin, authorize: () => Promise<void>, timeoutMs = 30_000,
+): Promise<DarwinIncarnation | undefined> {
+	return (await observeLegacyDrain(pin, authorize, { timeoutMs }))?.exit;
 }

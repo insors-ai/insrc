@@ -129,6 +129,14 @@ static int swap_directories(const char *first, const char *second, const char *d
 	return renamex_np(first, second, RENAME_SWAP);
 }
 
+static int publish_directory(const char *source, const char *target, const char *device, const char *inode) {
+	struct stat directory;
+	if (source[0] != '/' || target[0] != '/' || lstat(source, &directory) != 0) return -1;
+	if (!S_ISDIR(directory.st_mode) || directory.st_uid != getuid() || (directory.st_mode & 0077) != 0
+		|| !same_number(device, (uint64_t)directory.st_dev) || !same_number(inode, directory.st_ino)) { errno = ESTALE; return -1; }
+	return renamex_np(source, target, RENAME_EXCL);
+}
+
 static int observe(pid_t pid, const char *marker, const char *executable, long timeout_ms) {
 	struct identity identity;
 	char actual[100];
@@ -193,6 +201,7 @@ int main(int argc, char **argv) {
 		if (errno == EWOULDBLOCK) return 75;
 	} else if (argc == 2 && strcmp(argv[1], "peer") == 0) result = print_peer();
 	else if (argc == 7 && strcmp(argv[1], "swap-directories") == 0) result = swap_directories(argv[2], argv[3], argv[4], argv[5], argv[6]);
+	else if (argc == 6 && strcmp(argv[1], "publish-directory") == 0) result = publish_directory(argv[2], argv[3], argv[4], argv[5]);
 	else if (argc >= 3 && strcmp(argv[1], "cwd-batch") == 0) result = print_working_directories(argc - 2, argv + 2);
 	else if (argc >= 3) {
 		long pid = positive(argv[2]);

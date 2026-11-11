@@ -5,6 +5,7 @@ import { accepted, openManagedSupervisorLink } from '../cli/services/managed-dae
 import type { ManagedSupervisorLink } from '../cli/services/managed-daemon-control.js';
 import type { SupervisorReply } from '../shared/daemon-supervisor-protocol.js';
 import type { MutationReservation, InstallationMutationGate } from '../shared/installation-mutation-gate.js';
+import type { RunFileGuard } from '../shared/daemon-run-files.js';
 import {
 	publishManagedSelector, registerManagedJob, removeManagedJob, requireQuiescentInstallation,
 } from '../shared/managed-daemon-installation.js';
@@ -13,6 +14,7 @@ import {
 	COMPATIBILITY_RECEIPT, COMPATIBILITY_STEP, requireQualifiedReleasePair, verifyQuiescedReleaseStores,
 } from './release-compatibility.js';
 import type { QualifiedReleasePair, ReleaseCompatibility } from './release-compatibility.js';
+import { giveLegacyRunGuard, settleLegacyRunGuard } from './legacy-run-guard.js';
 
 type Update = Extract<MutationReservation, { kind: 'update' }>;
 type Gate = Pick<InstallationMutationGate, 'admit' | 'recordIntent' | 'recordReceipt'>;
@@ -40,7 +42,7 @@ export interface HandoffEffects {
 	readonly remove: typeof removeManagedJob;
 	readonly select: typeof publishManagedSelector;
 	readonly register: typeof registerManagedJob;
-	readonly inspectStores: (pins: ManagedUpdatePins) => Promise<void>;
+	readonly inspectStores: (pins: ManagedUpdatePins, guard?: RunFileGuard) => Promise<void>;
 }
 
 export async function connectManagedSupervisor(installation: ManagedInstallation): Promise<ManagedSupervisorLink> {
@@ -63,13 +65,14 @@ const effects: HandoffEffects = {
 	},
 	select: publishManagedSelector,
 	register: registerManagedJob,
-	async inspectStores({ prior, candidate, compatibility }) {
-		await requireQuiescentInstallation(prior);
-		await requireQuiescentInstallation(candidate);
+	async inspectStores({ prior, candidate, compatibility }, guard) {
+		await requireQuiescentInstallation(prior, guard);
+		await requireQuiescentInstallation(candidate, guard);
 		// The detached daemon updater owns the stopped store for this inspection.
 		const { declareLiveStoreOwner } = await import('../db/graph/store.js');
 		declareLiveStoreOwner();
 		await verifyQuiescedReleaseStores(prior.stateRoot, compatibility);
+		guard?.assertOwned();
 	},
 };
 
@@ -143,14 +146,14 @@ export async function stageManagedUpdate(
 }
 
 export async function stageManagedCandidate(
-	gate: Gate, update: Update, pins: ManagedUpdatePins, operations = effects,
+	gate: Gate, update: Update, pins: ManagedUpdatePins, operations = effects, guard?: RunFileGuard,
 ): Promise<HandoffReceipt> {
 	const { candidate } = pins;
 	const revalidate = async () => { await gate.admit(update); };
 	const intent = (step: string, detail: string) => gate.recordIntent(update, step, detail);
 	const receipt = (step: string, detail: string) => gate.recordReceipt(update, step, detail);
 	await revalidate();
-	await operations.inspectStores(pins);
+	await operations.inspectStores(pins, guard);
 	await intent('provisional-selector', candidate.releaseId);
 	await operations.select(candidate, revalidate);
 	await receipt('provisional-selector', candidate.releaseId);
@@ -163,7 +166,14 @@ export async function stageManagedCandidate(
 	try {
 		const idle = accepted(await link.call({ op: 'status', generation: null }));
 		if (idle.state !== 'idle' || idle.generation !== null) throw new Error('candidate supervisor is not idle after handshake');
-		if (!update.predecessor.wasRunning) return { job, generation: null };
+		if (guard !== undefined) {
+			if (job.incarnation === undefined) throw new Error('candidate supervisor lacks an authenticated incarnation');
+			await giveLegacyRunGuard(gate, update, candidate.stateRoot, job.incarnation);
+		}
+		if (!update.predecessor.wasRunning) {
+			if (guard !== undefined) await settleLegacyRunGuard(gate, update, candidate.stateRoot);
+			return { job, generation: null };
+		}
 		await intent('candidate-start', candidate.releaseId);
 		await revalidate();
 		const started = accepted(await link.call({ op: 'start', generation: null, updateId: update.id }));

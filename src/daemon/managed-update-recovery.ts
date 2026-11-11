@@ -5,6 +5,7 @@ import { accepted } from '../cli/services/managed-daemon-control.js';
 import type { ManagedSupervisorLink } from '../cli/services/managed-daemon-control.js';
 import { matchesDarwinPeer, readDarwinIncarnation } from '../shared/darwin-lifecycle.js';
 import type { DarwinIncarnation } from '../shared/darwin-lifecycle.js';
+import type { RunFileGuard } from '../shared/daemon-run-files.js';
 import type { InstallationMutationGate, MutationReservation } from '../shared/installation-mutation-gate.js';
 import {
 	inspectManagedJob, publishManagedSelector, registerManagedJob, removeManagedJob,
@@ -14,9 +15,11 @@ import type { ManagedInstallation, RegisteredManagedJob } from '../shared/manage
 import { connectManagedSupervisor, recordManagedUpdatePins, stageManagedCandidate, stageManagedUpdate, waitForGeneration } from './managed-update-handoff.js';
 import type { HandoffEffects, HandoffReceipt, ManagedUpdatePins } from './managed-update-handoff.js';
 import { recoverManagedTransaction, settleManagedUpdate } from './managed-update-transaction.js';
-import { drainLegacyDaemonForCutover } from './legacy-daemon-cutover.js';
+import { drainLegacyDaemonForCutover, observeLegacyDrain } from './legacy-daemon-cutover.js';
 import { discoverLegacyLaunch, fenceLegacyLauncher, restoreLegacyLauncher } from './legacy-cutover-admission.js';
 import { inspectLegacyJob, removeLegacyJob, restoreLegacyService, verifyLegacyService } from './legacy-launch-job.js';
+import { holdLegacyRunGuard, settleLegacyRunGuard } from './legacy-run-guard.js';
+import { qualifiedPairFromReservation } from './release-compatibility.js';
 
 type Update = Extract<MutationReservation, { kind: 'update' }>;
 type Purpose = 'lifecycle' | 'reconcile';
@@ -191,6 +194,7 @@ class Rollback {
 		if (legacy !== undefined) {
 			await this.journal('rollback-legacy-service', prior.releaseId, async () => {
 				if (entry(initial, 'legacy-launcher-fence') !== undefined) {
+					await settleLegacyRunGuard(this.gate, initial, prior.stateRoot, this.purpose);
 					await restoreLegacyLauncher(this.gate, initial, undefined, this.purpose);
 				}
 				await this.legacyOperations.restore(legacy, prior, initial.predecessor.wasRunning, this.revalidate);
@@ -260,6 +264,10 @@ class Rollback {
 				});
 			});
 		}
+		await settleLegacyRunGuard(this.gate, initial, candidate.stateRoot, this.purpose);
+		if (pending?.step === 'legacy-guard-transfer' && pending.receipt === undefined) {
+			await this.receipt(pending.step, 'candidate was idle and its guard was retired');
+		}
 		await this.journal('rollback-candidate-job', candidate.releaseId, async () => {
 			await this.operations.quiescent(candidate);
 			const removed = await this.operations.remove(candidate, this.revalidate, job?.incarnation);
@@ -301,18 +309,34 @@ export async function completeLegacyMigration(
 			}
 			await recordManagedUpdatePins(gate, update, pins);
 			await gate.recordIntent(update, 'predecessor-stop', legacy.entry);
-			const target = await legacyOperations.drain({ stateRoot: prior.stateRoot, runtime: prior.runtime, entry: legacy.entry,
-				...(update.predecessor.launch === undefined ? {} : { launch: update.predecessor.launch }) }, authorize);
-			if (wasRunning !== (target !== undefined)) throw new Error('legacy daemon state changed before its drain');
-			await operations.quiescent(prior);
-			await gate.recordReceipt(update, 'predecessor-stop', JSON.stringify({
-				state: target === undefined ? 'idle' : 'exited', generation: null,
-				...(target === undefined ? {} : { exit: target }),
-			}));
+			const launch = update.predecessor.launch;
+			let guard: RunFileGuard | undefined;
+			if (launch === undefined) {
+				const target = await legacyOperations.drain({ stateRoot: prior.stateRoot, runtime: prior.runtime, entry: legacy.entry }, authorize);
+				if (wasRunning !== (target !== undefined)) throw new Error('legacy daemon state changed before its drain');
+				await operations.quiescent(prior);
+				await gate.recordReceipt(update, 'predecessor-stop', JSON.stringify({
+					state: target === undefined ? 'idle' : 'exited', generation: null,
+					...(target === undefined ? {} : { exit: target }),
+				}));
+			} else if (launch.kind === 'stopped') {
+				await operations.quiescent(prior);
+				await gate.recordReceipt(update, 'predecessor-stop', JSON.stringify({ state: 'idle', generation: null }));
+				guard = await holdLegacyRunGuard(gate, update, prior.stateRoot);
+			} else {
+				await observeLegacyDrain({ stateRoot: prior.stateRoot, runtime: prior.runtime, entry: legacy.entry, launch }, authorize, {
+					async acquireCleanupGuard(receipt) {
+						if (receipt.drain !== 'graceful') qualifiedPairFromReservation(await gate.admit(update) as Update);
+						await gate.recordReceipt(update, 'predecessor-stop', JSON.stringify({ state: 'exited', generation: null, ...receipt }));
+						guard = await holdLegacyRunGuard(gate, update, prior.stateRoot);
+						return guard;
+					},
+				});
+			}
 			await gate.recordIntent(update, 'predecessor-job-removal', legacy.job.label);
 			await legacyOperations.remove(legacy, authorize);
 			await gate.recordReceipt(update, 'predecessor-job-removal', 'saved legacy LaunchAgent verified absent');
-			return stageManagedCandidate(gate, update, pins, handoff);
+			return stageManagedCandidate(gate, update, pins, handoff, guard);
 		},
 		verifyCandidate: receipt => verifyCandidate(pins.candidate, update, receipt, operations),
 		rollback: () => new Rollback(gate, update, operations, 'lifecycle', legacyOperations).run(),

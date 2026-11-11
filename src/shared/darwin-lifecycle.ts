@@ -74,6 +74,14 @@ export async function readDarwinWorkingDirectories(
 	});
 }
 
+/** Publish the exact staged directory without overwriting even an empty destination. */
+export async function publishDarwinDirectory(
+	from: string, to: string, pin: { readonly dev: string; readonly ino: string }, executable = HELPER,
+): Promise<void> {
+	requireDarwin();
+	await exec(executable, ['publish-directory', from, to, pin.dev, pin.ino], { timeout: ATTACH_TIMEOUT_MS, maxBuffer: 8192 });
+}
+
 /** Exchange owned directories on the same volume in one rename operation. */
 export async function swapDarwinDirectories(
 	left: string, right: string, expected: { device: string; leftInode: string; rightInode: string }, executable = HELPER,

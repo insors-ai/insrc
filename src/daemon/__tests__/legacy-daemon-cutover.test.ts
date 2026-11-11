@@ -7,7 +7,7 @@ import { existsSync } from 'node:fs';
 import { mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { drainLegacyDaemonForCutover } from '../legacy-daemon-cutover.js';
+import { drainLegacyDaemonForCutover, observeLegacyDrain } from '../legacy-daemon-cutover.js';
 import { pinLegacyLaunchJob } from '../legacy-launch-job.js';
 
 test('Legacy cutover observes the exact authenticated process exit before cleaning its publication', {
@@ -15,9 +15,11 @@ test('Legacy cutover observes the exact authenticated process exit before cleani
 }, async t => {
 	const stateRoot = await realpath(await mkdtemp('/tmp/insrc-lc-'));
 	const entry = join(stateRoot, 'legacy.mjs');
+	const log = join(stateRoot, 'daemon.log');
+	await writeFile(log, '');
 	await writeFile(entry, `
 import { createServer } from 'node:net';
-import { writeFileSync } from 'node:fs';
+import { appendFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 const root = process.env.INSRC_TEST_ROOT;
 const server = createServer(socket => {
@@ -26,7 +28,10 @@ const server = createServer(socket => {
     pending += chunk;
     if (!pending.endsWith('\\n')) return;
     const request = JSON.parse(pending);
-    if (request.method === 'daemon.shutdown') process.exit(0);
+    if (request.method === 'daemon.shutdown') {
+      appendFileSync(join(root, 'daemon.log'), JSON.stringify({ time: Date.now(), module: 'daemon', msg: 'bye', pid: process.pid }) + '\\n');
+      process.exit(0);
+    }
   });
 });
 
@@ -49,8 +54,9 @@ server.listen(join(root, 'daemon.sock'), () => {
 	const pin = { stateRoot, runtime: process.execPath, entry };
 	await assert.rejects(drainLegacyDaemonForCutover({ ...pin, entry: join(stateRoot, 'foreign.mjs') }, async () => {}), /pinned entry/);
 	assert.equal(child.exitCode, null);
-	const observed = await drainLegacyDaemonForCutover(pin, async () => {});
-	assert.equal(observed?.pid, child.pid);
+	const observed = await observeLegacyDrain(pin, async () => {}, { log });
+	assert.equal(observed?.exit.pid, child.pid);
+	assert.equal(observed?.drain, 'graceful');
 	assert.deepEqual(await exited, [0, null]);
 	assert.equal(existsSync(join(stateRoot, 'daemon.pid')), false);
 	assert.equal(existsSync(join(stateRoot, 'daemon.sock')), false);

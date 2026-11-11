@@ -148,17 +148,23 @@ export async function inspectPinnedLaunchJob(job: DarwinLaunchJob): Promise<Veri
 }
 
 /** A legacy predecessor must be stopped by its owner before managed cutover. */
-export async function requireQuiescentInstallation(installation: ManagedInstallation): Promise<void> {
+export async function requireQuiescentInstallation(installation: ManagedInstallation,
+	guard?: { readonly path: string; assertOwned(): void },
+): Promise<void> {
 	const paths = installationPaths(installation.stateRoot);
-	for (const path of [paths.daemonPid, paths.daemonSocket, paths.runGuard, paths.updateLock]) {
+	if (guard !== undefined && guard.path !== paths.runGuard) failure('run-file guard belongs to another installation');
+	guard?.assertOwned();
+	for (const path of [paths.daemonPid, paths.daemonSocket, paths.updateLock]) {
 		if (await exists(path)) failure(`installation is not quiescent: ${path}`);
 	}
+	if (guard === undefined && await exists(paths.runGuard)) failure(`installation is not quiescent: ${paths.runGuard}`);
 	const { stdout } = await exec('/bin/ps', ['-axww', '-o', 'command='], { encoding: 'utf8', timeout: 5000, maxBuffer: 1024 * 1024 });
 	const entries = [installation.releaseRoot, process.env['INSRC_DAEMON_ROOT'] ?? join(installation.stateRoot, 'daemon')]
 		.map(root => join(root, 'out/daemon/index.js'));
 	if (stdout.split('\n').some(line => line.trim().split(/\s+/)[0]?.includes('node') && entries.some(entry => line.includes(entry)))) {
 		failure('a process still runs the installed legacy daemon entry');
 	}
+	guard?.assertOwned();
 }
 
 function xml(value: string): string {

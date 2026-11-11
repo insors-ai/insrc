@@ -15,6 +15,7 @@ import { DaemonSupervisor, SupervisorPublicShutdown } from '../daemon/supervisor
 import { SupervisorRunFiles } from '../daemon/supervisor-run-files.js';
 import { listenForSupervisorControllers } from '../daemon/supervisor-socket.js';
 import { qualifiedPairFromReservation } from '../daemon/release-compatibility.js';
+import { adoptLegacyRunGuard } from '../daemon/legacy-run-guard.js';
 
 async function verifyReady(socketPath: string, pid: number, uid: number): Promise<void> {
 	let resolvePeer!: (peer: DarwinPeerCredentials) => void;
@@ -85,6 +86,7 @@ async function main(): Promise<void> {
 			}
 			return { ...daemon, env };
 		},
+		adoptRunFiles: reservation => adoptLegacyRunGuard(paths.runGuard, reservation, owner),
 		runFiles: new SupervisorRunFiles({ guardPath: paths.runGuard, pidFile: paths.daemonPid, socketFile: paths.daemonSocket },
 			{ ...owner, commandLine: owner.executable }, owner.uid),
 		verifyReady: (_generation, pid) => verifyReady(paths.daemonSocket, pid, owner.uid),

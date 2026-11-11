@@ -1,6 +1,6 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 
-import { lstatSync, mkdirSync, readFileSync, rmdirSync, unlinkSync, writeFileSync } from 'node:fs';
+import { closeSync, constants, fsyncSync, lstatSync, mkdirSync, openSync, readFileSync, renameSync, rmdirSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { processIdentityState, requireProcessIdentity } from './daemon-process.js';
@@ -38,6 +38,13 @@ export interface RunFileGuard {
 	release(): void;
 }
 
+export interface RunFileGuardPin {
+	readonly directory: Pick<RunFileIdentity, 'dev' | 'ino'>;
+	readonly record: RunFileIdentity;
+	readonly owner: ProcessIdentity;
+	readonly nonce: string;
+}
+
 function ownerRecord(path: string): { owner: ProcessIdentity; nonce: string } {
 	const value: unknown = JSON.parse(readFileSync(join(path, 'owner.json'), 'utf8'));
 	if (typeof value !== 'object' || value === null) throw new Error('invalid guard owner record');
@@ -46,6 +53,86 @@ function ownerRecord(path: string): { owner: ProcessIdentity; nonce: string } {
 		|| !Number.isSafeInteger(owner.pid) || (owner.pid ?? 0) <= 0
 		|| typeof owner.startedAt !== 'string' || owner.startedAt === '' || typeof owner.commandLine !== 'string' || owner.commandLine === '') throw new Error('invalid guard owner identity');
 	return { owner: owner as ProcessIdentity, nonce: record['nonce'] };
+}
+
+/** Pin the existing guard without removing or replacing its directory. */
+export function readRunFileGuardPin(path: string): RunFileGuardPin | undefined {
+	const directory = runFileIdentity(path);
+	if (directory === undefined) return undefined;
+	const recordPath = join(path, 'owner.json');
+	const record = runFileIdentity(recordPath);
+	const uid = process.getuid?.();
+	const dir = lstatSync(path);
+	const file = lstatSync(recordPath);
+	if (record === undefined || !dir.isDirectory() || !file.isFile() || dir.uid !== uid || file.uid !== uid
+		|| (dir.mode & 0o077) !== 0 || (file.mode & 0o077) !== 0 || file.nlink !== 1 || file.size > 8192) {
+		throw new Error('run-file guard is not an owned private publication');
+	}
+	const value = ownerRecord(path);
+	const after = runFileIdentity(recordPath);
+	const afterDirectory = runFileIdentity(path);
+	if (after === undefined || !sameRunFile(after, record) || afterDirectory?.dev !== directory.dev
+		|| afterDirectory.ino !== directory.ino) throw new Error('run-file guard changed while being pinned');
+	return { directory: { dev: directory.dev, ino: directory.ino }, record, ...value };
+}
+
+function sameOwner(a: ProcessIdentity, b: ProcessIdentity): boolean {
+	return a.pid === b.pid && a.startedAt === b.startedAt && a.commandLine === b.commandLine;
+}
+
+/** Rotate the record atomically. The legacy guard pathname is continuously occupied. */
+export function transferRunFileGuard(path: string, from: RunFileGuardPin, owner: ProcessIdentity, nonce: string): RunFileGuard {
+	if (!/^[a-f0-9-]{36}$/.test(nonce)) throw new Error('invalid run-file guard transfer nonce');
+	const pin = (): RunFileGuardPin => {
+		const value = readRunFileGuardPin(path);
+		if (value === undefined || value.directory.dev !== from.directory.dev || value.directory.ino !== from.directory.ino) {
+			throw new Error('run-file guard directory was replaced');
+		}
+		return value;
+	};
+	const syncDirectory = () => {
+		const fd = openSync(path, constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW);
+		try { fsyncSync(fd); } finally { closeSync(fd); }
+	};
+	const pathToRecord = join(path, 'owner.json');
+	const current = pin();
+	if (current.nonce !== nonce || !sameOwner(current.owner, owner)) {
+		if (current.nonce !== from.nonce || !sameOwner(current.owner, from.owner) || !sameRunFile(current.record, from.record)) {
+			throw new Error('run-file guard transfer source does not match its pin');
+		}
+		const temporary = join(path, `transfer-${nonce}`);
+		// A matching orphan can be resumed after the file was flushed but before the rename.
+		const expected = JSON.stringify({ owner, nonce });
+		const write = () => {
+			const fd = openSync(temporary, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW, 0o600);
+			try { writeFileSync(fd, expected); fsyncSync(fd); } finally { closeSync(fd); }
+		};
+		try { write(); } catch (error) {
+			if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
+			const staged = lstatSync(temporary);
+			if (!staged.isFile() || staged.uid !== process.getuid?.() || staged.nlink !== 1 || (staged.mode & 0o077) !== 0
+				|| staged.size > Buffer.byteLength(expected)) throw error;
+			const found = readFileSync(temporary, 'utf8');
+			if (found !== expected) {
+				if (!expected.startsWith(found) || !sameRunFile(pin().record, current.record)) throw error;
+				unlinkSync(temporary);
+				write();
+			}
+		}
+		if (!sameRunFile(pin().record, current.record)) throw new Error('run-file guard changed before transfer');
+		renameSync(temporary, pathToRecord);
+	}
+	syncDirectory();
+	const adopted = pin();
+	const assertOwned = () => {
+		const latest = pin();
+		if (latest.nonce !== nonce || !sameOwner(latest.owner, owner) || !sameRunFile(latest.record, adopted.record)) {
+			throw new Error('transferred run-file guard ownership changed');
+		}
+	};
+	assertOwned();
+	return { path, owner, nonce, assertOwned,
+		release() { assertOwned(); unlinkSync(pathToRecord); rmdirSync(path); } };
 }
 
 /** A conflicting or orphaned guard is never automatically reclaimed. */

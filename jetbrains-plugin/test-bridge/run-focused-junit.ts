@@ -22,7 +22,8 @@ gradle.beforeProject { project ->
 }
 `);
 		const result = spawnSync('./gradlew', [
-			'-I', init, '--no-configuration-cache', 'cleanTest', 'test', '--offline',
+			'-I', init, '--no-configuration-cache', '--no-build-cache', '--offline',
+			`-PinsrcFixtureReports=${join(scratch, 'reports')}`, 'test', '--rerun',
 			...classes.flatMap(name => ['--tests', name]), '--console=plain',
 		], { cwd: jetbrainsPluginRoot, env, encoding: 'utf8', timeout: 290_000 });
 		assert.equal(result.status, 0, `Gradle focused tests failed:\n${result.error ?? ''}\n${result.stdout}\n${result.stderr}`);

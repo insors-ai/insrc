@@ -102,22 +102,32 @@ test('Explicit fresh activation start intent and owned partial publication', pla
 });
 
 test('Fresh controller activation reconciles partial selector and bootstrap', platform, async t => {
-	for (const startChild of [false, true]) {
+	for (const interruption of ['descriptor', 'manifest-link', 'bootstrap']) {
+		const startChild = interruption === 'bootstrap';
 		const { activation, gate, installation, scratch } = await fixture(t, startChild);
 		const helper = join(scratch, 'interrupt.mjs');
 		await writeFile(helper, `
 import { InstallationMutationGate } from ${reference('../../shared/installation-mutation-gate.ts')};
 import { readDarwinIncarnation } from ${reference('../../shared/darwin-lifecycle.ts')};
-import { ensureManagedJob, installFreshSelectorMember } from ${reference('../../shared/managed-daemon-installation.ts')};
+import { link, writeFile } from 'node:fs/promises';
+import { ensureManagedJob, installFreshSelectorMember, installationPaths } from ${reference('../../shared/managed-daemon-installation.ts')};
 const activation = ${JSON.stringify(activation)};
+const interruption = ${JSON.stringify(interruption)};
 const installation = activation.installation;
 const gate = new InstallationMutationGate(installation.stateRoot);
 const active = await gate.reserve({ kind: 'start', owner: await readDarwinIncarnation(process.pid), activation });
 const admit = async () => { await gate.admit(active); };
 for (const member of ['descriptor', 'manifest']) {
   await gate.recordIntent(active, 'activation-' + member, installation.releaseId);
+  if (interruption === 'manifest-link' && member === 'manifest') {
+    const manifest = installationPaths(installation.stateRoot).manifest;
+    const staged = manifest + '.activate-' + active.id;
+    await writeFile(staged, JSON.stringify(installation) + '\\n', { mode: 0o600 });
+    await link(staged, manifest);
+    break;
+  }
   await installFreshSelectorMember(installation, member, active.id, admit);
-  if (!activation.startChild) break;
+  if (interruption === 'descriptor') break;
   await gate.recordReceipt(active, 'activation-' + member, member);
 }
 if (activation.startChild) {

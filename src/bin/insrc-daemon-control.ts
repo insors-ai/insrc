@@ -137,14 +137,20 @@ async function main(command: string): Promise<void> {
 	if (command === 'migrate') return migrate(process.argv.slice(3));
 	if (!['start', 'stop', 'restart', 'update', 'status', 'recover'].includes(command)) return legacyStop(command);
 
+	if (command === 'recover' && process.platform === 'darwin'
+		&& await access(installationPaths(PATHS.insrc).directory).then(() => true, () => false)) {
+		const pending = (await new InstallationMutationGate(PATHS.insrc).read()).active;
+		if (pending?.kind === 'start' && pending.activation !== undefined) {
+			await activateFreshManagedDaemon(pending.activation);
+			return;
+		}
+	}
 	const installation = await readInstallationSelector(PATHS.insrc);
 	if (installation === undefined) {
 		if (process.platform === 'darwin' && await access(installationPaths(PATHS.insrc).directory).then(() => true, () => false)) {
 			const active = (await new InstallationMutationGate(PATHS.insrc).read()).active;
 			if (active?.kind === 'start' && active.activation !== undefined) {
-				if (command !== 'recover') throw new Error('fresh daemon activation is in progress; retry the installer to recover');
-				await activateFreshManagedDaemon(active.activation);
-				return;
+				throw new Error('fresh daemon activation is in progress; retry the installer to recover');
 			}
 		}
 		process.exitCode = NOT_MANAGED;
@@ -161,10 +167,6 @@ async function main(command: string): Promise<void> {
 		return;
 	}
 	if (command === 'recover') {
-		if (active?.kind === 'start' && active.activation !== undefined) {
-			await activateFreshManagedDaemon(active.activation);
-			return;
-		}
 		if (active?.kind === 'update') {
 			const outcome = await recoverInstalledManagedUpdate(gate, active.id, await readDarwinIncarnation(process.pid));
 			process.stdout.write(`${outcome.decision}: ${outcome.detail}\n`);

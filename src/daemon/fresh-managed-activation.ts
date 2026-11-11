@@ -11,7 +11,8 @@ import { InstallationMutationGate } from '../shared/installation-mutation-gate.j
 import type { FreshActivation, MutationReservation } from '../shared/installation-mutation-gate.js';
 import {
 	ensureManagedJob, inspectManagedJob, installFreshSelectorMember, readInstallationSelector,
-	removeFreshSelectorMember, removeManagedJob, requireQuiescentInstallation, verifyManagedReleaseRuntime, verifyManagedSelectorFiles,
+	removeFreshSelectorMember, removeManagedJob, requireQuiescentInstallation, verifyFreshSelectorOwnership,
+	verifyManagedReleaseRuntime, verifyManagedSelectorFiles,
 } from '../shared/managed-daemon-installation.js';
 import type { ManagedInstallation } from '../shared/managed-daemon-installation.js';
 import { verifyStagedReleasePin } from './managed-release-staging.js';
@@ -80,8 +81,7 @@ export async function activateFreshManagedDaemon(activation: FreshActivation): P
 		await verifyStagedReleasePin({ root: installation.releaseRoot, runtime: installation.runtime,
 			commit: installation.releaseId, fingerprint: activation.fingerprint });
 		await gate.claimRecovery(previous.id, owner, async () => {
-			const selected = await readInstallationSelector(installation.stateRoot);
-			if (selected !== undefined && !isDeepStrictEqual(selected, installation)) return false;
+			await verifyFreshSelectorOwnership(installation, previous.id);
 			const job = await inspectManagedJob(installation);
 			return job === undefined || previous.entries.some(entry => entry.step === 'activation-job');
 		});

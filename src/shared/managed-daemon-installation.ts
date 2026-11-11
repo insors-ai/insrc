@@ -226,6 +226,34 @@ export async function publishManagedSelector(installation: ManagedInstallation, 
 }
 
 /** Install or reconcile one fresh selector member without overwriting a conflicting file. */
+function freshSelectorContents(installation: ManagedInstallation, member: 'descriptor' | 'manifest'): string {
+	return member === 'descriptor' ? descriptor(supervisorJob(installation), installation) : JSON.stringify(installation) + '\n';
+}
+
+/** Read-only ownership check that admits the exact two-link publication left by a crash. */
+export async function verifyFreshSelectorOwnership(installation: ManagedInstallation, activationId: string): Promise<void> {
+	if (!installation.enabled || !/^[a-f0-9-]{36}$/.test(activationId)) failure('invalid fresh activation pin');
+	const paths = installationPaths(installation.stateRoot);
+	await privateDirectory(paths.directory);
+	for (const member of ['descriptor', 'manifest'] as const) {
+		const path = paths[member];
+		if (!await exists(path)) continue;
+		const info = await lstat(path);
+		if (!info.isFile() || info.uid !== uid() || (info.mode & 0o077) !== 0 || info.size > 8192 || info.nlink > 2) {
+			failure('fresh activation file is not an owned private file');
+		}
+		if (info.nlink === 2) {
+			const staged = await lstat(`${path}.activate-${activationId}`);
+			if (!staged.isFile() || staged.dev !== info.dev || staged.ino !== info.ino) {
+				failure('fresh activation hard link belongs to another publication');
+			}
+		}
+		if (await readFile(path, 'utf8') !== freshSelectorContents(installation, member)) {
+			failure('fresh activation publication belongs to a different installation');
+		}
+	}
+}
+
 export async function installFreshSelectorMember(
 	installation: ManagedInstallation, member: 'descriptor' | 'manifest', activationId: string, revalidate: () => Promise<void>,
 ): Promise<void> {
@@ -234,8 +262,7 @@ export async function installFreshSelectorMember(
 	await privateDirectory(paths.directory);
 	const path = paths[member];
 	const temporary = `${path}.activate-${activationId}`;
-	const expected = member === 'descriptor'
-		? descriptor(supervisorJob(installation), installation) : JSON.stringify(installation) + '\n';
+	const expected = freshSelectorContents(installation, member);
 	const inspect = async (target: string) => {
 		if (!await exists(target)) return undefined;
 		const info = await lstat(target);
@@ -287,8 +314,7 @@ export async function removeFreshSelectorMember(
 	const before = runFileIdentity(path);
 	if (before === undefined) return;
 	await privateFile(path);
-	const expected = member === 'descriptor'
-		? descriptor(supervisorJob(installation), installation) : JSON.stringify(installation) + '\n';
+	const expected = freshSelectorContents(installation, member);
 	if (await readFile(path, 'utf8') !== expected) failure('fresh activation cleanup refuses a foreign publication');
 	await revalidate();
 	const current = runFileIdentity(path);

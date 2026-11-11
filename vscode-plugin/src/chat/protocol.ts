@@ -261,6 +261,8 @@ export type HostToWebview =
       readonly key: string;
       readonly rowIndex?: number | undefined;
       readonly attachments?: readonly AttachmentRef[] | undefined;
+      /** Story e4ce70ad1ae43d31/s1 (additive): the row's ISO `at`, so the live echo renders the same who-row time as its replay. */
+      readonly at?: string | undefined;
     }
   // Story E2026101259da3204:S001: the attachments waiting to go with a session's next message.
   // The host owns this list, so a rebuilt webview loses nothing. `error` is one plain sentence

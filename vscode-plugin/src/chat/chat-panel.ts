@@ -2674,7 +2674,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // S001 ac1/lc1: the live user-row echo — reconciled to ONE row via its stable key.
       `else if(m.type==='turn-running'){if(m.sessionId===cur){pendingTurn=m.pendingTurnId||null;if(!activeProgress){setRunning(true);setProgress('working\\u2026',pendingTurn?null:undefined);}}}` +
       `else if(m.type==='turn-progress'){if(m.progress&&m.progress.turnId===m.target.turnId){pendingTurn=null;projectProgress(m.progress);}else if(!m.progress&&((activeProgress&&activeProgress.turnId===m.target.turnId)||pendingTurn===m.target.turnId)){setRunning(false);setIdle();}}` +
-      `else if(m.type==='user-row'){pager.track(m.rowIndex,function(){reg.appendKeyed(reg.toViewModel({role:'user',text:m.text,attachments:m.attachments}),m.key);});}` +
+      `else if(m.type==='user-row'){pager.track(m.rowIndex,function(){reg.appendKeyed(reg.toViewModel({role:'user',text:m.text,attachments:m.attachments,at:m.at}),m.key);});}` +
       (attachOn ? `else if(m.type==='attachments-pending'){renderPending(m);}` : '') +
       (queueOn ? `else if(m.type==='outbox'){renderOutbox(m.view);}` : '') +
       // S005: session-restored CLEARS the terminal before replaying (so switching chats
@@ -2895,6 +2895,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // suppressEcho so the internal "Approved — run exactly this now: …" prompt is NOT echoed as a
       // user bubble (only the resolved permission-outcome chip is shown). A normal submit still echoes.
       if (opts?.suppressEcho !== true && session === s) {
+        // Story e4ce70ad1ae43d31/s1: the live echo carries the persisted row's `at` so its
+        // who-row time matches the replayed row.
+        const at = s.transcript[s.transcript.length - 1]?.at;
         post({
           type: 'user-row',
           target: { sessionId: s.id, viewGeneration },
@@ -2902,6 +2905,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           key: `r${s.transcript.length - 1}`,
           rowIndex: s.transcript.length - 1,
           ...(files.length > 0 ? { attachments: [...files] } : {}),
+          ...(at !== undefined ? { at } : {}),
         });
       }
       // S005: name the chat from its FIRST user prompt (clipped) so the history dropdown

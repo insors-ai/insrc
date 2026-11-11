@@ -20,9 +20,8 @@ import { mkdirSync, existsSync, rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { runBootSteeringRefresh } from './steering-inject.js';
 import { PATHS } from '../shared/paths.js';
-import type { ProgressKind } from '../shared/task-progress.js';
 import { openProgressRuntime } from './task-progress/runtime.js';
-import type { ProgressRuntime } from './task-progress/rpc.js';
+import { registerExecutorProducers, validateExecutorDetails } from './task-progress/executor-measurements.js';
 import { setLogMode, getLogger } from '../shared/logger.js';
 
 setLogMode('daemon');
@@ -490,12 +489,13 @@ async function main(): Promise<void> {
 	// Built at boot without daemon threads; with them, only when the first request that must stay
 	// on this thread arrives (s4), so a daemon that never sees one never builds the handler tables here.
 	let understandingRoutes: HandlerRuntime['understandingRoutes'] | undefined;
-	let progressRuntime: Promise<ProgressRuntime<{ readonly kind: ProgressKind }>> | undefined;
-	const getProgressRuntime = (): Promise<ProgressRuntime<{ readonly kind: ProgressKind }>> => {
-		return progressRuntime ??= openProgressRuntime(PATHS.insrc,
-			workspaceRepoIds,
-			(_kind, details): details is { readonly kind: ProgressKind } => false,
-		).catch(error => { progressRuntime = undefined; throw error; });
+	const openExecutorProgress = async () => {
+		const runtime = await openProgressRuntime(PATHS.insrc, workspaceRepoIds, validateExecutorDetails);
+		return { ...runtime, producers: registerExecutorProducers(runtime.coordinator) };
+	};
+	let progressRuntime: ReturnType<typeof openExecutorProgress> | undefined;
+	const getProgressRuntime = () => {
+		return progressRuntime ??= openExecutorProgress().catch(error => { progressRuntime = undefined; throw error; });
 	};
 	const buildRuntime = (): ForwardRequest => {
 		const runtime = buildHandlerRuntime({

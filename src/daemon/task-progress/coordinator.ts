@@ -59,7 +59,7 @@ interface Runtime<D extends Details> {
   stopped: boolean;
 }
 
-interface ProducerPort<D extends Details> {
+export interface ProducerPort<D extends Details> {
   register(authorization: ProducerAuthorization, producerKey: string, delegate: TaskProgressDelegate<D>): Promise<Admission>;
   signalMeasurement(owner: OwnerHandle, sequence: number): Promise<void>;
   recordLifecycle(owner: OwnerHandle, evidence: OwnerEvidence): Promise<'recorded' | 'replay' | 'rejected'>;

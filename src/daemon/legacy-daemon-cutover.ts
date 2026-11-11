@@ -5,17 +5,19 @@ import { lstatSync, readFileSync } from 'node:fs';
 import { createConnection } from 'node:net';
 import type { Socket } from 'node:net';
 import { realpath } from 'node:fs/promises';
-import { matchesDarwinPeer, observeDarwinExit, readDarwinIncarnation, readDarwinPeerCredentials } from '../shared/darwin-lifecycle.js';
+import { matchesDarwinPeer, observeDarwinExit, readDarwinIncarnation, readDarwinLaunchContext, readDarwinPeerCredentials } from '../shared/darwin-lifecycle.js';
 import type { DarwinExitObservation, DarwinIncarnation } from '../shared/darwin-lifecycle.js';
-import { readProcessIdentity } from '../shared/daemon-process.js';
 import { acquireRunFileGuard, removeOwnedRunFile, runFileIdentity, sameRunFile } from '../shared/daemon-run-files.js';
 import type { RunFileIdentity } from '../shared/daemon-run-files.js';
 import { installationPaths } from '../shared/managed-daemon-installation.js';
+import type { LegacyLaunchPin } from '../shared/installation-mutation-gate.js';
+import { matchesInstalledDaemonArguments } from './legacy-launch-job.js';
 
 export interface LegacyDaemonPin {
 	readonly stateRoot: string;
 	readonly runtime: string;
 	readonly entry: string;
+	readonly launch?: LegacyLaunchPin | undefined;
 }
 
 function requireSameFile(path: string, expected: RunFileIdentity, mayBeAbsent = false): void {
@@ -45,8 +47,12 @@ export async function drainLegacyDaemonForCutover(
 		try {
 			const pidIdentity = runFileIdentity(paths.daemonPid);
 			const socketIdentity = runFileIdentity(paths.daemonSocket);
-			if (pidIdentity === undefined && socketIdentity === undefined) return undefined;
+			if (pidIdentity === undefined && socketIdentity === undefined && (pin.launch === undefined || pin.launch.kind === 'stopped')) return undefined;
 			if (pidIdentity === undefined || socketIdentity === undefined) throw new Error('legacy daemon publication is incomplete');
+			if (pin.launch !== undefined && (pin.launch.kind === 'stopped'
+				|| !sameRunFile(pin.launch.pidFile, pidIdentity) || !sameRunFile(pin.launch.socketFile, socketIdentity))) {
+				throw new Error('legacy daemon publication changed after admission');
+			}
 			pidFile = pidIdentity;
 			socketFile = socketIdentity;
 			const pidStat = lstatSync(paths.daemonPid);
@@ -57,9 +63,10 @@ export async function drainLegacyDaemonForCutover(
 			const pidText = readFileSync(paths.daemonPid, 'utf8').trim();
 			if (!/^\d+$/.test(pidText)) throw new Error('legacy daemon pid file is invalid');
 			target = await readDarwinIncarnation(Number(pidText));
-			const command = readProcessIdentity(target.pid)?.commandLine;
+			const { argv } = await readDarwinLaunchContext(target.pid);
 			if (target.uid !== uid || await realpath(target.executable) !== await realpath(pin.runtime)
-				|| (command !== `${pin.runtime} ${pin.entry}` && command !== `node ${pin.entry}`)) {
+				|| !matchesInstalledDaemonArguments(argv, pin.runtime, pin.entry)
+				|| (pin.launch !== undefined && !matchesDarwinPeer(target, target, pin.launch.process))) {
 				throw new Error('legacy daemon process does not match the pinned entry');
 			}
 			observer = await observeDarwinExit(target, timeoutMs);

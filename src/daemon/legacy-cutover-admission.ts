@@ -271,10 +271,12 @@ export async function fenceLegacyLauncher(gate: Gate, update: Extract<MutationRe
 }
 
 /** Restore the old canonical directory without following or replacing a foreign path. */
-export async function restoreLegacyLauncher(gate: Gate, update: Extract<MutationReservation, { kind: 'update' }>, helper?: string): Promise<void> {
-	const fence = fenceIntent(await gate.admit(update));
+export async function restoreLegacyLauncher(gate: Gate, update: Extract<MutationReservation, { kind: 'update' }>, helper?: string,
+	purpose: 'lifecycle' | 'reconcile' = 'lifecycle',
+): Promise<void> {
+	const fence = fenceIntent(await gate.admit(update, purpose));
 	if (fence === undefined || await layout(fence) === 'original') return;
-	await gate.admit(update);
+	await gate.admit(update, purpose);
 	await swapDarwinDirectories(fence.canonical, fence.displaced, {
 		device: fence.legacy.dev, leftInode: fence.dispatcher.ino, rightInode: fence.legacy.ino,
 	}, helper);

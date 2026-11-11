@@ -8,11 +8,10 @@ import { accepted, ManagedDaemonControl, openManagedSupervisorLink } from '../cl
 import { readDarwinIncarnation } from '../shared/darwin-lifecycle.js';
 import { SupervisorLifecycleError } from '../shared/daemon-supervisor-protocol.js';
 import { InstallationMutationGate } from '../shared/installation-mutation-gate.js';
-import { runFileIdentity } from '../shared/daemon-run-files.js';
 import { rpc } from '../shared/ipc-client.js';
 import { installationPaths, readInstallationSelector, readManagedUpdateInputs, stageManagedInstallation, verifyManagedReleaseRuntime } from '../shared/managed-daemon-installation.js';
 import { completeLegacyMigration, recoverInstalledManagedUpdate } from '../daemon/managed-update-recovery.js';
-import { inspectLegacyJob, pinLegacyLaunchJob, verifyLegacyService } from '../daemon/legacy-launch-job.js';
+import { discoverLegacyLaunch } from '../daemon/legacy-cutover-admission.js';
 import { readQualifiedReleasePairs, releaseDeclaration } from '../daemon/managed-update-launch.js';
 import { requireQualifiedReleasePair } from '../daemon/release-compatibility.js';
 import { readInstalledCommit } from '../daemon/installed-commit.js';
@@ -75,20 +74,14 @@ async function migrate([release, releaseId, runtime, descriptor]: readonly strin
 	if (declaredPrior === undefined) throw new Error('legacy release has no explicit qualification for the candidate');
 	const compatibility = requireQualifiedReleasePair(declaredPrior, declaredCandidate, qualified);
 	await verifyManagedReleaseRuntime(candidate);
-	const legacy = await pinLegacyLaunchJob(prior, baseline, descriptor);
-	await access(legacy.entry);
-	const job = await inspectLegacyJob(legacy);
-	if (job === undefined) throw new Error('legacy LaunchAgent must be registered before migration');
-	const paths = installationPaths(root);
-	const wasRunning = runFileIdentity(paths.daemonPid) !== undefined || runFileIdentity(paths.daemonSocket) !== undefined;
-	if (!wasRunning && legacy.runAtLoad) throw new Error('saved LaunchAgent would start during rollback of a stopped installation');
-	await verifyLegacyService(legacy, prior, wasRunning);
+	const route = await discoverLegacyLaunch(prior, baseline);
+	if (route.legacy?.job.descriptor !== await realpath(descriptor)) throw new Error('legacy LaunchAgent does not match the requested descriptor');
 	const gate = new InstallationMutationGate(root);
 	const reservation = await gate.reserve({
 		kind: 'update', owner: await readDarwinIncarnation(process.pid),
 		predecessor: {
 			priorRelease: prior.releaseId, candidateRelease: candidate.releaseId, priorCommit: readInstalledCommit(prior.releaseRoot),
-			wasRunning, generation: null, pins: { prior, candidate }, legacy,
+			...route, generation: null, pins: { prior, candidate },
 		},
 	});
 	if (reservation.kind !== 'update') throw new Error('legacy migration did not reserve an update');

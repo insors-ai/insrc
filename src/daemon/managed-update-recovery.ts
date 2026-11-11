@@ -1,5 +1,6 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 
+import { isDeepStrictEqual } from 'node:util';
 import { accepted } from '../cli/services/managed-daemon-control.js';
 import type { ManagedSupervisorLink } from '../cli/services/managed-daemon-control.js';
 import { matchesDarwinPeer, readDarwinIncarnation } from '../shared/darwin-lifecycle.js';
@@ -14,6 +15,7 @@ import { connectManagedSupervisor, recordManagedUpdatePins, stageManagedCandidat
 import type { HandoffEffects, HandoffReceipt, ManagedUpdatePins } from './managed-update-handoff.js';
 import { recoverManagedTransaction, settleManagedUpdate } from './managed-update-transaction.js';
 import { drainLegacyDaemonForCutover } from './legacy-daemon-cutover.js';
+import { discoverLegacyLaunch, fenceLegacyLauncher, restoreLegacyLauncher } from './legacy-cutover-admission.js';
 import { inspectLegacyJob, removeLegacyJob, restoreLegacyService, verifyLegacyService } from './legacy-launch-job.js';
 
 type Update = Extract<MutationReservation, { kind: 'update' }>;
@@ -137,6 +139,9 @@ class Rollback {
 		const baseline = legacy?.baseline ?? prior;
 		await this.operations.verifySelector(baseline, candidate);
 		if (legacy !== undefined && entry(initial, 'predecessor-stop') === undefined) {
+			if (entry(initial, 'legacy-launcher-fence') !== undefined) {
+				await restoreLegacyLauncher(this.gate, initial, undefined, this.purpose);
+			}
 			const pending = initial.entries.at(-1);
 			if (pending !== undefined && pending.receipt === undefined) {
 				await this.receipt(pending.step, 'preflight interrupted before legacy drain');
@@ -185,6 +190,9 @@ class Rollback {
 
 		if (legacy !== undefined) {
 			await this.journal('rollback-legacy-service', prior.releaseId, async () => {
+				if (entry(initial, 'legacy-launcher-fence') !== undefined) {
+					await restoreLegacyLauncher(this.gate, initial, undefined, this.purpose);
+				}
 				await this.legacyOperations.restore(legacy, prior, initial.predecessor.wasRunning, this.revalidate);
 				return prior.releaseId;
 			});
@@ -284,9 +292,17 @@ export async function completeLegacyMigration(
 		async stage() {
 			await operations.verifySelector(legacy.baseline);
 			await legacyOperations.verify(legacy, prior, wasRunning);
+			if (update.predecessor.launch !== undefined) {
+				const observed = await discoverLegacyLaunch(prior, legacy.baseline);
+				if (!isDeepStrictEqual(observed, { launch: update.predecessor.launch, legacy, wasRunning })) {
+					throw new Error('legacy launch route changed after update reservation');
+				}
+				await fenceLegacyLauncher(gate, update);
+			}
 			await recordManagedUpdatePins(gate, update, pins);
 			await gate.recordIntent(update, 'predecessor-stop', legacy.entry);
-			const target = await legacyOperations.drain({ stateRoot: prior.stateRoot, runtime: prior.runtime, entry: legacy.entry }, authorize);
+			const target = await legacyOperations.drain({ stateRoot: prior.stateRoot, runtime: prior.runtime, entry: legacy.entry,
+				...(update.predecessor.launch === undefined ? {} : { launch: update.predecessor.launch }) }, authorize);
 			if (wasRunning !== (target !== undefined)) throw new Error('legacy daemon state changed before its drain');
 			await operations.quiescent(prior);
 			await gate.recordReceipt(update, 'predecessor-stop', JSON.stringify({

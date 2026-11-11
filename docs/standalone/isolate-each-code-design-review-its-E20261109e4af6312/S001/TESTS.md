@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 21 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 24 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -236,3 +236,32 @@ Run at 2026-11-11T16:04:20.516Z on commit `aa9aa072f`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/review/design-review/__tests__/worker-admission.test.ts` | 0 | 3 | 7.9 s |  |
+
+## t11
+
+Run at 2026-11-11T16:37:26.694Z on commit `58667fd89`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/daemon/threads/__tests__/review-worker-recovery.test.ts: disposable daemon crash reconstructs unresolved guards and leaves unrelated reviews usable**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | disposable daemon crash reconstructs unresolved guards and leaves unrelated reviews usable | `src/daemon/threads/__tests__/review-worker-recovery.test.ts` |
+
+**integration: src/daemon/threads/__tests__/review-worker-clearance.test.ts: existing local broker approval binds exact guards and requires a separate resume**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | existing local broker approval binds exact guards and requires a separate resume | `src/daemon/threads/__tests__/review-worker-clearance.test.ts` |
+
+**integration: src/daemon/threads/__tests__/review-worker-clearance.test.ts: stale partial repeated or lost-response clearance preserves remaining fences and audit receipts**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | stale partial repeated or lost-response clearance preserves remaining fences and audit receipts | `src/daemon/threads/__tests__/review-worker-clearance.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/review-worker-clearance.test.ts` | 0 | 6 | 9.7 s |  |
+| `src/daemon/threads/__tests__/review-worker-recovery.test.ts` | 0 | 2 | 4.5 s |  |

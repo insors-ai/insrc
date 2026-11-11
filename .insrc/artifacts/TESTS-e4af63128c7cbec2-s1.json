@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 20,
-        "contentHash": "5fe3ff7bcacd584f48e8c954ab361ab3582e13554096189355f13d5966de2ef6",
-        "at": "2026-11-11T16:04:20.695Z",
+        "number": 22,
+        "contentHash": "cc85b275d1f34eec1725e3d512685d57e9233dac3023e9fed023834b7bd3dc69",
+        "at": "2026-11-11T16:37:26.868Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "e4af63128c7cbec2",
     "storyId": "s1",
     "createdAt": "2026-11-09T07:52:13.312Z",
-    "updatedAt": "2026-11-11T16:04:20.516Z",
+    "updatedAt": "2026-11-11T16:37:26.694Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-09T04:29:20.389Z",
     "epicSlug": "isolate-each-code-design-review-its",
-    "revision": 20
+    "revision": 22
   },
   "body": {
     "tasks": [
@@ -644,6 +644,105 @@
               },
               {
                 "title": "cold unverified design recovery retains its original submission and qualifies before provider dispatch",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "58667fd89",
+        "ranAt": "2026-11-11T16:37:26.694Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/threads/__tests__/review-worker-recovery.test.ts: disposable daemon crash reconstructs unresolved guards and leaves unrelated reviews usable",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-recovery.test.ts",
+                "title": "disposable daemon crash reconstructs unresolved guards and leaves unrelated reviews usable",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/threads/__tests__/review-worker-clearance.test.ts: existing local broker approval binds exact guards and requires a separate resume",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-clearance.test.ts",
+                "title": "existing local broker approval binds exact guards and requires a separate resume",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/threads/__tests__/review-worker-clearance.test.ts: stale partial repeated or lost-response clearance preserves remaining fences and audit receipts",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-clearance.test.ts",
+                "title": "stale partial repeated or lost-response clearance preserves remaining fences and audit receipts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/review-worker-clearance.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9689,
+            "titles": [
+              {
+                "title": "code",
+                "result": "pass"
+              },
+              {
+                "title": "design",
+                "result": "pass"
+              },
+              {
+                "title": "existing local broker approval binds exact guards and requires a separate resume",
+                "result": "pass"
+              },
+              {
+                "title": "stale partial repeated or lost-response clearance preserves remaining fences and audit receipts",
+                "result": "pass"
+              },
+              {
+                "title": "denial expiry disconnect and changed retained guards cannot grant clearance",
+                "result": "pass"
+              },
+              {
+                "title": "receipt survives a post-application audit failure and replay repairs its audit without inference",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-worker-recovery.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4500,
+            "titles": [
+              {
+                "title": "disposable daemon crash reconstructs unresolved guards and leaves unrelated reviews usable",
+                "result": "pass"
+              },
+              {
+                "title": "legacy active missing guards reconstruct only the requested review fence",
                 "result": "pass"
               }
             ],

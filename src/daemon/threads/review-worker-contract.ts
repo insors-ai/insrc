@@ -13,6 +13,8 @@ export interface ReviewBootstrapInput extends ReviewWorkerIdentity {
  readonly attempt:number;readonly reviewer:'daemon'|'controller';readonly actionId:string;
  /** The family's exact bounded submission, not a prepared source context. */
  readonly submitted:unknown;
+ /** Host-resolved artifact route; never a provider/socket/closure. */
+ readonly epicHash?:string|undefined;
 }
 export interface ReviewWorkerInit extends DaemonWorkerInit {
  readonly role:'review';readonly review:ReviewBootstrapInput;readonly nativePort:MessagePort;

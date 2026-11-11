@@ -26,10 +26,14 @@ import { getToolSettings } from '../tools/config.js';
 import { updateReviewWorkerResource } from './review-worker-resources.js';
 import type { ReviewProcessReservation, ConfirmedReviewLeaseClosure } from '../../shared/review-native.js';
 import { isDeepStrictEqual } from 'node:util';
+import { CodeReviewWorker } from '../../workflow/code-review/task-review/worker-admission.js';
+import type { TaskReviewDeps } from '../../workflow/code-review/task-review/coordinator.js';
+import { updateStoredCodeCheckpoint,loadStoredCheckpoint,checkpointPath } from '../../workflow/code-review/task-review/checkpoint.js';
+import { isCodeAdmission } from '../../workflow/code-review/task-review/contracts.js';
 
 /** A dedicated instance, never the class singleton/session runtime. Source
  * qualification and controller authority adapters are integrated by t9/t10. */
-export async function runReviewWorker(init:ReviewWorkerInit):Promise<void>{
+export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?:TaskReviewDeps|undefined}={}):Promise<void>{
  if(!parentPort||init.role!=='review')throw new Error('Dedicated review worker required');
  assertReviewIdentity(init.review);
  const hub=startDaemonWorker(init),board=new StatusBoardClient(hub);
@@ -40,14 +44,26 @@ export async function runReviewWorker(init:ReviewWorkerInit):Promise<void>{
  const controllerLifetime=new AbortController();
  await withReviewNativeTransport(transport,async()=>{
   const provider=()=>createRoleRouter({cliTimeoutMs:900000}).resolveProviderForRole('review',loadAnalyzeConfig(),init.review.key.project).provider;
-  const coordinator=init.review.key.family==='code'
-   ?new TaskReviewCoordinator({sources:new RegistryReviewSources({repoPath:init.review.key.project,sessionId:`review:${init.review.key.reviewId}`,requestId:0,send:()=>{}}),provider})
-   :new DesignReviewCoordinator();
+  const code=init.review.key.family==='code'?new CodeReviewWorker(init.review,deps.code??{sources:new RegistryReviewSources({repoPath:init.review.key.project,sessionId:`review:${init.review.key.reviewId}`,requestId:0,send:()=>{}}),provider},init.review.epicHash):undefined;
+  const coordinator=code?.coordinator??new DesignReviewCoordinator();
   const identity=(raw:unknown):Record<string,unknown>=>{
    if(!raw||typeof raw!=='object'||!sameReviewWorker(init.review,raw as ReviewWorkerIdentity))throw new Error('Foreign or stale review worker operation');
    return raw as Record<string,unknown>;
   };
   const handlers:RpcHandlers={
+   'review.worker.advance':async raw=>{
+    const p=identity(raw);if(!code||p['attempt']!==init.review.attempt||p['nextAttempt']!==init.review.attempt+1)throw new Error('Invalid review advance');
+    const cp=await loadStoredCheckpoint(checkpointPath(init.review.key.project,init.review.key.reviewId)),last=cp?.attempts.at(-1);
+    if(!last||last.header.attempt!==init.review.attempt||cp!.attempts.some(a=>a.resourceGuard?.openLeases.length)||['pending','running'].includes(last.header.status)||!isCodeAdmission(last)&&last['review-response'].crPublication!=='complete')throw new Error('Previous attempt is active, unpublished or resource-fenced');
+    return{nextAttempt:p['nextAttempt']};
+   },
+   'review.worker.execute':async(raw,context)=>{
+    const p=identity(raw);if(!code)throw new Error('Design execution adapter not installed');
+    if(p['attempt']!==init.review.attempt||!['start','resume'].includes(String(p['operation'])))throw new Error('Invalid review execution');
+    if(!context?.reviewOwnerNonce)throw new Error('Trusted review execution required');
+    code.execute(init.review.reviewer==='controller'?{id:context.reviewOwnerNonce,signal:controllerLifetime.signal}:undefined,p['operation'] as 'start'|'resume');
+    return{accepted:true,...init.review.key,attempt:init.review.attempt};
+   },
    'review.worker.control':async(raw,context)=>{
     const p=identity(raw);
     if(init.review.reviewer!=='controller'||!context?.reviewOwnerNonce||p['attempt']!==init.review.attempt)throw new Error('Trusted reviewing owner required');
@@ -65,13 +81,20 @@ export async function runReviewWorker(init:ReviewWorkerInit):Promise<void>{
     const payload=p['input'];
     return coordinator.exchange({...((payload&&typeof payload==='object')?payload:{}),phase,repo:project,reviewId:id,attempt,...(phase==='assignment'?{}:{actionId:p['actionId'],executionId:p['executionId'],sequence:p['sequence']})},owner);
    },
-   'review.worker.matchAdmission':async(raw:unknown)=>{const p=identity(raw);if(p['attempt']!==init.review.attempt||p['reviewer']!==init.review.reviewer||p['actionId']!==init.review.actionId||!isDeepStrictEqual(p['submitted'],init.review.submitted))throw new Error('Conflicting review admission replay');return persistReviewWorkerAdmission(init.review);},
+   'review.worker.matchAdmission':async(raw:unknown)=>{
+    const p=identity(raw);if(p['attempt']!==init.review.attempt||p['reviewer']!==init.review.reviewer||p['actionId']!==init.review.actionId||!isDeepStrictEqual(p['submitted'],init.review.submitted))throw new Error('Conflicting review admission replay');
+    if(!code)return persistReviewWorkerAdmission(init.review);
+    const {reviewWorkerCheckpoint}=await import('./review-worker-contract.js');
+    const path=reviewWorkerCheckpoint(init.review.key);
+    await updateStoredCodeCheckpoint(path,current=>{const last=current?.attempts.at(-1);if(!last||last.header.attempt!==init.review.attempt||last.header.reviewer!==init.review.reviewer||!isDeepStrictEqual(last.submitted,init.review.submitted))throw new Error('Conflicting saved review admission');return current!;});
+    return{kind:'review-admission-saved',key:init.review.key,incarnation:init.review.incarnation,attempt:init.review.attempt,checkpointPath:path};
+   },
    'review.worker.resource.open':async(raw:unknown)=>{const p=identity(raw);return updateReviewWorkerResource(init.review,'open',p['reservation'] as ReviewProcessReservation);},
    'review.worker.resource.close':async(raw:unknown)=>{const p=identity(raw);return updateReviewWorkerResource(init.review,'close',p['reservation'] as ReviewProcessReservation,p['closure'] as ConfirmedReviewLeaseClosure);},
    'review.worker.describe':async(raw:unknown)=>{identity(raw);return{key:init.review.key,incarnation:init.review.incarnation,threadId,coordinator:coordinator.constructor.name,nativeBound:!!reviewNativeTransport(),storeOwnerDeclared:isLiveStoreOwnerDeclared(),shellTimeoutMs:getToolSettings().shell.defaultTimeoutMs};},
    'review.worker.progress':async(raw:unknown)=>{
     const params=identity(raw),attempt=params['attempt'];if(!Number.isSafeInteger(attempt)||Number(attempt)<1)throw new Error('Invalid review attempt');
-    return coordinator.progress(init.review.key.project,init.review.key.reviewId,Number(attempt));
+    return code?code.progress():coordinator.progress(init.review.key.project,init.review.key.reviewId,Number(attempt));
    },
   };
   if(process.env['INSRC_TEST_HOOKS']==='1')handlers['test.review.native']=async raw=>{

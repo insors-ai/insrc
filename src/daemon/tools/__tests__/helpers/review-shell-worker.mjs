@@ -28,6 +28,12 @@ async function checks(){
  }
  return bridge.withReviewNativeTransport(transport,async()=>{
   const node=script=>[process.execPath,'-e',script];
+  if(workerData.mode==='vibe'){
+   const {openVerifiedVibeSession}=await import(new URL('src/shared/vibe-session.ts',workerData.root));
+   const script=`const {createInterface}=require('node:readline');const model={name:'fixture',alias:'fixture',thinking:'high',thinkingLevels:['high']};createInterface({input:process.stdin}).on('line',line=>{const {id,method}=JSON.parse(line);if(!id)return;const result=method==='session/start'?{state:{session:{id:'fixture-session'}}}:method==='runtime/read'?{runtime:{config:{activeModel:model,models:[model]}}}:method==='config/model/write'?{status:'applied'}:{};process.stdout.write(JSON.stringify({jsonrpc:'2.0',id,result})+'\\n');});`;
+   const session=await openVerifiedVibeSession({command:process.execPath,args:['-e',script],cwd:workerData.repo,timeoutMs:5000,catalog:[{id:'fixture',efforts:['high']}],effort:'high',agentConfig:{headless:true},inheritProcessGroup:true});
+   await session.transport.close();return{id:session.id,effort:session.effort,threadId};
+  }
   if(workerData.mode==='unknown')return shell.runShell(['/review-unknown-fixture'],opts);
   if(workerData.mode==='blocked-timeout'){
    const m=shell.spawnManaged(process.execPath,['-e',"process.stdout.write(Buffer.alloc(200000));setInterval(()=>{},1000)"],{...opts,timeoutMs:50});

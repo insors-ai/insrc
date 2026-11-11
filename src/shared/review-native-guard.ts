@@ -13,6 +13,7 @@ export const REVIEW_NATIVE_SPAWN_APIS=['spawn','spawnSync','exec','execSync','ex
 export const REVIEW_NATIVE_BOUNDARIES=Object.freeze({
  'src/agent/providers/cli-provider.ts':['resolveBin','runSubprocess','activityReview'],
  'src/shared/process-group.ts':['runInProcessGroup'],
+ 'src/shared/vibe-session.ts':['startTransport'],
  'src/daemon/tools/shell-helper.ts':['runShell','runShellBytes','spawnManaged'],
  'src/daemon/tools/review-shell-process.ts':['ChildProcess (stream facade only; never spawn)'],
 });

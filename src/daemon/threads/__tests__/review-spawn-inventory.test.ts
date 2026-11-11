@@ -19,6 +19,6 @@ test('all review-reachable native spawn and exec paths use the host bridge',asyn
   else if(file.endsWith('.ts')&&!file.endsWith('.test.ts')&&/['"](?:node:)?child_process['"]/.test(await readFile(file,'utf8')))nativeFiles.push(file);
  }}
  for(const root of ['src/agent/providers','src/daemon/tools','src/workflow/code-review','src/workflow/review'])await inventory(root);
- nativeFiles.push('src/shared/process-group.ts');
+ nativeFiles.push('src/shared/process-group.ts','src/shared/vibe-session.ts');
  assert.deepEqual(nativeFiles.sort(),Object.keys(REVIEW_NATIVE_BOUNDARIES).sort(),'new native import boundaries require explicit bridge/inventory qualification');
 });

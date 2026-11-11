@@ -31,4 +31,5 @@ test('Git shell and raw-byte commands preserve output bounds and abort semantics
  blocked.worker.postMessage({kind:'release'});const resumed=await blocked.result;assert.equal(resumed.bytes,2*1024*1024);assert.equal(resumed.exit.code,0);await blocked.closed;
  const timed=await shellWorkerFixture(t,'blocked-timeout');let timer:ReturnType<typeof setTimeout>|undefined;
  try{const outcome=await Promise.race([timed.result,new Promise<never>((_,reject)=>{timer=setTimeout(()=>reject(Error('timeout deadlocked behind paused output')),6000);})]);assert.equal(outcome.timedOut,true);}finally{clearTimeout(timer);}await timed.closed;
+ const vibe=await shellWorkerFixture(t,'vibe');assert.deepEqual(await vibe.result,{id:'fixture-session',effort:'high',threadId:vibe.worker.threadId});assert.ok((await vibe.closed).every(outcome=>outcome.disposal.state==='confirmed'));
 });

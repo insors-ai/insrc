@@ -15,6 +15,7 @@ export interface ReviewBootstrapInput extends ReviewWorkerIdentity {
  readonly submitted:unknown;
  /** Host-resolved artifact route; never a provider/socket/closure. */
  readonly epicHash?:string|undefined;
+ readonly operation?:'start'|'resume'|undefined;
 }
 export interface ReviewWorkerInit extends DaemonWorkerInit {
  readonly role:'review';readonly review:ReviewBootstrapInput;readonly nativePort:MessagePort;

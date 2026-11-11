@@ -24,7 +24,11 @@ export class CodeReviewWorker {
  /** Returns before source work; no provider/qualification is awaited here. */
  execute(owner?:ControllerReviewOwner,operation:'start'|'resume'='start'):void{
   if(this.input.reviewer==='controller')requireReview(owner&&!owner.signal.aborted,'reviewer','Trusted live reviewing owner required');
-  if(this.launch){requireReview(this.owner===owner?.id,'reviewer','Review owner mismatch');return;}
+  if(this.launch){
+   requireReview(this.owner===owner?.id,'reviewer','Review owner mismatch');
+   if(operation!=='resume'||this.preparing||this.coordinator.isActive(this.input.key.project,this.input.key.reviewId))return;
+   this.launch=undefined;
+  }
   this.owner=owner?.id;this.preparing=true;
   this.launch=new Promise<void>(resolve=>setImmediate(()=>{
    void(async()=>{
@@ -42,6 +46,13 @@ export class CodeReviewWorker {
     else await this.coordinator.start(this.input.key.project,this.input.key.reviewId,this.input.attempt,this.input.submitted,{...(this.epicHash?{epicHash:this.epicHash}:{}),operation:isCodeAdmission(last)?'start':operation});
    })().catch(error=>this.failure(error)).finally(()=>{this.preparing=false;resolve();});
   }));
+ }
+ async assertResume():Promise<void>{
+  requireReview(!this.preparing&&!this.coordinator.isActive(this.input.key.project,this.input.key.reviewId),'attempt','Review is still active');
+  const cp=await loadStoredCheckpoint(checkpointPath(this.input.key.project,this.input.key.reviewId)),last=cp?.attempts.at(-1);
+  requireReview(last&&last.header.attempt===this.input.attempt&&same(last.submitted,this.input.submitted),'packet','Resume input is pinned');
+  requireReview(!cp!.attempts.some(a=>a.resourceGuard?.openLeases.length),'resourceGuard','Unresolved review resources require explicit clearance');
+  requireReview(!isCodeAdmission(last)||last.header.status==='interrupted','attempt','Only interrupted admission may resume; failed admission needs the next attempt');
  }
  private async failure(error:unknown):Promise<void>{
   const message=(error instanceof Error?error.message:String(error)).replace(/[\x00-\x1f\x7f]/g,' ').slice(0,2048)||'Review admission failed';

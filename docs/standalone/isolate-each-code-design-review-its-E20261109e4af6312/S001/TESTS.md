@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 19 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -192,3 +192,25 @@ Run at 2026-11-11T15:06:26.825Z on commit `1635e86d6`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/threads/__tests__/review-workers.test.ts` | 0 | 3 | 4.6 s |  |
+
+## t9
+
+Run at 2026-11-11T15:21:51.015Z on commit `e57dc09f2`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/workflow/code-review/task-review/__tests__/worker-admission.test.ts: durable acknowledgment precedes blocked source qualification and provider dispatch**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | durable acknowledgment precedes blocked source qualification and provider dispatch | `src/workflow/code-review/task-review/__tests__/worker-admission.test.ts` |
+
+**integration: src/workflow/code-review/task-review/__tests__/worker-admission.test.ts: replay and controller admission-to-assignment retain one execution identity**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | replay and controller admission-to-assignment retain one execution identity | `src/workflow/code-review/task-review/__tests__/worker-admission.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/code-review/task-review/__tests__/worker-admission.test.ts` | 0 | 2 | 4.5 s |  |

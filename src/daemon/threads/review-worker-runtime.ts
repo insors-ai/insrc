@@ -61,6 +61,7 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
     const p=identity(raw);if(!code)throw new Error('Design execution adapter not installed');
     if(p['attempt']!==init.review.attempt||!['start','resume'].includes(String(p['operation'])))throw new Error('Invalid review execution');
     if(!context?.reviewOwnerNonce)throw new Error('Trusted review execution required');
+    if(p['operation']==='resume')await code.assertResume();
     code.execute(init.review.reviewer==='controller'?{id:context.reviewOwnerNonce,signal:controllerLifetime.signal}:undefined,p['operation'] as 'start'|'resume');
     return{accepted:true,...init.review.key,attempt:init.review.attempt};
    },

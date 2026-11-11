@@ -83,7 +83,7 @@ export class ReviewWorkers {
  async admit(input:Omit<ReviewBootstrapInput,'incarnation'|'reviewer'|'epicHash'>,context:TrustedRpcContext):Promise<ReviewAdmissionReceipt>{
   if(!context.connectionIdentity||!context.daemonEpoch||!context.connectionSignal||context.connectionSignal.aborted)throw new Error('Trusted live review connection required');
   context.assertRequestActive?.();
-  if(!Number.isSafeInteger(input.attempt)||input.attempt<1||typeof input.actionId!=='string'||!input.actionId||input.actionId.length>128)throw new Error('Invalid review admission header');
+  if(!Number.isSafeInteger(input.attempt)||input.attempt<1||typeof input.actionId!=='string'||!input.actionId||input.actionId.length>128||input.operation!==undefined&&!['start','resume'].includes(input.operation))throw new Error('Invalid review admission header');
   const key={...input.key,project:await realpath(input.key.project)};
   const identity={key,incarnation:randomUUID()};assertReviewIdentity(identity);
   const scope=await this.deps.resolveScope(key,context);
@@ -102,7 +102,7 @@ export class ReviewWorkers {
    return this.call(previous,'review.worker.matchAdmission',{...input,key,incarnation:previous.input.incarnation,reviewer:scope.reviewer}) as Promise<ReviewAdmissionReceipt>;
   }
   if(this.cleanup.has(scope.cleanupScope)||key.family==='design'&&[...this.entries.values()].some(e=>e.input.key.family==='design'&&e.input.key.project===key.project&&e.scope.subject===scope.subject))throw new Error('Review subject or cleanup busy');
-  const review:ReviewBootstrapInput={attempt:input.attempt,actionId:input.actionId,submitted:input.submitted,...identity,reviewer:scope.reviewer,...(scope.epicHash?{epicHash:scope.epicHash}:{})};
+  const review:ReviewBootstrapInput={attempt:input.attempt,actionId:input.actionId,submitted:input.submitted,...identity,reviewer:scope.reviewer,...(scope.epicHash?{epicHash:scope.epicHash}:{}),...(input.operation?{operation:input.operation}:{})};
   const {port1,port2}=new MessageChannel(),connection=registerReviewWorkerConnection(port1),lifetime=new AbortController();
   const owner=registerReviewRequestOwner(connection,randomUUID(),scope.reviewer==='controller'?context.connectionSignal:lifetime.signal);
   const processOwner=this.leases.register(key,identity.incarnation),fence=new ReviewBootstrapFence(identity);
@@ -153,11 +153,12 @@ export class ReviewWorkers {
  }
  /** Admission has already been acknowledged. The worker schedules expensive
   * qualification in the background and this private control returns promptly. */
- async execute(identity:ReviewWorkerIdentity,context:TrustedRpcContext,operation:'start'|'resume'='start'):Promise<unknown>{
+ async execute(identity:ReviewWorkerIdentity,context:TrustedRpcContext,operation?:'start'|'resume'):Promise<unknown>{
   const e=this.entries.get(keyOf(identity.key));if(!e||!sameReviewWorker(e.input,identity))throw new Error('Foreign review execution');
   this.assertController(e,context);this.active(e);
-  if(!['start','resume'].includes(operation))throw new Error('Invalid review operation');
-  return this.call(e,'review.worker.execute',{operation,attempt:e.input.attempt});
+  const requested=operation??e.input.operation??'start';
+  if(!['start','resume'].includes(requested))throw new Error('Invalid review operation');
+  return this.call(e,'review.worker.execute',{operation:requested,attempt:e.input.attempt});
  }
  async control(request:ReviewWorkerControl,context:TrustedRpcContext):Promise<unknown>{
   const e=this.entries.get(keyOf(request.key));

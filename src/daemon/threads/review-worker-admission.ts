@@ -18,6 +18,15 @@ export async function persistReviewWorkerAdmission(input:ReviewBootstrapInput):P
   const packet={...parsed,reviewRevision:parsed.reviewRevision};
   await updateStoredCodeCheckpoint(path,prior=>{
   const last=prior?.attempts.at(-1);
+  if(input.operation==='resume'){
+   if(!prior||!last||last.header.attempt!==input.attempt||last.header.reviewer!==input.reviewer||!isDeepStrictEqual(last.submitted,packet))throw new Error('Resume input is pinned to the latest saved attempt');
+   if(prior.attempts.some(a=>a.resourceGuard?.openLeases.length))throw new Error('Unresolved review resources require explicit clearance');
+   if(!isCodeAdmission(last))return prior;
+   if(last.header.status==='failed')throw new Error('Failed admission requires the next attempt');
+   // Explicit replacement-worker recovery makes a lost active admission
+   // visibly interrupted before acknowledging it. It never replaces input.
+   return{...prior,schemaVersion:2,attempts:[...prior.attempts.slice(0,-1),{...last,operation:'resume',header:{...last.header,status:'interrupted',completedAt:last.header.completedAt??now},progress:{...last.progress,phase:'interrupted'}}]};
+  }
   if(last?.header.attempt===input.attempt){
    if(!isCodeAdmission(last)||!['pending','running'].includes(last.header.status)||last.header.reviewer!==input.reviewer||!isDeepStrictEqual(last.submitted,packet))throw new Error('Pinned admission cannot be replaced');
    // Identical lost-ack replay consumes no new attempt and still fsyncs.

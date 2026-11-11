@@ -173,7 +173,7 @@ Run at 2026-11-11T13:38:50.061Z on commit `8e26d2c88`. Tests check: **passed**. 
 
 ## t8
 
-Run at 2026-11-11T15:01:36.426Z on commit `941bb3611`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-11T15:06:26.825Z on commit `1635e86d6`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: src/daemon/threads/__tests__/review-workers.test.ts: canonical identities own one incarnation and preserve subject and cleanup exclusions**
 
@@ -191,4 +191,4 @@ Run at 2026-11-11T15:01:36.426Z on commit `941bb3611`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/threads/__tests__/review-workers.test.ts` | 0 | 2 | 4.5 s |  |
+| `src/daemon/threads/__tests__/review-workers.test.ts` | 0 | 3 | 4.6 s |  |

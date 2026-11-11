@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 16,
-        "contentHash": "3a8d3423b081c524b3327ea008076e031a382841d73cb6a90db2eb489b5459d4",
-        "at": "2026-11-11T15:01:36.592Z",
+        "number": 17,
+        "contentHash": "207396cd1e47063f288c627506fde697c747feb33080762f978970d2083fce0d",
+        "at": "2026-11-11T15:06:26.985Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "e4af63128c7cbec2",
     "storyId": "s1",
     "createdAt": "2026-11-09T07:52:13.312Z",
-    "updatedAt": "2026-11-11T15:01:36.426Z",
+    "updatedAt": "2026-11-11T15:06:26.825Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-09T04:29:20.389Z",
     "epicSlug": "isolate-each-code-design-review-its",
-    "revision": 16
+    "revision": 17
   },
   "body": {
     "tasks": [
@@ -486,8 +486,8 @@
       },
       {
         "taskId": "t8",
-        "commit": "941bb3611",
-        "ranAt": "2026-11-11T15:01:36.426Z",
+        "commit": "1635e86d6",
+        "ranAt": "2026-11-11T15:06:26.825Z",
         "testsPassed": true,
         "tests": [
           {
@@ -522,7 +522,7 @@
             "file": "src/daemon/threads/__tests__/review-workers.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 4485,
+            "durationMs": 4608,
             "titles": [
               {
                 "title": "canonical identities own one incarnation and preserve subject and cleanup exclusions",
@@ -530,6 +530,10 @@
               },
               {
                 "title": "stale owner messages and targeted disconnects cannot mutate another review",
+                "result": "pass"
+              },
+              {
+                "title": "admission replay retains a native intent committed by the writer ahead of it",
                 "result": "pass"
               }
             ],

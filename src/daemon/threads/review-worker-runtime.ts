@@ -1,0 +1,58 @@
+/* Copyright (c) Procix Software India. Licensed under the MIT License. */
+import { parentPort,threadId } from 'node:worker_threads';
+import { withReviewNativeTransport,reviewNativeTransport } from '../../shared/review-process-bridge.js';
+import { ReviewWorkerNativeTransport } from './review-worker-native.js';
+import { startDaemonWorker,pushedIndexRun } from './worker-entry.js';
+import { StatusBoardClient } from './status-board.js';
+import { setRunBoard } from '../workflow-run-registry.js';
+import { setLiveRunPublisher } from '../../analyze/orchestrator/live-runs.js';
+import { setIndexRunSource } from '../../indexer/run-record.js';
+import { serveRequests } from './worker-requests.js';
+import { directDispatch } from '../server.js';
+import { assertReviewIdentity,sameReviewWorker } from './review-worker-contract.js';
+import type { ReviewWorkerInit,ReviewWorkerIdentity } from './review-worker-contract.js';
+import { persistReviewWorkerAdmission } from './review-worker-admission.js';
+import { TaskReviewCoordinator } from '../../workflow/code-review/task-review/coordinator.js';
+import { DesignReviewCoordinator } from '../../workflow/review/design-review/coordinator.js';
+import { RegistryReviewSources } from '../../workflow/code-review/task-review/sources.js';
+import { createRoleRouter } from '../../analyze/context/role-router.js';
+import { loadAnalyzeConfig } from '../../config/analyze.js';
+import { registerBuiltinTools } from '../tools/builtins/index.js';
+import { registerBuiltinTemplates } from '../../analyze/planner/templates/bootstrap.js';
+import { registerBuiltinRuntimes } from '../../analyze/runtimes/bootstrap.js';
+import { isLiveStoreOwnerDeclared } from '../../db/graph/store.js';
+import { getToolSettings } from '../tools/config.js';
+
+/** A dedicated instance, never the class singleton/session runtime. Source
+ * qualification and controller authority adapters are integrated by t9/t10. */
+export async function runReviewWorker(init:ReviewWorkerInit):Promise<void>{
+ if(!parentPort||init.role!=='review')throw new Error('Dedicated review worker required');
+ assertReviewIdentity(init.review);
+ const hub=startDaemonWorker(init),board=new StatusBoardClient(hub);
+ setRunBoard(board);setIndexRunSource(pushedIndexRun);
+ setLiveRunPublisher((runId,live)=>board.markAnalyzeRun(runId,threadId,live));
+ registerBuiltinTools();registerBuiltinTemplates();registerBuiltinRuntimes();
+ const transport=new ReviewWorkerNativeTransport(init.nativePort,init.review);
+ await withReviewNativeTransport(transport,async()=>{
+  const provider=()=>createRoleRouter({cliTimeoutMs:900000}).resolveProviderForRole('review',loadAnalyzeConfig(),init.review.key.project).provider;
+  const coordinator=init.review.key.family==='code'
+   ?new TaskReviewCoordinator({sources:new RegistryReviewSources({repoPath:init.review.key.project,sessionId:`review:${init.review.key.reviewId}`,requestId:0,send:()=>{}}),provider})
+   :new DesignReviewCoordinator();
+  const identity=(raw:unknown):Record<string,unknown>=>{
+   if(!raw||typeof raw!=='object'||!sameReviewWorker(init.review,raw as ReviewWorkerIdentity))throw new Error('Foreign or stale review worker operation');
+   return raw as Record<string,unknown>;
+  };
+  const handlers={
+   'review.worker.describe':async(raw:unknown)=>{identity(raw);return{key:init.review.key,incarnation:init.review.incarnation,threadId,coordinator:coordinator.constructor.name,nativeBound:!!reviewNativeTransport(),storeOwnerDeclared:isLiveStoreOwnerDeclared(),shellTimeoutMs:getToolSettings().shell.defaultTimeoutMs};},
+   'review.worker.progress':async(raw:unknown)=>{
+    const params=identity(raw),attempt=params['attempt'];if(!Number.isSafeInteger(attempt)||Number(attempt)<1)throw new Error('Invalid review attempt');
+    return coordinator.progress(init.review.key.project,init.review.key.reviewId,Number(attempt));
+   },
+  };
+  const dispatch=directDispatch(handlers);
+  serveRequests(parentPort!,(request,deliver)=>withReviewNativeTransport(transport,()=>dispatch(request,deliver)));
+  parentPort!.postMessage('worker-ready');
+  const receipt=await persistReviewWorkerAdmission(init.review);
+  parentPort!.postMessage(receipt);
+ });
+}

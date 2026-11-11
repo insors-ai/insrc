@@ -4,7 +4,7 @@ import { claimDesignArtifact, releaseDesignArtifact } from './fence.js';
 import { realpath } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { createHash } from 'node:crypto';
-import { isMainThread } from 'node:worker_threads';
+import { isMainThread, workerData } from 'node:worker_threads';
 import { getLogger } from '../../../shared/logger.js';
 import { ReviewOutputFailureError } from '../../../shared/review-diagnostics.js';
 import type { LLMProvider } from '../../../shared/types.js';
@@ -79,7 +79,7 @@ export class DesignReviewCoordinator {
  private readonly replays=new Map<string,{owner:DesignControllerOwner;signature:string;completion:Promise<void>}>();
  private readonly uncertain=new Map<string,{code:string;summary:string}>();
  constructor(private readonly deps:DesignCoordinatorDeps={}){
-  requireDesign(isMainThread,'wrong_owner','Design review execution belongs to the main daemon');
+  requireDesign(isMainThread||workerData?.role==='review','wrong_owner','Design review execution requires its daemon owner');
  }
  forgetCheckpoint(project:string,reviewId:string):void{
   const key=this.key(project,reviewId);if(this.jobs.has(key)||this.admitting.has(key))return;

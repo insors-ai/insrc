@@ -95,6 +95,7 @@ export async function prepareReviewAdmission(project: string, reviewId: string, 
  const latest = saved?.attempts.at(-1);
  if (operation === 'resume') {
   requireReview(saved && latest && priorPrepared, 'checkpoint', 'missing-checkpoint');
+  requireReview(latest.header.status!=='failed','attempt','Failed review requires the next attempt');
   requireReview(latest.header.attempt === attempt, 'attempt', 'attempt-conflict: resume must select latest attempt');
   requireReview(latest.header.reviewer === reviewer, 'reviewer', 'wrong-reviewer');
   requireReview(request.packet === undefined || isDeepStrictEqual(request.packet, latest.submitted), 'packet', 'attempt-conflict: resume input is pinned');

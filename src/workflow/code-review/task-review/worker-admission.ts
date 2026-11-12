@@ -17,6 +17,7 @@ export class CodeReviewWorker {
  private launch:Promise<void>|undefined;
  private owner:string|undefined;
  private preparing=false;
+ isPreparing():boolean{return this.preparing;}
  isActive():boolean{return this.preparing||this.coordinator.isActive(this.input.key.project,this.input.key.reviewId);}
  constructor(private readonly input:ReviewBootstrapInput,deps:TaskReviewDeps,private readonly epicHash?:string){
   requireReview(input.key.family==='code','reviewer','Code worker required');
@@ -55,6 +56,7 @@ export class CodeReviewWorker {
   requireReview(!this.preparing&&!this.coordinator.isActive(this.input.key.project,this.input.key.reviewId),'attempt','Review is still active');
   const cp=await loadStoredCheckpoint(checkpointPath(this.input.key.project,this.input.key.reviewId)),last=cp?.attempts.at(-1);
   requireReview(last&&last.header.attempt===this.input.attempt&&same(last.submitted,this.input.submitted),'packet','Resume input is pinned');
+  requireReview(last.header.status!=='failed','attempt','Failed review requires the next attempt');
   requireReview(!cp!.attempts.some(a=>a.resourceGuard?.openLeases.length),'resourceGuard','Unresolved review resources require explicit clearance');
   requireReview(!isCodeAdmission(last)||last.header.status==='interrupted','attempt','Only interrupted admission may resume; failed admission needs the next attempt');
  }

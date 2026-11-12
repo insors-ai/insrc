@@ -172,6 +172,7 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
     const owner={id:context.reviewOwnerNonce,signal:controllerLifetime.signal};
     const phase=p['phase'],project=init.review.key.project,id=init.review.key.reviewId,attempt=Number(p['attempt']);
     if(coordinator instanceof TaskReviewCoordinator){
+     if(phase==='assignment'&&code){const observation=await code.progress();if(code.isPreparing()||observation.admission)return observation;}
      const envelope={taskId:p['taskId'],executionId:p['executionId'],sequence:p['sequence']};
      if(phase==='assignment')return coordinator.controllerAssignment(project,id,attempt,owner);
      if(phase==='scope')return coordinator.controllerScope(project,id,attempt,p['input'],owner,envelope);

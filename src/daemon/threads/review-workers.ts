@@ -105,7 +105,7 @@ export class ReviewWorkers {
  private active(e:Entry):void{
   if(this.entries.get(keyOf(e.input.key))!==e||e.closing||e.fence.state==='closing')throw new Error('Review worker fenced');assertReviewOwnerActive(e.owner,e.connection);
  }
- private scopeCleaning(key:ReviewKey,scope:ReviewWorkerScope):boolean{return this.cleanup.has(scope.cleanupScope)||scope.cleanupScope===reviewUnknownCleanupScope(key.project,key.family)&&[...this.cleanupTargets.values()].some(t=>t.project===key.project&&t.family===key.family);}
+ private scopeCleaning(key:ReviewKey,scope:Pick<ReviewWorkerScope,'cleanupScope'>):boolean{return this.cleanup.has(scope.cleanupScope)||scope.cleanupScope===reviewUnknownCleanupScope(key.project,key.family)&&[...this.cleanupTargets.values()].some(t=>t.project===key.project&&t.family===key.family);}
  async admit(input:Omit<ReviewBootstrapInput,'incarnation'|'reviewer'|'epicHash'|'subject'>,context:TrustedRpcContext):Promise<ReviewAdmissionReceipt>{
   return this.admitOwned(input,context);
  }
@@ -286,6 +286,7 @@ export class ReviewWorkers {
   assertReviewIdentity({key,incarnation:'stored-metadata'});
   return await this.storedOperation({key},'review.cleanup.describe') as {attempt:number;reviewer:'daemon'|'controller';storyId?:string;artifactId?:string;artifactPath?:string;epicHash?:string}|undefined;
  }
+ registeredScope(key:ReviewKey):ReviewWorkerScope|undefined{const scope=this.entries.get(keyOf(key))?.scope;return scope?{...scope}:undefined;}
  identity(key:ReviewKey):ReviewWorkerIdentity|undefined{const e=this.entries.get(keyOf(key));return e&&!e.closing?{key:e.input.key,incarnation:e.input.incarnation}:undefined;}
  /** Actual approval consumers enter this main-owned exclusion before a worker
   * scans or deletes evidence. Worker-local coordinator maps cannot grant it. */
@@ -310,7 +311,7 @@ export class ReviewWorkers {
    for(const candidate of discovery.candidates){
     const key:ReviewKey={project:target.project,family:target.family,reviewId:candidate.reviewId};let entry:Entry|undefined;
     try{
-     const resolved=await this.deps.resolveScope(key,context);if(resolved.cleanupScope!==scope)throw new Error('Cleanup subject does not match the registered host scope');
+     const resolved=await this.deps.resolveScope(key,context,target.family==='code'?{key,attempt:candidate.attempt,actionId:'cleanup-scope',submitted:undefined,route:{epicHash:target.epicHash,storyId:target.storyId}}:undefined);if(resolved.cleanupScope!==scope)throw new Error('Cleanup subject does not match the registered host scope');
      await this.admitOwned({key,attempt:candidate.attempt,actionId:`cleanup:${randomUUID()}`,submitted:{},maintenance:true},context,scope);
      entry=this.entries.get(keyOf(key));if(!entry)throw new Error('Cleanup owner missing');
      const cleaned=await this.call(entry,'review.worker.cleanup',target.family==='code'?{storyId:target.storyId}:{artifactId:target.artifactId},true) as CleanupResult;
@@ -323,9 +324,9 @@ export class ReviewWorkers {
   return result;
  }
  resourceRecovery(broker:ApprovalBroker,audit:ReviewResourceRecoveryDeps['audit'],approvalWaitMs?:number):ReviewResourceRecovery{
-  return new ReviewResourceRecovery({services:this.deps.services,broker,audit,track:this.deps.track,approvalWaitMs,claim:async(key,context)=>{
+  return new ReviewResourceRecovery({services:this.deps.services,broker,audit,track:this.deps.track,approvalWaitMs,claim:async(key,context,knownScope)=>{
    if(await realpath(key.project)!==key.project)throw new Error('Canonical resource review project required');
-   const scope=await this.deps.resolveScope(key,context),id=keyOf(key),entry=this.entries.get(id);
+   const scope=knownScope??await this.deps.resolveScope(key,context),id=keyOf(key),entry=this.entries.get(id);
    if(this.resourceHolds.has(id)||this.scopeCleaning(key,scope)||entry&&(!entry.fence.reclaimed||entry.reclaimedHealthy===false))throw new Error('Review work must be reclaimed before resource clearance');
    const hold={cleanupScope:scope.cleanupScope};this.resourceHolds.set(id,hold);
    const assertActive=()=>{const current=this.entries.get(id);if(this.resourceHolds.get(id)!==hold||context.connectionSignal?.aborted||current!==entry&&!(entry&&!current))throw new Error('Stale review resource recovery hold');};

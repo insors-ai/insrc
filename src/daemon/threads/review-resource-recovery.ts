@@ -18,13 +18,16 @@ export interface ReviewRecoveryHold {
  apply(clearance:ReviewAuthorizedClearance):void;
  release():void;
 }
+/** Main-resolved tracked locator, never deserialized from clearance input.
+ * No-document code routes supply it because filenames cannot identify root. */
+export interface ReviewResourceScope { readonly subject:string; readonly cleanupScope:string; }
 export interface ReviewResourceRecoveryDeps {
  readonly services:ThreadServices;
  readonly broker:ApprovalBroker;
- readonly claim:(key:ReviewKey,context:TrustedRpcContext)=>Promise<ReviewRecoveryHold>;
+ readonly claim:(key:ReviewKey,context:TrustedRpcContext,scope?:ReviewResourceScope)=>Promise<ReviewRecoveryHold>;
  /** Same artifact-log writer used by ordinary review publication. Required:
   * a prior receipt must be audited before a later clearance can replace it. */
- readonly audit:(key:ReviewKey,guards:readonly ReviewGuardRow[])=>Promise<void>;
+ readonly audit:(key:ReviewKey,guards:readonly ReviewGuardRow[],scope?:ReviewResourceScope)=>Promise<void>;
  readonly track:(worker:Worker,name:string)=>void;
  readonly approvalWaitMs?:number|undefined;
 }
@@ -38,10 +41,10 @@ export class ReviewResourceRecovery {
   const id=JSON.stringify([key.project,key.family,key.reviewId]),old=this.pending.get(id)??Promise.resolve(),next=old.catch(()=>{}).then(run),tail=next.then(()=>{},()=>{});
   this.pending.set(id,tail);void tail.then(()=>{if(this.pending.get(id)===tail)this.pending.delete(id);});return next;
  }
- private async withWorker<T>(key:ReviewKey,context:TrustedRpcContext,run:(rpc:(method:string,params?:object)=>Promise<ReviewResourceSnapshot>,hold:ReviewRecoveryHold)=>Promise<T>):Promise<T>{
+ private async withWorker<T>(key:ReviewKey,context:TrustedRpcContext,run:(rpc:(method:string,params?:object)=>Promise<ReviewResourceSnapshot>,hold:ReviewRecoveryHold)=>Promise<T>,scope?:ReviewResourceScope):Promise<T>{
   if(!context.connectionSignal||context.connectionSignal.aborted)throw new Error('Live local resource recovery connection required');
   const identity={key:{...key},incarnation:randomUUID()};assertReviewIdentity(identity);
-  const hold=await this.deps.claim(key,context);let started:StartedWorker|undefined,created:Worker|undefined;
+  const hold=await this.deps.claim(key,context,scope);let started:StartedWorker|undefined,created:Worker|undefined;
   let starting:Promise<StartedWorker>|undefined;
   const pending=new Map<string,{resolve:(value:ReviewResourceSnapshot)=>void;reject:(error:Error)=>void}>();
   const fail=()=>{for(const p of pending.values())p.reject(new Error('Resource worker unavailable'));pending.clear();void created?.terminate();};
@@ -65,14 +68,14 @@ export class ReviewResourceRecovery {
    hold.release();
   }
  }
- inspect(key:ReviewKey,context:TrustedRpcContext):Promise<ReviewResourceSnapshot>{return this.serial(key,()=>this.withWorker(key,context,rpc=>rpc('review.resource.inspect')));}
+ inspect(key:ReviewKey,context:TrustedRpcContext,scope?:ReviewResourceScope):Promise<ReviewResourceSnapshot>{return this.serial(key,()=>this.withWorker(key,context,rpc=>rpc('review.resource.inspect'),scope));}
  async drained():Promise<void>{await Promise.all([...this.pending.values()]);}
- clear(key:ReviewKey,input:{readonly leaseIds?:readonly string[]|undefined;readonly reason:string},context:TrustedRpcContext){
+ clear(key:ReviewKey,input:{readonly leaseIds?:readonly string[]|undefined;readonly reason:string},context:TrustedRpcContext,scope?:ReviewResourceScope){
   if(!input||typeof input!=='object'||Object.keys(input).some(k=>!['leaseIds','reason'].includes(k))||typeof input.reason!=='string'||!input.reason.trim()||input.reason.length>2048||input.leaseIds!==undefined&&(!Array.isArray(input.leaseIds)||!input.leaseIds.length||input.leaseIds.length>MAX_REVIEW_OPEN_LEASES||input.leaseIds.some(id=>typeof id!=='string')))throw new Error('Resource clearance needs a reason and optional leaseIds; caller approval receipts are not accepted');
   key=Object.freeze({...key});input=Object.freeze({reason:input.reason,...(input.leaseIds?{leaseIds:Object.freeze([...input.leaseIds])}:{})});
   return this.serial(key,()=>this.withWorker(key,context,async(rpc,hold)=>{
    const before=await rpc('review.resource.inspect');
-   await this.deps.audit(key,before.guards.filter(g=>g.resourceGuard.clearance));
+   await this.deps.audit(key,before.guards.filter(g=>g.resourceGuard.clearance),scope);
    for(const row of before.guards)if(row.resourceGuard.clearance)hold.apply(row.resourceGuard.clearance);
    if(!before.remaining)return{status:'already-clear' as const,remaining:0};
    const all=before.guards.flatMap(g=>g.resourceGuard.openLeases.map(l=>l.operationId)),selected=[...(input.leaseIds??all)].sort();
@@ -84,9 +87,9 @@ export class ReviewResourceRecovery {
    hold.assertActive();
    const clearance:ReviewAuthorizedClearance={at:new Date().toISOString(),reason:input.reason,approvalReceipt:{requestId,decision:'approve',reviewKey:key,guardDigest:before.digest,leaseIds:selected}};
    const after=await rpc('review.resource.apply',{clearance});
-   await this.deps.audit(key,after.guards.filter(g=>g.resourceGuard.clearance));
+   await this.deps.audit(key,after.guards.filter(g=>g.resourceGuard.clearance),scope);
    hold.apply(clearance);
    return{status:after.remaining?'partially-cleared' as const:'cleared' as const,remaining:after.remaining,requestId};
-  }));
+  },scope));
  }
 }

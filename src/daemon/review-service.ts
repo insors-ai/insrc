@@ -58,8 +58,8 @@ export class ProductionReviews{
     if(command.kind==='cli')this.currentReviewer(key.project,scope.subject,scope.reviewer);
     await authorizeReviewNative(key,command,scope.reviewer,signal,receipt);
    },track:(w,name)=>{this.tracked.add(w);w.once('exit',()=>this.tracked.delete(w));deps.track(w,name);},...(deps.start?{start:deps.start}:{})});
-  this.resources=this.registry.resourceRecovery(approvalBroker,async(key,rows)=>{
-   const scope=await this.scope(key),id=key.family==='code'?scope.subject.replace(/^BUILD-/,'CR-'):scope.subject;
+  this.resources=this.registry.resourceRecovery(approvalBroker,async(key,rows,knownScope)=>{
+   const scope=knownScope??await this.scope(key),id=key.family==='code'?scope.subject.replace(/^BUILD-/,'CR-'):scope.subject;
    await persistReviewResourceAudit(lifecycleFor(key.project).store,id,key,rows);
   });
   deps.services.onReviewCleanup(async target=>{await this.registered(target.project);return this.registry.cleanupApproved(target);});
@@ -74,6 +74,7 @@ export class ProductionReviews{
  }
  private async scope(key:ReviewKey,_ctx?:TrustedRpcContext,input?:Admission):Promise<ReviewWorkerScope>{
   await this.registered(key.project);
+  const owned=!input?this.registry.registeredScope(key):undefined;if(owned)return owned;
   const hint=input?.route,stored=hint?.storyId||hint?.artifactPath?undefined:await this.registry.describeStored(key);
   if(key.family==='code'){
    const hash=hint?.epicHash??stored?.epicHash,storyInput=hint?.storyId??stored?.storyId;
@@ -104,13 +105,18 @@ export class ProductionReviews{
  }
  private async recovery(key:ReviewKey,p:Record<string,unknown>,ctx:TrustedRpcContext):Promise<unknown|undefined>{
   const context={...ctx,connectionSignal:AbortSignal.any([ctx.connectionSignal!,this.lifetime.signal])};
+  if(p['resourceRecovery']===undefined&&this.registry.identity(key))return undefined;
+  const saved=await this.registry.describeStored(key);
+  if(!saved&&p['resourceRecovery']===undefined)return undefined;
+  // A no-document Story has no commit-document filename from which to infer
+  // its root. Resolve the explicit public locator against tracked authority,
+  // then carry that host-owned scope through the existing broker and audit.
+  const scope=await this.scope(key,ctx,key.family==='code'&&typeof p['epicHash']==='string'&&saved?.storyId?{key,attempt:saved.attempt,actionId:'resource-scope',submitted:undefined,route:{epicHash:p['epicHash'],storyId:saved.storyId}}:undefined);
   if(p['resourceRecovery']!==undefined){
-   const answer=await this.resources.clear(key,p['resourceRecovery'] as {reason:string;leaseIds?:string[]},context);
+   const answer=await this.resources.clear(key,p['resourceRecovery'] as {reason:string;leaseIds?:string[]},context,scope);
    return{...answer,guidance:'Resource clearance never starts review work. Submit a separate explicit resume/recover, or the next attempt after a failed attempt.'};
   }
-  if(this.registry.identity(key))return undefined;
-  const saved=await this.registry.describeStored(key);if(!saved)return undefined;
-  const state=await this.resources.inspect(key,context);
+  const state=await this.resources.inspect(key,context,scope);
   if(state.remaining)return{status:'resource_recovery_required',remaining:state.remaining,reviewId:key.reviewId,guardDigest:state.digest,guidance:'Verify the prior resources have ended, then request resourceRecovery with a reason and optional exact leaseIds through the existing local approval broker. Clearance alone will not resume.'};
   return undefined;
  }

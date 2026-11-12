@@ -12,6 +12,7 @@ import { reviewJsonLimit, requireReview } from '../code-review/task-review/contr
  */
 
 import { randomUUID } from 'node:crypto';
+import { withArtifactWriteAuthority } from './write-authority.js';
 import { existsSync, readdirSync, readFileSync, openSync, closeSync, fstatSync, readSync, realpathSync, constants } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join, resolve, relative } from 'node:path';
@@ -254,7 +255,7 @@ export class ArtifactStore {
 	private async enqueue<T>(id: string, run: () => Promise<T>): Promise<T> {
 		const lockKey = `${this.deps.repoPath}\0${id}`;
 		const previous = WRITE_QUEUES.get(lockKey) ?? Promise.resolve();
-		const next = previous.then(run);
+		const next = previous.then(() => withArtifactWriteAuthority(this.deps.repoPath,id,run));
 		const tail = next.catch(() => undefined);
 		WRITE_QUEUES.set(lockKey, tail);
 		try { return await next; }

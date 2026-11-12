@@ -17,6 +17,7 @@ export class CodeReviewWorker {
  private launch:Promise<void>|undefined;
  private owner:string|undefined;
  private preparing=false;
+ isActive():boolean{return this.preparing||this.coordinator.isActive(this.input.key.project,this.input.key.reviewId);}
  constructor(private readonly input:ReviewBootstrapInput,deps:TaskReviewDeps,private readonly epicHash?:string){
   requireReview(input.key.family==='code','reviewer','Code worker required');
   this.coordinator=new TaskReviewCoordinator({...deps,prepare:prepareWorkerCodeAdmission,read:readQualifiedCodeCheckpoint,save:saveWorkerCodeCheckpoint});
@@ -34,6 +35,9 @@ export class CodeReviewWorker {
    void(async()=>{
     const path=checkpointPath(this.input.key.project,this.input.key.reviewId),stored=await loadStoredCheckpoint(path),last=stored?.attempts.at(-1);
     requireReview(last&&last.header.attempt===this.input.attempt&&last.header.reviewer===this.input.reviewer&&same(last.submitted,this.input.submitted),'packet','Saved worker input mismatch');
+    // A cold same-input start replay observes its admitted work. Only explicit
+    // resume may reopen qualified execution or publish retained feedback.
+    if(!isCodeAdmission(last)&&operation==='start')return;
     if(isCodeAdmission(last)&&operation==='resume'){
      requireReview(last.header.status==='interrupted','attempt','Only interrupted admission may resume');
      await updateStoredCodeCheckpoint(path,current=>{

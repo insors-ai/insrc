@@ -16,6 +16,8 @@ export interface ReviewBootstrapInput extends ReviewWorkerIdentity {
  /** Host-resolved artifact route; never a provider/socket/closure. */
  readonly epicHash?:string|undefined;
  readonly operation?:'start'|'resume'|undefined;
+ /** Reopen stored evidence for model-free observation/publication/cleanup. */
+ readonly maintenance?:true|undefined;
  readonly subject?:string|undefined;
 }
 export interface ReviewWorkerInit extends DaemonWorkerInit {

@@ -1,4 +1,5 @@
 import { lstatSync } from 'node:fs';
+import { isDesignAdmission } from './contracts.js';
 import { claimDesignArtifact, releaseDesignArtifact } from './fence.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { realpath } from 'node:fs/promises';
@@ -272,6 +273,10 @@ export class DesignReviewCoordinator {
   if(!checkpoint){
    const locator=options.artifactPath??this.knownArtifacts.get(key);requireDesign(locator,'artifact-reference-required','Result has no checkpoint mapping; provide artifactPath for permanent history');
    const stored=permanentStoredDesignCheckpoint(project,locator,reviewId,attempt);
+   const preserved=stored.checkpoint.attempts.at(-1)!;
+   // The permanent entry is proof of publication. Older version-2 records
+   // may retain the pre-publication pending receipt in their stored evidence.
+   if(!isDesignAdmission(preserved))preserved.publication={reviewId,attempt,state:'complete',artifactHistoryEntryId:stored.entryId,reportReference:stored.entryId};
    if(stored.checkpoint.subject)this.knownArtifacts.set(key,stored.checkpoint.subject.canonicalPath);
    const view=observeStoredDesignCheckpoint(stored.checkpoint,options);
    return {...view,source:'history',...(!view.admission?{publication:{reviewId,attempt,state:'complete' as const,artifactHistoryEntryId:stored.entryId,reportReference:stored.entryId}}:{})};

@@ -15,6 +15,9 @@
  */
 
 import { setReviewProgressSource } from '../../workflow/review/worker-progress-source.js';
+import { ArtifactWriteAuthorityHost } from './artifact-write-authority.js';
+import { installReviewCleanupOwner } from '../../workflow/review/cleanup-owner.js';
+import type { ReviewCleanupOwner } from '../../workflow/review/cleanup-owner.js';
 import { registerReviewWorkerConnection, disconnectReviewWorker, assertReviewOwnerActive } from '../review-request-owner.js';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { MessageChannel } from 'node:worker_threads';
@@ -153,6 +156,10 @@ export class ThreadServices {
 	readonly registry = new TargetRegistry();
 	private readonly ports = new Set<MessagePort>();
 	private readonly handlers: HubHandlers;
+ private readonly artifactWrites=new ArtifactWriteAuthorityHost();
+ private reviewCleanup:ReviewCleanupOwner|undefined;
+ onReviewCleanup(owner:ReviewCleanupOwner):void{this.reviewCleanup=owner;}
+ reclaimArtifactWrites(port:MessagePort):void{this.artifactWrites.reclaim(port);}
 	private embedderBackend: EmbedderBackend | undefined;
 	private toolSettings: ToolSettings | undefined;
 	private shutdown: ((reason: string) => void | Promise<void>) | undefined;
@@ -166,8 +173,10 @@ export class ThreadServices {
 		enableMaintenanceLock();
 		installStepStateStore(steps);
   setReviewProgressSource(async()=>this.board.reviewProgress());
+  installReviewCleanupOwner(async target=>this.reviewCleanup?.(target));
 		this.board.onIndexRuns(runs => { for (const port of this.ports) pushToWorker(port, INDEX_RUNS_OP, runs); });
 		this.handlers = {
+   'review.lifecycle.cleanup':target=>this.reviewCleanup?.(target as Parameters<ReviewCleanupOwner>[0]),
 			...statusBoardHubHandlers(this.board),
 			...stepStateHubHandlers(steps),
 			...wireMainStoreHealth(() => this.ports),
@@ -205,7 +214,7 @@ export class ThreadServices {
 		const { port1, port2 } = new MessageChannel();
 		const connection = registerReviewWorkerConnection(port1);
 		port1.once('close', () => disconnectReviewWorker(connection));
-		const stop = serveHub(port1, { ...this.handlers, ...stepStateHubHandlers(this.steps, owner => assertReviewOwnerActive(owner, connection)) });
+		const stop = serveHub(port1, { ...this.handlers, ...this.artifactWrites.handlers(port1), ...stepStateHubHandlers(this.steps, owner => assertReviewOwnerActive(owner, connection)) });
 		this.ports.add(port1);
 		// A worker started after the backend was decided gets it at once.
 		if (this.embedderBackend !== undefined) pushToWorker(port1, EMBEDDER_BACKEND_OP, this.embedderBackend);

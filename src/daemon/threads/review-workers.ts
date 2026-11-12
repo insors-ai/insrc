@@ -23,6 +23,12 @@ import { reviewProgressPublication } from './review-progress.js';
 import type { ReviewObservation,ReviewProgressPublication } from './review-progress.js';
 import type { ReviewWorkerStatus } from '../../shared/review-worker-progress.js';
 import type { ApprovalBroker } from '../approval-broker.js';
+import type { ReviewCleanupTarget } from '../../workflow/review/cleanup-owner.js';
+import { reviewCleanupScope,reviewUnknownCleanupScope } from '../../workflow/review/cleanup-owner.js';
+import type { CleanupResult } from '../../workflow/code-review/task-review/cleanup.js';
+import { startWorker } from './workers.js';
+import type { StartedWorker } from './workers.js';
+import { REVIEW_BOOTSTRAP_MS } from './review-worker-contract.js';
 
 export interface ReviewWorkerScope {
  readonly reviewer:'daemon'|'controller';
@@ -54,6 +60,7 @@ export interface ReviewWorkerControl extends ReviewWorkerIdentity {
  readonly input:unknown;
 }
 interface Entry {
+ readonly cleanupOwner:boolean;
  attempt:number;
  readonly input:ReviewBootstrapInput;
  readonly scope:ReviewWorkerScope;
@@ -67,6 +74,7 @@ interface Entry {
  readonly pending:Map<string,{resolve:(value:unknown)=>void;reject:(error:Error)=>void}>;
  started?:StartedReviewWorker|undefined;
  progress?:ReviewWorkerProgress|undefined;
+ publication?:Promise<unknown>|undefined;
  closing?:Promise<void>|undefined;
  reclaimedHealthy?:boolean|undefined;
  readonly detach:()=>void;
@@ -77,14 +85,19 @@ const keyOf=(key:ReviewKey)=>JSON.stringify([key.project,key.family,key.reviewId
 export class ReviewWorkers {
  private readonly entries=new Map<string,Entry>();
  private readonly cleanup=new Set<string>();
+ private readonly cleanupTargets=new Map<string,ReviewCleanupTarget>();
  private readonly resourceHolds=new Map<string,{readonly cleanupScope:string}>();
  private sequence=0;
+ private shutdownWork:Promise<void>|undefined;
+ private readonly storedWorkers=new Set<Worker>();
+ private readonly storedRuns=new Set<Promise<unknown>>();
  readonly leases:ReviewProcessLeases;
  constructor(private readonly deps:ReviewWorkersDeps){
   this.leases=new ReviewProcessLeases({
    authorize:async(r,c,signal)=>{const e=this.forReservation(r);this.active(e);await deps.authorizeNative(e.input.key,c,e.context,signal);this.active(e);},
    verifyIntent:(r,receipt)=>this.forReservation(r).native.verifyIntent(r,receipt),
   });
+  deps.services.onReviewCleanup(target=>this.cleanupApproved(target));
  }
  private forReservation(r:ReviewProcessReservation):Entry{
   const e=this.entries.get(keyOf(r.key));if(!e||e.input.incarnation!==r.workerIncarnation)throw new Error('Foreign review incarnation');return e;
@@ -92,7 +105,12 @@ export class ReviewWorkers {
  private active(e:Entry):void{
   if(this.entries.get(keyOf(e.input.key))!==e||e.closing||e.fence.state==='closing')throw new Error('Review worker fenced');assertReviewOwnerActive(e.owner,e.connection);
  }
+ private scopeCleaning(key:ReviewKey,scope:ReviewWorkerScope):boolean{return this.cleanup.has(scope.cleanupScope)||scope.cleanupScope===reviewUnknownCleanupScope(key.project,key.family)&&[...this.cleanupTargets.values()].some(t=>t.project===key.project&&t.family===key.family);}
  async admit(input:Omit<ReviewBootstrapInput,'incarnation'|'reviewer'|'epicHash'|'subject'>,context:TrustedRpcContext):Promise<ReviewAdmissionReceipt>{
+  return this.admitOwned(input,context);
+ }
+ private async admitOwned(input:Omit<ReviewBootstrapInput,'incarnation'|'reviewer'|'epicHash'|'subject'>,context:TrustedRpcContext,cleanupScope?:string):Promise<ReviewAdmissionReceipt>{
+  if(this.shutdownWork)throw new Error('Review workers are shutting down');
   if(!context.connectionIdentity||!context.daemonEpoch||!context.connectionSignal||context.connectionSignal.aborted)throw new Error('Trusted live review connection required');
   context.assertRequestActive?.();
   if(!Number.isSafeInteger(input.attempt)||input.attempt<1||typeof input.actionId!=='string'||!input.actionId||input.actionId.length>128||input.operation!==undefined&&!['start','resume'].includes(input.operation))throw new Error('Invalid review admission header');
@@ -102,8 +120,11 @@ export class ReviewWorkers {
   const scope=await this.deps.resolveScope(key,context);
   if(!scope.subject||!scope.cleanupScope||!['daemon','controller'].includes(scope.reviewer)||scope.epicHash!==undefined&&!/^[0-9a-f]{16}$/.test(scope.epicHash))throw new Error('Invalid trusted review scope');
   if(context.connectionSignal.aborted)throw new Error('Review connection lost');
+  if(this.scopeCleaning(key,scope)&&cleanupScope!==scope.cleanupScope)throw new Error('Review subject or cleanup busy');
   const previous=this.entries.get(keyOf(key));
   if(previous){
+   if(previous.publication)throw new Error('Review publication is active');
+   if(previous.cleanupOwner&&!cleanupScope)throw new Error('Review cleanup is active');
    this.assertController(previous,context);this.active(previous);await previous.ready;
    if(input.attempt!==previous.input.attempt){
     if(input.attempt!==previous.attempt+1)throw new Error('Review attempt conflict');
@@ -114,8 +135,8 @@ export class ReviewWorkers {
    }
    return this.call(previous,'review.worker.matchAdmission',{...input,key,incarnation:previous.input.incarnation,reviewer:scope.reviewer}) as Promise<ReviewAdmissionReceipt>;
   }
-  if(this.cleanup.has(scope.cleanupScope)||key.family==='design'&&[...this.entries.values()].some(e=>e.input.key.family==='design'&&e.input.key.project===key.project&&e.scope.subject===scope.subject))throw new Error('Review subject or cleanup busy');
-  const review:ReviewBootstrapInput={attempt:input.attempt,actionId:input.actionId,submitted:input.submitted,...identity,reviewer:scope.reviewer,subject:scope.subject,...(scope.epicHash?{epicHash:scope.epicHash}:{}),...(input.operation?{operation:input.operation}:{})};
+  if(this.cleanup.has(scope.cleanupScope)&&cleanupScope!==scope.cleanupScope||key.family==='design'&&[...this.entries.values()].some(e=>e.input.key.family==='design'&&e.input.key.project===key.project&&e.scope.subject===scope.subject))throw new Error('Review subject or cleanup busy');
+  const review:ReviewBootstrapInput={attempt:input.attempt,actionId:input.actionId,submitted:input.submitted,...identity,reviewer:scope.reviewer,subject:scope.subject,...(scope.epicHash?{epicHash:scope.epicHash}:{}),...(input.operation?{operation:input.operation}:{}),...(input.maintenance?{maintenance:true as const}:{})};
   const {port1,port2}=new MessageChannel(),connection=registerReviewWorkerConnection(port1),lifetime=new AbortController();
   const owner=registerReviewRequestOwner(connection,randomUUID(),scope.reviewer==='controller'?context.connectionSignal:lifetime.signal);
   const processOwner=this.leases.register(key,identity.incarnation),fence=new ReviewBootstrapFence(identity);
@@ -128,7 +149,7 @@ export class ReviewWorkers {
   });
   const lost=()=>{void this.closeEntry(entry);};
   const detach=()=>context.connectionSignal?.removeEventListener('abort',lost);
-  entry={attempt:review.attempt,input:review,scope,context,fence,lifetime,connection,owner,native,ready,pending:new Map(),detach};
+  entry={cleanupOwner:cleanupScope===scope.cleanupScope,attempt:review.attempt,input:review,scope,context,fence,lifetime,connection,owner,native,ready,pending:new Map(),detach};
   this.entries.set(keyOf(key),entry);
   if(scope.reviewer==='controller')context.connectionSignal.addEventListener('abort',lost,{once:true});
   void Promise.resolve().then(()=>(this.deps.start??startReviewWorkerBootstrap)(this.deps.services,review,port2,{fence,onCreated:worker=>this.deps.track(worker,`review:${key.family}:${key.reviewId}`),onClosing:(_worker,reclaimed)=>{void reclaimed.then(()=>this.closeEntry(entry));}})).then(started=>{
@@ -137,6 +158,7 @@ export class ReviewWorkers {
    if(!hubConnection){rejectReady(new Error('Review worker hub is not registered'));void started.worker.terminate();void this.closeEntry(entry);return;}
    disconnectReviewWorker(entry.connection);entry.connection=hubConnection;
    entry.owner=registerReviewRequestOwner(hubConnection,randomUUID(),scope.reviewer==='controller'?context.connectionSignal:lifetime.signal);
+   started.port.once('close',()=>{void this.closeEntry(entry);});
    this.deps.services.board.publish({threadId:started.threadId,cls:'review',role:key.family==='code'?'code-review':'design-review',busy:true,method:'admission',since:Date.now(),queued:0});
    started.worker.on('message',(raw:unknown)=>{if(raw&&typeof raw==='object'&&Reflect.get(raw,'kind')==='review-progress'){this.acceptPublication(started.worker,raw as ReviewProgressPublication);return;}const reply=raw as ReplyEnvelope;if(reply?.kind!=='reply')return;const p=entry.pending.get(reply.requestId);if(!p)return;entry.pending.delete(reply.requestId);if(reply.error)p.reject(new Error(reply.error));else p.resolve(reply.result);});
    started.worker.once('exit',()=>{for(const p of entry.pending.values())p.reject(new Error('Review worker exited'));entry.pending.clear();void this.closeEntry(entry);});
@@ -168,9 +190,24 @@ export class ReviewWorkers {
   const stale=Date.now()-Date.parse(e.progress!.updatedAt)>2000||!!e.closing;
   return structuredClone({...cached,freshness:e.input.key.family==='code'?(stale?'stale':'live'):(stale?'stored':'live')});
  }
+ /** Explicit retries consume stored feedback only. A cold owner still joins
+  * native/resource fencing and the ordinary worker reclamation contract. */
+ async publishStored(input:Omit<ReviewBootstrapInput,'incarnation'|'reviewer'|'epicHash'|'subject'>,context:TrustedRpcContext):Promise<unknown>{
+  if(!Number.isSafeInteger(input.attempt)||input.attempt<1||!input.actionId||input.actionId.length>128)throw new Error('Invalid publication retry identity');
+  let entry=this.entries.get(keyOf(input.key));
+  if(!entry){await this.admit({...input,maintenance:true},context);entry=this.entries.get(keyOf(input.key));}
+  if(!entry)throw new Error('Review worker missing');this.assertController(entry,context);this.active(entry);
+  if(input.attempt!==entry.attempt)throw new Error('Publication retry attempt conflict');
+  if(entry.cleanupOwner||this.scopeCleaning(entry.input.key,entry.scope))throw new Error('Review cleanup is active');
+  if(entry.publication)throw new Error('Review publication is active');
+  const work=this.call(entry,'review.worker.publish',{actionId:input.actionId});entry.publication=work;
+  try{return await work;}
+  finally{if(entry.publication===work)entry.publication=undefined;if(entry.input.maintenance)await this.closeEntry(entry);}
+ }
  async recover(identity:ReviewWorkerIdentity,request:DesignRecoveryRequest,context:TrustedRpcContext):Promise<unknown>{
   const e=this.entries.get(keyOf(identity.key));if(!e||identity.key.family!=='design'||!sameReviewWorker(e.input,identity))throw new Error('Foreign design recovery');
   this.assertController(e,context);this.active(e);
+  if(e.publication||e.cleanupOwner||this.scopeCleaning(e.input.key,e.scope))throw new Error('Review publication or cleanup is active');
   if(request.repo!==e.input.key.project||request.reviewId!==e.input.key.reviewId||request.phase!=='recover')throw new Error('Foreign design recovery request');
   const result=await this.call(e,'review.worker.recover',{request}) as {attempt:number};
   if(!Number.isSafeInteger(result.attempt)||result.attempt<1)throw new Error('Invalid recovery receipt');
@@ -182,6 +219,7 @@ export class ReviewWorkers {
  async execute(identity:ReviewWorkerIdentity,context:TrustedRpcContext,operation?:'start'|'resume'):Promise<unknown>{
   const e=this.entries.get(keyOf(identity.key));if(!e||!sameReviewWorker(e.input,identity))throw new Error('Foreign review execution');
   this.assertController(e,context);this.active(e);
+  if(e.publication||e.cleanupOwner||this.scopeCleaning(e.input.key,e.scope))throw new Error('Review publication or cleanup is active');
   const requested=operation??e.input.operation??'start';
   if(!['start','resume'].includes(requested))throw new Error('Invalid review operation');
   const result=await this.call(e,'review.worker.execute',{operation:requested,attempt:e.input.attempt}) as {attempt:number};
@@ -192,6 +230,7 @@ export class ReviewWorkers {
   const e=this.entries.get(keyOf(request.key));
   if(!e||!sameReviewWorker(e.input,request)||request.attempt!==e.attempt||e.scope.reviewer!=='controller')throw new Error('Foreign review control');
   this.assertController(e,context);this.active(e);
+  if(e.publication||e.cleanupOwner||this.scopeCleaning(e.input.key,e.scope))throw new Error('Review publication or cleanup is active');
   const phases=e.input.key.family==='code'?['assignment','scope','result','activity']:['assignment','plan','impact','result','activity','failure'];
   if(!phases.includes(request.phase)||typeof request.actionId!=='string'||!request.actionId||request.actionId.length>128||typeof request.executionId!=='string'||!request.executionId||request.executionId.length>128||!Number.isSafeInteger(request.sequence)||request.sequence<1||request.taskId!==undefined&&(typeof request.taskId!=='string'||!request.taskId||request.taskId.length>256))throw new Error('Invalid review control envelope');
   return this.call(e,'review.worker.control',{attempt:request.attempt,phase:request.phase,actionId:request.actionId,executionId:request.executionId,sequence:request.sequence,taskId:request.taskId,input:request.input});
@@ -218,11 +257,71 @@ export class ReviewWorkers {
   if(this.cleanup.has(scope)||[...this.entries.values()].some(e=>e.scope.cleanupScope===scope)||[...this.resourceHolds.values()].some(h=>h.cleanupScope===scope))throw new Error('Review cleanup busy');
   this.cleanup.add(scope);let held=true;return()=>{if(held){held=false;this.cleanup.delete(scope);}};
  }
+ private storedOperation(data:Record<string,unknown>,method:string):Promise<unknown>{
+  if(this.shutdownWork)return Promise.reject(new Error('Review workers are shutting down'));
+  const work=this.runStoredOperation(data,method);this.storedRuns.add(work);
+  void work.then(()=>this.storedRuns.delete(work),()=>this.storedRuns.delete(work));return work;
+ }
+ private async runStoredOperation(data:Record<string,unknown>,method:string):Promise<unknown>{
+  let worker:Worker|undefined,started:StartedWorker|undefined,timer:ReturnType<typeof setTimeout>|undefined;
+  const starting=startWorker(this.deps.services,'review-stored-evidence','review-cleanup-discovery',{workerData:{role:'review',...data},transferList:[]},w=>{worker=w;this.storedWorkers.add(w);this.deps.track(w,'review-stored-evidence');});
+  try{
+   started=await Promise.race([starting,new Promise<never>((_,reject)=>{timer=setTimeout(()=>{void worker?.terminate();reject(new Error('Review cleanup discovery bootstrap timed out'));},REVIEW_BOOTSTRAP_MS);})]);
+   clearTimeout(timer);
+   started.port.once('close',()=>{void started?.worker.terminate();});
+   return await new Promise((resolve,reject)=>{
+    const id=randomUUID(),s=started!;
+    const exit=()=>{s.worker.off('message',message);reject(new Error('Review cleanup discovery exited'));};
+    const message=(raw:unknown)=>{const reply=raw as ReplyEnvelope;if(reply?.kind!=='reply'||reply.requestId!==id)return;s.worker.off('message',message);s.worker.off('exit',exit);if(reply.error)reject(new Error(reply.error));else resolve(reply.result as {candidates:Array<{reviewId:string;attempt:number}>;retained:string[];errors:string[]});};
+    s.worker.once('exit',exit);s.worker.on('message',message);s.worker.postMessage({kind:'request',requestId:id,method,params:{},stream:false});
+   });
+  }finally{if(timer)clearTimeout(timer);await worker?.terminate();started??=await starting.catch(()=>undefined);if(started){await started.reclaimed;started.disconnect();}if(worker)this.storedWorkers.delete(worker);}
+ }
+ async storedProgress(key:ReviewKey,attempt:number,options:{artifactPath?:string;epicHash?:string;storyId?:string;includeResult?:boolean;afterCompletedChunk?:number}={}):Promise<unknown>{
+  if(await realpath(key.project)!==key.project||!Number.isSafeInteger(attempt)||attempt<1)throw new Error('Canonical stored review identity required');
+  assertReviewIdentity({key,incarnation:'stored-reader'});
+  return this.storedOperation({history:{key,attempt,options}},'review.cleanup.history');
+ }
+ /** Actual approval consumers enter this main-owned exclusion before a worker
+  * scans or deletes evidence. Worker-local coordinator maps cannot grant it. */
+ async cleanupApproved(target:ReviewCleanupTarget):Promise<CleanupResult>{
+  const result:CleanupResult={deleted:[],retained:[],errors:[]};
+  if(!target||!['code','design'].includes(target.family)||await realpath(target.project)!==target.project)throw new Error('Canonical review cleanup target required');
+  if(target.family==='code'?!/^[a-f0-9]{16}$/.test(target.epicHash)||!/^s\d+$/.test(target.storyId):!/^(DEF-[a-f0-9]{16}|(?:HLD|LLD)-[a-f0-9]{16}(?:-s\d+)?)$/.test(target.artifactId))throw new Error('Invalid review cleanup subject');
+  const scope=reviewCleanupScope(target),root=`${target.project}/.insrc/tmp/${target.family==='code'?'code-review':'design-review'}`;
+  const unknown=reviewUnknownCleanupScope(target.project,target.family);
+  if(this.cleanup.has(scope)||[...this.resourceHolds.values()].some(h=>h.cleanupScope===scope||h.cleanupScope===unknown))return{deleted:[],retained:[root],errors:['Review cleanup or resource recovery is active']};
+  this.cleanup.add(scope);
+  this.cleanupTargets.set(scope,target);
+  const context:TrustedRpcContext={connectionIdentity:`review-cleanup:${randomUUID()}`,daemonEpoch:this.leases.daemonInstance,connectionSignal:new AbortController().signal};
+  try{
+   const entries=[...this.entries.values()].filter(e=>e.scope.cleanupScope===scope||e.scope.cleanupScope===unknown);
+   for(const e of entries){
+    if(e.publication||e.closing||!e.progress||!['complete','failed','interrupted'].includes(e.progress.phase))throw new Error('Review admission/execution/publication is active');
+    await this.call(e,'review.worker.assertIdle',{},true);
+   }
+   for(const e of entries){await this.closeEntry(e);if(this.entries.has(keyOf(e.input.key)))throw new Error('Review resources remain fenced');}
+   const discovery=await this.storedOperation({target},target.family==='design'?'review.cleanup.execute':'review.cleanup.discover') as {candidates:Array<{reviewId:string;attempt:number}>;deleted?:string[];retained:string[];errors:string[]};result.deleted.push(...(discovery.deleted??[]));result.retained.push(...discovery.retained);result.errors.push(...discovery.errors);
+   for(const candidate of discovery.candidates){
+    const key:ReviewKey={project:target.project,family:target.family,reviewId:candidate.reviewId};let entry:Entry|undefined;
+    try{
+     const resolved=await this.deps.resolveScope(key,context);if(resolved.cleanupScope!==scope)throw new Error('Cleanup subject does not match the registered host scope');
+     await this.admitOwned({key,attempt:candidate.attempt,actionId:`cleanup:${randomUUID()}`,submitted:{},maintenance:true},context,scope);
+     entry=this.entries.get(keyOf(key));if(!entry)throw new Error('Cleanup owner missing');
+     const cleaned=await this.call(entry,'review.worker.cleanup',target.family==='code'?{storyId:target.storyId}:{artifactId:target.artifactId},true) as CleanupResult;
+     result.deleted.push(...cleaned.deleted);result.retained.push(...cleaned.retained);result.errors.push(...cleaned.errors);
+    }catch(e){result.retained.push(`${root}/${candidate.reviewId}.json`);result.errors.push(e instanceof Error?e.message:String(e));}
+    finally{if(entry)await this.closeEntry(entry);}
+   }
+  }catch(e){result.retained.push(root);result.errors.push(e instanceof Error?e.message:String(e));}
+  finally{this.cleanup.delete(scope);this.cleanupTargets.delete(scope);}
+  return result;
+ }
  resourceRecovery(broker:ApprovalBroker,audit:ReviewResourceRecoveryDeps['audit'],approvalWaitMs?:number):ReviewResourceRecovery{
   return new ReviewResourceRecovery({services:this.deps.services,broker,audit,track:this.deps.track,approvalWaitMs,claim:async(key,context)=>{
    if(await realpath(key.project)!==key.project)throw new Error('Canonical resource review project required');
    const scope=await this.deps.resolveScope(key,context),id=keyOf(key),entry=this.entries.get(id);
-   if(this.resourceHolds.has(id)||this.cleanup.has(scope.cleanupScope)||entry&&(!entry.fence.reclaimed||entry.reclaimedHealthy===false))throw new Error('Review work must be reclaimed before resource clearance');
+   if(this.resourceHolds.has(id)||this.scopeCleaning(key,scope)||entry&&(!entry.fence.reclaimed||entry.reclaimedHealthy===false))throw new Error('Review work must be reclaimed before resource clearance');
    const hold={cleanupScope:scope.cleanupScope};this.resourceHolds.set(id,hold);
    const assertActive=()=>{const current=this.entries.get(id);if(this.resourceHolds.get(id)!==hold||context.connectionSignal?.aborted||current!==entry&&!(entry&&!current))throw new Error('Stale review resource recovery hold');};
    return{assertActive,release:()=>{if(this.resourceHolds.get(id)===hold)this.resourceHolds.delete(id);},apply:clearance=>{
@@ -248,5 +347,13 @@ export class ReviewWorkers {
    if(e.native.reclaimable&&e.fence.reclaimed&&storesHealthy){e.native.dispose();if(this.entries.get(keyOf(e.input.key))===e)this.entries.delete(keyOf(e.input.key));}
   })();return e.closing;
  }
- async shutdown():Promise<void>{await Promise.all([...this.entries.values()].map(e=>this.closeEntry(e)));}
+ async shutdown():Promise<void>{
+  if(this.shutdownWork)return this.shutdownWork;
+  const work=(async()=>{
+   await Promise.all([...this.entries.values()].map(e=>this.closeEntry(e)));
+   for(const worker of this.storedWorkers)await worker.terminate();
+   await Promise.allSettled([...this.storedRuns]);
+  })();this.shutdownWork=work;
+  try{await work;}finally{if(this.shutdownWork===work)this.shutdownWork=undefined;}
+ }
 }

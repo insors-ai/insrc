@@ -1,4 +1,5 @@
 import { cleanupStoryCheckpoints } from '../workflow/code-review/task-review/cleanup.js';
+import { ownedReviewCleanup } from '../workflow/review/cleanup-owner.js';
 import { approvalStateOf } from '../workflow/artifact-core/approval-view.js';
 import { artifactJsonPath, buildArtifactId } from '../workflow/storage.js';
 import { readFile } from 'node:fs/promises';
@@ -107,7 +108,7 @@ export async function readTaskReviewProgress(raw:unknown):Promise<unknown>{
 }
 
 /** Idempotent cleanup retry: authority comes from the stored approved BUILD. */
-export async function cleanupApprovedTaskReviews(raw: unknown): Promise<import('../workflow/code-review/task-review/cleanup.js').CleanupResult> {
+export async function cleanupApprovedTaskReviews(raw: unknown,ownerReviewId?:string): Promise<import('../workflow/code-review/task-review/cleanup.js').CleanupResult> {
  requireReview(raw&&typeof raw==='object','request','Expected story cleanup request');
  const p=raw as Record<string,unknown>;
  requireReview(typeof p['repo']==='string'&&p['repo'].startsWith('/'),'repo','Expected absolute project');
@@ -118,6 +119,8 @@ export async function cleanupApprovedTaskReviews(raw: unknown): Promise<import('
  requireReview(stored?.integrity.ok,'BUILD','BUILD integrity cannot be verified');
  const build=JSON.parse(await readFile(artifactJsonPath(repo,id),'utf8')) as {meta:Record<string,unknown>};
  requireReview(approvalStateOf(build.meta)==='approved','BUILD','Story BUILD approval is required for cleanup');
- const fenced=await coordinatorFor(repo).withStoryCleanup(repo,hash,story,()=>cleanupStoryCheckpoints(repo,hash,story,{sources:publicationDeps(repo).sources,onDeleted:id=>coordinatorFor(repo).forgetCheckpoint(repo,id)}));
+ if(!ownerReviewId){const owned=await ownedReviewCleanup({project:repo,family:'code',epicHash:hash,storyId:story});if(owned)return owned;}
+ if(ownerReviewId)return cleanupStoryCheckpoints(repo,hash,story,{sources:publicationDeps(repo).sources,ownerReviewId});
+ const fenced=await coordinatorFor(repo).withStoryCleanup(repo,hash,story,()=>cleanupStoryCheckpoints(repo,hash,story,{sources:publicationDeps(repo).sources,...(ownerReviewId?{ownerReviewId}:{}),onDeleted:id=>coordinatorFor(repo).forgetCheckpoint(repo,id)}));
  return fenced.busy?{deleted:[],retained:[`${repo}/.insrc/tmp/code-review`],errors:['Story review admission/execution/publication or cleanup is active; retry cleanup after it settles']}:fenced.result;
 }

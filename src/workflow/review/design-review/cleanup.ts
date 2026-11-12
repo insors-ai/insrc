@@ -6,14 +6,19 @@ import type { ArtifactStore } from '../../artifact-core/store.js';
 import { createRepoLifecycle } from '../../artifact-core/repo-lifecycle.js';
 import { checkIntegrity } from '../../artifact-core/lifecycle.js';
 import type { CleanupResult } from '../../code-review/task-review/cleanup.js';
-import { DesignCheckpointSchema, DesignReviewError, DESIGN_LIMITS, decodeDesign, requireDesign } from './contracts.js';
-import type { DesignReviewCheckpoint } from './contracts.js';
-import { designCheckpointPath, validateDesignCheckpointIdentity } from './checkpoint.js';
+import { DesignReviewError, DESIGN_LIMITS, requireDesign,isDesignAdmission } from './contracts.js';
+import type { StoredDesignCheckpoint } from './contracts.js';
+import { decodeStoredDesignCheckpoint } from './admission-checkpoint.js';
+import { designCheckpointPath, validateStoredDesignIdentity } from './checkpoint.js';
 import { designPreservationDigest, validatePermanentDesignReview } from './history.js';
 import { designArtifactActive, withDesignArtifactFence } from './fence.js';
+import { ownedReviewCleanup } from '../cleanup-owner.js';
+import { persistReviewResourceAudit } from '../resource-audit.js';
 
 interface Claim {schemaVersion:1;project:string;artifactId:string;reviewId:string;source:string;digest:string;ino:number;dev:number;state:'claimed'|'quarantine';}
 export interface DesignCleanupDeps {
+ readonly ownerReviewId?:string;
+ readonly ownerScope?:true;
  readonly store?:ArtifactStore;
  readonly onDeleted?:(reviewId:string)=>void;
  /** Fault/race injection at real filesystem boundaries; never supplied by normal callers. */
@@ -35,24 +40,26 @@ function saveManifest(dir:string,claim:Claim,create=false):void{
  const path=join(dir,'claim.json');writeFileSync(path,JSON.stringify(claim),{mode:0o600,flag:create?'wx':'w'});
  const fd=openSync(path,constants.O_RDONLY|constants.O_NOFOLLOW|constants.O_NONBLOCK);try{fsyncSync(fd);}finally{closeSync(fd);}syncDirectory(dir);
 }
-function decode(bytes:Buffer,project:string,id:string):DesignReviewCheckpoint{
- const cp=decodeDesign(DesignCheckpointSchema,JSON.parse(bytes.toString('utf8')));validateDesignCheckpointIdentity(project,id,cp);return cp;
+function decode(bytes:Buffer,project:string,id:string):StoredDesignCheckpoint{
+ const cp=decodeStoredDesignCheckpoint(JSON.parse(bytes.toString('utf8')));validateStoredDesignIdentity(project,id,cp);return cp;
 }
-async function preserved(project:string,artifactId:string,cp:DesignReviewCheckpoint,store:ArtifactStore):Promise<void>{
+async function preserved(project:string,artifactId:string,cp:StoredDesignCheckpoint,store:ArtifactStore):Promise<void>{
+ requireDesign(!cp.attempts.some(a=>'resourceGuard'in a&&a.resourceGuard?.openLeases.length),'resource_pending','Review resources are unresolved');
  requireDesign(cp.project===project&&cp.artifactId===artifactId,'foreign_checkpoint','Different project/artifact');
  requireDesign(!designArtifactActive(project,artifactId),'active_review','Artifact has active review ownership');
  const head=await store.readWithHistory(artifactId);
  requireDesign(['approved','in-signoff','signed-off','completed'].includes(head.lifecycle.status)&&head.lifecycle.approval?.revision===head.lifecycle.revision.number,'not_approved','Artifact is not currently approved');
  requireDesign(checkIntegrity(head,head.changeLog).ok,'approval_integrity','Approval history is inconsistent');
  const latest=cp.attempts.at(-1)!;
- requireDesign(latest.report&&['passed','changes_requested','incomplete'].includes(latest.status)&&latest.publication?.state==='complete','unpublished_review','Latest work is unfinished or unpublished');
+ requireDesign(!isDesignAdmission(latest)&&latest.report&&['passed','changes_requested','incomplete'].includes(latest.status)&&latest.publication?.state==='complete','unpublished_review','Latest work is unfinished or unpublished');
  const entry=head.changeLog.find(e=>e.id===latest.publication!.artifactHistoryEntryId);
  requireDesign(entry?.operation==='review'&&(entry.outcome?.data as {kind?:unknown}|undefined)?.kind==='design-chunk-review','unpreserved_review','Permanent review entry is missing');
  const record=validatePermanentDesignReview(entry.outcome!.data,{project,artifactId});
- requireDesign(record.reviewId===cp.reviewId&&record.attempts.length===cp.attempts.length&&record.preservationDigest===designPreservationDigest(cp),'unpreserved_review','Full attempt history differs from permanent evidence');
+ requireDesign(record.reviewId===cp.reviewId&&record.attempts.length+(record.schemaVersion===2?record.admissionFailures.length:0)===cp.attempts.length&&record.preservationDigest===designPreservationDigest(cp),'unpreserved_review','Full attempt history differs from permanent evidence');
 }
 /** Deletes only verified private claims. The public checkpoint pathname is never unlinked. */
 export async function cleanupDesignArtifact(projectInput:string,artifactId:string,deps:DesignCleanupDeps={}):Promise<CleanupResult>{
+ if(!deps.ownerReviewId&&!deps.ownerScope&&!deps.boundary){const owned=await ownedReviewCleanup({project:realpathSync(projectInput),family:'design',artifactId});if(owned)return owned;}
  const result:CleanupResult={deleted:[],retained:[],errors:[]},project=realpathSync(projectInput),root=dirname(designCheckpointPath(project,'cleanup'));
  const retain=(path:string,error:unknown)=>{result.retained.push(path);result.errors.push(`${path}: ${error instanceof Error?error.message:String(error)}`);};
  try{return await withDesignArtifactFence(project,artifactId,async()=>{
@@ -68,6 +75,7 @@ export async function cleanupDesignArtifact(projectInput:string,artifactId:strin
     const got=bounded(claimed,DESIGN_LIMITS.checkpointBytes);
     requireDesign(got.ino===c.ino&&got.dev===c.dev&&digest(got.bytes)===c.digest,'changed_claim','Claimed bytes changed or were replaced');
     const cp=decode(got.bytes,project,c.reviewId);await preserved(project,artifactId,cp,store);
+    await persistReviewResourceAudit(store,artifactId,{project,family:'design',reviewId:cp.reviewId},cp.attempts.flatMap(a=>'resourceGuard'in a&&a.resourceGuard?[{attempt:a.number,resourceGuard:a.resourceGuard}]:[]));
     await deps.boundary?.('beforeDelete',c.source,claimed);
     await preserved(project,artifactId,cp,store);
     const final=bounded(claimed,DESIGN_LIMITS.checkpointBytes);requireDesign(final.ino===got.ino&&final.dev===got.dev&&final.bytes.equals(got.bytes),'changed_claim','Private claim changed before deletion');
@@ -85,12 +93,14 @@ export async function cleanupDesignArtifact(projectInput:string,artifactId:strin
   }
   const entries=readdirSync(root,{withFileTypes:true});
   for(const entry of entries){
+   if(deps.ownerReviewId&&!entry.name.startsWith('.cleanup-')&&entry.name!==`${deps.ownerReviewId}.json`)continue;
    const path=join(root,entry.name);
    if(entry.name.startsWith('.cleanup-')){
     try{
      const st=lstatSync(path);requireDesign(st.isDirectory()&&!st.isSymbolicLink()&&realpathSync(path)===path&&(st.mode&0o077)===0&&(process.getuid===undefined||st.uid===process.getuid()),'unsafe_cleanup','Unsafe private claim directory');
      const c=JSON.parse(bounded(join(path,'claim.json'),8192).bytes.toString('utf8')) as Claim;
      if(c.project!==project||c.artifactId!==artifactId)continue;
+     if(deps.ownerReviewId&&c.reviewId!==deps.ownerReviewId)continue;
      requireDesign(c.schemaVersion===1&&c.source===designCheckpointPath(project,c.reviewId)&&/^[a-f0-9]{64}$/.test(c.digest)&&Number.isSafeInteger(c.ino)&&Number.isSafeInteger(c.dev)&&['claimed','quarantine'].includes(c.state),'unsafe_cleanup','Malformed claim metadata');
      await finish(path,c);
     }catch(error){retain(path,error);}continue;

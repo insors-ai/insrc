@@ -27,7 +27,7 @@ export function reviewProgressPublication(input:ReviewBootstrapInput,sequence:nu
  const admission=c?.admission??d?.admission,error=c?.admission?.error??d?.failure;
  const status=c?.status??d!.status;
  if(admission&&(!['pending','running','failed','interrupted'].includes(status)||c&&(c.totalTasks!==0||c.completedTasks!==0||c.progress?.task!==null)))throw new Error('Unverified admission cannot claim reviewed work or a passing result');
- const phase=c?.progress?.phase??(code?'scope_preparation':d!.phase);
+ const phase=c?.progress?.phase??(code?(c?.executionState==='active'&&c.crPublication==='pending'&&c.totalTasks>0&&c.completedTasks===c.totalTasks?'cr_publication':'scope_preparation'):d!.phase);
  const display:ReviewWorkerStatus={project:input.key.project,family:input.key.family,reviewId:input.key.reviewId,attempt:c?.attempt??input.attempt,status,phase,
  completed:c?.completedTasks??d!.completedChunks,total:c?.totalTasks??d!.totalChunks,observedAt:c?.progress?.observedAt??d?.observedAt??new Date().toISOString(),freshness:'live',
  ...(admission?{admission:{validation:'unverified' as const,state:status==='failed'?'failed' as const:status==='interrupted'?'interrupted' as const:status==='running'?'validating' as const:'pending' as const,stage:phase,...(error?{error:{code:error.code.slice(0,256),summary:error.summary.slice(0,2048)}}:{})}}:{}),

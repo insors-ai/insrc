@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { DesignReviewCoordinator } from './coordinator.js';
 import type { DesignCoordinatorDeps,DesignControllerOwner } from './coordinator.js';
 import { parseDesignRequest,isDesignAdmission,requireDesign } from './contracts.js';
-import { loadStoredDesignCheckpoint,qualifiedDesignProjection,updateStoredDesignCheckpoint } from './checkpoint.js';
+import { loadStoredDesignCheckpoint,qualifiedDesignProjection,updateStoredDesignCheckpoint,saveDesignCheckpoint } from './checkpoint.js';
 import { loadWorkerDesignCheckpoint,saveWorkerDesignCheckpoint } from './worker-checkpoint.js';
 import { observeStoredDesignCheckpoint } from './progress.js';
 import { prepareDesignSubject } from './subject.js';
@@ -23,6 +23,7 @@ export class DesignReviewWorker {
  private targetAttempt:number;
  private recoveryRequest:DesignRecoveryRequest|undefined;
  private readonly recoveries=new Map<string,Promise<void>>();
+ isActive():boolean{return this.preparing||this.coordinator.isActive(this.input.key.project,this.input.key.reviewId);}
  constructor(private readonly input:ReviewBootstrapInput,deps:DesignCoordinatorDeps={}){
   requireDesign(input.key.family==='design','wrong_owner','Design worker required');
   this.targetAttempt=input.attempt;
@@ -51,7 +52,13 @@ export class DesignReviewWorker {
      if(recovery)current.actions=(last.actions??[]).map(a=>a.actionId===recovery.actionId?{...a,validation:'qualified'}:a);
     }
     await deps.admit?.(cp);
-   },save:saveWorkerDesignCheckpoint,
+   },save:async(project,cp)=>{
+    const stored=await loadStoredDesignCheckpoint(project,cp.reviewId);
+    // Historical publication repair has no native work and must preserve its
+    // existing format/preservation identity, rather than minting admission.
+    if(input.maintenance&&stored?.schemaVersion===1)return saveDesignCheckpoint(project,cp);
+    return saveWorkerDesignCheckpoint(project,cp);
+   },
   });
  }
  async recover(raw:unknown,owner?:DesignControllerOwner){

@@ -6,6 +6,35 @@ import { join } from 'node:path';
 import { once } from 'node:events';
 import { clearanceFixture,workerRpc,until,pause } from './helpers/review-clearance-fixture.js';
 import { inspectReviewResources,requireClosedReviewResources } from '../../../workflow/review/resource-recovery.js';
+import { ThreadServices } from '../main-services.js';
+import { ReviewWorkers } from '../review-workers.js';
+import { startReviewWorkerBootstrap } from '../review-worker-bootstrap.js';
+import type { StartedReviewWorker } from '../review-worker-bootstrap.js';
+import { fixture as publicationFixture } from '../../../workflow/code-review/task-review/__tests__/publication-fixture.js';
+import { readFileSync } from 'node:fs';
+
+test('shutdown drains host leases before worker reclamation and replacement',async t=>{
+ const old=process.env['INSRC_TEST_HOOKS'];process.env['INSRC_TEST_HOOKS']='1';
+ const f=await publicationFixture(),started:StartedReviewWorker[]=[];
+ const services=new ThreadServices(()=>({startedAt:0,modelState:{status:'ready'},installedCommit:'fixture'}));
+ const registry=new ReviewWorkers({services,resolveScope:async()=>({reviewer:'daemon',subject:'fixture',cleanupScope:`${f.repo}:s1`}),authorizeNative:async(_key,c)=>assert.equal(c.command,process.execPath),resolveBinary:async c=>c,track:()=>{},start:async(...args)=>{const s=await startReviewWorkerBootstrap(...args);started.push(s);return s;}});
+ t.after(async()=>{await registry.shutdown();f.cleanup();if(old===undefined)delete process.env['INSRC_TEST_HOOKS'];else process.env['INSRC_TEST_HOOKS']=old;});
+ const key={project:f.repo,family:'code' as const,reviewId:'shutdown-review'},input={key,attempt:1,actionId:'shutdown-admission',submitted:f.packet};
+ const context={connectionIdentity:'shutdown-fixture',daemonEpoch:'epoch',connectionSignal:new AbortController().signal};
+ await registry.admit(input,context);const owner=started[0]!,path=join(f.repo,'.insrc/tmp/code-review/shutdown-review.json');
+ const running=workerRpc(owner,'test.review.native',{...owner.admission,probe:'hold'}).catch(()=>undefined);
+ await until(async()=> (await inspectReviewResources(key)).remaining===1);
+ let closedBeforeExit=false;owner.worker.once('exit',()=>{const cp=JSON.parse(readFileSync(path,'utf8'));closedBeforeExit=cp.attempts.every((a:any)=>!a.resourceGuard?.openLeases.length);});
+ await registry.shutdown();await running;await owner.reclaimed;
+ assert.equal(closedBeforeExit,true,'confirmed native disposal must be durably saved while its writer is alive');
+ assert.equal((await inspectReviewResources(key)).remaining,0);assert.equal(owner.worker.threadId,-1);
+ const replacement=await registry.admit({...input,operation:'resume'},context);assert.notEqual(replacement.incarnation,owner.admission.incarnation);
+ assert.notEqual(started[1]!.threadId,owner.threadId);
+ const next=started[1]!,again=workerRpc(next,'test.review.native',{...next.admission,probe:'hold'}).catch(()=>undefined);
+ await until(async()=> (await inspectReviewResources(key)).remaining===1);
+ next.port.close();await next.reclaimed;await again;
+ assert.equal((await inspectReviewResources(key)).remaining,0,'lost hub connection also drains native work before reclaim');
+});
 
 test('disposable daemon crash reconstructs unresolved guards and leaves unrelated reviews usable',async t=>{
  const f=await clearanceFixture(t),binary=join(f.repo,'survivor-cli'),packetFile=join(f.repo,'crash-packet.json');

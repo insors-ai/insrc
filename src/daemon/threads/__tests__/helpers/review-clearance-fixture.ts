@@ -30,6 +30,7 @@ export function workerRpc(started:StartedReviewWorker,method:string,params:unkno
  });
 }
 export class LocalPeer {
+ private subscribed=false;
  private sequence=0;private buffer='';private readonly waiting=new Map<number,{resolve:(v:any)=>void;reject:(e:Error)=>void}>();
  private readonly requests:ApprovalRequest[]=[];private readonly listeners:Array<(r:ApprovalRequest)=>void>=[];
  private constructor(readonly socket:ReturnType<typeof createConnection>){
@@ -37,7 +38,7 @@ export class LocalPeer {
   socket.on('error',error=>{for(const p of this.waiting.values())p.reject(error);this.waiting.clear();});socket.on('close',()=>{for(const p of this.waiting.values())p.reject(new Error('Local peer disconnected'));this.waiting.clear();});
  }
  static async connect(path:string){const socket=createConnection(path);await new Promise<void>((resolve,reject)=>{socket.once('connect',resolve);socket.once('error',reject);});return new LocalPeer(socket);}
- subscribe(){this.socket.write(JSON.stringify({id:++this.sequence,method:'approval.subscribe',params:{},stream:true})+'\n');}
+ subscribe(){if(this.subscribed)return;this.subscribed=true;this.socket.write(JSON.stringify({id:++this.sequence,method:'approval.subscribe',params:{},stream:true})+'\n');}
  call(method:string,params:unknown):Promise<any>{const id=++this.sequence;return new Promise((resolve,reject)=>{this.waiting.set(id,{resolve,reject});this.socket.write(JSON.stringify({id,method,params})+'\n');});}
  async request():Promise<ApprovalRequest>{const first=this.requests.shift();return first??new Promise<ApprovalRequest>(resolve=>this.listeners.push(resolve));}
  close(){this.socket.destroy();}

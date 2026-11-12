@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { fork } from 'node:child_process';
+import { fork,spawn } from 'node:child_process';
 import { writeFile,readFile,chmod,mkdir,rm,readlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { once } from 'node:events';
@@ -45,17 +45,37 @@ const fs=require('node:fs'),path=require('node:path');let input='';process.stdin
  const stop=async(crash=false)=>{if(!daemon||daemon.exitCode!==null||daemon.signalCode!==null)return;const exit=once(daemon,'exit');if(crash)daemon.kill('SIGKILL');else{for(const p of peers)p.close();daemon.send('stop');}await exit;};
  t.after(async()=>{for(const p of peers)p.close();await stop(true);for(const [pid,repo] of survivors){try{if(await readlink(`/proc/${pid}/cwd`)===repo)process.kill(-pid,'SIGKILL');}catch{}}cleanDesign();code.cleanup();});
  const start=async()=>{
-  diagnostic='';daemon=fork(new URL('./helpers/review-production-daemon.ts',import.meta.url),[config],{execArgv:['--import','tsx'],stdio:['ignore','ignore','pipe','ipc']});
+  diagnostic='';daemon=fork(new URL('./helpers/review-production-daemon.ts',import.meta.url),[config],{execArgv:['--import','tsx'],env:{...process.env,INSRC_TEST_HOOKS:'1'},stdio:['ignore','ignore','pipe','ipc']});
   daemon.stderr!.on('data',s=>{diagnostic=(diagnostic+String(s)).slice(-8000);});
   await Promise.race([once(daemon,'message'),once(daemon,'exit').then(()=>{throw Error(diagnostic);}),new Promise<never>((_,reject)=>setTimeout(()=>reject(Error('Fixture daemon readiness: '+diagnostic)),15000).unref())]);
   const peer=await LocalPeer.connect(socket);peers.push(peer);return peer;
  };
  const spawns=async(repo:string)=>{try{return(await readFile(join(repo,'native-spawns.jsonl'),'utf8')).trim().split('\n').filter(Boolean).map(s=>JSON.parse(s) as {pid:number;reviewId:string;qualified:boolean;leases:Array<{operationId:string}>});}catch{return[];}};
  let peer=await start();
+ // Unrelated live process is deliberately outside every review lease. Every
+ // targeted worker/daemon disposal and cleanup must leave it untouched.
+ const sentinel=spawn(process.execPath,['-e','setInterval(()=>{},1000)','review-unrelated-sentinel'],{cwd:code.repo,stdio:'ignore'});
+ t.after(()=>{sentinel.kill('SIGKILL');});
  for(const family of ['code','design'] as const){
   const repo=family==='code'?code.repo:design.repo,method=family==='code'?'taskReview':'designReview';
   const base={repo,attempt:1,...(family==='code'?{epicHash:hash}:{})};
   const submitted=family==='code'?{packet:code.packet}:{artifactPath:design.json};
+  for(const boundary of ['reserve','save']){
+   const request={...base,...submitted,reviewId:`boundary-${boundary}-${family}`},key={project:repo,family,reviewId:request.reviewId};
+   const count=(await spawns(repo)).length;await writeFile(join(repo,'hold-'+request.reviewId),'fixture boundary barrier');
+   await peer.call(method+'.start',request);
+   await until(async()=>readFile(join(repo,'stage-'+request.reviewId),'utf8').then(()=>true,()=>false));
+   await assert.rejects(peer.call('fixture.bypass',{reviewId:request.reviewId}),/transport is not installed/);
+   await peer.call('fixture.terminate',{reviewId:request.reviewId});
+   assert.equal((await spawns(repo)).length,count,'worker death before spawn never starts a native child');
+   const recovery={...base,reviewId:request.reviewId,...(family==='code'?{operation:'resume'}:{phase:'recover',operation:'resume',actionId:'boundary-resume'})};
+   if(boundary==='save'){
+    const route=method+(family==='code'?'.start':'.recover');assert.equal((await peer.call(route,recovery)).status,'resource_recovery_required');
+    peer.subscribe();await pause();const pending=peer.call(route,{...recovery,resourceRecovery:{reason:'Verified fixture operation saved intent but never spawned'}}),approval=await peer.request();
+    await peer.call('approval.answer',{requestId:approval.requestId,decision:'approve'});assert.equal((await pending).status,'cleared');
+   }
+   await requireClosedReviewResources(key);process.kill(sentinel.pid!,0);
+  }
   const denied={...base,...submitted,reviewId:`denied-${family}`};
   const before=(await spawns(repo)).length;
   await peer.call(method+'.start',denied);
@@ -78,6 +98,9 @@ const fs=require('node:fs'),path=require('node:path');let input='';process.stdin
   assert.equal((await spawns(repo)).filter(s=>s.reviewId===loss.reviewId).length,1);
   await rm(join(repo,'hold-'+loss.reviewId));await peer.call(route,resume);
   await until(async()=>{const p=await peer.call(method+'.progress',loss);if(p.status==='failed')throw Error(JSON.stringify(p));return p.status==='passed';});
+  const proof=JSON.parse(await readFile(join(repo,`byte-proof-${loss.reviewId}.json`),'utf8'));
+  assert.equal(proof.maxActive,1);assert.ok(proof.maxFrameBytes<=65536);assert.ok(proof.totalBytes>=200000);assert.ok(proof.frames>=4);
+  process.kill(sentinel.pid!,0);
   await peer.call('fixture.terminate',{reviewId:loss.reviewId});
  }
  for(const family of ['code','design'] as const){
@@ -105,7 +128,7 @@ const fs=require('node:fs'),path=require('node:path');let input='';process.stdin
   // Verify exact owned child before ending its process group. Ending it alone
   // cannot authorize a cold replacement or clear the durable uncertainty.
   assert.ok((await readFile(`/proc/${spawn.pid}/cmdline`,'utf8')).includes(join(bin,'claude')));
-  process.kill(-spawn.pid,'SIGKILL');survivors.delete(spawn.pid);
+  process.kill(-spawn.pid,'SIGKILL');await until(async()=>{try{return /\) Z /.test(await readFile(`/proc/${spawn.pid}/stat`,'utf8'));}catch(error){if((error as NodeJS.ErrnoException).code==='ENOENT')return true;throw error;}});survivors.delete(spawn.pid);
   assert.equal((await peer.call(route,recovery)).status,'resource_recovery_required');
   await assert.rejects(peer.call(route,{...recovery,resourceRecovery:{reason:'Wrong fixture lease',leaseIds:['foreign-operation']}}),/exact set/);
   await assert.rejects(peer.call(route,{...recovery,resourceRecovery:{reason:'Forged receipt',approvalReceipt:{decision:'approve'}}}),/caller approval receipts/);
@@ -115,6 +138,7 @@ const fs=require('node:fs'),path=require('node:path');let input='';process.stdin
   await peer.call('approval.answer',{requestId:approval.requestId,decision:'approve'});
   assert.equal((await clearing).status,'cleared');
   await requireClosedReviewResources(key);
+  process.kill(sentinel.pid!,0);
   assert.equal((await spawns(repo)).filter(s=>s.reviewId===id).length,callsBefore,'clearance is metadata only');
   const guarded=await inspectReviewResources(key);assert.ok(guarded.guards.some(g=>g.resourceGuard.clearance?.approvalReceipt.requestId===approval.requestId));
   assert.equal(await readFile(join(code.repo,'.insrc/tmp/code-review',`${other.reviewId}.json`),'utf8'),otherCheckpoint,'targeted clearance never changes unrelated checkpoints');

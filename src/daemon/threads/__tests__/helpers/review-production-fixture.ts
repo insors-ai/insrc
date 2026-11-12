@@ -37,9 +37,11 @@ export async function productionFixture(t:TestContext,hang?:'never-ready'|'befor
   'taskReview.start':startTaskReview,'taskReview.progress':readTaskReviewProgress,'taskReview.publish':publishStoredTaskReview,
   'taskReview.assignment':(p,c)=>exchangeControllerTaskReview(p,c,'assignment'),
   'taskReview.result':(p,c)=>exchangeControllerTaskReview(p,c,'result'),
+  'taskReview.activity':(p,c)=>exchangeControllerTaskReview(p,c,'activity'),
   'designReview.start':(p,c)=>designReviewOperation('start',p,c),
   'designReview.progress':(p,c)=>designReviewOperation('progress',p,c),
   'designReview.recover':(p,c)=>designReviewOperation('recover',p,c),
+  ...Object.fromEntries((['assignment','plan','result','activity','failure'] as const).map(phase=>[`designReview.${phase}`,(p:unknown,c:import('../../../request-context.js').TrustedRpcContext|undefined)=>designReviewOperation(phase,p,c)])),
   'daemon.status':()=>admin.daemonStatus(),'daemon.threads':()=>admin.threads(),
   'approval.answer':approval.answer,
  },{'approval.subscribe':approval.subscribe}),Date.now,path);

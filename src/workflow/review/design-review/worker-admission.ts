@@ -24,6 +24,7 @@ export class DesignReviewWorker {
  private recoveryRequest:DesignRecoveryRequest|undefined;
  private readonly recoveries=new Map<string,Promise<void>>();
  isActive():boolean{return this.preparing||this.coordinator.isActive(this.input.key.project,this.input.key.reviewId);}
+ isPreparing():boolean{return this.preparing;}
  constructor(private readonly input:ReviewBootstrapInput,deps:DesignCoordinatorDeps={}){
   requireDesign(input.key.family==='design','wrong_owner','Design worker required');
   this.targetAttempt=input.attempt;
@@ -64,6 +65,12 @@ export class DesignReviewWorker {
  async recover(raw:unknown,owner?:DesignControllerOwner){
   requireDesign(this.input.subject,'wrong_owner','Registered design subject required');
   if(this.input.reviewer==='controller')requireDesign(owner&&!owner.signal.aborted&&(this.owner===undefined||this.owner===owner.id),'wrong_owner','Trusted reviewing controller required');
+  const request=parseDesignRequest(raw);
+  requireDesign(request.phase==='recover'&&request.repo===this.input.key.project&&request.reviewId===this.input.key.reviewId,'foreign_checkpoint','Recovery belongs to another review');
+  // The coordinator durably records publication.actions before its model-free
+  // write. A second attempt.actions entry would change preserved assessment
+  // identity merely by replaying publication of the same accepted feedback.
+  if(request.operation==='retry_publication')return this.coordinator.recover(request,owner?{owner}:{});
   const admitted=await admitDesignRecovery(this.input.key.project,this.input.key.reviewId,raw,()=>requireDesign(!this.preparing&&!this.coordinator.isActive(this.input.key.project,this.input.key.reviewId),'review_conflict','Review is still active'));
   this.targetAttempt=Math.max(this.targetAttempt,admitted.resultAttempt);
   if(admitted.validation==='unverified'||this.recoveryRequest?.actionId===admitted.request.actionId)this.recoveryRequest=admitted.request;

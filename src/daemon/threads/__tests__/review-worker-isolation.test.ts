@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile,writeFile } from 'node:fs/promises';
 import { productionFixture } from './helpers/review-production-fixture.js';
 import { until,workerRpc } from './helpers/review-clearance-fixture.js';
 import { cleanupApprovedTaskReviews } from '../../task-review-rpc.js';
@@ -80,4 +80,36 @@ test('installed production routing bounds never-ready and pre-save-hung boot wit
   const other=f.codeRequest('after-'+mode);await peer.call('taskReview.start',other);await f.release(other.reviewId);
   await until(async()=> (await peer.call('taskReview.progress',other)).status==='passed');
  });
+});
+
+test('production controller exchanges and disconnect reclaim only their own review',async t=>{
+ const f=await productionFixture(t),owner=await f.peer(),observer=await f.peer();
+ f.code.build.meta.authoredBy='daemon';f.code.put(`.insrc/artifacts/BUILD-${hash}-s1.json`,f.code.build);
+ for(const d of [f.design,f.secondDesign]){const raw=JSON.parse(await readFile(d.json,'utf8'));raw.meta.authoredBy='daemon';await writeFile(d.json,JSON.stringify(raw));}
+ const code={...f.codeRequest('controller-code'),timingProtocol:'activity-v1'};
+ assert.equal((await owner.call('taskReview.start',code)).reviewer,'controller');await f.release(code.reviewId);
+ let frame:any;await until(async()=>{frame=await owner.call('taskReview.assignment',code);return frame.kind==='task';});
+ await assert.rejects(observer.call('taskReview.result',{...code,taskId:frame.taskId,executionId:frame.executionId,sequence:frame.nextSequence,result:f.code.result}),/owner|connection/);
+ assert.equal((await owner.call('taskReview.result',{...code,taskId:frame.taskId,executionId:frame.executionId,sequence:frame.nextSequence,result:f.code.result})).kind,'done');
+ const {artifactPath,...design}=f.designRequest('controller-design');assert.equal((await owner.call('designReview.start',{...design,artifactPath})).reviewer,'controller');await f.release(design.reviewId);
+ await until(async()=>{frame=(await owner.call('designReview.assignment',design)).assignment;return!!frame;});
+ const selectors=f.design.prepared.inventory.units.map(u=>u.id);
+ const plan={chunks:[{id:'content',title:'Content',selectors,concerns:['Requirements'],dependsOn:[],purpose:'substantive'},{id:'final',title:'Consistency',selectors:[],concerns:['Consistency'],dependsOn:['content'],purpose:'consistency'}],coverageExplanation:'Complete scope then consistency',finalConsistencyChunkId:'final',coverage:selectors.map(unitId=>({unitId,chunkIds:['content']}))};
+ await owner.call('designReview.plan',{...design,executionId:frame.executionId,sequence:1,plan});
+ for(const chunkId of ['content','final']){
+  await until(async()=>{frame=(await owner.call('designReview.assignment',design)).assignment;return!!frame;});
+  await owner.call('designReview.result',{...design,executionId:frame.executionId,sequence:1,result:{chunkId,status:'passed',summary:'Controller fixture assessment',findings:[],inspectedReferences:[...selectors,f.design.md,f.design.json,`${f.design.repo}/.insrc/tmp/design-review/${design.reviewId}.json`],limitations:[],advice:[]}});
+ }
+ await until(async()=> (await owner.call('designReview.progress',design)).status==='passed');
+ const pendingCode={...f.codeRequest('disconnect-code'),timingProtocol:'activity-v1'},{artifactPath:pendingPath,...pendingDesign}=f.designRequest('disconnect-design',1);
+ await owner.call('taskReview.start',pendingCode);await f.release(pendingCode.reviewId);
+ await owner.call('designReview.start',{...pendingDesign,artifactPath:pendingPath});await f.release(pendingDesign.reviewId);
+ await until(async()=>{const c=await owner.call('taskReview.assignment',pendingCode),d=await owner.call('designReview.assignment',pendingDesign);return c.kind==='task'&&!!d.assignment;});
+ const c=f.started.get(pendingCode.reviewId)!,d=f.started.get(pendingDesign.reviewId)!;
+ owner.close();await until(()=>c.worker.threadId===-1&&d.worker.threadId===-1);
+ assert.ok(await observer.call('daemon.status',{}));
+ // Successful prior feedback remains saved, and disconnected work cannot
+ // accept a forged result from a newly connected observer.
+ const saved=JSON.parse(await readFile(c.admission.checkpointPath,'utf8'));assert.equal(saved.attempts[0]['review-response'].tasks.length,0);
+ await assert.rejects(observer.call('taskReview.result',{...pendingCode,result:f.code.result}),/owner|unavailable|fenced|reclaimed|closed/);
 });

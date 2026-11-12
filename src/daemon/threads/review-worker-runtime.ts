@@ -180,6 +180,7 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
      if(phase==='activity')return coordinator.controllerActivity(project,id,attempt,p['input'],owner,envelope);
      throw new Error('Invalid code control phase');
     }
+    if(phase==='assignment'&&design){const observation=await design.progress();if(design.isPreparing()||observation.admission)return{...observation,assignment:null};}
     if(!['assignment','plan','impact','result','activity','failure'].includes(String(phase)))throw new Error('Invalid design control phase');
     const payload=p['input'];
     return coordinator.exchange({...((payload&&typeof payload==='object')?payload:{}),phase,repo:project,reviewId:id,attempt,...(phase==='assignment'?{}:{executionId:p['executionId'],sequence:p['sequence']})},owner);

@@ -1,5 +1,5 @@
 import { workerData } from 'node:worker_threads';
-import { writeFile } from 'node:fs/promises';
+import { writeFile,access } from 'node:fs/promises';
 import { join } from 'node:path';
 import { installReviewNativeSpawnGuard } from '../../../../shared/review-native-guard.js';
 import type { LLMProvider,ReviewSessionOpts,StructuredSchema } from '../../../../shared/types.js';
@@ -8,7 +8,8 @@ installReviewNativeSpawnGuard();
 const {runReviewWorker}=await import('../../review-worker-runtime.js');
 const {RegistryReviewSources}=await import('../../../../workflow/code-review/task-review/sources.js');
 const {CliProvider}=await import('../../../../agent/providers/cli-provider.js');
-const {reviewNativeTransport,runReviewNativeProcess}=await import('../../../../shared/review-process-bridge.js');
+const {reviewNativeTransport,runReviewNativeProcess,withReviewNativeTransport}=await import('../../../../shared/review-process-bridge.js');
+const {claudeReviewSessionArgs}=await import('../../../../agent/providers/cli-provider.js');
 const {prepareDesignSubject}=await import('../../../../workflow/review/design-review/subject.js');
 const {designCheckpointPath,loadStoredDesignCheckpoint}=await import('../../../../workflow/review/design-review/checkpoint.js');
 const {publishDesignReview}=await import('../../../../workflow/review/design-review/publication.js');
@@ -20,8 +21,14 @@ const sources=new RegistryReviewSources({repoPath:repo,sessionId:'native-product
 const cli=new CliProvider({kind:'claude',model:'fixture',effort:'medium'});
 let sequence=0;
 const provider={capabilities:cli.capabilities,runReviewSession:async(prompt:string,schema:StructuredSchema,opts:ReviewSessionOpts)=>{
+ const transport=reviewNativeTransport()!;
+ if(id.startsWith('boundary-')&&await access(join(repo,'hold-'+id)).then(()=>true,()=>false)){
+  const binary=await transport.resolveBinary('claude'),reservation=await transport.reserve({kind:'cli',command:binary,args:claudeReviewSessionArgs(schema,[]),cwd:repo});
+  if(id.startsWith('boundary-save-'))await transport.saveOpenIntent(reservation);
+  await writeFile(join(repo,'stage-'+id),JSON.stringify({operationId:reservation.operationId,stage:id.startsWith('boundary-save-')?'saved':'reserved'}));
+  await new Promise(()=>{}); // Test kills only this registered worker.
+ }
  if(id.startsWith('denied-')){
-  const transport=reviewNativeTransport()!;
   const binary=await transport.resolveBinary('claude');
   await runReviewNativeProcess(transport,binary,['--dangerously-skip-permissions'],{cwd:repo,stdin:'{}',timeoutMs:1000});
   throw new Error('Denied fixture operation cannot produce an assessment');
@@ -38,6 +45,11 @@ const provider={capabilities:cli.capabilities,runReviewSession:async(prompt:stri
  }
  const reply=join(repo,`.native-${id}-${++sequence}.json`);await writeFile(reply,JSON.stringify(value));
  const checkpointPath=join(repo,'.insrc/tmp',init.review.key.family==='code'?'code-review':'design-review',`${id}.json`);
- return cli.runReviewSession(JSON.stringify({reply,reviewId:id,checkpointPath}),schema,opts);
+ let active=0,maxActive=0,maxFrameBytes=0,totalBytes=0,frames=0;
+ try{return await withReviewNativeTransport({
+  resolveBinary:c=>transport.resolveBinary(c),reserve:c=>transport.reserve(c),saveOpenIntent:r=>transport.saveOpenIntent(r),waitStarted:r=>transport.waitStarted(r),write:(r,b,e)=>transport.write(r,b,e),cancel:r=>transport.cancel(r),saveClosedIntent:r=>transport.saveClosedIntent(r),
+  start:(r,receipt,consume)=>transport.start(r,receipt,async output=>{active++;maxActive=Math.max(maxActive,active);maxFrameBytes=Math.max(maxFrameBytes,output.bytes.byteLength);totalBytes+=output.bytes.byteLength;frames++;await new Promise(resolve=>setTimeout(resolve,2));try{await consume(output);}finally{active--;}}),
+ },()=>cli.runReviewSession(JSON.stringify({reply,reviewId:id,checkpointPath}),schema,opts));}
+ finally{await writeFile(join(repo,`byte-proof-${id}.json`),JSON.stringify({maxActive,maxFrameBytes,totalBytes,frames}));}
 }} as unknown as LLMProvider;
 await runReviewWorker(init,init.review.key.family==='code'?{code:{sources,provider:()=>provider,publish:(project,reviewId,hash)=>publishTaskCheckpoint(project,hash,reviewId,{sources,through:roundWriterFor(project),save:saveWorkerCodeCheckpoint})}}:{design:{provider:()=>({provider,model:'fixture'}),publish:async cp=>publishDesignReview((await loadStoredDesignCheckpoint(cp.project,cp.reviewId))!)}});

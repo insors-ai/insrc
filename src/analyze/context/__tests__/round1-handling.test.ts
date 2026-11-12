@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 
 import { InputTooLargeError } from '../../../agent/providers/cli-provider.js';
 import type { LLMMessage, LLMProvider, StructuredSchema } from '../../../shared/types.js';
-import { chunkAtLines, emitDivided } from '../final-emit.js';
+import { chunkAtLines, chunkResult, conversationBlocks, emitDivided } from '../final-emit.js';
 import { synthesizeHandled } from '../synthesizer.js';
 import type { synthesize } from '../synthesizer.js';
 import { HandlingBudgetError } from '../answer-step-error.js';
@@ -132,17 +132,22 @@ test('the part-id probe uses the longest key in the limit\'s own unit: a shorter
 	assert.ok(probes.some(id => id.includes(wide)), `the probe carries the wide key: ${probes.join('|')}`);
 });
 
-test('plain infra file names that hold the separator stay distinct; a kind before a real path is still taken off', () => {
+test('infra entries that hold the kind separator stay distinct, whether the text before it is a kind or a directory', () => {
 	const text = [
 		'## By family',
 		'- Alpha — Notes.yaml',
 		'- Beta — Notes.yaml',
 		'- Deployment — k8s/app.yaml',
 		'- Service — k8s/app.yaml',
+		'- Alpha — configs/app.yaml',
+		'- Beta — configs/app.yaml',
+		'- Deployment — k8s/app.yaml',
 	].join('\n');
 	const out = dedupeLayer(text, 'structure', 'infra').split('\n');
 	assert.ok(out.includes('- Alpha — Notes.yaml') && out.includes('- Beta — Notes.yaml'), 'two plain files are two entries');
-	assert.equal(out.filter(l => l.includes('k8s/app.yaml')).length, 1, 'one file listed under two kinds is listed once');
+	assert.ok(out.includes('- Alpha — configs/app.yaml') && out.includes('- Beta — configs/app.yaml'), 'two paths that differ before the separator are both kept');
+	assert.equal(out.filter(l => l === '- Deployment — k8s/app.yaml').length, 1, 'an identical entry is listed once');
+	assert.ok(out.includes('- Service — k8s/app.yaml'), 'the same file under another kind is kept');
 });
 
 test('an oversized rule reference goes through the real synthesizer: every section reaches the parts, every site is classified and the rule facts are whole', async () => {
@@ -300,4 +305,22 @@ test('a long file-read line keeps its line number on every piece, and a very lon
 		assert.ok(chunk.startsWith(`${path}:7:`), 'a piece opens with the whole citation');
 		assert.ok(Buffer.byteLength(chunk, 'utf8') <= 3_000, `a piece fits its size: ${Buffer.byteLength(chunk, 'utf8')}`);
 	}
+});
+
+test('a citation too long to repeat in a chunk is carried by the block envelope, and every chunk fits its size', () => {
+	const path = `src/${'d/'.repeat(1_940)}f.ts`;
+	const entry = `${path}:7: ${'y'.repeat(5_000)}`;
+	const chunks = chunkResult(entry);
+	assert.ok(chunks.length >= 2);
+	for (const chunk of chunks) {
+		assert.equal(chunk.citation, `${path}:7:`, 'the whole citation travels with the chunk');
+		assert.ok(Buffer.byteLength(chunk.text, 'utf8') <= 3_000, `a chunk fits its size: ${Buffer.byteLength(chunk.text, 'utf8')}`);
+	}
+	assert.equal(chunks.map(c => c.text).join('').replace(/^\s/, ''), `${'y'.repeat(5_000)}`.padStart(0), 'the content is whole');
+	const messages = [
+		{ role: 'assistant', content: [{ type: 'tool_use', id: 'u1', name: 'search_text', input: {} }] },
+		{ role: 'user', content: [{ type: 'tool_result', tool_use_id: 'u1', content: entry }] },
+	] as unknown as LLMMessage[];
+	const blocks = conversationBlocks(messages);
+	for (const block of blocks) assert.equal((block.envelope as { citation?: string }).citation, `${path}:7:`, 'the envelope repeats the citation for every section');
 });

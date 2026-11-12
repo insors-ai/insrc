@@ -47,15 +47,23 @@ function citationOf(line: string): { readonly prefix: string; readonly content: 
 	return { prefix: '', content: line };
 }
 
+/** A chunk of a tool result; `citation` is set when the citation of its line is too long to be repeated inside the chunk. */
+export interface ResultChunk {
+	readonly text:      string;
+	readonly citation?: string;
+}
+
 /**
  * The pieces of one over-long line, each at most `size` bytes at a code-point boundary. The citation is cut off first
  * and the content alone is split, so every piece opens with the whole citation (the later ones marked as continued).
+ * A citation that leaves less than the content floor is not repeated in the text: the pieces are bare content and the
+ * whole citation is returned beside them, for the block's envelope, which heads every section of the block.
  */
-function splitLongLine(line: string, size: number): readonly string[] {
+function splitLongLine(line: string, size: number): { readonly pieces: readonly string[]; readonly citation?: string } {
 	const { prefix, content } = citationOf(line);
 	const lead = prefix === '' ? '' : `${prefix} (continued) `;
-	// A citation that leaves no room is rare; the content then gets a floor so the split still ends.
-	const room = Math.max(512, size - bytesOf(lead));
+	const detached = prefix !== '' && size - bytesOf(lead) < 512;
+	const room = detached ? size : size - bytesOf(lead);
 	const pieces: string[] = [];
 	let current = '';
 	for (const ch of content) {
@@ -63,23 +71,40 @@ function splitLongLine(line: string, size: number): readonly string[] {
 		current += ch;
 	}
 	if (current.length > 0) pieces.push(current);
-	return pieces.map((piece, i) => (i === 0 ? `${prefix}${piece}` : `${lead}${piece}`));
+	if (detached) return { pieces, citation: prefix };
+	return { pieces: pieces.map((piece, i) => (i === 0 ? `${prefix}${piece}` : `${lead}${piece}`)) };
 }
 
 /** The text in chunks of at most `size` bytes that end at a line break; a longer line is split with its citation kept on every piece. */
-export function chunkAtLines(text: string, size = RESULT_CHUNK): readonly string[] {
-	if (bytesOf(text) <= size) return [text];
-	const chunks: string[] = [];
+export function chunkResult(text: string, size = RESULT_CHUNK): readonly ResultChunk[] {
+	if (bytesOf(text) <= size) return [{ text }];
+	const chunks: ResultChunk[] = [];
 	let current = '';
-	const flush = (): void => { if (current.length > 0) chunks.push(current); current = ''; };
+	const flush = (): void => { if (current.length > 0) chunks.push({ text: current }); current = ''; };
 	for (const line of text.split('\n')) {
-		for (const piece of bytesOf(line) > size ? splitLongLine(line, size) : [line]) {
+		if (bytesOf(line) <= size) {
+			const next = current.length === 0 ? line : `${current}\n${line}`;
+			if (current.length > 0 && bytesOf(next) > size) { flush(); current = line; } else current = next;
+			continue;
+		}
+		const split = splitLongLine(line, size);
+		if (split.citation !== undefined) {
+			flush();
+			for (const piece of split.pieces) chunks.push({ text: piece, citation: split.citation });
+			continue;
+		}
+		for (const piece of split.pieces) {
 			const next = current.length === 0 ? piece : `${current}\n${piece}`;
 			if (current.length > 0 && bytesOf(next) > size) { flush(); current = piece; } else current = next;
 		}
 	}
 	flush();
 	return chunks;
+}
+
+/** The text in chunks of at most `size` bytes that end at a line break (see {@link chunkResult}). */
+export function chunkAtLines(text: string, size = RESULT_CHUNK): readonly string[] {
+	return chunkResult(text, size).map(c => c.text);
 }
 
 const textOf = (content: LLMMessage['content']): string => (typeof content === 'string' ? content : JSON.stringify(content));
@@ -95,12 +120,12 @@ export function conversationBlocks(messages: readonly LLMMessage[]): readonly Ev
 			if (block.type === 'tool_result') {
 				const call = calls.get(block.tool_use_id);
 				const text = typeof block.content === 'string' ? block.content : JSON.stringify(block.content);
-				const chunks = chunkAtLines(text);
+				const chunks = chunkResult(text);
 				const ordinal = new Set(blocks.map(b => b.key.split('.')[0])).size + 1;
 				chunks.forEach((chunk, j) => blocks.push({
 					key: `${call?.name ?? 'tool'}#${ordinal}${chunks.length > 1 ? `.${j + 1}` : ''}`,
-					envelope: { tool: call?.name ?? 'tool', input: call?.input ?? {} },
-					text: chunk,
+					envelope: { tool: call?.name ?? 'tool', input: call?.input ?? {}, ...(chunk.citation === undefined ? {} : { citation: chunk.citation }) },
+					text: chunk.text,
 				}));
 			}
 		}

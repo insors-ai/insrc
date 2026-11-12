@@ -6,7 +6,7 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 30,
         "contentHash": "b38b6493fbe484285a83d8fd5f269eeb47e13cb33130b4ff834b20992b2db88a",
@@ -17,7 +17,19 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 30,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-12T19:27:20.106Z",
+        "override": {
+          "reason": "Cycle 3 (r7-r9) used the three-round limit; the two open r9 findings (final-emit long citation carried in the block envelope; handling-adapters kind-prefixed entries kept whole) were fixed in e790237e2 and not re-reviewed. Accepted notes: t8 plan wording says complete false for a partitioned success while the LLD keeps complete true when nothing is uncovered, and t8 no-evidence single-pass rule stays as built; t14 live run (docs-broad-live.test.ts) not run until the user pushes and updates the daemon. User approved in chat 2026-11-13."
+        }
+      }
     },
     "workflow": "build",
     "runId": "store-4bdf658c-37cf-4ea8-9561-3d075ea63ca7",

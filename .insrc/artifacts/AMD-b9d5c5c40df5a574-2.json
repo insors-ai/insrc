@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "store-64563c05-47a4-4813-a328-19dfafdb2370",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-12T01:23:43.558Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "d7635778bc23de15a3d9ee60a099f8bd3b27d8808e65d6117a3038cc60570628",
+        "at": "2026-11-12T01:23:43.559Z",
+        "by": {
+          "id": "insrc:define",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "id": "AMD-b9d5c5c40df5a574-2",
+    "epicSlug": "make-insrc-analysis-complete-used-right",
+    "hldBaseRunId": "wf-1791349476498-tih4l4",
+    "amendment": {
+      "type": "storyBoundary.addStory",
+      "storyId": "s9",
+      "internal": "Private implementation of s9: A request's size decides how deep and detailed its plan is, and a plan is checked to be executable"
+    },
+    "rationale": "Extends Epic `make-insrc-analysis-complete-used-right` (b9d5c5c40df5a574): building on its stories on sizing a request from what it touches (s2), handling by size (s3) and a broad analysis completing to a final report (s7), and on the code in src/analyze/planner (scope-band.ts, recursive.ts, validate.ts, render-catalog.ts), src/analyze/measure.ts and src/analyze/executor.",
+    "proposedBy": {
+      "workflow": "define",
+      "runId": "wf-1794446546195-r8u9t7",
+      "storyId": "s9",
+      "stepId": "scope.assess"
+    },
+    "proposedAt": "2026-11-12T01:23:43.557Z"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/analyze/planner/scope-band.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/analyze/planner/recursive.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/analyze/planner/validate.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/analyze/measure.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "insrc_analyze_step capability.reuse-check over src/analyze/planner: partial-match"
+    }
+  ]
+}

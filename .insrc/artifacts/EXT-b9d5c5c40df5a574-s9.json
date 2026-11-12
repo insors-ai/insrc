@@ -1,0 +1,155 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1794446546195-r8u9t7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-12T01:23:43.560Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 76720,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "epicSlug": "make-insrc-analysis-complete-used-right",
+    "storyId": "s9",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2566e3a3ac8d3f4483335b771d6195dd2db469c764b4ecb964c3ac885db0e8f6",
+        "at": "2026-11-12T01:23:43.561Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-12T01:26:38.456Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    }
+  },
+  "body": {
+    "scope": "L",
+    "notify": "Extends Epic `make-insrc-analysis-complete-used-right` (b9d5c5c40df5a574): building on its stories on sizing a request from what it touches (s2), handling by size (s3) and a broad analysis completing to a final report (s7), and on the code in src/analyze/planner (scope-band.ts, recursive.ts, validate.ts, render-catalog.ts), src/analyze/measure.ts and src/analyze/executor.",
+    "addedStory": {
+      "id": "s9",
+      "title": "A request's size decides how deep and detailed its plan is, and a plan is checked to be executable",
+      "userValue": "Someone asking a broad question about a large codebase gets a plan that is wide and shallow and that the analyzer can finish, while someone asking about a small area gets a plan that goes deep, so a broad analysis reaches its final report in a reasonable time instead of spending the run inside deeper and deeper child plans.",
+      "acceptanceCriteria": [
+        {
+          "id": "ac1",
+          "given": "A request that measures XL or L",
+          "when": "the analyzer plans it",
+          "then": "the plan is breadth-first: many shallow, inexpensive tasks across the areas, and no area is explored by a child plan that is itself a large plan",
+          "operationalizes": []
+        },
+        {
+          "id": "ac2",
+          "given": "A request that measures M or S",
+          "when": "the analyzer plans it",
+          "then": "the plan is depth-first: fewer areas, each examined in detail, and child plans are allowed where they add depth",
+          "operationalizes": []
+        },
+        {
+          "id": "ac3",
+          "given": "A plan whose child plans, taken together, would exceed what the request's size allows",
+          "when": "the plan is validated",
+          "then": "it is refused with a reason that names the total and the limit, so that the planner can correct it, in the same way a wrong task count is refused today",
+          "operationalizes": []
+        },
+        {
+          "id": "ac4",
+          "given": "A plan accepted for a broad request",
+          "when": "the analyzer executes it",
+          "then": "the executor works within a budget set by the request's size and the run says when a budget was reached, instead of running on with no bound",
+          "operationalizes": []
+        },
+        {
+          "id": "ac5",
+          "given": "The broad docs request on this repository, which measured XL",
+          "when": "it is run end to end",
+          "then": "it reaches a final report within a stated time and says in its record how deep the plan went and how many tasks ran",
+          "operationalizes": []
+        }
+      ]
+    },
+    "amendmentId": "AMD-b9d5c5c40df5a574-2",
+    "evidence": [
+      {
+        "kind": "code",
+        "ref": "src/analyze/planner/scope-band.ts"
+      },
+      {
+        "kind": "code",
+        "ref": "src/analyze/planner/recursive.ts"
+      },
+      {
+        "kind": "code",
+        "ref": "src/analyze/planner/validate.ts"
+      },
+      {
+        "kind": "code",
+        "ref": "src/analyze/measure.ts"
+      },
+      {
+        "kind": "step-output",
+        "ref": "insrc_analyze_step capability.reuse-check over src/analyze/planner: partial-match"
+      }
+    ],
+    "nextAction": {
+      "command": "insrc_workflow_step phase=start workflow=design.story params={\"epicHash\":\"b9d5c5c40df5a574\",\"storyId\":\"s9\"}",
+      "description": "Approve the HLD amendment (`AMD-b9d5c5c40df5a574-2`) and the updated Epic, then run `design.story` for the new Story `s9` to produce its LLD."
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/analyze/planner/scope-band.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/analyze/planner/recursive.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/analyze/planner/validate.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/analyze/measure.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "insrc_analyze_step capability.reuse-check over src/analyze/planner: partial-match"
+    }
+  ]
+}

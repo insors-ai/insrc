@@ -111,7 +111,7 @@ The analyzer's findings are incomplete in a way neither the analyzer nor its rea
 
 ## 6. Stories
 
-### 6.1 E20261006b9d5c5c4:S001 — Every result and every answer says whether it is complete
+### 6.1 STORY-b9d5c5c40df5a574-s1 — Every result and every answer says whether it is complete
 
 **User value:** `size: L`
 
@@ -130,7 +130,7 @@ As someone relying on an analysis, I am told plainly when a result was cut, when
 - **ac5:** Given any answer, on either path a request can take through the analyzer, when it is delivered, then it states whether its findings are complete and names every result that was cut, partly read or failed. _(operationalizes `k3`)_
 - **ac6:** Given the step that writes the answer fails, when the request ends, then the failure is reported with what the lookups found, and the request is not passed silently to another way of answering. _(operationalizes `k3`, `k7`)_
 
-### 6.2 E20261006b9d5c5c4:S002 — The analyzer sizes a request from what it actually touches
+### 6.2 STORY-b9d5c5c40df5a574-s2 — The analyzer sizes a request from what it actually touches
 
 **User value:** `size: M`
 
@@ -148,7 +148,7 @@ As someone asking a question, the analyzer finds out how big my question really 
 - **ac4:** Given a request whose size cannot be determined, when the analyzer proceeds, then it says so and treats the request as the largest size, never as a small one. _(operationalizes `k1`, `k3`)_
 - **ac5:** Given a caller that states a size for its request, when the request is sized, then the stated size is kept as a hint and the measured size is used. _(operationalizes `k1`)_
 
-### 6.3 E20261006b9d5c5c4:S003 — Each request size has a defined way of being handled, in full
+### 6.3 STORY-b9d5c5c40df5a574-s3 — Each request size has a defined way of being handled, in full
 
 **User value:** `size: L`
 
@@ -166,7 +166,7 @@ As someone asking a large question, the analyzer works through all of it by a kn
 - **ac6:** Given a single item, such as a long document section, that is too large to be read at once, when the analyzer reads it, then its whole content is taken into account, not only its beginning. _(operationalizes `k2`)_
 - **ac7:** Given a broad analysis of documents whose final combining step is handed more than one model call accepts, as on this repository on 2026-10-08, where Story s7 was accepted with that analysis not completing, when it is run, then the input to the combining step is handled in parts and the analysis returns a final report. _(operationalizes `k1`, `k2`)_
 
-### 6.4 E20261006b9d5c5c4:S004 — No lookup drops results
+### 6.4 STORY-b9d5c5c40df5a574-s4 — No lookup drops results
 
 **User value:** `size: L`
 
@@ -185,7 +185,7 @@ As someone relying on an analysis, I get every result a lookup found, whatever t
 - **ac5:** Given a result set that became larger because a limit was removed, when the analyzer answers, then it is handled by the method for its size, and the answer is complete. _(operationalizes `k1`, `k2`)_
 - **ac6:** Given a data source with no tables or namespaces of its own, where the analyzer can only list what a sample of its keys suggests (Redis, etcd), when the analyzer lists it, then the result says it is a sample and is not presented as complete; the analyzer does not scan every key of a live store. _(operationalizes `k3`)_
 
-### 6.5 E20261006b9d5c5c4:S005 — The form of an answer fits the question, for every kind of analyzer
+### 6.5 STORY-b9d5c5c40df5a574-s5 — The form of an answer fits the question, for every kind of analyzer
 
 **User value:** `size: L`
 
@@ -206,7 +206,7 @@ As someone reading an analysis, the answer is laid out for the question I asked,
 
 - `lc1` (convention) Structural reference in a prompt goes at its end. [[c3]]
 
-### 6.6 E20261006b9d5c5c4:S006 — An unfocused request gets an answer, and a request that cannot proceed says why
+### 6.6 STORY-b9d5c5c40df5a574-s6 — An unfocused request gets an answer, and a request that cannot proceed says why
 
 **User value:** `size: M`
 
@@ -221,7 +221,7 @@ As someone asking the analyzer a broad question about a repository or a module, 
 - **ac3:** Given a request the analyzer cannot proceed with, when it fails, then the failure names the actual cause, and says the model is unavailable only when a call to the model failed. _(operationalizes `k3`, `k7`)_
 - **ac4:** Given a request that names a single file or a single symbol, when the analyzer builds the context for it, then it either produces that context or reports that such a request is not supported, and never reports the model as unavailable. _(operationalizes `k3`)_
 
-### 6.7 E20261006b9d5c5c4:S007 — A broad analysis completes from request to final report
+### 6.7 STORY-b9d5c5c40df5a574-s7 — A broad analysis completes from request to final report
 
 **User value:** `size: L`
 
@@ -238,7 +238,7 @@ As someone asking the analyzer a broad question, the whole analysis runs to a fi
 - **ac3:** Given an analysis that stops part of the way through, when it ends, then the record of the run says at which stage it stopped and why, and is not left reading as still in progress. _(operationalizes `k3`)_
 - **ac4:** Given a completed analysis, when it is asked for again by the same run, then the stored result is returned as before. _(operationalizes `k1`)_
 
-### 6.8 E20261006b9d5c5c4:S008 — The code tasks of a broad analysis work on a repository whose graph has no modules for its directories
+### 6.8 STORY-b9d5c5c40df5a574-s8 — The code tasks of a broad analysis work on a repository whose graph has no modules for its directories
 
 **User value:** `size: M`
 
@@ -253,6 +253,20 @@ As someone asking for a broad analysis of a codebase, I get its modules and what
 - **ac3:** Given a repository whose graph does hold entities of kind 'module' for its own directories (no parser stores them today: each stores a module only for an imported module; a graph written by other means may hold them), when the same tasks run, then they return at least what they return today.
 - **ac4:** Given a module value that names nothing in the repository, when a task is given it, then the task fails with a reason that says so, and is not reported as an empty module.
 - **ac5:** Given a broad code analysis of an indexed repository, once this Story and Story s7 are built, when it is run, then it returns a final report in which the functional-surface tasks succeeded.
+
+### 6.9 STORY-b9d5c5c40df5a574-s9 — A request's size decides how deep and detailed its plan is, and a plan is checked to be executable
+
+**User value:**
+
+Someone asking a broad question about a large codebase gets a plan that is wide and shallow and that the analyzer can finish, while someone asking about a small area gets a plan that goes deep, so a broad analysis reaches its final report in a reasonable time instead of spending the run inside deeper and deeper child plans.
+
+**Acceptance criteria:**
+
+- **ac1:** Given A request that measures XL or L, when the analyzer plans it, then the plan is breadth-first: many shallow, inexpensive tasks across the areas, and no area is explored by a child plan that is itself a large plan.
+- **ac2:** Given A request that measures M or S, when the analyzer plans it, then the plan is depth-first: fewer areas, each examined in detail, and child plans are allowed where they add depth.
+- **ac3:** Given A plan whose child plans, taken together, would exceed what the request's size allows, when the plan is validated, then it is refused with a reason that names the total and the limit, so that the planner can correct it, in the same way a wrong task count is refused today.
+- **ac4:** Given A plan accepted for a broad request, when the analyzer executes it, then the executor works within a budget set by the request's size and the run says when a budget was reached, instead of running on with no bound.
+- **ac5:** Given The broad docs request on this repository, which measured XL, when it is run end to end, then it reaches a final report within a stated time and says in its record how deep the plan went and how many tasks ran.
 
 ## 7. References
 

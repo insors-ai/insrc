@@ -24,8 +24,6 @@ export interface DesignCleanupDeps {
  /** Fault/race injection at real filesystem boundaries; never supplied by normal callers. */
  readonly boundary?:(stage:'beforeClaim'|'afterClaim'|'beforeDelete',source:string,claimed:string)=>void|Promise<void>;
 }
-const releasers=new Map<string,(reviewId:string)=>void>();
-export function registerDesignCleanupRelease(project:string,release:(id:string)=>void):void{releasers.set(project,release);}
 function present(path:string):boolean{try{lstatSync(path);return true;}catch(error){if((error as NodeJS.ErrnoException).code==='ENOENT')return false;throw error;}}
 const digest=(bytes:Buffer)=>createHash('sha256').update(bytes).digest('hex');
 function bounded(path:string,limit:number):{bytes:Buffer;ino:number;dev:number}{
@@ -81,7 +79,7 @@ export async function cleanupDesignArtifact(projectInput:string,artifactId:strin
     const final=bounded(claimed,DESIGN_LIMITS.checkpointBytes);requireDesign(final.ino===got.ino&&final.dev===got.dev&&final.bytes.equals(got.bytes),'changed_claim','Private claim changed before deletion');
     unlinkSync(claimed);syncDirectory(dir);result.deleted.push(c.source);
     // A replacement at the public pathname retains its own replay ownership.
-    if(!present(c.source)){try{(deps.onDeleted??releasers.get(project))?.(c.reviewId);}catch(error){result.errors.push(`Replay release failed: ${String(error)}`);}}
+    if(!present(c.source)){try{deps.onDeleted?.(c.reviewId);}catch(error){result.errors.push(`Replay release failed: ${String(error)}`);}}
     unlinkSync(join(dir,'claim.json'));rmdirSync(dir);syncDirectory(root);
    }catch(error){
     if(!(error instanceof DesignReviewError)&&!['ELOOP','ENOENT'].includes((error as NodeJS.ErrnoException).code??'')){retain(claimed,error);return;}

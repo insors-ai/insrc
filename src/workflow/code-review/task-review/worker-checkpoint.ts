@@ -4,7 +4,7 @@ import { decodeReview,CheckpointSchema,isCodeAdmission,requireReview } from './c
 import type { ReviewAttempt,ReviewCheckpoint,StoredReviewCheckpoint,AdmissionCheckpoint } from './contracts.js';
 import { checkpointBytes,checkpointPath,loadStoredCheckpoint,updateStoredCodeCheckpoint } from './checkpoint.js';
 import { qualifyCodeAdmission } from './admission-checkpoint.js';
-import { prepareReviewAdmission } from './admission.js';
+import { prepareReviewAdmission,canonicalReviewStory } from './admission.js';
 
 /** Private execution view, never persisted or exposed as an approval artifact.
  * Technical-only attempts remain in the authoritative v2 file with their
@@ -44,6 +44,10 @@ export const prepareWorkerCodeAdmission:typeof prepareReviewAdmission=async(proj
  const stored=await loadStoredCheckpoint(checkpointPath(project,id));
  requireReview(stored,'checkpoint','Durable worker admission missing');
  const latest=stored.attempts.at(-1)!;
+ if(context.epicHash){
+  const packet=latest.submitted,story=canonicalReviewStory(packet.storyId,context.epicHash);
+  if(packet.documents.plan)requireReview(packet.documents.plan.path.endsWith(`PLAN-${context.epicHash}-${story}.json`)||packet.documents.plan.path.endsWith('/PLAN.md'),'documents.plan','Plan identity must match review subject');
+ }
  requireReview(!stored.attempts.some(a=>a.resourceGuard?.openLeases.length),'resourceGuard','Unresolved native resources require explicit recovery');
  if(!isCodeAdmission(latest)){
   requireReview(context.operation==='resume','attempt','Qualified execution already admitted');

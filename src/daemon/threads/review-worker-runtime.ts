@@ -42,12 +42,18 @@ import { publishDesignReview } from '../../workflow/review/design-review/publica
 import { roundWriterFor } from '../lifecycle-registry.js';
 import { saveWorkerCodeCheckpoint } from '../../workflow/code-review/task-review/worker-checkpoint.js';
 import { recordDesignAdmission } from '../../workflow/review/design-review/approval.js';
+import { familyForClient } from '../model-registry.js';
 
 /** A dedicated instance, never the class singleton/session runtime. Source
  * qualification and controller authority adapters are integrated by t9/t10. */
 export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?:TaskReviewDeps|undefined;readonly design?:DesignCoordinatorDeps|undefined}={}):Promise<void>{
  if(!parentPort||init.role!=='review')throw new Error('Dedicated review worker required');
  assertReviewIdentity(init.review);
+ if(init.review.key.family==='code'&&init.review.operation==='resume'&&init.review.submitted===undefined){
+  const cp=await loadStoredCheckpoint(reviewWorkerCheckpoint(init.review.key)),last=cp?.attempts.at(-1);
+  if(!last||last.header.attempt!==init.review.attempt)throw new Error('Pinned resume attempt missing');
+  init={...init,review:{...init.review,submitted:last.submitted}};
+ }
  const hub=startDaemonWorker(init),board=new StatusBoardClient(hub);
  setRunBoard(board);setIndexRunSource(pushedIndexRun);
  setLiveRunPublisher((runId,live)=>board.markAnalyzeRun(runId,threadId,live));
@@ -55,7 +61,8 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
  const transport=new ReviewWorkerNativeTransport(init.nativePort,init.review);
  const controllerLifetime=new AbortController();
  await withReviewNativeTransport(transport,async()=>{
-  const provider=()=>createRoleRouter({cliTimeoutMs:900000}).resolveProviderForRole('review',loadAnalyzeConfig(),init.review.key.project).provider;
+  const router=()=>createRoleRouter({clientDefault:familyForClient(init.review.route?.client),cliTimeoutMs:900000});
+  const provider=()=>router().resolveProviderForRole('review',loadAnalyzeConfig(),init.review.key.project).provider;
   const sources=deps.code?.sources??new RegistryReviewSources({repoPath:init.review.key.project,sessionId:`review:${init.review.key.reviewId}`,requestId:0,send:()=>{}});
   const publishCode=(project:string,id:string,hash:string,baseline?:import('../../workflow/code-review/task-review/capacity.js').CapacityBaseline)=>publishTaskCheckpoint(project,hash,id,{sources,through:roundWriterFor(project,{id:'insrc:code-review',kind:'system',properties:{}}),save:saveWorkerCodeCheckpoint,saveStored:async(path,candidate)=>{await updateStoredCodeCheckpoint(path,current=>{
    if(!current||current.attempts.length!==candidate.attempts.length)throw new Error('Publication checkpoint changed');
@@ -67,7 +74,7 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
    if(!stored||!isDeepStrictEqual(qualifiedDesignProjection(stored),input))throw new Error('Publication projection no longer matches the durable design evidence');
    return publishDesignReview(stored);
   };
-  const design=init.review.key.family==='design'?new DesignReviewWorker(init.review,deps.design?{...deps.design,...(init.review.maintenance?{publish:publishDesign}:{})}:{admit:recordDesignAdmission,publish:publishDesign,provider:()=>{const resolved=createRoleRouter({cliTimeoutMs:900000}).resolveProviderForRole('review',loadAnalyzeConfig(),init.review.key.project);return{provider:resolved.provider,model:resolved.resolution.model};}}):undefined;
+  const design=init.review.key.family==='design'?new DesignReviewWorker(init.review,deps.design?{...deps.design,...(init.review.maintenance?{publish:publishDesign}:{})}:{admit:recordDesignAdmission,publish:publishDesign,provider:()=>{const resolved=router().resolveProviderForRole('review',loadAnalyzeConfig(),init.review.key.project);return{provider:resolved.provider,model:resolved.resolution.model};}}):undefined;
   const coordinator=code?.coordinator??design!.coordinator;
   let progressSequence=0,publishing=false,maintenanceWork=false,publishingStored=false,lastProgressStamp:string|undefined,observationAttempt=init.review.attempt;
   const snapshot=async()=>{
@@ -86,6 +93,15 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
    return raw as Record<string,unknown>;
   };
   const handlers:RpcHandlers={
+   'review.worker.disconnect':async raw=>{
+    identity(raw);
+    if(init.review.reviewer!=='controller')throw new Error('Controller disconnect required');
+    controllerLifetime.abort();
+    // Existing coordinators own interruption persistence and task feedback.
+    // Main bounds this drain before reclaiming an unresponsive worker.
+    while(code?.isActive()||design?.isActive())await new Promise(resolve=>setTimeout(resolve,10));
+    return{stopped:true};
+   },
    'review.worker.assertIdle':async raw=>{identity(raw);if(maintenanceWork||code?.isActive()||design?.isActive())throw new Error('Review admission/execution/publication is active');return true;},
    'review.worker.publish':async raw=>{
     const p=identity(raw);if(typeof p['actionId']!=='string'||!p['actionId']||p['actionId'].length>128)throw new Error('Publication action required');
@@ -110,8 +126,8 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
      await requireClosedReviewResources(init.review.key);
      if(code){
       if(!init.review.epicHash||typeof p['storyId']!=='string')throw new Error('Canonical cleanup story required');
-      const {cleanupApprovedTaskReviews}=await import('../task-review-rpc.js');
-      return await cleanupApprovedTaskReviews({repo:init.review.key.project,epicHash:init.review.epicHash,storyId:p['storyId']},init.review.key.reviewId);
+      const {cleanupTaskReviewsInOwner}=await import('../task-review-rpc.js');
+      return await cleanupTaskReviewsInOwner({repo:init.review.key.project,epicHash:init.review.epicHash,storyId:p['storyId']},init.review.key.reviewId);
      }
      if(typeof p['artifactId']!=='string'||p['artifactId']!==init.review.subject)throw new Error('Canonical cleanup artifact required');
      const {cleanupDesignArtifact}=await import('../../workflow/review/design-review/cleanup.js');
@@ -168,7 +184,8 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
     return coordinator.exchange({...((payload&&typeof payload==='object')?payload:{}),phase,repo:project,reviewId:id,attempt,...(phase==='assignment'?{}:{executionId:p['executionId'],sequence:p['sequence']})},owner);
    },
    'review.worker.matchAdmission':async(raw:unknown)=>{
-    const p=identity(raw);if(p['attempt']!==init.review.attempt||p['reviewer']!==init.review.reviewer||p['actionId']!==init.review.actionId||!isDeepStrictEqual(p['submitted'],init.review.submitted))throw new Error('Conflicting review admission replay');
+    const p=identity(raw),omittedResume=!!code&&p['operation']==='resume'&&p['submitted']===undefined;
+    if(p['attempt']!==init.review.attempt||p['reviewer']!==init.review.reviewer||p['actionId']!==init.review.actionId||!omittedResume&&!isDeepStrictEqual(p['submitted'],init.review.submitted))throw new Error('Conflicting review admission replay');
     if(!code)return persistReviewWorkerAdmission(init.review);
     const {reviewWorkerCheckpoint}=await import('./review-worker-contract.js');
     const path=reviewWorkerCheckpoint(init.review.key);

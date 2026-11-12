@@ -103,7 +103,7 @@ export class ReviewProcessLeases {
  }
  start(owner: ReviewProcessOwner, sequence: number, receipt: ReviewIntentReceipt, consume: (output: ReviewProcessOutput)=>Promise<void>): ReviewProcessRun {
   const state=this.owner(owner),lease=state.leases.get(sequence);requireProcess(lease,'unknown_operation');
-  const pinned=Object.freeze({checkpointPath:receipt.checkpointPath,attempt:receipt.attempt,operationId:receipt.operationId,workerIncarnation:receipt.workerIncarnation,daemonInstance:receipt.daemonInstance});
+  const pinned=Object.freeze({checkpointPath:receipt.checkpointPath,attempt:receipt.attempt,operationId:receipt.operationId,workerIncarnation:receipt.workerIncarnation,daemonInstance:receipt.daemonInstance,...(receipt.sourceValidation?{sourceValidation:receipt.sourceValidation}:{})});
   requireProcess(!lease.receipt||JSON.stringify(lease.receipt)===JSON.stringify(pinned),'conflicting_intent_replay');
   if(lease.phase==='reserved'){
    requireProcess(!state.closing,'review_resource_fenced'); lease.phase='validating';lease.receipt=pinned;

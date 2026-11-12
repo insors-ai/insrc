@@ -15,6 +15,10 @@ export const ReviewKeySchema = object({
  reviewId: Type.String({ pattern: '^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$' }),
 }, { additionalProperties: false });
 export type ReviewKey = Static<typeof ReviewKeySchema>;
+export const ReviewResourceRecoveryInputSchema=object({
+ reason:Type.String({minLength:1,maxLength:2048}),
+ leaseIds:Type.Optional(Type.Array(id,{minItems:1,maxItems:MAX_REVIEW_OPEN_LEASES,uniqueItems:true})),
+},{additionalProperties:false});
 export const ReviewResourceGuardSchema = object({
  daemonInstance: id,
  openLeases: Type.Array(object({

@@ -78,6 +78,9 @@ export class ReviewNativeHost {
   const entry=this.operation(r);
   if(entry.intent!=='open'||!entry.receipt||!same(entry.receipt,receipt))throw new Error('Unverified native intent');
  }
+ intentFor(r:ReviewProcessReservation):ReviewIntentReceipt{
+  const entry=this.operation(r);if(entry.intent!=='open'||!entry.receipt)throw new Error('Native intent is not verified');return structuredClone(entry.receipt);
+ }
  private open(entry:Operation):Promise<ReviewIntentReceipt>{
   if(entry.intent==='open')return Promise.resolve(entry.receipt!);
   if(entry.saving)return entry.saving;

@@ -2,6 +2,8 @@
 import { ChildProcess } from 'node:child_process';
 import { PassThrough, Writable } from 'node:stream';
 import { finished } from 'node:stream/promises';
+import { basename } from 'node:path';
+import { reviewGitCommand } from './review-git-command.js';
 import type { ReviewNativeTransport } from '../../shared/review-process-bridge.js';
 import type { ReviewProcessOutcome, ReviewProcessReservation } from '../../shared/review-native.js';
 import type { ProcessDisposal } from '../../shared/process-group.js';
@@ -10,6 +12,7 @@ import type { ManagedExit, ManagedSpawnOptions } from './shell-helper.js';
 /** Only an event/stream facade, never a native handle or PID. Existing tool
  * consumers retain their decoding, truncation, input and result logic. */
 export function launchReviewShell(transport:ReviewNativeTransport,command:string,args:readonly string[],options:ManagedSpawnOptions){
+ if(['git','git.exe'].includes(basename(command))){const isolated=reviewGitCommand(args);args=isolated.args;options={...options,env:isolated.env};}
  const modes=options.stdio??['ignore','pipe','pipe'];
  if(!Array.isArray(modes)||modes.length!==3||modes.some(mode=>mode!=='pipe'&&mode!=='ignore'))throw new Error('Unsupported review managed stdio');
  const controller=new AbortController();

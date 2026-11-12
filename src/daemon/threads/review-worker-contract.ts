@@ -19,6 +19,8 @@ export interface ReviewBootstrapInput extends ReviewWorkerIdentity {
  /** Reopen stored evidence for model-free observation/publication/cleanup. */
  readonly maintenance?:true|undefined;
  readonly subject?:string|undefined;
+ /** Lookup hints only; the host resolves party/scope from tracked records. */
+ readonly route?:{readonly epicHash?:string;readonly storyId?:string;readonly artifactPath?:string;readonly client?:'claude'|'codex'|'vibe'}|undefined;
 }
 export interface ReviewWorkerInit extends DaemonWorkerInit {
  readonly role:'review';readonly review:ReviewBootstrapInput;readonly nativePort:MessagePort;

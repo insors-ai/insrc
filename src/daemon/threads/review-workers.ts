@@ -39,8 +39,8 @@ export interface ReviewWorkerScope {
 }
 export interface ReviewWorkersDeps {
  readonly services:ThreadServices;
- readonly resolveScope:(key:ReviewKey,context:TrustedRpcContext)=>Promise<ReviewWorkerScope>;
- readonly authorizeNative:(key:ReviewKey,command:ReviewNativeCommand,context:TrustedRpcContext,signal:AbortSignal)=>Promise<void>;
+ readonly resolveScope:(key:ReviewKey,context:TrustedRpcContext,input?:Omit<ReviewBootstrapInput,'incarnation'|'reviewer'|'epicHash'|'subject'>)=>Promise<ReviewWorkerScope>;
+ readonly authorizeNative:(key:ReviewKey,command:ReviewNativeCommand,context:TrustedRpcContext,signal:AbortSignal,receipt?:import('../../shared/review-native.js').ReviewIntentReceipt,scope?:ReviewWorkerScope)=>Promise<void>;
  readonly resolveBinary:(command:string)=>Promise<string>;
  readonly track:(worker:Worker,name:string)=>void;
  readonly start?:typeof startReviewWorkerBootstrap | undefined;
@@ -94,7 +94,7 @@ export class ReviewWorkers {
  readonly leases:ReviewProcessLeases;
  constructor(private readonly deps:ReviewWorkersDeps){
   this.leases=new ReviewProcessLeases({
-   authorize:async(r,c,signal)=>{const e=this.forReservation(r);this.active(e);await deps.authorizeNative(e.input.key,c,e.context,signal);this.active(e);},
+   authorize:async(r,c,signal)=>{const e=this.forReservation(r);this.active(e);await deps.authorizeNative(e.input.key,c,e.context,signal,e.native.intentFor(r),e.scope);this.active(e);},
    verifyIntent:(r,receipt)=>this.forReservation(r).native.verifyIntent(r,receipt),
   });
   deps.services.onReviewCleanup(target=>this.cleanupApproved(target));
@@ -117,7 +117,7 @@ export class ReviewWorkers {
   const key={...input.key,project:await realpath(input.key.project)};
   const identity={key,incarnation:randomUUID()};assertReviewIdentity(identity);
   if(this.resourceHolds.has(keyOf(key)))throw new Error('Review resource recovery is in progress');
-  const scope=await this.deps.resolveScope(key,context);
+  const scope=await this.deps.resolveScope(key,context,input);
   if(!scope.subject||!scope.cleanupScope||!['daemon','controller'].includes(scope.reviewer)||scope.epicHash!==undefined&&!/^[0-9a-f]{16}$/.test(scope.epicHash))throw new Error('Invalid trusted review scope');
   if(context.connectionSignal.aborted)throw new Error('Review connection lost');
   if(this.scopeCleaning(key,scope)&&cleanupScope!==scope.cleanupScope)throw new Error('Review subject or cleanup busy');
@@ -133,10 +133,10 @@ export class ReviewWorkers {
     if(this.entries.has(keyOf(key)))throw new Error('Review resources remain fenced');
     return this.admit(input,context);
    }
-   return this.call(previous,'review.worker.matchAdmission',{...input,key,incarnation:previous.input.incarnation,reviewer:scope.reviewer}) as Promise<ReviewAdmissionReceipt>;
+   return this.call(previous,'review.worker.matchAdmission',{...input,...(key.family==='code'&&input.operation==='resume'?{actionId:previous.input.actionId}:{}),key,incarnation:previous.input.incarnation,reviewer:scope.reviewer}) as Promise<ReviewAdmissionReceipt>;
   }
   if(this.cleanup.has(scope.cleanupScope)&&cleanupScope!==scope.cleanupScope||key.family==='design'&&[...this.entries.values()].some(e=>e.input.key.family==='design'&&e.input.key.project===key.project&&e.scope.subject===scope.subject))throw new Error('Review subject or cleanup busy');
-  const review:ReviewBootstrapInput={attempt:input.attempt,actionId:input.actionId,submitted:input.submitted,...identity,reviewer:scope.reviewer,subject:scope.subject,...(scope.epicHash?{epicHash:scope.epicHash}:{}),...(input.operation?{operation:input.operation}:{}),...(input.maintenance?{maintenance:true as const}:{})};
+  const review:ReviewBootstrapInput={attempt:input.attempt,actionId:input.actionId,submitted:input.submitted,...identity,reviewer:scope.reviewer,subject:scope.subject,...(scope.epicHash?{epicHash:scope.epicHash}:{}),...(input.operation?{operation:input.operation}:{}),...(input.maintenance?{maintenance:true as const}:{}),...(input.route?{route:input.route}:{})};
   const {port1,port2}=new MessageChannel(),connection=registerReviewWorkerConnection(port1),lifetime=new AbortController();
   const owner=registerReviewRequestOwner(connection,randomUUID(),scope.reviewer==='controller'?context.connectionSignal:lifetime.signal);
   const processOwner=this.leases.register(key,identity.incarnation),fence=new ReviewBootstrapFence(identity);
@@ -282,6 +282,11 @@ export class ReviewWorkers {
   assertReviewIdentity({key,incarnation:'stored-reader'});
   return this.storedOperation({history:{key,attempt,options}},'review.cleanup.history');
  }
+ async describeStored(key:ReviewKey):Promise<{attempt:number;reviewer:'daemon'|'controller';storyId?:string;artifactId?:string;artifactPath?:string;epicHash?:string}|undefined>{
+  assertReviewIdentity({key,incarnation:'stored-metadata'});
+  return await this.storedOperation({key},'review.cleanup.describe') as {attempt:number;reviewer:'daemon'|'controller';storyId?:string;artifactId?:string;artifactPath?:string;epicHash?:string}|undefined;
+ }
+ identity(key:ReviewKey):ReviewWorkerIdentity|undefined{const e=this.entries.get(keyOf(key));return e&&!e.closing?{key:e.input.key,incarnation:e.input.incarnation}:undefined;}
  /** Actual approval consumers enter this main-owned exclusion before a worker
   * scans or deletes evidence. Worker-local coordinator maps cannot grant it. */
  async cleanupApproved(target:ReviewCleanupTarget):Promise<CleanupResult>{
@@ -337,6 +342,12 @@ export class ReviewWorkers {
   if(e.closing)return e.closing;
   e.fence.close();e.lifetime.abort();e.detach();
   e.closing=(async()=>{
+   if(e.scope.reviewer==='controller'){
+    let timer:ReturnType<typeof setTimeout>|undefined;
+    try{await Promise.race([this.call(e,'review.worker.disconnect',{},true),new Promise<void>(resolve=>{timer=setTimeout(resolve,5000);})]);}
+    catch{/* Exit/loss still uses the existing cold interruption projection. */}
+    finally{clearTimeout(timer);}
+   }
    try{await e.native.flushClosures();}catch{/* Uncertain persisted guards keep this incarnation fenced. */}
    for(const p of e.pending.values())p.reject(new Error('Review worker closed'));e.pending.clear();
    const started=await e.ready.catch(async(error:unknown)=>{if(error instanceof ReviewWorkerBootstrapError)await error.reclaimed;return undefined;});

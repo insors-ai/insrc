@@ -21,15 +21,38 @@ const {artifactJsonPath,codeReviewArtifactId}=await import('../../workflow/stora
 const {readDesignFile}=await import('../../workflow/review/design-review/subject.js');
 startDaemonWorker(workerData);
 serveRequests(parentPort!,directDispatch({
+ 'review.cleanup.describe':async()=>{
+  const key=workerData.key as ReviewKey;
+  if(key.family==='code'){
+   const cp=await loadStoredCheckpoint(join(key.project,'.insrc/tmp/code-review',`${key.reviewId}.json`));if(!cp)return undefined;
+   const last=cp.attempts.at(-1)!,refs=Object.values(last.submitted.documents).filter(Boolean).map(d=>d!.path);
+   const epicHash=/^STORY-([a-f0-9]{16})-s\d+$/.exec(cp.storyId)?.[1]??refs.map(p=>/(?:-(?:[a-z]+-)?|E\d{8})([a-f0-9]{16})(?:-s\d+)?(?:\.(?:json|md)|\/)/i.exec(p)?.[1]).find(Boolean);
+   return{attempt:last.header.attempt,reviewer:last.header.reviewer,storyId:cp.storyId,...(epicHash?{epicHash}:{})};
+  }
+  const cp=await loadStoredDesignCheckpoint(key.project,key.reviewId);if(!cp)return undefined;
+  const last=cp.attempts.at(-1)!,qualified='subject'in cp?cp.subject:undefined;
+  const artifactPath=qualified?.canonicalPath??('submitted'in last&&last.submitted?last.submitted.artifactPath:undefined);
+  const artifactId='artifactId'in cp?cp.artifactId:undefined;
+  return{attempt:last.number,reviewer:last.reviewer??qualified?.reviewer,...(artifactPath?{artifactPath}:{}),...(artifactId?{artifactId}:{})};
+ },
  'review.cleanup.history':async()=>{
   const {key,attempt,options}=workerData.history as {key:ReviewKey;attempt:number;options:{artifactPath?:string;epicHash?:string;storyId?:string;includeResult?:boolean;afterCompletedChunk?:number}};
   if(key.family==='design')return new DesignReviewCoordinator().progress(key.project,key.reviewId,attempt,options);
   const cp=await loadStoredCheckpoint(join(key.project,'.insrc/tmp/code-review',`${key.reviewId}.json`));
   if(cp)return new TaskReviewCoordinator({sources:new RegistryReviewSources({repoPath:key.project,sessionId:'stored-read',requestId:0,send:()=>{}}),provider:()=>{throw new Error('Stored reads cannot invoke providers');}}).progress(key.project,key.reviewId,attempt);
-  if(!options.epicHash||!options.storyId||!/^[a-f0-9]{16}$/.test(options.epicHash)||!/^s\d+$/.test(options.storyId))throw new Error('Permanent code history requires its canonical epic/story locator');
-  const path=artifactJsonPath(key.project,codeReviewArtifactId(options.epicHash,options.storyId));
-  const body=validateTaskBody((JSON.parse(readDesignFile(key.project,path)) as {body:unknown}).body);
-  if(body.storyId!==options.storyId)throw new Error('Permanent review belongs to another story');
+  if(!options.epicHash||!/^[a-f0-9]{16}$/.test(options.epicHash)||options.storyId!==undefined&&!/^s\d+$/.test(options.storyId))throw new Error('Permanent code history requires its canonical epic locator');
+  let body:ReturnType<typeof validateTaskBody>|undefined;
+  const read=(story:string)=>{const path=artifactJsonPath(key.project,codeReviewArtifactId(options.epicHash!,story));const value=validateTaskBody((JSON.parse(readDesignFile(key.project,path)) as {body:unknown}).body);if(value.storyId!==story)throw new Error('Permanent review belongs to another story');return value;};
+  if(options.storyId)body=read(options.storyId);
+  else{
+   const files=await readdir(join(key.project,'.insrc/artifacts'));if(files.length>10000)throw new Error('Permanent history lookup requires an explicit storyId at this repository size');
+   for(const file of files){const match=new RegExp(`^CR-${options.epicHash}-(s[0-9]+)\\.json$`).exec(file);if(!match)continue;
+    let candidate:ReturnType<typeof validateTaskBody>;try{candidate=read(match[1]!);}catch{continue;}
+    if(!candidate.reviews.some(r=>r.reviewId===key.reviewId&&r.attempt===attempt)&&!candidate.admissionFailures?.some(r=>r.reviewId===key.reviewId&&r.attempt.header.attempt===attempt))continue;
+    if(body)throw new Error('Permanent review locator is ambiguous; supply storyId');body=candidate;
+   }
+  }
+  if(!body)throw new Error('Permanent review not found; supply its storyId locator');
   const review=body.reviews.find(r=>r.reviewId===key.reviewId&&r.attempt===attempt);
   if(review)return{reviewId:key.reviewId,attempt,status:review.status,crPublication:'complete',executionState:'inactive',completedTasks:review.tasks.length,totalTasks:review.tasks.length,interrupted:false,hasError:false,freshness:'stale',progress:null};
   const failure=body.admissionFailures?.find(f=>f.reviewId===key.reviewId&&f.attempt.header.attempt===attempt)?.attempt;
@@ -39,6 +62,7 @@ serveRequests(parentPort!,directDispatch({
  'review.cleanup.execute':async()=>{const target=workerData.target as ReviewCleanupTarget;if(target.family!=='design')throw new Error('Design cleanup scope required');return{candidates:[],...await cleanupDesignArtifact(target.project,target.artifactId,{ownerScope:true})};},
  'review.cleanup.discover':async()=>{
  const target=workerData.target as ReviewCleanupTarget,dir=join(target.project,'.insrc/tmp',target.family==='code'?'code-review':'design-review');
+ if(target.family==='code'){const {requireApprovedBuildForReviewCleanup}=await import('../task-review-rpc.js');await requireApprovedBuildForReviewCleanup(target.project,target.epicHash,target.storyId);}
  let names:string[];try{names=await readdir(dir);}catch(e){if((e as NodeJS.ErrnoException).code==='ENOENT')return{candidates:[],retained:[],errors:[]};throw e;}
  if(names.length>10000)throw new Error('Review cleanup directory exceeds scan limit');
  const candidates:Array<{reviewId:string;attempt:number}>=[],retained:string[]=[],errors:string[]=[];

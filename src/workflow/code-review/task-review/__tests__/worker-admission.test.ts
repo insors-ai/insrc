@@ -83,7 +83,7 @@ test('replay and controller admission-to-assignment retain one execution identit
  await rpc(s,'fixture.release');
  await until(async()=>{const a=(await loadStoredCheckpoint(reviewWorkerCheckpoint(ack.key)))!.attempts.at(-1)!;return'review-response'in a&&a.header.status==='running';});
  const assignment=(identity=ack)=>f.registry.control({...identity,attempt:1,phase:'assignment',actionId:submission.actionId,executionId:'pending',sequence:1,input:{}},f.context) as Promise<any>;
- const frame=await assignment();assert.equal(frame.kind,'task');
+ let frame:any;await until(async()=>{frame=await assignment();return frame.kind==='task';});assert.equal(frame.kind,'task');
  await f.registry.progress(ack.key,f.context);
  await f.registry.progress(ack.key,f.context);
  const repeat=await assignment();assert.equal(repeat.executionId,frame.executionId);assert.equal(repeat.nextSequence,frame.nextSequence);
@@ -116,7 +116,7 @@ test('replay and controller admission-to-assignment retain one execution identit
  await f.registry.execute(failed,f.context);await rpc(bad,'fixture.release');
  await until(async()=>((await loadStoredCheckpoint(reviewWorkerCheckpoint(failed.key)))!.attempts.at(-1)!.header.status==='failed'));
  const failure=(await loadStoredCheckpoint(reviewWorkerCheckpoint(failed.key)))!.attempts.at(-1)!;assert.ok('error'in failure&&failure.error);assert.equal((await rpc(bad,'fixture.stats')).calls,0);
- await assert.rejects(f.registry.execute(failed,f.context,'resume'),/failed admission needs the next attempt/);
+ await assert.rejects(f.registry.execute(failed,f.context,'resume'),/failed admission needs the next attempt|Failed review requires the next attempt/);
  const corrected=await f.registry.admit(f.submit('bad-source',f.packet,2),f.context),replacement=f.started.get('bad-source')!;
  assert.notEqual(corrected.incarnation,failed.incarnation);
  await f.registry.execute(corrected,f.context);await rpc(replacement,'fixture.release');

@@ -12,7 +12,7 @@ import { approveArtifactByJsonPath, approveWorkflowTarget } from '../../../gates
 import { lifecycleFor } from '../../../../daemon/lifecycle-registry.js';
 import { reviewedBuildFingerprint } from '../../build-freshness.js';
 import { cleanupApprovedTaskReviews } from '../../../../daemon/task-review-rpc.js';
-import { eventually } from './controller-fixture.js';
+import { eventually,reviewHost } from './controller-fixture.js';
 
 async function setup(){
  const f=await fixture(true),buildPath=join(f.repo,`.insrc/artifacts/BUILD-${hash}-s1.json`);
@@ -92,13 +92,13 @@ test('Cleanup retains malformed/symlink/foreign/future/unrepresented history and
 
 
 test('daemon cleanup owner requires approved lifecycle and preserves pointed native diagnostics',async()=>{
- const f=await setup();try{
-  await assert.rejects(cleanupApprovedTaskReviews({repo:f.repo,epicHash:hash,storyId:'s1'}),/approval/);
+ const f=await setup(),reviews=reviewHost(f.repo,()=>{throw Error('Cleanup cannot invoke a reviewer');});try{
+  const refused=await cleanupApprovedTaskReviews({repo:f.repo,epicHash:hash,storyId:'s1'});assert.match(refused.errors.join(' '),/approval|integrity/i);assert.equal(refused.deleted.length,0);
   const cp=f.checkpoint('diagnostic');cp.attempts[0]!['review-response'].failureDiagnostics=[{phase:'assessment',taskId:'t1',resolved:true,diagnostic:{provider:'codex',issues:[{code:'MISSING_REQUIRED_FIELD',field:'findings',correction:'Return findings as a top-level JSON array.',occurrences:2}],lastRejectedFeedback:{preview:'PRIVATE_PREVIEW_CANARY',truncated:false}}}];
   await saveCheckpoint(checkpointPath(f.repo,'diagnostic'),cp);const published=await publishTaskCheckpoint(f.repo,hash,'diagnostic',f.deps);
   const summary=f.readRecord(published.jsonPath).body.reviews.find(r=>r.reviewId==='diagnostic')!.summary;
   assert.match(summary,/MISSING_REQUIRED_FIELD/);assert.doesNotMatch(summary,/PRIVATE_PREVIEW_CANARY/);
   const result=await approveArtifactByJsonPath(f.buildPath,{lifecycle:f.lifecycle,afterBuildApproval:(repo,epicHash,storyId)=>cleanupApprovedTaskReviews({repo,epicHash,storyId})});
   assert.equal(result.cleanup?.deleted.length,3);assert.deepEqual(result.cleanup?.errors,[]);
- }finally{f.cleanup();}
+ }finally{await reviews.close();f.cleanup();}
 });

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { fixture, hash } from './publication-fixture.js';
-import { channel, serve, eventually } from './controller-fixture.js';
+import { channel, serve, eventually,assignedFrame } from './controller-fixture.js';
 import { TaskReviewCoordinator } from '../coordinator.js';
 import type { ControllerFrame } from '../controller.js';
 import type { LLMProvider, ReviewSessionOpts } from '../../../../shared/types.js';
@@ -15,10 +15,11 @@ test('real IPC activity protocol fences owners, sequences, replays and resumed e
  const base={repo:f.repo,epicHash:hash,reviewId:'activity-wire',attempt:1,packet:f.packet};
  try{
   await assert.rejects(first.rawCall('codeReview.task.start',base),/activity-v1/);
-  const frame=await first.rawCall<ControllerFrame>('codeReview.task.start',{...base,timingProtocol:'activity-v1'});
+  await first.rawCall('codeReview.task.start',{...base,timingProtocol:'activity-v1'});
+  const frame=await assignedFrame(first,base);
   assert.equal(frame.timing?.mode,'activity');assert.equal(frame.timing?.inactivityMs,1800000);assert.ok(!('remainingMs' in frame));
   const message={repo:f.repo,reviewId:base.reviewId,attempt:1,taskId:frame.taskId,executionId:frame.executionId,sequence:1,event:{kind:'model_output'}};
-  await assert.rejects(foreign.rawCall('codeReview.task.activity',message),/wrong-reviewer/);
+  await assert.rejects(foreign.rawCall('codeReview.task.activity',message),/wrong-reviewer|Review owner mismatch/);
   await assert.rejects(first.rawCall('codeReview.task.activity',{...message,sequence:2}),/Out-of-order/);
   const ack=await first.rawCall('codeReview.task.activity',message);
   await new Promise(resolve=>setTimeout(resolve,25));
@@ -29,7 +30,9 @@ test('real IPC activity protocol fences owners, sequences, replays and resumed e
   await assert.rejects(first.rawCall('codeReview.task.activity',{...message,taskId:'wrong'}),/Conflicting/);
   first.close();await eventually(()=>f.read(frame.path).attempts[0]!.header.interrupted===true);
   resumed=await channel(host.path);
-  const next=await resumed.rawCall<ControllerFrame>('codeReview.task.start',{...base,operation:'resume',timingProtocol:'activity-v1'});
+  await eventually(()=>host.reviews.registry.registeredScope({project:f.repo,family:'code',reviewId:base.reviewId})===undefined);
+  await resumed.rawCall('codeReview.task.start',{...base,operation:'resume',timingProtocol:'activity-v1'});
+  const next=await assignedFrame(resumed,base);
   assert.notEqual(next.executionId,frame.executionId);
   await assert.rejects(resumed.rawCall('codeReview.task.activity',message),/Stale or wrong/);
   const result={repo:f.repo,reviewId:base.reviewId,attempt:1,taskId:next.taskId,executionId:next.executionId,sequence:next.nextSequence,result:f.result};

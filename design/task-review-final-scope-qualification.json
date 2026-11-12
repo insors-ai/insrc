@@ -347,7 +347,7 @@
         },
         {
           "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
-          "title": "terminal capacity: 10000-task small packet refuses both routes before save or provider dispatch"
+          "title": "terminal capacity: 10000-task small packet refuses dispatch and preserves controller admission failure"
         },
         {
           "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",

@@ -115,7 +115,7 @@ test('production resume preserves failed qualified and no-document attempts and 
  for(const qualified of [true,false]){
   const reviewId=qualified?'failed-qualified':'failed-without-documents',path=checkpointPath(code.repo,reviewId),base={repo:code.repo,epicHash:hash,reviewId,attempt:1};
   if(qualified){
-   const cp=code.checkpoint(reviewId),last=cp.attempts[0]!;last.header.reviewer='controller';last.header.status='failed';last['review-response'].tasks=[];last['review-response'].crPublication='complete';
+   const cp=code.checkpoint(reviewId),last=cp.attempts[0]!;last.header.reviewer='controller';last.header.status='failed';last['review-response'].tasks=[];last['review-response'].crPublication='pending';last['review-response'].error='Original failed execution';last['review-response'].summary='Preserve this failed execution summary';
    await saveCheckpoint(path,cp);
   }else{
    const key={project:code.repo,family:'code' as const,reviewId};

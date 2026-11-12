@@ -54,7 +54,7 @@ serveRequests(parentPort!,directDispatch({
   }
   if(!body)throw new Error('Permanent review not found; supply its storyId locator');
   const review=body.reviews.find(r=>r.reviewId===key.reviewId&&r.attempt===attempt);
-  if(review)return{reviewId:key.reviewId,attempt,status:review.status,crPublication:'complete',executionState:'inactive',completedTasks:review.tasks.length,totalTasks:review.tasks.length,interrupted:false,hasError:false,freshness:'stale',progress:null};
+  if(review)return{reviewId:key.reviewId,attempt,status:review.status,crPublication:'complete',executionState:'inactive',completedTasks:review.tasks.length,totalTasks:review.failedAttempt?.header.selectedTaskIds.length??review.tasks.length,interrupted:false,hasError:!!review.failedAttempt,freshness:'stale',progress:null};
   const failure=body.admissionFailures?.find(f=>f.reviewId===key.reviewId&&f.attempt.header.attempt===attempt)?.attempt;
   if(!failure)throw new Error('Permanent review attempt not found');
   return{reviewId:key.reviewId,attempt,status:failure.header.status,crPublication:'pending',executionState:'inactive',completedTasks:0,totalTasks:0,interrupted:failure.header.status==='interrupted',hasError:!!failure.error,freshness:'stale',progress:failure.progress,admission:{validation:'unverified',...(failure.error?{error:failure.error}:{})}};

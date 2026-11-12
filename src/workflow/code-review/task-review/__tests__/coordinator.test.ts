@@ -233,7 +233,7 @@ test('shared attribution exhausts three submissions without running assessments 
   const a=(await f.read(ack.path)).attempts[0]!;
   assert.equal(calls,3);assert.equal(a.header.attributionRepair?.rejections,3);
   assert.deepEqual(a['review-response'].tasks.map(t=>t.status),['failed','failed','failed']);
-  await coordinator.start(f.project,'attribution-exhaustion',1,undefined,{operation:'resume'});await coordinator.settled(f.project,'attribution-exhaustion');
+  await assert.rejects(coordinator.start(f.project,'attribution-exhaustion',1,undefined,{operation:'resume'}),/Failed review requires the next attempt/);
   assert.equal(calls,3);
  }finally{await f.cleanup();}
 });

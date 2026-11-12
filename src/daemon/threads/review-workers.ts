@@ -125,7 +125,7 @@ export class ReviewWorkers {
   if(previous){
    if(previous.publication)throw new Error('Review publication is active');
    if(previous.cleanupOwner&&!cleanupScope)throw new Error('Review cleanup is active');
-   this.assertController(previous,context);this.active(previous);await previous.ready;
+   this.active(previous);await previous.ready;
    if(input.attempt!==previous.input.attempt){
     if(input.attempt!==previous.attempt+1)throw new Error('Review attempt conflict');
     await this.call(previous,'review.worker.advance',{attempt:previous.attempt,nextAttempt:input.attempt});
@@ -133,6 +133,16 @@ export class ReviewWorkers {
     if(this.entries.has(keyOf(key)))throw new Error('Review resources remain fenced');
     return this.admit(input,context);
    }
+   const foreign=previous.scope.reviewer==='controller'&&(context.connectionIdentity!==previous.context.connectionIdentity||context.daemonEpoch!==previous.context.daemonEpoch);
+   if(foreign&&input.operation==='resume'){
+    // Explicit recovery can rebind stopped work. The private owner must prove
+    // idleness and pinned input before its native/worker lifetime is retired.
+    await this.call(previous,'review.worker.assertIdle',{});
+    await this.call(previous,'review.worker.matchAdmission',{...input,actionId:previous.input.actionId,key,incarnation:previous.input.incarnation,reviewer:scope.reviewer});
+    await this.closeEntry(previous);if(this.entries.has(keyOf(key)))throw new Error('Review resources remain fenced');
+    return this.admit(input,context);
+   }
+   this.assertController(previous,context);
    return this.call(previous,'review.worker.matchAdmission',{...input,...(key.family==='code'&&input.operation==='resume'?{actionId:previous.input.actionId}:{}),key,incarnation:previous.input.incarnation,reviewer:scope.reviewer}) as Promise<ReviewAdmissionReceipt>;
   }
   if(this.cleanup.has(scope.cleanupScope)&&cleanupScope!==scope.cleanupScope||key.family==='design'&&[...this.entries.values()].some(e=>e.input.key.family==='design'&&e.input.key.project===key.project&&e.scope.subject===scope.subject))throw new Error('Review subject or cleanup busy');

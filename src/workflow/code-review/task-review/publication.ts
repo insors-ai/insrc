@@ -1,6 +1,6 @@
 import { requireCapacityBaseline } from './capacity.js';
 import type { CapacityBaseline } from './capacity.js';
-import { completedSummary } from './summary.js';
+import { completedSummary,failedAttemptSummary } from './summary.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { readFile, realpath } from 'node:fs/promises';
 import { isDeepStrictEqual } from 'node:util';
@@ -30,18 +30,19 @@ export async function publishTaskCheckpoint(project: string, epicHash:string, re
  requireReview(stored.project === canonical && stored.reviewId === reviewId, 'checkpoint', 'Checkpoint identity mismatch');
  const latest = stored.attempts.at(-1)!;
  if (isCodeAdmission(latest)) return publishTechnicalAdmission(canonical, epicHash, stored, latest, deps);
+ requireReview(latest.header.status!=='failed'||latest['review-response'].crPublication==='complete','attempt','Failed review requires the next attempt; its pending publication cannot rewrite failed feedback');
  const entries: readonly (ReviewAttempt | CodeAdmissionAttempt)[] = stored.attempts;
  const failures = entries.filter((a): a is CodeAdmissionAttempt => isCodeAdmission(a));
  const checkpoint: ReviewCheckpoint = { ...stored, schemaVersion: 1, attempts: entries.filter((a): a is ReviewAttempt => !isCodeAdmission(a)).map(a => { const { acceptedAt: _at, operation: _operation, ...qualified } = withoutReviewResourceGuard(a); return qualified; }) };
  validateResultOrigins(checkpoint.attempts.map(entry => ({ attempt:entry.header.attempt, reviewer:entry.header.reviewer, tasks:entry['review-response'].tasks, origins:entry['review-response'].origins })));
  requireReview(stored.attempts.every((a,i)=>a.header.attempt===i+1),'attempt','Attempt history must be contiguous');
  for(const earlier of checkpoint.attempts.slice(0,-1)){
-  requireReview(earlier['review-response'].crPublication==='complete'&&!['pending','running'].includes(earlier.header.status),'attempt','Earlier attempt must be published');
+  requireReview((earlier.header.status==='failed'||earlier['review-response'].crPublication==='complete')&&!['pending','running'].includes(earlier.header.status),'attempt','Earlier attempt must be published');
   validateSavedAttribution(earlier);
   if(earlier.submitted.reviewRevision){
    const priorPrepared=await prepareReviewPacket(earlier.submitted,deps.sources,true,undefined,earlier.header.derived);
    requireReview(priorPrepared.epicHash===epicHash&&canonicalReviewStory(priorPrepared.packet.storyId,epicHash)===canonicalReviewStory(checkpoint.storyId,epicHash)&&priorPrepared.packet.taskId===checkpoint.taskId,'scope','Earlier scope belongs to another subject');
-   await restoreAcceptedAssignments({path,checkpoint,attempt:earlier,prepared:priorPrepared});captureFinalScope(priorPrepared,earlier);
+   await restoreAcceptedAssignments({path,checkpoint,attempt:earlier,prepared:priorPrepared});if(earlier.header.attributionState!=='pending')captureFinalScope(priorPrepared,earlier);
   }
  }
  const attempt = checkpoint.attempts.at(-1)!;
@@ -80,6 +81,7 @@ export async function publishTaskCheckpoint(project: string, epicHash:string, re
    if(deps.baseline)await requireCapacityBaseline(deps.baseline);
    let history: unknown = priorExists ? current.payload.body : undefined;
    for (const failure of failures) history = mergeCodeAdmissionFailure(history, reviewId, failure);
+   for(const earlier of stored.attempts.slice(0,-1))if(!isCodeAdmission(earlier)&&earlier.header.status==='failed'&&earlier['review-response'].crPublication==='pending')history=mergeTaskSummary(history,failedAttemptSummary(earlier,reviewId));
    const body=mergeTaskSummary(history,summary);
    const envelope={...(priorHead??{meta:{workflow:'code-review',schemaVersion:2}}),body,citations:[]};
    requireReview(Buffer.byteLength(JSON.stringify(envelope,null,2)+'\n')<=reviewJsonLimit(),'projection_limit','Merged CR envelope exceeds storage capacity');

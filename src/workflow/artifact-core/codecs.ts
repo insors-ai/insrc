@@ -17,7 +17,7 @@ import { ArtifactIds } from '../artifact-ids.js';
 import type { ArtifactIdKind, ArtifactKey } from '../artifact-ids.js';
 import { requireEpicAnchor, stampRootAnchor, storyRecordFolderArgs, folderIdentityMeta } from '../storage.js';
 import { ArtifactShapeError, UnknownArtifactKindError } from './types.js';
-import { validateTaskBody } from '../code-review/task-review/record.js';
+import { validateTaskBody,hasPreservedReviewFailures } from '../code-review/task-review/record.js';
 import { checkTaskBody, checkTasksBody } from './task-bodies.js';
 
 /** The stored head, as `writeArtifact` and every raw reader see it. */
@@ -101,7 +101,7 @@ function codec(kind: ArtifactIdKind, workflow: string): KindCodec {
 			if (payload.body['format'] === 'task-based') {
 				const body = validateTaskBody(payload.body);
 				const reviewer=body.reviews.at(-1)?.reviewer;
-				return { schemaVersion: body.admissionFailures ? 3 : 2, ...(reviewer?{reviewedBy:reviewer}:{}), ...folderIdentityMeta(storyRecordFolderArgs(String(meta['repoPath']), String(meta['epicHash']), String(meta['storyId']), {}, { kind: 'read' })) };
+				return { schemaVersion: hasPreservedReviewFailures(body) ? 3 : 2, ...(reviewer?{reviewedBy:reviewer}:{}), ...folderIdentityMeta(storyRecordFolderArgs(String(meta['repoPath']), String(meta['epicHash']), String(meta['storyId']), {}, { kind: 'read' })) };
 			}
 			return { schemaVersion: 1 };
 		} } : {}),

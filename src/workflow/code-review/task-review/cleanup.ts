@@ -30,7 +30,7 @@ export async function cleanupStoryCheckpoints(project:string,hash:string,story:s
    requireReview(saved.project===project&&saved.reviewId===entry.name.slice(0,-5),'checkpoint','Foreign checkpoint identity');
    requireReview(canonicalReviewStory(saved.storyId,hash)===canonicalReviewStory(story,hash),'storyId','Different story; retained');
    const latest=saved.attempts.at(-1);requireReview(latest,'checkpoint','Empty attempt history');
-   requireReview(saved.attempts.every(a=>!a.resourceGuard?.openLeases.length&&!['pending','running'].includes(a.header.status)&&(isCodeAdmission(a)||a['review-response'].crPublication==='complete')),'checkpoint','Unfinished, unpublished or resource-fenced attempt; retained');
+   requireReview(saved.attempts.every(a=>!a.resourceGuard?.openLeases.length&&!['pending','running'].includes(a.header.status)&&(isCodeAdmission(a)||a.header.status==='failed'||a['review-response'].crPublication==='complete')),'checkpoint','Unfinished, unpublished or resource-fenced attempt; retained');
    const qualified=qualifiedCodeView(saved);
    // Reuse the existing strict source/history/CR comparison rather than invent a second preservation validator.
    if(qualified){const last=qualified.attempts.at(-1)!;await prepareReviewAdmission(project,saved.reviewId,last.header.attempt,undefined,last.header.reviewer,deps.sources,{operation:'resume',epicHash:hash,qualifiedHistory:qualified});}
@@ -41,6 +41,7 @@ export async function cleanupStoryCheckpoints(project:string,hash:string,story:s
     if(isCodeAdmission(attempt)){requireReview(codeReviewPreservationDigest(mergeCodeAdmissionFailure(body,saved.reviewId,attempt))===codeReviewPreservationDigest(body),'CR','Technical admission history is not preserved');continue;}
     const summary=body.reviews.find(r=>r.reviewId===saved.reviewId&&r.attempt===attempt.header.attempt);
     requireReview(summary,'CR','Missing saved attempt summary');
+    if(attempt.header.status==='failed'&&attempt['review-response'].crPublication==='pending'){requireReview(summary.failedAttempt&&isDeepStrictEqual(withoutReviewResourceGuard(summary.failedAttempt),withoutReviewResourceGuard(attempt)),'CR','Qualified failed input and feedback are not preserved');continue;}
     if(attempt['review-response'].failureDiagnostics?.length)requireReview(summary.summary===taskAttemptSummary(attempt),'CR','Pointed native failure summary is not preserved; retain historical checkpoint');
    }
    // Requalification uses host-owned Git leases whose open/close metadata is

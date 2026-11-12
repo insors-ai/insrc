@@ -114,7 +114,7 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
     return await design!.coordinator.recover({phase:'recover',repo:project,reviewId,attempt:init.review.attempt,actionId:p['actionId'],operation:'retry_publication'});
     }catch(error){
      if(code)await updateStoredCodeCheckpoint(reviewWorkerCheckpoint(init.review.key),current=>{
-      const last=current?.attempts.at(-1);if(!current||!last||isCodeAdmission(last))return current!;
+      const last=current?.attempts.at(-1);if(!current||!last||isCodeAdmission(last)||last.header.status==='failed')return current!;
       last['review-response'].crPublication='pending';last['review-response'].error=(error instanceof Error?error.message:String(error)).slice(0,2048);return current;
      });
      throw error;
@@ -139,12 +139,12 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
     if(design){
      const cp=await loadStoredDesignCheckpoint(init.review.key.project,init.review.key.reviewId),last=cp?.attempts.at(-1);
      const technical=last&&!isDesignAdmission(last)&&last.status==='failed'&&last.failure;
-     if(!last||p['attempt']!==last.number||p['nextAttempt']!==last.number+1||design.coordinator.isActive(init.review.key.project,init.review.key.reviewId)||cp!.attempts.some(a=>'resourceGuard'in a&&a.resourceGuard?.openLeases.length)||['pending','running'].includes(last.status)||!isDesignAdmission(last)&&!technical&&last.publication?.state!=='complete')throw new Error('Previous design attempt is active, unpublished or resource-fenced');
+     if(!last||p['attempt']!==last.number||p['nextAttempt']!==last.number+1||design.isActive()||cp!.attempts.some(a=>'resourceGuard'in a&&a.resourceGuard?.openLeases.length)||['pending','running'].includes(last.status)||!isDesignAdmission(last)&&!technical&&last.publication?.state!=='complete')throw new Error('Previous design attempt is active, unpublished or resource-fenced');
      return{nextAttempt:p['nextAttempt']};
     }
     if(!code||p['attempt']!==init.review.attempt||p['nextAttempt']!==init.review.attempt+1)throw new Error('Invalid review advance');
     const cp=await loadStoredCheckpoint(checkpointPath(init.review.key.project,init.review.key.reviewId)),last=cp?.attempts.at(-1);
-    if(!last||last.header.attempt!==init.review.attempt||cp!.attempts.some(a=>a.resourceGuard?.openLeases.length)||['pending','running'].includes(last.header.status)||!isCodeAdmission(last)&&last['review-response'].crPublication!=='complete')throw new Error('Previous attempt is active, unpublished or resource-fenced');
+    if(!last||last.header.attempt!==init.review.attempt||code.isActive()||cp!.attempts.some(a=>a.resourceGuard?.openLeases.length)||['pending','running'].includes(last.header.status)||!isCodeAdmission(last)&&last.header.status!=='failed'&&last['review-response'].crPublication!=='complete')throw new Error('Previous attempt is active, unpublished or resource-fenced');
     return{nextAttempt:p['nextAttempt']};
    },
    'review.worker.recover':async(raw,context)=>{

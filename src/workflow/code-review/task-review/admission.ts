@@ -75,9 +75,9 @@ export async function prepareReviewAdmission(project: string, reviewId: string, 
     }
     validateTaskResult(result, { taskId: result.taskId, changes: boundAssignments?.find(a => a.taskId === result.taskId)?.changes ?? (entry.submitted.reviewRevision ? [] : prepared.changes), evidenceReferences: refs });
    }
-   if (!['pending', 'running'].includes(entry.header.status)) requireReview(results.length === selected.length && entry.header.completedAt && aggregateTaskStatus(results) === entry.header.status, 'checkpoint', 'Terminal attempt disagrees with saved tasks');
+   if (!['pending', 'running'].includes(entry.header.status)) requireReview(entry.header.completedAt && (entry.header.status==='failed'&&entry['review-response'].crPublication==='pending' ? results.length<=selected.length&&(!!entry['review-response'].error||aggregateTaskStatus(results)==='failed') : results.length === selected.length && aggregateTaskStatus(results) === entry.header.status), 'checkpoint', 'Terminal attempt disagrees with saved tasks');
    if (entry['review-response'].crPublication === 'complete') requireReview(entry.header.completedAt && !['pending', 'running'].includes(entry.header.status), 'checkpoint', 'Published attempt is not terminal');
-   if (index < saved.attempts.length - 1) requireReview(entry['review-response'].crPublication === 'complete' && !['pending', 'running'].includes(entry.header.status), 'attempt', 'Earlier attempt was not published');
+   if (index < saved.attempts.length - 1) requireReview((entry.header.status==='failed'||entry['review-response'].crPublication === 'complete') && !['pending', 'running'].includes(entry.header.status), 'attempt', 'Earlier attempt was not published');
    if (entry['review-response'].crPublication === 'complete') {
     const cr = JSON.parse(await readFile(artifactJsonPath(canonical, codeReviewArtifactId(prepared.epicHash, canonicalReviewStory(saved.storyId, prepared.epicHash))), 'utf8')) as { meta?: { schemaVersion?: number }; body?: unknown };
     requireReview(cr.meta?.schemaVersion === 2 || cr.meta?.schemaVersion === 3, 'publication', 'Expected task-based CR history');
@@ -105,7 +105,7 @@ export async function prepareReviewAdmission(project: string, reviewId: string, 
  }
  requireReview(request.packet, 'packet', 'Start requires a committed packet');
  requireReview(context.accepted ? attempt===context.accepted.historyLength+1 : saved ? attempt === saved.attempts.length + 1 : attempt === 1, 'attempt', saved ? 'attempt-conflict: expected next sequential attempt' : 'missing-checkpoint: first attempt must be 1');
- if (latest) requireReview(!['pending', 'running'].includes(latest.header.status) && latest['review-response'].crPublication === 'complete', 'attempt', 'attempt-conflict: previous attempt must be terminal and published');
+ if (latest) requireReview(!['pending', 'running'].includes(latest.header.status) && (latest.header.status==='failed'||latest['review-response'].crPublication === 'complete'), 'attempt', 'attempt-conflict: previous attempt must be terminal and published');
  // The route comes from the Story's stored artifacts, never from the packet. Resume and publication re-read stored history and pass none.
  const route = context.epicHash ? await readStoryRoute(canonical, context.epicHash, canonicalReviewStory(request.packet.storyId, context.epicHash)) : undefined;
  const prepared = await prepareReviewPacket(request.packet, sources, false, route);

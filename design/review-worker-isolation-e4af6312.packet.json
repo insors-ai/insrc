@@ -1,15 +1,15 @@
 {
-  "reviewRevision": "35188a6ffde3b4ae3ef237937f8c8d70e3ce70e5",
+  "reviewRevision": "262ef49221223eb568662db6d86b1cb8a07091a3",
   "storyId": "s1",
   "functionalSummary": "Whole-story independent review for dedicated per-code/design-review workers (16 approved PLAN r6 tasks). Main-owned identity/leases, durable v2 unverified admission, source/subject qualification inside worker, async acknowledgments, immutable attempts, cached progress/status, controller authority, targeted recovery through the existing local broker, whole-history fencing, model-free publication and approved cleanup, unconditional production route cutover, compiled packaging and both supported clients. Changes in Task15 fixed early design assignment readiness and duplicate publication-only recovery bookkeeping. Task16 uses an object-shaped async executable-lookup API so the strict forbidden-spawn scanner does not mistake lookup for execution; no exemptions were added. Select ONLY the submitted after blocks/deletion anchors: all source origins are exact commits bearing this story trailer, never a generic HEAD diff. Other interleaved commits are context only. LLD r5 and PLAN r6 are the standalone route documents; there is no DEF/HLD for this route. All implementation tasks are built; final task validation precedes this mandatory whole-story review so it binds the final BUILD; no BUILD approval, push or deployment before independent review. Latest qualification: package build and native helpers pass; 391 backend/provider/MCP source checks pass, 51 Task15 daemon-gated isolation/recovery checks pass, compiled package 2 checks pass, native broker6 pass, affected VSCode32 and JetBrains13 pass; root/VSCode typechecks clean. Broader client failures/limits are fully disclosed in tests. TU1 64MiB source-projection failure remains separately scoped and is not fixed by worker isolation. Optional execution is at reviewer discretion; complete changed-module inspection and test coverage review remain mandatory. Scope qualification selects every surviving story-origin after-line from pinned Git blame intersected with exact original commit hunks, plus explicit story deletion anchors. Superseded original lines overwritten by later commits are not granted finding scope. No generic HEAD diff or unrelated change is added.",
   "documents": {
     "lld": {
       "path": ".insrc/artifacts/LLD-e4af63128c7cbec2-s1.json",
-      "commit": "35188a6ffde3b4ae3ef237937f8c8d70e3ce70e5"
+      "commit": "262ef49221223eb568662db6d86b1cb8a07091a3"
     },
     "plan": {
       "path": ".insrc/artifacts/PLAN-e4af63128c7cbec2-s1.json",
-      "commit": "35188a6ffde3b4ae3ef237937f8c8d70e3ce70e5"
+      "commit": "262ef49221223eb568662db6d86b1cb8a07091a3"
     }
   },
   "reviewSet": [

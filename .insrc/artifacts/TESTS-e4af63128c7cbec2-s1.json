@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 26,
-        "contentHash": "5cff8b36e0717b150f438c732f1f0302a4cfe4ed709ef062414c35eb8e28d8cd",
-        "at": "2026-11-11T17:27:54.781Z",
+        "number": 29,
+        "contentHash": "b52f8edf1a1801d4c5cce0e77b5c8be4a9f90f8697ba3c9ac478d4dea3aee679",
+        "at": "2026-11-12T01:23:20.293Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "e4af63128c7cbec2",
     "storyId": "s1",
     "createdAt": "2026-11-09T07:52:13.312Z",
-    "updatedAt": "2026-11-11T17:27:54.699Z",
+    "updatedAt": "2026-11-12T01:23:20.233Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-09T04:29:20.389Z",
     "epicSlug": "isolate-each-code-design-review-its",
-    "revision": 26
+    "revision": 29
   },
   "body": {
     "tasks": [
@@ -760,6 +760,150 @@
               },
               {
                 "title": "legacy active missing guards reconstruct only the requested review fence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "8cf777a4a",
+        "ranAt": "2026-11-12T01:23:20.233Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/threads/__tests__/review-worker-progress.test.ts: pending admission and cached progress stay responsive during blocked worker computation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-progress.test.ts",
+                "title": "pending admission and cached progress stay responsive during blocked worker computation",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-progress.test.ts",
+                "title": "technical admission failures publish failed preparation without findings or provider dispatch",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-progress.test.ts",
+                "title": "the cross-thread board read carries only review progress and excludes workflow frames",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/worker-admission.test.ts",
+                "title": "replay and controller admission-to-assignment retain one execution identity",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "vscode-plugin/src/chat/__tests__/review-worker-progress.test.ts: admission DTOs render preparing or failure without empty success",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/review-worker-progress.test.ts",
+                "title": "admission DTOs render preparing or failure without empty success",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/review/ReviewWorkerProgressTest.kt: admission DTOs preserve unknown inventory and current review identity",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/__tests__/review-worker-progress-gradle.test.ts",
+                "title": "admission DTOs preserve unknown inventory and current review identity",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "jetbrains-plugin/__tests__/review-worker-progress-gradle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 12292,
+            "titles": [
+              {
+                "title": "admission DTOs preserve unknown inventory and current review identity",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-worker-progress.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8431,
+            "titles": [
+              {
+                "title": "code",
+                "result": "pass"
+              },
+              {
+                "title": "design",
+                "result": "pass"
+              },
+              {
+                "title": "pending admission and cached progress stay responsive during blocked worker computation",
+                "result": "pass"
+              },
+              {
+                "title": "code",
+                "result": "pass"
+              },
+              {
+                "title": "design",
+                "result": "pass"
+              },
+              {
+                "title": "technical admission failures publish failed preparation without findings or provider dispatch",
+                "result": "pass"
+              },
+              {
+                "title": "the cross-thread board read carries only review progress and excludes workflow frames",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/worker-admission.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7577,
+            "titles": [
+              {
+                "title": "durable acknowledgment precedes blocked source qualification and provider dispatch",
+                "result": "pass"
+              },
+              {
+                "title": "replay and controller admission-to-assignment retain one execution identity",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/chat/__tests__/review-worker-progress.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 410,
+            "titles": [
+              {
+                "title": "admission DTOs render preparing or failure without empty success",
                 "result": "pass"
               }
             ],

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 25 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 31 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -266,3 +266,37 @@ Run at 2026-11-11T17:27:54.699Z on commit `f3c1b184a`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/threads/__tests__/review-worker-clearance.test.ts` | 0 | 9 | 12 s |  |
 | `src/daemon/threads/__tests__/review-worker-recovery.test.ts` | 0 | 2 | 5.1 s |  |
+
+## t12
+
+Run at 2026-11-12T01:23:20.233Z on commit `8cf777a4a`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/daemon/threads/__tests__/review-worker-progress.test.ts: pending admission and cached progress stay responsive during blocked worker computation**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | pending admission and cached progress stay responsive during blocked worker computation | `src/daemon/threads/__tests__/review-worker-progress.test.ts` |
+| pass | technical admission failures publish failed preparation without findings or provider dispatch | `src/daemon/threads/__tests__/review-worker-progress.test.ts` |
+| pass | the cross-thread board read carries only review progress and excludes workflow frames | `src/daemon/threads/__tests__/review-worker-progress.test.ts` |
+| pass | replay and controller admission-to-assignment retain one execution identity | `src/workflow/code-review/task-review/__tests__/worker-admission.test.ts` |
+
+**unit: vscode-plugin/src/chat/__tests__/review-worker-progress.test.ts: admission DTOs render preparing or failure without empty success**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | admission DTOs render preparing or failure without empty success | `vscode-plugin/src/chat/__tests__/review-worker-progress.test.ts` |
+
+**unit: jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/review/ReviewWorkerProgressTest.kt: admission DTOs preserve unknown inventory and current review identity**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | admission DTOs preserve unknown inventory and current review identity | `jetbrains-plugin/__tests__/review-worker-progress-gradle.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `jetbrains-plugin/__tests__/review-worker-progress-gradle.test.ts` | 0 | 1 | 12.3 s |  |
+| `src/daemon/threads/__tests__/review-worker-progress.test.ts` | 0 | 7 | 8.4 s |  |
+| `src/workflow/code-review/task-review/__tests__/worker-admission.test.ts` | 0 | 2 | 7.6 s |  |
+| `vscode-plugin/src/chat/__tests__/review-worker-progress.test.ts` | 0 | 1 | 0.4 s |  |

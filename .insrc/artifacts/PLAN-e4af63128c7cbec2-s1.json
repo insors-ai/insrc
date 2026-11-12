@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1794417290985-e1bmii",
+    "runId": "wf-1794423800476-3fq3eh",
     "repoPath": "/home/subho/work/dev/insors/insrc",
-    "createdAt": "2026-11-11T17:16:54.573Z",
+    "createdAt": "2026-11-11T19:05:39.626Z",
     "epicCreatedAt": "2026-11-09T04:29:20.389Z",
     "standalone": true,
     "attribution": {
@@ -16,7 +16,7 @@
         }
       ]
     },
-    "elapsedMs": 117857,
+    "elapsedMs": 129826,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "e4af63128c7cbec2",
@@ -28,9 +28,9 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 5,
-        "contentHash": "2b6a7e97a20c55d121f81af40fcf63a0c7a9cfb6a3e5394d3eb5d3f6165e875d",
-        "at": "2026-11-11T17:16:56.467Z",
+        "number": 6,
+        "contentHash": "9afeef214d27decd48a2178fb309acde1a239980e73605cb969796be65b38f5f",
+        "at": "2026-11-11T19:05:42.511Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -39,13 +39,13 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 5,
+        "revision": 6,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-11T17:21:05.456Z"
+        "at": "2026-11-12T01:20:59.324Z"
       }
     },
     "envelope": {
@@ -53,8 +53,8 @@
       "references": [],
       "attachments": []
     },
-    "revision": 5,
-    "rangeBase": "6e79e62e4dd811246a0e5deb6092306c9953ce4f"
+    "revision": 6,
+    "rangeBase": "19be219f2d546cd2a9d6a9b291a53bd02109e4c4"
   },
   "body": {
     "summary": {
@@ -448,7 +448,7 @@
       {
         "id": "t12",
         "title": "Expose responsive admission progress across supported clients",
-        "summary": "Wire bounded per-review worker progress/status into current MCP/RPC readers, daemon thread status, CLI surfaces and live VS Code/JetBrains review DTOs/renderers. Preserve method names, identities and artifact-review behavior; add only the approved admission-phase/diagnostic fields and rendering semantics.",
+        "summary": "Wire bounded per-review worker progress/status into current MCP/RPC readers, daemon thread status, CLI surfaces and live VS Code/JetBrains review DTOs/renderers. Preserve method names, identities and artifact-review behavior; add only the approved admission-phase/diagnostic fields and rendering semantics. Component acceptance in this task uses registered real review workers and the available host-service contract, actual MCP connection classes, daemon/artifact readers and supported client DTO/renderers. Production ReviewWorkers instantiation and atomic public-route activation are deliberately deferred to t14; installed production end-to-end qualification remains mandatory in t15/t16. Do not require production cutover to accept this component task.",
         "size": "M",
         "order": 12,
         "dependsOn": [
@@ -457,10 +457,10 @@
           "t10"
         ],
         "acceptanceChecks": [
-          "During blocked admission, progress/status respond without waiting for worker computation and report freshness, timestamps and unverified state rather than fabricated completion.",
-          "Code uses scope_preparation with task:null and unknown inventory represented by numeric zero plus explicit pending/unverified admission; design uses admission phase before its accepted plan.",
-          "Clients display Preparing review or technical admission failure, never successful empty scope; existing qualified/completed review views still decode.",
-          "Controller admission-to-assignment observation does not steal authority, restart admission or allocate another execution identity.",
+          "Through registered real-worker component fixtures and the available host-service contract, blocked admission does not delay cached progress/status; readers report freshness, timestamps and explicit unverified state rather than fabricated completion. Production route installation is t14 acceptance.",
+          "In the registered code/design worker component, code uses scope_preparation with task:null and unknown inventory represented by numeric zero plus explicit pending/unverified admission; design uses admission phase before its accepted plan.",
+          "Actual supported client DTOs/renderers display Preparing review or technical admission failure from the component's progress projection, never successful empty scope; existing qualified/completed views still decode. Production delivery through the installed registry is verified in t14/t15.",
+          "Registered-worker controller admission-to-assignment tests establish that cached observation preserves owner authority, does not restart admission and does not allocate another execution identity.",
           "Current vscode-plugin and jetbrains-plugin IPC field names remain aligned; deprecated insrc-ide is outside scope."
         ],
         "derivedFrom": [

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 31 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 37 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -300,3 +300,37 @@ Run at 2026-11-12T01:23:20.233Z on commit `8cf777a4a`. Tests check: **passed**. 
 | `src/daemon/threads/__tests__/review-worker-progress.test.ts` | 0 | 7 | 8.4 s |  |
 | `src/workflow/code-review/task-review/__tests__/worker-admission.test.ts` | 0 | 2 | 7.6 s |  |
 | `vscode-plugin/src/chat/__tests__/review-worker-progress.test.ts` | 0 | 1 | 0.4 s |  |
+
+## t13
+
+Run at 2026-11-12T02:12:05.399Z on commit `f8cda8670`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/daemon/threads/__tests__/review-worker-publication.test.ts: publication retry after worker exit or lost receipt performs zero provider calls**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | publication retry after worker exit or lost receipt performs zero provider calls | `src/daemon/threads/__tests__/review-worker-publication.test.ts` |
+
+**integration: src/daemon/threads/__tests__/review-worker-cleanup.test.ts: approval cleanup retains active targets and preserves both-family permanent history**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | approval cleanup retains active targets and preserves both-family permanent history | `src/daemon/threads/__tests__/review-worker-cleanup.test.ts` |
+| pass | artifact writes share the main queue and release only after worker reclamation | `src/daemon/threads/__tests__/artifact-write-authority.test.ts` |
+
+**integration: src/daemon/threads/__tests__/review-worker-recovery.test.ts: shutdown drains host leases before worker reclamation and replacement**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | shutdown drains host leases before worker reclamation and replacement | `src/daemon/threads/__tests__/review-worker-recovery.test.ts` |
+| pass | disposable daemon crash reconstructs unresolved guards and leaves unrelated reviews usable | `src/daemon/threads/__tests__/review-worker-recovery.test.ts` |
+| pass | legacy active missing guards reconstruct only the requested review fence | `src/daemon/threads/__tests__/review-worker-recovery.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/artifact-write-authority.test.ts` | 0 | 1 | 1.6 s |  |
+| `src/daemon/threads/__tests__/review-worker-cleanup.test.ts` | 0 | 3 | 8.6 s |  |
+| `src/daemon/threads/__tests__/review-worker-publication.test.ts` | 0 | 3 | 4 s |  |
+| `src/daemon/threads/__tests__/review-worker-recovery.test.ts` | 0 | 3 | 6.7 s |  |

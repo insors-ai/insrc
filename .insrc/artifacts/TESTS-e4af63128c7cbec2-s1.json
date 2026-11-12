@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 29,
-        "contentHash": "b52f8edf1a1801d4c5cce0e77b5c8be4a9f90f8697ba3c9ac478d4dea3aee679",
-        "at": "2026-11-12T01:23:20.293Z",
+        "number": 30,
+        "contentHash": "3f9d1b55990ffc75307c2847d482fbac2616b2b6f4215f9d6feb6cd8d4585c03",
+        "at": "2026-11-12T02:12:05.491Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "e4af63128c7cbec2",
     "storyId": "s1",
     "createdAt": "2026-11-09T07:52:13.312Z",
-    "updatedAt": "2026-11-12T01:23:20.233Z",
+    "updatedAt": "2026-11-12T02:12:05.399Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-09T04:29:20.389Z",
     "epicSlug": "isolate-each-code-design-review-its",
-    "revision": 29
+    "revision": 30
   },
   "body": {
     "tasks": [
@@ -904,6 +904,146 @@
             "titles": [
               {
                 "title": "admission DTOs render preparing or failure without empty success",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t13",
+        "commit": "f8cda8670",
+        "ranAt": "2026-11-12T02:12:05.399Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/threads/__tests__/review-worker-publication.test.ts: publication retry after worker exit or lost receipt performs zero provider calls",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-publication.test.ts",
+                "title": "publication retry after worker exit or lost receipt performs zero provider calls",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/threads/__tests__/review-worker-cleanup.test.ts: approval cleanup retains active targets and preserves both-family permanent history",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-cleanup.test.ts",
+                "title": "approval cleanup retains active targets and preserves both-family permanent history",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/artifact-write-authority.test.ts",
+                "title": "artifact writes share the main queue and release only after worker reclamation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/threads/__tests__/review-worker-recovery.test.ts: shutdown drains host leases before worker reclamation and replacement",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-recovery.test.ts",
+                "title": "shutdown drains host leases before worker reclamation and replacement",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-recovery.test.ts",
+                "title": "disposable daemon crash reconstructs unresolved guards and leaves unrelated reviews usable",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-recovery.test.ts",
+                "title": "legacy active missing guards reconstruct only the requested review fence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/artifact-write-authority.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1601,
+            "titles": [
+              {
+                "title": "artifact writes share the main queue and release only after worker reclamation",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-worker-cleanup.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8587,
+            "titles": [
+              {
+                "title": "code",
+                "result": "pass"
+              },
+              {
+                "title": "design",
+                "result": "pass"
+              },
+              {
+                "title": "approval cleanup retains active targets and preserves both-family permanent history",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-worker-publication.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4015,
+            "titles": [
+              {
+                "title": "code",
+                "result": "pass"
+              },
+              {
+                "title": "design",
+                "result": "pass"
+              },
+              {
+                "title": "publication retry after worker exit or lost receipt performs zero provider calls",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-worker-recovery.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6678,
+            "titles": [
+              {
+                "title": "shutdown drains host leases before worker reclamation and replacement",
+                "result": "pass"
+              },
+              {
+                "title": "disposable daemon crash reconstructs unresolved guards and leaves unrelated reviews usable",
+                "result": "pass"
+              },
+              {
+                "title": "legacy active missing guards reconstruct only the requested review fence",
                 "result": "pass"
               }
             ],

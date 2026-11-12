@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 62 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 64 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -420,3 +420,25 @@ Run at 2026-11-12T05:28:27.176Z on commit `8fe4b316c`. Tests check: **passed**. 
 | `src/daemon/tools/__tests__/review-worker-shell.test.ts` | 0 | 1 | 5.8 s |  |
 | `src/workflow/code-review/task-review/__tests__/worker-admission.test.ts` | 0 | 2 | 11.8 s |  |
 | `src/workflow/review/design-review/__tests__/worker-admission.test.ts` | 0 | 3 | 7.4 s |  |
+
+## t16
+
+Run at 2026-11-12T06:01:20.906Z on commit `2100ec477`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/daemon/threads/__tests__/review-worker-package.test.ts: compiled worker entrypoints and both review families start from an isolated built package**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | compiled worker entrypoints and both review families start from an isolated built package | `src/daemon/threads/__tests__/review-worker-package.test.ts` |
+
+**integration: src/daemon/threads/__tests__/review-worker-package.test.ts: release instructions retain explicit recovery local trust and post-approval smoke ordering**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | release instructions retain explicit recovery local trust and post-approval smoke ordering | `src/daemon/threads/__tests__/review-worker-package.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/review-worker-package.test.ts` | 0 | 2 | 7.3 s |  |

@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 37,
-        "contentHash": "8e24aacf9db7b2f0fb47679820e0e4bff644891c6fe285650c11f499b94060a3",
-        "at": "2026-11-12T05:28:27.310Z",
+        "number": 38,
+        "contentHash": "5c6757a43419a6bdac5c3d7d3468a686a22c773c1ea72dc5c09227782837c69f",
+        "at": "2026-11-12T06:01:21.042Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "e4af63128c7cbec2",
     "storyId": "s1",
     "createdAt": "2026-11-09T07:52:13.312Z",
-    "updatedAt": "2026-11-12T05:28:27.176Z",
+    "updatedAt": "2026-11-12T06:01:20.906Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-09T04:29:20.389Z",
     "epicSlug": "isolate-each-code-design-review-its",
-    "revision": 37
+    "revision": 38
   },
   "body": {
     "tasks": [
@@ -1639,6 +1639,59 @@
               },
               {
                 "title": "cold unverified design recovery retains its original submission and qualifies before provider dispatch",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t16",
+        "commit": "2100ec477",
+        "ranAt": "2026-11-12T06:01:20.906Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/threads/__tests__/review-worker-package.test.ts: compiled worker entrypoints and both review families start from an isolated built package",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-package.test.ts",
+                "title": "compiled worker entrypoints and both review families start from an isolated built package",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/threads/__tests__/review-worker-package.test.ts: release instructions retain explicit recovery local trust and post-approval smoke ordering",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-package.test.ts",
+                "title": "release instructions retain explicit recovery local trust and post-approval smoke ordering",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/review-worker-package.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7306,
+            "titles": [
+              {
+                "title": "compiled worker entrypoints and both review families start from an isolated built package",
+                "result": "pass"
+              },
+              {
+                "title": "release instructions retain explicit recovery local trust and post-approval smoke ordering",
                 "result": "pass"
               }
             ],

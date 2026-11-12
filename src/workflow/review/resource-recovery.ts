@@ -22,10 +22,10 @@ export async function inspectReviewResources(key:ReviewKey):Promise<ReviewResour
   let cp=await loadStoredCheckpoint(checkpointPath(key.project,key.reviewId));
   if(!cp)return snapshot(key,[]);
   if(cp.project!==key.project||cp.reviewId!==key.reviewId)throw new Error('Foreign resource checkpoint');
-  if(cp.schemaVersion===1&&cp.attempts.some(a=>!a.resourceGuard&&['pending','running'].includes(a.header.status)))cp=await updateStoredCodeCheckpoint(checkpointPath(key.project,key.reviewId),current=>{
+  if(cp.schemaVersion===1&&cp.attempts.some(a=>!a.resourceGuard&&(['pending','running','interrupted'].includes(a.header.status)||a.header.interrupted===true)))cp=await updateStoredCodeCheckpoint(checkpointPath(key.project,key.reviewId),current=>{
    if(!current||current.project!==key.project||current.reviewId!==key.reviewId)throw new Error('Resource checkpoint changed');
    if(current.schemaVersion!==1)return current;
-   return{...current,schemaVersion:2,attempts:current.attempts.map(a=>!a.resourceGuard&&['pending','running'].includes(a.header.status)?{...a,resourceGuard:legacyGuard(key,a.header.attempt)}:a)};
+   return{...current,schemaVersion:2,attempts:current.attempts.map(a=>!a.resourceGuard&&(['pending','running','interrupted'].includes(a.header.status)||a.header.interrupted===true)?{...a,resourceGuard:legacyGuard(key,a.header.attempt)}:a)};
   });
   return snapshot(key,cp.attempts.flatMap(a=>a.resourceGuard?[{attempt:a.header.attempt,resourceGuard:a.resourceGuard}]:[]));
  }

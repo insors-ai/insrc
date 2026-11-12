@@ -11,7 +11,25 @@ import { ReviewWorkers } from '../review-workers.js';
 import { startReviewWorkerBootstrap } from '../review-worker-bootstrap.js';
 import type { StartedReviewWorker } from '../review-worker-bootstrap.js';
 import { fixture as publicationFixture } from '../../../workflow/code-review/task-review/__tests__/publication-fixture.js';
+import { saveCheckpoint,checkpointPath } from '../../../workflow/code-review/task-review/checkpoint.js';
 import { readFileSync } from 'node:fs';
+
+test('legacy interrupted code history retains uncertainty on earlier attempts',async t=>{
+ const f=await publicationFixture();t.after(f.cleanup);
+ const reviewId='legacy-interrupted-code',cp=f.checkpoint(reviewId),first=cp.attempts[0]!;
+ first.header.status='incomplete';first.header.interrupted=true;
+ const second=structuredClone(first);second.header.attempt=2;second.header.status='passed';delete second.header.interrupted;
+ // The unrelated terminal successor uses the historical unpinned format;
+ // it has no final-scope attribution authority copied from attempt one.
+ delete second.submitted.reviewRevision;
+ for(const field of ['finalScopeIdentity','attributionState','acceptedAttribution','taskScopeIdentities','attributionIdentity','attributionFailure'] as const)delete second.header[field];
+ cp.attempts.push(second);await saveCheckpoint(checkpointPath(f.repo,reviewId),cp);
+ const key={project:f.repo,family:'code' as const,reviewId},snapshot=await inspectReviewResources(key);
+ assert.equal(snapshot.remaining,1);assert.equal(snapshot.guards[0]!.attempt,1);
+ assert.equal(snapshot.guards[0]!.resourceGuard.daemonInstance,'unverifiable-legacy');
+ await assert.rejects(requireClosedReviewResources(key),/review_resources_fenced/);
+ const again=await inspectReviewResources(key);assert.equal(again.digest,snapshot.digest,'read replay cannot erase or replace uncertainty');
+});
 
 test('shutdown drains host leases before worker reclamation and replacement',async t=>{
  const old=process.env['INSRC_TEST_HOOKS'];process.env['INSRC_TEST_HOOKS']='1';

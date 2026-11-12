@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 38,
-        "contentHash": "5c6757a43419a6bdac5c3d7d3468a686a22c773c1ea72dc5c09227782837c69f",
-        "at": "2026-11-12T06:01:21.042Z",
+        "number": 39,
+        "contentHash": "0608360e6d80fa882731bc8e60af4d6c00626591507798fc0c544bef205d6f3d",
+        "at": "2026-11-12T19:48:10.200Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "e4af63128c7cbec2",
     "storyId": "s1",
     "createdAt": "2026-11-09T07:52:13.312Z",
-    "updatedAt": "2026-11-12T06:01:20.906Z",
+    "updatedAt": "2026-11-12T19:48:09.913Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-09T04:29:20.389Z",
     "epicSlug": "isolate-each-code-design-review-its",
-    "revision": 38
+    "revision": 39
   },
   "body": {
     "tasks": [
@@ -1648,8 +1648,8 @@
       },
       {
         "taskId": "t16",
-        "commit": "2100ec477",
-        "ranAt": "2026-11-12T06:01:20.906Z",
+        "commit": "75c00e950",
+        "ranAt": "2026-11-12T19:48:09.913Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1684,7 +1684,7 @@
             "file": "src/daemon/threads/__tests__/review-worker-package.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 7306,
+            "durationMs": 7952,
             "titles": [
               {
                 "title": "compiled worker entrypoints and both review families start from an isolated built package",

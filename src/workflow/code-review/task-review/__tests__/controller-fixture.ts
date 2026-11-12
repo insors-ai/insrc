@@ -1,7 +1,7 @@
 import { isDeepStrictEqual } from 'node:util';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { createConnection } from 'node:net';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 import { IpcServer, directDispatch } from '../../../../daemon/server.js';
 import { exchangeControllerTaskReview, startTaskReview, readTaskReviewProgress } from '../../../../daemon/task-review-rpc.js';
 import type { LLMProvider } from '../../../../shared/types.js';
@@ -72,10 +72,8 @@ export function reviewHost(repo:string,resolveProvider:()=>LLMProvider){
  installProductionReviews(host);
  return{host,close:async()=>{await host.shutdown();for(const port of ports)port.close();}};
 }
-export async function serve(repo:string,resolveProvider:()=>LLMProvider,compiled=false){
- if(compiled){const {registerGitTools}=await import(resolve('out/daemon/tools/builtins/git/index.js'));registerGitTools();}
- const {IpcServer,directDispatch}=await import(compiled?resolve('out/daemon/server.js'):'../../../../daemon/server.js');
- const {exchangeControllerTaskReview,startTaskReview,readTaskReviewProgress,publishStoredTaskReview}=await import(compiled?resolve('out/daemon/task-review-rpc.js'):'../../../../daemon/task-review-rpc.js');
+export async function serve(repo:string,resolveProvider:()=>LLMProvider){
+ const {publishStoredTaskReview}=await import('../../../../daemon/task-review-rpc.js');
  const reviews=reviewHost(repo,resolveProvider);
  const path=join(repo,'controller.sock');
  const server=new IpcServer(directDispatch({

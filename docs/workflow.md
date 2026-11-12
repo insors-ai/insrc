@@ -17,6 +17,24 @@ see [Task review execution](task-review-execution.md).
 For current design-review execution and its initial-attempt limits, see
 [Design review execution](design-review-execution.md).
 
+Code and design reviews each run in their own daemon worker. A start first saves
+an unverified pending admission; only completed qualification and independent
+feedback can satisfy a review gate. Poll cached progress while it runs. Observer
+disconnects do not stop daemon-owned reviews, while reviewing-controller loss
+ends only that review's work. Restart recovery is explicit: resume interrupted
+work, and submit a new sequential attempt after a failed attempt. Failed input
+and feedback remain immutable.
+
+Uncertain native resources require exact local-broker clearance before a
+separate explicit recovery/new attempt. Automated local clients may answer the
+same broker; there are no new trust keys or activation flags. Publication retry
+is model-free, and approval cleanup waits for permanent preservation of the
+complete history. See [dedicated review workers, recovery and release
+order](daemon.md#dedicated-review-workers-and-recovery). Deployment follows the
+independent whole-story code review and human BUILD approval, then coordinated
+restart/MCP reconnect and a controlled deployed smoke. Isolation does not remove
+TU1's separate 64 MiB projection-limit failure.
+
 ## Concepts
 
 The framework models software authoring as **Epic → Story →

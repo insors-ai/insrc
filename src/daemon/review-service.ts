@@ -52,7 +52,7 @@ export class ProductionReviews{
   if(!isMainThread)throw new Error('Review host must be constructed on main');
   registerBuiltinTools();
   this.registry=new ReviewWorkers({services:deps.services,
-   resolveScope:(key,ctx,input)=>this.scope(key,ctx,input),resolveBinary:resolveReviewBinary,
+   resolveScope:(key,ctx,input)=>this.scope(key,ctx,input),resolveBinary:command=>resolveReviewBinary({command}),
    authorizeNative:async(key,command,_ctx,signal,receipt,scope)=>{
     await this.registered(key.project);if(!scope)throw new Error('Registered review scope required');
     if(command.kind==='cli')this.currentReviewer(key.project,scope.subject,scope.reviewer);

@@ -22,13 +22,7 @@ import { join } from 'node:path';
 export const services=new ThreadServices(()=>({startedAt:0,modelState:{status:'ready'},installedCommit:'fixture'}));
 export const pause=()=>new Promise<void>(resolve=>setTimeout(resolve,10));
 export async function until(check:()=>Promise<boolean>|boolean){const end=Date.now()+15000;while(Date.now()<end){if(await check())return;await pause();}throw new Error('Fixture condition timed out');}
-export function workerRpc(started:StartedReviewWorker,method:string,params:unknown={}):Promise<any>{
- const requestId=Math.random().toString();return new Promise((resolve,reject)=>{
-  const done=()=>{started.worker.off('message',message);started.worker.off('exit',exit);};const exit=()=>{done();reject(new Error('Fixture worker exited'));};
-  const message=(raw:any)=>{if(raw?.kind!=='reply'||raw.requestId!==requestId)return;done();if(raw.error)reject(new Error(raw.error));else resolve(raw.result);};
-  started.worker.on('message',message);started.worker.once('exit',exit);started.worker.postMessage({kind:'request',requestId,method,params,stream:false});
- });
-}
+export { workerRpc } from './review-worker-rpc.js';
 export class LocalPeer {
  private subscribed=false;
  private sequence=0;private buffer='';private readonly waiting=new Map<number,{resolve:(v:any)=>void;reject:(e:Error)=>void}>();

@@ -1,10 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { chmodSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 import { fixture, hash } from './publication-fixture.js';
 import { channel, serve, eventually } from './controller-fixture.js';
-const {CliProvider}=await import(resolve('out/agent/providers/cli-provider.js'));
+import { CliProvider } from '../../../../agent/providers/cli-provider.js';
+import { TaskReviewCoordinator } from '../coordinator.js';
+import { saveCheckpoint } from '../checkpoint.js';
 import type { ControllerFrame } from '../controller.js';
 import type { ReviewAcknowledgement } from '../coordinator.js';
 
@@ -17,14 +19,14 @@ test('native adapter plus real IPC persists feedback on both routes and CLIs, an
   const frames=kind==='claude'?[{type:'assistant',uuid:'fixture-output',message:{content:[{type:'tool_use',id:'output-1',name:'StructuredOutput',input:f.result}]}}]:[{type:'item.completed',item:{type:'agent_message',text:JSON.stringify(f.result)}},{type:'turn.completed'}];
   writeFileSync(bin,'#!/usr/bin/env node\nimport{appendFileSync}from"node:fs";appendFileSync('+JSON.stringify(calls)+',"started\\n");process.stdin.resume();setTimeout(()=>process.stdout.write('+JSON.stringify(frames.map(x=>JSON.stringify(x)+'\n').join(''))+',()=>{appendFileSync('+JSON.stringify(calls)+',\"wrapper_failed\\n\");process.exit(1)}),20);');chmodSync(bin,0o755);
   const cli=new CliProvider({kind,binPath:bin,timeoutMs:1,codexFirstOutputMs:1});
-  const host=await serve(f.repo,()=>{assert.equal(party,'daemon','controller route cannot invoke daemon provider');return cli;},true);
+  const host=await serve(f.repo,()=>{assert.equal(party,'daemon','controller route cannot invoke daemon provider');return cli;});
   let client=await channel(host.path);
   const id=`end-to-end-${party}-${kind}`,base={repo:f.repo,epicHash:hash,reviewId:id,attempt:1,packet:f.packet};
   try{
    if(party==='daemon'){
     const ack=await client.call<ReviewAcknowledgement>('codeReview.task.start',base);assert.ok(['pending','running'].includes(ack.status));
     client.close(); // Native execution is daemon-owned, independent of the caller.
-    await eventually(()=>existsSync(ack.path)&&f.read(ack.path).attempts[0]!['review-response'].crPublication==='complete');
+    await eventually(()=>existsSync(ack.path)&&f.read(ack.path).attempts[0]?.['review-response']?.crPublication==='complete');
     assert.deepEqual(f.read(ack.path).attempts[0]!['review-response'].tasks,[f.result]);
     client=await channel(host.path);
     // Publication durability precedes the background owner's final release.
@@ -33,7 +35,8 @@ test('native adapter plus real IPC persists feedback on both routes and CLIs, an
     while((await client.call<{executionState:string}>('codeReview.task.progress',base)).executionState!=='inactive'){
      assert.ok(Date.now()<deadline,'published native execution must release its owner');await new Promise(resolve=>setTimeout(resolve,10));
     }
-    const done=await client.call<ReviewAcknowledgement>('codeReview.task.start',{...base,operation:'resume'});assert.equal(done.status,'passed');assert.deepEqual(done.pendingTaskIds,[]);
+    await client.call<ReviewAcknowledgement>('codeReview.task.start',{...base,operation:'resume'});
+    assert.equal((await client.call<{status:string}>('codeReview.task.progress',base)).status,'passed');
    }else{
     const frame=await client.call<ControllerFrame>('codeReview.task.start',base);assert.equal(frame.kind,'task');let sequence=frame.nextSequence!;
     const common={repo:f.repo,reviewId:id,attempt:1,taskId:frame.taskId,executionId:frame.executionId};
@@ -62,7 +65,6 @@ test('both native adapters preserve feedback queued before expiry and never acce
   const bin=join(f.repo,'fake-expiry.mjs');
   const frames=kind==='claude'?[{type:'assistant',message:{content:[{type:'tool_use',id:'output',name:'StructuredOutput',input:f.result}]}}]:[{type:'item.completed',item:{type:'agent_message',text:JSON.stringify(f.result)}},{type:'turn.completed'}];
   writeFileSync(bin,'#!/usr/bin/env node\nprocess.stdin.resume();setTimeout(()=>process.stdout.write('+JSON.stringify(frames.map(x=>JSON.stringify(x)+'\n').join(''))+'),10);setInterval(()=>{},1000);');chmodSync(bin,0o755);
-  const {TaskReviewCoordinator}=await import(resolve('out/workflow/code-review/task-review/coordinator.js'));const {saveCheckpoint}=await import(resolve('out/workflow/code-review/task-review/checkpoint.js'));
   class ObservedCli extends CliProvider {
    override async runReviewSession<T>(prompt:string,schema:import('../../../../shared/types.js').StructuredSchema,opts:import('../../../../shared/types.js').ReviewSessionOpts):Promise<T>{
     if(opts.mode!=='activity')throw Error('Expected activity mode');

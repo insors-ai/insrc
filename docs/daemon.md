@@ -1942,3 +1942,71 @@ attempts. Lowering it can make existing larger records unreadable until the
 limit is raised again. Each new attempt still checks that its complete terminal
 records fit. This does not change model token limits, the Git diff read limit,
 source/projection work limits or the 32 KiB diagnostic-retention policy.
+
+### Dedicated review workers and recovery
+
+Each code or design review has a dedicated worker, keyed by canonical project,
+review family and review-id. Attempts retain that review identity. Chat sessions
+and unrelated reviews continue independently, including when expensive admission
+work is running. `daemon.threads.enabled` controls optional session routing; it
+does not move reviews back onto a session or the main thread. There is no review
+activation flag or fallback engine.
+
+A start acknowledges a durably saved, **unverified pending admission** before
+source/subject qualification. Pending admission is not a valid review or a pass.
+Progress and daemon thread views use the last validated cached observation;
+`observedAt` and freshness distinguish live from stale data. Observation never
+starts work. Native CLI and Git/tool processes belong to main-owned leases, with
+an open intent saved in the checkpoint before spawn and closure saved only after
+confirmed disposal. Losing one worker cannot cancel another review's processes.
+
+Daemon-owned reviews survive observer disconnects. Losing the reviewing
+controller ends only that controller's review work. A restart does not resume
+reviews automatically. Retain `.insrc/tmp/` checkpoints and explicitly submit
+code `resume` or design `recover` for interrupted resumable work. Failed attempts
+require a separate, sequential **new attempt**; never rewrite or resume failed
+feedback. A new attempt may follow a failed attempt after its resource fence is
+cleared.
+
+If progress reports `resource_recovery_required`, verify the exact prior native
+resources have ended, then request `resourceRecovery` with a reason and optional
+exact `leaseIds` through code `resume` or design `recover`. The existing local
+approval broker displays the review key, retained-history guard digest and lease
+set. A valid local client, including an automated local client, may answer that
+broker; no new trust keys or human-only provenance rule is added. Callers cannot
+supply approval receipts. Stale or foreign receipts/lease sets cannot grant
+clearance. Clearance changes resource metadata only. Submit a **separate explicit
+recovery or new attempt** afterward; clearance never dispatches a model.
+
+Publication retry uses saved feedback without a model. Approval cleanup deletes
+only inactive checkpoints whose complete attempt history and resource audit are
+preserved permanently. Retained files or cleanup errors require investigation
+and an explicit retry, not another review. Design history reads after cleanup
+need the exact `artifactPath` when no checkpoint mapping remains.
+
+Worker isolation does not fix TU1 S1's separate **64 MiB source/projection
+limit** failure. It makes that work observable and isolates its execution; TU1
+still needs a separately valid bounded scope or implementation correction.
+Changing JSON capacity does not change this projection limit.
+
+#### Review-worker release order
+
+1. Finish source, compiled-package and supported-client qualification. Compiled
+   fixtures provide pre-deployment evidence; do not claim a deployed smoke yet.
+2. Complete the independent whole-story code review against the committed packet
+   and final source pin.
+3. Obtain human BUILD approval after presenting BUILD and CR.
+4. Coordinate active reviews: let them finish or explicitly interrupt their own
+   owners, retaining checkpoints and unresolved resource guards.
+5. Only then push/publish the qualified changes and update the daemon and clients.
+6. Restart the daemon and reconnect MCP clients so discovery uses the new schema.
+   Recover interrupted work explicitly; do not promise in-flight completion.
+7. Run a controlled deployed smoke: acknowledge pending admission, observe
+   concurrent code/design reviews on distinct worker threadIds, and check cached
+   progress/status plus targeted recovery. Use paused or fake-provider fixtures
+   for isolation rather than repeated cloud reviews. Resume TU1 only with its
+   separately valid bounded source-projection scope.
+
+Once version-2 admission records exist, retain compatible checkpoint readers.
+An operational rollback must preserve readable history; do not blind-downgrade,
+delete checkpoints or clear another session's resources to force a restart.

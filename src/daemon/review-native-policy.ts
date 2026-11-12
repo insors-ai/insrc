@@ -21,7 +21,7 @@ import { REVIEW_SESSION_READ_TOOLS,REVIEW_SESSION_ANALYZE_TOOLS } from '../agent
 
 const names=['git','claude','codex','vibe','vibe-app-server'] as const;
 /** Host-only PATH lookup: no worker-local `which` subprocess. */
-export async function resolveReviewBinary(command:string):Promise<string>{
+export async function resolveReviewBinary({command}:{readonly command:string}):Promise<string>{
  if(!names.includes(command as typeof names[number]))throw new Error('Unsupported review executable');
  for(const dir of (process.env['PATH']??'').split(delimiter)){
   if(!dir||!isAbsolute(dir))continue;
@@ -78,7 +78,7 @@ function readonlyCli(kind:'claude'|'codex',args:readonly string[],key:ReviewKey)
 export async function authorizeReviewNative(key:ReviewKey,command:ReviewNativeCommand,reviewer:'daemon'|'controller',signal:AbortSignal,receipt:ReviewIntentReceipt|undefined):Promise<void>{
  if(signal.aborted||await realpath(command.cwd)!==key.project)throw new Error('Review native scope is unavailable');
  if(command.kind==='tool'){
-  const binary=await resolveReviewBinary('git');if(command.command!=='git'&&command.command!==binary)throw new Error('Unsupported native review tool');
+  const binary=await resolveReviewBinary({command:'git'});if(command.command!=='git'&&command.command!==binary)throw new Error('Unsupported native review tool');
   const {tool,input}=sourceTool(command),registered=getTool(tool.id);
   if(!registered||!isDefinitionOf(registered,tool))throw new Error('Review tool provenance is unavailable');
   const cls=resolveApprovalClass(registered,input);
@@ -89,6 +89,6 @@ export async function authorizeReviewNative(key:ReviewKey,command:ReviewNativeCo
   return;
  }
  if(command.kind!=='cli'||reviewer!=='daemon'||receipt?.sourceValidation!=='qualified')throw new Error('Qualified independent reviewer required for native inference');
- for(const kind of ['claude','codex'] as const){let binary:string;try{binary=await resolveReviewBinary(kind);}catch{continue;}if(command.command===binary){readonlyCli(kind,command.args,key);return;}}
+ for(const kind of ['claude','codex'] as const){let binary:string;try{binary=await resolveReviewBinary({command:kind});}catch{continue;}if(command.command===binary){readonlyCli(kind,command.args,key);return;}}
  throw new Error('Unsupported review CLI executable');
 }

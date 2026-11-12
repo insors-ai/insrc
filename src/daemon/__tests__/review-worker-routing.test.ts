@@ -17,6 +17,8 @@ import { handleDesignReviewStep } from '../steps/design-review-step.js';
 import { cleanupDesignArtifact } from '../../workflow/review/design-review/cleanup.js';
 import { saveCheckpoint,checkpointPath,updateStoredCodeCheckpoint } from '../../workflow/code-review/task-review/checkpoint.js';
 import { persistReviewWorkerAdmission } from '../threads/review-worker-admission.js';
+import { impactFixture } from '../../workflow/review/design-review/__tests__/impact-fixtures.js';
+import { saveDesignCheckpoint,updateStoredDesignCheckpoint } from '../../workflow/review/design-review/checkpoint.js';
 
 test('every supported review method delegates heavy work to its dedicated owner',async t=>{
  let cleanDesign=()=>{};const code=await fixture(),design=designFixture({after:fn=>{cleanDesign=fn;}},'daemon');
@@ -134,4 +136,30 @@ test('production resume preserves failed qualified and no-document attempts and 
   const after=JSON.parse(await readFile(path,'utf8'));assert.equal(after.attempts.length,2);assert.deepEqual(after.attempts[0],JSON.parse(before).attempts[0]);
  }
  assert.equal(Atomics.load(calls,0),0);
+});
+
+test('production design recovery preserves qualified failures and only an explicit next attempt starts work',async t=>{
+ const repos=new Set<string>(),cleanups:Array<()=>void>=[],calls=new Int32Array(new SharedArrayBuffer(4));
+ const host=new ProductionReviews({services:new ThreadServices(()=>({startedAt:0,modelState:{status:'ready'},installedCommit:'fixture'})),registeredRepos:async()=>repos,track:()=>{},start:(svc,input,port,deps)=>startReviewWorkerBootstrap(svc,input,port,{...deps,start:(s,n,_script,extra,created)=>startWorker(s,n,'__tests__/helpers/review-maintenance',{workerData:{...extra!.workerData,calls:calls.buffer},transferList:extra!.transferList},created)})});
+ installProductionReviews(host);t.after(async()=>{await host.shutdown();for(const clean of cleanups)clean();});
+ const context={connectionIdentity:'failed-design',daemonEpoch:'epoch',connectionSignal:new AbortController().signal};
+ for(const code of ['invalid_result','publication_capacity','checkpoint_capacity']){
+  const f=impactFixture({after:fn=>cleanups.push(fn)},'daemon');repos.add(f.repo);
+  await writeFile(join(f.repo,'.insrc/schema.json'),JSON.stringify({version:2}));
+  const failed=structuredClone(f.baseline);failed.status='failed';failed.failure={code,summary:'Fixture qualified failure'};failed.finishedAt=new Date().toISOString();
+  failed.publication={reviewId:'review-1',attempt:1,state:'pending'};
+  await saveDesignCheckpoint(f.repo,{...f.checkpoint,attempts:[failed]});
+  await updateStoredDesignCheckpoint(f.repo,'review-1',cp=>({...cp!,schemaVersion:2,attempts:cp!.attempts.map(a=>({...a,resourceGuard:{daemonInstance:'fixture',openLeases:[]}}))}));
+  const base={repo:f.repo,reviewId:'review-1',attempt:1},before=await readFile(f.path,'utf8');
+  for(const operation of ['resume','restart_full','retry_publication']){
+   const request={...base,phase:'recover',operation,actionId:`cannot-${operation.replaceAll('_','-')}`,...(operation==='restart_full'?{userDecision:{action:'restart_full',reason:'Fixture recovery request',recordedAt:new Date().toISOString()}}:{})};
+   await assert.rejects(designReviewOperation('recover',request,context),/Failed review requires the next attempt/);
+   await assert.rejects(handleDesignReviewStep(request,context),/Failed review requires the next attempt/);
+   assert.equal(await readFile(f.path,'utf8'),before,'no action or failed feedback may be rewritten');
+  }
+  const end=Date.now()+10000;
+  while(true){try{await handleDesignReviewStep({...base,phase:'start',attempt:2,artifactPath:f.json},context);break;}catch(error){if(Date.now()>end||!/fenced|closed|resource|reclaimed/i.test(String(error)))throw error;await new Promise(r=>setTimeout(r,20));}}
+  const next=JSON.parse(await readFile(f.path,'utf8'));assert.equal(next.attempts.length,2);assert.deepEqual(next.attempts[0],JSON.parse(before).attempts[0]);
+ }
+ assert.equal(Atomics.load(calls,0),0,'clearance/rejected recovery never invokes a reviewer');
 });

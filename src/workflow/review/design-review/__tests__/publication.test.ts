@@ -96,7 +96,7 @@ test('publication append and head-replace crashes replay the same complete histo
   assert.doesNotThrow(()=>assertDesignSubjectUnchanged(f.prepared.subject,f.baseline.baseline,receipt));
  }
 });
-test('known permanent-history minimum refuses before model work and explicitly resumes after the allowance is raised',async t=>{
+test('known permanent-history minimum preserves failure and starts a new attempt after the allowance is raised',async t=>{
  const f=impactFixture(t);let limit=1,calls=0;
  const provider={capabilities:{reviewActivity:true},runReviewSession:async(_p:string,_s:unknown,opts:ActivityReviewSessionOpts)=>{calls++;const value=calls===1?f.plan:f.baseline.completedChunks[calls-2]!;await opts.onCandidate(value);return value;}} as unknown as LLMProvider;
  const c=new DesignReviewCoordinator({publish:publishDesignReview,preflight:cp=>preflightDesignPublication(cp,limit),provider:()=>({provider,model:'fixture'})});
@@ -105,11 +105,13 @@ test('known permanent-history minimum refuses before model work and explicitly r
  const refused=(await loadDesignCheckpoint(f.repo,'review-1'))!.attempts[0]!;
  assert.equal(refused.failure!.code,'publication_capacity');assert.equal(calls,0);assert.equal(refused.unit,undefined);
  limit=1024*1024;
- await c.recover({phase:'recover',repo:f.repo,reviewId:'review-1',attempt:1,actionId:'raised-preflight',operation:'resume'});
- for(let i=0;i<500;i++){const p=await c.progress(f.repo,'review-1',1);if(p.publication?.state==='complete')break;await pause(5);}
- assert.equal((await c.progress(f.repo,'review-1',1)).publication!.state,'complete');assert.equal(calls,4);
+ await assert.rejects(c.recover({phase:'recover',repo:f.repo,reviewId:'review-1',attempt:1,actionId:'raised-preflight',operation:'resume'}),/Failed review requires the next attempt/);
+ for(let i=0;i<500&&c.isActive(f.repo,'review-1');i++)await pause(5);
+ await c.start({phase:'start',repo:f.repo,reviewId:'review-1',attempt:2,artifactPath:f.json});
+ for(let i=0;i<500;i++){const p=await c.progress(f.repo,'review-1',2);if(p.publication?.state==='complete')break;await pause(5);}
+ assert.equal((await c.progress(f.repo,'review-1',2)).publication!.state,'complete');assert.equal(calls,4);
  const cp=(await loadDesignCheckpoint(f.repo,'review-1'))!;
- assert.equal(cp.attempts[0]!.actions!.find(a=>a.actionId==='raised-preflight')!.outcome!.code,'publication_capacity');
+ assert.deepEqual(cp.attempts[0],refused);assert.equal(cp.attempts.length,2);
 });
 test('canonical edits during journal staging or log append are preserved and refuse publication',async t=>{
  for(const phase of ['stage','append']){

@@ -57,7 +57,7 @@ function checkEvolution(previous:DesignReviewCheckpoint,next:DesignReviewCheckpo
   const restart=old.status==='invalidated'&&source?.status==='invalidated'&&
    (added.preparationKind??'planning')==='planning'&&!added.impact&&
    source.actions?.some(a=>qualifiedDesignAction(a)&&a.operation==='restart_full'&&a.userDecision?.action==='restart_full'&&a.resultAttempt===added.number);
-  const failedResubmission=old.status==='failed'&&!!old.failure&&!old.report&&!old.publication&&
+  const failedResubmission=old.status==='failed'&&!!old.failure&&
    (added.preparationKind??'planning')==='planning'&&!added.impact&&previous.attempts.every((a,i)=>same(a,next.attempts[i]));
   requireDesign(correction||restart||failedResubmission,'immutable_history','New attempt requires a terminal correction, explicit failed-attempt resubmission or approved full restart');
  }

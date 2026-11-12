@@ -1,7 +1,7 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { unlink, readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { impactFixture } from './impact-fixtures.js';
 import { admissionFixture } from './fixtures.js';
 import { isDesignAdmission } from '../contracts.js';
@@ -79,13 +79,13 @@ test('technical admission diagnostics remain non-review evidence across publicat
  await requireCurrentDesignApproval(f.repo, head, head.changeLog);
   // Use the real artifact lifecycle approval, then prove resource-only replay
   // does not replace its original approval actor, timestamp, revision or review.
+  const postApproval = (await loadStoredDesignCheckpoint(f.repo, cp.reviewId))!;
   await lifecycle.service.apply(f.id, 'approve', { id: 'human:fixture', kind: 'person', properties: {} });
   const approved = (await lifecycle.service.inspect(f.id))!;
-  await updateStoredDesignCheckpoint(f.repo, cp.reviewId, saved => {
-   assert.ok(saved?.schemaVersion === 2); const guard = saved.attempts[1]!.resourceGuard!;
-   guard.clearance!.reason = 'Post-approval trusted fixture receipt'; guard.clearance!.approvalReceipt.requestId = 'clearance-post-approval'; return saved;
-  });
-  const postApproval = (await loadStoredDesignCheckpoint(f.repo, cp.reviewId))!;
+  assert.equal(await loadStoredDesignCheckpoint(f.repo,cp.reviewId),undefined,'approval always cleans the checkpoint');
+  // Replay retained evidence without recreating the deleted checkpoint.
+  assert.ok(postApproval.schemaVersion===2);const guard=postApproval.attempts[1]!.resourceGuard!;
+  guard.clearance!.reason='Post-approval trusted fixture receipt';guard.clearance!.approvalReceipt.requestId='clearance-post-approval';
   const replayAfterApproval = await publishDesignReview(postApproval);
   assert.equal(replayAfterApproval.artifactHistoryEntryId, receipt.artifactHistoryEntryId);
   const afterReplay = (await lifecycle.service.inspect(f.id))!;
@@ -109,7 +109,7 @@ test('technical admission diagnostics remain non-review evidence across publicat
   await assert.rejects(requireCurrentDesignApproval(g.repo, afterFailure, afterFailure.changeLog), /later or untracked/);
  // Exercise permanent reads after removal of working state; actual fenced
  // cleanup and native-resource reclamation are qualified by the cleanup task.
- await unlink(f.path);
+ assert.equal(await loadStoredDesignCheckpoint(f.repo,cp.reviewId),undefined);
  const read = permanentStoredDesignCheckpoint(f.repo, f.json, cp.reviewId, 2).checkpoint;
  assert.equal(read.schemaVersion, 2); assert.equal(isDesignAdmission(read.attempts[0]!), true);
  assert.equal(read.attempts[1]!.number, 2);

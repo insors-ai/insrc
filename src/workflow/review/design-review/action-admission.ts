@@ -13,13 +13,14 @@ export async function admitDesignRecovery(project:string,id:string,raw:unknown,b
  await updateStoredDesignCheckpoint(project,id,cp=>{
   requireDesign(cp,'missing_checkpoint','Design review not found');
   const old=cp.attempts.at(-1)!;
+  requireDesign(old.status!=='failed','review_conflict','Failed review requires the next attempt');
   const previous=cp.attempts.flatMap(a=>a.actions??[]).find(a=>a.actionId===request.actionId);
   if(previous){requireDesign(previous.signature===signature,'review_conflict','Conflicting recovery action replay');replay=true;validation=previous.validation??'qualified';return cp;}
   beforeNew?.();
   requireDesign(old.number===request.attempt,'missing_attempt','Recovery must name the current attempt');
   requireDesign(!cp.attempts.some(a=>('resourceGuard'in a)&&a.resourceGuard?.openLeases.length),'resource_pending','Unresolved native resources require explicit clearance');
   requireDesign(!(old.actions??[]).some(a=>a.validation==='unverified'),'review_conflict','Another recovery request is still being qualified');
-  if(isDesignAdmission(old))requireDesign(old.status!=='failed'&&request.operation==='resume'&&!request.userDecision,'review_conflict','Unverified recovery can only resume unchanged admission; failed admission needs the next attempt');
+  if(isDesignAdmission(old))requireDesign(request.operation==='resume'&&!request.userDecision,'review_conflict','Unverified recovery can only resume unchanged admission');
   const actions=old.actions??[];requireDesign(actions.length<DESIGN_LIMITS.actions,'input_too_large','Recovery action limit reached');
   const action={actionId:request.actionId,signature,operation:request.operation,sourceAttempt:request.attempt,resultAttempt:request.attempt+(request.operation==='restart_full'?1:0),...(request.userDecision?{userDecision:request.userDecision}:{}),acceptedAt:new Date().toISOString(),validation:'unverified' as const};
   return{...cp,schemaVersion:2,attempts:[...cp.attempts.slice(0,-1),{...old,actions:[...actions,action]}]};

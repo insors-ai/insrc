@@ -138,7 +138,7 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
     const p=identity(raw);
     if(design){
      const cp=await loadStoredDesignCheckpoint(init.review.key.project,init.review.key.reviewId),last=cp?.attempts.at(-1);
-     const technical=last&&!isDesignAdmission(last)&&last.status==='failed'&&last.failure&&!last.report&&!last.publication;
+     const technical=last&&!isDesignAdmission(last)&&last.status==='failed'&&last.failure;
      if(!last||p['attempt']!==last.number||p['nextAttempt']!==last.number+1||design.coordinator.isActive(init.review.key.project,init.review.key.reviewId)||cp!.attempts.some(a=>'resourceGuard'in a&&a.resourceGuard?.openLeases.length)||['pending','running'].includes(last.status)||!isDesignAdmission(last)&&!technical&&last.publication?.state!=='complete')throw new Error('Previous design attempt is active, unpublished or resource-fenced');
      return{nextAttempt:p['nextAttempt']};
     }

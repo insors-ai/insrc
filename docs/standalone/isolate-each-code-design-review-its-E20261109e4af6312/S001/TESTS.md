@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 45 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 62 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -365,3 +365,58 @@ Run at 2026-11-12T04:36:38.374Z on commit `c4a74c15e`. Tests check: **passed**. 
 | `src/daemon/threads/__tests__/review-native-host.test.ts` | 0 | 2 | 0.6 s |  |
 | `src/daemon/threads/__tests__/review-worker-recovery.test.ts` | 0 | 4 | 6.7 s |  |
 | `src/workflow/code-review/task-review/__tests__/pending-failure-history.test.ts` | 0 | 1 | 7.4 s |  |
+
+## t15
+
+Run at 2026-11-12T05:28:27.176Z on commit `8fe4b316c`. Tests check: **passed**. 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/daemon/threads/__tests__/review-worker-isolation.test.ts: code code design design and mixed reviews use distinct real worker threads**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | code code design design and mixed reviews use distinct real worker threads | `src/daemon/threads/__tests__/review-worker-isolation.test.ts` |
+| pass | production controller exchanges and disconnect reclaim only their own review | `src/daemon/threads/__tests__/review-worker-isolation.test.ts` |
+
+**integration: src/daemon/threads/__tests__/review-worker-isolation.test.ts: blocked admission permits progress daemon status and an unrelated review before release**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | blocked admission permits progress daemon status and an unrelated review before release | `src/daemon/threads/__tests__/review-worker-isolation.test.ts` |
+| pass | installed production routing bounds never-ready and pre-save-hung boot without fallback | `src/daemon/threads/__tests__/review-worker-isolation.test.ts` |
+
+**integration: src/daemon/threads/__tests__/review-worker-recovery.test.ts: crash-boundary owner-loss and cleanup races retain targeted lifecycle guarantees**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | crash-boundary owner-loss and cleanup races retain targeted lifecycle guarantees | `src/daemon/threads/__tests__/review-worker-recovery.test.ts` |
+| pass | full daemon entrypoint retains both-family crash fences and failed-attempt recovery through public routes | `src/daemon/threads/__tests__/review-worker-daemon.test.ts` |
+| pass | stale owner messages and targeted disconnects cannot mutate another review | `src/daemon/threads/__tests__/review-workers.test.ts` |
+| pass | pending admission and cached progress stay responsive during blocked worker computation | `src/daemon/threads/__tests__/review-worker-progress.test.ts` |
+| pass | cleared failed attempts accept only a separate explicit next submission and preserve the failed record | `src/daemon/threads/__tests__/review-worker-clearance.test.ts` |
+| pass | publication retry after worker exit or lost receipt performs zero provider calls | `src/daemon/threads/__tests__/review-worker-publication.test.ts` |
+| pass | approval cleanup retains active targets and preserves both-family permanent history | `src/daemon/threads/__tests__/review-worker-cleanup.test.ts` |
+| pass | host leases precede spawn and enforce owner-bound replay and disposal | `src/daemon/threads/__tests__/review-processes.test.ts` |
+| pass | Git shell and raw-byte commands preserve output bounds and abort semantics through leases | `src/daemon/tools/__tests__/review-worker-shell.test.ts` |
+| pass | fake native review CLI streams and cancellation use host-owned leases | `src/agent/providers/__tests__/review-worker-process.test.ts` |
+| pass | durable acknowledgment precedes blocked source qualification and provider dispatch | `src/workflow/code-review/task-review/__tests__/worker-admission.test.ts` |
+| pass | durable admission and current workflow ancestry run in the owner worker | `src/workflow/review/design-review/__tests__/worker-admission.test.ts` |
+| pass | production design recovery preserves qualified failures and only an explicit next attempt starts work | `src/daemon/__tests__/review-worker-routing.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/agent/providers/__tests__/review-worker-process.test.ts` | 0 | 2 | 1.7 s |  |
+| `src/daemon/__tests__/review-worker-routing.test.ts` | 0 | 4 | 55.1 s |  |
+| `src/daemon/threads/__tests__/review-processes.test.ts` | 0 | 2 | 0.6 s |  |
+| `src/daemon/threads/__tests__/review-worker-cleanup.test.ts` | 0 | 3 | 8.9 s |  |
+| `src/daemon/threads/__tests__/review-worker-clearance.test.ts` | 0 | 9 | 11.9 s |  |
+| `src/daemon/threads/__tests__/review-worker-daemon.test.ts` | 0 | 1 | 60.7 s |  |
+| `src/daemon/threads/__tests__/review-worker-isolation.test.ts` | 0 | 6 | 29.9 s |  |
+| `src/daemon/threads/__tests__/review-worker-progress.test.ts` | 0 | 7 | 7.6 s |  |
+| `src/daemon/threads/__tests__/review-worker-publication.test.ts` | 0 | 3 | 4 s |  |
+| `src/daemon/threads/__tests__/review-worker-recovery.test.ts` | 0 | 5 | 47.7 s |  |
+| `src/daemon/threads/__tests__/review-workers.test.ts` | 0 | 3 | 4.5 s |  |
+| `src/daemon/tools/__tests__/review-worker-shell.test.ts` | 0 | 1 | 5.8 s |  |
+| `src/workflow/code-review/task-review/__tests__/worker-admission.test.ts` | 0 | 2 | 11.8 s |  |
+| `src/workflow/review/design-review/__tests__/worker-admission.test.ts` | 0 | 3 | 7.4 s |  |

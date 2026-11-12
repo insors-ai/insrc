@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 37 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 45 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -334,3 +334,34 @@ Run at 2026-11-12T02:12:05.399Z on commit `f8cda8670`. Tests check: **passed**. 
 | `src/daemon/threads/__tests__/review-worker-cleanup.test.ts` | 0 | 3 | 8.6 s |  |
 | `src/daemon/threads/__tests__/review-worker-publication.test.ts` | 0 | 3 | 4 s |  |
 | `src/daemon/threads/__tests__/review-worker-recovery.test.ts` | 0 | 3 | 6.7 s |  |
+
+## t14
+
+Run at 2026-11-12T04:36:38.374Z on commit `c4a74c15e`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/daemon/__tests__/review-worker-routing.test.ts: every supported review method delegates heavy work to its dedicated owner**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | every supported review method delegates heavy work to its dedicated owner | `src/daemon/__tests__/review-worker-routing.test.ts` |
+| pass | production resume preserves failed qualified and no-document attempts and requires an explicit new attempt | `src/daemon/__tests__/review-worker-routing.test.ts` |
+| pass | production design recovery preserves qualified failures and only an explicit next attempt starts work | `src/daemon/__tests__/review-worker-routing.test.ts` |
+| pass | orderly native host disposal ignores late port closure and cannot close a replacement owner | `src/daemon/threads/__tests__/review-native-host.test.ts` |
+| pass | unexpected native port loss shares explicit close work and notifies its owner once | `src/daemon/threads/__tests__/review-native-host.test.ts` |
+| pass | legacy interrupted code history retains uncertainty on earlier attempts | `src/daemon/threads/__tests__/review-worker-recovery.test.ts` |
+| pass | pending-publication qualified failure survives new attempt publication approval cleanup and permanent reads | `src/workflow/code-review/task-review/__tests__/pending-failure-history.test.ts` |
+
+**integration: src/daemon/__tests__/review-worker-routing.test.ts: optional session threading disabled cannot enable main or session review fallback**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | optional session threading disabled cannot enable main or session review fallback | `src/daemon/__tests__/review-worker-routing.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/__tests__/review-worker-routing.test.ts` | 0 | 4 | 54.8 s |  |
+| `src/daemon/threads/__tests__/review-native-host.test.ts` | 0 | 2 | 0.6 s |  |
+| `src/daemon/threads/__tests__/review-worker-recovery.test.ts` | 0 | 4 | 6.7 s |  |
+| `src/workflow/code-review/task-review/__tests__/pending-failure-history.test.ts` | 0 | 1 | 7.4 s |  |

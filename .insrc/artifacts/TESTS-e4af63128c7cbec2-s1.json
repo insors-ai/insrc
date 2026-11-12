@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 30,
-        "contentHash": "3f9d1b55990ffc75307c2847d482fbac2616b2b6f4215f9d6feb6cd8d4585c03",
-        "at": "2026-11-12T02:12:05.491Z",
+        "number": 35,
+        "contentHash": "0097e8f021ab1254cf519d871e50bc9e71bcbdee0a6445f58c1bac431bd72bd0",
+        "at": "2026-11-12T04:36:38.498Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "e4af63128c7cbec2",
     "storyId": "s1",
     "createdAt": "2026-11-09T07:52:13.312Z",
-    "updatedAt": "2026-11-12T02:12:05.399Z",
+    "updatedAt": "2026-11-12T04:36:38.374Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-09T04:29:20.389Z",
     "epicSlug": "isolate-each-code-design-review-its",
-    "revision": 30
+    "revision": 35
   },
   "body": {
     "tasks": [
@@ -1044,6 +1044,152 @@
               },
               {
                 "title": "legacy active missing guards reconstruct only the requested review fence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t14",
+        "commit": "c4a74c15e",
+        "ranAt": "2026-11-12T04:36:38.374Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/__tests__/review-worker-routing.test.ts: every supported review method delegates heavy work to its dedicated owner",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-worker-routing.test.ts",
+                "title": "every supported review method delegates heavy work to its dedicated owner",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-worker-routing.test.ts",
+                "title": "production resume preserves failed qualified and no-document attempts and requires an explicit new attempt",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-worker-routing.test.ts",
+                "title": "production design recovery preserves qualified failures and only an explicit next attempt starts work",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-native-host.test.ts",
+                "title": "orderly native host disposal ignores late port closure and cannot close a replacement owner",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-native-host.test.ts",
+                "title": "unexpected native port loss shares explicit close work and notifies its owner once",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-recovery.test.ts",
+                "title": "legacy interrupted code history retains uncertainty on earlier attempts",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/pending-failure-history.test.ts",
+                "title": "pending-publication qualified failure survives new attempt publication approval cleanup and permanent reads",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/review-worker-routing.test.ts: optional session threading disabled cannot enable main or session review fallback",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-worker-routing.test.ts",
+                "title": "optional session threading disabled cannot enable main or session review fallback",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/review-worker-routing.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 54784,
+            "titles": [
+              {
+                "title": "every supported review method delegates heavy work to its dedicated owner",
+                "result": "pass"
+              },
+              {
+                "title": "optional session threading disabled cannot enable main or session review fallback",
+                "result": "pass"
+              },
+              {
+                "title": "production resume preserves failed qualified and no-document attempts and requires an explicit new attempt",
+                "result": "pass"
+              },
+              {
+                "title": "production design recovery preserves qualified failures and only an explicit next attempt starts work",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-native-host.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 601,
+            "titles": [
+              {
+                "title": "orderly native host disposal ignores late port closure and cannot close a replacement owner",
+                "result": "pass"
+              },
+              {
+                "title": "unexpected native port loss shares explicit close work and notifies its owner once",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-worker-recovery.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6744,
+            "titles": [
+              {
+                "title": "legacy interrupted code history retains uncertainty on earlier attempts",
+                "result": "pass"
+              },
+              {
+                "title": "shutdown drains host leases before worker reclamation and replacement",
+                "result": "pass"
+              },
+              {
+                "title": "disposable daemon crash reconstructs unresolved guards and leaves unrelated reviews usable",
+                "result": "pass"
+              },
+              {
+                "title": "legacy active missing guards reconstruct only the requested review fence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/pending-failure-history.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7389,
+            "titles": [
+              {
+                "title": "pending-publication qualified failure survives new attempt publication approval cleanup and permanent reads",
                 "result": "pass"
               }
             ],

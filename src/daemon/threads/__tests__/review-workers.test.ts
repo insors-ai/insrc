@@ -79,9 +79,10 @@ test('stale owner messages and targeted disconnects cannot mutate another review
  assert.equal(f.registry.acceptProgress(sb.worker,b,progress),false);
  await assert.rejects(f.registry.progress(a.key,two.context),/owner mismatch/);
  await assert.rejects(f.registry.control({...a,attempt:1,phase:'result',actionId:'a',executionId:'e',sequence:1,input:{}},two.context),/owner mismatch/);
- // The trusted assignment reaches the real family handler. Unqualified
- // admission must still refuse execution until Task 9 installs qualification.
- await assert.rejects(f.registry.control({...a,attempt:1,phase:'assignment',actionId:'a',executionId:'e',sequence:1,input:{}},one.context),/Admission checkpoint requires a version-2-aware consumer/);
+ // Assignment observes the durable admission while qualification has not
+ // started; it must not fabricate task authority or start model work.
+ const pending=await f.registry.control({...a,attempt:1,phase:'assignment',actionId:'a',executionId:'e',sequence:1,input:{}},one.context) as {status:string;admission:{validation:string}};
+ assert.equal(pending.status,'pending');assert.equal(pending.admission.validation,'unverified');
  const holding=rpc(sa,'hold').catch(()=>undefined);
  await until(async()=>{const cp=JSON.parse(await readFile(reviewWorkerCheckpoint(a.key),'utf8'));return cp.attempts.at(-1).resourceGuard?.openLeases.length===1;});
  one.abort.abort();await holding;await sa.reclaimed;

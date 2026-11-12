@@ -73,6 +73,9 @@ test('durable acknowledgment precedes blocked source qualification and provider 
 test('replay and controller admission-to-assignment retain one execution identity',async t=>{
  const f=fixture(t,'controller'),submission=f.submit('controller');
  const ack=await f.registry.admit(submission,f.context),s=f.started.get('controller')!;
+ const pending=await f.registry.progress(ack.key,f.context) as any;
+ assert.equal(pending.admission.validation,'unverified');
+ await assert.rejects(f.registry.progress(ack.key,{...f.context,connectionIdentity:'other-controller'}),/owner mismatch/);
  await f.registry.execute(ack,f.context);await f.registry.execute(ack,f.context);
  await until(async()=>!!(await rpc(s,'fixture.stats')).entered);
  assert.deepEqual(await f.registry.admit(submission,f.context),ack);
@@ -81,6 +84,8 @@ test('replay and controller admission-to-assignment retain one execution identit
  await until(async()=>{const a=(await loadStoredCheckpoint(reviewWorkerCheckpoint(ack.key)))!.attempts.at(-1)!;return'review-response'in a&&a.header.status==='running';});
  const assignment=(identity=ack)=>f.registry.control({...identity,attempt:1,phase:'assignment',actionId:submission.actionId,executionId:'pending',sequence:1,input:{}},f.context) as Promise<any>;
  const frame=await assignment();assert.equal(frame.kind,'task');
+ await f.registry.progress(ack.key,f.context);
+ await f.registry.progress(ack.key,f.context);
  const repeat=await assignment();assert.equal(repeat.executionId,frame.executionId);assert.equal(repeat.nextSequence,frame.nextSequence);
  await f.registry.shutdown();
  const resumed=await f.registry.admit({...submission,operation:'resume'},f.context),resumedWorker=f.started.get('controller')!;

@@ -264,6 +264,7 @@ test('scratch-panel.test.ts: selectionchange with non-empty selection shows the 
     getRangeAt: () => ({ getBoundingClientRect: () => ({ right: 120, bottom: 240 }) }),
   };
   const docListeners: Array<(e?: unknown) => void> = [];
+  let activeElement: unknown = undefined; // the document's focused element
   runInNewContext(documentBootstrap(), {
     acquireVsCodeApi: () => ({ postMessage: (m: unknown) => { sent.push(m); } }),
     window: {
@@ -275,21 +276,29 @@ test('scratch-panel.test.ts: selectionchange with non-empty selection shows the 
     document: {
       getElementById: (id: string) => (id === 'insrc-scratchdoc' ? doc : id === 'insrc-sendtochat' ? sendBtn : bodyStub('div', id)),
       addEventListener: (t: string, l: (e?: unknown) => void) => { if (t === 'selectionchange') docListeners.push(l); },
+      get activeElement() { return activeElement; },
     },
   });
-  // selectionchange fires with a non-empty selection, then the button click focuses the
-  // button (a second selectionchange with a collapsed selection) — the latch must survive.
+  // selectionchange fires with a non-empty selection.
   for (const l of docListeners) l();
   assert.equal((sendBtn as unknown as { hidden: boolean }).hidden, false, 'button revealed on a non-empty selection');
   const style = (sendBtn as unknown as { style: Record<string, string> }).style;
   assert.equal(style['left'], '92px', 'button anchored at the selection caret rect (right-28, viewport-relative)');
   assert.equal(style['top'], '246px', 'button anchored below the selection rect (bottom+6, viewport-relative)');
-  selection = { toString: () => '', isCollapsed: true }; // the focus/selectionchange that follows the click
+  // The user presses the button: focus moves to it (activeElement = the button) and a
+  // collapsed selectionchange fires — the button must STAY VISIBLE for the click.
+  activeElement = sendBtn;
+  selection = { toString: () => '', isCollapsed: true };
   for (const l of docListeners) l();
+  assert.equal((sendBtn as unknown as { hidden: boolean }).hidden, false, 'button stays visible while it holds focus (the click in flight)');
   fire(sendBtn, 'click');
   const posted = JSON.parse(JSON.stringify(sent)) as Array<{ v: number; payload: { type: string; text?: string } }>;
   assert.deepEqual(posted.filter((m) => m.payload.type === 'send-to-chat'), [{ v: 1, payload: { type: 'send-to-chat', text: 'selected <text>' } }], 'the captured selection was posted, not lost to the focus change');
   assert.ok(posted.some((m) => m.payload.type === 'scratch-ready'), 'the bootstrap signalled scratch-ready');
+  // Clicking elsewhere collapses the selection with focus NOT on the button: hidden again.
+  activeElement = undefined;
+  for (const l of docListeners) l();
+  assert.equal((sendBtn as unknown as { hidden: boolean }).hidden, true, 'button hides on a collapsed selection when it does not hold focus');
   // Webview-side cap: a >65,536-byte selection is truncated in the bootstrap before
   // posting, WITHOUT splitting surrogate pairs.
   const big = '😀'.repeat(20_000); // 80,000 UTF-8 bytes

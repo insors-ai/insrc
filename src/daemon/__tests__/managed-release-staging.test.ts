@@ -20,6 +20,7 @@ import { rpc } from '../../shared/ipc-client.js';
 import { installFreshSelectorMember, inspectManagedJob, installationPaths, readInstallationSelector, registerManagedJob, removeManagedJob } from '../../shared/managed-daemon-installation.js';
 import { retainManagedReleaseVerifier } from '../managed-update-preparation.js';
 import { stageManagedUpdate } from '../managed-update-handoff.js';
+import { recoverInstalledManagedUpdate } from '../managed-update-recovery.js';
 import { captureManagedReleasePin, stageManagedRelease, verifyStagedReleasePin } from '../managed-release-staging.js';
 import type { ManagedReleaseQualification } from '../managed-release-staging.js';
 import { readTaggedReleaseCompatibility } from '../release-compatibility.js';
@@ -207,6 +208,38 @@ test('Changed local runtime bytes block cutover or offline rollback', { skip: pr
 	assert.ok(active?.kind === 'update');
 	assert.deepEqual(recordedSourceRelease(active)?.source, source);
 	assert.equal(active.entries.some(entry => entry.step === 'predecessor-stop'), false);
+
+	await gate.publishOutcome(update, 'rolled-back', 'mutation never started');
+	await gate.release(update);
+	const gateUrl = new URL('../../shared/installation-mutation-gate.ts', import.meta.url).href;
+	const darwinUrl = new URL('../../shared/darwin-lifecycle.ts', import.meta.url).href;
+	const script = join(f.scratch, 'interrupted-update.mjs');
+	await writeFile(script, `
+		import { register } from ${JSON.stringify(import.meta.resolve('tsx/esm/api'))};
+		register();
+		const { InstallationMutationGate } = await import(${JSON.stringify(gateUrl)});
+		const { readDarwinIncarnation } = await import(${JSON.stringify(darwinUrl)});
+		const [predecessor, proof] = JSON.parse(process.argv[2]);
+		const gate = new InstallationMutationGate(predecessor.pins.prior.stateRoot);
+		const update = await gate.reserve({ kind: 'update', owner: await readDarwinIncarnation(process.pid), predecessor });
+		await gate.admitSourceRelease(update, proof);
+		await gate.recordIntent(update, 'predecessor-stop', 'incumbent');
+		await gate.recordReceipt(update, 'predecessor-stop', 'observed exit');
+		await gate.recordIntent(update, 'rollback-job', 'original supervisor');
+		await gate.recordReceipt(update, 'rollback-job', 'original supervisor verified');
+		console.log(update.id);
+	`);
+	const { stdout } = await promisify(execFile)(process.execPath, [script, JSON.stringify([update.predecessor, {
+		source, catalog: 'c'.repeat(40), priorFingerprint: staged.prior.fingerprint,
+		candidateFingerprint: staged.candidate.fingerprint, launchProfile: 'managed',
+	}])]);
+	const outcome = await recoverInstalledManagedUpdate(gate, stdout.trim(), await readDarwinIncarnation(process.pid), {
+		connect: unexpected, remove: unexpected, select: unexpected, register: unexpected, quiescent: unexpected,
+		incarnation: unexpected, inspect: async () => undefined, verifySelector: async () => {},
+	});
+	assert.equal(outcome.decision, 'operator-recovery');
+	assert.match(outcome.detail, /pinned release changed/);
+	assert.equal((await gate.read()).active?.entries.some(entry => entry.step === 'rollback-start'), false);
 });
 
 test('The stopped installed controller fetches and commits a qualified update without daemon IPC', {

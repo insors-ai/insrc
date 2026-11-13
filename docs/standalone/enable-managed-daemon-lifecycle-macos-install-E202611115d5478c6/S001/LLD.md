@@ -1,14 +1,14 @@
 <!-- insrc:artifact LLD-5d5478c61a25ac8f-s1 -->
 
-# LLD: STORY-5d5478c61a25ac8f-s1 — Enable managed daemon lifecycle on macOS install and upgrade
+# LLD: STORY-5d5478c61a25ac8f-s1 — Enable managed daemon lifecycle on macOS install
 
 ## Summary
 
 **Epic:** `enable-managed-daemon-lifecycle-macos-install`
-**HLD base run:** `wf-1794546820180-mwzp01`
-**HLD effective hash:** `792d79af295b...`
+**HLD base run:** `wf-1794555514618-2phz13`
+**HLD effective hash:** `a1f870fbe4e8...`
 
-The normal macOS installer provisions a per-user supervisor and automatically migrates supported locally built installs. Before cutover the updater verifies the incumbent against release-authorized build evidence and pins its original bytes for rollback. Existing configuration, stores and running state survive a verified rollback.
+Use a single signed source release tag. Compile at install time and retain exact local rollback bytes. Keep the supervised migration, crash recovery and existing command entry points.
 
 ## Contents
 
@@ -29,35 +29,50 @@ The normal macOS installer provisions a per-user supervisor and automatically mi
 
 ## 2. Contract details
 
-**Surface level:** internal-shared
+**Surface level:** internal
 
-### 2.1 `stageManagedRelease`
+### 2.1 `fetchReleaseAuthorization`
 
 ```typescript
-stageManagedRelease(options: StageOptions): Promise<{ readonly candidate: StagedReleasePin; readonly prior?: StagedReleasePin; readonly compatibility?: QualifiedReleasePair }>
+fetchReleaseAuthorization(input: BootstrapInput): Promise<VerifiedSource>
 ```
 
 **Parameters:**
-- `options: StageOptions` — Carries the configured source, exact release pair, authorized build evidence and optional incumbent.
+- `input: BootstrapInput` — Private workspace, channel and trusted verifier inputs.
 
-**Returns:** `Promise<{ readonly candidate: StagedReleasePin; readonly prior?: StagedReleasePin; readonly compatibility?: QualifiedReleasePair }>` — Verified candidate and optional byte-exact original rollback pin.
+**Returns:** `VerifiedSource` — Canonical channel, tag object, commit and tree
 
 **Errors:**
-- `Error` when Missing or invalid signed evidence, unsupported build profile, unaccounted executable differences, ambiguous inventory or unstable pin.
+- `Error` when Required verification or lifecycle evidence fails.
 
 **Preconditions:**
-- The official installer script and IDE-bundled copies carry the same dependency-free Node verifier and pinned offline release root. An installed managed controller can reuse its verified copy. Fetch into a fresh owner-private bare Git directory with external hooks, checkout filters and config injection disabled. Before checkout, npm scripts, build, or launch of a downloaded bridge, the trusted verifier validates the signed source/branch/full commit and expected Git tree, approved build inputs and release policy. A configured URL override changes routing only. Never obtain the first verifier or root from the fetched branch.
-- Use separately root-signed UTF-8 trust data, and per-channel Ed25519 qualification keys authorized by that data. Verify signatures over exact length-framed UTF-8 payload bytes with distinct trust and qualification domain tags. Enforce strict versioned schemas and limits and reject duplicate keys. Trust data records monotonic epoch, permitted source and branch per key, key ID and public key, validity window and revocations. The root is pinned in the official distribution. Root rotation requires an updated trusted distribution. Production verifier trust excludes fixture keys.
+- A trusted installer or installed verifier carries the pinned public key and authorized channel mapping. Fetch into an owner-private bare repository with controlled Git configuration and a trusted Git/SSH verifier.
 
 **Postconditions:**
-- Refresh root-signed trust data from the configured release channel during preparation and within five minutes before the first cutover mutation. Trust data is valid for at most 24 hours. Validate the UTC window, key status and epoch against an owner-private durable floor advanced atomically under admission. If the same epoch arrives with different bytes, the local clock has rolled behind the stored valid-time floor, or signed trust data is unavailable, refuse admission. Qualification carries key ID, release source, exact current branch head and Git tree, ordered release pair, validity window, supported profile and immutable release-test receipt digests. A revoked key, expired qualification, stale trust epoch or changed candidate prevents cutover.
-- Initial profile targets the measured arm64 macOS 27.0 installation class and predecessor ab6a96296ea6f2bde948636424218c0a23136c74. Reference inputs pin Node 22.23.2 with ABI 127, npm 10.9.8, node-gyp 11.5.0, Node 22.22.1 headers, Apple Clang 21.0.0 build 2100.3.34.2, Command Line Tools 27.0.0.0.1788430756, SDK 27.0, Python 3.12.6, -std=c++17 and exact Git tree and lockfile. Release authority records digests for tools, SDK/headers, dependencies, prebuilds and environment allowlist. It produces references from two clean installer builds at separate real paths, with pinned inputs and controlled network dependency retrieval. Each supported optional dependency layout is inventoried and qualifies separately. No profile ships before the real product matrix confirms these inputs and the target incumbent.
-- Inventory exact relative paths, type, permitted modes, symlink targets, and digests for the Node runtime, the executable closure in out and node_modules, project-memory dist, scripts used by the daemon or supported entry points, and build/package configuration used by those entry points. Walk by stable owned file handles without following unapproved links. Reject extra or missing execution-bearing files, escaped links or ambiguous optional package layouts. Default to raw SHA-256. A signed profile may explicitly enumerate inert build leftovers with their expected formats and paths. Generated Makefile, gyp and dependency records, intermediate Mach-O object/static library files and npm bookkeeping are eligible only if a verified runtime or rollback path never reads or executes them. Validate their types and allowlisted formats and retain every byte in the raw pin. Optional JavaScript or WASM packages are executable and use a separately qualified exact inventory.
-- Native equivalence is limited initially to the signed exact paths of the fs-ext, tree-sitter, tree-sitter-sql and tree-sitter-kotlin thin arm64 bundles observed in the native study. Parse the entire file without gaps or overlaps. Preserve raw bytes of code, mapped data, all padding outside explicitly validated linker regions, and loader semantics including virtual addresses, dependency names, binding, export, rebase, relocation and indirect-symbol tables. Only known debug-only N_SO and N_OSO records may replace an exact observed checkout root with a token. Only N_OSO may normalize its object timestamp. Preserve record order, indices, types, sections, flags, all other values and decoded names. Verify runtime tables never reference any normalized debug record or a mutable byte of its strings. Reject all other native variations.
-- Derive the normalized representation from a checked physical layout. For each profile require the signed region order, alignment, permitted padding bytes and extent rules. Verify LC_SYMTAB addresses and sizes select its original bounded symbol and string tables. Decode and validate all n_strx references and account for the complete original string table including suffix sharing, terminators and padding. Preserve exact non-debug values and all runtime reference relationships. Construct a deterministic tokenized string table from the ordered symbol records and retained non-debug strings, with stable offsets assigned in first-appearance order. Replace only validated physical offsets, lengths and string offsets with logical region identifiers and their derived canonical offsets and lengths. Compute the normalized LC_SYMTAB strsize and __LINKEDIT filesize from these canonical extents while preserving loader-visible addresses, protections and alignments. Verify LC_CODE_SIGNATURE dataoff equals the validated original signature boundary and original CodeDirectory codeLimit equals dataoff, with complete coverage from offset zero and no unsigned gap or trailing payload. Verify the original linker-signed ad hoc CodeDirectory page hashes, expected identity, flags and absence of extra slots or entitlements. Represent signature offset and codeLimit by the same derived canonical boundary after normalization and preserve the verified signature policy in the digest. Normalize the linker UUID and generated page hashes only after those checks. Compare the versioned logical representation with the signed reference. The representation is evidence only and is never executed or written over the original binary.
-- After independent verification capture and retain a byte-exact digest of every installed runtime and allowed inert file, including portable verifier metadata. Journal the raw incumbent and candidate pins and the signed evidence digest with the exact update before fencing. Recheck raw bytes and identities on both sides of the fence and before rollback. Build the authenticated candidate with the qualified inputs, and verify its signed inventory before executing its installed controller or daemon.
+- Require an annotated tag with a signed channel identifier and unambiguous version or sequence, a direct commit target matching the fetched release branch head, and an allowed signature. Verify before any candidate checkout, install script or bridge. Consume that immutable object through local staging.
+- Read the compatibility catalog as a bounded Git blob from the verified tree before checkout. The catalog keys predecessor declarations and launch profiles by exact prior commit. The signed tag target supplies the candidate commit identity. The installed controller validates the schema, graph and writable-format equality and explicit crash-consistent reopening eligibility. The catalog supplies the known declaration for a historical predecessor without one, and rejects a present conflicting declaration. Journal the verified tag and catalog blob IDs, ordered compatibility pair, approved launch profile and local byte pins for offline recovery.
 
-### 2.2 `completeLegacyMigration`
+### 2.2 `stageManagedRelease`
+
+```typescript
+stageManagedRelease(options: StageOptions): Promise<StagedRelease>
+```
+
+**Parameters:**
+- `options: StageOptions` — Verified source, installation root and incumbent runtime.
+
+**Returns:** `StagedRelease` — Candidate and prior exact local fingerprints and compatibility pair
+
+**Errors:**
+- `Error` when Required verification or lifecycle evidence fails.
+
+**Preconditions:**
+- Use the verified commit and independently capture the actual incumbent bytes. Check known graph and writable-format declarations and restrict support to the known predecessor and explicit rollback-compatible versions.
+
+**Postconditions:**
+- Build in private staging. Require a successful build and required runtime entries. Pin local candidate bytes and recheck both pins before mutation.
+
+### 2.3 `completeLegacyMigration`
 
 ```typescript
 completeLegacyMigration(gate: InstallationMutationGate, update: UpdateReservation, pins: ManagedUpdatePins): Promise<DaemonUpdateOutcome>
@@ -75,19 +90,21 @@ completeLegacyMigration(gate: InstallationMutationGate, update: UpdateReservatio
 
 **Preconditions:**
 - Use the migration-capable installer or updater to prepare the release before invoking any shutdown path. Freeze the canonical legacy launch and checkout paths and verify old mutating helpers are absent before cutover. Verify the pinned predecessor and public socket before sending shutdown.
-- For a later upgrade of a restored legacy generation, the trusted external entry point acquires an InstallationMutationGate update preparation reservation before fetching the bridge or candidate, running build commands or comparing inventories. Under admission capture the authenticated restored process incarnation and running or stopped intent, then verify the same baseline immediately before cutover. Use the managed preparation reservation pattern. An admitted public stop wins if it reserved first and the updater returns busy. If preparation fails or is cancelled before mutation, record its failure and release the reservation after verifying the incumbent, selector and launcher are unchanged. Dead-owner recovery cancels preparation with no mutation or uses the journaled recovery path if cutover has begun. Upgrade admission stays held continuously when the qualified preparation becomes the cutover reservation.
+- For a later upgrade of a restored legacy generation, the trusted external entry point acquires an InstallationMutationGate update preparation reservation before fetching the bridge or candidate, running build commands or capturing local fingerprints. Under admission capture the authenticated restored process incarnation and running or stopped intent, then verify the same baseline immediately before cutover. Use the managed preparation reservation pattern. An admitted public stop wins if it reserved first and the updater returns busy. If preparation fails or is cancelled before mutation, record its failure and release the reservation after verifying the incumbent, selector and launcher are unchanged. Dead-owner recovery cancels preparation with no mutation or uses the journaled recovery path if cutover has begun. Upgrade admission stays held continuously when the qualified preparation becomes the cutover reservation.
+- Preserve exact prior launch route, selector, state and incarnation under admission.
 
 **Postconditions:**
 - Preserve the original raw pin, job policy and stopped or running intent. Keep the canonical dispatcher fenced during candidate cleanup, selector reconciliation, predecessor launch and readiness verification, and until the rollback outcome and receipt are durable.
 - For a prior running install, the reservation owner alone may use the private, byte-pinned archived checkout. Reconstruct direct argv and cwd or a private launchd descriptor, mapping only pre-recorded checkout-contained executable/script/cwd paths from the captured inode to its archived location. Preserve UID, domain, label, argument order, runtime, state-root environment and RunAtLoad/KeepAlive policy. Verify the actual registered job and socket peer before recording readiness. A previously stopped job stays passive. Refuse ambiguous mapping and retain the fence.
 - Publish the terminal rollback outcome and verified legacy route together before enabling normal access. Keep a guarded canonical dispatcher after rollback. It can select the archived release only for the verified terminal receipt, route restart and update through the same gate, and support a later managed retry without releasing the old mutating scripts. Keep the archived location stable for the live job. Journal dispatch publication separately so interrupted settlement can reconcile without another spawn. Verify exact child or idle state and preserve a committed candidate without rollback.
-- Every restored running legacy route uses a trusted, byte-pinned rollback preload from the current installer/controller, passed as an explicit Node --import argument after scrubbing user injection options. For the signed predecessor profile the synchronous Node module hook matches the verified archived admin-handlers module URL and the pinned main/admin-worker importer URLs. It supplies wrappers for both sharedAdminHandlers and adminWorkerHandlers, retaining the original table except daemon.update and daemon.shutdown. The wrapper returns an update-via-current-installer refusal before invoking any old handler, so it never writes the old marker, spawns the old helper or schedules shutdown. The restored daemon keeps this refusal after terminal rollback and throughout any later migration attempt. The runtime and archived executable keep their raw pins. Set the launcher root to the stable guarded canonical dispatcher, while the daemon entry and cwd use the verified archive. Never resolve launcher operations through the archived checkout.
+- Every restored running legacy route uses a trusted, byte-pinned rollback preload from the current installer/controller, passed as an explicit Node --import argument after scrubbing user injection options. For the supported predecessor the synchronous Node module hook matches the verified archived admin-handlers module URL and the pinned main/admin-worker importer URLs. It supplies wrappers for both sharedAdminHandlers and adminWorkerHandlers, retaining the original table except daemon.update and daemon.shutdown. The wrapper returns an update-via-current-installer refusal before invoking any old handler, so it never writes the old marker, spawns the old helper or schedules shutdown. The restored daemon keeps this refusal after terminal rollback and throughout any later migration attempt. The runtime and archived executable keep their raw pins. Set the launcher root to the stable guarded canonical dispatcher, while the daemon entry and cwd use the verified archive. Never resolve launcher operations through the archived checkout.
 - At startup require the preload and exact hook configuration in the main thread and any admin worker, including replacements. For the pinned old router, queued admin requests can only reach a constructed wrapped table. Profile validation proves the supported startup and worker imports, default worker argument inheritance and absence of an unguarded update route. A private preload receipt identifies the verified module and invocation for main and the admin worker. Fail startup or keep recovery fenced if the wrapper cannot attest either applicable path before readiness acceptance. Test both threaded and single-threaded operation. The original legacy IPC is unavailable for updating a restored predecessor. Current shell, TUI and IDE paths use the trusted installer route.
 - Both wrapped tables forward public daemon.shutdown to one process-level admission path. Before invoking the original drain, atomically acquire a stop reservation through InstallationMutationGate. A competing update, rollback, restart or stop reservation returns the existing busy response without entering the original shutdown handler. Hold an admitted stop reservation through exact predecessor exit and run-file reconciliation. The trusted controller records the generation and exact exit observer before admitting the drain and owns cleanup if the requester or old process exits. Recover abandoned admission through the existing journal and exact-incarnation evidence. A failed admission never schedules a delayed drain.
 - Give the admitted migration controller a private local drain channel furnished by the pinned adapter, independent of public daemon.shutdown. Use an owner-private socket with bounded, versioned messages and Darwin peer credentials. The adapter matches the controller peer UID, PID, start time and executable against the current durable reservation, and checks the operation, target state root, restored process incarnation and outstanding drain intent. Reject stale, repeated or mismatched requests without forwarding them. The controller verifies the adapter peer and arms the exact exit observer before sending the request. Main and worker public handlers share the same gate and cannot submit private drain authority. No caller can pass that authority as public RPC parameters.
 - Treat the private adapter's authenticated generation and both applicable handler receipts as prerequisites to publishing restored readiness. If the private endpoint or admission proof is missing, keep recovery fenced. During first migration from the untouched historical process, retain the existing authenticated legacy drain and exact-exit/rollback checks. Once restoration has installed the adapter, use the private route for every later controller drain. A stopped predecessor has no adapter process to drain.
+- For the known shell LaunchAgent only, replace its verified bash start wrapper with a controller-authored private launchd descriptor using the pinned Node executable, explicit guarded --import preload, original supported tsx loader, archived entry and cwd. Preserve label, UID, domain, approved environment and passive/RunAtLoad policy, pin both descriptor hashes, verify live registration and exact adapter/daemon peer before publishing rollback. A previously stopped job stays passive.
 
-### 2.3 `stageManagedInstallation`
+### 2.4 `stageManagedInstallation`
 
 ```typescript
 stageManagedInstallation(installation: ManagedInstallation, revalidate: () => Promise<void>, legacyCutover?: boolean): Promise<void>
@@ -109,7 +126,7 @@ stageManagedInstallation(installation: ManagedInstallation, revalidate: () => Pr
 **Postconditions:**
 - The installer controller journals descriptor and provisional-selector publication, exact job registration and idle handshake, and optional child readiness. Enable the selector under the reservation before controller admission. Release the reservation only after a verified idle or running result is durable. --no-start leaves an enabled selector and an idle supervisor. Recovery replays an exact matching partial pair or removes only artifacts created by the activation and restores prior absence.
 
-### 2.4 `launchManagedUpdate`
+### 2.5 `launchManagedUpdate`
 
 ```typescript
 launchManagedUpdate(entry: string, args: readonly string[], awaitReply: () => Promise<boolean>): Promise<{ launched: true; updateId: string }>
@@ -123,7 +140,7 @@ launchManagedUpdate(entry: string, args: readonly string[], awaitReply: () => Pr
 **Returns:** `Promise<{ launched: true; updateId: string }>` — Returns the admitted update identity while the helper owns completion.
 
 **Errors:**
-- `SupervisorLifecycleError` when An update is already active or the helper cannot qualify the candidate.
+- `Error` when Admission, trusted helper launch, or acknowledgement fails. Source verification or staging failure after acknowledgement is a detached terminal outcome.
 
 **Preconditions:**
 - The already trusted installed helper reserves the update and returns its acknowledgement within the existing client deadline. Launch it without fetching, installing, building or inventory verification before the acknowledgement. Stopped updates use the local controller and preserve idle intent.
@@ -152,20 +169,25 @@ Persist a tagged managed, legacy-job, legacy-direct, or legacy-stopped predecess
 - `src/daemon/legacy-launch-job.ts`
 - `src/daemon/legacy-daemon-cutover.ts`
 
-### 3.3 `Release qualification profile and exact rollback pin` — invariant-change
+### 3.3 `VerifiedSource` — new
 
-The release authority owns a signed, versioned profile for one configured source, ordered commit pair and tested build profile. A release pair can have multiple profiles. Exactly one applicable profile must verify a particular installation. An update reservation owns one verified profile receipt and one exact incumbent pin and binds both to its candidate, selector and state root. The profile verifies a complete measured inventory and accounts for variability. The local pin freezes raw bytes for rollback, and the receipt is reusable during recovery without remote network access. Historical journals retain their original verification rules. Versioned notes that lack the required portable proof cannot qualify a source-built variant. Record one immutable admission receipt per update with signing key, trust epoch and payload digest, verification time, qualification and reference digests, commit/tree pair, source, release profile, raw pins and exact update ID. Before a recorded fence, expiry, refresh failure or revocation forces refusal. After the fence, the recorded decision applies only to that transaction while its owner settles it within its admitted authorization window. If recovery begins without a durable success, it can verify and roll back offline using the receipt and raw pin. It needs fresh authorization to newly activate a candidate. If revocation is known before a new candidate activation, roll back. Durable success is reconciled offline and is never reinterpreted as uncommitted.
+One signed annotated tag authorizes one channel and one commit. A reservation owns at most one verified source receipt and one pair of exact local pins. The receipt stores signer identity and tag, commit and tree object IDs. Keep a durable channel floor to reject replay of an older release and reuse of a sequence with a different tag. The candidate tree owns the bounded compatibility catalog, keyed by exact predecessor commit with explicit ordered-pair and launch-profile semantics. The receipt binds the catalog blob and decoded pair to the update for offline recovery.
 
 **Call sites:**
+- `src/bin/insrc-release-bootstrap.ts`
+- `src/shared/installation-mutation-gate.ts`
+
+### 3.4 `Release qualification metadata` — field-remove
+
+Supersede published runtime references, Mach-O normalization and delegation metadata for new releases. Retain decoding needed for any historical journal already requiring offline recovery. No new authorization can use the prior unsigned route.
+
+**Call sites:**
+- `src/shared/installation-mutation-gate.ts`
 - `src/daemon/managed-release-staging.ts`
-- `src/daemon/managed-update-preparation.ts`
-- `src/daemon/release-compatibility.ts`
-- `src/daemon/managed-update-recovery.ts`
 
 ## 4. Diagrams
 
-- [Cutover sequence](sequence-diagram.html)
-- [Running, idle and rollback branches](component-dependency.html)
+- [Sequence diagram](docs/standalone/enable-managed-daemon-lifecycle-macos-install-E202611115d5478c6/S001/sequence-diagram.html)
 
 ## 5. Error paths
 
@@ -191,32 +213,26 @@ The release authority owns a signed, versioned profile for one configured source
   - Detection: Publication fails, or retry sees an active reservation without a verified terminal reply.
   - Response: Keep the reservation. Re-read the exact matching durable outcome through existing recovery. A durable success verifies or completes activation without rollback. A durable rollback verifies the old state. Only a proven uncommitted transaction can unwind. Unknown ownership remains fenced.
   - User impact: The updater reports an unconfirmed result until recovery determines the terminal state.
-- **Release qualification is missing, ambiguous, stale, revoked or invalid** (recoverable)
-  - Detection: Reject absent note, invalid signature or key, unsupported profile or verifier version, source or commit mismatch, conflicting profiles and any unaccounted runtime difference.
-  - Response: Report the failed verification before any incumbent shutdown, fence or selector mutation. Discard only owned preparation artifacts and preserve the incumbent.
-  - User impact: The daemon remains available with an update diagnostic and can retry after a qualified release is published.
-- **Installed runtime changes after independent verification** (recoverable)
-  - Detection: Recheck the original raw digest and exact file identities while holding update admission at the designated cutover and rollback boundaries.
-  - Response: Stop cutover before touching the incumbent when possible. After mutation use the existing exact rollback or fenced recovery. Refuse to execute any changed rollback copy.
-  - User impact: The update fails with a verification diagnostic.
-- **Legacy mutation competes with rollback or cutover authorization expires** (recoverable)
-  - Detection: Read the admitted trust receipt and launcher fence identities. Detect a concurrent old command through the guarded canonical route or a fresh candidate admission after expiry or revocation.
-  - Response: Reject the old command. Use only the private archive route for rollback, verify the prior state, publish terminal evidence, then permit guarded dispatch. If admission is no longer valid, recover offline by rollback unless the candidate already has a verified durable success.
-  - User impact: The previous verified service is restored or the installation remains fenced for recovery.
 - **A restored legacy client attempts an unadmitted lifecycle RPC or the rollback adapter cannot bind both handlers** (recoverable)
   - Detection: The pinned adapter wraps both legacy admin factories and requires readiness receipts for each applicable path. Public shutdown requires a stop reservation. Private drain requires peer and intent checks against the current reservation and exact restored incarnation.
   - Response: Refuse public update and reject a busy public stop before the legacy handler can run. Accept an idle public stop through normal stop admission. A competing client or stale controller cannot initiate a private drain. Keep recovery fenced if adapter admission is unproven.
   - User impact: The previous service remains available through supported commands or the controller reports fenced recovery.
+- **Missing tag, wrong signer, channel, target, or stale sequence** (recoverable)
+  - Detection: Controlled Git verification and durable floor comparison.
+  - Response: Refuse before checkout and npm. Leave predecessor service and selector untouched.
+  - User impact: Update reports the verification failure.
+- **Build, compatibility, raw-pin, or readiness verification fails** (recoverable)
+  - Detection: Check local build outputs, writable-format declarations, captured pins and supervisor readiness.
+  - Response: Release an untouched preparation or restore the exact prior bytes and route after cutover. Keep fenced if recovery evidence is uncertain.
+  - User impact: Prior service resumes when verified.
 
 **Edge cases**
 
 | Input | Expected |
 | :--- | :--- |
-| Fresh --no-start | Register the supervisor, enable the selector and verify idle with no daemon child. Subsequent normal start uses the same supervisor. |
-| Already-managed update when the daemon is stopped | The external controller prepares and commits the update using supervisor status; no daemon RPC is required. Keep the candidate idle. |
-| Legacy daemon remains running while the candidate is staged | On a restored legacy route the updater acquires the preparation reservation before any fetch, build or inventory verification and captures the exact running or stopped baseline. Stage outside the live root without fencing or stopping the incumbent. Keep the same reservation through qualification and cutover. Refused or interrupted preparation leaves the incumbent intact and releases admission through the journal. An untouched predecessor uses the original stage-before-cutover ordering and revalidates its baseline at cutover. |
-| An unchanged older shell or IDE freshness client invokes legacy restart or daemon.update | An old client cannot acquire new preflight behavior before executing its existing shutdown sequence. The first upgrade is delivered by the current standard installer or the ordinary update action in updated IDE clients. The installer may be rerun on an existing installation without launchctl or file edits. Never present an old acknowledgement as migration success. |
-| Two qualified installs share a commit but have different build paths or raw native artifact bytes | Each matches independent expected execution-bearing bytes under the same tested profile and retains its own raw exact pin. |
+| Authorized tag for a different channel or retargeted branch | Reject before checkout. |
+| Retry same signed tag after failed migration | Allow the same tag at the recorded floor. Reject an equal sequence with a different tag. |
+| Offline recovery | Recover using durable local pins, without contacting Git. |
 
 **Invariants to preserve**
 
@@ -226,10 +242,14 @@ The release authority owns a signed, versioned profile for one configured source
 
 ## 6. Test strategy
 
-**Test framework:** `Node.js test runner via tsx, installed shell integration fixtures, and real macOS launchd smoke tests in disposable state roots.`
+**Test framework:** `Node test runner with real Git, disposable SSH signing keys, and macOS launchd integration. Retain Linux and IDE routing coverage. Acceptance criteria: ac1 Authorize the exact configured source before checkout. ac2 Pin and verify exact local rollback bytes. ac3 Preserve running or stopped intent across source-built migration. ac4 Keep restored lifecycle and retry guarded.`
 
 **Test levels**
 
+- **integration** — Verify normal updater entry points and local crash-safe cutover.
+  - Subjects: `Only an authorized channel tag can reach checkout and npm`, `Changed local runtime bytes block cutover or offline rollback`
+- **smoke** — Test production source compilation with disposable signing keys and state.
+  - Subjects: `Source-built macOS migration preserves running and stopped service intent`, `Restored rollback guards public lifecycle and admits private retry`
 - **unit** — Verify admission, qualification, journal compatibility and outcome recovery.
   - Subjects: `Predecessor variants and backward decoding`, `Explicit fresh activation start intent and owned partial publication`, `Release provenance, changed bytes and absent legacy declaration`, `Graceful, broker-denied and unknown drain evidence`, `Uncertain publication with durable success versus no outcome`
 - **integration** — Drive supported entry points and competing legacy operations through the real controller boundaries.
@@ -237,73 +257,48 @@ The release authority owns a signed, versioned profile for one configured source
 - **smoke** — Verify actual launchd and daemon state on macOS.
   - Subjects: `Fresh install and verified ordinary restart`, `Fresh --no-start and later supervisor start`, `First supported update of a qualified prior build with broker denial`, `Direct install and passive recovery job with exact loader argv`, `Verified stopped and running rollback with configuration and store integrity`
   - Fixtures: `Disposable macOS state roots and isolated launchd labels`, `Pinned released predecessors, including the regression and clean-drain cases`
-- **contract** — Verify release signatures, independent expected inventory, applicability, exact runtime coverage, and report provenance.
-  - Subjects: `Independent same-commit macOS build equivalence and tamper rejection`, `Changed native code, loadable data, bindings, signature policy, injected modules, symlinks and unidentified variance fail closed`, `Missing or stale release evidence prevents promotion and leaves the incumbent running`
-- **smoke** — Require real product builds before promoting a source-built profile.
-  - Subjects: `Release publication validates real running and stopped upgrades for every enabled profile`, `Real product passive and recovery job loader arguments, verified broker refusal, data-preserving rollback and subsequent managed update`
-  - Fixtures: `Two independent production installer builds of the same supported predecessor in different homes with observed native variance`, `Real predecessor and candidate installs using disposable homes and distinct launchd jobs`, `Qualification from an isolated release authority, plus immutable test receipts bound to promoted release metadata`
-- **integration** — Prove trust ordering and rollback fences at the real controller boundaries.
-  - Subjects: `Trust rotation, expiry, replay and offline rollback at the fence boundary`, `Invalid or missing authorization prevents bootstrap checkout execution, npm scripts and bridge invocation`, `A competing legacy command and interruption during rollback cannot reopen the launcher before durable outcome`
-  - Fixtures: `A trusted installer and distinct trusted/unauthorized signed Git origins with executable marker probes`, `A real archived legacy daemon, fresh and expired signed trust epochs, and controller crash points before outcome and before guarded dispatch`
-- **contract** — Cover derived Mach-O layout, signature coverage and preserved runtime semantics.
-  - Subjects: `Independent unequal-length debug roots preserve canonical native identity and malformed offsets or codeLimit are rejected`
-  - Fixtures: `Two real fs-ext builds with different path lengths and different physical string-table size, __LINKEDIT extent, signature offset and codeLimit`, `Malformed linkedit offsets, unexpected string aliases or padding, truncated CodeDirectory and mismatched codeLimit`
-- **integration** — Prove restored old IPC containment and preserve the bounded managed acknowledgement.
-  - Subjects: `Real restored legacy update and shutdown RPCs cannot interrupt rollback or a managed retry`, `Managed acknowledgement precedes a preparation exceeding the client deadlines and lost reply cancels only unstarted work`, `Idle public stop and authorized private drain require distinct admission and reconcile exact exit`, `A restored installer reserves before fetch, build or inventory and releases admission on preparation failure`
-  - Fixtures: `Actual old predecessor with normal and threaded admin routing and worker replacement, paused before rollback publication and during a later managed preparation`, `Existing managed-update-handoff slow preparation fixture, Unix socket delivery failure and correlated update outcome`, `Use real old main and admin-worker handler paths, including worker replacement. Send JetBrains-compatible shutdown during rollback and later preparation. Verify no marker, helper, scheduled or immediate drain, or exit before authorization. Cover idle stop, forged or stale private drain attempts, competing admission and owner death.`, `Pause the actual restored installer before bridge fetch, during build and during inventory. Send public shutdown through both admin routes. Assert busy with the same PID, selector and launcher. Force verification failure and controller death. Verify admission clears and an ordinary public Stop can then succeed. Assert a public Stop that reserved first prevents preparation.`
 
 **Acceptance mapping**
 
 | Criterion | Proving tests |
 | :--- | :--- |
-| `ac1` | `Fresh install and verified ordinary restart`, `Fresh --no-start and later supervisor start` |
-| `ac2` | `Installer and updated CLI, VS Code and JetBrains route matrix`, `First supported update of a qualified prior build with broker denial`, `Direct install and passive recovery job with exact loader argv`, `Old shell/helper concurrent with canonical launcher exchange and old child attempting to open stores` |
-| `ac3` | `Running managed update IPC and stopped local managed update`, `Verified stopped and running rollback with configuration and store integrity`, `Uncertain publication with durable success versus no outcome`, `Linux normal install, update and restart unchanged` |
-| `ac4` | `Independent same-commit macOS build equivalence and tamper rejection`, `Release publication validates real running and stopped upgrades for every enabled profile`, `Trust rotation, expiry, replay and offline rollback at the fence boundary`, `Invalid or missing authorization prevents bootstrap checkout execution, npm scripts and bridge invocation`, `A competing legacy command and interruption during rollback cannot reopen the launcher before durable outcome`, `Independent unequal-length debug roots preserve canonical native identity and malformed offsets or codeLimit are rejected`, `Real restored legacy update and shutdown RPCs cannot interrupt rollback or a managed retry`, `Managed acknowledgement precedes a preparation exceeding the client deadlines and lost reply cancels only unstarted work`, `Idle public stop and authorized private drain require distinct admission and reconcile exact exit`, `A restored installer reserves before fetch, build or inventory and releases admission on preparation failure` |
+| `ac1` | `Only an authorized channel tag can reach checkout and npm` |
+| `ac2` | `Changed local runtime bytes block cutover or offline rollback` |
+| `ac3` | `Source-built macOS migration preserves running and stopped service intent` |
+| `ac4` | `Restored rollback guards public lifecycle and admits private retry` |
 
 ## 7. Migration
 
-**State before:** The s1 discovery bundle identified whole-tree prior fingerprint qualification before managed migration. Two builds of the same legacy commit produced different native executable bytes. The configured origin was missing the qualification ref.
+**State before:** Legacy or managed daemon installed from source. The reference-inventory implementation is development work.
 
-**State after:** Current install and update entry points share a migration-capable controller and immutable releases. A supported first upgrade retains the previous release and establishes one verified per-user supervisor. User data remains in the existing state root.
+**State after:** Authorized Git source builds locally and cuts over transactionally. Existing state and exact rollback bytes are retained.
 
 **Zero downtime:** no — **Data rewrite:** no
 
 **Steps**
 
-1. The release maintainer builds independent references, signs profile and product test receipt digests, and uploads qualification for the exact target commit. A promotion gate verifies the note and reference receipts against the intended head before advancing the channel ref. Publish the note before the branch moves, or publish both atomically. Re-fetch both from the ordinary updater endpoint and confirm the signed head and trust epoch agree. Unsupported profiles remain unavailable. Fixture keys never authorize production. — ↩ rollbackable
-2. Use the current standard installer for both fresh installs and first upgrades. Updated VS Code and JetBrains lifecycle Update on unmanaged Darwin dispatch the packaged migration-capable installer in existing-install mode with the configured branch and root. Updated freshness clients route unmanaged Darwin to that same action before sending any daemon.update RPC. A migration-capable shell or TUI starts the same external preflight on ordinary Update. For already-installed binaries that cannot obtain new code before shutdown, the supported first-upgrade action is the current standard installer, including the normal Install action in an updated IDE. No manual service administration is part of that path. The distributed first-stage verifier authenticates the exact bridge commit, tree and build inputs before checkout or running any candidate-controlled instructions. Updated IDEs ship the same first-stage verifier. — ↩ rollbackable
-3. For a previously restored legacy installation, acquire the preparation reservation before bridge or candidate fetch, build, or inventory checks. Under that reservation verify and record the incumbent incarnation and running or stopped intent. A concurrent Stop or restart that reserved first makes Update return busy. After admission, public Stop returns busy throughout preparation. Verify signed evidence, stage outside the live root, and pin the raw incumbent and candidate bytes. Refresh trust and revalidate the exact baseline before promoting the same reservation to cutover. Preparation failure or pre-mutation owner death cancels the reservation after proving no installed state changed. An untouched legacy installation still stages before cutover reservation and authenticates its observed baseline before mutation. Fresh install uses explicit activation intent. — ↩ rollbackable
-4. For legacy cutover, admit cutover under the existing preparation reservation for a restored legacy route, or acquire the initial cutover reservation for an untouched route, then atomically replace the canonical installed checkout entry with a gate-aware dispatcher while preserving its original directory identity. Recover either side of the exchange by journaled inode evidence. Recheck for in-flight old helpers, update markers, unsupported launch routes, and mismatched job registrations. The dispatcher has no old executable or mutable checkout target. Refuse when the old launcher or writer cannot be excluded. Keep the prior checkout pinned until rollback is no longer needed. — ↩ rollbackable
-5. Authenticate the running predecessor over the pinned socket and observe exact exit. While the canonical launcher remains fenced, acquire the legacy-compatible run-file guard before cleanup, reconcile only the recorded publications, and retain the guard until a verified supervisor has adopted it for startup. Transfer owner evidence under the same directory identity with no unguarded interval. Remove a verified passive old job after its child exits. Apply the stored outcome policy for graceful, broker-denied, or unknown exit. — ↩ rollbackable
-6. Journal the provisional selector and register the supervisor. Start a child for a normal fresh install or previously running update. Verify idle for --no-start or previously stopped update. Publish the matching durable terminal record before release. An already-managed shell/TUI update uses the external transaction even when stopped, and the running managed RPC uses the detached helper and acknowledgement handshake. For the running managed route the trusted installed helper reserves and acknowledges before it starts fetch or build. Confirm reply delivery before preparation and complete qualification before shutdown. — ↩ rollbackable
-7. Recover interrupted activation or cutover using the matching durable outcome. Keep the canonical dispatcher fenced. Reconcile the selector and restore the previous service only through the verified private archive route, then verify exact running or stopped state. Publish the terminal rollback receipt and outcome before the dispatcher resumes guarded legacy commands. Recover an interruption after publication without relaunching the old service. Keep the archived path stable for loaded jobs and later managed retries. Uncertain ownership retains the fence. A durable success is reconciled without rollback. A running predecessor starts only with the pinned admin preload. Route its launcher root to the canonical dispatcher. Keep the obsolete update RPC disabled in both main and admin worker before and after terminal rollback. A later update uses the verified external entry point. Gate restored public shutdown with an atomic stop reservation until exact exit reconciliation. An update owner drains a restored predecessor over its private authenticated adapter channel. A public request during rollback or preparation receives busy before the legacy handler runs. — ↩ rollbackable
+1. Bundle the same trusted verifier and public key into the shell distribution and both IDEs. — ↩ rollbackable
+2. Sign and publish the exact release head after source-built macOS tests. Publish tag and branch consistently and verify via the normal channel. — ↩ rollbackable
+3. Reserve a restored route before slow work. Authenticate before checkout, stage the local build, and capture both raw fingerprints. — ↩ rollbackable
+4. Verify and drain the exact incumbent. Activate the candidate under the supervisor or recover using the guarded original bytes. Publish the terminal result before releasing admission. — ↩ rollbackable
 
-**Backward compat:** Preserve the CLI flags, configured source, IDE IPC result shapes, supported user settings, Linux behavior and historical journal decoding. Existing binaries that stop before they can fetch the migration use the current normal installer for the first upgrade. The canonical installed launcher remains a compatible entry point after migration.
+**Backward compat:** Keep old journal decoding as needed for offline reconciliation. Existing users upgrade with the current installer or IDE. Fresh install and Linux remain within their existing lifecycle scope.
 
 ## 8. Alternatives considered
 
-### 8.1 a1: Release-signed build verification profiles — **CHOSEN**
+### 8.1 a1: Signed annotated channel tags — **CHOSEN**
 
-Use independent release evidence for portable equivalence and an exact local pin for rollback.
+Verify the exact locally built release source with Git.
 
-Publish a signed profile per tested predecessor and platform. Verify its complete runtime inventory against an independently built reference using exact hashes by default and bounded deterministic transformations only for verified build variance. Bind the original measured bytes to the cutover journal.
+Fetch privately, verify a signed annotated tag using an independently pinned release key, bind signed channel and commit, then check out its exact tree.
 
-### 8.2 a2: Exact release fingerprints only
+### 8.2 a2: Signed commit plus separate channel policy
 
-Accept an inventory of byte-identical prior builds.
+Verify a release commit with the same pinned key.
 
-Publish one exact fingerprint for each independently archived prior package and continue requiring an exact installed match.
+Require a release-team-signed head commit and add channel metadata to signed commit content to disambiguate promotion.
 
-**Rejected because:** An exact reference fingerprint rejects separately built valid native binaries.
-
-### 8.3 a3: Rebuild a rollback release from the old commit
-
-Use an independently verified replacement rollback build.
-
-Fetch and rebuild the predecessor in a separate directory using pinned release inputs, then use that result as the rollback executable.
-
-**Rejected because:** A replacement rollback build leaves original executable provenance unverified and changes rollback identity.
+**Rejected because:** Applies release policy to source commits and complicates branch promotion.
 
 ## 9. References
 

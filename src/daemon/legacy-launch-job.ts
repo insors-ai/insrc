@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 import { lstat, readFile, realpath } from 'node:fs/promises';
 import { createConnection } from 'node:net';
 import type { Socket } from 'node:net';
-import { join } from 'node:path';
+import { dirname, isAbsolute, join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { promisify } from 'node:util';
 import { matchesDarwinPeer, observeDarwinExit, readDarwinIncarnation, readDarwinLaunchContext, readDarwinPeerCredentials, verifyDarwinJobProcess } from '../shared/darwin-lifecycle.js';
@@ -31,6 +31,63 @@ async function descriptorBytes(path: string): Promise<Buffer> {
 }
 
 function hash(bytes: Buffer): string { return createHash('sha256').update(bytes).digest('hex'); }
+
+/** Build the private rollback descriptor without invoking the archived shell launcher. */
+export async function guardedLegacyShellJob(
+	legacy: Legacy, prior: ManagedInstallation, archive: string, preload: string, destination: string,
+): Promise<{ job: typeof legacy.job; bytes: Buffer; descriptorHash: string }> {
+	const { job } = legacy;
+	const original = join(prior.releaseRoot, 'scripts/daemon-ctl.sh');
+	if (job.label !== 'ai.insors.daemon' || job.program !== '/bin/bash' || job.args.length !== 3
+		|| job.args[0] !== '/bin/bash' || job.args[1] !== '-c'
+		|| (job.args[2] !== `${original} start`
+			&& !(prior.releaseRoot === join(prior.stateRoot, 'daemon') && job.args[2] === '~/.insrc/daemon/scripts/daemon-ctl.sh start'))
+		|| archive === prior.releaseRoot || ![archive, preload, destination].every(isAbsolute)) {
+		throw new Error('legacy shell launch job does not match the guarded rollback profile');
+	}
+	const originalBytes = await descriptorBytes(job.descriptor);
+	if (hash(originalBytes) !== legacy.descriptorHash) throw new Error('saved legacy LaunchAgent descriptor changed');
+	const { stdout } = await exec('/usr/bin/plutil', ['-convert', 'json', '-o', '-', job.descriptor], {
+		encoding: 'utf8', timeout: 2_000, maxBuffer: 32_768,
+	});
+	if (hash(await descriptorBytes(job.descriptor)) !== legacy.descriptorHash) throw new Error('saved legacy LaunchAgent descriptor changed');
+	const source = JSON.parse(stdout) as Record<string, unknown>;
+	const args = [prior.runtime, '--import', preload, '--import', 'tsx/esm', join(archive, 'out/daemon/index.js')];
+	const environment = new Map<string, string>([['HOME', dirname(prior.stateRoot)], ['PATH', prior.pathEnv]]);
+	const inherited = source['EnvironmentVariables'];
+	if (inherited !== undefined) {
+		if (inherited === null || typeof inherited !== 'object' || Array.isArray(inherited)) {
+			throw new Error('legacy shell launch job environment is unsupported');
+		}
+		for (const [key, value] of Object.entries(inherited)) {
+			if (key === 'NODE_OPTIONS' || key === 'NODE_PATH') continue;
+			if (!['HOME', 'PATH', 'INSRC_DAEMON_ROOT', 'INSRC_MODE', 'INSRC_LOG_LEVEL'].includes(key)
+				|| typeof value !== 'string' || /[\u0000-\u001f]/.test(value)) throw new Error('legacy shell launch job environment is unsupported');
+			environment.set(key, value);
+		}
+	}
+	environment.set('INSRC_DAEMON_ROOT', prior.releaseRoot);
+	environment.set('INSRC_MODE', 'daemon');
+	if (environment.get('HOME') !== dirname(prior.stateRoot)) throw new Error('legacy shell launch job belongs to another state root');
+	const text = (value: string) => '<string>' + value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;') + '</string>';
+	const field = (key: string, value: string) => '<key>' + key + '</key>' + value;
+	const env = [...environment].map(([key, value]) => field(key, text(value))).join('');
+	const ancillary = ['StandardOutPath', 'StandardErrorPath', 'ProcessType', 'ExitTimeOut'].map(key => {
+		const value = source[key];
+		if (value === undefined) return '';
+		if (key === 'ExitTimeOut' && typeof value === 'number' && Number.isSafeInteger(value) && value >= 0) {
+			return field(key, `<integer>${value}</integer>`);
+		}
+		if (typeof value !== 'string' || key === 'ExitTimeOut') throw new Error('legacy shell launch job policy is unsupported');
+		return field(key, text(value));
+	}).join('');
+	const bytes = Buffer.from('<?xml version="1.0" encoding="UTF-8"?>\n<plist version="1.0"><dict>'
+		+ field('Label', text(job.label)) + field('ProgramArguments', '<array>' + args.map(text).join('') + '</array>')
+		+ field('WorkingDirectory', text(archive)) + field('RunAtLoad', legacy.runAtLoad ? '<true/>' : '<false/>')
+		+ field('KeepAlive', '<false/>') + field('EnvironmentVariables', '<dict>' + env + '</dict>') + ancillary + '</dict></plist>\n');
+	return { job: { ...job, program: prior.runtime, args, workingDirectory: archive, descriptor: destination },
+		bytes, descriptorHash: hash(bytes) };
+}
 
 /** A supported legacy LaunchAgent has no trigger or automatic restart policy. */
 export async function pinLegacyLaunchJob(

@@ -3,23 +3,26 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { createHash, generateKeyPairSync, sign, verify } from 'node:crypto';
-import { access, cp, mkdir, mkdtemp, readFile, realpath, rm } from 'node:fs/promises';
+import { access, cp, lstat, mkdir, mkdtemp, readFile, readdir, realpath, rm, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { after, before, test } from 'node:test';
-import { qualifiedNativeDigest } from '../managed-release-mach-o.js';
-import { releaseSignatureFrame } from '../../shared/managed-release-trust.js';
+import { measureManagedReleaseInventory } from '../managed-release-inventory.js';
+import { QUALIFIED_NATIVE_PATHS, qualifiedNativeDigest } from '../managed-release-mach-o.js';
+import { releaseMetadataDigest, releaseSignatureFrame, verifyReleaseQualification } from '../../shared/managed-release-trust.js';
 
 const nativePath = 'node_modules/fs-ext/build/Release/fs_ext.node';
 const darwin = process.platform === 'darwin' && process.arch === 'arm64';
 const firstBuild = { root: '', bytes: Buffer.alloc(0) };
 const secondBuild = { root: '', bytes: Buffer.alloc(0) };
+let fixtureRuntime: string;
 let scratch: string | undefined;
 
 before(async () => {
 	if (!darwin) return;
 	scratch = await realpath(await mkdtemp('/tmp/insrc-native-reference-'));
 	const node = await realpath(process.execPath);
+	fixtureRuntime = node;
 	const npm = await realpath(execFileSync('/usr/bin/which', ['npm'], { encoding: 'utf8' }).trim());
 	const candidates = [resolve(dirname(node), '../lib/node_modules/npm/node_modules/node-gyp/bin/node-gyp.js'),
 		resolve(dirname(npm), '../node_modules/node-gyp/bin/node-gyp.js'),
@@ -35,16 +38,20 @@ before(async () => {
 		const deps = join(root, 'node_modules');
 		const fsExt = join(deps, 'fs-ext');
 		await mkdir(deps, { recursive: true });
-		for (const dependency of ['fs-ext', 'nan']) {
+		const packages = [...QUALIFIED_NATIVE_PATHS].map(path => path.slice('node_modules/'.length).split('/build/')[0]!);
+		for (const dependency of [...packages, 'nan', 'node-addon-api']) {
 			const source = resolve('node_modules', dependency);
+			await mkdir(dirname(join(deps, dependency)), { recursive: true });
 			await cp(source, join(deps, dependency), { recursive: true,
 				filter: path => path !== join(source, 'build') && path !== join(source, 'node_modules') });
 		}
-		execFileSync(node, [nodeGyp, 'rebuild', `--nodedir=${headers}`, '--arch=arm64'], {
-			cwd: fsExt, env: { ...process.env, PATH: `${dirname(node)}:${process.env['PATH'] ?? '/usr/bin:/bin'}`, CXXFLAGS: '-std=c++17' },
-			timeout: 90_000, stdio: 'pipe',
-		});
-		return { root, bytes: await readFile(join(root, nativePath)) };
+		for (const dependency of packages) {
+			execFileSync(node, [nodeGyp, 'rebuild', `--nodedir=${headers}`, '--arch=arm64'], {
+				cwd: join(deps, dependency), env: { ...process.env, PATH: `${dirname(node)}:${process.env['PATH'] ?? '/usr/bin:/bin'}`, CXXFLAGS: '-std=c++17', npm_config_napi_build_version: '10' },
+				timeout: 120_000, stdio: 'pipe',
+			});
+		}
+		return { root, bytes: await readFile(join(fsExt, 'build/Release/fs_ext.node')) };
 	};
 	Object.assign(firstBuild, await build(join(scratch, 'first')));
 	Object.assign(secondBuild, await build(join(scratch, 'second-deliberately-longer-path')));
@@ -60,18 +67,20 @@ function command(bytes: Buffer, kind: number): number {
 	throw new Error('missing Mach-O command');
 }
 
-test('Independent same-commit macOS build equivalence and tamper rejection', { skip: !darwin }, () => {
+test('Independent same-commit macOS build equivalence and tamper rejection', { skip: !darwin }, async () => {
 	const first = firstBuild.bytes;
 	const second = secondBuild.bytes;
 	assert.notDeepEqual(first, second);
 	const expected = qualifiedNativeDigest(first, nativePath, firstBuild.root);
-	const signer = generateKeyPairSync('ed25519');
-	const payload = Buffer.from(JSON.stringify({ path: nativePath, digest: expected }));
-	const frame = releaseSignatureFrame('release-qualification', payload);
-	const signature = sign(null, frame, signer.privateKey);
-	assert.equal(verify(null, frame, signer.publicKey, signature), true);
-	const reference = JSON.parse(payload.toString('utf8')) as { path: string; digest: string };
-	assert.equal(qualifiedNativeDigest(second, reference.path, secondBuild.root), reference.digest);
+	for (const path of QUALIFIED_NATIVE_PATHS) {
+		const left = await readFile(join(firstBuild.root, path));
+		const right = await readFile(join(secondBuild.root, path));
+		assert.notDeepEqual(left, right);
+		assert.equal(qualifiedNativeDigest(left, path, firstBuild.root), qualifiedNativeDigest(right, path, secondBuild.root));
+	}
+	const reference = await inventoryReference(firstBuild.root);
+	assert.notEqual(await measureManagedReleaseInventory(firstBuild.root, fixtureRuntime, reference),
+		await measureManagedReleaseInventory(secondBuild.root, fixtureRuntime, reference));
 	const modified = Buffer.from(first);
 	const textOffset = modified.readUInt32LE(command(modified, 0x19) + 72 + 48);
 	modified[textOffset] = modified[textOffset]! ^ 1;
@@ -88,6 +97,64 @@ test('Independent same-commit macOS build equivalence and tamper rejection', { s
 	assert.throws(() => qualifiedNativeDigest(invalidBinding, nativePath, firstBuild.root), /qualified Mach-O/);
 	assert.notEqual(qualifiedNativeDigest(first, nativePath, secondBuild.root), expected);
 });
+
+async function inventoryReference(source: string) {
+	const roots = ['out', 'node_modules', 'scripts', 'package.json', 'package-lock.json', '.npmrc', 'packages/project-memory/dist'];
+	// Preserve the independently produced binaries, removing only unneeded build
+	// scratch from this fixture. The product inventory qualifies its own full tree.
+	for (const { root } of [firstBuild, secondBuild]) {
+		for (const name of roots) {
+			if (name === 'node_modules') continue;
+			const path = join(root, name);
+			if (name.includes('.') && name !== 'packages/project-memory/dist') await writeFile(path, 'fixture');
+			else await mkdir(path, { recursive: true });
+		}
+		for (const path of QUALIFIED_NATIVE_PATHS) {
+			const prefix = path.split('/build/')[0]!;
+			const binary = await readFile(join(root, path));
+			const mode = (await lstat(join(root, path))).mode & 0o777;
+			await rm(join(root, prefix), { recursive: true });
+			await mkdir(dirname(join(root, path)), { recursive: true });
+			await writeFile(join(root, path), binary, { mode });
+		}
+	}
+	const entries: [string, number, string | null][] = [];
+	async function visit(path: string, name: string): Promise<void> {
+		const stat = await lstat(path);
+		if (stat.isDirectory()) {
+			entries.push([name, stat.mode, null]);
+			for (const child of (await readdir(path)).sort()) await visit(join(path, child), `${name}/${child}`);
+		} else {
+			const bytes = await readFile(path);
+			const digest = QUALIFIED_NATIVE_PATHS.has(name) ? 'mach-o-arm64-v1:' + qualifiedNativeDigest(bytes, name, source)
+				: releaseMetadataDigest(bytes);
+			entries.push([name, stat.mode, digest]);
+		}
+	}
+	await visit(fixtureRuntime, 'node-runtime');
+	for (const name of roots) await visit(join(source, name), name);
+	const bytes = Buffer.from(JSON.stringify(entries));
+	const signer = generateKeyPairSync('ed25519');
+	const root = generateKeyPairSync('ed25519');
+	const channel = { repoUrl: 'https://example.invalid/insrc.git', branch: 'v2' };
+	const now = Date.now();
+	const validity = { notBefore: now - 1_000, expiresAt: now + 10_000 };
+	const pair = { priorCommit: '1'.repeat(40), candidateCommit: '2'.repeat(40), priorTree: '3'.repeat(40), candidateTree: '4'.repeat(40) };
+	const signed = (domain: Parameters<typeof releaseSignatureFrame>[0], value: unknown, key: typeof signer.privateKey) => {
+		const payload = Buffer.from(JSON.stringify(value));
+		const signature = sign(null, releaseSignatureFrame(domain, payload), key);
+		return Buffer.from(JSON.stringify({ payload: payload.toString('base64'), signature: signature.toString('base64') }));
+	};
+	const qualified = verifyReleaseQualification({
+		rootKey: root.publicKey, now, keyId: 'fixture', channel, ...pair,
+		trustEnvelope: signed('release-trust', { version: 1, epoch: 1, ...validity, revoked: [],
+			keys: [{ id: 'fixture', channel, ...validity, publicKey: signer.publicKey.export({ type: 'spki', format: 'der' }).toString('base64') }] }, root.privateKey),
+		qualificationEnvelope: signed('release-qualification', { version: 1, keyId: 'fixture', channel, ...pair, ...validity,
+			profile: 'darwin-arm64', referenceDigest: releaseMetadataDigest(bytes), compatibilityDigest: 'a'.repeat(64),
+			testEvidenceDigest: 'b'.repeat(64) }, signer.privateKey),
+	});
+	return { bytes, digest: qualified.referenceDigest };
+}
 
 test('Independent unequal-length debug roots preserve canonical native identity and malformed offsets or codeLimit are rejected', { skip: !darwin }, () => {
 	const { root, bytes } = firstBuild;

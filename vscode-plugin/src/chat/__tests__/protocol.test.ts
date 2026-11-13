@@ -347,6 +347,17 @@ test("protocol.test.ts: all eight new message types appear in their own directio
   // No duplicates (union/array equality has no repeated member).
   assert.equal(new Set(WEBVIEW_TO_HOST_TYPES).size, WEBVIEW_TO_HOST_TYPES.length);
   assert.equal(new Set(HOST_TO_WEBVIEW_TYPES).size, HOST_TO_WEBVIEW_TYPES.length);
+  // Union/array equality: the compile-time half lives in protocol.ts
+  // (_HostArrayEqualsUnion / _WebviewArrayEqualsUnion, typechecked with the plugin
+  // sources), which pins each union's discriminants to exactly its const array.
+  // The runtime half possible here: the arrays are duplicate-free and mutually
+  // disjoint (no kind in both directions), and every constructed union member's
+  // discriminant is in its own array — together with the compile-time pin that
+  // means array == union, per direction.
+  const overlap = (HOST_TO_WEBVIEW_TYPES as readonly string[]).filter((k) =>
+    (WEBVIEW_TO_HOST_TYPES as readonly string[]).includes(k),
+  );
+  assert.deepEqual(overlap, [], 'no discriminant appears in both directions');
 
   // Union membership is proven at compile time by constructing each direction's shapes;
   // at runtime each constructed message's discriminant is in its own array only.

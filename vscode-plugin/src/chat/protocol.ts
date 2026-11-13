@@ -394,7 +394,9 @@ export const HOST_TO_WEBVIEW_TYPES = [
   'history-list',
   'active-list',
   'transcript-row',
+  'approval-position',
   'docs-list',
+  'docs-review-progress',
   'docs-content',
   'user-row',
   'theme',
@@ -414,6 +416,7 @@ export const WEBVIEW_TO_HOST_TYPES = [
   'submit-turn',
   'new-chat',
   'open-chat',
+  'set-run-config',
   'set-edit-mode',
   'edit-decision',
   'docs-decision',
@@ -446,6 +449,28 @@ export const WEBVIEW_TO_HOST_TYPES = [
 
 export type HostToWebviewType = (typeof HOST_TO_WEBVIEW_TYPES)[number];
 export type WebviewToHostType = (typeof WEBVIEW_TO_HOST_TYPES)[number];
+
+/**
+ * Compile-time union/array equality (verified by tsc, which DOES typecheck this file —
+ * the __tests__ are excluded from tsconfig, so the runtime test only asserts the
+ * array side): each const array contains exactly its union's discriminants, neither
+ * direction having a member or array entry the other lacks.
+ */
+type _AssertTrue<T extends true> = T;
+type _HostArrayEqualsUnion = _AssertTrue<
+  HostToWebviewType extends HostToWebview['type']
+    ? HostToWebview['type'] extends HostToWebviewType
+      ? true
+      : false
+    : false
+>;
+type _WebviewArrayEqualsUnion = _AssertTrue<
+  WebviewToHostType extends WebviewToHost['type']
+    ? WebviewToHost['type'] extends WebviewToHostType
+      ? true
+      : false
+    : false
+>;
 
 /** Wrap a payload in the versioned envelope. */
 export function envelope<T>(payload: T): Envelope<T> {

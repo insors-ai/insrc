@@ -22,7 +22,7 @@
 import { constants } from 'node:fs';
 import { link, lstat, mkdir, open, readdir, unlink, writeFile } from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
-import { join, resolve } from 'node:path';
+import { join, relative, resolve, sep } from 'node:path';
 import { errCode } from './async-util.js';
 
 /** One scratchpad's metadata; `id` is the file basename. */
@@ -176,7 +176,11 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
     }
     const rootResolved = resolve(root);
     const path = resolve(rootResolved, id);
-    if (path === rootResolved || !path.startsWith(`${rootResolved}/`)) {
+    // relative() is separator-agnostic (correct on Windows too, where resolved
+    // paths use backslashes); an escaping id yields '' or a path that starts
+    // with '..' or is absolute.
+    const rel = relative(rootResolved, path);
+    if (rel === '' || rel.startsWith(`..${sep}`) || rel === '..' || resolve(rel) === rel) {
       throw new ScratchRefused(`'${id}' is outside the scratches directory`);
     }
     return path;

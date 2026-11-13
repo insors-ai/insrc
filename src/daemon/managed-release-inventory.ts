@@ -7,6 +7,7 @@ import { lstat, open, readdir, readlink, realpath } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { TextDecoder } from 'node:util';
 import { releaseMetadataDigest } from '../shared/managed-release-trust.js';
+import { QUALIFIED_NATIVE_PATHS, qualifiedNativeDigest } from './managed-release-mach-o.js';
 
 const ROOTS = ['node-runtime', 'out', 'node_modules', 'scripts', 'package.json', 'package-lock.json', '.npmrc', 'packages/project-memory/dist'];
 const MAX_ENTRIES = 150_000;
@@ -91,16 +92,24 @@ export async function measureManagedReleaseInventory(root: string, runtime: stri
 			const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
 			try {
 				if (!stable(info, await file.stat())) throw new Error(`runtime inventory changed while opening: ${name}`);
-				const digest = createHash('sha256');
-				for await (const chunk of file.createReadStream({ autoClose: false })) digest.update(chunk as Buffer);
-				value = digest.digest('hex');
-				pinnedValue = value;
+				if (entry?.[2]?.startsWith('mach-o-arm64-v1:')) {
+					if (!QUALIFIED_NATIVE_PATHS.has(name) || info.size > 32 * 1024 * 1024) return invalidReference();
+					const bytes = await file.readFile();
+					pinnedValue = releaseMetadataDigest(bytes);
+					value = 'mach-o-arm64-v1:' + qualifiedNativeDigest(bytes, name, root);
+				} else {
+					const digest = createHash('sha256');
+					for await (const chunk of file.createReadStream({ autoClose: false })) digest.update(chunk as Buffer);
+					value = digest.digest('hex');
+					pinnedValue = value;
+				}
 				if (!stable(info, await file.stat())) throw new Error(`runtime inventory changed while reading: ${name}`);
 			} finally { await file.close(); }
 		} else if (!info.isDirectory()) {
 			throw new Error(`unsupported runtime inventory entry: ${name}`);
 		}
-		if (entry !== undefined && (entry[2] !== value || (info.isFile() && !DIGEST.test(entry[2] ?? '')))) {
+		if (entry !== undefined && (entry[2] !== value
+			|| (info.isFile() && !DIGEST.test((entry[2] ?? '').replace(/^mach-o-arm64-v1:/, ''))))) {
 			throw new Error(`runtime inventory differs from signed reference: ${name}`);
 		}
 		expected?.delete(name);

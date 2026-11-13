@@ -5,6 +5,7 @@ import { basename, dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawn } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
+import { Worker } from 'node:worker_threads';
 import { once } from 'node:events';
 import { randomUUID } from 'node:crypto';
 import { acquireRunFileGuard, removeOwnedRunFile, runFileGuardConflict, runFileIdentity } from '../daemon-run-files.js';
@@ -118,43 +119,32 @@ function quarantineStamp(seconds: number): string {
 }
 
 function ensureDaemonLog(): void {
-	if (!existsSync(PATHS.daemonLog)) writeFileSync(PATHS.daemonLog, '', { mode: 0o600 });
+	// A killed run can leave the log-write-failure fixture (mode 0o444) behind; restore the intended mode.
+	if (existsSync(PATHS.daemonLog)) chmodSync(PATHS.daemonLog, 0o600);
+	else writeFileSync(PATHS.daemonLog, '', { mode: 0o600 });
 }
 
-/** Spins on mkdir once ready, grabbing the guard path the moment it is free. */
-function guardFreeRacer(path: string): { child: ChildProcess; ready: Promise<void>; result: Promise<string> } {
-	const source = `import { mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-const path = process.argv[1];
-process.stdout.write('ready\\n');
-let done = false;
-for (let attempt = 0; attempt < 200000 && !done; attempt++) {
-	try { mkdirSync(path); writeFileSync(join(path, 'owner.json'), JSON.stringify({ owner: { pid: process.pid, startedAt: 'linux:current-boot:1', commandLine: 'racer' }, nonce: 'racer' }), { flag: 'wx', mode: 0o600 }); done = true; } catch { }
-}
-if (done) { process.stdout.write('acquired\\n'); process.on('message', () => process.exit(0)); }
-else { process.stdout.write('lost\\n'); process.exit(1); }`;
-	const child = spawn(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', source, path], { stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
-	children.push(child); child.stdout!.setEncoding('utf8');
-	let settleReady: (() => void) | undefined, settleResult: ((value: string) => void) | undefined;
-	const ready = new Promise<void>((resolve, reject) => { settleReady = resolve; child.on('error', reject); });
-	const result = new Promise<string>((resolve, reject) => {
-		settleResult = resolve;
-		child.on('exit', () => reject(new Error('racer exited without a result')));
-	});
-	let buffer = '';
-	child.stdout!.on('data', (chunk: string) => {
-		buffer += chunk;
-		for (;;) {
-			const index = buffer.indexOf('\n');
-			if (index < 0) break;
-			const line = buffer.slice(0, index).trim();
-			buffer = buffer.slice(index + 1);
-			if (line === '') continue;
-			if (settleReady !== undefined) { settleReady(); settleReady = undefined; }
-			else settleResult!(line);
-		}
-	});
-	return { child, ready, result };
+/** Worker-thread racers for the retry race: each busy-spins mkdirSync on the guard path and grabs it the
+ * moment the quarantine rename frees it. Unlike a spawned child, which blocks on the pipe write that
+ * announces its readiness (the very write that wakes this process to run the reclaim), a worker never
+ * blocks between reporting it is spinning and the retry window, so it stays scheduled across the race.
+ * The first racer to succeed writes the racer record and exits; the rest are terminated by the caller. */
+function workerRacers(path: string, count: number): { spinning: Promise<unknown[]>; workers: Worker[] } {
+	const source = `const { parentPort, workerData } = require('node:worker_threads');
+const { mkdirSync, writeFileSync } = require('node:fs');
+const { join } = require('node:path');
+const path = workerData.path;
+let spinning = false;
+for (;;) {
+  try { mkdirSync(path); writeFileSync(join(path, 'owner.json'), JSON.stringify({ owner: { pid: process.pid, startedAt: 'linux:current-boot:1', commandLine: 'racer' }, nonce: 'racer' }), { flag: 'wx', mode: 0o600 }); parentPort.postMessage('won'); break; }
+  catch { if (!spinning) { spinning = true; parentPort.postMessage('spinning'); } }
+}`;
+	const workers = Array.from({ length: count }, () => new Worker(source, { eval: true, workerData: { path } }));
+	const spinning = Promise.all(workers.map((worker) => new Promise<unknown>((resolve, reject) => {
+		worker.once('message', (message: unknown) => { if (message === 'spinning') resolve(message); });
+		worker.once('error', reject);
+	})));
+	return { spinning, workers };
 }
 
 test("acquireRunFileGuard quarantines and acquires when the verdict is 'gone' (fake reader, mkdtemp guard)", () => {
@@ -212,23 +202,33 @@ test("acquireRunFileGuard withholds 'same', same-boot 'replaced', corrupt or mis
 	assert.equal(quarantinedSiblings(path).length, 0, 'throwing reader');
 });
 
-test('acquireRunFileGuard recomputes the conflict and throws when the retry mkdir hits EEXIST', { skip: process.platform === 'win32', timeout: 10000 }, async () => {
-	const path = join(dir, 'guard');
-	staleGuard(path, 'linux:stale-boot:111', 'nonce-race');
-	const racer = guardFreeRacer(path);
-	await racer.ready; // spinning before the reclaim even starts
-	// The racer grabs the freed path before the single retry mkdir, so the retry EEXISTs. Even though the
-	// recompute's injected reader also reads the racer's record as gone, the reclaim does not run twice:
-	// the thrown conflict is recomputed against the racer's record, never the quarantined one.
-	let conflict: unknown;
-	try { acquireReclaim(path, acquiringOwner, () => undefined); }
-	catch (error) { conflict = error; }
-	assert.ok(conflict instanceof Error && /ownership conflict/.test(conflict.message), String(conflict));
+test('acquireRunFileGuard recomputes the conflict and throws when the retry mkdir hits EEXIST', { skip: process.platform === 'win32', timeout: 60000 }, async () => {
+	// The retry window is a single mkdir. Four worker-thread racers spin on the freed path; a lost
+	// attempt (the retry mkdir won anyway) is discarded and retried on a fresh guard, so the
+	// deterministic recompute path is exercised on the attempt that wins, never assumed.
+	let conflict: unknown, path = '';
+	let workers: Worker[] = [];
+	for (let attempt = 0; attempt < 12 && conflict === undefined; attempt++) {
+		path = join(dir, `guard-race-${attempt}`);
+		staleGuard(path, 'linux:stale-boot:111', 'nonce-race');
+		const racers = workerRacers(path, 4);
+		workers = racers.workers;
+		await racers.spinning; // every racer has already failed a mkdir: all are inside the spin loop
+		// A racer grabs the freed path before the single retry mkdir, so the retry EEXISTs. Even though the
+		// recompute's injected reader also reads the racer's record as gone, the reclaim does not run twice:
+		// the thrown conflict is recomputed against the racer's record, never the quarantined one.
+		try { acquireReclaim(path, acquiringOwner, () => undefined); }
+		catch (error) { conflict = error; continue; }
+		// Lost the window anyway: the retry mkdir reclaimed the path before a racer was scheduled.
+		await Promise.allSettled(workers.map((worker) => worker.terminate()));
+		workers = [];
+	}
+	assert.ok(conflict instanceof Error && /ownership conflict/.test(conflict.message),
+		`every attempt lost the retry race to the parallel load: ${String(conflict)}`);
 	assert.equal(conflict.message.includes('nonce-race'), false, 'the conflict must be recomputed, not replayed');
 	assert.ok(/nonce=racer/.test(conflict.message) || /unverifiable owner/.test(conflict.message), 'the evidence names the racer: its record or its in-flight write');
-	assert.equal(await racer.result, 'acquired');
 	assert.equal(quarantinedSiblings(path).length, 1); // the stale record is still quarantined
-	racer.child.kill('SIGKILL');
+	await Promise.allSettled(workers.map((worker) => worker.terminate()));
 });
 
 test('acquireRunFileGuard leaves a symlink guard as a conflict', () => {

@@ -8,7 +8,8 @@ import { matchesDarwinPeer, readDarwinIncarnation } from '../shared/darwin-lifec
 import type { DarwinIncarnation } from '../shared/darwin-lifecycle.js';
 import type { RunFileGuard } from '../shared/daemon-run-files.js';
 import { measureManagedReleaseInventory } from './managed-release-inventory.js';
-import { recordedReleaseQualification } from '../shared/installation-mutation-gate.js';
+import { recordedReleaseQualification, recordedSourceRelease } from '../shared/installation-mutation-gate.js';
+import { verifyStagedReleasePin } from './managed-release-staging.js';
 import type { InstallationMutationGate, MutationReservation } from '../shared/installation-mutation-gate.js';
 import {
 	inspectManagedJob, publishManagedSelector, registerManagedJob, removeManagedJob,
@@ -234,7 +235,10 @@ class Rollback {
 		}
 		await verifyRollbackSelector(initial, this.operations);
 		const releaseProof = recordedReleaseQualification(initial);
+		const source = recordedSourceRelease(initial);
 		const verifyPrior = async () => {
+			if (source !== undefined) await verifyStagedReleasePin({ root: prior.releaseRoot, runtime: prior.runtime,
+				commit: prior.releaseId, fingerprint: source.priorFingerprint });
 			if (releaseProof !== undefined
 				&& await measureManagedReleaseInventory(prior.releaseRoot, prior.runtime) !== releaseProof.priorFingerprint) {
 				throw new Error('pinned rollback inventory changed');
@@ -357,12 +361,13 @@ export async function completeLegacyMigration(
 			await verifyRollbackSelector(update, operations);
 			await verifyOriginalLegacyRoute(update, legacyOperations);
 			await verifyManagedUpdateInventory(pins);
-			if (pins.releaseQualification !== undefined) await recordManagedUpdatePins(gate, update, pins);
+			const signed = pins.sourceRelease !== undefined;
+			if (signed) await recordManagedUpdatePins(gate, update, pins);
 			if (launch !== undefined) {
 				const archive = await fenceLegacyLauncher(gate, update, legacyOperations.helper);
 				await verifyManagedUpdateInventory(pins, archive);
 			}
-			if (pins.releaseQualification === undefined) await recordManagedUpdatePins(gate, update, pins);
+			if (!signed) await recordManagedUpdatePins(gate, update, pins);
 			await gate.recordIntent(update, 'predecessor-stop', entry);
 			let guard: RunFileGuard | undefined;
 			if (launch === undefined) {

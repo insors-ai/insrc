@@ -4,10 +4,9 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { accepted, openManagedSupervisorLink } from '../cli/services/managed-daemon-control.js';
 import type { ManagedSupervisorLink } from '../cli/services/managed-daemon-control.js';
 import type { SupervisorReply } from '../shared/daemon-supervisor-protocol.js';
-import type { AdmittedReleaseQualification, MutationReservation, InstallationMutationGate } from '../shared/installation-mutation-gate.js';
+import type { AdmittedSourceRelease, MutationReservation, InstallationMutationGate } from '../shared/installation-mutation-gate.js';
 import type { RunFileGuard } from '../shared/daemon-run-files.js';
-import { releaseMetadataDigest } from '../shared/managed-release-trust.js';
-import { measureManagedReleaseInventory } from './managed-release-inventory.js';
+import { verifyStagedReleasePin } from './managed-release-staging.js';
 import {
 	installFreshSelectorMember, publishManagedSelector, registerManagedJob, removeManagedJob, requireQuiescentInstallation,
 } from '../shared/managed-daemon-installation.js';
@@ -25,16 +24,17 @@ export interface ManagedUpdatePins {
 	readonly prior: ManagedInstallation;
 	readonly candidate: ManagedInstallation;
 	readonly compatibility: QualifiedReleasePair;
-	readonly releaseQualification?: Omit<AdmittedReleaseQualification, 'updateId'>;
+	readonly sourceRelease?: AdmittedSourceRelease;
 }
 
 /** Recheck signed raw pins at the live mutation boundary. The prior may have been archived. */
 export async function verifyManagedUpdateInventory(pins: ManagedUpdatePins, priorRoot = pins.prior.releaseRoot): Promise<void> {
-	const proof = pins.releaseQualification;
-	if (proof === undefined) return;
-	if (await measureManagedReleaseInventory(priorRoot, pins.prior.runtime) !== proof.priorFingerprint
-		|| await measureManagedReleaseInventory(pins.candidate.releaseRoot, pins.candidate.runtime) !== proof.candidateFingerprint) {
-		throw new Error('pinned runtime inventory changed before cutover');
+	if (pins.sourceRelease !== undefined) {
+		await verifyStagedReleasePin({ root: priorRoot, runtime: pins.prior.runtime, commit: pins.prior.releaseId,
+			fingerprint: pins.sourceRelease.priorFingerprint });
+		await verifyStagedReleasePin({ root: pins.candidate.releaseRoot, runtime: pins.candidate.runtime, commit: pins.candidate.releaseId,
+			fingerprint: pins.sourceRelease.candidateFingerprint });
+		return;
 	}
 }
 
@@ -108,7 +108,7 @@ export interface HandoffReceipt {
 }
 
 export async function recordManagedUpdatePins(
-	gate: Gate & Partial<Pick<InstallationMutationGate, 'admitReleaseQualification'>>, update: Update, pins: ManagedUpdatePins,
+	gate: Gate & Partial<Pick<InstallationMutationGate, 'admitSourceRelease'>>, update: Update, pins: ManagedUpdatePins,
 ): Promise<void> {
 	const { prior, candidate, compatibility } = pins;
 	const { predecessor } = update;
@@ -118,12 +118,9 @@ export async function recordManagedUpdatePins(
 	}
 	await gate.admit(update);
 	const compatibilityIntent = JSON.stringify(compatibility);
-	if (pins.releaseQualification !== undefined) {
-		if (gate.admitReleaseQualification === undefined) throw new Error('signed release admission is unavailable');
-		if (pins.releaseQualification.qualification.compatibilityDigest !== releaseMetadataDigest(Buffer.from(compatibilityIntent))) {
-			throw new Error('writable formats differ from the signed qualification');
-		}
-		await gate.admitReleaseQualification(update, { updateId: update.id, ...pins.releaseQualification });
+	if (pins.sourceRelease !== undefined) {
+		if (gate.admitSourceRelease === undefined) throw new Error('signed source admission is unavailable');
+		await gate.admitSourceRelease(update, pins.sourceRelease);
 	}
 	await gate.recordIntent(update, 'release-pins', JSON.stringify({ prior, candidate }));
 	await gate.recordReceipt(update, 'release-pins', 'pinned for this transaction');

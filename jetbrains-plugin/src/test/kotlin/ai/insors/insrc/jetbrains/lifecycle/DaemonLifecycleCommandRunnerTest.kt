@@ -72,8 +72,9 @@ class DaemonLifecycleCommandRunnerTest {
                 "TMPDIR" to System.getenv("INSRC_ROUTE_MATRIX_TMP"),
                 "INSRC_TEST_TRACE" to System.getenv("INSRC_ROUTE_MATRIX_TRACE"),
             )
-            assertTrue(DaemonLifecycleCommandRunner(ScriptDaemonProvisioner.ProcessBuilderRunner(), locator, noNode, env)
-                .run(LifecycleCommand.UPDATE) is DaemonActionResult.Ok)
+            val result = DaemonLifecycleCommandRunner(ScriptDaemonProvisioner.ProcessBuilderRunner(), locator, noNode, env)
+                .run(LifecycleCommand.UPDATE)
+            assertEquals(System.getenv("INSRC_ROUTE_MATRIX_EXPECTED") == "ok", result is DaemonActionResult.Ok)
         }
         val home = Files.createTempDirectory("insrc-legacy-locator").toRealPath()
         try {

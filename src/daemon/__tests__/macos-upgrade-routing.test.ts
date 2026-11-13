@@ -43,6 +43,7 @@ if [ "$1" = "-e" ]; then exit 0; fi
 if [ "$1" = "--input-type=commonjs" ]; then exit 0; fi
 if [ "$2" = "authorize" ]; then
   printf 'authorize:%s:%s\n' "$5" "$6" >> "$INSRC_TEST_TRACE"
+  if [ -f "$INSRC_TEST_TRACE.deny" ]; then exit 4; fi
   mkdir -p "$3/checkout/out/bin"
   : > "$3/checkout/out/bin/insrc-daemon-control.js"
   exit 0
@@ -89,13 +90,36 @@ exit 45`);
 	await copyFile(control, join(checkout, 'scripts/daemon-ctl.sh'));
 	assert.deepEqual(await controller.run('update'), { ok: true, state: 'running' });
 	await requireBridge();
-	await writeFile(trace, '');
 	const jetbrains = new URL('../../../jetbrains-plugin/test-bridge/run-focused-junit.ts', import.meta.url).href;
 	const { runFocusedJUnit } = await import(jetbrains);
-	runFocusedJUnit(['ai.insors.insrc.jetbrains.lifecycle.DaemonLifecycleCommandRunnerTest'], {
-		...process.env, INSRC_ROUTE_MATRIX_HOME: home, INSRC_ROUTE_MATRIX_PATH: env.PATH,
-		INSRC_ROUTE_MATRIX_TMP: root, INSRC_ROUTE_MATRIX_TRACE: trace,
-		INSRC_ROUTE_MATRIX_INSTALLER: routedInstaller,
-	});
+	const runJetBrains = (expected: 'ok' | 'refused') =>
+		runFocusedJUnit(['ai.insors.insrc.jetbrains.lifecycle.DaemonLifecycleCommandRunnerTest'], {
+			...process.env, INSRC_ROUTE_MATRIX_HOME: home, INSRC_ROUTE_MATRIX_PATH: env.PATH,
+			INSRC_ROUTE_MATRIX_TMP: root, INSRC_ROUTE_MATRIX_TRACE: trace,
+			INSRC_ROUTE_MATRIX_INSTALLER: routedInstaller, INSRC_ROUTE_MATRIX_EXPECTED: expected,
+		});
+	await writeFile(trace, '');
+	runJetBrains('ok');
 	await requireBridge();
+
+	await writeFile(trace + '.deny', '');
+	const requireRefusal = async () => {
+		assert.equal((await readFile(trace, 'utf8')).trim(), `authorize:${origin}:v2`);
+		assert.equal(await readFile(join(checkout, 'incumbent'), 'utf8'), 'executable release');
+	};
+	for (const [script, args] of [
+		[routedInstaller, ['--target', checkout, '-y', '--repo', origin, '--branch', 'v2']],
+		[control, ['update', '--repo-url', origin, '--branch', 'v2']],
+	] as const) {
+		await writeFile(trace, '');
+		await assert.rejects(exec('/bin/bash', [script, ...args], { env, cwd: root, timeout: 12_000 }),
+			/macOS upgrade bridge authorization failed/);
+		await requireRefusal();
+	}
+	await writeFile(trace, '');
+	assert.equal((await controller.run('update')).ok, false);
+	await requireRefusal();
+	await writeFile(trace, '');
+	runJetBrains('refused');
+	await requireRefusal();
 });

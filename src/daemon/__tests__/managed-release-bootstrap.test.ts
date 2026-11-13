@@ -98,3 +98,51 @@ test('Invalid or missing authorization prevents bootstrap checkout execution, np
 	await assert.rejects(exec(process.execPath, [verifier, 'verify-built', valid, incumbent, origin, 'v2']),
 		/unexpected runtime inventory entry/);
 });
+
+test('Fresh macOS install and Linux install preserve their existing build and launch routes', async t => {
+	const root = await realpath(await mkdtemp('/tmp/insrc-fresh-routing-'));
+	t.after(() => rm(root, { recursive: true, force: true }));
+	const tools = join(root, 'tools');
+	await mkdir(tools);
+	const shim = (name: string, command: string) =>
+		writeFile(join(tools, name), '#!/bin/bash\nset -eu\n' + command, { mode: 0o700 });
+	await shim('uname', 'printf "%s\\n" "$INSRC_TEST_PLATFORM"');
+	await shim('git', `
+case "$1" in
+--version) printf 'git version 2.45.0\\n' ;;
+clone)
+  target="$7"
+  mkdir -p "$target/out/bin" "$target/scripts" "$target/src/assets/models"
+  cp "$INSRC_TEST_CATALOG" "$target/src/assets/models/cloud-model-catalog.json"
+  : > "$target/out/bin/insrc-daemon-control.js"
+  printf '%s\\n' '#!/bin/sh' 'echo linux-start >> "$INSRC_TEST_TRACE"' > "$target/scripts/daemon-ctl.sh"
+  chmod +x "$target/scripts/daemon-ctl.sh"
+  ;;
+-C) printf 'abcdef\\n' ;;
+*) exit 1 ;;
+esac`);
+	await shim('npm', 'printf "npm:%s\\n" "$1" >> "$INSRC_TEST_TRACE"');
+	await shim('curl', 'exit 1');
+	await shim('node', `
+if [ "\${2:-}" = "activate-fresh" ]; then
+  printf 'mac-activate:%s\\n' "$4" >> "$INSRC_TEST_TRACE"
+  exit 0
+fi
+exec "$INSRC_TEST_NODE" "$@"`);
+	const installer = new URL('scripts/insrc-daemon-install.sh', project).pathname;
+	for (const platform of ['Darwin', 'Linux']) {
+		const home = join(root, platform);
+		await mkdir(home);
+		const trace = join(home, 'trace');
+		const target = join(home, 'daemon');
+		await exec('/bin/bash', [installer, '-y', '--target', target, '--embedder', 'onnx',
+			...(platform === 'Darwin' ? ['--no-start'] : [])], {
+			env: { ...process.env, HOME: home, PATH: `${tools}:/usr/bin:/bin`, INSRC_TEST_PLATFORM: platform,
+				INSRC_TEST_TRACE: trace, INSRC_TEST_NODE: process.execPath,
+				INSRC_TEST_CATALOG: new URL('src/assets/models/cloud-model-catalog.json', project).pathname },
+		});
+		assert.deepEqual((await readFile(trace, 'utf8')).trim().split('\n'), platform === 'Darwin'
+			? ['npm:ci', 'npm:run', 'mac-activate:idle']
+			: ['npm:install', 'npm:run', 'linux-start']);
+	}
+});

@@ -56,12 +56,23 @@ set -euo pipefail
 DAEMON_ROOT="${INSRC_DAEMON_ROOT:-$HOME/.insrc/daemon}"
 NODE_BIN_FILE="$HOME/.insrc/daemon-node"
 
+# Absolutize with shell builtins only (the GUI PATH may lack coreutils):
+# spawn_daemon cds to DAEMON_ROOT before executing, so a relative NODE_BIN
+# would resolve against the wrong directory there.
+abspath() {
+	local p="$1"
+	case "$p" in
+		/*) printf '%s\n' "$p" ;;
+		*)  printf '%s/%s\n' "$PWD" "$p" ;;
+	esac
+}
+
 resolve_node() {
 	if [ -n "${INSRC_NODE_BIN:-}" ]; then
-		if [ -x "$INSRC_NODE_BIN" ]; then echo "$INSRC_NODE_BIN"; return 0; fi
+		if [ -x "$INSRC_NODE_BIN" ]; then abspath "$INSRC_NODE_BIN"; return 0; fi
 		return 1
 	fi
-	if command -v node >/dev/null 2>&1; then command -v node; return 0; fi
+	if command -v node >/dev/null 2>&1; then abspath "$(command -v node)"; return 0; fi
 	local dir
 	if [ -n "${INSRC_NODE_LOCATIONS+x}" ]; then
 		# Test seam: an explicit (possibly empty) colon-separated list REPLACES
@@ -69,23 +80,36 @@ resolve_node() {
 		local IFS=:
 		for dir in $INSRC_NODE_LOCATIONS; do
 			[ -n "$dir" ] || continue
-			if [ -x "$dir/node" ]; then echo "$dir/node"; return 0; fi
+			if [ -x "$dir/node" ]; then abspath "$dir/node"; return 0; fi
 		done
 	else
 		for dir in /opt/homebrew/bin /usr/local/bin "$HOME/.nvm/versions/node"/*/bin "$DAEMON_ROOT/node_modules/.bin"; do
-			if [ -x "$dir/node" ]; then echo "$dir/node"; return 0; fi
+			if [ -x "$dir/node" ]; then abspath "$dir/node"; return 0; fi
 		done
 	fi
 	if [ -f "$NODE_BIN_FILE" ]; then
-		local recorded
-		# Strip whitespace with shell builtins only: the GUI PATH may
-		# lack even coreutils, so no tr/sed/awk here.
-		local line
+		# Trim leading/trailing whitespace only (shell builtins, no coreutils):
+		# internal spaces are significant in paths like "/Applications/Node Tools/bin/node".
+		local recorded line
 		recorded=""
 		while IFS= read -r line || [ -n "$line" ]; do
-			recorded="$recorded${line//[[:space:]]/}"
+			recorded="$recorded$line"
 		done < "$NODE_BIN_FILE"
-		if [ -n "$recorded" ] && [ -x "$recorded" ]; then echo "$recorded"; return 0; fi
+		# trim leading whitespace
+		while [ -n "$recorded" ]; do
+			case "$recorded" in
+				[[:space:]]*) recorded="${recorded#?}" ;;
+				*) break ;;
+			esac
+		done
+		# trim trailing whitespace
+		while [ -n "$recorded" ]; do
+			case "$recorded" in
+				*[[:space:]]) recorded="${recorded%?}" ;;
+				*) break ;;
+			esac
+		done
+		if [ -n "$recorded" ] && [ -x "$recorded" ]; then abspath "$recorded"; return 0; fi
 	fi
 	return 1
 }

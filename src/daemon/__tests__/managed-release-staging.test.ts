@@ -2,8 +2,10 @@
 
 import assert from 'node:assert/strict';
 import { execFile, execFileSync, spawn } from 'node:child_process';
+import { generateKeyPairSync, sign } from 'node:crypto';
+import type { KeyObject } from 'node:crypto';
 import { once } from 'node:events';
-import { mkdir, mkdtemp, readFile, readdir, realpath, rm, writeFile } from 'node:fs/promises';
+import { lstat, mkdir, mkdtemp, readFile, readdir, readlink, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { createConnection } from 'node:net';
 import { dirname, join } from 'node:path';
@@ -15,8 +17,10 @@ import { promisify } from 'node:util';
 import { open } from 'lmdb';
 import { accepted, ManagedDaemonControl, openManagedSupervisorLink } from '../../cli/services/managed-daemon-control.js';
 import { InstallationMutationGate } from '../../shared/installation-mutation-gate.js';
+import { releaseMetadataDigest, releaseSignatureFrame } from '../../shared/managed-release-trust.js';
 import { rpc } from '../../shared/ipc-client.js';
 import { installFreshSelectorMember, inspectManagedJob, installationPaths, readInstallationSelector, registerManagedJob, removeManagedJob } from '../../shared/managed-daemon-installation.js';
+import { retainManagedReleaseVerifier } from '../managed-update-preparation.js';
 import { captureManagedReleasePin, stageManagedRelease, verifyStagedReleasePin } from '../managed-release-staging.js';
 import type { ManagedReleaseQualification } from '../managed-release-staging.js';
 import type { ReleaseCompatibility } from '../release-compatibility.js';
@@ -60,7 +64,10 @@ async function fixture(t: TestContext, supervisor?: string, programs?: { daemon:
 			]),
 		].join('\n'),
 		'version.txt': 'prior',
+		'.npmrc': '',
+		'scripts/fixture': 'fixture',
 	};
+	await mkdir(join(repoUrl, 'scripts'));
 	for (const [name, value] of Object.entries(files)) await writeFile(join(repoUrl, name), value);
 	git(repoUrl, 'add', '.');
 	git(repoUrl, 'commit', '-qm', 'prior');
@@ -91,6 +98,80 @@ async function fixture(t: TestContext, supervisor?: string, programs?: { daemon:
 	};
 	const options = { stateRoot, runtime, source, qualification, prior: { root: old, runtime } };
 	return { options, entry, dependency, old, qualifiedOld, priorCommit, priorFingerprint, priorDependency, scratch };
+}
+
+async function makeTestReleaseAuthority(f: Awaited<ReturnType<typeof fixture>>) {
+	const { stateRoot, runtime, source } = f.options;
+	const root = generateKeyPairSync('ed25519');
+	const signer = generateKeyPairSync('ed25519');
+	const keyFile = join(f.scratch, 'fixture-root.pem');
+	const installer = join(f.scratch, 'installer.sh');
+	const bundle = fileURLToPath(new URL('../../../scripts/bundle-release-bootstrap.mjs', import.meta.url));
+	await writeFile(keyFile, root.publicKey.export({ format: 'pem', type: 'spki' }));
+	await promisify(execFile)(runtime, [bundle, keyFile, installer]);
+	const verifier = join(f.scratch, 'verifier.mjs');
+	const packaged = await readFile(installer, 'utf8');
+	const base64 = packaged.match(/^INSRC_RELEASE_BOOTSTRAP_B64='([^']+)'$/m)?.[1];
+	assert.ok(base64);
+	await writeFile(verifier, Buffer.from(base64, 'base64'), { mode: 0o600 });
+	const env = { ...process.env, HOME: f.scratch, PATH: `${dirname(runtime)}:${process.env['PATH'] ?? '/usr/bin:/bin'}` };
+
+	async function inventory(root: string) {
+		const entries: [string, number, string | null][] = [];
+		async function visit(path: string, name: string): Promise<void> {
+			const info = await lstat(path);
+			entries.push([name, info.mode, info.isDirectory() ? null : info.isSymbolicLink() ? await readlink(path)
+				: releaseMetadataDigest(await readFile(path))]);
+			if (info.isDirectory()) {
+				for (const child of await readdir(path)) await visit(join(path, child), `${name}/${child}`);
+			}
+		}
+		await visit(runtime, 'node-runtime');
+		for (const name of ['out', 'node_modules', 'scripts', 'package.json', 'package-lock.json', '.npmrc', 'packages/project-memory']) {
+			await visit(join(root, name), name);
+		}
+		return Buffer.from(JSON.stringify(entries));
+	}
+
+	function envelope(domain: Parameters<typeof releaseSignatureFrame>[0], key: KeyObject, value: unknown): string {
+		const payload = Buffer.from(JSON.stringify(value));
+		return JSON.stringify({ payload: payload.toString('base64'),
+			signature: sign(null, releaseSignatureFrame(domain, payload), key).toString('base64') });
+	}
+
+	let epoch = 0;
+	async function publish(prior: ReleaseCompatibility, candidate: ReleaseCompatibility, independentPrior: string) {
+		const built = await mkdtemp(join(f.scratch, 'reference-'));
+		git(f.scratch, 'clone', '-q', '--no-local', '--', source.repoUrl, built);
+		await promisify(execFile)('npm', ['ci', '--no-fund', '--no-audit'], { cwd: built, env, timeout: 20_000 });
+		await promisify(execFile)('npm', ['run', 'build'], { cwd: built, env, timeout: 20_000 });
+		await writeFile(join(built, 'out/release-compatibility.json'), JSON.stringify(candidate) + '\n', { mode: 0o600 });
+		const priorInventory = await inventory(independentPrior);
+		const candidateInventory = await inventory(built);
+		const referenceDigest = releaseMetadataDigest(Buffer.from(JSON.stringify([
+			releaseMetadataDigest(priorInventory), releaseMetadataDigest(candidateInventory),
+		])));
+		const compatibility = Buffer.from(JSON.stringify({ prior, candidate }));
+		const window = { notBefore: Date.now() - 10_000, expiresAt: Date.now() + 300_000 };
+		const keyId = 'disposable-staging-authority';
+		const trust = envelope('release-trust', root.privateKey, { version: 1, epoch: ++epoch, ...window, revoked: [],
+			keys: [{ id: keyId, publicKey: signer.publicKey.export({ type: 'spki', format: 'der' }).toString('base64'),
+				channel: source, ...window }] });
+		const qualification = envelope('release-qualification', signer.privateKey, {
+			version: 1, keyId, channel: source, priorCommit: prior.releaseId, candidateCommit: candidate.releaseId,
+			priorTree: git(source.repoUrl, 'rev-parse', `${prior.releaseId}^{tree}`),
+			candidateTree: git(source.repoUrl, 'rev-parse', `${candidate.releaseId}^{tree}`),
+			profile: 'darwin-disposable-fixture', referenceDigest, compatibilityDigest: releaseMetadataDigest(compatibility),
+			testEvidenceDigest: 'a'.repeat(64), ...window,
+		});
+		git(source.repoUrl, 'notes', '--ref=insrc-release-trust', 'add', '-m', trust, candidate.releaseId);
+		git(source.repoUrl, 'notes', '--ref=insrc-daemon-updates', 'add', '-m', JSON.stringify({
+			keyId, qualification: Buffer.from(qualification).toString('base64'), priorInventory: priorInventory.toString('base64'),
+			candidateInventory: candidateInventory.toString('base64'), compatibility: compatibility.toString('base64'),
+		}), candidate.releaseId);
+		return built;
+	}
+	return { installer, publish, retain: () => retainManagedReleaseVerifier(stateRoot, verifier) };
 }
 
 test('Release provenance, changed bytes and absent legacy declaration', async t => {
@@ -138,7 +219,9 @@ await listenForSupervisorControllers(join(directory, 'control.sock'), { installa
 	const gate = new InstallationMutationGate(stateRoot);
 	await gate.read();
 	const paths = installationPaths(stateRoot);
-	git(source.repoUrl, 'notes', '--ref=insrc-daemon-updates', 'add', '-m', JSON.stringify(qualification), qualification.candidate.releaseId);
+	const authority = await makeTestReleaseAuthority(f);
+	await authority.publish(profile(f.priorCommit), qualification.candidate, f.qualifiedOld);
+	await authority.retain();
 	const graph = open({ path: join(stateRoot, 'graph.lmdb'), noSubdir: true, maxDbs: 32 });
 	graph.openDB({ name: 'meta', keyEncoding: 'ordered-binary' }).putSync('schema_version', 10);
 	await graph.close();
@@ -234,9 +317,8 @@ createServer(connection => {
 `;
 	await writeFile(f.entry, predecessor);
 	await writeFile(join(f.qualifiedOld, 'out/daemon/index.js'), predecessor);
-	const independent = await captureManagedReleasePin(f.qualifiedOld, runtime);
-	const published = { ...qualification, pairs: [{ ...qualification.pairs[0]!, priorFingerprint: independent.fingerprint }] };
-	git(source.repoUrl, 'notes', '--ref=insrc-daemon-updates', 'add', '-m', JSON.stringify(published), qualification.candidate.releaseId);
+	const authority = await makeTestReleaseAuthority(f);
+	const independentlyBuilt = await authority.publish(profile(f.priorCommit), qualification.candidate, f.qualifiedOld);
 	const graphPath = join(stateRoot, 'graph.lmdb');
 	const graph = open({ path: graphPath, noSubdir: true, maxDbs: 32 });
 	const meta = graph.openDB({ name: 'meta', keyEncoding: 'ordered-binary' });
@@ -254,8 +336,7 @@ createServer(connection => {
 	try {
 		const [ready] = await Promise.race([once(old.stdout, 'data'), exited]);
 		assert.match(String(ready), /ready/);
-		const installer = fileURLToPath(new URL('../../../scripts/insrc-daemon-install.sh', import.meta.url));
-		const result = await promisify(execFile)('/bin/bash', [installer, '--target', f.old, '--repo', source.repoUrl, '--branch', source.branch, '-y'],
+		const result = await promisify(execFile)('/bin/bash', [authority.installer, '--target', f.old, '--repo', source.repoUrl, '--branch', source.branch, '-y'],
 			{ env, cwd: f.scratch, timeout: 105_000 });
 		assert.match(result.stdout, /committed/);
 		assert.deepEqual(await exited, [null, 'SIGKILL']);
@@ -274,17 +355,10 @@ createServer(connection => {
 		try { assert.equal(inspect.openDB({ name: 'meta', keyEncoding: 'ordered-binary' }).get('fixture_record'), 'survives'); }
 		finally { await inspect.close(); }
 		assert.equal(Number((await readFile(paths.daemonPid, 'utf8')).trim()) === old.pid, false);
-		const independentlyBuilt = join(f.scratch, 'independent-managed');
-		git(f.scratch, 'clone', '-q', '--', source.repoUrl, independentlyBuilt);
-		await promisify(execFile)('npm', ['ci', '--no-fund', '--no-audit'], { cwd: independentlyBuilt, env, timeout: 20_000 });
-		await promisify(execFile)('npm', ['run', 'build'], { cwd: independentlyBuilt, env, timeout: 20_000 });
-		await writeFile(join(independentlyBuilt, 'out/release-compatibility.json'), JSON.stringify(qualification.candidate) + '\n', { mode: 0o600 });
-		const managedFingerprint = (await captureManagedReleasePin(independentlyBuilt, runtime)).fingerprint;
 		await writeFile(join(source.repoUrl, 'version.txt'), 'subsequent managed update');
 		git(source.repoUrl, 'commit', '-qam', 'subsequent managed update');
 		const next = profile(git(source.repoUrl, 'rev-parse', 'HEAD'));
-		git(source.repoUrl, 'notes', '--ref=insrc-daemon-updates', 'add', '-m', JSON.stringify({ source, candidate: next,
-			pairs: [{ prior: qualification.candidate, candidate: next, priorFingerprint: managedFingerprint }] }), next.releaseId);
+		await authority.publish(qualification.candidate, next, independentlyBuilt);
 		const ack = await rpc<{ launched: boolean; updateId: string }>('daemon.update', {}, () => createConnection(paths.daemonSocket), { timeoutMs: 20_000 });
 		assert.equal(ack.launched, true);
 		const deadline = performance.now() + 80_000;

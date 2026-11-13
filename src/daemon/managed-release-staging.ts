@@ -58,6 +58,7 @@ interface StageOptions {
 	readonly source: { readonly repoUrl: string; readonly branch: string };
 	readonly qualification: ManagedReleaseQualification;
 	readonly prior?: { readonly root: string; readonly runtime: string };
+	readonly checkoutAuthorized?: (checkout: string) => Promise<void>;
 }
 
 function inside(root: string, path: string): boolean {
@@ -230,7 +231,8 @@ export async function stageManagedRelease(options: StageOptions): Promise<{
 	let destination: string | undefined;
 	try {
 		const checkout = join(staging, 'checkout');
-		await managedReleaseGit(staging, ['clone', '--no-local', '--single-branch', '--branch', source.branch, '--', source.repoUrl, checkout]);
+		if (options.checkoutAuthorized !== undefined) await options.checkoutAuthorized(checkout);
+		else await managedReleaseGit(staging, ['clone', '--no-local', '--single-branch', '--branch', source.branch, '--', source.repoUrl, checkout]);
 		if (await cleanCheckoutCommit(checkout) !== candidateProfile.releaseId) {
 			throw new Error('fetched branch does not match the qualified candidate commit');
 		}

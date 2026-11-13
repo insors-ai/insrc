@@ -3,7 +3,6 @@
 import { access, lstat, realpath, rm } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import { basename, join } from 'node:path';
-import { isDeepStrictEqual } from 'node:util';
 import { stopDaemon } from '../cli/services/daemon.js';
 import { captureDaemon, cleanupStoppedDaemon } from '../cli/services/lifecycle.js';
 import { accepted, ManagedDaemonControl, openManagedSupervisorLink } from '../cli/services/managed-daemon-control.js';
@@ -11,15 +10,11 @@ import { readDarwinIncarnation } from '../shared/darwin-lifecycle.js';
 import { SupervisorLifecycleError } from '../shared/daemon-supervisor-protocol.js';
 import { InstallationMutationGate } from '../shared/installation-mutation-gate.js';
 import { rpc } from '../shared/ipc-client.js';
-import { installationPaths, readInstallationSelector, readManagedUpdateInputs, stageManagedInstallation, verifyManagedReleaseRuntime } from '../shared/managed-daemon-installation.js';
-import { completeLegacyMigration, recoverInstalledManagedUpdate } from '../daemon/managed-update-recovery.js';
-import { discoverLegacyLaunch } from '../daemon/legacy-cutover-admission.js';
-import { readQualifiedReleasePairs, releaseDeclaration } from '../daemon/managed-update-launch.js';
-import { requireQualifiedReleasePair } from '../daemon/release-compatibility.js';
-import { readInstalledCommit } from '../daemon/installed-commit.js';
+import { installationPaths, readInstallationSelector, stageManagedInstallation } from '../shared/managed-daemon-installation.js';
+import { recoverInstalledManagedUpdate } from '../daemon/managed-update-recovery.js';
 import { activateFreshManagedDaemon } from '../daemon/fresh-managed-activation.js';
 import { captureManagedReleasePin } from '../daemon/managed-release-staging.js';
-import { admitManagedPreparation, prepareLegacyUpgrade, runManagedPreparation } from '../daemon/managed-update-preparation.js';
+import { admitManagedPreparation, prepareLegacyUpgrade, retainManagedReleaseVerifier, runManagedPreparation } from '../daemon/managed-update-preparation.js';
 import { PATHS } from '../shared/paths.js';
 
 const NOT_MANAGED = 10;
@@ -58,43 +53,6 @@ async function stage(release: string | undefined, releaseId: string | undefined,
 	process.stdout.write('managed daemon descriptor staged\n');
 }
 
-async function migrate([release, releaseId, runtime, descriptor]: readonly string[]): Promise<void> {
-	if (process.platform !== 'darwin' || release === undefined || releaseId === undefined || runtime === undefined
-		|| !/^[a-zA-Z0-9._-]+$/.test(releaseId)) {
-		throw new Error('migrate requires legacy release root, release ID, and runtime');
-	}
-	const root = await realpath(PATHS.insrc);
-	const baseline = await readInstallationSelector(root);
-	if (baseline?.enabled === true) throw new Error('legacy migration requires an unmanaged predecessor');
-	const { candidate, qualifications } = await readManagedUpdateInputs(root);
-	if (baseline !== undefined && !isDeepStrictEqual(candidate, { ...baseline, enabled: true })) throw new Error('candidate differs from the staged release');
-	const prior = { ...candidate, enabled: false, releaseRoot: await realpath(release), releaseId, runtime: await realpath(runtime) };
-	if (prior.releaseRoot === candidate.releaseRoot) throw new Error('legacy and candidate releases require separate roots');
-	const qualified = readQualifiedReleasePairs(qualifications);
-	const declaredCandidate = await releaseDeclaration(candidate.releaseRoot);
-	if (declaredCandidate.releaseId !== candidate.releaseId) throw new Error('candidate declaration differs from the staged release');
-	const declaredPrior = qualified.find(pair => pair.prior.releaseId === prior.releaseId && pair.candidate.releaseId === candidate.releaseId)?.prior;
-	if (declaredPrior === undefined) throw new Error('legacy release has no explicit qualification for the candidate');
-	const compatibility = requireQualifiedReleasePair(declaredPrior, declaredCandidate, qualified);
-	await verifyManagedReleaseRuntime(candidate);
-	const route = await discoverLegacyLaunch(prior, baseline ?? { ...candidate, enabled: false });
-	if (descriptor !== undefined && route.legacy?.job.descriptor !== await realpath(descriptor)) {
-		throw new Error('legacy LaunchAgent does not match the requested descriptor');
-	}
-	const gate = new InstallationMutationGate(root);
-	const reservation = await gate.reserve({
-		kind: 'update', owner: await readDarwinIncarnation(process.pid),
-		predecessor: {
-			priorRelease: prior.releaseId, candidateRelease: candidate.releaseId, priorCommit: readInstalledCommit(prior.releaseRoot),
-			...route, generation: null, pins: { prior, candidate }, ...(baseline === undefined ? { selectorAbsent: true } : {}),
-		},
-	});
-	if (reservation.kind !== 'update') throw new Error('legacy migration did not reserve an update');
-	const outcome = await completeLegacyMigration(gate, reservation, { prior, candidate, compatibility });
-	process.stdout.write(`${outcome.decision}: ${outcome.detail}\n`);
-	if (outcome.decision !== 'committed') process.exitCode = 4;
-}
-
 async function main(command: string): Promise<void> {
 	if (command === 'dispatch') {
 		const [root, name, ...args] = process.argv.slice(3);
@@ -131,17 +89,19 @@ async function main(command: string): Promise<void> {
 			ownedBridge = root;
 		}
 		try {
-			const outcome = await prepareLegacyUpgrade(await realpath(PATHS.insrc), checkout, { repoUrl, branch });
+			if (ownedBridge === undefined) throw new Error('legacy upgrade requires a verified installer bridge');
+			const outcome = await prepareLegacyUpgrade(await realpath(PATHS.insrc), checkout, { repoUrl, branch }, ownedBridge);
 			process.stdout.write(`${outcome.decision}: ${outcome.detail}\n`);
 			if (outcome.decision !== 'committed') process.exitCode = 4;
 		} finally { if (ownedBridge !== undefined) await rm(ownedBridge, { recursive: true, force: true }); }
 		return;
 	}
 	if (command === 'activate-fresh') {
-		const [release, intent] = process.argv.slice(3);
+		const [release, intent, verifier] = process.argv.slice(3);
 		if (release === undefined || (intent !== 'start' && intent !== 'idle')) throw new Error('activate-fresh requires a release and start or idle intent');
 		const stateRoot = await realpath(PATHS.insrc);
 		const pin = await captureManagedReleasePin(await realpath(release), process.execPath);
+		if (verifier !== undefined) await retainManagedReleaseVerifier(stateRoot, verifier);
 		await activateFreshManagedDaemon({
 			installation: { version: 1, stateRoot, releaseRoot: pin.root, releaseId: pin.commit, runtime: pin.runtime,
 				pathEnv: process.env['PATH'] ?? '/usr/bin:/bin', enabled: true },
@@ -173,7 +133,7 @@ async function main(command: string): Promise<void> {
 		return;
 	}
 	if (command === 'stage' || command === 'stage-legacy') return stage(process.argv[3], process.argv[4], command === 'stage-legacy');
-	if (command === 'migrate') return migrate(process.argv.slice(3));
+	if (command === 'migrate') throw new Error('legacy migration requires a verified installer bridge');
 	if (!['start', 'stop', 'restart', 'update', 'update-local', 'status', 'recover'].includes(command)) return legacyStop(command);
 
 	if (command === 'recover' && process.platform === 'darwin'

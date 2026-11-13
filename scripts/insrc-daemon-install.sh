@@ -14,9 +14,9 @@
 #   6. Start the daemon (unless --no-start).
 #   7. Print next-step guidance (MCP registration, interactive TUI).
 #
-# The script is INTENTIONALLY the entire distribution -- there is no
-# code payload. The actual daemon source is pulled from GitHub at
-# install time. Update the install by re-running this script or by
+# The release script includes the trusted macOS upgrade verifier. The
+# daemon source is pulled from GitHub at install time.
+# Update the install by re-running this script or by
 # running $INSTALL_ROOT/scripts/daemon-ctl.sh update.
 #
 # Usage:
@@ -60,6 +60,15 @@ EXPLICIT_BRANCH=0
 START_AFTER_INSTALL=1
 ASSUME_YES=0
 FRESH_MAC_INSTALL=0
+# Filled by release packaging with the verifier and independently provisioned public key.
+INSRC_RELEASE_BOOTSTRAP_B64=''
+
+write_release_verifier() {
+	(
+		unset NODE_OPTIONS NODE_PATH
+		node --input-type=commonjs -e 'const fs=require("node:fs"); fs.writeFileSync(process.argv[1], Buffer.from(process.argv[2],"base64"), {flag:"wx",mode:0o600});' "$1" "$INSRC_RELEASE_BOOTSTRAP_B64"
+	)
+}
 EMBEDDER_CHOICE="auto"     # auto | ollama | onnx
 LOG_FILE=""
 
@@ -214,12 +223,22 @@ if [ "$(uname -s)" = Darwin ] && [ "$FRESH_MAC_INSTALL" -eq 0 ] && [ -e "$INSTAL
 	BRIDGE=$(mktemp -d "${TMPDIR:-/tmp}/insrc-upgrade-XXXXXXXX")
 	trap 'rm -rf "$BRIDGE"' EXIT
 	log "preparing the macOS upgrade bridge beside the installed release"
-	git clone --quiet --branch "$BRANCH" --single-branch -- "$REPO_URL" "$BRIDGE/checkout"
+	[ -n "$INSRC_RELEASE_BOOTSTRAP_B64" ] || die "production release trust root is not provisioned" 4
+	write_release_verifier "$BRIDGE/verifier.mjs"
+	(
+		unset NODE_OPTIONS NODE_PATH
+		node "$BRIDGE/verifier.mjs" authorize "$BRIDGE" "$INSTALL_ROOT" "$REPO_URL" "$BRANCH"
+	) || die "macOS upgrade bridge authorization failed" 4
 	( cd "$BRIDGE/checkout" && CXXFLAGS="${CXXFLAGS:+$CXXFLAGS }-std=c++17" npm ci --no-fund --no-audit && npm run --silent build )
+	(
+		unset NODE_OPTIONS NODE_PATH
+		node "$BRIDGE/verifier.mjs" verify-built "$BRIDGE" "$INSTALL_ROOT" "$REPO_URL" "$BRANCH"
+	) || die "macOS upgrade bridge inventory verification failed" 4
 	[ -f "$BRIDGE/checkout/out/bin/insrc-daemon-control.js" ] || die "selected branch has no macOS upgrade bridge" 4
 	INSTALL_ROOT=$(cd "$INSTALL_ROOT" && pwd -P)
 	cd /
 	# The controller owns cleanup after exec, so no old checkout shell remains during the fence census.
+	unset NODE_OPTIONS NODE_PATH
 	exec node "$BRIDGE/checkout/out/bin/insrc-daemon-control.js" prepare-legacy-upgrade "$INSTALL_ROOT" "$REPO_URL" "$BRANCH" "$BRIDGE"
 fi
 
@@ -462,7 +481,14 @@ if [ "$FRESH_MAC_INSTALL" -eq 1 ]; then
 	if [ "$START_AFTER_INSTALL" -eq 1 ]; then ACTIVATION_INTENT=start; fi
 	HELPER="$INSTALL_ROOT/out/bin/insrc-daemon-control.js"
 	[ -f "$HELPER" ] || die "this daemon release does not include the macOS supervisor controller" 4
-	node "$HELPER" activate-fresh "$INSTALL_ROOT" "$ACTIVATION_INTENT"
+	if [ -n "$INSRC_RELEASE_BOOTSTRAP_B64" ]; then
+		BRIDGE=$(mktemp -d "${TMPDIR:-/tmp}/insrc-verifier-XXXXXXXX")
+		trap 'rm -rf "$BRIDGE"' EXIT
+		write_release_verifier "$BRIDGE/verifier.mjs"
+		node "$HELPER" activate-fresh "$INSTALL_ROOT" "$ACTIVATION_INTENT" "$BRIDGE/verifier.mjs"
+	else
+		node "$HELPER" activate-fresh "$INSTALL_ROOT" "$ACTIVATION_INTENT"
+	fi
 	rm -f "$FRESH_MARKER"
 elif [ "$START_AFTER_INSTALL" -eq 1 ] && [ -x "$CTL" ]; then
 	log "starting daemon ..."

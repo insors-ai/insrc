@@ -1,9 +1,10 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 
-import { mkdtemp, readFile, realpath, rm } from 'node:fs/promises';
+import { lstat, mkdir, mkdtemp, open, readFile, realpath, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { isDeepStrictEqual } from 'node:util';
+import { execFile } from 'node:child_process';
+import { isDeepStrictEqual, promisify } from 'node:util';
 import { accepted, openManagedSupervisorLink } from '../cli/services/managed-daemon-control.js';
 import { readDarwinIncarnation } from '../shared/darwin-lifecycle.js';
 import { runFileIdentity } from '../shared/daemon-run-files.js';
@@ -15,59 +16,119 @@ import { checkUpdateSource, readUpdateSource } from '../shared/update-source.js'
 import type { UpdateSource } from '../shared/update-source.js';
 import { discoverLegacyLaunch } from './legacy-cutover-admission.js';
 import { managedReleaseGit as git, stageManagedRelease, verifyStagedReleasePin } from './managed-release-staging.js';
-import type { ManagedReleaseQualification } from './managed-release-staging.js';
+import { readReleaseQualificationReceipt, readReleaseTrustFloor, releaseMetadataDigest } from '../shared/managed-release-trust.js';
 import { completeLegacyMigration, completeManagedUpdate } from './managed-update-recovery.js';
 import { readReleaseCompatibility } from './release-compatibility.js';
 
 type Update = Extract<MutationReservation, { kind: 'update' }>;
 type Source = { readonly repoUrl: string; readonly branch: string };
-const NOTES = 'refs/notes/insrc-daemon-updates';
+const exec = promisify(execFile);
+const VERIFIER = 'release-verifier.mjs';
+
+function installedVerifier(stateRoot: string): string {
+	return join(installationPaths(stateRoot).directory, VERIFIER);
+}
+
+/** Retain the verifier supplied by the current installer for subsequent managed updates. */
+export async function retainManagedReleaseVerifier(stateRoot: string, verifier: string): Promise<void> {
+	const directory = installationPaths(stateRoot).directory;
+	await mkdir(directory, { recursive: true, mode: 0o700 });
+	const parent = await lstat(directory);
+	if (!parent.isDirectory() || parent.uid !== process.getuid?.() || (parent.mode & 0o077) !== 0) {
+		throw new Error('release verifier directory is not private and owned');
+	}
+	const input = await lstat(verifier);
+	if (!input.isFile() || input.uid !== process.getuid?.() || input.nlink !== 1 || (input.mode & 0o077) !== 0
+		|| input.size > 1024 * 1024) throw new Error('installer release verifier is not a bounded private file');
+	const bytes = await readFile(verifier);
+	const path = installedVerifier(stateRoot);
+	const output = await open(path, 'wx', 0o600).catch((error: NodeJS.ErrnoException) => {
+		if (error.code !== 'EEXIST') throw error;
+	});
+	if (output === undefined) {
+		const existing = await lstat(path);
+		if (!existing.isFile() || existing.uid !== input.uid || existing.nlink !== 1 || (existing.mode & 0o077) !== 0
+			|| existing.size !== bytes.length || !(await readFile(path)).equals(bytes)) {
+			throw new Error('existing release verifier differs from the installer');
+		}
+		return;
+	}
+	try {
+		await output.writeFile(bytes);
+		await output.sync();
+	} finally { await output.close(); }
+}
 
 async function sourceFor(stateRoot: string, releaseRoot: string, override?: UpdateSource): Promise<Source> {
 	const config = readUpdateSource(join(stateRoot, 'config.json'));
 	const repoUrl = override?.repoUrl || config.repoUrl || await git(releaseRoot, ['remote', 'get-url', 'origin']);
-	const branch = override?.branch || config.branch || await git(releaseRoot, ['symbolic-ref', '--short', 'HEAD']);
+	const branch = override?.branch || config.branch || await git(releaseRoot, ['config', '--get', 'insrc.releaseBranch']).catch(() =>
+		git(releaseRoot, ['symbolic-ref', '--short', 'HEAD']));
 	checkUpdateSource({ repoUrl, branch });
 	return { repoUrl, branch };
 }
 
-/** Read the release authority's Git note for the exact configured origin head. */
-async function originQualification(source: Source): Promise<ManagedReleaseQualification> {
-	const staging = await mkdtemp(join(tmpdir(), 'insrc-release-qualification-'));
+async function originQualification(prior: ManagedInstallation, source: Source, gate: InstallationMutationGate,
+	verifier: string, checkout?: string,
+) {
+	const info = await lstat(verifier);
+	if (!info.isFile() || info.uid !== process.getuid?.() || info.nlink !== 1 || (info.mode & 0o077) !== 0
+		|| info.size > 1024 * 1024) throw new Error('installed release verifier is not a bounded private file');
+	const staging = await realpath(await mkdtemp(join(tmpdir(), 'insrc-release-qualification-')));
 	try {
-		await git(staging, ['init', '--quiet']);
-		await git(staging, ['fetch', '--quiet', '--depth=1', '--no-tags', '--', source.repoUrl,
-			`refs/heads/${source.branch}:refs/insrc/candidate`, `${NOTES}:${NOTES}`]);
-		const commit = await git(staging, ['rev-parse', '--verify', 'refs/insrc/candidate^{commit}']);
-		const text = await git(staging, ['notes', `--ref=${NOTES}`, 'show', commit]);
-		const note = JSON.parse(text) as Partial<ManagedReleaseQualification>;
-		if (note?.source?.repoUrl !== source.repoUrl || note.source?.branch !== source.branch || !Array.isArray(note.pairs)) {
-			throw new Error('release qualification does not name the configured source');
-		}
-		const candidate = readReleaseCompatibility(note.candidate);
-		if (candidate.releaseId !== commit) throw new Error('release qualification does not pin the configured head');
-		const pairs = note.pairs.map(pair => {
-			if (typeof pair.priorFingerprint !== 'string' || !/^[a-f0-9]{64}$/.test(pair.priorFingerprint)) {
-				throw new Error('release qualification is missing an independent prior fingerprint');
-			}
-			return { prior: readReleaseCompatibility(pair.prior), candidate: readReleaseCompatibility(pair.candidate),
-				priorFingerprint: pair.priorFingerprint };
+		const { NODE_OPTIONS: _options, NODE_PATH: _modulePath, ...env } = process.env;
+		const result = await exec(prior.runtime, [verifier, 'qualification', staging, prior.releaseRoot, source.repoUrl,
+			source.branch, ...(checkout === undefined ? [] : [checkout])], {
+			env, timeout: 180_000, maxBuffer: 48 * 1024 * 1024,
+		}).finally(async () => {
+			const observed = await readFile(join(staging, 'observed-trust.json'), 'utf8').catch((error: NodeJS.ErrnoException) => {
+				if (error.code !== 'ENOENT') throw error;
+			});
+			if (observed !== undefined) await gate.observeReleaseTrust(readReleaseTrustFloor(JSON.parse(observed)));
 		});
-		return { source, candidate, pairs };
+		const output = JSON.parse(result.stdout) as { qualification: unknown; proof: {
+			priorInventory: string; candidateInventory: string; compatibility: string;
+		} };
+		const receipt = readReleaseQualificationReceipt(output.qualification);
+		const bytes = Buffer.from(output.proof.compatibility, 'base64');
+		const pair = JSON.parse(bytes.toString('utf8')) as { prior: unknown; candidate: unknown };
+		const priorProfile = readReleaseCompatibility(pair.prior);
+		const candidate = readReleaseCompatibility(pair.candidate);
+		if (receipt.priorCommit !== priorProfile.releaseId || receipt.candidateCommit !== candidate.releaseId
+			|| releaseMetadataDigest(Buffer.from(JSON.stringify({ prior: priorProfile, candidate }))) !== receipt.compatibilityDigest) {
+			throw new Error('verified writable formats do not match the ordered release pair');
+		}
+		const inventory = (value: string) => {
+			const bytes = Buffer.from(value, 'base64');
+			return { bytes, digest: releaseMetadataDigest(bytes) };
+		};
+		return { receipt, qualification: { source, candidate, pairs: [{ prior: priorProfile, candidate,
+			priorInventory: inventory(output.proof.priorInventory), candidateInventory: inventory(output.proof.candidateInventory) }] } };
 	} finally { await rm(staging, { recursive: true, force: true }); }
 }
 
-async function stageRelease(prior: ManagedInstallation, runtime: string, override?: UpdateSource) {
+async function stageRelease(prior: ManagedInstallation, runtime: string, gate: InstallationMutationGate,
+	verifier: string, override?: UpdateSource,
+) {
 	const source = await sourceFor(prior.stateRoot, prior.releaseRoot, override);
-	const qualification = await originQualification(source);
-	const staged = await stageManagedRelease({ stateRoot: prior.stateRoot, runtime, source, qualification,
-		prior: { root: prior.releaseRoot, runtime: prior.runtime } });
+	const initial = await originQualification(prior, source, gate, verifier);
+	const verifyUnchanged = async (checkout?: string) => {
+		const { receipt } = await originQualification(prior, source, gate, verifier, checkout);
+		if (receipt.qualificationDigest !== initial.receipt.qualificationDigest) {
+			throw new Error('release qualification changed during preparation');
+		}
+		return receipt;
+	};
+	const staged = await stageManagedRelease({ stateRoot: prior.stateRoot, runtime, source, qualification: initial.qualification,
+		prior: { root: prior.releaseRoot, runtime: prior.runtime },
+		checkoutAuthorized: async checkout => { await verifyUnchanged(checkout); } });
 	if (staged.prior === undefined || staged.compatibility === undefined) throw new Error('prior release did not qualify for cutover');
 	await verifyStagedReleasePin(staged.prior);
 	await verifyStagedReleasePin(staged.candidate);
-	return { prior: staged.prior, compatibility: staged.compatibility,
-		candidate: { ...prior, enabled: true, releaseRoot: staged.candidate.root,
-			releaseId: staged.candidate.commit, runtime: staged.candidate.runtime } };
+	return { prior: staged.prior, compatibility: staged.compatibility, releaseQualification: {
+		qualification: await verifyUnchanged(), priorFingerprint: staged.prior.fingerprint, candidateFingerprint: staged.candidate.fingerprint,
+	}, candidate: { ...prior, enabled: true, releaseRoot: staged.candidate.root,
+		releaseId: staged.candidate.commit, runtime: staged.candidate.runtime } };
 }
 
 /** Admission uses only the installed selector and authenticated supervisor state. */
@@ -100,7 +161,7 @@ export async function runManagedPreparation(gate: InstallationMutationGate, upda
 	let prepared: Awaited<ReturnType<typeof stageRelease>>;
 	try {
 		await gate.admit(update);
-		prepared = await stageRelease(prior, prior.runtime, override);
+		prepared = await stageRelease(prior, prior.runtime, gate, installedVerifier(prior.stateRoot), override);
 	} catch (error) {
 		const detail = `Update preparation failed: ${(error instanceof Error ? error.message : String(error)).slice(0, 900)}`;
 		await gate.publishOutcome(update, 'rolled-back', detail);
@@ -111,11 +172,12 @@ export async function runManagedPreparation(gate: InstallationMutationGate, upda
 		candidateRelease: prepared.candidate.releaseId, wasRunning: update.predecessor.wasRunning,
 		...(update.predecessor.generation === undefined ? {} : { generation: update.predecessor.generation }),
 		pins: { prior, candidate: prepared.candidate } });
-	return completeManagedUpdate(gate, qualified, { prior, candidate: prepared.candidate, compatibility: prepared.compatibility });
+	return completeManagedUpdate(gate, qualified, { prior, candidate: prepared.candidate, compatibility: prepared.compatibility,
+		releaseQualification: prepared.releaseQualification });
 }
 
 /** A current installer runs this bridge from outside the incumbent checkout. */
-export async function prepareLegacyUpgrade(root: string, checkout: string, override: UpdateSource) {
+export async function prepareLegacyUpgrade(root: string, checkout: string, override: UpdateSource, bootstrap: string) {
 	const baseline = await readInstallationSelector(root);
 	if (baseline?.enabled) throw new Error('legacy upgrade requires an unmanaged installation');
 	const pidFile = installationPaths(root).daemonPid;
@@ -125,16 +187,19 @@ export async function prepareLegacyUpgrade(root: string, checkout: string, overr
 	const priorCommit = await git(priorRoot, ['rev-parse', '--verify', 'HEAD^{commit}']);
 	const prior: ManagedInstallation = { version: 1, stateRoot: root, releaseRoot: priorRoot, releaseId: priorCommit,
 		runtime, enabled: false, pathEnv: process.env['PATH'] ?? '/usr/bin:/bin' };
-	const prepared = await stageRelease(prior, process.execPath, override);
+	const gate = new InstallationMutationGate(root);
+	const verifier = join(bootstrap, 'verifier.mjs');
+	const prepared = await stageRelease(prior, process.execPath, gate, verifier, override);
+	await retainManagedReleaseVerifier(root, verifier);
 	if (baseline !== undefined && !isDeepStrictEqual(baseline, { ...prepared.candidate, enabled: false })) {
 		throw new Error('a different provisional installation owns the selector');
 	}
 	const route = await discoverLegacyLaunch(prior, baseline ?? { ...prepared.candidate, enabled: false });
-	const gate = new InstallationMutationGate(root);
 	const reservation = await gate.reserve({ kind: 'update', owner: await readDarwinIncarnation(process.pid), predecessor: {
 		...route, priorRelease: prior.releaseId, candidateRelease: prepared.candidate.releaseId, priorCommit,
 		generation: null, pins: { prior, candidate: prepared.candidate }, ...(baseline === undefined ? { selectorAbsent: true } : {}),
 	} });
 	if (reservation.kind !== 'update') throw new Error('expected legacy upgrade reservation');
-	return completeLegacyMigration(gate, reservation, { prior, candidate: prepared.candidate, compatibility: prepared.compatibility });
+	return completeLegacyMigration(gate, reservation, { prior, candidate: prepared.candidate, compatibility: prepared.compatibility,
+		releaseQualification: prepared.releaseQualification });
 }

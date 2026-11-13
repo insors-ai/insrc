@@ -63,7 +63,9 @@ class DaemonLifecycleCommandRunnerTest {
         val matrixHome = System.getenv("INSRC_ROUTE_MATRIX_HOME")
         if (matrixHome != null) {
             val home = Path.of(matrixHome)
-            val locator = DefaultDaemonScriptLocator(homeDir = home, macOS = true, daemonRootOverride = null)
+            val fixture = Path.of(System.getenv("INSRC_ROUTE_MATRIX_INSTALLER"))
+            val locator = DefaultDaemonScriptLocator(homeDir = home, macOS = true, daemonRootOverride = null,
+                bundledInstaller = { Files.newInputStream(fixture) })
             val env = System.getenv() + mapOf(
                 "HOME" to matrixHome,
                 "PATH" to System.getenv("INSRC_ROUTE_MATRIX_PATH"),

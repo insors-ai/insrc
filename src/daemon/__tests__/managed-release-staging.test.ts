@@ -337,7 +337,10 @@ createServer(connection => {
 		const [ready] = await Promise.race([once(old.stdout, 'data'), exited]);
 		assert.match(String(ready), /ready/);
 		const result = await promisify(execFile)('/bin/bash', [authority.installer, '--target', f.old, '--repo', source.repoUrl, '--branch', source.branch, '-y'],
-			{ env, cwd: f.scratch, timeout: 105_000 });
+			{ env, cwd: f.scratch, timeout: 105_000 }).catch((error: Error & { stdout?: string }) => {
+			t.diagnostic(error.stdout ?? '');
+			throw error;
+		});
 		assert.match(result.stdout, /committed/);
 		assert.deepEqual(await exited, [null, 'SIGKILL']);
 		const selected = await readInstallationSelector(stateRoot);

@@ -190,6 +190,14 @@ export interface ChatPanelHostDeps {
    * vscode module. Absent -> no attach button, no chip row, and the attachment messages are ignored.
    */
   readonly attachments?: ChatAttachmentDeps | undefined;
+  /**
+   * Story E202611134642d49a:S001 t4: the scratchpad menu in the chat status bar. When present,
+   * the webview renders the icon-only #insrc-scratch button next to #insrc-attach, posts
+   * 'scratch-open-menu' on click and renders the host's 'scratch-list' pushes into
+   * #insrc-scratchmenu. Absent -> no button, no menu, and the scratch messages are ignored
+   * by the webview (the host switch still refuses non-string payload fields).
+   */
+  readonly scratchpads?: { readonly enabled: true } | undefined;
   /** Epic babd84c6e2fb480a Story S001: opens a clicked link or code reference. Absent -> the clicks are ignored. */
   readonly links?: LinkOpener | undefined;
   /**
@@ -483,6 +491,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // chat switch lose nothing (a window reload does). `clientId` is the webview's own name for a
   // pasted image, echoed back so it can show the thumbnail it holds.
   const att = deps.attachments;
+  // Story E202611134642d49a:S001 t4: the scratchpad button is always available in the status
+  // bar (the store lives in the extension host), but the seam is injectable so tests without a
+  // scratch setup see no button — the same contract as the attach seam.
+  const scratchOn = deps.scratchpads !== undefined;
   const links = deps.links;
   interface PendingAttachment {
     readonly ref: AttachmentRef;
@@ -2278,6 +2290,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // Run-config controls in the status bar's bottom-right corner: the provider·model
       // button + effort gauge button, and their popups opening UPWARD from there.
       `.statusbar .runctl{margin-left:auto;display:inline-flex;align-items:center;gap:8px;position:relative;}` +
+      // Story E202611134642d49a:S001 t4: the scratchpad button in the status bar wraps in a
+      // positioned chip so its menu anchors to it; the menu opens UPWARD from the status bar
+      // (the .chatmenu default opens downward, which is right for the top chrome only).
+      (scratchOn
+        ? `.scratchchip{position:relative;display:inline-flex;align-items:center;}` +
+          `#insrc-scratchmenu{bottom:calc(100% + 8px);top:auto;right:auto;left:0;}`
+        : '') +
       `.runbtn,.gaugebtn{display:inline-flex;align-items:center;gap:6px;height:24px;background:var(--dropdown-bg);border:1px solid var(--dropdown-border);border-radius:6px;padding:0 8px;cursor:pointer;color:var(--fg);font-family:var(--font);font-size:12px;font-weight:500;}` +
       `.runbtn:hover,.gaugebtn:hover{color:var(--accent);}` +
       `.runbtn:focus-visible,.gaugebtn:focus-visible{outline:1px solid var(--focus);outline-offset:1px;}` +
@@ -2485,6 +2504,22 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         `attBar.hidden=items.length===0&&!m.error;}` +
         `if(attBtn)attBtn.addEventListener('click',function(){vs.postMessage({v:1,payload:{type:'pick-attachments'}});});` +
         `reg.onAttachmentOpen(function(id){vs.postMessage({v:1,payload:{type:'open-attachment',attachmentId:id}});});`;
+    // Story E202611134642d49a:S001 t4: the scratchpad menu. The button posts scratch-open-menu;
+    // the host answers with a 'scratch-list' push (recent entries, or an error). Rows post
+    // scratch-open {id} / scratch-new / scratch-browse. Empty and error states render as hint
+    // rows, so the menu is never blank. Rendering reuses mitem/chatMenuKey/closePops.
+    const scratchScript = !scratchOn
+      ? ''
+      : `var scratchBtn=document.getElementById('insrc-scratch'),scratchMenu=document.getElementById('insrc-scratchmenu'),scratchList=null;` +
+        `function renderScratchMenu(m){scratchMenu.innerHTML='';var err=typeof m.error==='string'?m.error:'';if(err){scratchMenu.appendChild(mitem(false,err.indexOf('scratchpads unavailable:')===0?err:'scratchpads unavailable: '+err,undefined,undefined,undefined,true,''));return;}var es=Array.isArray(m.entries)?m.entries:[];` +
+        `if(es.length===0){scratchMenu.appendChild(mitem(false,'no scratchpads yet — use “New scratchpad” below',undefined,undefined,undefined,true,''));}` +
+        `es.forEach(function(e){if(e&&typeof e.id==='string'){var row=mitem(false,String(e.name!==undefined?e.name:e.id),undefined,undefined,undefined,false,'');row.setAttribute('data-id',e.id);row.onclick=function(){vs.postMessage({v:1,payload:{type:'scratch-open',id:e.id}});};scratchMenu.appendChild(row);}});` +
+        `var newRow=mitem(false,'New scratchpad',undefined,undefined,undefined,false,'');newRow.onclick=function(){vs.postMessage({v:1,payload:{type:'scratch-new'}});};scratchMenu.appendChild(newRow);` +
+        `var brRow=mitem(false,'Browse all',undefined,undefined,undefined,false,'');brRow.onclick=function(){vs.postMessage({v:1,payload:{type:'scratch-browse'}});};scratchMenu.appendChild(brRow);}` +
+        `if(scratchBtn)scratchBtn.addEventListener('click',function(e){if(e&&e.stopPropagation)e.stopPropagation();vs.postMessage({v:1,payload:{type:'scratch-open-menu'}});toggleChatMenu(scratchBtn,scratchMenu,function(){renderScratchMenu(scratchList||{entries:[]});});});` +
+        `if(scratchBtn)scratchBtn.addEventListener('keydown',function(e){triggerKey(scratchBtn,scratchMenu,function(){renderScratchMenu(scratchList||{entries:[]});},e);});` +
+        `if(scratchMenu)scratchMenu.addEventListener('click',function(e){if(e&&e.stopPropagation)e.stopPropagation();});` +
+        `if(scratchMenu)scratchMenu.addEventListener('keydown',function(e){chatMenuKey(scratchBtn,scratchMenu,e);});`;
     // A paste holding images attaches them and is prevented; any other paste is left alone.
     const pasteScript = !attachOn
       ? ''
@@ -2562,7 +2597,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `function catalogHint(){return catalogStatus==='loading'?'Loading model catalog…':catalogStatus==='unavailable'?'Model catalog unavailable. Reopen to retry.':'';}` +
       `function requestCatalog(){vs.postMessage({v:1,payload:{type:'open-run-picker'}});}` +
       `function updatePickers(){if(rp&&rp.classList.contains('open'))renderProvPane();if(ep&&ep.classList.contains('open'))renderEffortPop();}` +
-      `function closePops(){if(rp)rp.classList.remove('open');if(ep)ep.classList.remove('open');if(rb)rb.setAttribute('aria-expanded','false');if(gb)gb.setAttribute('aria-expanded','false');if(actMenu)actMenu.classList.remove('open');if(histMenu)histMenu.classList.remove('open');if(act)act.setAttribute('aria-expanded','false');if(hs)hs.setAttribute('aria-expanded','false');chatFocused=null;}` +
+      `function closePops(){if(rp)rp.classList.remove('open');if(ep)ep.classList.remove('open');if(rb)rb.setAttribute('aria-expanded','false');if(gb)gb.setAttribute('aria-expanded','false');if(actMenu)actMenu.classList.remove('open');if(histMenu)histMenu.classList.remove('open');if(act)act.setAttribute('aria-expanded','false');if(hs)hs.setAttribute('aria-expanded','false');${scratchOn ? 'if(scratchMenu)scratchMenu.classList.remove(\'open\');if(scratchBtn)scratchBtn.setAttribute(\'aria-expanded\',\'false\');' : ''}chatFocused=null;}` +
       `function mitem(sel,label,sub,onclick,onhover,dis,icon){var d=document.createElement('div');d.className='item'+(sel?' sel':'')+(dis?' dis':'');d.setAttribute('role','menuitem');if(dis)d.setAttribute('aria-disabled','true');d.innerHTML='<span class="pico">'+(icon||'')+'</span><span class="chk">✓</span><span class="lbl"></span>'+(sub?'<span class="sub"></span>':'');d.querySelector('.lbl').textContent=label;if(sub)d.querySelector('.sub').textContent=sub;if(!dis){if(onhover)d.onmouseenter=onhover;d.onclick=onclick;}return d;}` +
       // Story 546198e11c24c1e3/s1: the chat dropdowns. The two triggers render from selected-id
       // membership (histChatFor/activeChatFor return the entry or undefined); the menus reuse mitem's
@@ -2600,6 +2635,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `if(histMenu)histMenu.addEventListener('click',function(e){if(e&&e.stopPropagation)e.stopPropagation();});` +
       `if(actMenu)actMenu.addEventListener('keydown',function(e){chatMenuKey(act,actMenu,e);});` +
       `if(histMenu)histMenu.addEventListener('keydown',function(e){chatMenuKey(hs,histMenu,e);});` +
+      // Story E202611134642d49a:S001 t4: the scratchpad menu (declared after the shared menu
+      // helpers it reuses: mitem/closePops/toggleChatMenu/triggerKey/chatMenuKey).
+      scratchScript +
       `function renderProvPane(hover){var pp=document.getElementById('insrc-provpane');pp.innerHTML='<div class="pane-h">Provider</div>';var s=rstate();document.getElementById('insrc-popfoot').textContent=catalogHint()||(started?'Provider is fixed once a chat has started · model and effort apply to the next turns.':'Provider change starts a new chat · model change applies to the next turns.');catalog.forEach(function(f){pp.appendChild(mitem(f.id===s.provider,f.label,String(f.models.length),function(){if(f.id!==s.provider){vs.postMessage({v:1,payload:{type:'new-chat',provider:f.id,model:''}});}},function(){renderModelPane(f);},started&&f.id!==s.provider,pico(f.id)));});renderModelPane(rprov(hover||s.provider));}` +
       `function renderModelPane(f){if(!f)return;var mp=document.getElementById('insrc-modelpane');mp.innerHTML='<div class="pane-h"></div>';mp.querySelector('.pane-h').textContent=f.label;var s=rstate();mp.appendChild(mitem(s.model==='', 'default','CLI default',function(){pickModel(f,'');}));f.models.forEach(function(m){mp.appendChild(mitem(f.id===s.provider&&rmodel(s.provider,s.model)===m,m.name,m.alias||m.id,function(){pickModel(f,m.id);}));});}` +
       `function pickModel(f,id){var s=rstate();if(f.id!==s.provider){vs.postMessage({v:1,payload:{type:'new-chat',provider:f.id,model:id,effort:s.effort}});}else{vs.postMessage({v:1,payload:{type:'set-run-config',model:id}});closePops();}}` +
@@ -2715,6 +2753,18 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // dropdown; each row carries a status dot (red/yellow/green) + the provider icon + title; the
       // chip glyph shows the most urgent status. reconcile() settles BOTH triggers against cur.
       `else if(m.type==='active-list'){actEntries=m.chats||[];var urg='';var rank={'waiting-input':3,working:2,done:1};(m.chats||[]).forEach(function(c){if((rank[c.status]||0)>(rank[urg]||0))urg=c.status;});if(actChip&&actChip.dataset)actChip.dataset.urgent=urg;reconcile();}` +
+      // Story E202611134642d49a:S001 t4: the host's answer to scratch-open-menu — cache the
+      // list and re-render the menu if it is open (a closed menu renders on its next open).
+      (scratchOn ? `else if(m.type==='scratch-list'){scratchList=m;if(scratchMenu&&scratchMenu.classList.contains('open'))renderScratchMenu(m);}` : '') +
+      // Story E202611134642d49a:S001 t4: a scratchpad's Send-to-chat. Deterministic insertion
+      // into #insrc-input ONLY: splice at the caret, replacing an active range; when the caret
+      // is at the end of a non-empty draft, append with one separating newline. Never touches
+      // #insrc-prompt and never posts submit/cancel — the user decides when to send.
+      (scratchOn ? `else if(m.type==='insert-into-input'){if(typeof m.text!=='string')return;var v=m.text;var s=typeof box.selectionStart==='number'?box.selectionStart:box.value.length,e=typeof box.selectionEnd==='number'?box.selectionEnd:s;` +
+        `if(e>s){box.value=box.value.slice(0,s)+v+box.value.slice(e);box.selectionStart=box.selectionEnd=s+v.length;}` +
+        `else if(s>=box.value.length&&box.value!==''){box.value=box.value+'\\n'+v;box.selectionStart=box.selectionEnd=box.value.length;}` +
+        `else{box.value=box.value.slice(0,s)+v+box.value.slice(s);box.selectionStart=box.selectionEnd=s+v.length;}` +
+        `box.focus();}` : '') +
       `});` +
       `const box=document.getElementById('insrc-input');` +
       // S002 ac2: submit converges on ONE path (Enter and the leading '>' prompt control); it
@@ -2796,6 +2846,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         ? `<button id="insrc-attach" type="button" class="attachbtn" aria-label="attach files" title="attach files">` +
           `<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M13.2 7.3 8 12.5a3.2 3.2 0 0 1-4.5-4.5l5.6-5.6a2.1 2.1 0 0 1 3 3L6.6 10.9a1.1 1.1 0 0 1-1.5-1.5l4.8-4.8"/></svg>` +
           `</button>`
+        : '') +
+      // Story E202611134642d49a:S001 t4: the sibling icon-only scratchpad button, directly next
+      // to the attach button, with its upward-opening menu (the .scratchchip wrapper anchors it).
+      (scratchOn
+        ? `<span class="scratchchip"><button id="insrc-scratch" type="button" class="attachbtn" aria-haspopup="menu" aria-expanded="false" aria-label="scratchpads" title="scratchpads">` +
+          `<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M4 1.5h6l3 3V14a.5.5 0 0 1-.5.5h-8A.5.5 0 0 1 4 14V2a.5.5 0 0 1 .5-.5Z"/><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" d="M10 1.5V5h3.5"/><path fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" d="M6 8h4M6 10.5h4M6 13h2.5"/></svg>` +
+          `</button><div id="insrc-scratchmenu" class="popup chatmenu" role="menu" aria-label="scratchpads"></div></span>`
         : '') +
       `<span class="seg" id="insrc-modeseg">edits <select id="insrc-mode" class="segsel ${provCls}" aria-label="mode"><option value="manual" disabled>Manual</option><option value="edit-auto" disabled>Edit Automatically</option><option value="auto" selected>Auto</option></select></span>` +
       // Run-config controls, bottom-right corner of the status bar. The popups open upward.

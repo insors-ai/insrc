@@ -32,6 +32,8 @@ import { DatabaseSync } from 'node:sqlite';
 import { appendFileSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join as pathJoin } from 'node:path';
+import { fire, allOf, type BodyStub } from './fake-dom.js';
+import { runShell, ofType, composer, type Shell, type Composer } from './chat-shell.test.js';
 
 /** rmSync that tolerates a still-running observer pass recreating a lock file mid-teardown. */
 async function rmrf(p: string): Promise<void> {
@@ -8525,4 +8527,149 @@ test('host: scratchpad messages with valid payloads are accepted without throwin
   assert.match(warns.join('\n'), /non-string id/);
   assert.match(warns.join('\n'), /non-string text/);
   assert.equal(fc.posted.length, before, 'malformed payloads post nothing either');
+});
+
+// ---- Story E202611134642d49a:S001 t4: chat webview scratchpad button, menu, insert-into-input ----
+
+test('chat-panel.test.ts: #insrc-scratch sibling button with class attachbtn + inline SVG + title exists next to #insrc-attach (ac2, ac5)', () => {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+    attachments: { store: createAttachmentStore({ root: '/att', fs: fakeAttachmentFs().fs }), pickFiles: async () => [], open: () => {} },
+    scratchpads: { enabled: true },
+  });
+  host.open();
+  const html = fc.html();
+  assert.ok(html.includes('id="insrc-attach"'), 'the attach button is present');
+  const attachIdx = html.indexOf('id="insrc-attach"');
+  const scratchIdx = html.indexOf('id="insrc-scratch"');
+  assert.ok(scratchIdx > attachIdx, 'the scratch button comes after the attach button');
+  assert.ok(scratchIdx - attachIdx < 700, 'the scratch button is directly next to the attach button');
+  const button = /<button id="insrc-scratch" type="button" class="attachbtn" aria-haspopup="menu" aria-expanded="false" aria-label="scratchpads" title="scratchpads">(.*?)<\/button>/.exec(html);
+  assert.ok(button, 'the scratch button matches the icon-only attachbtn shape');
+  assert.match(button![1]!, /^<svg [^>]*aria-hidden="true"[^>]*>.*<\/svg>$/s, 'the button carries an inline SVG');
+  assert.equal(button![1]!.replace(/<[^>]*>/g, '').trim(), '', 'no visible text content on the button');
+  assert.ok(html.includes('<div id="insrc-scratchmenu" class="popup chatmenu" role="menu" aria-label="scratchpads"></div>'), 'the scratch menu reuses .popup.chatmenu');
+  const fc2 = fakeChannel();
+  createChatPanelHost({ createPanel: () => fc2.channel, providers: registry({ claude: scriptedAdapter([]) }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' }).open();
+  assert.doesNotMatch(fc2.html(), /insrc-scratch/, 'without the seam there is no scratch button');
+});
+
+test('chat-panel.test.ts: #insrc-scratchmenu .popup.chatmenu renders recent items + New scratchpad + Browse all from a scratch-list push, incl. empty-state hint and error row (ac2)', () => {
+  const v = runShell({ hostDeps: { scratchpads: { enabled: true } } });
+  const menu = v.el('insrc-scratchmenu');
+  // A scratch-list push caches the list; the menu re-renders when open.
+  fire(v.el('insrc-scratch'), 'click');
+  assert.deepEqual(ofType(v, 'scratch-open-menu'), [{ type: 'scratch-open-menu' }], 'the button click posts scratch-open-menu (ac3)');
+  assert.ok(menu.listeners['click'] !== undefined, 'the menu swallows its own clicks');
+  v.msg({ type: 'scratch-list', entries: [
+    { id: '20260113-083000-pad.md', name: '20260113-083000-pad', mtime: 300, size: 12 },
+    { id: '20260113-082000-other.md', name: '20260113-082000-other', mtime: 200, size: 5 },
+  ] });
+  const lblOf = (c: BodyStub): string => {
+    const lbl = c.querySelector('.lbl') as BodyStub | null;
+    return lbl?.textContent ?? '';
+  };
+  const labels = (): string[] => menu.children.map(lblOf);
+  assert.deepEqual(labels(), ['20260113-083000-pad', '20260113-082000-other', 'New scratchpad', 'Browse all'], 'recent entries then the two action rows');
+  // Row clicks post the right intents (fire the row's own onclick, as chatMenuKey does).
+  const clickRow = (c: BodyStub): void => { const fn = (c as unknown as { onclick?: (e?: unknown) => void }).onclick; assert.equal(typeof fn, 'function', 'the row has a click handler'); fn!(); };
+  const rows = menu.children.filter((c) => c.attrs['aria-disabled'] !== 'true');
+  clickRow(rows[0]!);
+  assert.deepEqual(ofType(v, 'scratch-open'), [{ type: 'scratch-open', id: '20260113-083000-pad.md' }]);
+  clickRow(rows[2]!);
+  assert.deepEqual(ofType(v, 'scratch-new'), [{ type: 'scratch-new' }], 'New scratchpad posts the titleless intent');
+  clickRow(rows[3]!);
+  assert.deepEqual(ofType(v, 'scratch-browse'), [{ type: 'scratch-browse' }]);
+  // Empty list: the hint row, then the two actions.
+  v.msg({ type: 'scratch-list', entries: [] });
+  assert.equal(labels().length, 3);
+  assert.match(labels()[0]!, /no scratchpads yet/i, 'empty-state hint row');
+  // Error list: one disabled row naming the failure.
+  v.msg({ type: 'scratch-list', entries: [], error: 'scratchpads unavailable: EACCES' });
+  assert.deepEqual(labels(), ['scratchpads unavailable: EACCES'], 'error row replaces the entries');
+  assert.equal(menu.children[0]!.attrs['aria-disabled'], 'true', 'the error row is disabled');
+  // Second click closed the menu (toggle); a later push while closed only caches the list.
+  fire(v.el('insrc-scratch'), 'click');
+  assert.ok(!(menu.children.length === 0), 'rows stay while closed');
+  v.msg({ type: 'scratch-list', entries: [{ id: '20260113-090000-late.md', name: '20260113-090000-late', mtime: 400, size: 1 }] });
+  assert.deepEqual(labels(), ['scratchpads unavailable: EACCES'], 'a push while closed does not re-render');
+  fire(v.el('insrc-scratch'), 'click');
+  assert.deepEqual(labels(), ['20260113-090000-late', 'New scratchpad', 'Browse all'], 'the reopened menu renders the cached list');
+});
+
+test("chat-panel.test.ts: bootstrap click on #insrc-scratch posts {type:'scratch-open-menu'} (ac2)", () => {
+  const v = runShell({ hostDeps: { scratchpads: { enabled: true } } });
+  assert.deepEqual(ofType(v, 'scratch-open-menu'), []);
+  fire(v.el('insrc-scratch'), 'click');
+  assert.deepEqual(ofType(v, 'scratch-open-menu'), [{ type: 'scratch-open-menu' }]);
+  fire(v.el('insrc-scratch'), 'click'); // toggles closed, no second post contract change: still posts the intent
+  assert.equal(ofType(v, 'scratch-open-menu').length, 2);
+  // Without the seam: no listener, no posts, no menu element script.
+  const plain = runShell();
+  assert.equal(plain.el('insrc-scratch').listeners['click']?.length ?? 0, 0);
+  fire(plain.el('insrc-scratch'), 'click');
+  assert.deepEqual(ofType(plain, 'scratch-open-menu'), []);
+});
+
+test('chat-panel.test.ts: host insert-into-input handler inserts into #insrc-input (:2784) per the deterministic rule — caret mid-draft in a non-empty draft, and an active range selection replaced — existing content preserved, focuses it, no submit-turn/cancel-turn posted (ac4)', () => {
+  const v: Shell = runShell({ hostDeps: { scratchpads: { enabled: true } } });
+  // Caret mid-draft in a non-empty draft: splice at the caret, existing content preserved.
+  let box: Composer = composer(v, 'hello world', 5, 5);
+  v.msg({ type: 'insert-into-input', text: 'beautiful ' });
+  assert.equal(box.value, 'hellobeautiful  world', 'inserted at the caret, both sides kept');
+  assert.equal(box.selectionStart, 15, 'the caret moves after the inserted text');
+  assert.equal((box as unknown as { focusedWith?: unknown }).focusedWith !== undefined, true, 'the input was focused');
+  assert.deepEqual(ofType(v, 'submit-turn'), [], 'no submit posted');
+  assert.deepEqual(ofType(v, 'cancel-turn'), [], 'no cancel posted');
+  // Active range selection: the range is replaced.
+  box = composer(v, 'hello world', 6, 11);
+  v.msg({ type: 'insert-into-input', text: 'there' });
+  assert.equal(box.value, 'hello there', 'the active range was replaced');
+  assert.equal(box.selectionEnd, 11);
+  // Caret at the end of a non-empty draft: append with ONE separating newline.
+  box = composer(v, 'draft', 5, 5);
+  v.msg({ type: 'insert-into-input', text: 'appended' });
+  assert.equal(box.value, 'draft\nappended', 'appended with one newline only');
+  // Caret at the end of an EMPTY draft: plain append, no leading newline.
+  box = composer(v, '', 0, 0);
+  v.msg({ type: 'insert-into-input', text: 'first' });
+  assert.equal(box.value, 'first');
+  // #insrc-prompt is never a target: its value/text is untouched by the handler.
+  const prompt = v.el('insrc-prompt');
+  const promptBefore = prompt.textContent;
+  v.msg({ type: 'insert-into-input', text: 'x' });
+  assert.equal(prompt.textContent, promptBefore, '#insrc-prompt was not modified');
+  // A non-string payload is ignored without throwing.
+  assert.doesNotThrow(() => v.msg({ type: 'insert-into-input', text: 42 }));
+  assert.deepEqual(ofType(v, 'submit-turn').concat(ofType(v, 'cancel-turn')), [], 'still no submit/cancel');
+});
+
+test('chat-panel.test.ts + scratch-panel.test.ts: every button in the new UI is icon-only with a title attribute — no visible text content on buttons (ac5)', () => {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+    attachments: { store: createAttachmentStore({ root: '/att', fs: fakeAttachmentFs().fs }), pickFiles: async () => [], open: () => {} },
+    scratchpads: { enabled: true },
+  });
+  host.open();
+  const html = fc.html();
+  for (const id of ['insrc-attach', 'insrc-scratch']) {
+    const m = new RegExp(`<button id="${id}"[^>]*>([\\s\\S]*?)</button>`).exec(html);
+    assert.ok(m, `#${id} exists`);
+    assert.ok(m![0].includes('title="'), `#${id} has a hover title`);
+    assert.equal(m![1]!.replace(/<[^>]*>/g, '').trim(), '', `#${id} has no visible text (icon only)`);
+    assert.match(m![1]!, /^<svg /, `#${id} carries an inline SVG icon`);
+  }
+  // The scratch menu's rows are built from mitem at runtime; the button markup is the only
+  // button-creating markup added by t4 — assert no new <button> literal without a title.
+  const buttonLiterals = html.match(/<button [^>]*>/g) ?? [];
+  for (const b of buttonLiterals) assert.ok(b.includes('title=') || b.includes('aria-label='), `button literal names itself: ${b.slice(0, 80)}`);
+  void allOf;
 });

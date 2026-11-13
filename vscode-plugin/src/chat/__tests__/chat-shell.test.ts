@@ -21,13 +21,13 @@ import { fakeAttachmentFs } from './fake-attachment-fs.js';
 import { PROVIDER_ICON_SVGS } from '../provider-icons.js';
 import { waitFor } from './fixtures.js';
 
-const ROW_PX = 10;
+export const ROW_PX = 10;
 const VIEW_PX = 100;
 
 type Stub = BodyStub & Record<string, unknown>;
 
 /** The shell script running in its own context over fake elements; `msg` delivers a host message. */
-interface Shell {
+export interface Shell {
   term: BodyStub;
   bar: BodyStub;
   sent: Array<Record<string, unknown>>;
@@ -41,7 +41,7 @@ interface Shell {
   tickIntervals: () => void;
 }
 /** `attach` gives the host its attachment seams, so the shell has the attach controls. */
-function runShell(opts: { attach?: boolean | undefined; queue?: boolean | undefined; clock?: { t: number } | undefined; store?: ReturnType<typeof createInMemoryChatSessionStore> | undefined; channel?: ChatPanelChannel | undefined; catalog?: unknown; hostDeps?: Partial<ChatPanelHostDeps> | undefined } = {}): Shell {
+export function runShell(opts: { attach?: boolean | undefined; queue?: boolean | undefined; clock?: { t: number } | undefined; store?: ReturnType<typeof createInMemoryChatSessionStore> | undefined; channel?: ChatPanelChannel | undefined; catalog?: unknown; hostDeps?: Partial<ChatPanelHostDeps> | undefined } = {}): Shell {
   let html = '';
   const inner: ChatPanelChannel = opts.channel ?? { setHtml: (h) => { html = h; }, postMessage: () => {}, onMessage: () => {}, onDidDispose: () => {}, reveal: () => {}, dispose: () => {} };
   // keep runShell's own html snapshot in sync when a caller supplies the channel
@@ -202,7 +202,7 @@ test('the shell script bounds the view of a long active session: rows past the l
 
 // ---- Story E2026101259da3204:S001 t7: the attach button, the chips and the paste ----
 
-const ofType = (v: Shell, type: string): Array<Record<string, unknown>> => v.sent.filter((m) => m['type'] === type);
+export const ofType = (v: Shell, type: string): Array<Record<string, unknown>> => v.sent.filter((m) => m['type'] === type);
 const byClass = (root: BodyStub, cls: string): BodyStub[] => allOf(root).filter((n) => n.className.split(/\s+/).includes(cls));
 /** A paste event over clipboard items; counts preventDefault calls. */
 function pasteEvent(items: Array<{ kind: string; type: string; file?: { type: string; name: string; dataUrl: string } | undefined }>): { event: Record<string, unknown>; prevented: () => number } {
@@ -1135,8 +1135,8 @@ test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1; Story e0821209d9
 });
 
 // Send chat prompts with Enter (Story d15a24eb41e0771c/s1).
-type Composer = BodyStub & { value: string; selectionStart: number; selectionEnd: number; setRangeText?: (t: string, s: number, e: number, mode: string) => void; focusedWith?: unknown };
-function composer(v: Shell, text: string, start = text.length, end = start): Composer {
+export type Composer = BodyStub & { value: string; selectionStart: number; selectionEnd: number; setRangeText?: (t: string, s: number, e: number, mode: string) => void; focusedWith?: unknown };
+export function composer(v: Shell, text: string, start = text.length, end = start): Composer {
   const box = v.el('insrc-input') as Composer;
   box.value = text;
   box.selectionStart = start;

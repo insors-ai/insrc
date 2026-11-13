@@ -63,6 +63,7 @@ export async function measureManagedReleaseInventory(root: string, runtime: stri
 	const expected = reference === undefined ? undefined : readReference(reference.bytes, reference.digest);
 	const raw = createHash('sha256');
 	const visited: { path: string; stat: Stats }[] = [];
+	const links: { path: string; target: string }[] = [];
 	const uid = process.getuid?.();
 	async function visit(path: string, name: string): Promise<void> {
 		if (!safePath(name) || visited.length >= MAX_ENTRIES) throw new Error('runtime inventory exceeds its path bounds');
@@ -79,9 +80,11 @@ export async function measureManagedReleaseInventory(root: string, runtime: stri
 		if (info.isSymbolicLink()) {
 			const target = await readlink(path);
 			const lexical = resolve(dirname(path), target);
-			if (isAbsolute(target) || !contained(root, lexical) || !contained(root, await realpath(path))) {
+			const resolved = await realpath(path);
+			if (isAbsolute(target) || !contained(root, lexical) || !contained(root, resolved)) {
 				throw new Error(`runtime inventory link escapes its checkout: ${name}`);
 			}
+			links.push({ path, target: resolved });
 			value = target;
 			pinnedValue = target;
 		} else if (info.isFile()) {
@@ -115,6 +118,12 @@ export async function measureManagedReleaseInventory(root: string, runtime: stri
 		await visit(path, name);
 	}
 	if (expected !== undefined && expected.size !== 0) throw new Error('signed runtime inventory entry is missing');
+	const measuredPaths = new Set(visited.map(entry => entry.path));
+	for (const link of links) {
+		if (!measuredPaths.has(link.target) || await realpath(link.path) !== link.target) {
+			throw new Error('runtime inventory link target is unmeasured or changed');
+		}
+	}
 	for (const { path, stat } of visited) {
 		if (!stable(stat, await lstat(path))) throw new Error(`runtime inventory changed during measurement: ${path}`);
 	}

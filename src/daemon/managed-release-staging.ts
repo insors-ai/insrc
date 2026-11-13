@@ -23,16 +23,25 @@ export interface ManagedReleaseQualification {
 	readonly source: Required<Pick<UpdateSource, 'repoUrl' | 'branch'>>;
 	readonly candidate: ReleaseCompatibility;
 	readonly pairs: readonly (QualifiedReleasePair & {
-		/** Captured from the qualified predecessor build and runtime, outside the live installation. */
-		readonly priorFingerprint: string;
-		readonly priorInventory?: RuntimeInventoryReference;
-		readonly candidateInventory?: RuntimeInventoryReference;
-	})[];
+	} & (LegacyReference | SignedReferences))[];
 }
 
-interface RuntimeInventoryReference {
+export interface RuntimeInventoryReference {
 	readonly bytes: Buffer;
 	readonly digest: string;
+}
+
+interface LegacyReference {
+	/** Captured from the qualified predecessor build and runtime, outside the live installation. */
+	readonly priorFingerprint: string;
+	readonly priorInventory?: never;
+	readonly candidateInventory?: never;
+}
+
+interface SignedReferences {
+	readonly priorFingerprint?: never;
+	readonly priorInventory: RuntimeInventoryReference;
+	readonly candidateInventory: RuntimeInventoryReference;
 }
 
 export interface StagedReleasePin {
@@ -183,7 +192,9 @@ export async function stageManagedRelease(options: StageOptions): Promise<{
 	const runtime = await realpath(options.runtime);
 	const directory = installationPaths(stateRoot).directory;
 	const releases = join(directory, 'releases');
-	if (priorRoot !== undefined && inside(priorRoot, releases)) throw new Error('staging would mutate the installed release');
+	if (priorRoot !== undefined && (inside(priorRoot, releases) || priorRoot === releases)) {
+		throw new Error('staging would mutate the installed release');
+	}
 	let prior: StagedReleasePin | undefined;
 	let compatibility: QualifiedReleasePair | undefined;
 	let candidateInventory: RuntimeInventoryReference | undefined;

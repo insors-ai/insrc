@@ -51,6 +51,11 @@ test('Changed native code, loadable data, bindings, signature policy, injected m
 	await writeFile(module, 'injected module');
 	await assert.rejects(measureManagedReleaseInventory(root, runtime, reference), /unexpected runtime inventory/);
 	await rm(module);
+	const optional = join(root, 'node_modules/optional');
+	await mkdir(optional);
+	await writeFile(join(optional, 'package.json'), '{}');
+	await assert.rejects(measureManagedReleaseInventory(root, runtime, reference), /unexpected runtime inventory/);
+	await rm(optional, { recursive: true });
 	const entry = join(root, 'out/entry');
 	await rm(entry);
 	await symlink(runtime, entry);
@@ -58,6 +63,17 @@ test('Changed native code, loadable data, bindings, signature policy, injected m
 	await rm(entry);
 	await symlink(join(root, 'out/daemon/index.js'), entry);
 	await assert.rejects(measureManagedReleaseInventory(root, runtime, reference), /link escapes/);
+	await rm(entry);
+	await symlink('daemon/index.js', entry);
+	const unmeasured = join(root, 'unmeasured.js');
+	await writeFile(unmeasured, 'unmeasured executable');
+	await rm(entry);
+	await symlink('../unmeasured.js', entry);
+	const escapingEntries = entries.map(item => item[0] === 'out/entry' ? [item[0], item[1], '../unmeasured.js'] : item);
+	const escapingBytes = Buffer.from(JSON.stringify(escapingEntries));
+	await assert.rejects(measureManagedReleaseInventory(root, runtime, {
+		bytes: escapingBytes, digest: releaseMetadataDigest(escapingBytes),
+	}), /link target is unmeasured/);
 	await rm(entry);
 	await symlink('daemon/index.js', entry);
 	await rm(join(root, 'scripts/daemon-ctl.sh'));

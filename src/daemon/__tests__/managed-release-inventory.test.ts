@@ -13,7 +13,7 @@ test('Changed native code, loadable data, bindings, signature policy, injected m
 	t.after(() => rm(temp, { recursive: true, force: true }));
 	const root = join(temp, 'checkout');
 	const runtime = join(temp, 'node');
-	const directories = ['out', 'out/daemon', 'node_modules', 'node_modules/fixture', 'scripts', 'packages/project-memory/dist'];
+	const directories = ['out', 'out/daemon', 'node_modules', 'node_modules/fixture', 'scripts', 'packages/project-memory', 'packages/project-memory/dist'];
 	const files = {
 		'node-runtime': 'runtime', 'out/daemon/index.js': 'daemon',
 		'node_modules/fixture/native.node': 'code|data|bindings|signature',
@@ -27,6 +27,7 @@ test('Changed native code, loadable data, bindings, signature policy, injected m
 	}
 	await chmod(runtime, 0o755);
 	await symlink('daemon/index.js', join(root, 'out/entry'));
+	await symlink('../packages/project-memory', join(root, 'node_modules/project-memory'));
 	const entries: [string, number, string | null][] = [];
 	for (const directory of directories) entries.push([directory, (await lstat(join(root, directory))).mode, null]);
 	for (const [name, value] of Object.entries(files)) {
@@ -34,6 +35,7 @@ test('Changed native code, loadable data, bindings, signature policy, injected m
 		entries.push([name, (await lstat(path)).mode, releaseMetadataDigest(Buffer.from(value))]);
 	}
 	entries.push(['out/entry', (await lstat(join(root, 'out/entry'))).mode, 'daemon/index.js']);
+	entries.push(['node_modules/project-memory', (await lstat(join(root, 'node_modules/project-memory'))).mode, '../packages/project-memory']);
 	const bytes = Buffer.from(JSON.stringify(entries));
 	const reference = { bytes, digest: releaseMetadataDigest(bytes) };
 	const raw = await measureManagedReleaseInventory(root, runtime, reference);

@@ -99,14 +99,14 @@ test('Independent same-commit macOS build equivalence and tamper rejection', { s
 });
 
 async function inventoryReference(source: string) {
-	const roots = ['out', 'node_modules', 'scripts', 'package.json', 'package-lock.json', '.npmrc', 'packages/project-memory/dist'];
+	const roots = ['out', 'node_modules', 'scripts', 'package.json', 'package-lock.json', '.npmrc', 'packages/project-memory'];
 	// Preserve the independently produced binaries, removing only unneeded build
 	// scratch from this fixture. The product inventory qualifies its own full tree.
 	for (const { root } of [firstBuild, secondBuild]) {
 		for (const name of roots) {
 			if (name === 'node_modules') continue;
 			const path = join(root, name);
-			if (name.includes('.') && name !== 'packages/project-memory/dist') await writeFile(path, 'fixture');
+			if (name.includes('.')) await writeFile(path, 'fixture');
 			else await mkdir(path, { recursive: true });
 		}
 		for (const path of QUALIFIED_NATIVE_PATHS) {

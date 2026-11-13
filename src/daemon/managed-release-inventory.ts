@@ -9,7 +9,7 @@ import { TextDecoder } from 'node:util';
 import { releaseMetadataDigest } from '../shared/managed-release-trust.js';
 import { QUALIFIED_NATIVE_PATHS, qualifiedNativeDigest } from './managed-release-mach-o.js';
 
-const ROOTS = ['node-runtime', 'out', 'node_modules', 'scripts', 'package.json', 'package-lock.json', '.npmrc', 'packages/project-memory/dist'];
+const ROOTS = ['node-runtime', 'out', 'node_modules', 'scripts', 'package.json', 'package-lock.json', '.npmrc', 'packages/project-memory'];
 const MAX_ENTRIES = 150_000;
 const MAX_REFERENCE_BYTES = 32 * 1024 * 1024;
 const DIGEST = /^[a-f0-9]{64}$/;

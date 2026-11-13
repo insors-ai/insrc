@@ -328,3 +328,66 @@ test("run-config message shape is encoded in the HostToWebview union and posted 
   const cliDefault: HostToWebview = { type: 'run-config', provider: 'codex', model: '', effort: '' };
   if (cliDefault.type === 'run-config') assert.equal(cliDefault.model, '');
 });
+
+// ---- Story E202611134642d49a:S001 t2: the eight scratchpad message types ----
+
+test("protocol.test.ts: all eight new message types appear in their own direction's union + const array only, with direction-isolation and union/array-equality assertions passing (ac5)", () => {
+  const webviewToHost: readonly WebviewToHostType[] = ['scratch-open-menu', 'scratch-new', 'scratch-open', 'scratch-delete', 'scratch-browse', 'send-to-chat'];
+  const hostToWebview: readonly HostToWebviewType[] = ['scratch-list', 'insert-into-input'];
+
+  // Direction isolation: each new type is in its OWN array and NOT the other's.
+  for (const k of webviewToHost) {
+    assert.ok(WEBVIEW_TO_HOST_TYPES.includes(k), `'${k}' is listed webview->host`);
+    assert.ok(!(HOST_TO_WEBVIEW_TYPES as readonly string[]).includes(k), `'${k}' is NOT listed host->webview`);
+  }
+  for (const k of hostToWebview) {
+    assert.ok(HOST_TO_WEBVIEW_TYPES.includes(k), `'${k}' is listed host->webview`);
+    assert.ok(!(WEBVIEW_TO_HOST_TYPES as readonly string[]).includes(k), `'${k}' is NOT listed webview->host`);
+  }
+  // No duplicates (union/array equality has no repeated member).
+  assert.equal(new Set(WEBVIEW_TO_HOST_TYPES).size, WEBVIEW_TO_HOST_TYPES.length);
+  assert.equal(new Set(HOST_TO_WEBVIEW_TYPES).size, HOST_TO_WEBVIEW_TYPES.length);
+
+  // Union membership is proven at compile time by constructing each direction's shapes;
+  // at runtime each constructed message's discriminant is in its own array only.
+  const w2h: WebviewToHost[] = [
+    { type: 'scratch-open-menu' },
+    { type: 'scratch-new' },
+    { type: 'scratch-open', id: '20260113-083000-pad.md' },
+    { type: 'scratch-delete', id: '20260113-083000-pad.md' },
+    { type: 'scratch-browse' },
+    { type: 'send-to-chat', text: 'selected text' },
+  ];
+  const h2w: HostToWebview[] = [
+    { type: 'scratch-list', entries: [{ id: '20260113-083000-pad.md', name: '20260113-083000-pad', mtime: 1, size: 3 }] },
+    { type: 'scratch-list', entries: [], error: 'scratchpads unavailable' },
+    { type: 'insert-into-input', text: 'selected text' },
+  ];
+  for (const m of w2h) {
+    assert.ok(WEBVIEW_TO_HOST_TYPES.includes(m.type), `${m.type} in WEBVIEW_TO_HOST_TYPES`);
+    assert.ok(!(HOST_TO_WEBVIEW_TYPES as readonly string[]).includes(m.type), `${m.type} not in HOST_TO_WEBVIEW_TYPES`);
+  }
+  for (const m of h2w) {
+    assert.ok(HOST_TO_WEBVIEW_TYPES.includes(m.type), `${m.type} in HOST_TO_WEBVIEW_TYPES`);
+    assert.ok(!(WEBVIEW_TO_HOST_TYPES as readonly string[]).includes(m.type), `${m.type} not in WEBVIEW_TO_HOST_TYPES`);
+  }
+  // Shape spot-checks: titleless intents carry only their discriminant; payloads carry the contract fields.
+  assert.deepEqual(Object.keys(w2h[0]!), ['type']);
+  assert.deepEqual(Object.keys(w2h[1]!), ['type']);
+  assert.deepEqual(Object.keys(w2h[2]!), ['type', 'id']);
+  assert.deepEqual(Object.keys(w2h[5]!), ['type', 'text']);
+  assert.deepEqual(Object.keys(h2w[0]!), ['type', 'entries']);
+  assert.deepEqual(Object.keys(h2w[1]!), ['type', 'entries', 'error']);
+  assert.deepEqual(Object.keys(h2w[2]!), ['type', 'text']);
+  if (h2w[0]!.type === 'scratch-list') assert.equal(h2w[0]!.entries[0]!.name, '20260113-083000-pad');
+  if (h2w[1]!.type === 'scratch-list') assert.equal(h2w[1]!.error, 'scratchpads unavailable');
+  if (h2w[2]!.type === 'insert-into-input') assert.equal(h2w[2]!.text, 'selected text');
+
+  // Purely additive: every prior kind is still present, exactly once.
+  for (const k of ['submit-turn', 'new-chat', 'open-chat', 'set-edit-mode', 'edit-decision', 'docs-decision', 'open-doc', 'cancel-turn', 'permission-decision', 'set-permission-mode', 'selection-decision', 'ready', 'open-run-picker', 'load-older', 'attach-image', 'pick-attachments', 'remove-attachment', 'open-attachment', 'open-link', 'open-code-ref', 'open-companion', 'outbox-cancel', 'outbox-dismiss', 'outbox-resend', 'outbox-retry-now']) {
+    assert.ok(WEBVIEW_TO_HOST_TYPES.includes(k as WebviewToHostType), `existing webview->host kind ${k} still present`);
+  }
+  for (const k of ['turn-event', 'turn-progress', 'session-restored', 'history-list', 'active-list', 'transcript-row', 'docs-list', 'docs-content', 'user-row', 'theme', 'transcript-page', 'attachments-pending', 'docs-decision-result', 'docs-companion', 'turn-running', 'run-catalog', 'run-config', 'outbox']) {
+    assert.ok(HOST_TO_WEBVIEW_TYPES.includes(k as HostToWebviewType), `existing host->webview kind ${k} still present`);
+  }
+});

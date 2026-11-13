@@ -86,11 +86,16 @@ function quarantineDeadGuard(path: string, read: ProcessIdentityReader): boolean
 	let conclusivelyDead = false;
 	try {
 		record = ownerRecord(path);
-		const occupant = read(record.owner.pid);
-		const recordedBoot = occupant === undefined ? undefined : bootSegment(record.owner.startedAt);
-		const occupantBoot = occupant === undefined ? undefined : bootSegment(occupant.startedAt);
-		conclusivelyDead = occupant === undefined
-			|| (recordedBoot !== undefined && occupantBoot !== undefined && recordedBoot !== occupantBoot);
+		const state = processIdentityState(record.owner, read);
+		if (state === 'gone') conclusivelyDead = true;
+		else if (state === 'replaced') {
+			// A reused PID: conclusively dead only when the recorded start marker names a previous boot,
+			// so the occupant identity cannot be the recorded owner whatever the PID now carries.
+			const occupant = read(record.owner.pid);
+			const recordedBoot = occupant === undefined ? undefined : bootSegment(record.owner.startedAt);
+			const occupantBoot = occupant === undefined ? undefined : bootSegment(occupant.startedAt);
+			conclusivelyDead = recordedBoot !== undefined && occupantBoot !== undefined && recordedBoot !== occupantBoot;
+		}
 	} catch { /* an unreadable record or unreadable identity withholds, exactly as before */ }
 	if (!conclusivelyDead || record === undefined) return false;
 	const { owner, nonce } = record;

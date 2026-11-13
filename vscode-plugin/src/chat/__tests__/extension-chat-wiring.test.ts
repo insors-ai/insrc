@@ -141,8 +141,8 @@ test('group-lock: extension.ts wires thin seams into createChatGroupLock and att
   assert.match(b, /executeCommand\('workbench\.action\.lockEditorGroup'\)/, 'the lock seam runs the built-in lock command');
   assert.match(
     b,
-    /const webviewPanelChannel = \(panel: vscode\.WebviewPanel\): ChatPanelChannel => \{[\s\S]*?chatGroupLock\.attach\(panel\);\s*return webviewChannel\(panel\);/,
-    'the single create+restore adapter attaches the lock',
+    /const webviewPanelChannel = \(panel: vscode\.WebviewPanel\): ChatPanelChannel => \{[\s\S]*?chatGroupLock\.attach\(panel\);[\s\S]*?const base = webviewChannel\(panel\);/,
+    'the single create+restore adapter attaches the lock and wraps the shared channel',
   );
   // The view-type literal lives only in chat-panel.ts; extension.ts compares nothing itself.
   assert.doesNotMatch(src, /insrc\.chatPanel/, 'no chat view-type literal in extension.ts');
@@ -379,4 +379,96 @@ test('extension wiring: the repo-config panel probes mcp.status WITH the selecte
   const src = read(EXT).replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
   assert.match(src, /mcpRegistration: \(repoPath\?: string\) => daemonData\.mcpRegistration\(repoPath, repoConfigReadTimeoutMs\)/,
     'the selected repo path and timeout are forwarded to the daemon probe');
+});
+
+// ---- Story E202611134642d49a:S001 t7: scratchpad extension wiring (store + host handlers) ----
+
+test('extension-chat-wiring.test.ts: extension.ts constructs createScratchStore with root join(PATHS.insrc, \'scratches\') (ac1)', () => {
+  const src = read(EXT);
+  const block = /if \(chatEnabled\) \{([\s\S]*?)\n  \}/.exec(src);
+  assert.ok(block, 'the chatEnabled block is present');
+  const b = block![1]!;
+  assert.match(b, /createScratchStore\(\{\s*root:\s*join\(PATHS\.insrc,\s*'scratches'\),\s*logger:\s*panelLog\s*\}\)/, 'the scratch store is rooted at ~/.insrc/scratches inside the chat gate');
+  assert.match(b, /scratchpads:\s*\{\s*enabled:\s*true\s*\}/, 'the chat host gets the scratchpads seam enabled');
+  assert.match(b, /createScratchPanels\(\{/, 'the panels controller is constructed');
+  assert.match(b, /panels:\s*scratchPanelFactory/, 'the controller gets the title-capable panel factory');
+  assert.match(b, /setPanelTitle:/, 'the production setPanelTitle adapter is injected');
+  assert.match(b, /genNonce:\s*makeNonce/, 'per-render CSP nonces come from the shared makeNonce');
+  assert.match(b, /onSendToChat:/, 'the send-to-chat route is injected');
+});
+
+test('extension-chat-wiring.test.ts: scratch-new title acquisition end-to-end — prompt cancelled -> no create + unchanged list; prompt answered -> create + list refresh + document open', () => {
+  const src = read(EXT);
+  const block = /if \(chatEnabled\) \{([\s\S]*?)\n  \}/.exec(src);
+  assert.ok(block, 'the chatEnabled block is present');
+  const b = block![1]!;
+  const handler = /case 'scratch-new':\s*\{([\s\S]*?)\n        \}/.exec(b);
+  assert.ok(handler, 'the scratch-new host case exists');
+  const h = handler![1]!;
+  assert.match(h, /vscode\.window\.showInputBox\(\{[^}]*prompt:[^}]*\}\)/, 'the host acquires the title via showInputBox');
+  assert.match(h, /title === undefined \|\| title\.trim\(\) === ''/, 'a cancelled or blank prompt is detected');
+  // Cancelled/blank path: no createScratch, and the UNCHANGED list is re-sent.
+  const cancelBranch = /if \(title === undefined \|\| title\.trim\(\) === ''\) \{\s*void sendScratchList\(\);\s*return;\s*\}/.exec(h);
+  assert.ok(cancelBranch, 'cancelled/blank -> sendScratchList() (unchanged list) and return, no create');
+  assert.doesNotMatch(cancelBranch![0], /createScratch/, 'the cancel branch never creates');
+  // Answered path: create + refreshBrowse + openDocument + re-send list.
+  assert.match(h, /scratchStore\.createScratch\(title\.trim\(\)\)/, 'answered prompt creates the scratchpad with the trimmed title');
+  assert.match(h, /await scratchPanels\.refreshBrowse\(\)/, 'the browse table is refreshed after create');
+  assert.match(h, /await scratchPanels\.openDocument\(entry\.id\)/, 'the new document is opened');
+  assert.match(h, /void sendScratchList\(\)/, 'the (now changed) list is re-sent');
+});
+
+test('extension-chat-wiring.test.ts: scratch-list error field renders the unavailable row and a later success recovers; host switch cases for all six webview->host messages and both host->webview pushes', () => {
+  const src = read(EXT);
+  const block = /if \(chatEnabled\) \{([\s\S]*?)\n  \}/.exec(src);
+  assert.ok(block, 'the chatEnabled block is present');
+  const b = block![1]!;
+  // All six webview->host scratch intents have a host switch case.
+  for (const t of ['scratch-open-menu', 'scratch-new', 'scratch-open', 'scratch-delete', 'scratch-browse', 'send-to-chat']) {
+    assert.match(b, new RegExp(`case '${t}':`), `host switch handles ${t}`);
+  }
+  assert.match(b, /SCRATCH_INTENT_TYPES[^;]*'scratch-open-menu'[\s\S]*'send-to-chat'/, 'the channel interceptor routes exactly the six scratch intents');
+  // scratch-list push carries entries + optional error; the error text is the unavailable row source.
+  assert.match(b, /postChatToWebview\(\{\s*type:\s*'scratch-list',\s*entries,\s*\.\.\.\(error !== undefined \? \{ error \} : \{\}\)\s*\}\)/, 'the scratch-list push carries entries and the error field');
+  assert.match(b, /error = `scratchpads unavailable: \$\{String\(err\)\}`/, 'a store failure maps to the unavailable error text');
+  assert.match(b, /await scratchStore\.listScratches\(5\)/, 'the menu list is the recent top-5 by mtime');
+  // Both host->webview pushes exist.
+  assert.match(b, /type:\s*'scratch-list'/, 'host->webview push: scratch-list');
+  assert.match(b, /type:\s*'insert-into-input',\s*text:\s*capUtf8\(/, 'host->webview push: insert-into-input');
+  // The webview side renders the error row (chat-panel) and the controller renders error rows in the browse table (scratch-panels).
+  const chatPanel = read(CHAT_PANEL);
+  assert.match(chatPanel, /err\.indexOf\('scratchpads unavailable:'\)===0/, 'the chat webview renders the unavailable error row from the scratch-list error field');
+  const scratchPanels = read(join(HERE, '..', '..', 'panels', 'scratch-panels.ts'));
+  assert.match(scratchPanels, /scratch-error-row/, 'the browse table renders an error row');
+  // Recovery: a later successful listScratches posts entries with no error field.
+  const listFn = /const sendScratchList = async[\s\S]*?entries = await scratchStore\.listScratches\(5\);[\s\S]*?postChatToWebview\(\{\s*type:\s*'scratch-list',\s*entries,\s*\.\.\.\(error !== undefined \? \{ error \} : \{\}\)\s*\}\);/.exec(b);
+  assert.ok(listFn, 'sendScratchList re-lists and posts entries with no error on success (a later success recovers from an earlier error)');
+});
+
+test('extension-chat-wiring.test.ts: send-to-chat reveals the chat panel, awaits the ready handshake, then pushes insert-into-input capped at 65,536 UTF-8 bytes; disposed chat drops silently', () => {
+  const src = read(EXT);
+  const block = /if \(chatEnabled\) \{([\s\S]*?)\n  \}/.exec(src);
+  assert.ok(block, 'the chatEnabled block is present');
+  const b = block![1]!;
+  const sendCase = /case 'send-to-chat':[\s\S]*?chatPost\(\{\s*type:\s*'insert-into-input',\s*text:\s*capUtf8\(msg\.text\)\s*\}\)[\s\S]*?return;/.exec(b);
+  assert.ok(sendCase, 'the send-to-chat host case exists');
+  const s = sendCase![0];
+  assert.match(s, /chatHost\.open\(\)/, 'send-to-chat reveals (or opens) the chat panel');
+  assert.match(s, /await chatHostReady\(\)/, 'it awaits the webview ready handshake before pushing');
+  assert.match(s, /chatPost\(\{\s*type:\s*'insert-into-input',\s*text:\s*capUtf8\(msg\.text\)\s*\}\)/, 'it pushes insert-into-input capped via capUtf8');
+  assert.match(s, /if \(chatDisposed\(\)\) return;/, 'a disposed chat drops the text silently (no throw)');
+  // The ready handshake is observed in the wrapped channel adapter.
+  assert.match(b, /if \(p\.type === 'ready'\) \{\s*chatReady = true;\s*for \(const w of chatReadyWaiters\.splice\(0\)\) w\(\);?\s*\}/, 'the ready handshake releases the waiters');
+  assert.match(b, /const chatHostReady = \(\): Promise<void> => \(chatReady \? Promise\.resolve\(\) : new Promise<void>\(\(r\) => void chatReadyWaiters\.push\(r\)\)\)/, 'chatHostReady resolves immediately when already ready, else waits');
+  // The cap itself is the shared SEND_TO_CHAT_CAP = 65,536 UTF-8 bytes, applied controller-side.
+  const scratchPanels = read(join(HERE, '..', '..', 'panels', 'scratch-panels.ts'));
+  assert.match(scratchPanels, /export const SEND_TO_CHAT_CAP = 65_536;/, 'the cap is 65,536');
+  assert.match(scratchPanels, /export function capUtf8\(s: string, cap: number = SEND_TO_CHAT_CAP\)/, 'capUtf8 is the production multibyte-safe controller-side cap');
+  // The onSendToChat route uses the same reveal + ready + capped insert path.
+  const sendDep = /onSendToChat:\s*\(text\) => \{([\s\S]*?)\n      \},/.exec(b);
+  assert.ok(sendDep, 'the onSendToChat dep is wired');
+  assert.match(sendDep![1]!, /chatHost\.open\(\)/, 'onSendToChat reveals the chat');
+  assert.match(sendDep![1]!, /await chatHostReady\(\)/, 'onSendToChat awaits ready');
+  assert.match(sendDep![1]!, /type:\s*'insert-into-input',\s*text:\s*capUtf8\(text\)/, 'onSendToChat pushes the capped insert');
+  assert.match(sendDep![1]!, /if \(chatDisposed\(\)\) return;/, 'a disposed chat drops silently');
 });

@@ -2245,7 +2245,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // we deliberately do NOT add overflow-y:auto so #insrc-term stays the panel's single scroll region).
       `#insrc-input{flex:1 1 auto;min-width:0;resize:none;height:40px;background:transparent;color:var(--input-fg);caret-color:var(--accent);padding:9px 4px;font-family:var(--font);font-size:13px;line-height:1.5;outline:none;}` +
       `#insrc-input::placeholder{color:var(--placeholder);}` +
-      `.statusbar{display:flex;gap:12px;align-items:center;padding:7px 13px;background:var(--bg-inset);border-top:1px solid var(--border-lit);color:var(--muted);font-size:11.5px;flex-wrap:wrap;flex:0 0 auto;}` +
+      // position:relative so the scratchpad menu (position:absolute) anchors to the status bar
+      // itself, directly under its icon-only button, instead of to a wrapper span (t4 fix).
+      `.statusbar{position:relative;display:flex;gap:12px;align-items:center;padding:7px 13px;background:var(--bg-inset);border-top:1px solid var(--border-lit);color:var(--muted);font-size:11.5px;flex-wrap:wrap;flex:0 0 auto;}` +
       // ISSUE-6ae99f6e: the functional provider + mode (edits) selects live in the status bar, styled as
       // segments; the mode seg carries the amber 'auto-approve' pill (S004 k6 i) via .statusbar .perm-auto.
       `.statusbar .seg{display:inline-flex;align-items:center;gap:5px;}` +
@@ -2290,12 +2292,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // Run-config controls in the status bar's bottom-right corner: the provider·model
       // button + effort gauge button, and their popups opening UPWARD from there.
       `.statusbar .runctl{margin-left:auto;display:inline-flex;align-items:center;gap:8px;position:relative;}` +
-      // Story E202611134642d49a:S001 t4: the scratchpad button in the status bar wraps in a
-      // positioned chip so its menu anchors to it; the menu opens UPWARD from the status bar
-      // (the .chatmenu default opens downward, which is right for the top chrome only).
+      // Story E202611134642d49a:S001 t4: the scratchpad button is a DIRECT child of the status
+      // bar (a sibling of #insrc-attach, no wrapper span) so the menu anchors to the bar itself
+      // and sits directly under the button; it opens UPWARD from the status bar (the .popup
+      // default already opens upward; left:0 keeps it under the button at the bar's left edge).
       (scratchOn
-        ? `.scratchchip{position:relative;display:inline-flex;align-items:center;}` +
-          `#insrc-scratchmenu{bottom:calc(100% + 8px);top:auto;right:auto;left:0;}`
+        ? `#insrc-scratchmenu{bottom:calc(100% + 8px);top:auto;right:auto;left:0;}`
         : '') +
       `.runbtn,.gaugebtn{display:inline-flex;align-items:center;gap:6px;height:24px;background:var(--dropdown-bg);border:1px solid var(--dropdown-border);border-radius:6px;padding:0 8px;cursor:pointer;color:var(--fg);font-family:var(--font);font-size:12px;font-weight:500;}` +
       `.runbtn:hover,.gaugebtn:hover{color:var(--accent);}` +
@@ -2847,12 +2849,14 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           `<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M13.2 7.3 8 12.5a3.2 3.2 0 0 1-4.5-4.5l5.6-5.6a2.1 2.1 0 0 1 3 3L6.6 10.9a1.1 1.1 0 0 1-1.5-1.5l4.8-4.8"/></svg>` +
           `</button>`
         : '') +
-      // Story E202611134642d49a:S001 t4: the sibling icon-only scratchpad button, directly next
-      // to the attach button, with its upward-opening menu (the .scratchchip wrapper anchors it).
+      // Story E202611134642d49a:S001 t4: the sibling icon-only scratchpad button, a DIRECT DOM
+      // sibling of #insrc-attach inside the status bar (no wrapper span), with its own
+      // upward-opening menu positioned absolutely against the bar under the button.
       (scratchOn
-        ? `<span class="scratchchip"><button id="insrc-scratch" type="button" class="attachbtn" aria-haspopup="menu" aria-expanded="false" aria-label="scratchpads" title="scratchpads">` +
+        ? `<button id="insrc-scratch" type="button" class="attachbtn" aria-haspopup="menu" aria-expanded="false" aria-label="scratchpads" title="scratchpads">` +
           `<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M4 1.5h6l3 3V14a.5.5 0 0 1-.5.5h-8A.5.5 0 0 1 4 14V2a.5.5 0 0 1 .5-.5Z"/><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" d="M10 1.5V5h3.5"/><path fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" d="M6 8h4M6 10.5h4M6 13h2.5"/></svg>` +
-          `</button><div id="insrc-scratchmenu" class="popup chatmenu" role="menu" aria-label="scratchpads"></div></span>`
+          `</button>` +
+          `<div id="insrc-scratchmenu" class="popup chatmenu" role="menu" aria-label="scratchpads"></div>`
         : '') +
       `<span class="seg" id="insrc-modeseg">edits <select id="insrc-mode" class="segsel ${provCls}" aria-label="mode"><option value="manual" disabled>Manual</option><option value="edit-auto" disabled>Edit Automatically</option><option value="auto" selected>Auto</option></select></span>` +
       // Run-config controls, bottom-right corner of the status bar. The popups open upward.

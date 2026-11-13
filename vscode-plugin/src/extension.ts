@@ -59,6 +59,10 @@ import type { PanelHandle } from './panels/types.js';
 import { runSetModelTier, type DecisionResult, type ModelCheckResult } from './models/model-tier-picker.js';
 import { runDaemonFreshnessCheck } from './freshness/daemon-freshness.js';
 import { createChatPanelHost, CHAT_PANEL_TITLE, CHAT_VIEW_TYPE, DEFAULT_TURN_LOCK_TIMEOUT_MS, type ChatPanelChannel } from './chat/chat-panel.js';
+import { createScratchStore, type ScratchEntry } from './chat/scratch-store.js';
+import { createScratchPanels, capUtf8 } from './panels/scratch-panels.js';
+import type { HostToWebview, WebviewToHost } from './chat/protocol.js';
+import { makeNonce } from './panels/html.js';
 import { createFileSessionLocks, defaultIsAlive, defaultProcessStartTime } from './chat/session-lock.js';
 import { chatIsOffered, createQueueFactory, processAliveCheck, queuePathOf, repoKeyOf, windowKeyOf } from './chat/chat-queue-setup.js';
 import type { SqliteDatabase } from './chat/chat-queue-store.js';
@@ -749,13 +753,55 @@ export function activate(context: vscode.ExtensionContext): void {
       lockActiveGroup: () => vscode.commands.executeCommand('workbench.action.lockEditorGroup'),
       warn: panelLog.warn,
     });
+    // Story E202611134642d49a:S001 t7: the chat channel is built HERE (one adapter for a fresh
+    // panel and a VS-Code-restored one). The scratch host router (declared after chatHost) needs
+    // the live channel to post scratch-list / insert-into-input and to observe ready/dispose, so
+    // the adapter records it: `chatChannel` is the live chat channel (undefined when closed) and
+    // `chatReady` resolves on the webview's next ready handshake. The scratch intents themselves
+    // are routed by intercepting onDidReceiveMessage below — see scratchOnMessage.
+    let chatChannel: ChatPanelChannel | undefined;
+    let chatReadyWaiters: Array<() => void> = [];
+    let chatReady = false;
     const webviewPanelChannel = (panel: vscode.WebviewPanel): ChatPanelChannel => {
       panel.iconPath = {
         light: vscode.Uri.file(join(context.extensionPath, 'media', 'insrc-icon.svg')),
         dark: vscode.Uri.file(join(context.extensionPath, 'media', 'insrc-icon-dark.svg')),
       };
       chatGroupLock.attach(panel);
-      return webviewChannel(panel);
+      const base = webviewChannel(panel);
+      const wrapped: ChatPanelChannel = {
+        setHtml: (html) => base.setHtml(html),
+        postMessage: (message) => base.postMessage(message),
+        reveal: (opts) => base.reveal(opts),
+        dispose: () => base.dispose(),
+        onDidDispose: (listener) => base.onDidDispose(listener),
+        onMessage: (listener) => {
+          base.onMessage((m) => {
+            // Route the six scratchpad intents to the scratch host router (declared below via
+            // a forward reference) AND pass every message to the chat host's own listener.
+            const env = m as { v?: unknown; payload?: unknown } | null;
+            if (env !== null && env.v === 1 && typeof env.payload === 'object' && env.payload !== null) {
+              const p = env.payload as { type?: unknown };
+              if (typeof p.type === 'string' && SCRATCH_INTENT_TYPES.has(p.type)) scratchOnMessage(p as WebviewToHost);
+              if (p.type === 'ready') {
+                chatReady = true;
+                for (const w of chatReadyWaiters.splice(0)) w();
+              }
+            }
+            listener(m);
+          });
+        },
+      };
+      chatChannel = wrapped;
+      chatReady = false;
+      base.onDidDispose(() => {
+        if (chatChannel === wrapped) {
+          chatChannel = undefined;
+          chatReady = false;
+          for (const w of chatReadyWaiters.splice(0)) w();
+        }
+      });
+      return wrapped;
     };
     // Story E20261013e62a9269:S001: a document a chat turn presents for approval is opened in the
     // review pane, quietly. The review host is made below; the presenter reaches it when a
@@ -881,6 +927,9 @@ export function activate(context: vscode.ExtensionContext): void {
         // Open BESIDE the active editor group (a split), not on top of the current editor;
         // the shared factory wraps it + stamps the themed insrc mark.
         webviewPanelChannel(vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Beside, { enableScripts: true })),
+      // Story E202611134642d49a:S001 t4/t7: the scratchpad menu in the chat status bar
+      // (icon-only button next to attach) — the store lives in the extension host below.
+      scratchpads: { enabled: true },
       providers: chatProviders,
       store: chatStore,
       cwd: () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd(),
@@ -907,6 +956,163 @@ export function activate(context: vscode.ExtensionContext): void {
       turnLockTimeoutMs: () =>
         Math.max(1000, vscode.workspace.getConfiguration().get<number>('insrc.chat.turnLockTimeoutMs') ?? DEFAULT_TURN_LOCK_TIMEOUT_MS),
     });
+    // Story E202611134642d49a:S001 t7: the scratchpad feature's extension-host wiring. The
+    // store holds plain *.md files under ~/.insrc/scratches (no daemon IPC); the panels
+    // controller owns the two scratch viewTypes (browse-all table + single document). Both
+    // live inside the chat gate because every entry point is the chat panel's scratchpad
+    // button; nothing is registered outside `if (chatEnabled)`.
+    const scratchStore = createScratchStore({ root: join(PATHS.insrc, 'scratches'), logger: panelLog });
+    // The panels factory keeps the raw WebviewPanel in its closure so setPanelTitle can set
+    // the real tab title (the stock PanelHandle has no title op — the controller injects one).
+    const scratchPanelFactory = ({ viewType, title }: { readonly viewType: string; readonly title: string }): PanelHandle => {
+      const panel = vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, { enableScripts: true });
+      const handle: PanelHandle = {
+        setHtml: (html) => {
+          panel.webview.html = html;
+        },
+        reveal: () => panel.reveal(),
+        onDidDispose: (listener) => {
+          panel.onDidDispose(listener);
+        },
+        onMessage: (listener) => {
+          panel.webview.onDidReceiveMessage(listener);
+        },
+        postMessage: (message) => {
+          panel.webview.postMessage(message).then(undefined, () => {
+            /* ignore — a disposed panel's post is non-fatal */
+          });
+        },
+        dispose: () => panel.dispose(),
+      };
+      // Stash the raw panel on the handle so the title adapter below can reach it.
+      (handle as PanelHandle & { __rawPanel?: unknown }).__rawPanel = panel;
+      return handle;
+    };
+    const scratchPanels = createScratchPanels({
+      panels: scratchPanelFactory,
+      store: scratchStore,
+      logger: panelLog,
+      genNonce: makeNonce,
+      setPanelTitle: (panel, title) => {
+        const raw = (panel as PanelHandle & { __rawPanel?: vscode.WebviewPanel }).__rawPanel;
+        if (raw !== undefined) raw.title = title;
+      },
+      onSendToChat: (text) => {
+        // Reveal the chat (opening it when closed), wait for the webview's ready handshake,
+        // then push the insert-into-input message (capped at 65,536 UTF-8 bytes — the insert
+        // handler never auto-sends). A disposed chat drops the text silently.
+        void (async (): Promise<void> => {
+          try {
+            if (chatDisposed()) return;
+            chatHost.open();
+            await chatHostReady();
+            if (chatDisposed()) return;
+            chatPost({ type: 'insert-into-input', text: capUtf8(text) });
+          } catch (err) {
+            panelLog.warn(`[scratches] send-to-chat could not reach the chat: ${String(err)}`);
+          }
+        })();
+      },
+    });
+    context.subscriptions.push({ dispose: () => scratchPanels.dispose() });
+    // The six scratchpad webview->host intents arrive on the CHAT panel's channel; the wrapped
+    // adapter (webviewPanelChannel above) routes them here via scratchOnMessage while the chat
+    // host still receives every message unchanged.
+    const SCRATCH_INTENT_TYPES: ReadonlySet<string> = new Set([
+      'scratch-open-menu', 'scratch-new', 'scratch-open', 'scratch-delete', 'scratch-browse', 'send-to-chat',
+    ]);
+    let scratchOnMessage: (msg: WebviewToHost) => void = () => {};
+    const postChatToWebview = (msg: HostToWebview): void => {
+      chatChannel?.postMessage({ v: 1, payload: msg });
+    };
+    const chatDisposed = (): boolean => chatChannel === undefined;
+    const chatHostReady = (): Promise<void> => (chatReady ? Promise.resolve() : new Promise<void>((r) => void chatReadyWaiters.push(r)));
+    scratchOnMessage = (msg: WebviewToHost): void => {
+      switch (msg.type) {
+        case 'scratch-open-menu': {
+          void (async (): Promise<void> => {
+            let entries: readonly ScratchEntry[] = [];
+            let error: string | undefined;
+            try {
+              entries = await scratchStore.listScratches(5); // recent top-5 by mtime
+            } catch (err) {
+              error = `scratchpads unavailable: ${String(err)}`;
+            }
+            postChatToWebview({ type: 'scratch-list', entries, ...(error !== undefined ? { error } : {}) });
+          })();
+          return;
+        }
+        case 'scratch-new': {
+          void (async (): Promise<void> => {
+            // Titleless intent: the host acquires the title via the input box. A cancelled or
+            // blank-trimmed prompt creates nothing and re-sends the UNCHANGED list.
+            const title = await vscode.window.showInputBox({ prompt: 'Name the new scratchpad' });
+            if (title === undefined || title.trim() === '') {
+              void sendScratchList();
+              return;
+            }
+            try {
+              const entry = await scratchStore.createScratch(title.trim());
+              await scratchPanels.refreshBrowse();
+              await scratchPanels.openDocument(entry.id);
+              void sendScratchList();
+            } catch (err) {
+              panelLog.warn(`[scratches] create failed: ${String(err)}`);
+              void sendScratchList();
+            }
+          })();
+          return;
+        }
+        case 'scratch-open':
+          void scratchPanels.openDocument(msg.id);
+          return;
+        case 'scratch-delete': {
+          void (async (): Promise<void> => {
+            scratchPanels.invalidateId(msg.id);
+            try {
+              await scratchStore.deleteScratch(msg.id);
+            } catch (err) {
+              panelLog.warn(`[scratches] delete failed for ${msg.id}: ${String(err)}`);
+            }
+            scratchPanels.closeDocumentIfShowing(msg.id);
+            await scratchPanels.refreshBrowse();
+          })();
+          return;
+        }
+        case 'scratch-browse':
+          void scratchPanels.openBrowse();
+          return;
+        case 'send-to-chat':
+          // send-to-chat arrives from the DOCUMENT panel (its own channel), but the same
+          // handler serves it if it ever comes over the chat channel; route through the same
+          // reveal+ready+insert path (already capped controller-side by the panels controller).
+          void (async (): Promise<void> => {
+            try {
+              if (chatDisposed()) return;
+              chatHost.open();
+              await chatHostReady();
+              if (chatDisposed()) return;
+              chatPost({ type: 'insert-into-input', text: capUtf8(msg.text) });
+            } catch (err) {
+              panelLog.warn(`[scratches] send-to-chat could not reach the chat: ${String(err)}`);
+            }
+          })();
+          return;
+        default:
+          return; // not a scratch intent — the chat host handles it
+      }
+    };
+    const chatPost = postChatToWebview;
+    const sendScratchList = async (): Promise<void> => {
+      let entries: readonly ScratchEntry[] = [];
+      let error: string | undefined;
+      try {
+        entries = await scratchStore.listScratches(5);
+      } catch (err) {
+        error = `scratchpads unavailable: ${String(err)}`;
+      }
+      postChatToWebview({ type: 'scratch-list', entries, ...(error !== undefined ? { error } : {}) });
+    };
     // Gate the editor-title icon (contributes.menus["editor/title"] when:insrc.chat.ready) on an
     // activate-time context key set ONLY here, inside the flag gate \u2014 NOT the live
     // config.insrc.chat.enabled. So toggling the setting without a window reload cannot surface a

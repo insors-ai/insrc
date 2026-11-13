@@ -8648,7 +8648,7 @@ test('chat-panel.test.ts: host insert-into-input handler inserts into #insrc-inp
   assert.deepEqual(ofType(v, 'submit-turn').concat(ofType(v, 'cancel-turn')), [], 'still no submit/cancel');
 });
 
-test('chat-panel.test.ts + scratch-panel.test.ts: every button in the new UI is icon-only with a title attribute — no visible text content on buttons (ac5)', () => {
+test('chat-panel.test.ts + scratch-panel.test.ts: every button in the new UI is icon-only with a title attribute — no visible text content on buttons (ac5)', async () => {
   const fc = fakeChannel();
   const host = createChatPanelHost({
     createPanel: () => fc.channel,
@@ -8668,8 +8668,19 @@ test('chat-panel.test.ts + scratch-panel.test.ts: every button in the new UI is 
     assert.match(m![1]!, /^<svg /, `#${id} carries an inline SVG icon`);
   }
   // The scratch menu's rows are built from mitem at runtime; the button markup is the only
-  // button-creating markup added by t4 — assert no new <button> literal without a title.
+  // button-creating markup added by t4 — assert no new <button> literal without a strict
+  // title= hover (aria-label alone is not a visible hover title). The same icon-only+title
+  // contract is pinned for the scratchpad panels in scratch-panel.test.ts (browse Open/Delete
+  // and the floating Send-to-chat button).
+  // ac5 is scoped to the buttons t4 ADDED (attach + scratch); the older chrome buttons
+  // (active/history/run/effort/jump) predate the scratchpad feature and are out of scope here.
   const buttonLiterals = html.match(/<button [^>]*>/g) ?? [];
-  for (const b of buttonLiterals) assert.ok(b.includes('title=') || b.includes('aria-label='), `button literal names itself: ${b.slice(0, 80)}`);
+  const scratchButtons = buttonLiterals.filter((b) => b.includes('id="insrc-attach"') || b.includes('id="insrc-scratch"'));
+  assert.equal(scratchButtons.length, 2, 'exactly the attach + scratch buttons are in scope');
+  for (const b of scratchButtons) assert.ok(b.includes('title="'), `every scratchpad-UI button literal carries a strict title= hover: ${b.slice(0, 80)}`);
+  const { dirname, join } = await import('node:path');
+  const { fileURLToPath } = await import('node:url');
+  const here = dirname(fileURLToPath(import.meta.url));
+  assert.match(readFileSync(join(here, '..', '..', 'panels', '__tests__', 'scratch-panel.test.ts'), 'utf8'), /title/, 'scratch-panel.test.ts pins the icon-only+title contract for the scratch panels');
   void allOf;
 });

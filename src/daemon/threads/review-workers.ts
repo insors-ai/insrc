@@ -289,11 +289,17 @@ export class ReviewWorkers {
   return true;
  }
  private async reclaimTerminal(e:Entry):Promise<void>{
-  try {
-   await this.call(e,'review.worker.assertIdle',{});
-   if(!e.publication&&!e.closing&&e.progress&&['complete','failed','interrupted'].includes(e.progress.phase))await this.closeEntry(e);
-  } catch { /* Active publication or an unresolved lease retains its owner. */ }
+  while(this.entries.get(keyOf(e.input.key))===e&&!e.closing&&e.progress&&['complete','failed','interrupted'].includes(e.progress.phase)){
+   try {
+    await this.call(e,'review.worker.assertIdle',{});
+    if(!e.publication){await this.closeEntry(e);return;}
+   } catch { if(e.closing)return; }
+   // The final checkpoint can precede the coordinator's release. Do not
+   // require another checkpoint write to retry this lightweight idle probe.
+   await new Promise<void>(resolve=>{setTimeout(resolve,100).unref();});
+  }
  }
+
  cachedProgress(key:ReviewKey):ReviewWorkerProgress|undefined{return this.entries.get(keyOf(key))?.progress;}
  /** Held by the artifact/story cleanup operation, including its filesystem work. */
  claimCleanup(scope:string):()=>void{

@@ -5,10 +5,10 @@
 ## Summary
 
 **Epic:** `enable-managed-daemon-lifecycle-macos-install`
-**LLD run:** `wf-1794546820180-mwzp01`
-**LLD effective hash:** `792d79af295b...`
+**LLD run:** `wf-1794555514618-2phz13`
+**LLD effective hash:** `a1f870fbe4e8...`
 
-Keep the existing macOS supervisor, migration and client work. Add signed release verification, portable native build evidence and a guarded restoration path. Qualify real macOS builds before release promotion and verify Linux compatibility.
+Authenticate each promoted macOS source head with one signed Git tag. Build on the user’s machine and keep the exact incumbent bytes for guarded rollback. Exercise the installer and IDE routes with disposable keys, then run the full regression sweep after implementation. Production packaging uses the release team’s public signing key.
 
 ## Contents
 
@@ -27,14 +27,12 @@ Keep the existing macOS supervisor, migration and client work. Add signed releas
 | 5 | **`t5`** Commit or roll back legacy migration | M | approved r1 | `t2`, `t3`, `t4` | unit: Uncertain publication with durable success versus no outcome; integration: Startup guard transfer, candidate bootstrap failure, rollback and repeated recovery; integration: Rollback restores an idle job without launching and refuses unqualified RunAtLoad | [[c2]] [[c3]] [[c4]] [[c5]] |
 | 6 | **`t6`** Wire running and stopped daemon updates | M | approved r1 | `t1`, `t5` | integration: Running managed update IPC and stopped local managed update; integration: Managed update acknowledges before slow preparation and survives client disconnect | [[c3]] [[c6]] [[c7]] |
 | 7 | **`t7`** Wire normal IDE first-upgrade actions | M | approved r1 | `t6` | integration: Installer and updated CLI, VS Code and JetBrains route matrix | [[c6]] [[c7]] |
-| 8 | **`t9`** Verify signed release and trust metadata | M | — | `t1` | integration: Trust rotation, expiry, replay and offline rollback at the fence boundary | [[c6]] [[c9]] |
-| 9 | **`t10`** Verify the installed runtime inventory | M | — | `t9` | integration: Changed native code, loadable data, bindings, signature policy, injected modules, symlinks and unidentified variance fail closed | [[c5]] [[c9]] |
-| 10 | **`t11`** Verify supported native build variance | L | — | `t10` | integration: Independent same-commit macOS build equivalence and tamper rejection; integration: Independent unequal-length debug roots preserve canonical native identity and malformed offsets or codeLimit are rejected | [[c9]] [[c8]] |
-| 11 | **`t12`** Authenticate installer and IDE bootstrap | M | — | `t9`, `t11`, `t7` | integration: Invalid or missing authorization prevents bootstrap checkout execution, npm scripts and bridge invocation | [[c1]] [[c9]] |
-| 12 | **`t13`** Gate restored legacy lifecycle requests | L | — | `t5`, `t9` | integration: A competing legacy command and interruption during rollback cannot reopen the launcher before durable outcome; integration: Real restored legacy update and shutdown RPCs cannot interrupt rollback or a managed retry; integration: Idle public stop and authorized private drain require distinct admission and reconcile exact exit | [[c3]] [[c4]] [[c5]] |
-| 13 | **`t14`** Reserve restored upgrades before preparation | M | — | `t12`, `t13`, `t6` | integration: A restored installer reserves before fetch, build or inventory and releases admission on preparation failure; integration: Managed acknowledgement precedes a preparation exceeding the client deadlines and lost reply cancels only unstarted work | [[c1]] [[c3]] [[c7]] |
-| 14 | **`t8`** Qualify install, migration and rollback | L | approved r1 | `t2`, `t5`, `t6`, `t7`, `t14` | integration: Linux normal install, update and restart unchanged; smoke: Fresh install and verified ordinary restart; smoke: Fresh --no-start and later supervisor start; smoke: First supported update of a qualified prior build with broker denial; smoke: Direct install and passive recovery job with exact loader argv; smoke: Verified stopped and running rollback with configuration and store integrity; smoke: Real product passive and recovery job loader arguments, verified broker refusal, data-preserving rollback and subsequent managed update | [[c1]] [[c4]] [[c8]] |
-| 15 | **`t15`** Gate promotion on published product qualification | M | — | `t11`, `t12`, `t14`, `t8` | integration: Missing or stale release evidence prevents promotion and leaves the incumbent running; smoke: Release publication validates real running and stopped upgrades for every enabled profile | [[c1]] [[c8]] [[c9]] |
+| 8 | **`t16`** Verify signed Git source before checkout | L | — | `t1`, `t7` | integration: Only an authorized channel tag can reach checkout and npm; integration: Installer and updated CLI, VS Code and JetBrains route matrix | [[c1]] [[c2]] |
+| 9 | **`t17`** Stage tagged compatibility and exact local runtime pins | L | — | `t16`, `t5`, `t6` | integration: Changed local runtime bytes block cutover or offline rollback; integration: Tagged compatibility rejects a conflicting declaration and admits a known historical predecessor; integration: Running managed update IPC and stopped local managed update | [[c1]] [[c2]] [[c3]] |
+| 10 | **`t13`** Gate restored legacy lifecycle requests | L | approved r1 | `t5`, `t17` | integration: A competing legacy command and interruption during rollback cannot reopen the launcher before durable outcome; integration: Real restored legacy update and shutdown RPCs cannot interrupt rollback or a managed retry; integration: Idle public stop and authorized private drain require distinct admission and reconcile exact exit | [[c1]] [[c2]] [[c3]] |
+| 11 | **`t14`** Reserve restored upgrades before preparation | M | approved r1 | `t13`, `t17`, `t6` | integration: A restored installer reserves before source fetch or build and releases admission on preparation failure; integration: Managed acknowledgement precedes a preparation exceeding the client deadlines and lost reply cancels only unstarted work | [[c1]] [[c2]] |
+| 12 | **`t18`** Gate signed-source release promotion | M | — | `t14`, `t17` | integration: Promotion requires passing source-built evidence for the exact signed head; integration: Published installer and both IDEs embed the same trusted verifier | [[c1]] [[c3]] |
+| 13 | **`t8`** Qualify local install, migration and rollback | L | draft r2 | `t2`, `t5`, `t6`, `t7`, `t14`, `t18` | integration: Linux normal install, update and restart unchanged; smoke: Fresh install and verified ordinary restart; smoke: Fresh --no-start and later supervisor start; smoke: First supported update of a qualified prior build with broker denial; smoke: Direct install and passive recovery job with exact loader argv; smoke: Verified stopped and running rollback with configuration and store integrity; smoke: Real product passive and recovery job loader arguments, verified broker refusal, data-preserving rollback and subsequent managed update; smoke: Source-built macOS migration preserves running and stopped service intent; smoke: Restored rollback guards public lifecycle and admits private retry | [[c1]] [[c3]] |
 
 ### 1.1 TASK-5d5478c61a25ac8f-s1-t1 — Stage and qualify pinned macOS releases
 
@@ -94,105 +92,78 @@ Route VS Code and JetBrains installed update actions through the shared installe
 - Updated IDE lifecycle and freshness flows stage the migration before legacy shutdown and report verified outcomes.
 - Older callers can use the current normal installer as the first-upgrade entry without manual launchd or file edits. Managed clients keep the existing IPC outcome contract.
 
-### 1.8 TASK-5d5478c61a25ac8f-s1-t9 — Verify signed release and trust metadata
+### 1.8 TASK-5d5478c61a25ac8f-s1-t16 — Verify signed Git source before checkout
 
-Add the trusted bootstrap verification contract and admission evidence.
-
-**Acceptance checks:**
-- Bind source, branch, candidate tree and ordered releases to a scoped signature. Reject invalid, expired, revoked or replayed metadata and retain the durable receipt for offline recovery.
-
-### 1.9 TASK-5d5478c61a25ac8f-s1-t10 — Verify the installed runtime inventory
-
-Measure the complete execution inventory and produce the exact local rollback pin.
+Replace authorization with one pinned SSH signing key, verify the signed channel tag against exact branch head before checkout and journal the channel sequence floor. Reuse the shared installer entry point.
 
 **Acceptance checks:**
-- Reject unexpected executable files, unsafe links and unsupported optional package layouts. Retain every qualified file in the raw rollback pin and revalidate it at cutover.
+- Only a correctly signed annotated tag for the configured channel and exact branch head authorizes checkout. Reject unsigned or malformed tags, foreign signers, wrong target, stale sequence and same-sequence substitution. Permit identical retries. Confirm denied input never reaches npm or a downloaded controller.
 
-### 1.10 TASK-5d5478c61a25ac8f-s1-t11 — Verify supported native build variance
+### 1.9 TASK-5d5478c61a25ac8f-s1-t17 — Stage tagged compatibility and exact local runtime pins
 
-Verify signed reference equivalence for the named native add-ons.
-
-**Acceptance checks:**
-- Independent unequal-length build roots verify against the same signed reference. Changed executable data, loader relationships, layout or signature coverage fail closed.
-
-### 1.11 TASK-5d5478c61a25ac8f-s1-t12 — Authenticate installer and IDE bootstrap
-
-Run the trusted first-stage verifier before candidate-controlled execution.
+Read a bounded catalog blob from the verified source tree, check the exact ordered compatibility pair and known historical fallback, and bind exact locally built byte pins to the update. Supersede the unpublished reference inventory, native normalization and delegation code while retaining historical recovery decoding as needed.
 
 **Acceptance checks:**
-- Shell and both IDE installer routes refuse missing or invalid authorization before bridge checkout, npm scripts or bridge execution. Preserve existing fresh and Linux behavior.
+- Catalog supports only the exact prior commit and authorized launch profile. Verify known writable formats and crash-consistent reopening. Reject conflicting declarations. Require candidate local build and exact raw pins before cutover. Offline recovery uses recorded evidence and original bytes.
 
-### 1.12 TASK-5d5478c61a25ac8f-s1-t13 — Gate restored legacy lifecycle requests
+### 1.10 TASK-5d5478c61a25ac8f-s1-t13 — Gate restored legacy lifecycle requests
 
-Preserve exact rollback using a guarded adapter, authenticated drain and durable fenced settlement.
-
-**Acceptance checks:**
-- A restored process gates both lifecycle RPCs across applicable workers. The private controller drain requires the current reservation and exact peer. Verify restored state and publish rollback before permitting guarded dispatch.
-
-### 1.13 TASK-5d5478c61a25ac8f-s1-t14 — Reserve restored upgrades before preparation
-
-Apply continuous preparation-to-cutover admission to the actual restored installer route.
+Complete guarded archived rollback, pinned admin preload and distinct public stop and private update drain paths, including the supported shell LaunchAgent transformation.
 
 **Acceptance checks:**
-- Arbitrate Stop and Update before fetch or build and preserve the exact incumbent baseline. Cleanly release a failed or abandoned pre-mutation reservation. Preserve managed acknowledgement before slow preparation.
+- Only the trusted controller can reconstruct the pinned shell LaunchAgent as the guarded private Node descriptor. Preserve passive policy and launch identity. Both handler tables arbitrate Stop and refuse old Update. Publish verified rollback before opening guarded dispatch.
 
-### 1.14 TASK-5d5478c61a25ac8f-s1-t8 — Qualify install, migration and rollback
+### 1.11 TASK-5d5478c61a25ac8f-s1-t14 — Reserve restored upgrades before preparation
 
-Exercise supported paths against disposable macOS state and verify Linux behavior.
-
-**Acceptance checks:**
-- Fresh install and --no-start, ordinary restart, running and stopped updates, and first upgrade of broker-denied predecessors pass real macOS qualification.
-- Interrupted guard adoption, stopped-job rollback and publication ambiguity are verified. User config and state survive. Linux lifecycle remains compatible.
-- Record immutable real-product qualification receipts for each enabled profile, using an isolated signer and exercising independent native builds, real running broker denial, stopped and passive routes, and the subsequent managed update.
-
-### 1.15 TASK-5d5478c61a25ac8f-s1-t15 — Gate promotion on published product qualification
-
-Produce and verify release evidence for the product matrix and enforce it before promotion.
+Arbitrate the restored installer route before fetch or build. Keep the original reservation through qualification and cutover. Preserve managed acknowledgement and recover abandoned preflight.
 
 **Acceptance checks:**
-- Publication verifies the exact release head, signed profiles and immutable real-product receipts from independent builds. Refuse missing or invalid evidence before promotion. Use a disposable signer for tests.
+- Stop and Update serialize before restored preparation. Failure releases admission only after checking unchanged live state. Existing managed acknowledgement precedes verification and build.
+
+### 1.12 TASK-5d5478c61a25ac8f-s1-t18 — Gate signed-source release promotion
+
+Verify the exact proposed source head and require real source-built qualification results before signing and promotion. Produce the same packaged verifier for the installer, VS Code and JetBrains. Implement and exercise the gate with fixture evidence. Actual promotion consumes the evidence produced in t8.
+
+**Acceptance checks:**
+- Missing or mismatched test evidence blocks promotion. Validate the precise tag and head through the normal fetch route and use the same public verifier configuration in each distribution. Exercise with a disposable signing key.
+
+### 1.13 TASK-5d5478c61a25ac8f-s1-t8 — Qualify local install, migration and rollback
+
+Exercise the real source-built installer against disposable macOS state, preserve Linux behavior, and run the full regression sweep after implementation. Record exact source test evidence for the promotion gate.
+
+**Acceptance checks:**
+- Cover fresh start and idle, running and stopped managed updates, broker-denied legacy migration, passive and shell job restoration, rollback with intact stores and later retry. Check normal Linux lifecycle. Run the full regression sweep only after implementation tasks.
 
 ## 2. Test-strategy coverage
 
 | LLD strategy item | Covered by |
 | :--- | :--- |
+| Only an authorized channel tag can reach checkout and npm | `t16` |
+| Changed local runtime bytes block cutover or offline rollback | `t17` |
+| Source-built macOS migration preserves running and stopped service intent | `t8` |
+| Restored rollback guards public lifecycle and admits private retry | `t8` |
 | Predecessor variants and backward decoding | `t3` |
 | Explicit fresh activation start intent and owned partial publication | `t2` |
 | Release provenance, changed bytes and absent legacy declaration | `t1` |
 | Graceful, broker-denied and unknown drain evidence | `t4` |
 | Uncertain publication with durable success versus no outcome | `t5` |
-| Installer and updated CLI, VS Code and JetBrains route matrix | `t6`, `t7` |
-| Running managed update IPC and stopped local managed update | `t6` |
-| Old shell/helper concurrent with canonical launcher exchange and old child attempting to open stores | `t3`, `t4` |
-| Startup guard transfer, candidate bootstrap failure, rollback and repeated recovery | `t4`, `t5` |
+| Installer and updated CLI, VS Code and JetBrains route matrix | `t7`, `t16` |
+| Running managed update IPC and stopped local managed update | `t6`, `t17` |
+| Old shell/helper concurrent with canonical launcher exchange and old child attempting to open stores | `t3` |
+| Startup guard transfer, candidate bootstrap failure, rollback and repeated recovery | `t5` |
 | Linux normal install, update and restart unchanged | `t8` |
-| Fresh install and verified ordinary restart | `t2`, `t8` |
-| Fresh --no-start and later supervisor start | `t2`, `t8` |
-| First supported update of a qualified prior build with broker denial | `t6`, `t8` |
-| Direct install and passive recovery job with exact loader argv | `t3`, `t8` |
-| Verified stopped and running rollback with configuration and store integrity | `t5`, `t8` |
-| Trust rotation, expiry, replay and offline rollback at the fence boundary | `t9` |
-| Changed native code, loadable data, bindings, signature policy, injected modules, symlinks and unidentified variance fail closed | `t10`, `t11` |
-| Independent same-commit macOS build equivalence and tamper rejection | `t11` |
-| Independent unequal-length debug roots preserve canonical native identity and malformed offsets or codeLimit are rejected | `t11` |
-| Invalid or missing authorization prevents bootstrap checkout execution, npm scripts and bridge invocation | `t12` |
-| A competing legacy command and interruption during rollback cannot reopen the launcher before durable outcome | `t13` |
-| Real restored legacy update and shutdown RPCs cannot interrupt rollback or a managed retry | `t13` |
-| Idle public stop and authorized private drain require distinct admission and reconcile exact exit | `t13` |
-| A restored installer reserves before fetch, build or inventory and releases admission on preparation failure | `t14` |
-| Managed acknowledgement precedes a preparation exceeding the client deadlines and lost reply cancels only unstarted work | `t14` |
-| Real product passive and recovery job loader arguments, verified broker refusal, data-preserving rollback and subsequent managed update | `t8` |
-| Missing or stale release evidence prevents promotion and leaves the incumbent running | `t15` |
-| Release publication validates real running and stopped upgrades for every enabled profile | `t15` |
+| Fresh install and verified ordinary restart | `t8` |
+| Fresh --no-start and later supervisor start | `t8` |
+| First supported update of a qualified prior build with broker denial | `t8` |
+| Direct install and passive recovery job with exact loader argv | `t8` |
+| Verified stopped and running rollback with configuration and store integrity | `t8` |
 
 ## 3. References
 
-- **[[c1]]** `prior-artifact` `docs/standalone/enable-managed-daemon-lifecycle-macos-install-E202611115d5478c6/S001/LLD.md#7-migration`
-- **[[c2]]** `prior-artifact` `docs/standalone/enable-managed-daemon-lifecycle-macos-install-E202611115d5478c6/S001/LLD.md#23-stagemanagedinstallation`
-- **[[c3]]** `prior-artifact` `docs/standalone/enable-managed-daemon-lifecycle-macos-install-E202611115d5478c6/S001/LLD.md#22-completelegacymigration`
-- **[[c4]]** `prior-artifact` `docs/standalone/enable-managed-daemon-lifecycle-macos-install-E202611115d5478c6/S001/LLD.md#5-error-paths`
-- **[[c5]]** `prior-artifact` `docs/standalone/enable-managed-daemon-lifecycle-macos-install-E202611115d5478c6/S001/LLD.md#3-data-model-changes`
+- **[[c1]]** `prior-artifact` `docs/standalone/enable-managed-daemon-lifecycle-macos-install-E202611115d5478c6/S001/LLD.md#2-contract-details`
 - **[[c6]]** `prior-artifact` `docs/standalone/enable-managed-daemon-lifecycle-macos-install-E202611115d5478c6/S001/LLD.md#7-migration`
-- **[[c7]]** `prior-artifact` `docs/standalone/enable-managed-daemon-lifecycle-macos-install-E202611115d5478c6/S001/LLD.md#24-launchmanagedupdate`
-- **[[c8]]** `prior-artifact` `docs/standalone/enable-managed-daemon-lifecycle-macos-install-E202611115d5478c6/S001/LLD.md#6-test-strategy`
-- **[[c9]]** `prior-artifact` `docs/standalone/enable-managed-daemon-lifecycle-macos-install-E202611115d5478c6/S001/LLD.md#21-stagemanagedrelease`
+- **[[c2]]** `prior-artifact` `docs/standalone/enable-managed-daemon-lifecycle-macos-install-E202611115d5478c6/S001/LLD.md#3-data-model-changes`
+- **[[c3]]** `prior-artifact` `docs/standalone/enable-managed-daemon-lifecycle-macos-install-E202611115d5478c6/S001/LLD.md#6-test-strategy`
+- **[[c5]]** `prior-artifact` `docs/standalone/enable-managed-daemon-lifecycle-macos-install-E202611115d5478c6/S001/LLD.md#32-updatepredecessor--invariant-change`
+- **[[c4]]** `prior-artifact` `docs/standalone/enable-managed-daemon-lifecycle-macos-install-E202611115d5478c6/S001/LLD.md#5-error-paths`
+- **[[c7]]** `prior-artifact` `docs/standalone/enable-managed-daemon-lifecycle-macos-install-E202611115d5478c6/S001/LLD.md#25-launchmanagedupdate`

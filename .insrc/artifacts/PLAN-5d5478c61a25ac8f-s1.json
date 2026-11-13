@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1794548011892-ahacgh",
+    "runId": "wf-1794557422280-6qjozu",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-13T05:35:04.668Z",
+    "createdAt": "2026-11-13T08:10:23.507Z",
     "epicCreatedAt": "2026-11-11T16:00:50.440Z",
     "standalone": true,
     "attribution": {
@@ -16,21 +16,21 @@
         }
       ]
     },
-    "elapsedMs": 92435,
+    "elapsedMs": 915,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "5d5478c61a25ac8f",
     "epicSlug": "enable-managed-daemon-lifecycle-macos-install",
     "storyId": "s1",
-    "lldRunId": "wf-1794546820180-mwzp01",
-    "lldEffectiveHash": "792d79af295b027bc11ae783f40c08df3ed2f23fca836a5151386d677d22ee41",
+    "lldRunId": "wf-1794555514618-2phz13",
+    "lldEffectiveHash": "a1f870fbe4e8bd421186b00a54f49d9a6b9b895eabf5481b7bfc3e4659f1b4e4",
     "authoredBy": "controller",
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 2,
-        "contentHash": "eba56cefeac588b9586ecf781b46ee2b670e21891d2b9b1f05d3481cdc916548",
-        "at": "2026-11-13T05:35:04.769Z",
+        "number": 4,
+        "contentHash": "ee68b5bcc935f1635ba033e13108f9bcd5d2837880f38a062875bff94b33aa2e",
+        "at": "2026-11-13T08:10:23.648Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -39,13 +39,13 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 2,
+        "revision": 4,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-13T05:36:08.258Z"
+        "at": "2026-11-13T08:27:48.581Z"
       }
     },
     "envelope": {
@@ -53,14 +53,10 @@
       "references": [],
       "attachments": []
     },
-    "revision": 2,
-    "rangeBase": "449105b30c3462dcae6f8f1adeaa3b83db1d5adc"
+    "revision": 4,
+    "rangeBase": "be02879ef54cb99bb5289b7bcef4609a46fd12ad"
   },
   "body": {
-    "summary": {
-      "audience": "technical",
-      "prose": "Keep the existing macOS supervisor, migration and client work. Add signed release verification, portable native build evidence and a guarded restoration path. Qualify real macOS builds before release promotion and verify Linux compatibility."
-    },
     "tasks": [
       {
         "id": "t1",
@@ -267,120 +263,83 @@
         ]
       },
       {
-        "id": "t9",
-        "order": 8,
-        "title": "Verify signed release and trust metadata",
-        "summary": "Add the trusted bootstrap verification contract and admission evidence.",
-        "size": "M",
-        "dependsOn": [
-          "t1"
-        ],
-        "acceptanceChecks": [
-          "Bind source, branch, candidate tree and ordered releases to a scoped signature. Reject invalid, expired, revoked or replayed metadata and retain the durable receipt for offline recovery."
-        ],
-        "derivedFrom": [
-          "c6",
-          "c9"
-        ],
-        "tests": [
-          {
-            "level": "integration",
-            "name": "Trust rotation, expiry, replay and offline rollback at the fence boundary"
-          }
-        ]
-      },
-      {
-        "id": "t10",
-        "order": 9,
-        "title": "Verify the installed runtime inventory",
-        "summary": "Measure the complete execution inventory and produce the exact local rollback pin.",
-        "size": "M",
-        "dependsOn": [
-          "t9"
-        ],
-        "acceptanceChecks": [
-          "Reject unexpected executable files, unsafe links and unsupported optional package layouts. Retain every qualified file in the raw rollback pin and revalidate it at cutover."
-        ],
-        "derivedFrom": [
-          "c5",
-          "c9"
-        ],
-        "tests": [
-          {
-            "level": "integration",
-            "name": "Changed native code, loadable data, bindings, signature policy, injected modules, symlinks and unidentified variance fail closed"
-          }
-        ]
-      },
-      {
-        "id": "t11",
-        "order": 10,
-        "title": "Verify supported native build variance",
-        "summary": "Verify signed reference equivalence for the named native add-ons.",
+        "id": "t16",
+        "title": "Verify signed Git source before checkout",
+        "summary": "Replace authorization with one pinned SSH signing key, verify the signed channel tag against exact branch head before checkout and journal the channel sequence floor. Reuse the shared installer entry point.",
         "size": "L",
         "dependsOn": [
-          "t10"
-        ],
-        "acceptanceChecks": [
-          "Independent unequal-length build roots verify against the same signed reference. Changed executable data, loader relationships, layout or signature coverage fail closed."
-        ],
-        "derivedFrom": [
-          "c9",
-          "c8"
-        ],
-        "tests": [
-          {
-            "level": "integration",
-            "name": "Independent same-commit macOS build equivalence and tamper rejection"
-          },
-          {
-            "level": "integration",
-            "name": "Independent unequal-length debug roots preserve canonical native identity and malformed offsets or codeLimit are rejected"
-          }
-        ]
-      },
-      {
-        "id": "t12",
-        "order": 11,
-        "title": "Authenticate installer and IDE bootstrap",
-        "summary": "Run the trusted first-stage verifier before candidate-controlled execution.",
-        "size": "M",
-        "dependsOn": [
-          "t9",
-          "t11",
+          "t1",
           "t7"
         ],
         "acceptanceChecks": [
-          "Shell and both IDE installer routes refuse missing or invalid authorization before bridge checkout, npm scripts or bridge execution. Preserve existing fresh and Linux behavior."
+          "Only a correctly signed annotated tag for the configured channel and exact branch head authorizes checkout. Reject unsigned or malformed tags, foreign signers, wrong target, stale sequence and same-sequence substitution. Permit identical retries. Confirm denied input never reaches npm or a downloaded controller."
         ],
         "derivedFrom": [
           "c1",
-          "c9"
+          "c2"
         ],
         "tests": [
           {
             "level": "integration",
-            "name": "Invalid or missing authorization prevents bootstrap checkout execution, npm scripts and bridge invocation"
+            "name": "Only an authorized channel tag can reach checkout and npm"
+          },
+          {
+            "level": "integration",
+            "name": "Installer and updated CLI, VS Code and JetBrains route matrix"
           }
-        ]
+        ],
+        "order": 8
+      },
+      {
+        "id": "t17",
+        "title": "Stage tagged compatibility and exact local runtime pins",
+        "summary": "Read a bounded catalog blob from the verified source tree, check the exact ordered compatibility pair and known historical fallback, and bind exact locally built byte pins to the update. Supersede the unpublished reference inventory, native normalization and delegation code while retaining historical recovery decoding as needed.",
+        "size": "L",
+        "dependsOn": [
+          "t16",
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "Catalog supports only the exact prior commit and authorized launch profile. Verify known writable formats and crash-consistent reopening. Reject conflicting declarations. Require candidate local build and exact raw pins before cutover. Offline recovery uses recorded evidence and original bytes."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Changed local runtime bytes block cutover or offline rollback"
+          },
+          {
+            "level": "integration",
+            "name": "Tagged compatibility rejects a conflicting declaration and admits a known historical predecessor"
+          },
+          {
+            "level": "integration",
+            "name": "Running managed update IPC and stopped local managed update"
+          }
+        ],
+        "order": 9
       },
       {
         "id": "t13",
-        "order": 12,
         "title": "Gate restored legacy lifecycle requests",
-        "summary": "Preserve exact rollback using a guarded adapter, authenticated drain and durable fenced settlement.",
+        "summary": "Complete guarded archived rollback, pinned admin preload and distinct public stop and private update drain paths, including the supported shell LaunchAgent transformation.",
         "size": "L",
         "dependsOn": [
           "t5",
-          "t9"
+          "t17"
         ],
         "acceptanceChecks": [
-          "A restored process gates both lifecycle RPCs across applicable workers. The private controller drain requires the current reservation and exact peer. Verify restored state and publish rollback before permitting guarded dispatch."
+          "Only the trusted controller can reconstruct the pinned shell LaunchAgent as the guarded private Node descriptor. Preserve passive policy and launch identity. Both handler tables arbitrate Stop and refuse old Update. Publish verified rollback before opening guarded dispatch."
         ],
         "derivedFrom": [
-          "c3",
-          "c4",
-          "c5"
+          "c1",
+          "c2",
+          "c3"
         ],
         "tests": [
           {
@@ -395,60 +354,85 @@
             "level": "integration",
             "name": "Idle public stop and authorized private drain require distinct admission and reconcile exact exit"
           }
-        ]
+        ],
+        "order": 10
       },
       {
         "id": "t14",
-        "order": 13,
         "title": "Reserve restored upgrades before preparation",
-        "summary": "Apply continuous preparation-to-cutover admission to the actual restored installer route.",
+        "summary": "Arbitrate the restored installer route before fetch or build. Keep the original reservation through qualification and cutover. Preserve managed acknowledgement and recover abandoned preflight.",
         "size": "M",
         "dependsOn": [
-          "t12",
           "t13",
+          "t17",
           "t6"
         ],
         "acceptanceChecks": [
-          "Arbitrate Stop and Update before fetch or build and preserve the exact incumbent baseline. Cleanly release a failed or abandoned pre-mutation reservation. Preserve managed acknowledgement before slow preparation."
+          "Stop and Update serialize before restored preparation. Failure releases admission only after checking unchanged live state. Existing managed acknowledgement precedes verification and build."
         ],
         "derivedFrom": [
           "c1",
-          "c3",
-          "c7"
+          "c2"
         ],
         "tests": [
           {
             "level": "integration",
-            "name": "A restored installer reserves before fetch, build or inventory and releases admission on preparation failure"
+            "name": "A restored installer reserves before source fetch or build and releases admission on preparation failure"
           },
           {
             "level": "integration",
             "name": "Managed acknowledgement precedes a preparation exceeding the client deadlines and lost reply cancels only unstarted work"
           }
-        ]
+        ],
+        "order": 11
+      },
+      {
+        "id": "t18",
+        "title": "Gate signed-source release promotion",
+        "summary": "Verify the exact proposed source head and require real source-built qualification results before signing and promotion. Produce the same packaged verifier for the installer, VS Code and JetBrains. Implement and exercise the gate with fixture evidence. Actual promotion consumes the evidence produced in t8.",
+        "size": "M",
+        "dependsOn": [
+          "t14",
+          "t17"
+        ],
+        "acceptanceChecks": [
+          "Missing or mismatched test evidence blocks promotion. Validate the precise tag and head through the normal fetch route and use the same public verifier configuration in each distribution. Exercise with a disposable signing key."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Promotion requires passing source-built evidence for the exact signed head"
+          },
+          {
+            "level": "integration",
+            "name": "Published installer and both IDEs embed the same trusted verifier"
+          }
+        ],
+        "order": 12
       },
       {
         "id": "t8",
-        "title": "Qualify install, migration and rollback",
-        "summary": "Exercise supported paths against disposable macOS state and verify Linux behavior.",
+        "title": "Qualify local install, migration and rollback",
+        "summary": "Exercise the real source-built installer against disposable macOS state, preserve Linux behavior, and run the full regression sweep after implementation. Record exact source test evidence for the promotion gate.",
         "size": "L",
-        "order": 14,
         "dependsOn": [
           "t2",
           "t5",
           "t6",
           "t7",
-          "t14"
+          "t14",
+          "t18"
         ],
         "acceptanceChecks": [
-          "Fresh install and --no-start, ordinary restart, running and stopped updates, and first upgrade of broker-denied predecessors pass real macOS qualification.",
-          "Interrupted guard adoption, stopped-job rollback and publication ambiguity are verified. User config and state survive. Linux lifecycle remains compatible.",
-          "Record immutable real-product qualification receipts for each enabled profile, using an isolated signer and exercising independent native builds, real running broker denial, stopped and passive routes, and the subsequent managed update."
+          "Cover fresh start and idle, running and stopped managed updates, broker-denied legacy migration, passive and shell job restoration, rollback with intact stores and later retry. Check normal Linux lifecycle. Run the full regression sweep only after implementation tasks."
         ],
         "derivedFrom": [
           "c1",
-          "c4",
-          "c8"
+          "c3"
         ],
         "tests": [
           {
@@ -478,42 +462,44 @@
           {
             "level": "smoke",
             "name": "Real product passive and recovery job loader arguments, verified broker refusal, data-preserving rollback and subsequent managed update"
-          }
-        ]
-      },
-      {
-        "id": "t15",
-        "order": 15,
-        "title": "Gate promotion on published product qualification",
-        "summary": "Produce and verify release evidence for the product matrix and enforce it before promotion.",
-        "size": "M",
-        "dependsOn": [
-          "t11",
-          "t12",
-          "t14",
-          "t8"
-        ],
-        "acceptanceChecks": [
-          "Publication verifies the exact release head, signed profiles and immutable real-product receipts from independent builds. Refuse missing or invalid evidence before promotion. Use a disposable signer for tests."
-        ],
-        "derivedFrom": [
-          "c1",
-          "c8",
-          "c9"
-        ],
-        "tests": [
-          {
-            "level": "integration",
-            "name": "Missing or stale release evidence prevents promotion and leaves the incumbent running"
           },
           {
             "level": "smoke",
-            "name": "Release publication validates real running and stopped upgrades for every enabled profile"
+            "name": "Source-built macOS migration preserves running and stopped service intent"
+          },
+          {
+            "level": "smoke",
+            "name": "Restored rollback guards public lifecycle and admits private retry"
           }
-        ]
+        ],
+        "order": 13
       }
     ],
     "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "Only an authorized channel tag can reach checkout and npm",
+        "coveredByTaskIds": [
+          "t16"
+        ]
+      },
+      {
+        "lldStrategyItem": "Changed local runtime bytes block cutover or offline rollback",
+        "coveredByTaskIds": [
+          "t17"
+        ]
+      },
+      {
+        "lldStrategyItem": "Source-built macOS migration preserves running and stopped service intent",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Restored rollback guards public lifecycle and admits private retry",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
       {
         "lldStrategyItem": "Predecessor variants and backward decoding",
         "coveredByTaskIds": [
@@ -547,27 +533,26 @@
       {
         "lldStrategyItem": "Installer and updated CLI, VS Code and JetBrains route matrix",
         "coveredByTaskIds": [
-          "t6",
-          "t7"
+          "t7",
+          "t16"
         ]
       },
       {
         "lldStrategyItem": "Running managed update IPC and stopped local managed update",
         "coveredByTaskIds": [
-          "t6"
+          "t6",
+          "t17"
         ]
       },
       {
         "lldStrategyItem": "Old shell/helper concurrent with canonical launcher exchange and old child attempting to open stores",
         "coveredByTaskIds": [
-          "t3",
-          "t4"
+          "t3"
         ]
       },
       {
         "lldStrategyItem": "Startup guard transfer, candidate bootstrap failure, rollback and repeated recovery",
         "coveredByTaskIds": [
-          "t4",
           "t5"
         ]
       },
@@ -580,144 +565,44 @@
       {
         "lldStrategyItem": "Fresh install and verified ordinary restart",
         "coveredByTaskIds": [
-          "t2",
           "t8"
         ]
       },
       {
         "lldStrategyItem": "Fresh --no-start and later supervisor start",
         "coveredByTaskIds": [
-          "t2",
           "t8"
         ]
       },
       {
         "lldStrategyItem": "First supported update of a qualified prior build with broker denial",
         "coveredByTaskIds": [
-          "t6",
           "t8"
         ]
       },
       {
         "lldStrategyItem": "Direct install and passive recovery job with exact loader argv",
         "coveredByTaskIds": [
-          "t3",
           "t8"
         ]
       },
       {
         "lldStrategyItem": "Verified stopped and running rollback with configuration and store integrity",
         "coveredByTaskIds": [
-          "t5",
           "t8"
-        ]
-      },
-      {
-        "lldStrategyItem": "Trust rotation, expiry, replay and offline rollback at the fence boundary",
-        "coveredByTaskIds": [
-          "t9"
-        ]
-      },
-      {
-        "lldStrategyItem": "Changed native code, loadable data, bindings, signature policy, injected modules, symlinks and unidentified variance fail closed",
-        "coveredByTaskIds": [
-          "t10",
-          "t11"
-        ]
-      },
-      {
-        "lldStrategyItem": "Independent same-commit macOS build equivalence and tamper rejection",
-        "coveredByTaskIds": [
-          "t11"
-        ]
-      },
-      {
-        "lldStrategyItem": "Independent unequal-length debug roots preserve canonical native identity and malformed offsets or codeLimit are rejected",
-        "coveredByTaskIds": [
-          "t11"
-        ]
-      },
-      {
-        "lldStrategyItem": "Invalid or missing authorization prevents bootstrap checkout execution, npm scripts and bridge invocation",
-        "coveredByTaskIds": [
-          "t12"
-        ]
-      },
-      {
-        "lldStrategyItem": "A competing legacy command and interruption during rollback cannot reopen the launcher before durable outcome",
-        "coveredByTaskIds": [
-          "t13"
-        ]
-      },
-      {
-        "lldStrategyItem": "Real restored legacy update and shutdown RPCs cannot interrupt rollback or a managed retry",
-        "coveredByTaskIds": [
-          "t13"
-        ]
-      },
-      {
-        "lldStrategyItem": "Idle public stop and authorized private drain require distinct admission and reconcile exact exit",
-        "coveredByTaskIds": [
-          "t13"
-        ]
-      },
-      {
-        "lldStrategyItem": "A restored installer reserves before fetch, build or inventory and releases admission on preparation failure",
-        "coveredByTaskIds": [
-          "t14"
-        ]
-      },
-      {
-        "lldStrategyItem": "Managed acknowledgement precedes a preparation exceeding the client deadlines and lost reply cancels only unstarted work",
-        "coveredByTaskIds": [
-          "t14"
-        ]
-      },
-      {
-        "lldStrategyItem": "Real product passive and recovery job loader arguments, verified broker refusal, data-preserving rollback and subsequent managed update",
-        "coveredByTaskIds": [
-          "t8"
-        ]
-      },
-      {
-        "lldStrategyItem": "Missing or stale release evidence prevents promotion and leaves the incumbent running",
-        "coveredByTaskIds": [
-          "t15"
-        ]
-      },
-      {
-        "lldStrategyItem": "Release publication validates real running and stopped upgrades for every enabled profile",
-        "coveredByTaskIds": [
-          "t15"
         ]
       }
-    ]
+    ],
+    "summary": {
+      "prose": "Authenticate each promoted macOS source head with one signed Git tag. Build on the user’s machine and keep the exact incumbent bytes for guarded rollback. Exercise the installer and IDE routes with disposable keys, then run the full regression sweep after implementation. Production packaging uses the release team’s public signing key.",
+      "audience": "technical"
+    }
   },
   "citations": [
     {
       "id": "c1",
       "kind": "prior-artifact",
-      "ref": "docs/standalone/enable-managed-daemon-lifecycle-macos-install-E202611115d5478c6/S001/LLD.md#7-migration"
-    },
-    {
-      "id": "c2",
-      "kind": "prior-artifact",
-      "ref": "docs/standalone/enable-managed-daemon-lifecycle-macos-install-E202611115d5478c6/S001/LLD.md#23-stagemanagedinstallation"
-    },
-    {
-      "id": "c3",
-      "kind": "prior-artifact",
-      "ref": "docs/standalone/enable-managed-daemon-lifecycle-macos-install-E202611115d5478c6/S001/LLD.md#22-completelegacymigration"
-    },
-    {
-      "id": "c4",
-      "kind": "prior-artifact",
-      "ref": "docs/standalone/enable-managed-daemon-lifecycle-macos-install-E202611115d5478c6/S001/LLD.md#5-error-paths"
-    },
-    {
-      "id": "c5",
-      "kind": "prior-artifact",
-      "ref": "docs/standalone/enable-managed-daemon-lifecycle-macos-install-E202611115d5478c6/S001/LLD.md#3-data-model-changes"
+      "ref": "docs/standalone/enable-managed-daemon-lifecycle-macos-install-E202611115d5478c6/S001/LLD.md#2-contract-details"
     },
     {
       "id": "c6",
@@ -725,19 +610,29 @@
       "ref": "docs/standalone/enable-managed-daemon-lifecycle-macos-install-E202611115d5478c6/S001/LLD.md#7-migration"
     },
     {
-      "id": "c7",
+      "id": "c2",
       "kind": "prior-artifact",
-      "ref": "docs/standalone/enable-managed-daemon-lifecycle-macos-install-E202611115d5478c6/S001/LLD.md#24-launchmanagedupdate"
+      "ref": "docs/standalone/enable-managed-daemon-lifecycle-macos-install-E202611115d5478c6/S001/LLD.md#3-data-model-changes"
     },
     {
-      "id": "c8",
+      "id": "c3",
       "kind": "prior-artifact",
       "ref": "docs/standalone/enable-managed-daemon-lifecycle-macos-install-E202611115d5478c6/S001/LLD.md#6-test-strategy"
     },
     {
-      "id": "c9",
+      "id": "c5",
       "kind": "prior-artifact",
-      "ref": "docs/standalone/enable-managed-daemon-lifecycle-macos-install-E202611115d5478c6/S001/LLD.md#21-stagemanagedrelease"
+      "ref": "docs/standalone/enable-managed-daemon-lifecycle-macos-install-E202611115d5478c6/S001/LLD.md#32-updatepredecessor--invariant-change"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/enable-managed-daemon-lifecycle-macos-install-E202611115d5478c6/S001/LLD.md#5-error-paths"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/enable-managed-daemon-lifecycle-macos-install-E202611115d5478c6/S001/LLD.md#25-launchmanagedupdate"
     }
   ]
 }

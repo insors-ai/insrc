@@ -15,6 +15,7 @@ import { PATHS } from '../shared/paths.js';
 import { captureLegacyDrainLogs, classifyLegacyDrain, readLegacyDrainLogs } from './legacy-drain-evidence.js';
 import type { LegacyDrain } from './legacy-drain-evidence.js';
 import { matchesInstalledDaemonArguments } from './legacy-launch-job.js';
+import { requestLegacyDrain } from './legacy-private-drain.js';
 
 export interface LegacyDaemonPin {
 	readonly stateRoot: string;
@@ -39,13 +40,14 @@ interface DrainOptions {
 	readonly timeoutMs?: number;
 	readonly log?: string;
 	readonly acquireCleanupGuard?: (receipt: LegacyDrainReceipt) => Promise<RunFileGuard>;
+	readonly privateDrain?: { readonly path: string; readonly updateId: string };
 }
 
 /** Drain a cooperative legacy daemon on its authenticated socket. The observer never signals it. */
 export async function observeLegacyDrain(
 	pin: LegacyDaemonPin, authorize: () => Promise<void>, options: DrainOptions = {},
 ): Promise<LegacyDrainReceipt | undefined> {
-	const { timeoutMs = 30_000, log = PATHS.daemonLog, acquireCleanupGuard } = options;
+	const { timeoutMs = 30_000, log = PATHS.daemonLog, acquireCleanupGuard, privateDrain } = options;
 	if (process.platform !== 'darwin' || await realpath(pin.stateRoot) !== pin.stateRoot) {
 		throw new Error('legacy cutover requires a canonical macOS installation root');
 	}
@@ -101,10 +103,12 @@ export async function observeLegacyDrain(
 		const logs = await captureLegacyDrainLogs(log);
 		await authorize();
 		const requestedAt = Date.now();
-		await new Promise<void>((resolve, reject) => {
-			socket!.write(JSON.stringify({ id: 1, method: 'daemon.shutdown', params: {} }) + '\n',
-				error => error ? reject(error) : resolve());
-		});
+		if (privateDrain === undefined) {
+			await new Promise<void>((resolve, reject) => {
+				socket!.write(JSON.stringify({ id: 1, method: 'daemon.shutdown', params: {} }) + '\n',
+					error => error ? reject(error) : resolve());
+			});
+		} else await requestLegacyDrain(privateDrain.path, target, privateDrain.updateId);
 		if (!await observer.exited) throw new Error('legacy daemon exit was not observed');
 		const exitedAt = Date.now();
 		const receipt = { exit: target, drain: classifyLegacyDrain(await readLegacyDrainLogs(logs), target.pid, requestedAt, exitedAt) };

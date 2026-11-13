@@ -95,6 +95,39 @@ test('Independent same-commit macOS build equivalence and tamper rejection', { s
 	const dyld = command(invalidBinding, 0x80000022);
 	invalidBinding.writeUInt32LE(invalidBinding.readUInt32LE(dyld + 8), dyld + 16);
 	assert.throws(() => qualifiedNativeDigest(invalidBinding, nativePath, firstBuild.root), /qualified Mach-O/);
+
+	// The reference must reject changed mapped data even if the local page
+	// hash is internally consistent. Locate a file-backed __DATA section.
+	const changedData = Buffer.from(first);
+	let offset = 32;
+	let dataOffset: number | undefined;
+	for (let i = 0; i < changedData.readUInt32LE(16); i++) {
+		if (changedData.readUInt32LE(offset) === 0x19 && changedData.toString('ascii', offset + 8, offset + 14) === '__DATA') {
+			for (let section = 0; section < changedData.readUInt32LE(offset + 64); section++) {
+				const sectionOffset = offset + 72 + section * 80;
+				const fileOffset = changedData.readUInt32LE(sectionOffset + 48);
+				if (fileOffset !== 0 && changedData.readBigUInt64LE(sectionOffset + 40) > 0n) { dataOffset = fileOffset; break; }
+			}
+			if (dataOffset !== undefined) break;
+		}
+		offset += changedData.readUInt32LE(offset + 4);
+	}
+	assert.ok(dataOffset !== undefined);
+	changedData[dataOffset] = changedData[dataOffset]! ^ 1;
+	const dataPage = Math.floor(dataOffset / 4096);
+	const signatureOffset = changedData.readUInt32LE(command(changedData, 0x1d) + 8);
+	createHash('sha256').update(changedData.subarray(dataPage * 4096, Math.min(signatureOffset, (dataPage + 1) * 4096)))
+		.digest().copy(changedData, codeDirectory + changedData.readUInt32BE(codeDirectory + 16) + dataPage * 32);
+	assert.notEqual(qualifiedNativeDigest(changedData, nativePath, firstBuild.root), expected);
+	await writeFile(join(firstBuild.root, nativePath), changedData);
+	await assert.rejects(measureManagedReleaseInventory(firstBuild.root, fixtureRuntime, reference), /differs from signed reference/);
+
+	// Remove the ad-hoc signing flag while leaving executable page hashes unchanged.
+	const alteredPolicy = Buffer.from(first);
+	alteredPolicy.writeUInt32BE(alteredPolicy.readUInt32BE(codeDirectory + 12) ^ 2, codeDirectory + 12);
+	await writeFile(join(firstBuild.root, nativePath), alteredPolicy);
+	await assert.rejects(measureManagedReleaseInventory(firstBuild.root, fixtureRuntime, reference), /qualified Mach-O/);
+	await writeFile(join(firstBuild.root, nativePath), first);
 	assert.notEqual(qualifiedNativeDigest(first, nativePath, secondBuild.root), expected);
 });
 

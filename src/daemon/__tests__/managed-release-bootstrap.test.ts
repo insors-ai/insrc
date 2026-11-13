@@ -82,6 +82,10 @@ test('Invalid or missing authorization prevents bootstrap checkout execution, np
 	const missing = await mkdtemp(join(root, 'missing-'));
 	await assert.rejects(authorize(missing));
 	await assert.rejects(readFile(join(missing, 'checkout/candidate')), { code: 'ENOENT' });
+	const observation = await mkdtemp(join(root, 'observation-'));
+	await assert.rejects(exec(process.execPath, [verifier, 'qualification', observation, incumbent, origin, 'v2']));
+	const observed = JSON.parse(await readFile(join(observation, 'observed-trust.json'), 'utf8')) as { epoch: number };
+	assert.equal(observed.epoch, 1, 'record root-signed trust even if the qualification ref is missing');
 	await assert.rejects(shell(), /bridge authorization failed/);
 	await assert.rejects(readFile(trace), { code: 'ENOENT' });
 	await note(keys.privateKey);

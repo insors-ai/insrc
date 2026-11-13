@@ -76,7 +76,7 @@ export async function fetchReleaseAuthorization(input: BootstrapInput) {
 	const repository = join(ownedWorkspace, 'objects.git');
 	await git(ownedWorkspace, ['init', '--quiet', '--bare', '--template=', repository]);
 	await git(repository, ['fetch', '--quiet', '--no-tags', '--depth=1', '--', repoUrl,
-		`refs/heads/${branch}:${LOCAL_HEAD}`, `${TRUST_REF}:${TRUST_REF}`, `${PROOF_REF}:${PROOF_REF}`]);
+		`refs/heads/${branch}:${LOCAL_HEAD}`, `${TRUST_REF}:${TRUST_REF}`]);
 	const candidateCommit = await git(repository, ['rev-parse', '--verify', `${LOCAL_HEAD}^{commit}`]);
 	const candidateTree = await git(repository, ['rev-parse', '--verify', `${LOCAL_HEAD}^{tree}`]);
 	const priorCommit = await git(incumbent, ['rev-parse', '--verify', 'HEAD^{commit}']);
@@ -85,6 +85,7 @@ export async function fetchReleaseAuthorization(input: BootstrapInput) {
 	const now = Date.now();
 	const trust = observeReleaseTrust(rootKey, trustEnvelope, now);
 	await input.observeTrust?.(trust);
+	await git(repository, ['fetch', '--quiet', '--no-tags', '--depth=1', '--', repoUrl, `${PROOF_REF}:${PROOF_REF}`]);
 	const proof = proofOf(await git(repository, ['notes', `--ref=${PROOF_REF}`, 'show', candidateCommit]));
 	const qualificationEnvelope = Buffer.from(proof.qualification, 'base64');
 	const qualification = verifyReleaseQualification({ rootKey, trustEnvelope, qualificationEnvelope, keyId: proof.keyId,

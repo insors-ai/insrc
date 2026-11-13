@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1794546488593-gfewpl",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-13T05:09:02.329Z",
+    "epicCreatedAt": "2026-11-13T05:09:02.329Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 53735,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "b7b47a99a6c59f21",
+    "epicSlug": "keep-code-review-attribution-prompts-concise",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a50f0e80f33ab6c42f14f7feb1e69d7d79c952be2be327623aef4403da0ac0a5",
+        "at": "2026-11-13T05:09:02.334Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-13T05:29:17.706Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "parentRef": {
+      "epicHash": "b7b47a99a6c59f21",
+      "slug": "EPIC-b7b47a99a6c59f21"
+    }
+  },
+  "body": {
+    "title": "Keep code-review attribution prompts concise",
+    "reproduction": "Submit the committed whole-story packet design/review-worker-isolation-e4af6312.packet.json as review worker-isolation-e4af6312-whole-story attempt 1. The Codex attribution session exits before assessing any code: input_too_large, actual_chars 1122790 versus max_chars 1048576. Expected: concise task-scope allocation instructions with pinned references and reviewer-driven detail lookup, followed by complete per-task review; no need to fit the whole story's content into the attribution input. Evidence is retained in .insrc/tmp/code-review/worker-isolation-e4af6312-whole-story.json.",
+    "rootCause": "The shared attributionPrompt in src/workflow/code-review/task-review/assessment.ts interpolates the full committed Plan, functional summary, selectedCode for every projected change, all test execution details, and serialized feedback history into one input before task allocation. Both src/workflow/code-review/task-review/coordinator.ts and src/workflow/code-review/task-review/controller.ts invoke this function. Consequently task-level review partitioning does not bound the preceding attribution input. The saved CLI diagnostic confirms rejection at turn/start, not exhausted model output.",
+    "fixIntent": "Make task-scope attribution a concise reference-based instruction shared by daemon and controller reviewers. Reference immutable pinned documents, packet/checkpoint input, indexed change/test inventory and prior feedback instead of embedding complete source, artifact bodies, test outputs or history. Let the reviewer inspect the pinned details required to allocate scope. Preserve exact change/test indexes, required replacement-witness relationships, complete-coverage validation, applicable-task rules and sequential-attempt/reuse semantics. Do not truncate selected scope, raise CLI limits, relax finding authorization, change checkpoint schemas, or redesign task assessment. Add regression coverage demonstrating that large source/artifact/test/history content does not inflate attribution prompts, reference resolution remains pinned and omitted scope is still rejected. Resume the blocked independent review only after this tracked correction is built and approved."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/assessment.ts:18",
+      "quotedText": "attributionPrompt interpolates prepared.documents.plan, selectedCode for each change, full tests and feedbackHistory."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/controller.ts",
+      "quotedText": "Analyzer module profile and source lookup confirm controller scope uses the shared attributionPrompt."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/coordinator.ts",
+      "quotedText": "Analyzer module profile and source lookup confirm daemon runReviewSession uses the shared attributionPrompt."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": ".insrc/tmp/code-review/worker-isolation-e4af6312-whole-story.json",
+      "quotedText": "failureDiagnostics terminal cli_exit: input exceeds1048576; actual_chars1122790."
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/attribution-binding.ts",
+      "quotedText": "Existing attribution binding requires every submitted change/test to be covered."
+    }
+  ]
+}

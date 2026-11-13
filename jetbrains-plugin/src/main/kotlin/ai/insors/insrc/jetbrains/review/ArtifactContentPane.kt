@@ -55,10 +55,12 @@ internal class ArtifactContentPane(
         border = JBUI.Borders.emptyLeft(8)
         foreground = JBUI.CurrentTheme.ContextHelp.FOREGROUND
     }
+    private val progressLabel = JBLabel("").apply { isVisible = false }
     private val actionBar = JPanel(FlowLayout(FlowLayout.LEFT, 6, 4)).apply {
         add(approveButton)
         add(overrideButton)
         add(blockLabel)
+        add(progressLabel)
         isVisible = false   // shown only once an artifact view is loaded
     }
 
@@ -199,11 +201,21 @@ internal class ArtifactContentPane(
     // ---- S005 Approve action ------------------------------------------------
 
     /** Remember the loaded artifact + show/gate the Approve controls (EDT). */
+    fun updateReviewProgress(artifactId: String, mdPath: String, progress: ai.insors.insrc.jetbrains.daemon.ReviewWorkerProgressDto?) {
+        if (disposed || currentView?.artifactId != artifactId || currentMdPath != mdPath) return
+        progressLabel.text = progress?.label() ?: ""
+        progressLabel.toolTipText = progress?.let { "${it.freshness} · ${it.observedAt}" }
+        progressLabel.isVisible = progress != null
+    }
+
     private fun setApproveTarget(view: ArtifactReviewViewDto, mdPath: String) {
         // A re-render for a DIFFERENT artifact clears the approved-latch; a
         // re-render of the same just-approved artifact keeps the buttons disabled.
         if (mdPath != currentMdPath) approvedTarget = false
         currentView = view
+        progressLabel.text = view.reviewProgress?.label() ?: ""
+        progressLabel.toolTipText = view.reviewProgress?.let { "${it.freshness} · ${it.observedAt}" }
+        progressLabel.isVisible = view.reviewProgress != null
         currentMdPath = mdPath
         actionBar.isVisible = true
         updateApproveControls()
@@ -212,6 +224,8 @@ internal class ArtifactContentPane(
     /** Hide the Approve controls — no artifact is loaded. */
     private fun clearApproveTarget() {
         currentView = null
+        progressLabel.text = ""
+        progressLabel.isVisible = false
         currentMdPath = null
         approvedTarget = false
         actionBar.isVisible = false

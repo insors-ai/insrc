@@ -54,7 +54,7 @@ export class ControllerTaskReview {
  private readonly selected:readonly PlanTask[];
  constructor(private readonly review:AdmittedReview,private readonly owner:ControllerReviewOwner,private readonly deps:ControllerDeps){
   this.lastDurable=structuredClone(review.checkpoint);
-  this.progress=new ReviewProgressTracker(deps.now?{now:deps.now,wall:()=>new Date().toISOString()}:undefined);
+  this.progress=new ReviewProgressTracker(deps.now?{now:deps.now,wall:()=>new Date().toISOString()}:undefined,review.attempt.progress);
   this.progressPersistence=new ReviewProgressPersistence(review.attempt,this.progress,{serial:work=>this.queue(undefined,work),save:async()=>{await persistReview(this.review,this.deps);this.lastDurable=structuredClone(this.review.checkpoint);}});
   this.done=new Promise(resolve=>{this.resolveDone=resolve;});
   this.selected=review.prepared.tasks.filter(task=>!review.prepared.packet.taskId||task.id===review.prepared.packet.taskId).sort((a,b)=>a.order-b.order);

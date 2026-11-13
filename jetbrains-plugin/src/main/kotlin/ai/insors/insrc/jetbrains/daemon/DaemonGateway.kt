@@ -77,6 +77,7 @@ data class ArtifactReviewViewDto(
     val openQuestions: List<OpenQuestionDto>,
     val approvable: Boolean,
     val blockReason: String?,
+    val reviewProgress: ReviewWorkerProgressDto? = null,
     val designReview: Map<String, Any?>? = null,
     val designFindings: List<Map<String, Any?>>? = null,
 )
@@ -1888,6 +1889,7 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
                 renderedMarkdown = str(data["renderedMarkdown"]),
                 openQuestions = questions,
                 approvable = data["approvable"] as? Boolean ?: false,
+                reviewProgress = (data["reviewProgress"] as? Map<String, Any?>)?.let(ReviewWorkerProgressDto::from),
                 designReview = data["designReview"] as? Map<String, Any?>,
                 designFindings = (data["designFindings"] as? List<*>)?.mapNotNull { it as? Map<String, Any?> },
                 blockReason = (data["blockReason"] as? String)?.takeIf { it.isNotEmpty() },

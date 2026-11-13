@@ -33,6 +33,7 @@ interface DeliveryEvidenceView {
 }
 
 export interface DocsContent {
+ readonly reviewProgress?:ArtifactReviewView['reviewProgress'];
  readonly designReview?:ArtifactReviewView['designReview'];
  readonly designFindings?:ArtifactReviewView['designFindings'];
   readonly markdown: string;
@@ -187,6 +188,7 @@ export function createDocsReviewClient(client: IpcClient, opts: DocsReviewClient
       if (isError(res)) throw new Error(res.error);
       return {
         markdown: res.renderedMarkdown,
+        ...(res.reviewProgress!==undefined?{reviewProgress:res.reviewProgress}:{}),
         ...(res.designReview!==undefined?{designReview:res.designReview}:{}),
         ...(res.designFindings!==undefined?{designFindings:res.designFindings}:{}),
         openQuestions: res.openQuestions.map((q) => q.text),

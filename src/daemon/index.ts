@@ -68,6 +68,8 @@ import { registerSignoff } from './steps/workflow-step/signoff-registration.js';
 import { writePid, isAlreadyRunning, bootstrapEmbeddingModel, getModelState } from './lifecycle.js';
 import { readPublicInstalledCommit } from './managed-update-ipc.js';
 import { ThreadServices, currentLmdbFileSizeMb, maintenanceConfig, sessionIdleMs, threadsEnabled } from './threads/main-services.js';
+import { ProductionReviews,installProductionReviews } from './review-service.js';
+import { threadViews } from './threads/admin-status.js';
 import type { SessionPool } from './threads/session-pool.js';
 import { startSessionRouting } from './threads/session-routing.js';
 import { lazyForward } from './threads/lazy-runtime.js';
@@ -266,20 +268,19 @@ async function main(): Promise<void> {
 	//     any store is used, and the hub each worker is served over.
 	// Idle maintenance (graph compaction), made once the workers are (below).
 	let maintenance: MaintenanceController | undefined;
-	const threadServices = threadsEnabled()
-		? new ThreadServices(async () => ({
+	const reviewServices = new ThreadServices(async () => ({
 			startedAt,
 			modelState: getModelState(),
 			installedCommit: await readPublicInstalledCommit(),
 			lmdbFileSizeMb: currentLmdbFileSizeMb(),
 			maintenance: maintenance?.status(),
-		}))
-		: undefined;
+		}));
+ const threadServices=threadsEnabled()?reviewServices:undefined;
+ const {onToolSettingsChange}=await import('./tools/config.js');
+ onToolSettingsChange(settings=>reviewServices.setToolSettings(settings));
 	if (threadServices !== undefined) {
 		log.info('daemon threads enabled');
 		// tools.config.set is served here; each change reaches every worker (Story 5d393a4b).
-		const { onToolSettingsChange } = await import('./tools/config.js');
-		onToolSettingsChange(settings => threadServices.setToolSettings(settings));
 		// An analyze run live on this thread is known to the board, like a worker's (Story 5d393a4b).
 		const { setLiveRunPublisher } = await import('../analyze/orchestrator/live-runs.js');
 		setLiveRunPublisher((runId, live) => threadServices.board.markAnalyzeRun(runId, mainThreadId, live));
@@ -303,7 +304,7 @@ async function main(): Promise<void> {
 
 	// 4. Bootstrap embedding model (async, non-blocking)
 	void bootstrapEmbeddingModel()
-		.then(() => threadServices?.setEmbedderBackend(getActiveEmbedderBackend()))
+		.then(() => reviewServices.setEmbedderBackend(getActiveEmbedderBackend()))
 		.catch(() => { /* the bootstrap logs its own failures */ });
 
 	// 5. Load repos, start indexer: on this thread, or, with daemon threads
@@ -413,6 +414,12 @@ async function main(): Promise<void> {
 	//     onto the canonical unified ids in one pass.
 	const { registerBuiltinTools } = await import('./tools/builtins/index.js');
 	registerBuiltinTools();
+ const reviews=new ProductionReviews({services:reviewServices,registeredRepos:async()=>new Set((await listRepos(db)).map(r=>r.path)),track:(worker,name)=>{
+  if(supervisor)supervisor.track(worker,name);
+  else worker.on('error',error=>log.error({worker:name,error:error.message},'review worker failed'));
+ }});
+ installProductionReviews(reviews);
+ let reviewClosing:Promise<void>|undefined;
 
 	// 6b'. The two rules that refresh the tracker status after a git pull or push in a registered repo (Story s9).
 	const { registerTrackerRefreshHooks } = await import('../workflow/tracker/refresh-hooks.js');
@@ -502,6 +509,7 @@ async function main(): Promise<void> {
 	const buildRuntime = (): ForwardRequest => {
 		const runtime = buildHandlerRuntime({
 			db, configStore, queue, indexer, startedAt,
+   reviewThreads:()=>threadViews(reviewServices.board.snapshot(),Date.now()).filter(t=>t.cls==='review'),
 			shutdown: reason => requestPublicShutdown(reason),
 			attachedClients: () => server.attachedClients(),
 			understandingService: () => understandingService,
@@ -651,6 +659,7 @@ async function main(): Promise<void> {
 			},
 		}),
 		stopBackgroundWork: () => {
+   reviews.stopAdmission();reviewClosing=reviews.shutdown();void reviewClosing.catch(error=>log.error({error:String(error)},'review shutdown retained recovery fences'));
 			connectionSessionRuntime.stopAdmission();
 			void connectionTestSupervisor.shutdown();
 			understandingService?.stop();
@@ -669,6 +678,7 @@ async function main(): Promise<void> {
 		},
 		queueDone,
 		closeStores: async () => {
+   await (reviewClosing??reviews.shutdown());
 			await connectionTestSupervisor.shutdown();
 			await server.flushPendingWrites(1000);
 			server.disconnectClients();

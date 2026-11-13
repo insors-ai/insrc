@@ -34,6 +34,7 @@ export interface TaskReviewDeps {
  readonly provider: () => LLMProvider;
  readonly save?: typeof saveCheckpoint;
  readonly read?: typeof loadCheckpoint;
+ readonly prepare?:typeof prepareReviewAdmission|undefined;
  readonly publish?: ((project: string, reviewId: string, epicHash: string, baseline?: import('./capacity.js').CapacityBaseline) => Promise<unknown>) | undefined;
  readonly now?: () => number;
  readonly timer?: (callback: () => void, ms: number) => () => void;
@@ -65,7 +66,7 @@ export class TaskReviewCoordinator {
   const path = checkpointPath(project, id);
   this.reserve(path);
   try {
-   const saved = await loadCheckpoint(path);
+   const saved = await (this.deps.read??loadCheckpoint)(path);
    requireReview(saved, 'checkpoint', 'missing-checkpoint');
    const key = this.storyKey(project, hash, saved.storyId);
    requireReview(!this.cleaning.has(key), 'storyId', 'cleanup-in-progress');
@@ -132,7 +133,7 @@ export class TaskReviewCoordinator {
  }
  private async controller(project:string,id:string,attempt:number):Promise<ControllerTaskReview>{
   const path=checkpointPath(project,id);
-  const saved=await loadCheckpoint(path);requireReview(saved,'checkpoint','missing-checkpoint');
+  const saved=await(this.deps.read??loadCheckpoint)(path);requireReview(saved,'checkpoint','missing-checkpoint');
   requireReview(saved.attempts.at(-1)?.header.reviewer==='controller','reviewer','wrong-reviewer');
   requireReview(saved.attempts.at(-1)?.header.attempt===attempt,'attempt','Attempt mismatch');
   const controller=this.controllers.get(path);requireReview(controller,'checkpoint','Controller state unavailable; explicit retrigger is required');return controller;
@@ -143,10 +144,10 @@ export class TaskReviewCoordinator {
   const scope = epicHash && typeof story === 'string' ? this.storyKey(project, epicHash, story) : undefined;
   this.reserve(path, scope); // Reserve before any awaited admission or provider use.
   try {
-   const admitted = await prepareReviewAdmission(project, reviewId, attempt, input, reviewer, this.deps.sources, { epicHash, operation });
+   const admitted = await(this.deps.prepare??prepareReviewAdmission)(project, reviewId, attempt, input, reviewer, this.deps.sources, { epicHash, operation });
    const fence=this.storageFences.get(admitted.path);
    if(fence){
-    const visible=await loadCheckpoint(admitted.path);
+    const visible=await(this.deps.read??loadCheckpoint)(admitted.path);
     if(operation!=='resume'||!visible||(!isDeepStrictEqual(visible,fence.prior)&&!isDeepStrictEqual(visible,fence.candidate)))throw fence.error;
    }
    this.storyWork.set(path, this.storyKey(project, admitted.prepared.epicHash, admitted.checkpoint.storyId));
@@ -180,7 +181,7 @@ export class TaskReviewCoordinator {
    if(entry['review-response'].crPublication!=='complete')qualifyReviewCapacity({...review,checkpoint:state,attempt:state.attempts.at(-1)!});
    const snapshot=structuredClone(state);await(this.deps.save??saveCheckpoint)(savedPath,snapshot,io);lastDurable=snapshot;
   };
-  const tracker = new ReviewProgressTracker(this.deps.now ? {now:this.deps.now,wall:()=>new Date().toISOString()} : undefined);
+  const tracker = new ReviewProgressTracker(this.deps.now ? {now:this.deps.now,wall:()=>new Date().toISOString()} : undefined,entry.progress);
   const active=this.active.get(path); if(active)active.progress=tracker;
   const selected = prepared.tasks.filter(task => !prepared.packet.taskId || task.id === prepared.packet.taskId);
   let assignments: readonly TaskAssignment[] | undefined = await restoreAcceptedAssignments(review);

@@ -9,7 +9,7 @@ import type { ReviewCheckpoint, TaskReviewResult } from './contracts.js';
 import type { AdmittedReview } from './execution.js';
 import { failAttribution, unmappedTaskFailure } from './attribution-failure.js';
 import { taskFailure } from './assessment.js';
-import { completedSummary } from './summary.js';
+import { completedSummary,failedAttemptSummary } from './summary.js';
 import type { CompletedReviewSummary } from './contracts.js';
 import { latestReviewStatus, mergeTaskSummary, validateTaskBody } from './record.js';
 import { MAX_ATTEMPT_DIAGNOSTIC_BYTES, validateFailureDiagnostics } from './diagnostics.js';
@@ -82,8 +82,10 @@ export function terminalCapacity(review:AdmittedReview,baseline:CapacityBaseline
   const summary=completedSummary(review.prepared,attempt,checkpoint.reviewId);
   attempt.header.status=summary.status;attempt['review-response'].summary='All selected task assessments are terminal. CR publication complete.';
   const prior=baseline.head?.['body'] as {reviews?:readonly CompletedReviewSummary[];status?:unknown}|undefined;
-  const kept=prior?.reviews?.filter(r=>r.reviewId!==checkpoint.reviewId||r.attempt!==attempt.header.attempt);
-  const current=kept?.length?{...prior,reviews:kept,status:latestReviewStatus(kept as readonly CompletedReviewSummary[])}:undefined;
+  const retained=checkpoint.attempts.slice(0,-1).filter(a=>a.header.status==='failed'&&a['review-response'].crPublication==='pending').map(a=>failedAttemptSummary(a,checkpoint.reviewId));
+  const kept=[...(prior?.reviews?.filter(r=>r.reviewId!==checkpoint.reviewId||r.attempt!==attempt.header.attempt)??[])];
+  for(const failure of retained)if(!kept.some(r=>r.reviewId===failure.reviewId&&r.attempt===failure.attempt))kept.push(failure);
+  const current=kept.length?{kind:'code-review',format:'task-based',storyId:summary.storyId,...prior,reviews:kept,status:latestReviewStatus(kept)}:undefined;
   const body={kind:'code-review',format:'task-based',storyId:summary.storyId,status:latestReviewStatus([...(current?.reviews??[]),summary]),reviews:[...(current?.reviews??[]),summary]};
   // Actual envelope/prefix are retained; only missing creation metadata uses reserve.
   const envelope={...(baseline.head??{meta:{workflow:'code-review',schemaVersion:2},citations:[]}),body};

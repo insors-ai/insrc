@@ -24,7 +24,7 @@ import { assertConnectionProviderAdmission } from '../../shared/connection-provi
  *   5. Run validatePlan(plan, catalog, { focused, isChildPlan }).
  *      On failure, append a `## VALIDATOR FEEDBACK` block to the user
  *      message + the rejected plan as an assistant turn, then retry.
- *      Up to `maxAttempts` total (default 3). Exhaustion -> typed
+ *      Up to `PLANNER_MAX_ATTEMPTS` total (5). Exhaustion -> typed
  *      ClassifierLlmUnavailable-style error.
  *
  * No tool-loop: the planner only consumes the context bundle the
@@ -66,7 +66,7 @@ import type {
 	PlanBuilderOpts,
 	PlanTask,
 } from './types.js';
-import { validatePlan, type PlanValidationFailure } from './validate.js';
+import { taskCountFailure, validatePlan, type PlanValidationFailure } from './validate.js';
 
 const savedLog = getLogger('analyze:planner');
 const quietLog = { info: (..._args: unknown[]) => { } };
@@ -162,6 +162,14 @@ export class EmptyPlanCatalogError extends Error {
 // runPlanner -- public entry point
 // ---------------------------------------------------------------------------
 
+/**
+ * How many replies the planner may be given for one plan: the first, then up to four corrections.
+ * Each correction answers a whole plan, and one reply fixes one or two invariants, so the count of
+ * attempts is its own bound; cfg.shaper.structuredOutputRetries is the schema-repair budget of every
+ * model call and stays what completeStructured is given as its own `maxAttempts`.
+ */
+export const PLANNER_MAX_ATTEMPTS = 5;
+
 export interface RunPlannerArgs {
 	readonly input:     PlanBuilderInput;
 	readonly opts:      PlanBuilderOpts;
@@ -238,7 +246,7 @@ export async function runPlanner(args: RunPlannerArgs): Promise<PlanTask> {
 
 	const attempts: PlanTask[] = [];
 	const failures: PlanValidationFailure[] = [];
-	const maxAttempts = cfg.shaper.structuredOutputRetries;
+	const maxAttempts = PLANNER_MAX_ATTEMPTS;
 	const persistArgs = parentTaskPath !== undefined
 		? { runId: opts.runId, parentTaskPath }
 		: { runId: opts.runId };
@@ -367,7 +375,10 @@ export async function runPlanner(args: RunPlannerArgs): Promise<PlanTask> {
 		}, 'Plan Builder validation failure -- corrective retry']);
 
 		// Echoed in wire form, so the retry's example matches what the model must emit.
-		messages = appendCorrectionTurn(messages, encodePlanParams(stamped, wire), failure, priorFailures);
+		// validatePlan reports one failure, so a wrong task count would stay unmentioned until the
+		// ordering errors are gone. It is stated beside the primary failure, as text for the model only.
+		const alsoFailing = failure.invariantId === 'INV-13' ? undefined : taskCountFailure(stamped, { focused: intent.focused }) ?? undefined;
+		messages = appendCorrectionTurn(messages, encodePlanParams(stamped, wire), failure, priorFailures, alsoFailing);
 	}
 
 	throw new PlanBuilderExhausted(attempts, failures);
@@ -434,6 +445,11 @@ function appendCorrectionTurn(
 	rejected:      PlanTask,
 	failure:       PlanValidationFailure,
 	priorFailures: readonly PlanValidationFailure[],
+	/**
+	 * The task-count failure (INV-13), stated after the primary one so a single reply can fix both.
+	 * It is only text for the model: it never enters the failure history or the repetition banner.
+	 */
+	alsoFailing?:  PlanValidationFailure | undefined,
 ): LLMMessage[] {
 	const hint = invariantFixHint(failure.invariantId);
 	const fixHintBlock = renderFixHint(hint);
@@ -457,7 +473,13 @@ function appendCorrectionTurn(
 				offendingTaskBlock +
 				fixHintBlock +
 				`\n\n` +
-				`Emit the corrected PlanTask JSON. Fix ONLY the named issue -- keep the ` +
+				(alsoFailing === undefined ? '' :
+					`## ALSO FAILING\n` +
+					`The same plan also fails invariant **${alsoFailing.invariantId}**:\n` +
+					`> ${alsoFailing.message}\n` +
+					`\n` +
+					`Fix both in the same reply.\n\n`) +
+				`Emit the corrected PlanTask JSON. Fix ONLY the named issue${alsoFailing === undefined ? '' : 's'} -- keep the ` +
 				`rest of the plan intact. Respond with ONLY the JSON object -- no markdown ` +
 				`fences, no prose.`,
 		},

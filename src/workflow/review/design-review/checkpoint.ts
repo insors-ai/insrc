@@ -10,8 +10,9 @@ import { DESIGN_LIMITS, DesignCheckpointSchema, DesignReviewError, DesignReviewP
 import type { DesignReviewCheckpoint, DesignAttempt, DesignUnitState, DesignUnitSummary } from './contracts.js';
 import { isDesignAdmission } from './contracts.js';
 import type { StoredDesignCheckpoint } from './contracts.js';
-import type { ReviewResourceGuard } from '../../../shared/review-resources.js';
+import type { ReviewResourceGuard,ReviewAuthorizedClearance } from '../../../shared/review-resources.js';
 import { checkDesignAdmissionEvolution, decodeStoredDesignCheckpoint } from './admission-checkpoint.js';
+import { designActionEvolution,qualifiedDesignAction } from './action-state.js';
 
 const same=(a:unknown,b:unknown):boolean=>JSON.stringify(a)===JSON.stringify(b);
 function checkUnit(unit:DesignUnitState|DesignUnitSummary):void {
@@ -31,6 +32,7 @@ function checkRecovery(attempt:DesignAttempt):void {
   checkUnit(summary);const key=`${summary.phase}\0${summary.unitId}`;
   requireDesign(!keys.has(key),'invalid_checkpoint','Duplicate completed unit summary');keys.add(key);
   requireDesign(new Set(summary.actionIds).size===summary.actionIds.length&&summary.actionIds.every(id=>actions.some(a=>a.actionId===id)),'invalid_checkpoint','Unit summary names an unknown or duplicate action');
+  requireDesign(summary.actionIds.every(id=>actions.some(a=>a.actionId===id&&qualifiedDesignAction(a))),'invalid_checkpoint','Unit summary names an unverified recovery action');
   if(summary.phase==='impact')requireDesign(attempt.plan&&attempt.impact,'invalid_checkpoint','Completed impact summary has no atomic plan/impact pair');
   if(summary.phase==='planning')requireDesign(attempt.plan,'invalid_checkpoint','Completed planning summary has no accepted plan');
   if(summary.phase==='chunk_review')requireDesign(attempt.completedChunks.some(c=>c.chunkId===summary.unitId),'invalid_checkpoint','Completed unit summary has no accepted chunk');
@@ -41,7 +43,7 @@ function checkRecovery(attempt:DesignAttempt):void {
   if(sealed)requireDesign(sealed.automaticDispatches===attempt.unit.dispatches&&sealed.retriesUsed===attempt.unit.retriesUsed&&sealed.userDirectedDispatches===attempt.unit.userDirectedDispatches&&same(sealed.diagnostics,attempt.unit.diagnostics),'immutable_history','Cannot reopen a sealed unit');
  }
  const directed=summaries.reduce((count,s)=>count+s.userDirectedDispatches,0)+(attempt.unit&&!keys.has(`${attempt.unit.phase}\0${attempt.unit.unitId}`)?attempt.unit.userDirectedDispatches:0);
- requireDesign(directed<=actions.filter(a=>a.userDecision?.action==='retry_failed_unit').length,'invalid_checkpoint','User-directed dispatch lacks an approved action');
+ requireDesign(directed<=actions.filter(a=>qualifiedDesignAction(a)&&a.userDecision?.action==='retry_failed_unit').length,'invalid_checkpoint','User-directed dispatch lacks an approved action');
  if(attempt.recovery)requireDesign(attempt.recovery.attempt===attempt.number&&attempt.recovery.status===attempt.status&&same(attempt.recovery.completedChunkIds,attempt.completedChunks.map(c=>c.chunkId)),'invalid_checkpoint','Recovery state does not match attempt');
 }
 function checkEvolution(previous:DesignReviewCheckpoint,next:DesignReviewCheckpoint):void {
@@ -54,8 +56,10 @@ function checkEvolution(previous:DesignReviewCheckpoint,next:DesignReviewCheckpo
    added.preparationKind==='impact'&&previous.attempts.every((a,i)=>same(a,next.attempts[i]));
   const restart=old.status==='invalidated'&&source?.status==='invalidated'&&
    (added.preparationKind??'planning')==='planning'&&!added.impact&&
-   source.actions?.some(a=>a.operation==='restart_full'&&a.userDecision?.action==='restart_full'&&a.resultAttempt===added.number);
-  requireDesign(correction||restart,'immutable_history','New attempt requires a complete terminal correction or approved full restart of invalidated work');
+   source.actions?.some(a=>qualifiedDesignAction(a)&&a.operation==='restart_full'&&a.userDecision?.action==='restart_full'&&a.resultAttempt===added.number);
+  const failedResubmission=old.status==='failed'&&!!old.failure&&
+   (added.preparationKind??'planning')==='planning'&&!added.impact&&previous.attempts.every((a,i)=>same(a,next.attempts[i]));
+  requireDesign(correction||restart||failedResubmission,'immutable_history','New attempt requires a terminal correction, explicit failed-attempt resubmission or approved full restart');
  }
  if(next.attempts.length===previous.attempts.length)requireDesign(same(previous.subject,next.subject),'immutable_history','Cannot replace an active subject');
  for(const [index,old] of previous.attempts.entries()){
@@ -71,7 +75,7 @@ function checkEvolution(previous:DesignReviewCheckpoint,next:DesignReviewCheckpo
   requireDesign((old.unitSummaries??[]).every((r,i)=>same(r,current.unitSummaries?.[i])),'immutable_history','Cannot replace a sealed unit summary');
   for(const [i,action] of (old.actions??[]).entries()){
    const updated=current.actions?.[i];
-   requireDesign(updated&&same({...action,outcome:undefined},{...updated,outcome:undefined})&&(!action.outcome||same(action.outcome,updated.outcome)),'immutable_history','Cannot replace action identity or a filled outcome');
+   requireDesign(updated&&designActionEvolution(action,updated),'immutable_history','Cannot replace action identity, qualification or a filled outcome');
   }
   if(old.unit){
    const unit=current.unit;
@@ -121,7 +125,7 @@ export function validateDesignCheckpointIdentity(project: string, id: string, ch
  for(const attempt of checkpoint.attempts) {
   checkRecovery(attempt);
   requireDesign((attempt.preparationKind??'planning')==='impact'?!!attempt.plan===!!attempt.impact:!attempt.impact,'invalid_checkpoint','Impact preparation requires an atomic plan/impact pair; full planning cannot retain coverage');
-  requireDesign((attempt.actions??[]).every(a=>a.resultAttempt<=numbers.length),'invalid_checkpoint','Recovery action names an absent attempt');
+  requireDesign((attempt.actions??[]).every(a=>a.resultAttempt<=numbers.length||!qualifiedDesignAction(a)&&a.operation==='restart_full'&&a.sourceAttempt===numbers.length&&a.resultAttempt===numbers.length+1),'invalid_checkpoint','Recovery action names an absent attempt');
   requireDesign(attempt.progress.checkpointPath===designCheckpointPath(project,id),'foreign_checkpoint','Progress names another checkpoint');
   requireDesign(attempt.completedChunks.every(r=>Buffer.byteLength(JSON.stringify(r))<=DESIGN_LIMITS.resultBytes),'result_too_large','Stored chunk result exceeds page limit');
   const ids=new Set(attempt.completedChunks.map(r=>r.chunkId));
@@ -236,7 +240,7 @@ function serializeDesignWrite<T>(path: string, write: () => Promise<T>): Promise
  * the latest durable snapshot, so a delayed progress save cannot drop a lease.
  * Ownership across workers/processes remains the daemon registry's job. */
 export function updateStoredDesignCheckpoint(project: string, reviewId: string,
- mutate: (current: StoredDesignCheckpoint | undefined) => StoredDesignCheckpoint | Promise<StoredDesignCheckpoint>,hostConfirmedClosures:readonly ReviewResourceGuard['openLeases'][number][]=[]): Promise<StoredDesignCheckpoint> {
+ mutate: (current: StoredDesignCheckpoint | undefined) => StoredDesignCheckpoint | Promise<StoredDesignCheckpoint>,hostConfirmedClosures:readonly ReviewResourceGuard['openLeases'][number][]=[],authorizedClearance?:ReviewAuthorizedClearance): Promise<StoredDesignCheckpoint> {
  const path = designCheckpointPath(project, reviewId);
  return serializeDesignWrite(path, async () => {
   const previous = await loadStoredDesignCheckpoint(project, reviewId);
@@ -244,7 +248,7 @@ export function updateStoredDesignCheckpoint(project: string, reviewId: string,
   validateStoredDesignIdentity(project, reviewId, cp);
   if (cp.schemaVersion === 1) { await saveQualifiedDesignCheckpoint(project, cp); return cp; }
   if (previous) {
-   checkDesignAdmissionEvolution(previous, cp,hostConfirmedClosures);
+   checkDesignAdmissionEvolution(previous, cp,hostConfirmedClosures,authorizedClearance);
    const before = qualifiedDesignProjection(previous), after = qualifiedDesignProjection(cp);
    if (before && after) checkEvolution(before, after);
   }

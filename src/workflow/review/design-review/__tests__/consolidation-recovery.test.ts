@@ -1,6 +1,5 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { setTimeout as pause } from 'node:timers/promises';
 import { appendFileSync } from 'node:fs';
 import { DesignReviewCoordinator } from '../coordinator.js';
 import { saveDesignCheckpoint, loadDesignCheckpoint } from '../checkpoint.js';
@@ -28,15 +27,12 @@ async function fixture(t:Parameters<typeof impactFixture>[0],partial=false){
 }
 const request=(f:Awaited<ReturnType<typeof fixture>>)=>({phase:'recover',repo:f.repo,reviewId:'review-1',attempt:2,actionId:'approved-reconsolidation',operation:'resume',userDecision:{action:'retry_failed_unit',reason:'User approved recovery',recordedAt:new Date().toISOString()}});
 
-test('failed consolidation recovers durable accepted chunks without provider calls and remains replay safe',async t=>{
- const f=await fixture(t,true);const before=structuredClone(f.current.completedChunks);
- const c=new DesignReviewCoordinator({provider:()=>{throw new Error('No model call is allowed');}});
- await assert.rejects(c.recover({...request(f),userDecision:undefined}),/user direction/);
- const approved=request(f);await c.recover(approved);
- for(let i=0;i<1000;i++){const p=await c.progress(f.repo,'review-1',2);if(!['running','pending'].includes(p.status))break;await pause(2);}
- const cp=(await loadDesignCheckpoint(f.repo,'review-1'))!;
- assert.equal(cp.attempts[1]!.status,'incomplete');assert.equal(cp.attempts[1]!.report!.counts.HIGH,1);assert.equal(cp.attempts[1]!.report!.counts.MED,0);assert.equal(cp.attempts[1]!.actions!.at(-1)!.outcome!.code,'completed');assert.deepEqual(cp.attempts[1]!.completedChunks,before);assert.deepEqual(cp.attempts[0],f.baseline);
- assert.equal((await c.recover(approved)).status,'incomplete');
+test('failed consolidation preserves accepted chunks and requires a new attempt even with user direction',async t=>{
+ const f=await fixture(t,true),before=await loadDesignCheckpoint(f.repo,'review-1');let calls=0;
+ const c=new DesignReviewCoordinator({provider:()=>{calls++;throw new Error('Failed work cannot resume');}});
+ await assert.rejects(c.recover({...request(f),userDecision:undefined}),/Failed review requires the next attempt/);
+ await assert.rejects(c.recover(request(f)),/Failed review requires the next attempt/);
+ assert.deepEqual(await loadDesignCheckpoint(f.repo,'review-1'),before);assert.equal(calls,0);
 });
 
 test('failed consolidation recovery refuses changed subjects unrelated failures and missing accepted work',async t=>{
@@ -46,8 +42,8 @@ test('failed consolidation recovery refuses changed subjects unrelated failures 
   else{const cp=structuredClone(f.checkpoint);if(mode==='unrelated')cp.attempts[1]!.failure!.code='persistence_failed';else cp.attempts[1]!.completedChunks.pop();
    // Create an independent stored fixture rather than rewrite immutable feedback.
    const c=new DesignReviewCoordinator({load:async()=>cp});
-   await assert.rejects(c.recover(request(f)),/not resumable/);continue;
+   await assert.rejects(c.recover(request(f)),/Failed review requires the next attempt/);continue;
   }
-  const c=new DesignReviewCoordinator({});await assert.rejects(c.recover(request(f)),/changed/i);
+  const c=new DesignReviewCoordinator({});await assert.rejects(c.recover(request(f)),/Failed review requires the next attempt/);
  }
 });

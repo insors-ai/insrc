@@ -134,19 +134,21 @@ The catalog is the trailing structural reference per the project's prompt conven
 
 ### Retry loop
 
-Plan Builder retries up to `maxAttempts: 3` on:
-- Wire-layer schema-conformance failure (the provider's structured-output retry handles this internally)
+Plan Builder allows up to `PLANNER_MAX_ATTEMPTS` (5: the first reply plus four corrections) on:
+- Wire-layer schema-conformance failure (the provider's structured-output retry handles this internally, with its own budget, `shaper.structuredOutputRetries`, which is also what `completeStructured` is given)
 - Invariant validator failure (custom retry: validator's reason text is appended to the user message as a `## VALIDATOR FEEDBACK` block; the plan is re-issued)
 
 A retry's `## VALIDATOR FEEDBACK` block uses the validator's failed-invariant ID (e.g. `INV-11: aggregator task must be last in the list; got it at position 14 of 20`) so the model can target the fix without re-reasoning the whole plan.
 
-After 3 failures the run aborts with `plan-builder-exhausted`. The persisted `errors.json` records all three attempts' full plans + validator notes so the user can diagnose.
+The validator reports one failure (the first, in invariant order). When that failure is not INV-13 and the task count is outside the band, the same feedback block also states the count failure after the primary one (`## ALSO FAILING`), so one reply can fix both. That note is text for the model only: the recorded failure history, the persisted feedback and the exhausted-run error carry the primary failure, one per attempt, and the repeated-failure banner compares primary failures only.
+
+After the last attempt fails the run aborts with `plan-builder-exhausted`. The persisted attempts directory records every attempt's full plan + validator note so the user can diagnose.
 
 ## Edge cases
 
 ### Focused intent → smaller-than-band plans
 
-When `focused: true` with a very tight focus ("just the error handling"), the band's lower bound becomes advisory — the planner is allowed to emit below-band counts if the focus genuinely doesn't need more tasks. Concretely: focused intent reduces the lower bound by 50% (rounded down) but not the upper.
+When `focused: true` with a very tight focus ("just the error handling"), the band's lower bound becomes advisory — the planner is allowed to emit below-band counts if the focus genuinely doesn't need more tasks. Concretely: focused intent reduces the lower bound by 50% (rounded down) but not the upper. The planner prompt prints the resulting range once, as the final range (for XL focused, 20-80), from the same table the validator reads; it never asks the model to apply the reduction itself.
 
 ### XL → planner-template tasks
 
@@ -258,7 +260,7 @@ The Plan Builder call is the only operation that isn't deterministic across rest
 |---|---|---|
 | Wire-layer schema violation | Inside `completeStructured` retry | Yes (provider handles) |
 | Invariant validation failure | Plan Builder retry | Yes (up to maxAttempts) |
-| Invariant exhausted (maxAttempts) | Run abort | No — manual rerun |
+| Invariant exhausted (`PLANNER_MAX_ATTEMPTS`) | Run abort | No — manual rerun |
 | Catalog drift mid-run (template removed) | Plan validation | No — fail fast |
 | Context bundle inconsistency (planner saw modules X,Y; one disappeared by execution time) | Per-task execution | Partially — task short-circuits with `dependency-unavailable`; downstream tasks adapt |
 | Child-plan dispatch failure | Planner-template task execution | The parent task fails with `child-plan-build-failed` after that planner exhausts its retries; downstream sibling tasks see the failure via `dependency-unavailable` and adapt; the parent Plan's aggregator runs anyway and surfaces the partial completeness |

@@ -58,7 +58,7 @@ test('sequential re-review: full history in attribution, fresh pins and reasoned
     const task=await client.call<ControllerFrame>('codeReview.task.scope',{...request,scope:f.scope()});assert.equal(task.taskId,'t2');assert.deepEqual(task.completedTaskIds,['t1']);assert.match(task.prompt!,/Earlier task2 regression/);assert.equal(task.prompt!.includes('TASK1_ONLY_FEEDBACK'),false);
     const done=await client.call<ControllerFrame>('codeReview.task.result',{...request,result:f.fresh('t2')});assert.equal(done.status,'incomplete');assert.equal(done.crPublication,'complete');assert.equal(calls,0,'actual controller does not spawn daemon reviewer');
    }else{
-    await eventually(()=>f.read(started.path).attempts[1]!['review-response'].crPublication==='complete');assert.equal(calls,2,'one attribution plus only the changed task');assert.match(prompts[0]!,/TASK1_ONLY_FEEDBACK/);assert.match(prompts[1]!,/Earlier task2 regression/);assert.equal(prompts[1]!.includes('TASK1_ONLY_FEEDBACK'),false);
+    await eventually(()=>f.read(started.path).attempts[1]?.['review-response']?.crPublication==='complete');assert.equal(calls,2,'one attribution plus only the changed task');assert.match(prompts[0]!,/TASK1_ONLY_FEEDBACK/);assert.match(prompts[1]!,/Earlier task2 regression/);assert.equal(prompts[1]!.includes('TASK1_ONLY_FEEDBACK'),false);
    }
    const saved=f.read(started.path);assert.deepEqual(saved.attempts[0],f.original);const next=saved.attempts[1]!;
    assert.deepEqual(next.submitted,f.packet);assert.notEqual(next.header.buildFingerprint,f.original.header.buildFingerprint);assert.equal(next.header.status,'incomplete');

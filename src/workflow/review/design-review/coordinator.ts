@@ -1,9 +1,9 @@
 import { lstatSync } from 'node:fs';
+import { isDesignAdmission } from './contracts.js';
 import { claimDesignArtifact, releaseDesignArtifact } from './fence.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { realpath } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { createHash } from 'node:crypto';
 import { isMainThread, workerData } from 'node:worker_threads';
 import { getLogger } from '../../../shared/logger.js';
 import { ReviewOutputFailureError } from '../../../shared/review-diagnostics.js';
@@ -31,11 +31,7 @@ import type { DesignPublication } from './contracts.js';
 import { publishDesignReview } from './publication.js';
 
 const log=getLogger('design-review');
-// JSON object key order is not part of an immutable submission's identity.
-function requestSignature(value:unknown):string{
- const canonical=JSON.stringify(value,(_key,item:unknown)=>item&&typeof item==='object'&&!Array.isArray(item)?Object.fromEntries(Object.entries(item).sort(([a],[b])=>a<b?-1:a>b?1:0)):item);
- return createHash('sha256').update(canonical).digest('hex');
-}
+import { requestSignature } from './request-signature.js';
 export interface DesignProvider { readonly provider:LLMProvider; readonly model:string; }
 export interface DesignCoordinatorDeps {
  /** The daemon supplies the durable publisher; isolated execution fixtures may omit this store port. */
@@ -49,6 +45,8 @@ export interface DesignCoordinatorDeps {
  readonly load?:typeof loadDesignCheckpoint;
  readonly activity?:ReviewActivityMonitorDeps|undefined;
  readonly subjectMonitor?:DesignSubjectMonitorDeps|undefined;
+ /** Internal preaccepted worker handoff; never supplied by a public packet. */
+ readonly acceptedAttempt?:number|undefined;
 }
 export interface DesignControllerOwner { readonly id:string; readonly signal:AbortSignal; }
 export interface DesignStartContext { readonly provider?:(()=>DesignProvider)|undefined; readonly owner?:DesignControllerOwner|undefined; }
@@ -98,7 +96,7 @@ export class DesignReviewCoordinator {
  }
  private ack(checkpoint:DesignReviewCheckpoint,active:boolean,number=currentDesignAttempt(checkpoint).number):DesignReviewAcknowledgement{
   this.knownArtifacts.set(this.key(checkpoint.project,checkpoint.reviewId),checkpoint.subject.canonicalPath);
-  const attempt=checkpoint.attempts[number-1];requireDesign(attempt,'missing_attempt','Design review attempt not found');
+  const attempt=checkpoint.attempts.find(a=>a.number===number);requireDesign(attempt,'missing_attempt','Design review attempt not found');
   const error=number===currentDesignAttempt(checkpoint).number&&this.uncertain.get(this.key(checkpoint.project,checkpoint.reviewId));
   return {reviewId:checkpoint.reviewId,attempt:attempt.number,artifactId:checkpoint.artifactId,reviewer:attempt.reviewer??checkpoint.subject.reviewer,
    status:error?'failed':attempt.status==='invalidated'?'invalidated':attempt.publication?.state==='pending'?(attempt.publication.error?'failed':'pending'):!active&&(attempt.status==='pending'||attempt.status==='running')?'interrupted':attempt.status,
@@ -130,7 +128,7 @@ export class DesignReviewCoordinator {
   const cp=await(this.deps.load??loadDesignCheckpoint)(request.repo,request.reviewId);
   requireDesign(cp,'missing_checkpoint','Design review not found');
   requireDesign(!this.subjects.has(this.subjectKey(cp.subject)),'review_conflict','Subject has another active execution');
-  const a=currentDesignAttempt(cp);requireDesign(a.number===request.attempt&&a.report&&a.publication,'publication_incomplete','No current publication to retry');
+  const a=currentDesignAttempt(cp);requireDesign(a.status!=='failed','review_conflict','Failed review requires the next attempt');requireDesign(a.number===request.attempt&&a.report&&a.publication,'publication_incomplete','No current publication to retry');
   requireDesign(request.userDecision===undefined,'invalid_decision','Publication retry does not dispatch reviewer work');
   const actions=a.publication.actions??[],prior=actions.find(x=>x.actionId===request.actionId);
   if(prior){requireDesign(prior.signature===signature,'review_conflict','Conflicting publication action replay');return this.ack(cp,false);}
@@ -155,8 +153,9 @@ export class DesignReviewCoordinator {
   if(active&&currentDesignAttempt(active.checkpoint).status==='paused'){await active.done;active=this.jobs.get(key);}
   const saved=active?.checkpoint??await(this.deps.load??loadDesignCheckpoint)(request.repo,request.reviewId);
   requireDesign(saved,'missing_checkpoint','Design review not found');
+  requireDesign(currentDesignAttempt(saved).status!=='failed','review_conflict','Failed review requires the next attempt');
   const replay=saved.attempts.flatMap(a=>a.actions??[]).find(a=>a.actionId===request.actionId);
-  if(replay){
+  if(replay&&replay.validation!=='unverified'){
    requireDesign(replay.signature===signature,'review_conflict','Conflicting recovery action replay');
    if(active?.owner)requireDesign(context.owner?.id===active.owner.id,'wrong_owner','Not the reviewing connection');
    return this.ack(saved,!!active&&currentDesignAttempt(saved).number===replay.resultAttempt,replay.resultAttempt);
@@ -166,7 +165,7 @@ export class DesignReviewCoordinator {
   const checkpoint=structuredClone(saved),source=currentDesignAttempt(checkpoint);
   requireDesign(source.number===request.attempt,'missing_attempt','Recovery must name the current attempt');
   source.reviewer??=saved.subject.reviewer;
-  let attempt=source,consolidationRetry=false;
+  let attempt=source;
   if(request.operation==='restart_full'){
    requireDesign(source.status==='invalidated','review_conflict','Full restart requires an invalidated attempt');
    const prepared=(this.deps.prepare??prepareDesignSubject)(request.repo,saved.subject.canonicalPath);
@@ -176,25 +175,18 @@ export class DesignReviewCoordinator {
    attempt={number:source.number+1,status:'pending',preparationKind:'planning',baseline:prepared.baseline,inventory:prepared.inventory,completedChunks:[],progress:tracker.snapshot(),startedAt:new Date().toISOString(),reviewer:prepared.subject.reviewer};
    checkpoint.attempts.push(attempt);
   }else{
-   consolidationRetry=source.status==='failed'&&source.failure?.code==='invalid_result'&&!!source.plan&&!source.report&&!nextDesignUnit(source);
-   const capacityRetry=source.status==='failed'&&['publication_capacity','checkpoint_capacity'].includes(source.failure?.code??'');
-   requireDesign(['pending','running','interrupted','paused'].includes(source.status)||consolidationRetry||capacityRetry,'review_conflict','Attempt is not resumable');
+   requireDesign(['pending','running','interrupted','paused'].includes(source.status),'review_conflict','Attempt is not resumable');
    try{assertDesignSubjectUnchanged(saved.subject,source.baseline);}catch(error){
     const summary=error instanceof Error?error.message:'Reviewed artifact changed';source.status='invalidated';source.failure={code:'artifact_changed',summary};source.finishedAt=new Date().toISOString();
     source.recovery={attempt:source.number,status:'invalidated',reason:'artifact_changed',completedChunkIds:source.completedChunks.map(c=>c.chunkId),requiresUserInput:true};
     source.progress={...source.progress,status:'invalidated',phase:'complete',requiresUserInput:true};
     await(this.deps.save??saveDesignCheckpoint)(request.repo,checkpoint);throw error;
    }
-   if(consolidationRetry){
-    requireDesign(request.userDecision?.action==='retry_failed_unit','user_decision_required','Failed consolidation requires user direction');
-    // Validate saved evidence before admitting a no-model consolidation retry.
-    consolidateDesignReview(checkpoint.reviewId,source.number,checkpoint.subject,source.baseline.contentIdentity,source.plan!,source.completedChunks,source.impact?{impact:source.impact,attempts:checkpoint.attempts}:undefined);
-   }
    if(source.status==='paused')requireDesign(request.userDecision?.action==='retry_failed_unit','user_decision_required','Paused review requires user direction');
   }
   if(checkpoint.subject.reviewer==='controller')requireDesign(context.owner&&!context.owner.signal.aborted,'wrong_owner','A live trusted reviewer connection is required');
   const work=nextDesignUnit(attempt);
-  requireDesign(work||!request.userDecision||request.operation==='restart_full'||consolidationRetry,'invalid_decision','No unfinished unit to retry');
+  requireDesign(work||!request.userDecision||request.operation==='restart_full','invalid_decision','No unfinished unit to retry');
   finishDirectedExecution(attempt,'interrupted','Previous directed execution ended without accepted feedback');
   let reservedExecutionId:string|undefined;
   try{reservedExecutionId=work?reserveDesignUnit(attempt,work.chunk,request.userDecision?.action==='retry_failed_unit',true,work.preparationKind??'planning'):undefined;}
@@ -204,7 +196,8 @@ export class DesignReviewCoordinator {
     attempt.progress={...attempt.progress,status:'paused',phase:'complete',requiresUserInput:true};await(this.deps.save??saveDesignCheckpoint)(request.repo,checkpoint);
    }throw error;
   }
-  (source.actions??=[]).push({actionId:request.actionId,signature,operation:request.operation,sourceAttempt:source.number,resultAttempt:attempt.number,...(request.userDecision?{userDecision:request.userDecision}:{}),...(source.failure&&['publication_capacity','checkpoint_capacity'].includes(source.failure.code)?{outcome:{...source.failure}}:{}),acceptedAt:new Date().toISOString()});
+  const action={actionId:request.actionId,signature,operation:request.operation,sourceAttempt:source.number,resultAttempt:attempt.number,...(request.userDecision?{userDecision:request.userDecision}:{}),acceptedAt:replay?.acceptedAt??new Date().toISOString(),...(replay?{validation:'qualified' as const}:{})};
+  if(replay){requireDesign(replay.signature===signature&&replay.validation==='unverified','review_conflict','Conflicting recovery admission');source.actions![source.actions!.findIndex(a=>a.actionId===replay.actionId)]=action;}else(source.actions??=[]).push(action);
   const tracker=new DesignProgressTracker(designCheckpointPath(request.repo,request.reviewId),undefined,attempt.progress);
   tracker.phase('persisting',attempt.completedChunks.length,attempt.plan?.chunks.length??0);
   attempt.status='pending';delete attempt.recovery;delete attempt.failure;delete attempt.finishedAt;tracker.coverage(attempt);attempt.progress=tracker.snapshot();
@@ -222,21 +215,23 @@ export class DesignReviewCoordinator {
    this.launch(checkpoint,tracker,context,reservedExecutionId);return this.ack(checkpoint,true);
   }catch(error){if(this.subjects.get(subjectKey)===key)this.subjects.delete(subjectKey);releaseDesignArtifact(request.repo,subjectKey.split("\0")[1]!,key);throw error;}
  }
+ isActive(project:string,reviewId:string):boolean{return this.jobs.has(this.key(project,reviewId))||this.admitting.has(this.key(project,reviewId));}
  private async admit(request:DesignReviewStart,context:DesignStartContext):Promise<DesignReviewAcknowledgement>{
   const key=this.key(request.repo,request.reviewId),active=this.jobs.get(key);
   const saved=active?.checkpoint??await(this.deps.load??loadDesignCheckpoint)(request.repo,request.reviewId);
   if(saved){
    if(saved.submitted.artifactPath!==request.artifactPath)throw new DesignReviewConflictError('Review id belongs to another immutable submission');
-   if(saved.attempts[request.attempt-1]?.number===request.attempt)return this.ack(saved,!!active&&currentDesignAttempt(saved).number===request.attempt,request.attempt);
+   if(saved.attempts.some(a=>a.number===request.attempt))return this.ack(saved,!!active&&currentDesignAttempt(saved).number===request.attempt,request.attempt);
    const source=currentDesignAttempt(saved);
-   requireDesign(request.attempt===source.number+1,'review_conflict','Expected the next sequential attempt');
+   requireDesign(request.attempt===source.number+1||request.attempt===this.deps.acceptedAttempt&&request.attempt>source.number,'review_conflict','Expected the next sequential attempt');
    requireDesign(!active&&!this.subjects.has(this.subjectKey(saved.subject)),'review_conflict','Subject already has an active review');
    requireDesign(!this.uncertain.has(key),'persistence_failed','Prior terminal state could not be persisted');
-   requireDesign(['passed','changes_requested','incomplete'].includes(source.status)&&source.report?.status===source.status,'review_conflict','Correction requires a complete terminal report; unfinished work uses explicit recovery');
-   requireDesign(!this.deps.publish||source.publication?.state==='complete','publication_incomplete','Finish pending publication before starting a correction attempt');
+   const failedResubmission=source.status==='failed'&&!!source.failure;
+   requireDesign(failedResubmission||['passed','changes_requested','incomplete'].includes(source.status)&&source.report?.status===source.status,'review_conflict','New attempt requires a complete terminal report or a failed technical predecessor; interrupted work uses explicit recovery');
+   requireDesign(failedResubmission||!this.deps.publish||source.publication?.state==='complete','publication_incomplete','Finish pending publication before starting a correction attempt');
    const retained=new Set(source.impact?.retainedCoverage.map(r=>r.chunkId)??[]);
    const fresh=source.plan?.chunks.filter(c=>!retained.has(c.id));
-   requireDesign(source.plan&&fresh&&JSON.stringify(source.report.chunks)===JSON.stringify(source.completedChunks)&&fresh.length===source.completedChunks.length&&fresh.every((c,i)=>c.id===source.completedChunks[i]?.chunkId),'invalid_checkpoint','Terminal report must match the accepted plan and results');
+   requireDesign(failedResubmission||source.plan&&fresh&&JSON.stringify(source.report!.chunks)===JSON.stringify(source.completedChunks)&&fresh.length===source.completedChunks.length&&fresh.every((c,i)=>c.id===source.completedChunks[i]?.chunkId),'invalid_checkpoint','Terminal report must match the accepted plan and results');
    const prepared=(this.deps.prepare??prepareDesignSubject)(request.repo,request.artifactPath);
    requireDesign(prepared.subject.artifactId===saved.artifactId&&prepared.subject.project===saved.project,'foreign_checkpoint','Correction resolved another artifact');
    if(prepared.subject.reviewer==='controller')requireDesign(context.owner&&!context.owner.signal.aborted,'wrong_owner','A live trusted reviewer connection is required');
@@ -244,13 +239,13 @@ export class DesignReviewCoordinator {
    try{
     const tracker=new DesignProgressTracker(designCheckpointPath(request.repo,request.reviewId));
     const checkpoint:DesignReviewCheckpoint={...structuredClone(saved),subject:prepared.subject};
-    checkpoint.attempts.push({number:request.attempt,status:'pending',preparationKind:'impact',baseline:prepared.baseline,inventory:prepared.inventory,completedChunks:[],progress:tracker.snapshot(),startedAt:new Date().toISOString(),reviewer:prepared.subject.reviewer});
+    checkpoint.attempts.push({number:request.attempt,status:'pending',preparationKind:failedResubmission?'planning':'impact',baseline:prepared.baseline,inventory:prepared.inventory,completedChunks:[],progress:tracker.snapshot(),startedAt:new Date().toISOString(),reviewer:prepared.subject.reviewer});
     await this.deps.admit?.(checkpoint);
     await(this.deps.save??saveDesignCheckpoint)(request.repo,checkpoint);
     this.launch(checkpoint,tracker,context);return this.ack(checkpoint,true);
    }catch(error){if(this.subjects.get(subjectKey)===key)this.subjects.delete(subjectKey);releaseDesignArtifact(request.repo,subjectKey.split("\0")[1]!,key);throw error;}
   }
-  requireDesign(request.attempt===1,'review_conflict','Initial review requires attempt 1');
+  requireDesign(request.attempt===1||request.attempt===this.deps.acceptedAttempt,'review_conflict','Initial review requires attempt 1');
   const prepared=(this.deps.prepare??prepareDesignSubject)(request.repo,request.artifactPath);
   if(prepared.subject.reviewer==='controller')requireDesign(context.owner&&!context.owner.signal.aborted,'wrong_owner','A live trusted reviewer connection is required');
   const subjectKey=this.subjectKey(prepared.subject);
@@ -259,7 +254,7 @@ export class DesignReviewCoordinator {
   try{
    const tracker=new DesignProgressTracker(designCheckpointPath(request.repo,request.reviewId));
    const checkpoint:DesignReviewCheckpoint={schemaVersion:1,reviewId:request.reviewId,project:request.repo,artifactId:prepared.subject.artifactId,subject:prepared.subject,
-    submitted:{artifactPath:request.artifactPath,attempt:1},attempts:[{number:1,status:'pending',preparationKind:'planning',baseline:prepared.baseline,inventory:prepared.inventory,completedChunks:[],progress:tracker.snapshot(),startedAt:new Date().toISOString(),reviewer:prepared.subject.reviewer}]};
+    submitted:{artifactPath:request.artifactPath,attempt:request.attempt},attempts:[{number:request.attempt,status:'pending',preparationKind:'planning',baseline:prepared.baseline,inventory:prepared.inventory,completedChunks:[],progress:tracker.snapshot(),startedAt:new Date().toISOString(),reviewer:prepared.subject.reviewer}]};
    await this.deps.admit?.(checkpoint);
    await(this.deps.save??saveDesignCheckpoint)(request.repo,checkpoint);
    this.launch(checkpoint,tracker,context);
@@ -272,6 +267,10 @@ export class DesignReviewCoordinator {
   if(!checkpoint){
    const locator=options.artifactPath??this.knownArtifacts.get(key);requireDesign(locator,'artifact-reference-required','Result has no checkpoint mapping; provide artifactPath for permanent history');
    const stored=permanentStoredDesignCheckpoint(project,locator,reviewId,attempt);
+   const preserved=stored.checkpoint.attempts.at(-1)!;
+   // The permanent entry is proof of publication. Older version-2 records
+   // may retain the pre-publication pending receipt in their stored evidence.
+   if(!isDesignAdmission(preserved))preserved.publication={reviewId,attempt,state:'complete',artifactHistoryEntryId:stored.entryId,reportReference:stored.entryId};
    if(stored.checkpoint.subject)this.knownArtifacts.set(key,stored.checkpoint.subject.canonicalPath);
    const view=observeStoredDesignCheckpoint(stored.checkpoint,options);
    return {...view,source:'history',...(!view.admission?{publication:{reviewId,attempt,state:'complete' as const,artifactHistoryEntryId:stored.entryId,reportReference:stored.entryId}}:{})};
@@ -282,9 +281,9 @@ export class DesignReviewCoordinator {
    return{...observeStoredDesignCheckpoint({...checkpoint,attempts:checkpoint.attempts.filter(a=>a.number<=attempt)},options),source:'checkpoint'};
   }
   this.knownArtifacts.set(key,checkpoint.subject.canonicalPath);
-  requireDesign(checkpoint.attempts[attempt-1]?.number===attempt,'missing_attempt','Design review attempt not found');
+  requireDesign(checkpoint.attempts.some(a=>a.number===attempt),'missing_attempt','Design review attempt not found');
   const live=!!job&&currentDesignAttempt(checkpoint).number===attempt;
-  const view=observeDesignCheckpoint({...checkpoint,attempts:checkpoint.attempts.slice(0,attempt)},{...options,active:live,...(live?{liveProgress:job.tracker.snapshot()}:{})});
+  const view=observeDesignCheckpoint({...checkpoint,attempts:checkpoint.attempts.filter(a=>a.number<=attempt)},{...options,active:live,...(live?{liveProgress:job.tracker.snapshot()}:{})});
   const uncertain=attempt===currentDesignAttempt(checkpoint).number&&this.uncertain.get(key);
   if(uncertain)return{...view,status:'failed',phase:'complete',requiresUserInput:true,failure:uncertain};
   const reason=live&&job.abort.signal.reason;

@@ -13,12 +13,21 @@ export interface ReviewBootstrapInput extends ReviewWorkerIdentity {
  readonly attempt:number;readonly reviewer:'daemon'|'controller';readonly actionId:string;
  /** The family's exact bounded submission, not a prepared source context. */
  readonly submitted:unknown;
+ /** Host-resolved artifact route; never a provider/socket/closure. */
+ readonly epicHash?:string|undefined;
+ readonly operation?:'start'|'resume'|undefined;
+ /** Reopen stored evidence for model-free observation/publication/cleanup. */
+ readonly maintenance?:true|undefined;
+ readonly subject?:string|undefined;
+ /** Lookup hints only; the host resolves party/scope from tracked records. */
+ readonly route?:{readonly epicHash?:string;readonly storyId?:string;readonly artifactPath?:string;readonly client?:'claude'|'codex'|'vibe'}|undefined;
 }
 export interface ReviewWorkerInit extends DaemonWorkerInit {
  readonly role:'review';readonly review:ReviewBootstrapInput;readonly nativePort:MessagePort;
 }
 export interface ReviewAdmissionReceipt extends ReviewWorkerIdentity {
  readonly kind:'review-admission-saved';readonly attempt:number;readonly checkpointPath:string;
+ readonly progress?:import('./review-progress.js').ReviewProgressPublication|undefined;
 }
 export function assertReviewIdentity(value:ReviewWorkerIdentity):void{
  if(!Value.Check(ReviewKeySchema,value.key)||!isAbsolute(value.key.project)||resolve(value.key.project)!==value.key.project||!value.incarnation||value.incarnation.length>128||/[\x00-\x1f\x7f]/.test(value.incarnation))throw new Error('Invalid review worker identity');

@@ -1,0 +1,1216 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 11,
+        "contentHash": "1d58f7093e1b0947da62c3f34f8c6c472873cb4d93808312b5d1b7d828c465b4",
+        "at": "2026-11-11T18:21:25.304Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "1c09e09cd985026b",
+    "storyId": "s1",
+    "createdAt": "2026-11-11T16:07:39.723Z",
+    "updatedAt": "2026-11-11T18:21:25.033Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-11T14:35:39.306Z",
+    "epicSlug": "plan-builder-runs-out-attempts-before",
+    "revision": 11
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "ced60417a",
+        "ranAt": "2026-11-11T16:07:39.723Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/analyze/planner/__tests__/validate.test.ts: SCOPE_BAND values match the design doc",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/validate.test.ts",
+                "title": "SCOPE_BAND values match the design doc",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/analyze/planner/__tests__/validate.test.ts: the band module imports nothing from the validator or the renderer",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/validate.test.ts",
+                "title": "the band module imports nothing from the validator or the renderer",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/planner/__tests__/validate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 823,
+            "titles": [
+              {
+                "title": "validatePlan: happy-path 20-task M-bucket plan passes every invariant",
+                "result": "pass"
+              },
+              {
+                "title": "INV-1: empty tasks list",
+                "result": "pass"
+              },
+              {
+                "title": "INV-2: gap in task ids (t01, t02, t04)",
+                "result": "pass"
+              },
+              {
+                "title": "INV-2: out-of-order ids (t01, t03, t02, ...)",
+                "result": "pass"
+              },
+              {
+                "title": "INV-3: unknown template id",
+                "result": "pass"
+              },
+              {
+                "title": "INV-4: data template in a code plan",
+                "result": "pass"
+              },
+              {
+                "title": "INV-4: generic-target plans accept any target template",
+                "result": "pass"
+              },
+              {
+                "title": "INV-5: missing required param key",
+                "result": "pass"
+              },
+              {
+                "title": "INV-5: param value with wrong type",
+                "result": "pass"
+              },
+              {
+                "title": "INV-6: emitted produces differs from template produces",
+                "result": "pass"
+              },
+              {
+                "title": "INV-7: task consumes an output no earlier task produces",
+                "result": "pass"
+              },
+              {
+                "title": "INV-8: leaf template emitted with kind=planner",
+                "result": "pass"
+              },
+              {
+                "title": "INV-8: planner template emitted with kind=leaf",
+                "result": "pass"
+              },
+              {
+                "title": "INV-9: params contains a nested {taskId, template, ...} array",
+                "result": "pass"
+              },
+              {
+                "title": "INV-9: params deeply nested array of task-shaped objects",
+                "result": "pass"
+              },
+              {
+                "title": "INV-10: produces->consumes cycle (a depends on b depends on a)",
+                "result": "pass"
+              },
+              {
+                "title": "INV-12: no aggregator at all",
+                "result": "pass"
+              },
+              {
+                "title": "INV-12: aggregator not in the last slot",
+                "result": "pass"
+              },
+              {
+                "title": "INV-12: TWO aggregator tasks",
+                "result": "pass"
+              },
+              {
+                "title": "INV-13: M-bucket plan with too few tasks (below lower bound 20)",
+                "result": "pass"
+              },
+              {
+                "title": "INV-13: focused intent halves the lower bound",
+                "result": "pass"
+              },
+              {
+                "title": "INV-13: focused intent does NOT raise the upper bound",
+                "result": "pass"
+              },
+              {
+                "title": "INV-14: task rationale at exactly 19 chars (boundary)",
+                "result": "pass"
+              },
+              {
+                "title": "INV-14: plan reasoning at exactly 49 chars (boundary)",
+                "result": "pass"
+              },
+              {
+                "title": "INV-15: root plan must NOT have parentTaskPath",
+                "result": "pass"
+              },
+              {
+                "title": "INV-15: child plan MUST have parentTaskPath",
+                "result": "pass"
+              },
+              {
+                "title": "INV-15: child plan with parentTaskPath set passes",
+                "result": "pass"
+              },
+              {
+                "title": "SCOPE_BAND values match the design doc",
+                "result": "pass"
+              },
+              {
+                "title": "the band module imports nothing from the validator or the renderer",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "79784ad9c",
+        "ranAt": "2026-11-11T16:32:14.084Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/analyze/planner/__tests__/validate.test.ts: the task-count check agrees with validatePlan at every band boundary",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/validate.test.ts",
+                "title": "the task-count check agrees with validatePlan at every band boundary",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/analyze/planner/__tests__/validate.test.ts: validatePlan keeps its invariant order and results for the existing cases",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/validate.test.ts",
+                "title": "validatePlan keeps its invariant order and results for the existing cases",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/planner/__tests__/validate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 938,
+            "titles": [
+              {
+                "title": "validatePlan: happy-path 20-task M-bucket plan passes every invariant",
+                "result": "pass"
+              },
+              {
+                "title": "INV-1: empty tasks list",
+                "result": "pass"
+              },
+              {
+                "title": "INV-2: gap in task ids (t01, t02, t04)",
+                "result": "pass"
+              },
+              {
+                "title": "INV-2: out-of-order ids (t01, t03, t02, ...)",
+                "result": "pass"
+              },
+              {
+                "title": "INV-3: unknown template id",
+                "result": "pass"
+              },
+              {
+                "title": "INV-4: data template in a code plan",
+                "result": "pass"
+              },
+              {
+                "title": "INV-4: generic-target plans accept any target template",
+                "result": "pass"
+              },
+              {
+                "title": "INV-5: missing required param key",
+                "result": "pass"
+              },
+              {
+                "title": "INV-5: param value with wrong type",
+                "result": "pass"
+              },
+              {
+                "title": "INV-6: emitted produces differs from template produces",
+                "result": "pass"
+              },
+              {
+                "title": "INV-7: task consumes an output no earlier task produces",
+                "result": "pass"
+              },
+              {
+                "title": "INV-8: leaf template emitted with kind=planner",
+                "result": "pass"
+              },
+              {
+                "title": "INV-8: planner template emitted with kind=leaf",
+                "result": "pass"
+              },
+              {
+                "title": "INV-9: params contains a nested {taskId, template, ...} array",
+                "result": "pass"
+              },
+              {
+                "title": "INV-9: params deeply nested array of task-shaped objects",
+                "result": "pass"
+              },
+              {
+                "title": "INV-10: produces->consumes cycle (a depends on b depends on a)",
+                "result": "pass"
+              },
+              {
+                "title": "INV-12: no aggregator at all",
+                "result": "pass"
+              },
+              {
+                "title": "INV-12: aggregator not in the last slot",
+                "result": "pass"
+              },
+              {
+                "title": "INV-12: TWO aggregator tasks",
+                "result": "pass"
+              },
+              {
+                "title": "INV-13: M-bucket plan with too few tasks (below lower bound 20)",
+                "result": "pass"
+              },
+              {
+                "title": "INV-13: focused intent halves the lower bound",
+                "result": "pass"
+              },
+              {
+                "title": "INV-13: focused intent does NOT raise the upper bound",
+                "result": "pass"
+              },
+              {
+                "title": "INV-14: task rationale at exactly 19 chars (boundary)",
+                "result": "pass"
+              },
+              {
+                "title": "INV-14: plan reasoning at exactly 49 chars (boundary)",
+                "result": "pass"
+              },
+              {
+                "title": "INV-15: root plan must NOT have parentTaskPath",
+                "result": "pass"
+              },
+              {
+                "title": "INV-15: child plan MUST have parentTaskPath",
+                "result": "pass"
+              },
+              {
+                "title": "INV-15: child plan with parentTaskPath set passes",
+                "result": "pass"
+              },
+              {
+                "title": "SCOPE_BAND values match the design doc",
+                "result": "pass"
+              },
+              {
+                "title": "the band module imports nothing from the validator or the renderer",
+                "result": "pass"
+              },
+              {
+                "title": "the task-count check agrees with validatePlan at every band boundary",
+                "result": "pass"
+              },
+              {
+                "title": "validatePlan keeps its invariant order and results for the existing cases",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "1f686ad60",
+        "ranAt": "2026-11-11T16:42:19.128Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/analyze/planner/__tests__/driver-unit.test.ts: renderDepthPolicy prints the INV-13 range for every scope and focus value, without halving wording",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/driver-unit.test.ts",
+                "title": "renderDepthPolicy prints the INV-13 range for every scope and focus value, without halving wording",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/analyze/planner/__tests__/driver-unit.test.ts: no duplicate band table in the renderer",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/driver-unit.test.ts",
+                "title": "no duplicate band table in the renderer",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/planner/__tests__/driver-unit.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 745,
+            "titles": [
+              {
+                "title": "renderCatalog: empty catalog renders the no-templates marker",
+                "result": "pass"
+              },
+              {
+                "title": "renderCatalog: single template renders id + target + family + description + produces",
+                "result": "pass"
+              },
+              {
+                "title": "renderCatalog: aggregator template flags itself with INV-12 hint",
+                "result": "pass"
+              },
+              {
+                "title": "renderCatalog: catalog order is preserved",
+                "result": "pass"
+              },
+              {
+                "title": "renderDepthPolicy: M scope reports 20-40 band",
+                "result": "pass"
+              },
+              {
+                "title": "renderDepthPolicy: focused intent prints the lower bound that is enforced",
+                "result": "pass"
+              },
+              {
+                "title": "renderDepthPolicy prints the INV-13 range for every scope and focus value, without halving wording",
+                "result": "pass"
+              },
+              {
+                "title": "no duplicate band table in the renderer",
+                "result": "pass"
+              },
+              {
+                "title": "renderDepthPolicy: XS depth hint mentions detailed per-unit",
+                "result": "pass"
+              },
+              {
+                "title": "renderDepthPolicy: XL depth hint mentions structural breadth + child plans",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError(ECONNREFUSED) -> PlanBuilderLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError(\"Ollama is not running\") -> PlanBuilderLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError(\"Model not found\") -> PlanBuilderLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError(arbitrary error) -> PlanBuilderSchemaUnrecoverable",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError(non-Error) -> wraps in PlanBuilderSchemaUnrecoverable",
+                "result": "pass"
+              },
+              {
+                "title": "PlanBuilderLlmUnavailableError carries cause in message",
+                "result": "pass"
+              },
+              {
+                "title": "PlanBuilderSchemaUnrecoverable carries error list in message",
+                "result": "pass"
+              },
+              {
+                "title": "PlanBuilderPromptMissingError carries the absolute path",
+                "result": "pass"
+              },
+              {
+                "title": "PlanBuilderExhausted carries attempts + failures + lastFailure",
+                "result": "pass"
+              },
+              {
+                "title": "buildInitialMessages: emits 2 messages (system, user) with all the required sections",
+                "result": "pass"
+              },
+              {
+                "title": "buildInitialMessages: child-plan parentTaskPath emits the warning note",
+                "result": "pass"
+              },
+              {
+                "title": "appendCorrectionTurn: re-issues with the assistant turn + VALIDATOR FEEDBACK block",
+                "result": "pass"
+              },
+              {
+                "title": "MaxPlanDepthExceededError carries currentDepth, rootScope, cap on the instance",
+                "result": "pass"
+              },
+              {
+                "title": "runPlanner: refuses BEFORE any LLM call when currentDepth+1 > cap",
+                "result": "pass"
+              },
+              {
+                "title": "runPlanner: rootScope overrides intent.scope for the depth cap",
+                "result": "pass"
+              },
+              {
+                "title": "runPlanner: rootScope=XS at currentDepth=2 (exactly the cap) is rejected",
+                "result": "pass"
+              },
+              {
+                "title": "runPlanner: default currentDepth=0 always passes the depth check (cap >= 2)",
+                "result": "pass"
+              },
+              {
+                "title": "appendCorrectionTurn with failure.target renders the pointer",
+                "result": "pass"
+              },
+              {
+                "title": "appendCorrectionTurn: escalation banner fires when the same (invariantId, taskId) repeats",
+                "result": "pass"
+              },
+              {
+                "title": "appendCorrectionTurn: no escalation banner when previous failure was a different invariant",
+                "result": "pass"
+              },
+              {
+                "title": "appendCorrectionTurn: no escalation banner when same invariant hits a different task",
+                "result": "pass"
+              },
+              {
+                "title": "runPlanner: an empty template catalog is refused with a typed error before any schema is built or model is called",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "a8144216a",
+        "ranAt": "2026-11-11T16:44:35.810Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/analyze/planner/__tests__/driver-unit.test.ts: appendCorrectionTurn without alsoFailing is byte-identical to the pre-change fixture",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/driver-unit.test.ts",
+                "title": "appendCorrectionTurn without alsoFailing is byte-identical to the pre-change fixture",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/analyze/planner/__tests__/driver-unit.test.ts: appendCorrectionTurn with alsoFailing states the primary first and the count second",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/driver-unit.test.ts",
+                "title": "appendCorrectionTurn with alsoFailing states the primary first and the count second",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/analyze/planner/__tests__/driver-unit.test.ts: repetition banner follows primary failures only, including the secondary-to-primary transition",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/driver-unit.test.ts",
+                "title": "repetition banner follows primary failures only, including the secondary-to-primary transition",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/planner/__tests__/driver-unit.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 755,
+            "titles": [
+              {
+                "title": "renderCatalog: empty catalog renders the no-templates marker",
+                "result": "pass"
+              },
+              {
+                "title": "renderCatalog: single template renders id + target + family + description + produces",
+                "result": "pass"
+              },
+              {
+                "title": "renderCatalog: aggregator template flags itself with INV-12 hint",
+                "result": "pass"
+              },
+              {
+                "title": "renderCatalog: catalog order is preserved",
+                "result": "pass"
+              },
+              {
+                "title": "renderDepthPolicy: M scope reports 20-40 band",
+                "result": "pass"
+              },
+              {
+                "title": "renderDepthPolicy: focused intent prints the lower bound that is enforced",
+                "result": "pass"
+              },
+              {
+                "title": "renderDepthPolicy prints the INV-13 range for every scope and focus value, without halving wording",
+                "result": "pass"
+              },
+              {
+                "title": "no duplicate band table in the renderer",
+                "result": "pass"
+              },
+              {
+                "title": "renderDepthPolicy: XS depth hint mentions detailed per-unit",
+                "result": "pass"
+              },
+              {
+                "title": "renderDepthPolicy: XL depth hint mentions structural breadth + child plans",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError(ECONNREFUSED) -> PlanBuilderLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError(\"Ollama is not running\") -> PlanBuilderLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError(\"Model not found\") -> PlanBuilderLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError(arbitrary error) -> PlanBuilderSchemaUnrecoverable",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError(non-Error) -> wraps in PlanBuilderSchemaUnrecoverable",
+                "result": "pass"
+              },
+              {
+                "title": "PlanBuilderLlmUnavailableError carries cause in message",
+                "result": "pass"
+              },
+              {
+                "title": "PlanBuilderSchemaUnrecoverable carries error list in message",
+                "result": "pass"
+              },
+              {
+                "title": "PlanBuilderPromptMissingError carries the absolute path",
+                "result": "pass"
+              },
+              {
+                "title": "PlanBuilderExhausted carries attempts + failures + lastFailure",
+                "result": "pass"
+              },
+              {
+                "title": "buildInitialMessages: emits 2 messages (system, user) with all the required sections",
+                "result": "pass"
+              },
+              {
+                "title": "buildInitialMessages: child-plan parentTaskPath emits the warning note",
+                "result": "pass"
+              },
+              {
+                "title": "appendCorrectionTurn: re-issues with the assistant turn + VALIDATOR FEEDBACK block",
+                "result": "pass"
+              },
+              {
+                "title": "appendCorrectionTurn without alsoFailing is byte-identical to the pre-change fixture",
+                "result": "pass"
+              },
+              {
+                "title": "appendCorrectionTurn with alsoFailing states the primary first and the count second",
+                "result": "pass"
+              },
+              {
+                "title": "repetition banner follows primary failures only, including the secondary-to-primary transition",
+                "result": "pass"
+              },
+              {
+                "title": "MaxPlanDepthExceededError carries currentDepth, rootScope, cap on the instance",
+                "result": "pass"
+              },
+              {
+                "title": "runPlanner: refuses BEFORE any LLM call when currentDepth+1 > cap",
+                "result": "pass"
+              },
+              {
+                "title": "runPlanner: rootScope overrides intent.scope for the depth cap",
+                "result": "pass"
+              },
+              {
+                "title": "runPlanner: rootScope=XS at currentDepth=2 (exactly the cap) is rejected",
+                "result": "pass"
+              },
+              {
+                "title": "runPlanner: default currentDepth=0 always passes the depth check (cap >= 2)",
+                "result": "pass"
+              },
+              {
+                "title": "appendCorrectionTurn with failure.target renders the pointer",
+                "result": "pass"
+              },
+              {
+                "title": "appendCorrectionTurn: escalation banner fires when the same (invariantId, taskId) repeats",
+                "result": "pass"
+              },
+              {
+                "title": "appendCorrectionTurn: no escalation banner when previous failure was a different invariant",
+                "result": "pass"
+              },
+              {
+                "title": "appendCorrectionTurn: no escalation banner when same invariant hits a different task",
+                "result": "pass"
+              },
+              {
+                "title": "runPlanner: an empty template catalog is refused with a typed error before any schema is built or model is called",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "14129f96a",
+        "ranAt": "2026-11-11T16:49:17.105Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/analyze/planner/__tests__/driver-unit.test.ts: with a recording stub provider, the initial prompt carries the enforced range",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/driver-unit.test.ts",
+                "title": "with a recording stub provider, the initial prompt carries the enforced range",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/analyze/planner/__tests__/driver-unit.test.ts: with a recording stub provider, the correction message sent on call 2 states INV-7 and then the count",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/driver-unit.test.ts",
+                "title": "with a recording stub provider, the correction message sent on call 2 states INV-7 and then the count",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/analyze/planner/__tests__/driver-unit.test.ts: recording-stub replay (INV-7 plus count, INV-11, valid) accepted at call 3 with primary-only feedback",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/driver-unit.test.ts",
+                "title": "recording-stub replay (INV-7 plus count, INV-11, valid) accepted at call 3 with primary-only feedback",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/analyze/planner/__tests__/driver-unit.test.ts: through structuredStageForTest, failures and saved feedback hold primary failures only",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/driver-unit.test.ts",
+                "title": "through structuredStageForTest, failures and saved feedback hold primary failures only",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/analyze/planner/__tests__/driver-unit.test.ts: an empty task list states the count and keeps INV-1 primary",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/driver-unit.test.ts",
+                "title": "an empty task list states the count and keeps INV-1 primary",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/planner/__tests__/driver-unit.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 900,
+            "titles": [
+              {
+                "title": "renderCatalog: empty catalog renders the no-templates marker",
+                "result": "pass"
+              },
+              {
+                "title": "renderCatalog: single template renders id + target + family + description + produces",
+                "result": "pass"
+              },
+              {
+                "title": "renderCatalog: aggregator template flags itself with INV-12 hint",
+                "result": "pass"
+              },
+              {
+                "title": "renderCatalog: catalog order is preserved",
+                "result": "pass"
+              },
+              {
+                "title": "renderDepthPolicy: M scope reports 20-40 band",
+                "result": "pass"
+              },
+              {
+                "title": "renderDepthPolicy: focused intent prints the lower bound that is enforced",
+                "result": "pass"
+              },
+              {
+                "title": "renderDepthPolicy prints the INV-13 range for every scope and focus value, without halving wording",
+                "result": "pass"
+              },
+              {
+                "title": "no duplicate band table in the renderer",
+                "result": "pass"
+              },
+              {
+                "title": "renderDepthPolicy: XS depth hint mentions detailed per-unit",
+                "result": "pass"
+              },
+              {
+                "title": "renderDepthPolicy: XL depth hint mentions structural breadth + child plans",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError(ECONNREFUSED) -> PlanBuilderLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError(\"Ollama is not running\") -> PlanBuilderLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError(\"Model not found\") -> PlanBuilderLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError(arbitrary error) -> PlanBuilderSchemaUnrecoverable",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError(non-Error) -> wraps in PlanBuilderSchemaUnrecoverable",
+                "result": "pass"
+              },
+              {
+                "title": "PlanBuilderLlmUnavailableError carries cause in message",
+                "result": "pass"
+              },
+              {
+                "title": "PlanBuilderSchemaUnrecoverable carries error list in message",
+                "result": "pass"
+              },
+              {
+                "title": "PlanBuilderPromptMissingError carries the absolute path",
+                "result": "pass"
+              },
+              {
+                "title": "PlanBuilderExhausted carries attempts + failures + lastFailure",
+                "result": "pass"
+              },
+              {
+                "title": "buildInitialMessages: emits 2 messages (system, user) with all the required sections",
+                "result": "pass"
+              },
+              {
+                "title": "buildInitialMessages: child-plan parentTaskPath emits the warning note",
+                "result": "pass"
+              },
+              {
+                "title": "appendCorrectionTurn: re-issues with the assistant turn + VALIDATOR FEEDBACK block",
+                "result": "pass"
+              },
+              {
+                "title": "appendCorrectionTurn without alsoFailing is byte-identical to the pre-change fixture",
+                "result": "pass"
+              },
+              {
+                "title": "appendCorrectionTurn with alsoFailing states the primary first and the count second",
+                "result": "pass"
+              },
+              {
+                "title": "repetition banner follows primary failures only, including the secondary-to-primary transition",
+                "result": "pass"
+              },
+              {
+                "title": "MaxPlanDepthExceededError carries currentDepth, rootScope, cap on the instance",
+                "result": "pass"
+              },
+              {
+                "title": "runPlanner: refuses BEFORE any LLM call when currentDepth+1 > cap",
+                "result": "pass"
+              },
+              {
+                "title": "runPlanner: rootScope overrides intent.scope for the depth cap",
+                "result": "pass"
+              },
+              {
+                "title": "runPlanner: rootScope=XS at currentDepth=2 (exactly the cap) is rejected",
+                "result": "pass"
+              },
+              {
+                "title": "runPlanner: default currentDepth=0 always passes the depth check (cap >= 2)",
+                "result": "pass"
+              },
+              {
+                "title": "appendCorrectionTurn with failure.target renders the pointer",
+                "result": "pass"
+              },
+              {
+                "title": "appendCorrectionTurn: escalation banner fires when the same (invariantId, taskId) repeats",
+                "result": "pass"
+              },
+              {
+                "title": "appendCorrectionTurn: no escalation banner when previous failure was a different invariant",
+                "result": "pass"
+              },
+              {
+                "title": "appendCorrectionTurn: no escalation banner when same invariant hits a different task",
+                "result": "pass"
+              },
+              {
+                "title": "runPlanner: an empty template catalog is refused with a typed error before any schema is built or model is called",
+                "result": "pass"
+              },
+              {
+                "title": "with a recording stub provider, the initial prompt carries the enforced range",
+                "result": "pass"
+              },
+              {
+                "title": "with a recording stub provider, the correction message sent on call 2 states INV-7 and then the count",
+                "result": "pass"
+              },
+              {
+                "title": "recording-stub replay (INV-7 plus count, INV-11, valid) accepted at call 3 with primary-only feedback",
+                "result": "pass"
+              },
+              {
+                "title": "through structuredStageForTest, failures and saved feedback hold primary failures only",
+                "result": "pass"
+              },
+              {
+                "title": "an empty task list states the count and keeps INV-1 primary",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "c5a00524b",
+        "ranAt": "2026-11-11T16:51:33.848Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/analyze/planner/__tests__/driver-unit.test.ts: five-call acceptance and exhaustion with the planner limit",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/driver-unit.test.ts",
+                "title": "five-call acceptance and exhaustion with the planner limit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/analyze/planner/__tests__/driver-unit.test.ts: completeStructured receives the shared maxAttempts, not the planner limit",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/driver-unit.test.ts",
+                "title": "completeStructured receives the shared maxAttempts, not the planner limit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/planner/__tests__/driver-unit.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 949,
+            "titles": [
+              {
+                "title": "renderCatalog: empty catalog renders the no-templates marker",
+                "result": "pass"
+              },
+              {
+                "title": "renderCatalog: single template renders id + target + family + description + produces",
+                "result": "pass"
+              },
+              {
+                "title": "renderCatalog: aggregator template flags itself with INV-12 hint",
+                "result": "pass"
+              },
+              {
+                "title": "renderCatalog: catalog order is preserved",
+                "result": "pass"
+              },
+              {
+                "title": "renderDepthPolicy: M scope reports 20-40 band",
+                "result": "pass"
+              },
+              {
+                "title": "renderDepthPolicy: focused intent prints the lower bound that is enforced",
+                "result": "pass"
+              },
+              {
+                "title": "renderDepthPolicy prints the INV-13 range for every scope and focus value, without halving wording",
+                "result": "pass"
+              },
+              {
+                "title": "no duplicate band table in the renderer",
+                "result": "pass"
+              },
+              {
+                "title": "renderDepthPolicy: XS depth hint mentions detailed per-unit",
+                "result": "pass"
+              },
+              {
+                "title": "renderDepthPolicy: XL depth hint mentions structural breadth + child plans",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError(ECONNREFUSED) -> PlanBuilderLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError(\"Ollama is not running\") -> PlanBuilderLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError(\"Model not found\") -> PlanBuilderLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError(arbitrary error) -> PlanBuilderSchemaUnrecoverable",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError(non-Error) -> wraps in PlanBuilderSchemaUnrecoverable",
+                "result": "pass"
+              },
+              {
+                "title": "PlanBuilderLlmUnavailableError carries cause in message",
+                "result": "pass"
+              },
+              {
+                "title": "PlanBuilderSchemaUnrecoverable carries error list in message",
+                "result": "pass"
+              },
+              {
+                "title": "PlanBuilderPromptMissingError carries the absolute path",
+                "result": "pass"
+              },
+              {
+                "title": "PlanBuilderExhausted carries attempts + failures + lastFailure",
+                "result": "pass"
+              },
+              {
+                "title": "buildInitialMessages: emits 2 messages (system, user) with all the required sections",
+                "result": "pass"
+              },
+              {
+                "title": "buildInitialMessages: child-plan parentTaskPath emits the warning note",
+                "result": "pass"
+              },
+              {
+                "title": "appendCorrectionTurn: re-issues with the assistant turn + VALIDATOR FEEDBACK block",
+                "result": "pass"
+              },
+              {
+                "title": "appendCorrectionTurn without alsoFailing is byte-identical to the pre-change fixture",
+                "result": "pass"
+              },
+              {
+                "title": "appendCorrectionTurn with alsoFailing states the primary first and the count second",
+                "result": "pass"
+              },
+              {
+                "title": "repetition banner follows primary failures only, including the secondary-to-primary transition",
+                "result": "pass"
+              },
+              {
+                "title": "MaxPlanDepthExceededError carries currentDepth, rootScope, cap on the instance",
+                "result": "pass"
+              },
+              {
+                "title": "runPlanner: refuses BEFORE any LLM call when currentDepth+1 > cap",
+                "result": "pass"
+              },
+              {
+                "title": "runPlanner: rootScope overrides intent.scope for the depth cap",
+                "result": "pass"
+              },
+              {
+                "title": "runPlanner: rootScope=XS at currentDepth=2 (exactly the cap) is rejected",
+                "result": "pass"
+              },
+              {
+                "title": "runPlanner: default currentDepth=0 always passes the depth check (cap >= 2)",
+                "result": "pass"
+              },
+              {
+                "title": "appendCorrectionTurn with failure.target renders the pointer",
+                "result": "pass"
+              },
+              {
+                "title": "appendCorrectionTurn: escalation banner fires when the same (invariantId, taskId) repeats",
+                "result": "pass"
+              },
+              {
+                "title": "appendCorrectionTurn: no escalation banner when previous failure was a different invariant",
+                "result": "pass"
+              },
+              {
+                "title": "appendCorrectionTurn: no escalation banner when same invariant hits a different task",
+                "result": "pass"
+              },
+              {
+                "title": "runPlanner: an empty template catalog is refused with a typed error before any schema is built or model is called",
+                "result": "pass"
+              },
+              {
+                "title": "with a recording stub provider, the initial prompt carries the enforced range",
+                "result": "pass"
+              },
+              {
+                "title": "with a recording stub provider, the correction message sent on call 2 states INV-7 and then the count",
+                "result": "pass"
+              },
+              {
+                "title": "recording-stub replay (INV-7 plus count, INV-11, valid) accepted at call 3 with primary-only feedback",
+                "result": "pass"
+              },
+              {
+                "title": "through structuredStageForTest, failures and saved feedback hold primary failures only",
+                "result": "pass"
+              },
+              {
+                "title": "an empty task list states the count and keeps INV-1 primary",
+                "result": "pass"
+              },
+              {
+                "title": "five-call acceptance and exhaustion with the planner limit",
+                "result": "pass"
+              },
+              {
+                "title": "completeStructured receives the shared maxAttempts, not the planner limit",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "37eb0d49f",
+        "ranAt": "2026-11-11T18:21:25.033Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "src/analyze/orchestrator/__tests__/docs-broad-live.test.ts: the broad docs request runs to a final report",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "fail",
+              "evidence": "~/.insrc/analyze/docs-broad-live-mwcdxpq5 (run.json, plan.json, plan.attempts/01-03, tasks/t01-t06); test output /tmp/live-run4.txt: plan stage passed, execute stage unfinished at the 40-minute test limit"
+            }
+          }
+        ],
+        "files": [],
+        "note": "no test files to run; reported as failed by the builder: src/analyze/orchestrator/__tests__/docs-broad-live.test.ts: the broad docs request runs to a final report"
+      }
+    ]
+  },
+  "citations": []
+}

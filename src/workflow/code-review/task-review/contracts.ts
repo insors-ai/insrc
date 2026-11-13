@@ -117,6 +117,8 @@ export interface ReviewAttempt {
 export type TaskIdentityFormat = 'final-task-v1' | 'final-task-v2';
 export interface ReviewCheckpoint { schemaVersion: 1; reviewId: string; project: string; storyId: string; taskId?: string; attempts: readonly ReviewAttempt[]; }
 export interface CompletedReviewSummary {
+ /** Retained terminal execution failure; never a completed assessment. */
+ failedAttempt?: ReviewAttempt;
  reviewId: string; attempt: number; storyId: string; taskId?: string; reviewer: ReviewerParty; status: TaskReviewResult['status'];
  scope: Pick<ReviewPacket, 'storyId' | 'taskId' | 'documents' | 'reviewSet'> & { reviewRevision?: string; finalScope?: FinalScopeSnapshot }; tasks: readonly TaskReviewResult[]; summary: string; completedAt: string; buildFingerprint?: string; reassessmentSummary?: string; origins?: readonly TaskResultOrigin[];
  finalScopeIdentity?: string; attributionIdentity?: string; taskScopeIdentities?: readonly { taskId: string; identity: string }[];
@@ -149,7 +151,7 @@ export const CodeAdmissionAttemptSchema = object({
  resourceGuard: Type.Optional(ReviewResourceGuardSchema),
 });
 export type CodeAdmissionAttempt = Static<typeof CodeAdmissionAttemptSchema>;
-const QualifiedAttemptSchema = object({
+export const QualifiedAttemptSchema = object({
  ...cloneFields(CheckpointSchema.properties.attempts.items.properties),
  acceptedAt: Type.Optional(text), operation: Type.Optional(Type.Union([Type.Literal('start'), Type.Literal('resume')])), resourceGuard: Type.Optional(ReviewResourceGuardSchema),
 });

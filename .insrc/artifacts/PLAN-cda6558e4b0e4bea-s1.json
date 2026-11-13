@@ -1,0 +1,256 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1794550044290-40thap",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-13T06:08:24.272Z",
+    "epicCreatedAt": "2026-11-13T05:55:40.344Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "glm-5.3:cloud"
+        }
+      ]
+    },
+    "elapsedMs": 57852,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "cda6558e4b0e4bea",
+    "epicSlug": "recover-run-file-guards-whose-recorded",
+    "storyId": "s1",
+    "lldRunId": "wf-1794549254332-p1haji",
+    "lldEffectiveHash": "cda6558e4b0e4beaf03116cbafc8830acb28c25acf8fc8cdb1acd4d58b4057a1",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4bfc357ab3134502951808754c27585a6ed5db60cd6cc47a1510c63b3ee9432b",
+        "at": "2026-11-13T06:08:24.778Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-13T06:21:31.140Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "2a7e178e9aadaf918e8fcfaf5ba56e4fc62be5ab"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "A four-task build: the decision-table unit tests first (red), then the reclaim itself in the EEXIST branch of the shared acquireRunFileGuard, then consumer-path integration cases with real exited-process fixtures, then the full sweep confirming the untouched consumers keep their contracts. All code change lives in one module; every consumer inherits the recovery for free."
+    },
+    "tasks": [
+      {
+        "acceptanceChecks": [
+          "Suite fails red against the current fail-closed behavior for the reclaim cases",
+          "Withhold cases pass unchanged (same, same-boot replaced, corrupt owner.json, throwing reader)",
+          "Fake reader + mkdtemp fixtures in place, no real PID probing"
+        ],
+        "dependsOn": [],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "id": "t1",
+        "order": 1,
+        "size": "M",
+        "summary": "Test-first: extend src/shared/__tests__/daemon-run-files.test.ts with the decision-table cases - gone -> quarantine+acquire, previous-boot replaced -> quarantine+acquire, same/same-boot-replaced/corrupt-or-missing owner.json/throwing reader -> withhold with nothing renamed, retry EEXIST -> recompute and throw, symlink -> conflict, quarantine-name collision -> suffixed name, daemonLog line by nonce, log-write failure swallowed. Uses mkdtemp guard fixtures and a fake ProcessIdentityReader injected via the new optional third parameter.",
+        "tests": [
+          {
+            "level": "unit",
+            "name": "acquireRunFileGuard quarantines and acquires when the verdict is 'gone' (fake reader, mkdtemp guard)"
+          },
+          {
+            "level": "unit",
+            "name": "acquireRunFileGuard quarantines and acquires on previous-boot 'replaced' (boot segments mismatch)"
+          },
+          {
+            "level": "unit",
+            "name": "acquireRunFileGuard withholds 'same', same-boot 'replaced', corrupt or missing owner.json and a throwing reader; nothing is renamed"
+          },
+          {
+            "level": "unit",
+            "name": "acquireRunFileGuard recomputes the conflict and throws when the retry mkdir hits EEXIST"
+          },
+          {
+            "level": "unit",
+            "name": "acquireRunFileGuard leaves a symlink guard as a conflict"
+          },
+          {
+            "level": "unit",
+            "name": "acquireRunFileGuard suffixes the quarantine name on collision; owner.json stays byte-identical and one daemonLog line is keyed by the recorded nonce; a log-write failure is swallowed"
+          }
+        ],
+        "title": "Write the reclaim decision-table unit tests first (red)"
+      },
+      {
+        "acceptanceChecks": [
+          "acquireRunFileGuard signature matches the LLD contract with optional read param",
+          "Verdict + boot-segment comparison implemented and only 'gone' or previous-boot mismatch reclaims",
+          "Stale guard renamed whole with owner.json intact; one daemonLog line; single mkdir retry; retry EEXIST recomputes the conflict and throws",
+          "Comments at :51 and :73 narrowed; borrowRunFileGuard and removeOwnedRunFile untouched"
+        ],
+        "dependsOn": [
+          "t1"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4",
+          "c5"
+        ],
+        "id": "t2",
+        "order": 2,
+        "size": "M",
+        "summary": "Implement the reclaim in the EEXIST branch of acquireRunFileGuard (src/shared/daemon-run-files.ts): add the optional ProcessIdentityReader third param, read ownerRecord, compute processIdentityState plus the boot-id comparison ('gone', or recorded boot segment differs from the current boot), rename the stale guard to '<path>.quarantine-<UTC-timestamp>-<recorded-nonce>' with incremented-suffix collision handling, append a best-effort recovery line to PATHS.daemonLog (failures swallowed), retry mkdirSync once and recompute the conflict on retry EEXIST. Add renameSync/appendFileSync to the fs import; narrow the comments at :51 and :73 to the unverifiable-owner case.",
+        "tests": [
+          {
+            "level": "unit",
+            "name": "the t1 decision-table suite turns green against the implementation (no new tests)"
+          }
+        ],
+        "title": "Implement dead-owner reclaim inside shared acquireRunFileGuard"
+      },
+      {
+        "acceptanceChecks": [
+          "Lease acquires over a guard whose owner.json records a genuinely exited child process",
+          "Vault guard (PATHS.vaultGuard) reclaims a genuinely-exited-owner guard through the real readProcessIdentity verdict path",
+          "Supervisor borrow/release suites pass unchanged"
+        ],
+        "dependsOn": [
+          "t2"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c5"
+        ],
+        "id": "t3",
+        "order": 3,
+        "size": "M",
+        "summary": "Extend the integration suites with real-exited-owner fixtures (no fake reader - these paths call acquireRunFileGuard without injection): spawn a short-lived child process, wait for exit, write its recorded identity (current boot-id + the child's start ticks) into the guard's owner.json. src/daemon/__tests__/run-file-ownership.test.ts gains a startup-lease-over-dead-owner-guard case; src/daemon/__tests__/keystore-guard.test.ts gains a vault-guard reclaim case proving the offline maintenance path inherits the shared recovery through the real verdict.",
+        "tests": [
+          {
+            "level": "integration",
+            "name": "startup lease acquires over a guard whose owner.json records a genuinely exited child process (src/daemon/__tests__/run-file-ownership.test.ts)"
+          },
+          {
+            "level": "integration",
+            "name": "vault guard reclaims a genuinely-exited-owner guard through the real readProcessIdentity verdict path (src/daemon/__tests__/keystore-guard.test.ts)"
+          }
+        ],
+        "title": "Add consumer-path integration cases (lease, vault guard) with real-exited-owner fixtures"
+      },
+      {
+        "acceptanceChecks": [
+          "npx tsx --test 'src/**/__tests__/*.test.ts' exits clean",
+          "Shutdown and supervisor suites pass with no test modifications"
+        ],
+        "dependsOn": [
+          "t3"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "id": "t4",
+        "order": 4,
+        "size": "S",
+        "summary": "Run the full test sweep and confirm the untouched consumers keep their contracts: supervisor and shutdown suites pass unchanged (regression only, no edits to them).",
+        "tests": [
+          {
+            "level": "integration",
+            "name": "full sweep npx tsx --test 'src/**/__tests__/*.test.ts' exits clean with shutdown and supervisor suites unmodified"
+          }
+        ],
+        "title": "Full sweep with shutdown/supervisor regression confirmation"
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "coveredByTaskIds": [
+          "t1"
+        ],
+        "lldStrategyItem": "gone / previous-boot replaced -> quarantine + acquire"
+      },
+      {
+        "coveredByTaskIds": [
+          "t1"
+        ],
+        "lldStrategyItem": "same / same-boot replaced / unverifiable -> conflict, nothing renamed"
+      },
+      {
+        "coveredByTaskIds": [
+          "t1"
+        ],
+        "lldStrategyItem": "quarantine name = timestamp + nonce; owner.json intact; daemonLog line"
+      },
+      {
+        "coveredByTaskIds": [
+          "t1"
+        ],
+        "lldStrategyItem": "symlink -> conflict; name collision -> suffix"
+      },
+      {
+        "coveredByTaskIds": [
+          "t3"
+        ],
+        "lldStrategyItem": "lease over a dead-owner guard (src/daemon/__tests__/run-file-ownership.test.ts)"
+      },
+      {
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ],
+        "lldStrategyItem": "vault guard reclaims (src/daemon/__tests__/keystore-guard.test.ts); borrowRunFileGuard unchanged (src/daemon/__tests__/supervisor-run-files.test.ts)"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD-cda6558e4b0e4bea-s1 migration (six rollbackable steps: red decision-table tests, EEXIST verdict + boot comparison, quarantine rename + daemonLog line + one retry, integration suites, comment updates, full sweep)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD-cda6558e4b0e4bea-s1 errorPaths (6 error cases incl. live owner, same-boot PID reuse, unverifiable owner, competing starter, rename failure, log-write failure; 6 edge cases incl. previous-boot replaced, darwin replaced, symlink, collision)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD-cda6558e4b0e4bea-s1 testStrategy (node:test sweep, unit decision table via injected reader over mkdtemp guards, integration cases for lease and vault guard, supervisor/shutdown suites unchanged)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD-cda6558e4b0e4bea-s1 contractDetails (acquireRunFileGuard(path: string, owner?: ProcessIdentity, read?: ProcessIdentityReader): RunFileGuard, internal-shared surface)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD-cda6558e4b0e4bea-s1 invariantsToPreserve (c1-c6: live owner never reclaimed, unreadable never dead, rename-then-mkdir atomicity, supervisor-owned guard untouched, no recursive delete, shared-module placement)"
+    }
+  ]
+}

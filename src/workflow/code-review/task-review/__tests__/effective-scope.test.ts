@@ -41,9 +41,12 @@ test('final blobs, paths and spans reach prompts, native grants and strict resul
   const p = await prepareReviewPacket(f.packet, f.deps.sources), assignment = directAssignments(p)![0]!;
   assert.deepEqual(selectedCode(p.changes[0]!).blocks, []);
   assert.deepEqual(selectedCode(p.changes[1]!).blocks, [{ lines: [4, 4], code: 'current-final-defect\n' }]);
-  for (const prompt of [attributionPrompt(p), assignmentPrompt(p, assignment, [])]) {
+  for (const prompt of [assignmentPrompt(p, assignment, [])]) {
    assert.ok(prompt.includes('current-final-defect')); assert.ok(!prompt.includes('broken-original')); assert.ok(!prompt.includes('UNSELECTED_CONTEXT'));
   }
+  assert.ok(!attributionPrompt(p).includes('current-final-defect'));
+  assert.ok(attributionPrompt(p).includes(f.revision));
+  assert.match(attributionPrompt(p), /\"after\":\[4,4\]/);
   assert.ok(codeTaskCommands(p).includes(`git show ${f.revision}:source.js`));
   const schema = assignmentResultSchema(assignment); assert.ok(Value.Check(schema, f.result));
   for (const location of ['source.js:3', 'source.js', 'source.js:4-5']) assert.equal(Value.Check(schema, { ...f.result, findings: [{ ...f.result.findings[0]!, location }] }), false);

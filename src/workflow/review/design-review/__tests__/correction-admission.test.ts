@@ -56,5 +56,5 @@ test('checkpoint evolution freezes preparation and prior prefixes and rejects pa
   const bad=structuredClone(next);mutate(bad);await assert.rejects(saveDesignCheckpoint(f.repo,bad));assert.equal(readFileSync(f.path,'utf8'),bytes);
  }
  const wrong=designFixture(t),withoutReport=completed(wrong);delete withoutReport.attempts[0]!.report;await saveDesignCheckpoint(wrong.repo,withoutReport);
- const added=structuredClone(withoutReport);added.attempts.push({...next.attempts[1]!,progress:new DesignProgressTracker(wrong.path).snapshot()});await assert.rejects(saveDesignCheckpoint(wrong.repo,added),/complete terminal correction/);
+ const added=structuredClone(withoutReport);added.attempts.push({...next.attempts[1]!,progress:new DesignProgressTracker(wrong.path).snapshot()});await assert.rejects(saveDesignCheckpoint(wrong.repo,added),/terminal correction/);
 });

@@ -18,7 +18,7 @@ You emit a single JSON object conforming to the `PlanTask` schema. The validator
 10. **No produces/consumes cycles** within this plan.
 11. **The task list must be a valid topological sort** of the produces/consumes DAG. Consumers always come after producers.
 12. **Exactly one aggregator task, at the LAST position.** Identify it by the template flag `aggregator: yes` in the catalog. Each plan ends with its target's terminal aggregator. The aggregator's `consumes` should reference every prior task's outputs you want stitched into the final report.
-13. **Task count must fall within the scope-policy band** for your plan's scope bucket. The band is in the DEPTH POLICY block below. Focused intents halve the lower bound.
+13. **Task count must fall within the scope-policy band** for your plan's scope bucket. The band is in the DEPTH POLICY block below. That block states the final range for this plan, focus already taken into account: use it as printed.
 14. **`rationale` >= 20 chars per task; `reasoning` >= 50 chars on the plan.** Be concrete: name the entities + the reason. "summarise module foo to feed the aggregator" is fine; "needed for analysis" is not.
 15. **`parentTaskPath` is omitted on the root plan.** The Plan Builder framework stamps it on child plans automatically; you don't emit it.
 

@@ -22,7 +22,7 @@
           "entityId": "PLAN-e4af63128c7cbec2-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 2"
+          "fragment": "revision 7"
         },
         {
           "entityId": "TASK-e4af63128c7cbec2-s1-t9",
@@ -55,9 +55,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 2,
-        "contentHash": "45e4e5602de2ddafffeb9b4b3f7f503ee7fe79a07667f27c6fdb946376cf931e",
-        "at": "2026-11-11T12:23:32.903Z",
+        "number": 5,
+        "contentHash": "dbe229c4fc9e4e1537de49322edc9e5cbe1d684dc9a6a5b313b05f5cd3ea432c",
+        "at": "2026-11-11T17:21:06.773Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -75,7 +75,7 @@
         "at": "2026-11-09T07:42:48.108Z"
       }
     },
-    "revision": 2
+    "revision": 5
   },
   "body": {
     "title": "Switch all supported review entrypoints to dedicated workers",
@@ -88,7 +88,9 @@
       "Optional chat/session threading disabled still requires safe dedicated review workers or returns explicit unavailable.",
       "Existing retired review endpoints keep their current refusal behavior; no legacy engine is restored.",
       "The plan/deployment contract forbids installing an intermediate partial build before final qualification.",
-      "Through every supported production review route, CLI and tool/Git native work uses the installed transport and registered host lease with verified durable intent; no review-worker local spawn/exec/binary-lookup bypass remains. This gate discharges the production integration deliberately deferred from component acceptance in t5/t6."
+      "Through every supported production review route, CLI and tool/Git native work uses the installed transport and registered host lease with verified durable intent; no review-worker local spawn/exec/binary-lookup bypass remains. This gate discharges the production integration deliberately deferred from component acceptance in t5/t6.",
+      "Install the registry and concrete host-derived reviewer/scope resolution, controller authority, binary resolution, and native permission/provenance policies in daemon production construction. Every supported family/control/recovery/cleanup route consumes these bindings and the shared exclusions. Required callbacks and component fixtures from t8 alone are insufficient for this production gate.",
+      "Install Task 11 resource discovery and exact existing-local-broker clearance on production code resume and design recover entrypoints. Re-read all retained attempts before work; unresolved previous-daemon or legacy uncertainty fences only its review. No caller-provided receipt, PID-absence inference, or clearance-triggered automatic resume is permitted. Clearance alone never dispatches review work. After clearance, a resumable interrupted attempt requires a separate explicit resume/recover; a failed attempt instead requires a separate explicit new-attempt submission, which satisfies the post-clearance recovery requirement. Failed attempts and their pinned input/feedback remain unchanged. This discharges Task 11's deliberately deferred production-route integration."
     ],
     "tests": [
       {

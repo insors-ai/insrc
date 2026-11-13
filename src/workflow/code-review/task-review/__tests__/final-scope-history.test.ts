@@ -63,7 +63,7 @@ test('final history: unmapped attribution preserves bounded true failure without
 
 test('final history: fresh native and controller attribution failures publish all tasks and allow only the next attempt',async()=>{
  const {TaskReviewCoordinator}=await import('../coordinator.js');
- const {prepareReviewAdmission}=await import('../admission.js');
+ const {prepareReviewAdmission}=await import('../admission.js');const {readQualifiedCodeCheckpoint}=await import('../worker-checkpoint.js');
  const {channel,serve,provider}=await import('./controller-fixture.js');
  for(const route of ['daemon','daemon-timeout','controller']as const){
   const f=await fixture(true,2);let calls=0;
@@ -82,7 +82,7 @@ test('final history: fresh native and controller attribution failures publish al
    const saved=f.read(checkpointPath(f.repo,'unmapped')),a=saved.attempts[0]!;
    assert.equal(a.header.attributionState,'failed');assert.equal(a['review-response'].crPublication,'complete');assert.equal(a['review-response'].tasks.length,2);
    assert.ok(a['review-response'].tasks.every(t=>t.status===(route==='daemon-timeout'?'incomplete':'failed')&&!t.findings.length));
-   const next=await prepareReviewAdmission(f.repo,'unmapped',2,f.packet,route==='controller'?'controller':'daemon',f.deps.sources);assert.equal(next.attempt.header.attributionState,'pending');assert.deepEqual(next.checkpoint.attempts[0],a);
+   const qualified=(await readQualifiedCodeCheckpoint(checkpointPath(f.repo,'unmapped')))!;const next=await prepareReviewAdmission(f.repo,'unmapped',2,f.packet,route==='controller'?'controller':'daemon',f.deps.sources,{qualifiedHistory:qualified});assert.equal(next.attempt.header.attributionState,'pending');assert.deepEqual(next.checkpoint.attempts[0],qualified.attempts[0]);
   }finally{f.cleanup();}
  }
 });
@@ -94,7 +94,7 @@ test('final history: completed no-pin records retain byte-identical read-only co
   await saveCheckpoint(checkpointPath(f.repo,'publication'),cp);
   const p=await publishTaskCheckpoint(f.repo,hash,'publication',f.deps),body=f.readRecord(p.jsonPath).body,bytes=JSON.stringify(body);
   assert.equal(body.reviews[0]!.scope.finalScope,undefined);assert.equal(JSON.stringify(validateTaskBody(body)),bytes);
-  const {prepareReviewAdmission}=await import('../admission.js');const saved=readFileSync(checkpointPath(f.repo,'publication'),'utf8');
+  const {prepareReviewAdmission}=await import('../admission.js');const {readQualifiedCodeCheckpoint}=await import('../worker-checkpoint.js');const saved=readFileSync(checkpointPath(f.repo,'publication'),'utf8');
   await prepareReviewAdmission(f.repo,'publication',1,undefined,'daemon',f.deps.sources,{operation:'resume'});assert.equal(readFileSync(checkpointPath(f.repo,'publication'),'utf8'),saved);
   await assert.rejects(prepareReviewAdmission(f.repo,'fresh-unpinned',1,a.submitted,'daemon',f.deps.sources),/reviewRevision/);assert.equal(readFileSync(checkpointPath(f.repo,'publication'),'utf8'),saved);
  }finally{f.cleanup();}

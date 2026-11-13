@@ -154,6 +154,7 @@ export type HostToWebview =
   // S007: one pending artifact's rendered body for the docs-review pane (additive).
   // `commentable` (optional; default true) hides request-changes for artifact kinds the
   // daemon's resolveComment locator does not support (only DEF/HLD/LLD).
+  | {readonly type:'docs-review-progress';readonly artifactId:string;readonly reviewProgress?:import('../../../src/shared/review-worker-progress.js').ReviewWorkerStatus|undefined;readonly reviewProgressText?:string|undefined;}
   | {
       readonly type: 'docs-content';
       readonly artifactId: string;
@@ -171,6 +172,8 @@ export type HostToWebview =
       // still shows the full document and stays approvable; `blocked` means the
       // reviewer never saw the body at all.
       readonly degradation?: RenderDegradation | undefined;
+      readonly reviewProgress?:import('../../../src/shared/review-worker-progress.js').ReviewWorkerStatus|undefined;
+      readonly reviewProgressText?:string|undefined;
       // S002 (additive, SAME message — no new message type, exactly as t5 added
       // `sections` and `degradation` above). The artifact's functional record,
       // forwarded verbatim from DocsContent. ABSENT KEY when the document carries

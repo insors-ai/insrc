@@ -4,6 +4,13 @@ import type { PreparedReviewPacket } from './packet.js';
 import { captureFinalScope } from './final-scope-history.js';
 import { aggregateTaskStatus } from './results.js';
 import { taskAttemptSummary } from './record.js';
+import { withoutReviewResourceGuard } from '../../review/resource-audit.js';
+/** Archive failed execution as it was saved. Publication must never finish,
+ * renumber, clear an error or invent missing task assessments for it. */
+export function failedAttemptSummary(attempt:ReviewAttempt,reviewId:string):CompletedReviewSummary {
+ const raw=structuredClone(withoutReviewResourceGuard(attempt)),packet=raw.submitted;
+ return{reviewId,attempt:raw.header.attempt,storyId:packet.storyId.replace(/^STORY-[a-f0-9]{16}-/,''),...(packet.taskId?{taskId:packet.taskId}:{}),reviewer:raw.header.reviewer,status:'failed',scope:{...(packet.reviewRevision?{reviewRevision:packet.reviewRevision}:{}),storyId:packet.storyId,...(packet.taskId?{taskId:packet.taskId}:{}),documents:packet.documents,reviewSet:packet.reviewSet},tasks:raw['review-response'].tasks,summary:raw['review-response'].error??raw['review-response'].summary,completedAt:raw.header.completedAt!,failedAttempt:raw,...(raw['review-response'].origins?{origins:raw['review-response'].origins}:{})};
+}
 /** Shared exact permanent summary construction for publication and capacity qualification. */
 export function completedSummary(prepared:PreparedReviewPacket,attempt:ReviewAttempt,reviewId:string):CompletedReviewSummary {
  const finalScope=prepared.packet.reviewRevision?captureFinalScope(prepared,attempt):undefined;

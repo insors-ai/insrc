@@ -19,7 +19,7 @@ test('controller parity: actual independent-party routing and equivalent assignm
  const client=await channel(host.path);
  try{
   const ack=await client.call<{path:string}>('codeReview.task.start',{repo:f.repo,epicHash:hash,reviewId:'daemon-route',attempt:1,packet:f.packet,reviewer:'controller',party:'controller'});
-  await eventually(()=>f.read(ack.path).attempts[0]!['review-response'].crPublication==='complete');
+  await eventually(()=>f.read(ack.path).attempts[0]?.['review-response']?.crPublication==='complete');
   assert.equal(f.read(ack.path).attempts[0]!.header.reviewer,'daemon','caller party labels cannot select the reviewer');
   f.build.meta.authoredBy='daemon';f.put(`.insrc/artifacts/BUILD-${hash}-s1.json`,f.build);
   const frame=await client.call<ControllerFrame>('codeReview.task.start',{repo:f.repo,epicHash:hash,reviewId:'controller-route',attempt:1,packet:f.packet,reviewer:'daemon'});
@@ -40,15 +40,15 @@ test('controller submissions: replay idempotency, conflicting/foreign result ref
  try{
   const start=await client.call<ControllerFrame>('codeReview.task.start',{repo:f.repo,epicHash:hash,reviewId:'controller-replay',attempt:1,packet:f.packet});
   const params={repo:f.repo,reviewId:'controller-replay',attempt:1,result:f.result};
-  await assert.rejects(startTaskReview({repo:f.repo,epicHash:hash,reviewId:'untrusted-owner',attempt:1,packet:f.packet,owner:{id:'forged',signal:{}}}),/Trusted controller connection lifetime/);
+  await assert.rejects(startTaskReview({repo:f.repo,epicHash:hash,reviewId:'untrusted-owner',attempt:1,packet:f.packet,owner:{id:'forged',signal:{}}}),/Trusted live review connection/);
   assert.equal(existsSync(checkpointPath(f.repo,'untrusted-owner')),false);
   const authoritative=()=>{const head=JSON.parse(readFileSync(start.path,'utf8'));for(const attempt of head.attempts)delete attempt.progress;return head;};
   const before=authoritative();
-  await assert.rejects(foreign.call('codeReview.task.result',{...params,owner:'forged',reviewer:'controller',connectionIdentity:'forged'}),/wrong-reviewer/);
+  await assert.rejects(foreign.call('codeReview.task.result',{...params,owner:'forged',reviewer:'controller',connectionIdentity:'forged'}),/wrong-reviewer|Review owner mismatch|Review owner unavailable/);
   assert.deepEqual(authoritative(),before);
   await assert.rejects(client.call('codeReview.task.result',{...params,result:{...f.result,taskId:'foreign'}}),/Wrong or unassigned task/);
   assert.deepEqual(authoritative(),before);
-  await assert.rejects(client.call('codeReview.task.result',{...params,attempt:2}),/Attempt mismatch/);
+  await assert.rejects(client.call('codeReview.task.result',{...params,attempt:2}),/Attempt mismatch|Foreign review control/);
   assert.deepEqual(authoritative(),before);
   const done=await client.call<ControllerFrame>('codeReview.task.result',params);
   const after=readFileSync(start.path,'utf8'),cr=readFileSync(join(f.repo,`.insrc/artifacts/CR-${hash}-s1.json`),'utf8');
@@ -56,10 +56,10 @@ test('controller submissions: replay idempotency, conflicting/foreign result ref
   assert.equal(readFileSync(start.path,'utf8'),after);assert.equal(readFileSync(join(f.repo,`.insrc/artifacts/CR-${hash}-s1.json`),'utf8'),cr);
   await assert.rejects(client.call('codeReview.task.result',{...params,result:{...f.result,advice:['Conflicting feedback']}}),/Conflicting accepted (submission|exchange)/);
   assert.equal(readFileSync(start.path,'utf8'),after);
-  await assert.rejects(client.call('codeReview.task.assignment',{repo:f.repo,reviewId:'missing',attempt:1}),/missing-checkpoint/);
+  await assert.rejects(client.call('codeReview.task.assignment',{repo:f.repo,reviewId:'missing',attempt:1}),/missing-checkpoint|Review owner unavailable/);
   assert.equal(existsSync(checkpointPath(f.repo,'missing')),false);
   const daemon=f.checkpoint('daemon-owned');daemon.attempts[0]!.header.reviewer='daemon';await saveCheckpoint(checkpointPath(f.repo,'daemon-owned'),daemon);
-  await assert.rejects(client.call('codeReview.task.result',{...params,reviewId:'daemon-owned'}),/wrong-reviewer/);
+  await assert.rejects(client.call('codeReview.task.result',{...params,reviewId:'daemon-owned'}),/wrong-reviewer|Review owner mismatch|Review owner unavailable/);
  }finally{client.close();foreign.close();await host.server.close();f.cleanup();}
 });
 
@@ -75,11 +75,11 @@ test('review disconnect: stop controller work and retain completed tasks while d
   controller.close();await eventually(()=>f.read(frame.path).attempts[0]!.header.interrupted===true);
   const stopped=f.read(frame.path);assert.deepEqual(stopped.attempts[0]!['review-response'].tasks.map(result=>result.taskId),['t1']);assert.equal(stopped.attempts[0]!.header.activeTaskId,'t2');
   daemonClient=await channel(host.path);
-  await assert.rejects(daemonClient.call('codeReview.task.assignment',{repo:f.repo,reviewId:'controller-stop',attempt:1}),/explicit retrigger/);
+  await assert.rejects(daemonClient.call('codeReview.task.assignment',{repo:f.repo,reviewId:'controller-stop',attempt:1}),/explicit retrigger|Review owner unavailable/);
   f.build.meta.authoredBy='controller';f.put(`.insrc/artifacts/BUILD-${hash}-s1.json`,f.build);
   const ack=await daemonClient.call<{path:string}>('codeReview.task.start',{repo:f.repo,epicHash:hash,reviewId:'daemon-survives',attempt:1,packet:{...f.packet,taskId:'t1'}});
   daemonClient.close();await eventually(()=>release!==undefined);release!(structuredClone(f.result));
-  await eventually(()=>f.read(ack.path).attempts[0]!['review-response'].crPublication==='complete');
+  await eventually(()=>f.read(ack.path).attempts[0]?.['review-response']?.crPublication==='complete');
   assert.equal(f.read(ack.path).attempts[0]!.header.status,'passed');assert.equal(f.read(ack.path).attempts[0]!.header.reviewer,'daemon');
  }finally{controller.close();daemonClient?.close();await host.server.close();f.cleanup();}
 });

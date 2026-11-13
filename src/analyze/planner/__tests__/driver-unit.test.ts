@@ -21,6 +21,8 @@ import '../../orchestrator/__tests__/private-paths.js';
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { ModelCallFailedError } from '../../../agent/providers/model-call-error.js';
 
 import {
@@ -35,9 +37,16 @@ import {
 	renderDepthPolicy,
 	runPlanner,
 } from '../index.js';
+import { SCOPE_BAND } from '../scope-band.js';
+import { _setPlannerStructuredForTest, PLANNER_MAX_ATTEMPTS } from '../driver.js';
+import { loadAnalyzeConfig } from '../../../config/analyze.js';
+import { planAttemptsDirFor } from '../cache.js';
+import { DOCS_TEMPLATES } from '../templates/docs/index.js';
+import { taskCountFailure, validatePlan } from '../validate.js';
+import type { PlanTask, PlannedTask } from '../../../shared/analyze-types.js';
 import { _resetAnalyzeConfigCacheForTests } from '../../../config/analyze.js';
 import type { AnalyzeContextBundle } from '../../context/types.js';
-import type { LLMProvider } from '../../../shared/types.js';
+import type { LLMMessage, LLMProvider } from '../../../shared/types.js';
 
 /**
  * A minimal LLMProvider stub that throws on every call. Used by the
@@ -140,10 +149,35 @@ test('renderDepthPolicy: M scope reports 20-40 band', () => {
 	assert.match(out, /expected task count.*20-40/);
 });
 
-test('renderDepthPolicy: focused intent halves the lower bound only', () => {
+test('renderDepthPolicy: focused intent prints the lower bound that is enforced', () => {
 	const out = renderDepthPolicy('M', true);
 	assert.match(out, /expected task count.*10-40/);
-	assert.match(out, /focused intent reduces the lower bound to half/);
+});
+
+test('renderDepthPolicy prints the INV-13 range for every scope and focus value, without halving wording', () => {
+	for (const scope of ['XS', 'S', 'M', 'L', 'XL'] as const) {
+		for (const focused of [false, true]) {
+			const lo = focused ? Math.floor(SCOPE_BAND[scope].lo / 2) : SCOPE_BAND[scope].lo;
+			const hi = SCOPE_BAND[scope].hi;
+			const out = renderDepthPolicy(scope, focused);
+			const label = `${scope} focused=${focused}`;
+			assert.equal(out.match(/\*\*\d+-\d+\*\*/g)?.length, 1, `${label}: range printed once`);
+			assert.match(out, new RegExp(`expected task count: \\*\\*${lo}-${hi}\\*\\*`), label);
+			assert.doesNotMatch(out, /half|halv|reduc/i, label);
+			// the plan at the printed bounds is the plan the validator accepts, and one task outside is refused
+			for (const [n, ok] of [[lo, true], [hi, true], [lo - 1, false], [hi + 1, false]] as const) {
+				const plan = { scope, tasks: new Array(n) } as unknown as PlanTask;
+				assert.equal(taskCountFailure(plan, { focused }) === null, ok, `${label} n=${n}`);
+			}
+		}
+	}
+});
+
+test('no duplicate band table in the renderer', () => {
+	const source = readFileSync(new URL('../render-catalog.ts', import.meta.url), 'utf8');
+	assert.doesNotMatch(source, /\bXS:\s*\{\s*lo/, 'a band table literal remains');
+	assert.doesNotMatch(source, /Math\.floor\([^)]*\/\s*2\)/, 'a copy of the focused lower bound remains');
+	assert.match(source, /from '\.\/scope-band\.js'/);
 });
 
 test('renderDepthPolicy: XS depth hint mentions detailed per-unit', () => {
@@ -316,6 +350,66 @@ test('appendCorrectionTurn: re-issues with the assistant turn + VALIDATOR FEEDBA
 	assert.match(userBody, /tasks list must be non-empty/);
 	// I-004: the corrective turn now includes prescriptive fix hints.
 	assert.match(userBody, /HOW TO FIX/);
+});
+
+// The correction turn as it was before the count could be stated beside another failure:
+// captured from the code before that change (fixtures/correction-turn-inv7.json).
+interface CorrectionTurnFixture {
+	readonly prior:    LLMMessage[];
+	readonly rejected: PlanTask;
+	readonly failure:  PlanValidationFailure;
+	readonly cases:    ReadonlyArray<{ name: string; priorFailures: PlanValidationFailure[]; expected: LLMMessage[] }>;
+}
+const CORRECTION_TURN_FIXTURE = JSON.parse(
+	readFileSync(new URL('./fixtures/correction-turn-inv7.json', import.meta.url), 'utf8'),
+) as CorrectionTurnFixture;
+
+test('appendCorrectionTurn without alsoFailing is byte-identical to the pre-change fixture', () => {
+	assert.equal(CORRECTION_TURN_FIXTURE.cases.length, 2);
+	for (const c of CORRECTION_TURN_FIXTURE.cases) {
+		const out = _appendCorrectionTurnForTest(
+			CORRECTION_TURN_FIXTURE.prior, CORRECTION_TURN_FIXTURE.rejected, CORRECTION_TURN_FIXTURE.failure, c.priorFailures,
+		);
+		assert.deepEqual(out, c.expected, c.name);
+	}
+});
+
+const COUNT_FAILURE: PlanValidationFailure = {
+	invariantId: 'INV-13',
+	message:     'task count 15 is outside the scope band for XL (20-80 focused)',
+	target:      { count: 15, scope: 'XL', band: { lo: 20, hi: 80 } },
+};
+
+function lastUserTurn(messages: LLMMessage[]): string {
+	return messages[messages.length - 1]!.content as string;
+}
+
+test('appendCorrectionTurn with alsoFailing states the primary first and the count second', () => {
+	const { prior, rejected, failure } = CORRECTION_TURN_FIXTURE;
+	const body = lastUserTurn(_appendCorrectionTurnForTest(prior, rejected, failure, [], COUNT_FAILURE));
+	const primaryAt = body.indexOf('failed invariant **INV-7**');
+	const alsoAt = body.indexOf('also fails invariant **INV-13**');
+	assert.ok(primaryAt >= 0 && alsoAt > primaryAt, 'the count comes after the primary failure');
+	assert.ok(body.indexOf('HOW TO FIX') < alsoAt, 'the primary failure keeps its fix hint before the count');
+	assert.ok(body.includes(COUNT_FAILURE.message));
+	assert.match(body, /Fix both in the same reply/);
+	// the primary message itself is the same text as without the count
+	const plain = lastUserTurn(_appendCorrectionTurnForTest(prior, rejected, failure, []));
+	assert.ok(body.startsWith(plain.slice(0, plain.indexOf('Emit the corrected'))));
+});
+
+test('repetition banner follows primary failures only, including the secondary-to-primary transition', () => {
+	const { prior, rejected, failure } = CORRECTION_TURN_FIXTURE;
+	// attempt 1: INV-7 primary, the count is only a note, and no history yet
+	const first = lastUserTurn(_appendCorrectionTurnForTest(prior, rejected, failure, [], COUNT_FAILURE));
+	assert.doesNotMatch(first, /REPEATED FAILURE/);
+	// attempt 2: the count is now the primary failure; the history holds INV-7 only, so no banner
+	const second = lastUserTurn(_appendCorrectionTurnForTest(prior, rejected, COUNT_FAILURE, [failure]));
+	assert.doesNotMatch(second, /REPEATED FAILURE/);
+	assert.doesNotMatch(second, /ALSO FAILING/);
+	// attempt 3: the count is the primary failure again, so the banner appears
+	const third = lastUserTurn(_appendCorrectionTurnForTest(prior, rejected, COUNT_FAILURE, [failure, COUNT_FAILURE]));
+	assert.match(third, /REPEATED FAILURE/);
 });
 
 // ---------------------------------------------------------------------------
@@ -569,4 +663,183 @@ test('runPlanner: an empty template catalog is refused with a typed error before
 	assert.equal(err.target, 'docs');
 	assert.match(err.message, /no task template is registered for target 'docs'/);
 	assert.equal(called, 0, 'no model is called');
+});
+
+// ---------------------------------------------------------------------------
+// The count stated beside another failure, through the retry loop
+// ---------------------------------------------------------------------------
+
+const DOCS_INTENT = {
+	target: 'docs' as const, scope: 'XL' as const, focused: true,
+	scopeRef: { kind: 'repo' as const, value: '/r' }, reasoning: 'count-beside-failure fixture (XL focused: 20-80)',
+};
+const BUNDLE_FIXTURE: AnalyzeContextBundle = { system: '', focus: '', summary: '', structure: '', surface: '', artefacts: '', upstream: '' };
+
+/** A docs plan of n tasks: inventory, n-2 family summaries, aggregator. `edit` may break an invariant. */
+function docsPlan(n: number, edit?: (tasks: PlannedTask[]) => void): PlanTask {
+	const tasks: PlannedTask[] = [
+		{ taskId: 't01', template: 'docs.discovery.inventory', kind: 'leaf', params: { scopeRef: { kind: 'repo', value: '/r' } },
+		  produces: ['docs-inventory'], rationale: 'inventory of every document family in scope' },
+	];
+	for (let i = 2; i < n; i++) {
+		tasks.push({ taskId: `t${String(i).padStart(2, '0')}`, template: 'docs.family.summarise', kind: 'leaf', params: { family: 'design' },
+		  produces: ['family-summary'], rationale: `summary number ${i} of the design family documents` });
+	}
+	tasks.push({ taskId: `t${String(n).padStart(2, '0')}`, template: 'docs.aggregate.report', kind: 'leaf', params: {},
+	  produces: ['report'], rationale: 'aggregate every upstream output into the final report' });
+	edit?.(tasks);
+	return { planId: 'p-docs', goal: 'docs plan', target: 'generic', scope: 'XL', reasoning: 'docs plan used to drive the retry loop in a test fixture', tasks };
+}
+
+/** The reproduced sequence: INV-7 plus a wrong count, then INV-11 alone, then a valid plan. */
+function reproducedReplies(): PlanTask[] {
+	return [
+		docsPlan(15, t => { t[2] = { ...t[2]!, consumes: ['never-produced'] }; }),
+		docsPlan(20, t => { t[2] = { ...t[2]!, consumes: ['family-summary'] }; }),
+		docsPlan(20),
+	];
+}
+
+interface RecordedCall { messages: LLMMessage[]; opts: Record<string, unknown> | undefined }
+
+function recordingProvider(replies: readonly PlanTask[], calls: RecordedCall[]): LLMProvider {
+	return {
+		supportsTools: false,
+		capabilities:  { structuredOutput: true, toolCalling: false, vision: false, webSearch: false, streaming: false, embeddings: false },
+		complete:      async () => { throw new Error('stub: complete not used'); },
+		stream:        async function* () { yield ''; throw new Error('stub: stream not used'); },
+		embed:         async () => [],
+		completeStructured: async <T>(messages: LLMMessage[], _schema: unknown, opts?: Record<string, unknown>) => {
+			calls.push({ messages: [...messages], opts });
+			const reply = replies[calls.length - 1];
+			if (reply === undefined) throw new Error(`stub: no scripted reply for call ${calls.length}`);
+			return reply as T;
+		},
+	} as unknown as LLMProvider;
+}
+
+function feedbackOf(runId: string): string[] {
+	const dir = planAttemptsDirFor({ runId });
+	return [1, 2, 3, 4, 5].flatMap(n => {
+		const path = join(dir, `${String(n).padStart(2, '0')}.feedback.json`);
+		return existsSync(path) ? [(JSON.parse(readFileSync(path, 'utf8')) as PlanValidationFailure).invariantId] : [];
+	});
+}
+
+async function runDocsPlanner(runId: string, provider: LLMProvider): Promise<PlanTask> {
+	_resetAnalyzeConfigCacheForTests();
+	return runPlanner({
+		input: { intent: { ...DOCS_INTENT }, contextBundle: BUNDLE_FIXTURE, catalog: DOCS_TEMPLATES },
+		opts:  { runId },
+		provider,
+	});
+}
+
+test('with a recording stub provider, the initial prompt carries the enforced range', async () => {
+	const calls: RecordedCall[] = [];
+	await runDocsPlanner('count-note-range', recordingProvider([docsPlan(20)], calls));
+	const first = calls[0]!.messages.map(m => String(m.content)).join('\n');
+	assert.match(first, /expected task count: \*\*20-80\*\*/);
+	assert.doesNotMatch(first, /half|halv/i);
+});
+
+test('with a recording stub provider, the correction message sent on call 2 states INV-7 and then the count', async () => {
+	const calls: RecordedCall[] = [];
+	await runDocsPlanner('count-note-call2', recordingProvider(reproducedReplies(), calls));
+	const second = String(calls[1]!.messages[calls[1]!.messages.length - 1]!.content);
+	const primaryAt = second.indexOf('failed invariant **INV-7**');
+	const alsoAt = second.indexOf('also fails invariant **INV-13**');
+	assert.ok(primaryAt >= 0 && alsoAt > primaryAt, second.slice(0, 400));
+	assert.match(second, /task count 15 is outside the scope band for XL \(20-80 focused\)/);
+});
+
+test('recording-stub replay (INV-7 plus count, INV-11, valid) accepted at call 3 with primary-only feedback', async () => {
+	const calls: RecordedCall[] = [];
+	const replies = reproducedReplies();
+	const accepted = await runDocsPlanner('count-note-replay', recordingProvider(replies, calls));
+	assert.equal(calls.length, 3);
+	assert.equal(accepted.tasks.length, 20);
+	const third = String(calls[2]!.messages[calls[2]!.messages.length - 1]!.content);
+	assert.match(third, /failed invariant \*\*INV-11\*\*/);
+	assert.doesNotMatch(third, /ALSO FAILING/);
+	assert.doesNotMatch(third, /REPEATED FAILURE/);
+	assert.deepEqual(feedbackOf('count-note-replay'), ['INV-7', 'INV-11']);
+});
+
+test('through structuredStageForTest, failures and saved feedback hold primary failures only', async () => {
+	const replies = reproducedReplies();
+	const seen: string[][] = [];
+	_setPlannerStructuredForTest(async ({ attempt, failures }) => {
+		seen.push(failures.map(f => f.invariantId));
+		return replies[attempt]!;
+	});
+	try {
+		_resetAnalyzeConfigCacheForTests();
+		await runPlanner({ input: { intent: { ...DOCS_INTENT }, contextBundle: BUNDLE_FIXTURE, catalog: DOCS_TEMPLATES }, opts: { runId: 'count-note-hook' } });
+	} finally {
+		_setPlannerStructuredForTest(undefined);
+	}
+	assert.deepEqual(seen, [[], ['INV-7'], ['INV-7', 'INV-11']]);
+	assert.deepEqual(feedbackOf('count-note-hook'), ['INV-7', 'INV-11']);
+
+	// A run that never passes: the thrown error carries the primary failures only, never the count note.
+	const never = docsPlan(15, t => { t[2] = { ...t[2]!, consumes: ['never-produced'] }; });
+	_setPlannerStructuredForTest(async () => never);
+	let thrown: unknown;
+	try {
+		_resetAnalyzeConfigCacheForTests();
+		await runPlanner({ input: { intent: { ...DOCS_INTENT }, contextBundle: BUNDLE_FIXTURE, catalog: DOCS_TEMPLATES }, opts: { runId: 'count-note-exhausted' } });
+	} catch (err) {
+		thrown = err;
+	} finally {
+		_setPlannerStructuredForTest(undefined);
+	}
+	assert.ok(thrown instanceof PlanBuilderExhausted, String(thrown));
+	assert.ok(thrown.failures.length >= 3);
+	assert.ok(thrown.failures.every(f => f.invariantId === 'INV-7'), 'the thrown error holds the primary failure only');
+	assert.equal(thrown.lastFailure.invariantId, 'INV-7');
+	assert.deepEqual(feedbackOf('count-note-exhausted'), thrown.failures.map(f => f.invariantId));
+});
+
+test('an empty task list states the count and keeps INV-1 primary', () => {
+	const empty: PlanTask = { ...docsPlan(20), tasks: [] };
+	const failure = validatePlan(empty, DOCS_TEMPLATES, { focused: true });
+	assert.equal(failure?.invariantId, 'INV-1');
+	const also = taskCountFailure(empty, { focused: true });
+	assert.equal(also?.invariantId, 'INV-13');
+	const body = lastUserTurn(_appendCorrectionTurnForTest([], empty, failure!, [], also!));
+	assert.ok(body.indexOf('failed invariant **INV-1**') < body.indexOf('also fails invariant **INV-13**'));
+});
+
+// ---------------------------------------------------------------------------
+// The planner's own attempt limit
+// ---------------------------------------------------------------------------
+
+const failingReply = (): PlanTask => docsPlan(15, t => { t[2] = { ...t[2]!, consumes: ['never-produced'] }; });
+
+test('five-call acceptance and exhaustion with the planner limit', async () => {
+	assert.equal(PLANNER_MAX_ATTEMPTS, 5);
+	// valid only on the fifth reply: accepted on the fifth call
+	const accepting: RecordedCall[] = [];
+	const accepted = await runDocsPlanner('limit-fifth', recordingProvider([failingReply(), failingReply(), failingReply(), failingReply(), docsPlan(20)], accepting));
+	assert.equal(accepting.length, 5);
+	assert.equal(accepted.tasks.length, 20);
+	// never valid: five calls, five primary failures, and a sixth reply is never asked for
+	const refusing: RecordedCall[] = [];
+	const replies = Array.from({ length: 7 }, failingReply);
+	let thrown: unknown;
+	try { await runDocsPlanner('limit-never', recordingProvider(replies, refusing)); } catch (err) { thrown = err; }
+	assert.ok(thrown instanceof PlanBuilderExhausted, String(thrown));
+	assert.equal(refusing.length, 5);
+	assert.equal(thrown.failures.length, 5);
+	assert.ok(thrown.failures.every(f => f.invariantId === 'INV-7'));
+});
+
+test('completeStructured receives the shared maxAttempts, not the planner limit', async () => {
+	const shared = loadAnalyzeConfig().shaper.structuredOutputRetries;
+	assert.notEqual(shared, PLANNER_MAX_ATTEMPTS, 'the two limits are different values in this test');
+	const calls: RecordedCall[] = [];
+	await runDocsPlanner('limit-wire', recordingProvider([failingReply(), failingReply(), docsPlan(20)], calls));
+	assert.equal(calls.length, 3);
+	for (const c of calls) assert.equal(c.opts?.['maxAttempts'], shared);
 });

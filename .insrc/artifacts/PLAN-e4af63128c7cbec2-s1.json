@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1794407500932-a84hmh",
+    "runId": "wf-1794511608019-ty300t",
     "repoPath": "/home/subho/work/dev/insors/insrc",
-    "createdAt": "2026-11-11T14:34:32.148Z",
+    "createdAt": "2026-11-12T19:29:14.091Z",
     "epicCreatedAt": "2026-11-09T04:29:20.389Z",
     "standalone": true,
     "attribution": {
@@ -16,7 +16,7 @@
         }
       ]
     },
-    "elapsedMs": 166383,
+    "elapsedMs": 139295,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "e4af63128c7cbec2",
@@ -28,9 +28,9 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 3,
-        "contentHash": "23a18248acadeeb4c0729bfa960f7e6104aadf05295da47432b354bf7385b38f",
-        "at": "2026-11-11T14:34:33.783Z",
+        "number": 7,
+        "contentHash": "5c0c1d7692c83790f010d62b66bd88d5e88c0fffd52b878745f49ce3d54f7702",
+        "at": "2026-11-12T19:29:16.241Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -39,13 +39,13 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 3,
+        "revision": 7,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-11T15:00:22.971Z"
+        "at": "2026-11-12T19:38:52.179Z"
       }
     },
     "envelope": {
@@ -53,8 +53,8 @@
       "references": [],
       "attachments": []
     },
-    "revision": 3,
-    "rangeBase": "8e33c1561351674e87968acff24cb6bb2cbd78b8"
+    "revision": 7,
+    "rangeBase": "e0263448e9fcdd9d344a2c67fa6879155a03b9a2"
   },
   "body": {
     "summary": {
@@ -405,7 +405,7 @@
       {
         "id": "t11",
         "title": "Implement targeted daemon-crash fences and local clearance",
-        "summary": "Implement request-scoped resourceGuard discovery across retained attempts and explicit resourceClearance on existing code resume/design recover paths. Bind normal existing broker decisions to exact review/guard/lease sets, persist the receipt via a metadata-only recovery worker and require a separate subsequent review resume.",
+        "summary": "Implement request-scoped resourceGuard discovery and exact local-broker clearance as a registered ReviewWorkers component, using a metadata-only recovery worker and the existing family checkpoint writers. Prove the component before production cutover; t13 integrates shared consumers, t14 installs clearance on production code resume/design recover routes, and t15 verifies full production-daemon crash recovery. Clearance alone never dispatches review work. After clearance, a resumable interrupted attempt requires a separate explicit resume/recover; a failed attempt instead requires a separate explicit new-attempt submission, which satisfies the post-clearance recovery requirement. Failed attempts and their pinned input/feedback remain unchanged.",
         "size": "L",
         "order": 11,
         "dependsOn": [
@@ -415,12 +415,13 @@
           "t10"
         ],
         "acceptanceChecks": [
-          "An unresolved previous-daemon lease or interrupted legacy active attempt with missing guard reconstructs only that review's fence before native work; PID absence cannot clear it.",
-          "Existing broker/client authentication is unchanged: valid human-UI and automated local-client answers are equally accepted; caller-provided receipts and stale/wrong-review/lease-set approval are refused.",
+          "Within the registered real-worker component, an unresolved previous-daemon lease or interrupted legacy active attempt with missing guard reconstructs only that review's fence before native work; PID absence cannot clear it. Installing this fence on every supported production route is mandatory t14 acceptance.",
+          "Through the real existing local broker and socket/client contract, valid human-UI and automated local-client answers are equally accepted; caller-provided receipts and stale/wrong-review/lease-set approval are refused. Existing broker/client authentication is unchanged; production resume/recover route installation is mandatory t14 acceptance.",
           "No-client, decline, expiry, disconnect, lost pending broker request or changed guard state retains the fence. Re-read all unresolved retained-attempt guards before applying a decision.",
           "Persist exact bounded request/guard/lease approval receipt and authorized closure idempotently; metadata-only recovery cannot call native tools/providers or grant artifact approval.",
-          "Disposable full-daemon-crash tests keep a surviving old child fenced, allow unrelated reviews, and permit work only after clearance plus explicit resume; never crash the live user daemon.",
-          "Partial clearance leaves remaining leases blocking; repeated clearances and response-loss replay preserve audit evidence without duplicate inference."
+          "A disposable complete daemon-host process using the real registered ReviewWorkers/bootstrap/native-lease component is crashed while its owned native child survives. A replacement host keeps only that review fenced, allows unrelated reviews and permits work only after clearance plus a separate explicit recovery action (resume/recover for a resumable interrupted attempt, or a new-attempt submission for a failed attempt). This is component evidence, not installed production-daemon qualification; the full production-daemon route/crash test is mandatory t15 acceptance. Never crash the live user daemon.",
+          "Partial clearance leaves remaining leases blocking; repeated clearances and response-loss replay preserve audit evidence without duplicate inference.",
+          "Clearance alone never dispatches review work. After clearance, a resumable interrupted attempt requires a separate explicit resume/recover; a failed attempt instead requires a separate explicit new-attempt submission, which satisfies the post-clearance recovery requirement. Failed attempts and their pinned input/feedback remain unchanged. Ordinary same-attempt start replay after clearance remains refused; new-attempt submission does not silently retry or replace the failed attempt."
         ],
         "derivedFrom": [
           "c1",
@@ -447,7 +448,7 @@
       {
         "id": "t12",
         "title": "Expose responsive admission progress across supported clients",
-        "summary": "Wire bounded per-review worker progress/status into current MCP/RPC readers, daemon thread status, CLI surfaces and live VS Code/JetBrains review DTOs/renderers. Preserve method names, identities and artifact-review behavior; add only the approved admission-phase/diagnostic fields and rendering semantics.",
+        "summary": "Wire bounded per-review worker progress/status into current MCP/RPC readers, daemon thread status, CLI surfaces and live VS Code/JetBrains review DTOs/renderers. Preserve method names, identities and artifact-review behavior; add only the approved admission-phase/diagnostic fields and rendering semantics. Component acceptance in this task uses registered real review workers and the available host-service contract, actual MCP connection classes, daemon/artifact readers and supported client DTO/renderers. Production ReviewWorkers instantiation and atomic public-route activation are deliberately deferred to t14; installed production end-to-end qualification remains mandatory in t15/t16. Do not require production cutover to accept this component task.",
         "size": "M",
         "order": 12,
         "dependsOn": [
@@ -456,10 +457,10 @@
           "t10"
         ],
         "acceptanceChecks": [
-          "During blocked admission, progress/status respond without waiting for worker computation and report freshness, timestamps and unverified state rather than fabricated completion.",
-          "Code uses scope_preparation with task:null and unknown inventory represented by numeric zero plus explicit pending/unverified admission; design uses admission phase before its accepted plan.",
-          "Clients display Preparing review or technical admission failure, never successful empty scope; existing qualified/completed review views still decode.",
-          "Controller admission-to-assignment observation does not steal authority, restart admission or allocate another execution identity.",
+          "Through registered real-worker component fixtures and the available host-service contract, blocked admission does not delay cached progress/status; readers report freshness, timestamps and explicit unverified state rather than fabricated completion. Production route installation is t14 acceptance.",
+          "In the registered code/design worker component, code uses scope_preparation with task:null and unknown inventory represented by numeric zero plus explicit pending/unverified admission; design uses admission phase before its accepted plan.",
+          "Actual supported client DTOs/renderers display Preparing review or technical admission failure from the component's progress projection, never successful empty scope; existing qualified/completed views still decode. Production delivery through the installed registry is verified in t14/t15.",
+          "Registered-worker controller admission-to-assignment tests establish that cached observation preserves owner authority, does not restart admission and does not allocate another execution identity.",
           "Current vscode-plugin and jetbrains-plugin IPC field names remain aligned; deprecated insrc-ide is outside scope."
         ],
         "derivedFrom": [
@@ -546,7 +547,8 @@
           "Existing retired review endpoints keep their current refusal behavior; no legacy engine is restored.",
           "The plan/deployment contract forbids installing an intermediate partial build before final qualification.",
           "Through every supported production review route, CLI and tool/Git native work uses the installed transport and registered host lease with verified durable intent; no review-worker local spawn/exec/binary-lookup bypass remains. This gate discharges the production integration deliberately deferred from component acceptance in t5/t6.",
-          "Install the registry and concrete host-derived reviewer/scope resolution, controller authority, binary resolution, and native permission/provenance policies in daemon production construction. Every supported family/control/recovery/cleanup route consumes these bindings and the shared exclusions. Required callbacks and component fixtures from t8 alone are insufficient for this production gate."
+          "Install the registry and concrete host-derived reviewer/scope resolution, controller authority, binary resolution, and native permission/provenance policies in daemon production construction. Every supported family/control/recovery/cleanup route consumes these bindings and the shared exclusions. Required callbacks and component fixtures from t8 alone are insufficient for this production gate.",
+          "Install Task 11 resource discovery and exact existing-local-broker clearance on production code resume and design recover entrypoints. Re-read all retained attempts before work; unresolved previous-daemon or legacy uncertainty fences only its review. No caller-provided receipt, PID-absence inference, or clearance-triggered automatic resume is permitted. Clearance alone never dispatches review work. After clearance, a resumable interrupted attempt requires a separate explicit resume/recover; a failed attempt instead requires a separate explicit new-attempt submission, which satisfies the post-clearance recovery requirement. Failed attempts and their pinned input/feedback remain unchanged. This discharges Task 11's deliberately deferred production-route integration."
         ],
         "derivedFrom": [
           "c1",
@@ -581,7 +583,8 @@
           "Whole-history resource fences and clearance/publication/cleanup replay are exercised through real routing; unrelated review files and processes remain untouched.",
           "Run existing relevant ownership/admission/progress/checkpoint/recovery/publication/approval suites alongside these regressions with no live-cloud requirement.",
           "End-to-end fixtures through the actual worker registry and production review routes prove both code/design families use the CLI and tool/Git adapters with host-owned leases, durable intent, bounded byte backpressure and cleanup after real worker loss; unbound or bypassed native execution refuses.",
-          "Through installed production construction, prove host-derived reviewer routing, trusted successful controller exchanges, permission-denied native operations causing zero spawn, and cross-worker design-subject/story-artifact cleanup exclusions for both families."
+          "Through installed production construction, prove host-derived reviewer routing, trusted successful controller exchanges, permission-denied native operations causing zero spawn, and cross-worker design-subject/story-artifact cleanup exclusions for both families.",
+          "Run a disposable full production-daemon crash/replacement test through installed public review routes: persist intent before spawn, crash only the fixture daemon with its native child surviving, retain the exact review fence before native work and allow unrelated review traffic. After the test owner verifies the child ended, use the unchanged normal local broker approval and durable exact-guard receipt; only a separate explicit resume/recover for resumable interrupted work, or a separate explicit new-attempt submission for failed work, permits review work. Failed attempts are never resumed or rewritten. Verify both review families and reject stale/wrong-review/lease-set requests. Never terminate the user's live daemon. This discharges Task 11's deferred installed full-daemon recovery qualification."
         ],
         "derivedFrom": [
           "c1",
@@ -617,7 +620,7 @@
           "npm run build produces working out/ worker entrypoints, native helpers and schemas; compiled fixture starts code/design review workers without a source tree dependency.",
           "Relevant backend/MCP/provider/process/thread regression suites, VS Code typecheck/tests and affected JetBrains DTO tests pass, or environmental/baseline limits are explicitly evidenced without claiming coverage not performed.",
           "Docs describe local-client broker trust accurately, retain explicit recovery and no new activation flags, and explain that the separate TU1 projection-limit failure is not solved by isolation.",
-          "Create one committed whole-story review packet after all tasks, pin exactly the approved route documents/final source and include full test cases/results. Run the required independent code review before BUILD approval; do not add intermediate per-task independent review rounds.",
+          "Create one committed whole-story review packet after all implementation tasks, pin exactly the approved route documents/final source and include full test cases/results. Task16 validation requires the prepared packet, not an already executed independent review. After ALL task validation passes and the final BUILD record is stable, run the required independent whole-story code review as the separate mandatory BUILD-completion gate BEFORE human BUILD approval, push or deployment; do not add intermediate per-task independent review rounds.",
           "Produce release/recovery instructions that require publication/deployment only after independent whole-story review and human BUILD approval, coordinated handling of active reviews, MCP reconnect and a controlled deployed smoke after restart. Validate pre-deployment behavior with compiled fixtures; this Task does not require a deployment or post-deployment result before BUILD approval."
         ],
         "derivedFrom": [

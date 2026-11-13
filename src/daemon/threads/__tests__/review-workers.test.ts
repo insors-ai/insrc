@@ -11,6 +11,8 @@ import type { ReviewWorkerProgress } from '../review-workers.js';
 import { startReviewWorkerBootstrap } from '../review-worker-bootstrap.js';
 import type { StartedReviewWorker } from '../review-worker-bootstrap.js';
 import { reviewWorkerCheckpoint } from '../review-worker-contract.js';
+import { persistReviewWorkerAdmission } from '../review-worker-admission.js';
+import { updateStoredCodeCheckpoint,loadStoredCheckpoint } from '../../../workflow/code-review/task-review/checkpoint.js';
 
 const services=new ThreadServices(()=>({startedAt:0,modelState:{status:'ready'},installedCommit:'fixture'}));
 const packet=()=>({reviewRevision:'a'.repeat(40),storyId:'s1',functionalSummary:'Fixture',documents:{},reviewSet:[{commit:'a'.repeat(40),parent:null,files:[{path:'a.ts',segments:[{after:[1,1]}]}]}],tests:[]});
@@ -71,20 +73,40 @@ test('stale owner messages and targeted disconnects cannot mutate another review
  const f=await fixture(t,'controller'),one=context('one'),two=context('two');
  const a=await f.registry.admit(f.submit('owned-a'),one.context),b=await f.registry.admit(f.submit('owned-b'),two.context);
  const sa=f.started.get('owned-a')!,sb=f.started.get('owned-b')!;
- const progress:ReviewWorkerProgress={...b,attempt:1,sequence:1,phase:'execution',completed:0,updatedAt:new Date().toISOString()};
+ const progress:ReviewWorkerProgress={...b,attempt:1,sequence:(f.registry.cachedProgress(b.key)?.sequence??0)+1,phase:'execution',completed:0,updatedAt:new Date().toISOString()};
  assert.equal(f.registry.acceptProgress(sa.worker,b,progress),false);
  assert.equal(f.registry.acceptProgress(sb.worker,b,progress),true);
  assert.equal(f.registry.acceptProgress(sb.worker,b,progress),false);
  await assert.rejects(f.registry.progress(a.key,two.context),/owner mismatch/);
  await assert.rejects(f.registry.control({...a,attempt:1,phase:'result',actionId:'a',executionId:'e',sequence:1,input:{}},two.context),/owner mismatch/);
- // The trusted assignment reaches the real family handler. Unqualified
- // admission must still refuse execution until Task 9 installs qualification.
- await assert.rejects(f.registry.control({...a,attempt:1,phase:'assignment',actionId:'a',executionId:'e',sequence:1,input:{}},one.context),/Admission checkpoint requires a version-2-aware consumer/);
+ // Assignment observes the durable admission while qualification has not
+ // started; it must not fabricate task authority or start model work.
+ const pending=await f.registry.control({...a,attempt:1,phase:'assignment',actionId:'a',executionId:'e',sequence:1,input:{}},one.context) as {status:string;admission:{validation:string}};
+ assert.equal(pending.status,'pending');assert.equal(pending.admission.validation,'unverified');
  const holding=rpc(sa,'hold').catch(()=>undefined);
  await until(async()=>{const cp=JSON.parse(await readFile(reviewWorkerCheckpoint(a.key),'utf8'));return cp.attempts.at(-1).resourceGuard?.openLeases.length===1;});
  one.abort.abort();await holding;await sa.reclaimed;
  assert.ok(await f.registry.progress(b.key,two.context));await rpc(sb,'tool');
  assert.equal(f.registry.acceptProgress(sa.worker,a,{...progress,...a,sequence:2}),false);
- assert.equal(f.registry.cachedProgress(b.key)?.sequence,1);
+ assert.ok((f.registry.cachedProgress(b.key)?.sequence??0)>=progress.sequence);
  const cp=JSON.parse(await readFile(reviewWorkerCheckpoint(a.key),'utf8'));assert.deepEqual(cp.attempts.at(-1).resourceGuard.openLeases,[]);
+});
+test('admission replay retains a native intent committed by the writer ahead of it',async t=>{
+ const repo=await mkdtemp(join(tmpdir(),'review-intent-replay-'));t.after(()=>rm(repo,{recursive:true,force:true}));
+ const input={key:{project:repo,family:'code' as const,reviewId:'replay-race'},incarnation:'worker-incarnation',attempt:1,reviewer:'daemon' as const,actionId:'action',submitted:packet()};
+ const ack=await persistReviewWorkerAdmission(input);
+ let entered!:()=>void,release!:()=>void;
+ const started=new Promise<void>(resolve=>{entered=resolve;}),barrier=new Promise<void>(resolve=>{release=resolve;});
+ const guard={daemonInstance:'daemon-instance',openLeases:[{operationId:'worker-incarnation:1',workerIncarnation:input.incarnation,kind:'shell',openedAt:new Date().toISOString()}]};
+ const mutation=updateStoredCodeCheckpoint(ack.checkpointPath,async current=>{
+  assert.ok(current);entered();await barrier;
+  return{...current,schemaVersion:2,attempts:current.attempts.map(a=>({...a,resourceGuard:guard}))};
+ });
+ await started;
+ // Hold the owner write while the replay is submitted. A replay that reads
+ // before entering the lane would capture the old guard-free checkpoint.
+ const replay=persistReviewWorkerAdmission(input);
+ try{await new Promise(resolve=>setTimeout(resolve,100));}finally{release();}
+ await mutation;assert.deepEqual(await replay,ack);
+ assert.deepEqual((await loadStoredCheckpoint(ack.checkpointPath))?.attempts.at(-1)?.resourceGuard,guard);
 });

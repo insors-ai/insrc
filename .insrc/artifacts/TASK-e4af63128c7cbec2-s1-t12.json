@@ -22,7 +22,7 @@
           "entityId": "PLAN-e4af63128c7cbec2-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 2"
+          "fragment": "revision 7"
         },
         {
           "entityId": "TASK-e4af63128c7cbec2-s1-t8",
@@ -43,11 +43,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "b0e98227677ce12fd7342707cb51ab8399d91e3af988c02ed90c66bbdf70008a",
-        "at": "2026-11-09T07:42:48.098Z",
+        "number": 2,
+        "contentHash": "3609e2f4ed3d355da65d265e74ef53b34dd820f47f612da6da9e556e7435f666",
+        "at": "2026-11-12T01:21:00.836Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -65,18 +65,18 @@
         "at": "2026-11-09T07:42:48.100Z"
       }
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
     "title": "Expose responsive admission progress across supported clients",
-    "summary": "Wire bounded per-review worker progress/status into current MCP/RPC readers, daemon thread status, CLI surfaces and live VS Code/JetBrains review DTOs/renderers. Preserve method names, identities and artifact-review behavior; add only the approved admission-phase/diagnostic fields and rendering semantics.",
+    "summary": "Wire bounded per-review worker progress/status into current MCP/RPC readers, daemon thread status, CLI surfaces and live VS Code/JetBrains review DTOs/renderers. Preserve method names, identities and artifact-review behavior; add only the approved admission-phase/diagnostic fields and rendering semantics. Component acceptance in this task uses registered real review workers and the available host-service contract, actual MCP connection classes, daemon/artifact readers and supported client DTO/renderers. Production ReviewWorkers instantiation and atomic public-route activation are deliberately deferred to t14; installed production end-to-end qualification remains mandatory in t15/t16. Do not require production cutover to accept this component task.",
     "size": "M",
     "order": 12,
     "acceptanceChecks": [
-      "During blocked admission, progress/status respond without waiting for worker computation and report freshness, timestamps and unverified state rather than fabricated completion.",
-      "Code uses scope_preparation with task:null and unknown inventory represented by numeric zero plus explicit pending/unverified admission; design uses admission phase before its accepted plan.",
-      "Clients display Preparing review or technical admission failure, never successful empty scope; existing qualified/completed review views still decode.",
-      "Controller admission-to-assignment observation does not steal authority, restart admission or allocate another execution identity.",
+      "Through registered real-worker component fixtures and the available host-service contract, blocked admission does not delay cached progress/status; readers report freshness, timestamps and explicit unverified state rather than fabricated completion. Production route installation is t14 acceptance.",
+      "In the registered code/design worker component, code uses scope_preparation with task:null and unknown inventory represented by numeric zero plus explicit pending/unverified admission; design uses admission phase before its accepted plan.",
+      "Actual supported client DTOs/renderers display Preparing review or technical admission failure from the component's progress projection, never successful empty scope; existing qualified/completed views still decode. Production delivery through the installed registry is verified in t14/t15.",
+      "Registered-worker controller admission-to-assignment tests establish that cached observation preserves owner authority, does not restart admission and does not allocate another execution identity.",
       "Current vscode-plugin and jetbrains-plugin IPC field names remain aligned; deprecated insrc-ide is outside scope."
     ],
     "tests": [

@@ -22,13 +22,15 @@ const clock: ProgressClock = { now: () => performance.now(), wall: () => new Dat
 const clean = (value: string) => value.replace(/[\x00-\x1f\x7f]/g, ' ').slice(0, 256);
 /** Bounded projection of already validated host observations; never stores native payloads. */
 export class ReviewProgressTracker {
- readonly executionId = randomUUID();
+ readonly executionId:string;
  private readonly started: number;
  private taskStarted: number | undefined;
  private value: ReviewProgress;
- constructor(private readonly time: ProgressClock = clock) {
-  this.started = time.now();
-  this.value = { schemaVersion: 1, executionId: this.executionId, sequence: 0, phase: 'scope_preparation', task: null,
+ constructor(private readonly time: ProgressClock = clock,initial?:ReviewProgress) {
+  this.executionId=initial?.executionId??randomUUID();
+  this.started = time.now()-(initial?.reviewElapsedMs??0);
+  this.taskStarted=initial?.taskElapsedMs===undefined||initial.taskElapsedMs===null?undefined:time.now()-initial.taskElapsedMs;
+  this.value = initial?structuredClone(initial):{ schemaVersion: 1, executionId: this.executionId, sequence: 0, phase: 'scope_preparation', task: null,
    completedTasks: 0, reviewElapsedMs: 0, taskElapsedMs: null, observedAt: time.wall(), lastMeaningfulActivityAt: null,
    processState: 'unknown', lastProcessObservedAt: null, activeToolCount: 0 };
  }

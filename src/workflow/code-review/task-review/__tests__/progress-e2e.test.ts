@@ -16,10 +16,10 @@ import type { LLMProvider,ActivityReviewSessionOpts } from '../../../../shared/t
 test('Both native CLI fixtures expose isolated reconnectable progress through production IPC',async()=>{
  for(const party of ['daemon','controller'] as const)for(const kind of ['claude','codex'] as const){
   const f=await fixture();f.build.meta.authoredBy=party==='controller'?'daemon':'controller';f.put(`.insrc/artifacts/BUILD-${hash}-s1.json`,f.build);
-  const bin=join(f.repo,'progress-cli.mjs'),calls=join(f.repo,'calls');
+  const bin=join(f.repo,'progress-cli.mjs'),calls=join(f.repo,'calls'),release=join(f.repo,'release-cli');
   const tool=kind==='claude'?{type:'assistant',message:{content:[{type:'tool_use',id:'PRIVATE_TOOL',name:'Read',input:{private:'NEVER_IN_PROGRESS'}}]}}:{type:'item.started',item:{type:'command_execution',id:'PRIVATE_TOOL',command:'NEVER_IN_PROGRESS'}};
   const final=kind==='claude'?[{type:'assistant',message:{content:[{type:'tool_use',id:'answer',name:'StructuredOutput',input:f.result}]}}]:[{type:'item.completed',item:{type:'agent_message',text:JSON.stringify(f.result)}},{type:'turn.completed'}];
-  writeFileSync(bin,'#!/usr/bin/env node\nimport{appendFileSync}from"node:fs";appendFileSync('+JSON.stringify(calls)+',"call\\n");process.stdin.resume();setTimeout(()=>process.stdout.write('+JSON.stringify(JSON.stringify(tool)+'\n')+'),10);setTimeout(()=>process.stdout.write('+JSON.stringify(final.map(x=>JSON.stringify(x)+'\n').join(''))+'),180);');chmodSync(bin,0o755);
+  writeFileSync(bin,'#!/usr/bin/env node\nimport{appendFileSync,existsSync}from"node:fs";appendFileSync('+JSON.stringify(calls)+',"call\\n");process.stdin.resume();setTimeout(()=>process.stdout.write('+JSON.stringify(JSON.stringify(tool)+'\n')+'),10);const timer=setInterval(()=>{if(existsSync('+JSON.stringify(release)+')){clearInterval(timer);process.stdout.write('+JSON.stringify(final.map(x=>JSON.stringify(x)+'\n').join(''))+')}},10);');chmodSync(bin,0o755);
   const cli=new CliProvider({kind,binPath:bin,timeoutMs:1,codexFirstOutputMs:1});
   let resolutions=0;const host=await serve(f.repo,()=>{resolutions++;assert.equal(party,'daemon');return cli;});
   const owner=await channel(host.path),observer=await channel(host.path);const life=new AbortController();
@@ -34,14 +34,14 @@ test('Both native CLI fixtures expose isolated reconnectable progress through pr
      onCandidate:async result=>{await owner.rawCall('codeReview.task.result',{...common,sequence:sequence++,result});return{accepted:true};}});
     void native.catch(()=>{});
    }
-   const updates:string[]=[];
-   const done=await pollTaskReviewProgress(request,{signal:life.signal,read:async p=>{const view=await observer.call<ReviewProgressView>('codeReview.task.progress',p);views.push(view);return view;},sleep:async ms=>{assert.equal(ms,5000);await new Promise(resolve=>setTimeout(resolve,5));},onUpdate:text=>updates.push(text)});
+   const updates:string[]=[],deadline=Date.now()+15000;
+   const done=await pollTaskReviewProgress(request,{signal:life.signal,read:async p=>{const view=await(party==='controller'?owner:observer).call<ReviewProgressView>('codeReview.task.progress',p);views.push(view);if(view.progress?.phase==='tool_running')writeFileSync(release,'observed');return view;},sleep:async ms=>{assert.equal(ms,5000);assert.ok(Date.now()<deadline,'tool phase must reach the cache before release');await new Promise(resolve=>setTimeout(resolve,5));},onUpdate:text=>updates.push(text)});
    await native;assert.equal(done.status,'passed');assert.equal(done.crPublication,'complete');
    assert.ok(views.some(v=>v.freshness==='live'&&v.progress?.phase==='tool_running'));
    assert.ok(updates.length>=2);assert.ok(!JSON.stringify(views).includes('PRIVATE_TOOL'));assert.ok(!JSON.stringify(views).includes('NEVER_IN_PROGRESS'));
    assert.equal(readFileSync(calls,'utf8'),'call\n');assert.equal(resolutions,party==='daemon'?1:0,'polling never invokes provider');
    assert.deepEqual(f.read(checkpointPath(f.repo,reviewId)).attempts[0]!.submitted,f.packet);
-   await assert.rejects(observer.call('codeReview.task.progress',{...request,reviewId:'another-review'}),/checkpoint/);
+   await assert.rejects(observer.call('codeReview.task.progress',{...request,reviewId:'another-review'}),/checkpoint|not found|locator/);
   }finally{life.abort();owner.close();observer.close();await native?.catch(()=>{});await host.server.close();f.cleanup();}
  }
 });

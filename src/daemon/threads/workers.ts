@@ -83,9 +83,13 @@ export function startWorker(services: ThreadServices, name: string, script: stri
 		...(source ? { eval: true } : {}),
 		workerData: { ...conn.workerData, ...extra?.workerData, ...(source ? { __insrcSourceWorker: target.href } : {}) },
 		transferList: [...conn.transferList, ...(extra?.transferList ?? [])],
-	}); } catch (error) { conn.disconnect(); throw error; }
+	}); } catch (error) { services.reclaimArtifactWrites(conn.port);conn.disconnect(); throw error; }
 	const threadId = worker.threadId;
-	const reclaimed = watchWorker(worker).then(async locks => ({ locks, stores: await getStoreGuard().reclaim(threadId) }));
+	const reclaimed = watchWorker(worker).then(async locks => {
+  const stores=await getStoreGuard().reclaim(threadId);
+  services.reclaimArtifactWrites(conn.port);
+  return {locks,stores};
+ });
 	onCreated?.(worker);
 	return new Promise<StartedWorker>((resolve, reject) => {
 		// It rejects once the worker exited and was reclaimed, so a retry starts after the reclaim.

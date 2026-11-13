@@ -143,6 +143,7 @@ export interface RuntimeIndexer {
 }
 
 export interface HandlerRuntimeDeps {
+ readonly reviewThreads?:(()=>NonNullable<DaemonStatus['threads']>)|undefined;
   readonly progressRuntime?: (() => Promise<ProgressRuntime<ExecutorDetails>>) | undefined;
  readonly stepCallHandler?: StreamHandler | undefined;
 	/** Test seam: the registered repositories' paths (default: the registry in `db`). */
@@ -702,8 +703,8 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		'designReview.recover': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('recover', params, context),
 		'designReview.failure': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('failure', params, context),
 		'codeReview.task.cleanup': async params => (await import('./task-review-rpc.js')).cleanupApprovedTaskReviews(params),
-		'codeReview.task.progress': async params => (await import('./task-review-rpc.js')).readTaskReviewProgress(params),
-		'codeReview.task.publish': async params => (await import('./task-review-rpc.js')).publishStoredTaskReview(params),
+		'codeReview.task.progress': async (params,context) => (await import('./task-review-rpc.js')).readTaskReviewProgress(params,context),
+		'codeReview.task.publish': async (params,context) => (await import('./task-review-rpc.js')).publishStoredTaskReview(params,context),
 		'codeReview.task.start': async (params, context) => (await import('./task-review-rpc.js')).startTaskReview(params, context),
 		'codeReview.task.activity': async (params, context) => (await import('./task-review-rpc.js')).exchangeControllerTaskReview(params, context, 'activity'),
 		'codeReview.task.assignment': async (params, context) => (await import('./task-review-rpc.js')).exchangeControllerTaskReview(params, context, 'assignment'),
@@ -971,7 +972,8 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 				installedCommit: await readPublicInstalledCommit(),
 				lmdbFileSizeMb,
 			});
-			return status;
+			const reviewThreads=deps.reviewThreads?.();
+   return reviewThreads?.length?{...status,threads:reviewThreads}:status;
 		},
 
 		// Story s4: read-only diagnostic — the daemon's own list of currently-attached

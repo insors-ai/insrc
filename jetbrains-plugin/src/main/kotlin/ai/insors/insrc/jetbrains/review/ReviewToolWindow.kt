@@ -145,6 +145,8 @@ internal class ReviewPanel(
      * Otherwise query the daemon, render on the EDT, then reschedule the SAME
      * generation a coarse interval out.
      */
+    @Volatile private var progressTarget: Pair<String, String>? = null
+
     private fun poll(gen: Int) {
         if (gen != generation.get()) return   // superseded by a newer refresh
         val repo = project.basePath
@@ -157,6 +159,16 @@ internal class ReviewPanel(
             { if (gen == generation.get()) render(view) },
             project.disposed,
         )
+        val target = progressTarget
+        if (target != null && !repo.isNullOrEmpty()) {
+            val result = gateway.artifactReviewView(repo, target.second)
+            if (result is ai.insors.insrc.jetbrains.daemon.ArtifactContentResult.Loaded) {
+                ApplicationManager.getApplication().invokeLater({
+                    if (gen == generation.get() && progressTarget == target)
+                        contentPane.updateReviewProgress(target.first, target.second, result.view.reviewProgress)
+                }, project.disposed)
+            }
+        }
         schedule(gen, COARSE_POLL_INTERVAL_MS)
     }
 
@@ -195,6 +207,7 @@ internal class ReviewPanel(
         }
         contentPane.showMessage("Loading ${dto.kind}…")
         val mdPath = dto.mdPath
+        progressTarget = dto.artifactId to mdPath
         ApplicationManager.getApplication().executeOnPooledThread {
             val result = gateway.artifactReviewView(repo, mdPath)
             val view = ArtifactContentViews.of(result)

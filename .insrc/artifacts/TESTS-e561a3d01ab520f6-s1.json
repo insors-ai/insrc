@@ -1,0 +1,145 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "6c6ed30478937bc95bd3e6e7330f285767cb0abf75afa5f8a1e55e6942f427fc",
+        "at": "2026-11-13T05:33:29.674Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "e561a3d01ab520f6",
+    "storyId": "s1",
+    "createdAt": "2026-11-13T05:33:29.561Z",
+    "updatedAt": "2026-11-13T05:33:29.561Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-13T05:30:13.434Z",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "17a14772e",
+        "ranAt": "2026-11-13T05:33:29.561Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/concise-attribution.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/code-review/task-review/__tests__/concise-attribution.test.ts"
+            ]
+          },
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/effective-scope.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/code-review/task-review/__tests__/effective-scope.test.ts"
+            ]
+          },
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/selected-code.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/code-review/task-review/__tests__/selected-code.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/concise-attribution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 961,
+            "titles": [
+              {
+                "title": "attribution input size is independent of source, document, test-output and feedback body sizes",
+                "result": "pass"
+              },
+              {
+                "title": "concise attribution preserves complete change and test coverage validation",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/effective-scope.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4587,
+            "titles": [
+              {
+                "title": "effective attribution preserves all entries/tests and requires replacement witness closure",
+                "result": "pass"
+              },
+              {
+                "title": "final blobs, paths and spans reach prompts, native grants and strict result validation",
+                "result": "pass"
+              },
+              {
+                "title": "native response schema bounds decimal intervals, gaps and deletion anchors",
+                "result": "pass"
+              },
+              {
+                "title": "both reviewer routes reject invalid locations and preserve mandatory coverage omissions",
+                "result": "pass"
+              },
+              {
+                "title": "native and controller routes share final scope and reject historical findings without suppressing final defects",
+                "result": "pass"
+              },
+              {
+                "title": "renamed final paths alone authorize findings; previousPath remains provenance context",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/selected-code.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1301,
+            "titles": [
+              {
+                "title": "selected code: exact pinned after blocks reach assessment and references reach attribution without prior or surrounding source",
+                "result": "pass"
+              },
+              {
+                "title": "deletion markers select exact reviewed-version boundaries without removed text",
+                "result": "pass"
+              },
+              {
+                "title": "immutable historical before/after packets remain resumable but cannot be submitted as new attempts",
+                "result": "pass"
+              },
+              {
+                "title": "selected code preserves Unicode and missing final newline for an added file",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

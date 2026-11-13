@@ -9,7 +9,7 @@ import { prepareReviewAdmission } from '../admission.js';
 import { checkpointPath, saveCheckpoint, loadCheckpoint } from '../checkpoint.js';
 import { publishTaskCheckpoint } from '../publication.js';
 import { validateTaskBody } from '../record.js';
-import { decodeReview, CheckpointSchema, MAX_REVIEW_JSON_BYTES } from '../contracts.js';
+import { decodeReview, CheckpointSchema, reviewJsonLimit } from '../contracts.js';
 import { TaskReviewCoordinator } from '../coordinator.js';
 
 test('recovery admission: saved pins, latest-only resume, contiguous attempts and immutable prior sections', async () => {
@@ -46,7 +46,7 @@ test('recovery admission: saved pins, latest-only resume, contiguous attempts an
   const foreign=structuredClone(state);foreign.reviewId='foreign';foreign.project=join(f.repo,'other');f.put('.insrc/tmp/code-review/foreign.json',foreign);
   await assert.rejects(prepareReviewAdmission(f.repo,'foreign',1,undefined,'daemon',f.deps.sources,{operation:'resume'}),/identity mismatch/);
   f.put('.insrc/tmp/code-review/corrupt.json','{');await assert.rejects(prepareReviewAdmission(f.repo,'corrupt',1,undefined,'daemon',f.deps.sources,{operation:'resume'}));
-  f.put('.insrc/tmp/code-review/huge.json',' '.repeat(MAX_REVIEW_JSON_BYTES+1));await assert.rejects(loadCheckpoint(checkpointPath(f.repo,'huge')),/bounded checkpoint/);
+  f.put('.insrc/tmp/code-review/huge.json',' '.repeat(reviewJsonLimit()+1));await assert.rejects(loadCheckpoint(checkpointPath(f.repo,'huge')),/bounded checkpoint/);
   symlinkSync(path,checkpointPath(f.repo,'linked'));await assert.rejects(loadCheckpoint(checkpointPath(f.repo,'linked')));
  } finally {f.cleanup();}
 });
@@ -108,7 +108,7 @@ test('attempt schema compatibility: optional origins and old checkpoint/CR meani
   const invalid=structuredClone(saved.body);invalid.reviews[1]!.origins![0]!.sourceAttempt=2;assert.throws(()=>validateTaskBody(invalid),/earlier attempt|Reuse provenance/);
   const altered=structuredClone(saved.body);altered.reviews[1]!.tasks[0]!.advice=['Changed feedback'];assert.throws(()=>validateTaskBody(altered),/changes the saved result/);
   const bytes=readFileSync(path,'utf8');
-  const tooLarge=structuredClone(next.checkpoint);tooLarge.attempts[1]!['review-response'].summary='x'.repeat(MAX_REVIEW_JSON_BYTES);
+  const tooLarge=structuredClone(next.checkpoint);tooLarge.attempts[1]!['review-response'].summary='x'.repeat(reviewJsonLimit());
   await assert.rejects(saveCheckpoint(path,tooLarge));assert.equal(readFileSync(path,'utf8'),bytes);
   // A publication flag is not proof: admission also checks the permanent CR.
   const cr=JSON.parse(readFileSync(second.jsonPath,'utf8'));cr.body.reviews=[];writeFileSync(second.jsonPath,JSON.stringify(cr));

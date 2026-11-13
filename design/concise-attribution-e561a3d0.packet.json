@@ -1,0 +1,178 @@
+{
+  "reviewRevision": "17a14772e8cf965481888f5540a6c57b8be37497",
+  "storyId": "s1",
+  "functionalSummary": "Fix approved ISSUE-b7b47a99a6c59f21 under standalone BUILD-e561a3d01ab520f6-s1. Concise scope attribution uses pinned document and indexed final-source/test references, with full details read on demand from immutable checkpoint/Git. Keep complete coverage, replacement witnesses, sequential attempt/reuse and both reviewer parties. Scope excludes task assessment redesign, limits and schemas.23focused tests and typecheck pass; actual failed packet retains344changes/115testfiles/16tasks at112888promptchars.",
+  "documents": {},
+  "reviewSet": [
+    {
+      "commit": "17a14772e8cf965481888f5540a6c57b8be37497",
+      "parent": "7b56429813463ac5f394c89d3f010c6bc01b57aa",
+      "files": [
+        {
+          "path": "src/workflow/code-review/task-review/assessment.ts",
+          "segments": [
+            {
+              "after": [
+                1,
+                1
+              ]
+            },
+            {
+              "after": [
+                7,
+                7
+              ]
+            },
+            {
+              "after": [
+                20,
+                41
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/workflow/code-review/task-review/__tests__/concise-attribution.test.ts",
+          "segments": [
+            {
+              "after": [
+                1,
+                48
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/workflow/code-review/task-review/__tests__/selected-code.test.ts",
+          "segments": [
+            {
+              "after": [
+                14,
+                14
+              ]
+            },
+            {
+              "after": [
+                30,
+                30
+              ]
+            },
+            {
+              "after": [
+                35,
+                37
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/workflow/code-review/task-review/__tests__/effective-scope.test.ts",
+          "segments": [
+            {
+              "after": [
+                44,
+                44
+              ]
+            },
+            {
+              "after": [
+                47,
+                49
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "tests": [
+    {
+      "file": "src/workflow/code-review/task-review/__tests__/concise-attribution.test.ts",
+      "cases": [
+        "attribution input size is independent of source, document, test-output and feedback body sizes",
+        "concise attribution preserves complete change and test coverage validation"
+      ],
+      "command": "/home/subho/.nvm/versions/node/v22.22.1/bin/node --import tsx --test src/workflow/code-review/task-review/__tests__/concise-attribution.test.ts",
+      "result": "pass",
+      "executionDetails": "Executed together with the other four focused suites:23/23passed,0failed/skipped. Includes real isolated Git fixtures and fake Claude/Codex daemon/controller routes; no hosted calls. Root npx tsc --noEmit passed. Actual failed344-change/115-test/16-task packet qualified and prompt measured112888chars. Logs in evidenceReferences.",
+      "evidenceReferences": [
+        "/tmp/concise-attribution-tests.log",
+        "/tmp/concise-attribution-types.log",
+        "/tmp/concise-attribution-real-packet.log"
+      ]
+    },
+    {
+      "file": "src/workflow/code-review/task-review/__tests__/selected-code.test.ts",
+      "cases": [
+        "selected code: exact pinned after blocks reach assessment and references reach attribution without prior or surrounding source",
+        "deletion markers select exact reviewed-version boundaries without removed text",
+        "immutable historical before/after packets remain resumable but cannot be submitted as new attempts",
+        "selected code preserves Unicode and missing final newline for an added file"
+      ],
+      "command": "/home/subho/.nvm/versions/node/v22.22.1/bin/node --import tsx --test src/workflow/code-review/task-review/__tests__/selected-code.test.ts",
+      "result": "pass",
+      "executionDetails": "Executed together with the other four focused suites:23/23passed,0failed/skipped. Includes real isolated Git fixtures and fake Claude/Codex daemon/controller routes; no hosted calls. Root npx tsc --noEmit passed. Actual failed344-change/115-test/16-task packet qualified and prompt measured112888chars. Logs in evidenceReferences.",
+      "evidenceReferences": [
+        "/tmp/concise-attribution-tests.log",
+        "/tmp/concise-attribution-types.log",
+        "/tmp/concise-attribution-real-packet.log"
+      ]
+    },
+    {
+      "file": "src/workflow/code-review/task-review/__tests__/effective-scope.test.ts",
+      "cases": [
+        "effective attribution preserves all entries/tests and requires replacement witness closure",
+        "final blobs, paths and spans reach prompts, native grants and strict result validation",
+        "native response schema bounds decimal intervals, gaps and deletion anchors",
+        "both reviewer routes reject invalid locations and preserve mandatory coverage omissions",
+        "native and controller routes share final scope and reject historical findings without suppressing final defects",
+        "renamed final paths alone authorize findings; previousPath remains provenance context"
+      ],
+      "command": "/home/subho/.nvm/versions/node/v22.22.1/bin/node --import tsx --test src/workflow/code-review/task-review/__tests__/effective-scope.test.ts",
+      "result": "pass",
+      "executionDetails": "Executed together with the other four focused suites:23/23passed,0failed/skipped. Includes real isolated Git fixtures and fake Claude/Codex daemon/controller routes; no hosted calls. Root npx tsc --noEmit passed. Actual failed344-change/115-test/16-task packet qualified and prompt measured112888chars. Logs in evidenceReferences.",
+      "evidenceReferences": [
+        "/tmp/concise-attribution-tests.log",
+        "/tmp/concise-attribution-types.log",
+        "/tmp/concise-attribution-real-packet.log"
+      ]
+    },
+    {
+      "file": "src/workflow/code-review/task-review/__tests__/attribution-scope.test.ts",
+      "cases": [
+        "single-task attribution prompt and native schema select t4 only on initial and subsequent attempts",
+        "whole-story attribution retains every Plan task and strict host uniqueness and coverage checks",
+        "single-task re-review uses the same constrained attribution on daemon and controller routes and preserves prior attempts",
+        "Codex strict reassessment rows permit fresh review without a source and require a source only for reuse"
+      ],
+      "command": "/home/subho/.nvm/versions/node/v22.22.1/bin/node --import tsx --test src/workflow/code-review/task-review/__tests__/attribution-scope.test.ts",
+      "result": "pass",
+      "executionDetails": "Executed together with the other four focused suites:23/23passed,0failed/skipped. Includes real isolated Git fixtures and fake Claude/Codex daemon/controller routes; no hosted calls. Root npx tsc --noEmit passed. Actual failed344-change/115-test/16-task packet qualified and prompt measured112888chars. Logs in evidenceReferences.",
+      "evidenceReferences": [
+        "/tmp/concise-attribution-tests.log",
+        "/tmp/concise-attribution-types.log",
+        "/tmp/concise-attribution-real-packet.log"
+      ]
+    },
+    {
+      "file": "src/workflow/code-review/task-review/__tests__/previous-round-feedback.test.ts",
+      "cases": [
+        "previousRoundFeedback is concise, scoped, bounded, excludes previews/schema and respects latest same-party resolved result",
+        "feedback applies shared attribution only to selected tasks and enforces the whole-input byte budget",
+        "Fake Claude/Codex failure persists on daemon route and appears in subsequent input",
+        "controller fake native failures use the same persisted feedback on real IPC for both CLIs",
+        "Saved diagnostics survive disconnect/restart; later valid feedback does not rewrite failed attempt",
+        "exact failed-result origins preserve diagnostic provenance without reviving resolved older rounds",
+        "Writer failure does not falsely acknowledge diagnostics; accepted feedback survives later wrapper failure"
+      ],
+      "command": "/home/subho/.nvm/versions/node/v22.22.1/bin/node --import tsx --test src/workflow/code-review/task-review/__tests__/previous-round-feedback.test.ts",
+      "result": "pass",
+      "executionDetails": "Executed together with the other four focused suites:23/23passed,0failed/skipped. Includes real isolated Git fixtures and fake Claude/Codex daemon/controller routes; no hosted calls. Root npx tsc --noEmit passed. Actual failed344-change/115-test/16-task packet qualified and prompt measured112888chars. Logs in evidenceReferences.",
+      "evidenceReferences": [
+        "/tmp/concise-attribution-tests.log",
+        "/tmp/concise-attribution-types.log",
+        "/tmp/concise-attribution-real-packet.log"
+      ]
+    }
+  ]
+}

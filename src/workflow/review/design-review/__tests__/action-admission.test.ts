@@ -1,0 +1,41 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { designFixture } from './fixtures.js';
+import { admitDesignRecovery,settleDesignRecovery } from '../action-admission.js';
+import { saveDesignCheckpoint,loadStoredDesignCheckpoint,updateStoredDesignCheckpoint } from '../checkpoint.js';
+import { designActionEvolution } from '../action-state.js';
+import { saveWorkerDesignCheckpoint } from '../worker-checkpoint.js';
+
+test('recovery actions pin input before qualification and sealed outcomes cannot change',async t=>{
+ const f=designFixture(t);await saveDesignCheckpoint(f.repo,f.checkpoint);
+ const request={phase:'recover' as const,repo:f.repo,reviewId:'review-1',attempt:1,actionId:'recovery',operation:'resume' as const};
+ assert.equal((await admitDesignRecovery(f.repo,'review-1',request)).validation,'unverified');
+ assert.equal((await admitDesignRecovery(f.repo,'review-1',request)).replay,true);
+ const before=(await loadStoredDesignCheckpoint(f.repo,'review-1'))!,action=before.attempts[0]!.actions![0]!;
+ await assert.rejects(admitDesignRecovery(f.repo,'review-1',{...request,operation:'retry_publication'}),/Conflicting/);
+ await assert.rejects(admitDesignRecovery(f.repo,'review-1',{...request,actionId:'overlap'}),/still being qualified/);
+ const bytes=await readFile(f.path,'utf8');
+ await assert.rejects(updateStoredDesignCheckpoint(f.repo,'review-1',cp=>({...cp!,schemaVersion:2,attempts:cp!.attempts.map(a=>({...a,actions:[]}))})),/Cannot replace recovery action/);
+ assert.equal(await readFile(f.path,'utf8'),bytes);
+ await settleDesignRecovery(f.repo,'review-1',request,'failed',new Error('Pointed qualification failure'));
+ const failed=(await loadStoredDesignCheckpoint(f.repo,'review-1'))!.attempts[0]!.actions![0]!;
+ assert.equal(failed.validation,'failed');assert.equal(failed.outcome!.summary,'Pointed qualification failure');assert.deepEqual(failed.acceptedAt,action.acceptedAt);
+ await assert.rejects(settleDesignRecovery(f.repo,'review-1',request,'qualified'),/sealed/);
+ assert.equal(designActionEvolution(failed,{...failed,validation:'qualified'}),false);
+ assert.equal(designActionEvolution(action,{...action,validation:'qualified'}),true);
+ const after=(await loadStoredDesignCheckpoint(f.repo,'review-1'))!;assert.ok('completedChunks'in after.attempts[0]!);assert.deepEqual(after.attempts[0]!.completedChunks,[]);
+});
+test('design execution saves merge fresh native intent guards without losing the admission action',async t=>{
+ const f=designFixture(t);await saveDesignCheckpoint(f.repo,f.checkpoint);
+ const request={phase:'recover' as const,repo:f.repo,reviewId:'review-1',attempt:1,actionId:'pending-recovery',operation:'resume' as const};
+ await admitDesignRecovery(f.repo,'review-1',request);
+ await settleDesignRecovery(f.repo,'review-1',request,'qualified');
+ const current=(await loadStoredDesignCheckpoint(f.repo,'review-1'))!;assert.equal(current.schemaVersion,2);
+ const {qualifiedDesignProjection}=await import('../checkpoint.js');const snapshot=qualifiedDesignProjection(current)!;
+ const guard={daemonInstance:'daemon',openLeases:[{operationId:'native-operation',workerIncarnation:'worker',kind:'cli',openedAt:new Date().toISOString()}]};
+ await updateStoredDesignCheckpoint(f.repo,'review-1',cp=>({...cp!,schemaVersion:2,attempts:cp!.attempts.map(a=>({...a,resourceGuard:guard}))}));
+ snapshot.attempts[0]!.progress.sequence++;
+ await saveWorkerDesignCheckpoint(f.repo,snapshot);
+ const saved=(await loadStoredDesignCheckpoint(f.repo,'review-1'))!;assert.ok('resourceGuard'in saved.attempts[0]!);assert.deepEqual(saved.attempts[0]!.resourceGuard,guard);assert.equal(saved.attempts[0]!.actions![0]!.validation,'qualified');
+});

@@ -22,7 +22,7 @@
           "entityId": "PLAN-e4af63128c7cbec2-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 2"
+          "fragment": "revision 7"
         },
         {
           "entityId": "TASK-e4af63128c7cbec2-s1-t14",
@@ -35,9 +35,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 2,
-        "contentHash": "3f7c3ae626e724b5add778531f8fe87fa17725ba643b4c84d01d02d5e23b92b4",
-        "at": "2026-11-11T12:23:32.911Z",
+        "number": 5,
+        "contentHash": "3b51574077abe01dc7b9fca954955c645528f8ab2c3009f3e18b9751f75cc5db",
+        "at": "2026-11-11T17:21:06.785Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -55,7 +55,7 @@
         "at": "2026-11-09T07:42:48.112Z"
       }
     },
-    "revision": 2
+    "revision": 5
   },
   "body": {
     "title": "Qualify real concurrent worker isolation and failure recovery",
@@ -68,7 +68,9 @@
       "Never-ready/pre-save-hung boot, worker death across native-spawn/save boundaries, controller disconnect, observer disconnect and daemon restart retain targeted semantics.",
       "Whole-history resource fences and clearance/publication/cleanup replay are exercised through real routing; unrelated review files and processes remain untouched.",
       "Run existing relevant ownership/admission/progress/checkpoint/recovery/publication/approval suites alongside these regressions with no live-cloud requirement.",
-      "End-to-end fixtures through the actual worker registry and production review routes prove both code/design families use the CLI and tool/Git adapters with host-owned leases, durable intent, bounded byte backpressure and cleanup after real worker loss; unbound or bypassed native execution refuses."
+      "End-to-end fixtures through the actual worker registry and production review routes prove both code/design families use the CLI and tool/Git adapters with host-owned leases, durable intent, bounded byte backpressure and cleanup after real worker loss; unbound or bypassed native execution refuses.",
+      "Through installed production construction, prove host-derived reviewer routing, trusted successful controller exchanges, permission-denied native operations causing zero spawn, and cross-worker design-subject/story-artifact cleanup exclusions for both families.",
+      "Run a disposable full production-daemon crash/replacement test through installed public review routes: persist intent before spawn, crash only the fixture daemon with its native child surviving, retain the exact review fence before native work and allow unrelated review traffic. After the test owner verifies the child ended, use the unchanged normal local broker approval and durable exact-guard receipt; only a separate explicit resume/recover for resumable interrupted work, or a separate explicit new-attempt submission for failed work, permits review work. Failed attempts are never resumed or rewritten. Verify both review families and reject stale/wrong-review/lease-set requests. Never terminate the user's live daemon. This discharges Task 11's deferred installed full-daemon recovery qualification."
     ],
     "tests": [
       {

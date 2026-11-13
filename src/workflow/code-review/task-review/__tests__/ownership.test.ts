@@ -3,14 +3,14 @@ import assert from 'node:assert/strict';
 import { join } from 'node:path';
 import { MessageChannel } from 'node:worker_threads';
 import { fixture, hash } from './publication-fixture.js';
-import { channel, eventually, provider } from './controller-fixture.js';
+import { channel, eventually, provider,reviewHost } from './controller-fixture.js';
 import { TaskReviewCoordinator } from '../coordinator.js';
 import { publishTaskCheckpoint } from '../publication.js';
 import { IpcServer, directDispatch } from '../../../../daemon/server.js';
 import { Router } from '../../../../daemon/threads/router.js';
 import { TargetRegistry } from '../../../../daemon/threads/registry.js';
 import { serveRequests } from '../../../../daemon/threads/worker-requests.js';
-import { startTaskReview, coordinatorFor } from '../../../../daemon/task-review-rpc.js';
+import { startTaskReview } from '../../../../daemon/task-review-rpc.js';
 import type { ReviewAcknowledgement } from '../coordinator.js';
 
 const scope = (count: number) => ({tasks:Array.from({length:count},(_,i)=>({taskId:`t${i+1}`,changeIndexes:[0],testIndexes:[0]}))});
@@ -18,20 +18,21 @@ const scope = (count: number) => ({tasks:Array.from({length:count},(_,i)=>({task
 test('Cross-session and worker/direct duplicate review-id admission starts exactly one execution', async () => {
  const f=await fixture(true); const {port1,port2}=new MessageChannel();let workerCalls=0,calls=0,release!:()=>void;
  const pending=new Promise<void>(resolve=>{release=resolve;});
+ const reviews=reviewHost(f.repo,()=>provider(async()=>{calls++;await pending;return f.result;}));
  const registry=new TargetRegistry();registry.register({threadId:999,cls:'session'});
  serveRequests(port2,directDispatch({'codeReview.task.start':async()=>{workerCalls++;throw new Error('Worker must not own reviews');}}));
- const router=new Router({classOf:()=> 'session',registry,routed:new Set(['session']),local:directDispatch({'codeReview.task.start':(raw,trusted)=>startTaskReview(raw,trusted,{provider:()=>provider(async prompt=>{calls++;await pending;return f.result;})})})});
+ const router=new Router({classOf:()=> 'session',registry,routed:new Set(['session']),local:directDispatch({'codeReview.task.start':(raw,trusted)=>startTaskReview(raw,trusted)})});
  router.attach(999,port1);
  const path=join(f.repo,'ownership.sock'),server=new IpcServer(router.forward,Date.now,path);await server.listen();
  const a=await channel(path),b=await channel(path),request={repo:f.repo,epicHash:hash,reviewId:'shared',attempt:1,packet:f.packet};
  try {
   const first=await a.call<ReviewAcknowledgement>('codeReview.task.start',request);
-  await assert.rejects(b.call('codeReview.task.start',request),/already-running/);
-  await assert.rejects(startTaskReview(request,undefined,{provider:()=>{throw new Error('Duplicate provider');}}),/already-running/);
+  assert.equal((await b.call<ReviewAcknowledgement>('codeReview.task.start',request)).path,first.path);
+  await assert.rejects(startTaskReview(request),/Trusted live review connection/);
   await eventually(()=>calls===1);assert.equal(workerCalls,0);a.close();release();
-  await coordinatorFor(f.repo).settled(f.repo,'shared');
+  await eventually(()=>f.read(first.path).attempts[0]!.header.status==='passed');
   assert.equal(f.read(first.path).attempts[0]!.header.status,'passed');assert.equal(calls,1);
- } finally {release();a.close();b.close();await server.close();port1.close();port2.close();f.cleanup();}
+ } finally {release();a.close();b.close();await server.close();await reviews.close();port1.close();port2.close();f.cleanup();}
 });
 
 test('Different review ids overlap with serial per-review provider calls and merged CR history', async () => {

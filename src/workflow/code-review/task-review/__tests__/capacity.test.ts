@@ -49,7 +49,7 @@ test('terminal capacity: unchanged 32 KiB Unicode escaped diagnostics retain res
  }finally{f.cleanup();}
 });
 
-test('terminal capacity: 10000-task small packet refuses both routes before save or provider dispatch',async()=>{
+test('terminal capacity: 10000-task small packet refuses dispatch and preserves controller admission failure',async()=>{
  for(const route of ['daemon','controller']as const){
   const f=await fixture(true,2);let calls=0,saves=0;try{
    const planPath=f.packet.documents.plan!.path;
@@ -63,7 +63,7 @@ test('terminal capacity: 10000-task small packet refuses both routes before save
     f.build.meta.authoredBy='daemon';f.put(`.insrc/artifacts/BUILD-${hash}-s1.json`,f.build);const host=await serve(f.repo,()=>{calls++;return provider(async()=>f.result);}),client=await channel(host.path);
     try{await assert.rejects(client.call('codeReview.task.start',{repo:f.repo,epicHash:hash,reviewId:'oversize',attempt:1,packet:f.packet}),/projection_limit/);}finally{client.close();await host.server.close();}
    }
-   assert.equal(calls,0);assert.equal(saves,0);assert.equal(existsSync(checkpointPath(f.repo,'oversize')),false);
+   assert.equal(calls,0);assert.equal(saves,0);assert.equal(existsSync(checkpointPath(f.repo,'oversize')),route==='controller');if(route==='controller'){const saved=f.read(checkpointPath(f.repo,'oversize')) as any;assert.equal(saved.attempts[0].header.status,'failed');assert.match(saved.attempts[0].error.summary,/projection_limit/);}
   }finally{f.cleanup();}
  }
 });
@@ -90,7 +90,7 @@ test('terminal capacity: long task IDs and large accepted decisions are qualifie
 });
 
 test('terminal capacity: boundary failures publish and raising configured capacity admits the next attempt on both routes',async()=>{
- const {writeFileSync,readFileSync}=await import('node:fs');const {prepareReviewAdmission}=await import('../admission.js');
+ const {writeFileSync,readFileSync}=await import('node:fs');const {prepareReviewAdmission}=await import('../admission.js');const {readQualifiedCodeCheckpoint}=await import('../worker-checkpoint.js');
  for(const route of ['daemon','controller']as const){
   const f=await fixture(true,2);try{
    const limit=reviewJsonLimit(),prior=await publishTaskCheckpoint(f.repo,hash,'publication',f.deps),head=JSON.parse(readFileSync(prior.jsonPath,'utf8')) as {meta:Record<string,unknown>};head.meta['capacityPadding']='';writeFileSync(prior.jsonPath,JSON.stringify(head,null,2)+'\n');
@@ -106,11 +106,11 @@ test('terminal capacity: boundary failures publish and raising configured capaci
    }
    const cp=f.read(checkpointPath(f.repo,'boundary'));assert.equal(cp.attempts[0]!['review-response'].crPublication,'complete');assert.equal(cp.attempts[0]!['review-response'].tasks.length,2);
    assert.ok(Buffer.byteLength(readFileSync(prior.jsonPath,'utf8'))<=limit);assert.ok(Buffer.byteLength(readFileSync(checkpointPath(f.repo,'boundary'),'utf8'))<=limit);
-   await assert.rejects(prepareReviewAdmission(f.repo,'boundary',2,f.packet,route,f.deps.sources),/projection_limit/);
+   await assert.rejects(prepareReviewAdmission(f.repo,'boundary',2,f.packet,route,f.deps.sources,{qualifiedHistory:(await readQualifiedCodeCheckpoint(checkpointPath(f.repo,'boundary')))!}),/projection_limit/);
    const {execFileSync}=await import('node:child_process');const {mkdirSync}=await import('node:fs');
    const configHome=f.repo+'/review-home';mkdirSync(configHome+'/.insrc',{recursive:true});writeFileSync(configHome+'/.insrc/config.json',JSON.stringify({review:{maxJsonBytes:2*limit}}));
    writeFileSync(configHome+'/packet.json',JSON.stringify(f.packet));
-   const script=`import assert from 'node:assert/strict';import{readFileSync}from'node:fs';import{registerGitTools}from'./src/daemon/tools/builtins/git/index.ts';import{RegistryReviewSources}from'./src/workflow/code-review/task-review/sources.ts';import{prepareReviewAdmission}from'./src/workflow/code-review/task-review/admission.ts';registerGitTools();const repo=process.argv[1];const next=await prepareReviewAdmission(repo,'boundary',2,JSON.parse(readFileSync(process.argv[2],'utf8')),process.argv[3],new RegistryReviewSources({repoPath:repo,sessionId:'capacity-resume',requestId:1,send:()=>{}}));assert.equal(next.attempt.header.attributionState,'pending');process.exit(0);`;
+   const script=`import assert from 'node:assert/strict';import{readFileSync}from'node:fs';import{registerGitTools}from'./src/daemon/tools/builtins/git/index.ts';import{RegistryReviewSources}from'./src/workflow/code-review/task-review/sources.ts';import{prepareReviewAdmission}from'./src/workflow/code-review/task-review/admission.ts';import{readQualifiedCodeCheckpoint}from'./src/workflow/code-review/task-review/worker-checkpoint.ts';registerGitTools();const repo=process.argv[1];const next=await prepareReviewAdmission(repo,'boundary',2,JSON.parse(readFileSync(process.argv[2],'utf8')),process.argv[3],new RegistryReviewSources({repoPath:repo,sessionId:'capacity-resume',requestId:1,send:()=>{}}),{qualifiedHistory:await readQualifiedCodeCheckpoint(repo+'/.insrc/tmp/code-review/boundary.json')});assert.equal(next.attempt.header.attributionState,'pending');process.exit(0);`;
    execFileSync(process.execPath,['--import','tsx','--input-type=module','-e',script,f.repo,configHome+'/packet.json',route],{cwd:process.cwd(),env:{...process.env,HOME:configHome},stdio:'pipe',timeout:60000});
   }finally{f.cleanup();}
  }

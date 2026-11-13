@@ -1,10 +1,15 @@
 import { isDeepStrictEqual } from 'node:util';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { createConnection } from 'node:net';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 import { IpcServer, directDispatch } from '../../../../daemon/server.js';
 import { exchangeControllerTaskReview, startTaskReview, readTaskReviewProgress } from '../../../../daemon/task-review-rpc.js';
 import type { LLMProvider } from '../../../../shared/types.js';
+import { MessageChannel } from 'node:worker_threads';
+import { ProductionReviews,installProductionReviews } from '../../../../daemon/review-service.js';
+import { ThreadServices } from '../../../../daemon/threads/main-services.js';
+import { startReviewWorkerBootstrap } from '../../../../daemon/threads/review-worker-bootstrap.js';
+import { startWorker } from '../../../../daemon/threads/workers.js';
 export async function channel(path:string){
  const socket=createConnection(path);await new Promise<void>((resolve,reject)=>{socket.once('connect',resolve);socket.once('error',reject);});
  let next=0,buffer='';
@@ -22,7 +27,18 @@ export async function channel(path:string){
    const envelope=old&&old.method===method&&isDeepStrictEqual(old.input,params)?old.envelope:{taskId:frame?.taskId,executionId:frame?.executionId,sequence:frame?.nextSequence};
    Object.assign(p,envelope);sent.set(id,{method,input:structuredClone(params),envelope});
   }
-  const value=await rawCall<T>(method,p);const frame=value as Record<string,unknown>;
+  let value=await rawCall<T>(method,p);
+  if(method==='codeReview.task.start'&&(value as Record<string,unknown>)?.reviewer==='controller'){
+   const end=Date.now()+10000;
+   while(!(value as Record<string,unknown>)?.kind){
+    const failed=value as {status?:string;admission?:{error?:{field?:string;summary:string}}};
+    if(failed.status==='failed'&&failed.admission?.error)throw Error(`${failed.admission.error.field??'admission'}: ${failed.admission.error.summary}`);
+    if(Date.now()>end)throw Error('Controller assignment unavailable');
+    await new Promise(resolve=>setTimeout(resolve,10));
+    value=await rawCall<T>('codeReview.task.assignment',{repo:p.repo,reviewId:p.reviewId,attempt:p.attempt});
+   }
+  }
+  const frame=value as Record<string,unknown>;
   if(frame?.executionId&&frame.nextSequence)frames.set(id,frame);
   else if(frame?.executionId&&frame.acceptedSequence){const prior=frames.get(id);if(prior)frames.set(id,{...prior,nextSequence:Number(frame.acceptedSequence)+1});}
   return value;
@@ -30,18 +46,43 @@ export async function channel(path:string){
  return{socket,call,rawCall,close:()=>socket.destroy()};
 }
 export async function eventually(check:()=>boolean):Promise<void>{const end=Date.now()+10000;while(!check()){if(Date.now()>end)throw new Error('Condition did not complete');await new Promise(resolve=>setTimeout(resolve,10));}}
+export async function assignedFrame(client:{rawCall:<T=unknown>(method:string,input:unknown)=>Promise<T>},input:unknown):Promise<any>{
+ const end=Date.now()+10000;
+ while(Date.now()<end){const frame=await client.rawCall<any>('codeReview.task.assignment',input);if(frame.kind)return frame;if(frame.status==='failed'&&frame.admission?.error)throw Error(frame.admission.error.summary);await new Promise(resolve=>setTimeout(resolve,10));}
+ throw Error('Controller assignment unavailable');
+}
 export function provider(run:(prompt:string)=>Promise<unknown>):LLMProvider{return{capabilities:{reviewActivity:true},runReviewSession:run} as unknown as LLMProvider;}
-export async function serve(repo:string,resolveProvider:()=>LLMProvider,compiled=false){
- if(compiled){const {registerGitTools}=await import(resolve('out/daemon/tools/builtins/git/index.js'));registerGitTools();}
- const {IpcServer,directDispatch}=await import(compiled?resolve('out/daemon/server.js'):'../../../../daemon/server.js');
- const {exchangeControllerTaskReview,startTaskReview,readTaskReviewProgress}=await import(compiled?resolve('out/daemon/task-review-rpc.js'):'../../../../daemon/task-review-rpc.js');
+export function reviewHost(repo:string,resolveProvider:()=>LLMProvider){
+ const services=new ThreadServices(()=>({startedAt:0,modelState:{status:'ready'},installedCommit:'fixture'}));
+ const ports=new Set<import('node:worker_threads').MessagePort>();
+ const host=new ProductionReviews({services,registeredRepos:async()=>new Set([repo]),track:()=>{},start:(svc,input,port,deps)=>{
+  const {port1,port2}=new MessageChannel();ports.add(port1);
+  let callbackId=0;const callbacks=new Map<number,{resolve:(v:any)=>void;reject:(e:Error)=>void}>(),controllers=new Map<number,AbortController>();
+  port1.on('close',()=>{for(const c of controllers.values())c.abort();for(const p of callbacks.values())p.reject(Error('Fixture worker closed'));callbacks.clear();});
+  port1.on('message',async(message:any)=>{
+   if(message.abort){controllers.get(message.id)?.abort();return;}
+   if(message.callbackId){const p=callbacks.get(message.callbackId);callbacks.delete(message.callbackId);if(message.error)p?.reject(Error(message.error));else p?.resolve(message.result);return;}
+   const controller=new AbortController();controllers.set(message.id,controller);
+   const invoke=(event:string,value:unknown)=>new Promise((resolve,reject)=>{const id=++callbackId;callbacks.set(id,{resolve,reject});port1.postMessage({id:message.id,callbackId:id,event,value});});
+   try{const value=await resolveProvider().runReviewSession!(message.prompt,message.schema,{...message.options,signal:controller.signal,onActivity:(v:unknown)=>{void invoke('onActivity',v).catch(()=>{});},onCandidate:(v:unknown)=>invoke('onCandidate',v),onDiagnostic:(v:unknown)=>invoke('onDiagnostic',v)} as never);port1.postMessage({id:message.id,result:value});}
+   catch(error){port1.postMessage({id:message.id,error:String(error)});}finally{controllers.delete(message.id);}
+  });
+  return startReviewWorkerBootstrap(svc,input,port,{...deps,start:(s,n,_script,extra,created)=>startWorker(s,n,'__tests__/helpers/review-controller',{workerData:{...extra!.workerData,fixturePort:port2},transferList:[...extra!.transferList,port2]},created)});
+ }});
+ installProductionReviews(host);
+ return{host,close:async()=>{await host.shutdown();for(const port of ports)port.close();}};
+}
+export async function serve(repo:string,resolveProvider:()=>LLMProvider){
+ const {publishStoredTaskReview}=await import('../../../../daemon/task-review-rpc.js');
+ const reviews=reviewHost(repo,resolveProvider);
  const path=join(repo,'controller.sock');
  const server=new IpcServer(directDispatch({
-  'codeReview.task.progress':params=>readTaskReviewProgress(params),
-  'codeReview.task.start':(params,context)=>startTaskReview(params,context,{provider:resolveProvider}),
+  'codeReview.task.progress':(params,context)=>readTaskReviewProgress(params,context),
+  'codeReview.task.publish':(params,context)=>publishStoredTaskReview(params,context),
+  'codeReview.task.start':(params,context)=>startTaskReview(params,context),
   'codeReview.task.activity':(params,context)=>exchangeControllerTaskReview(params,context,'activity'),
   'codeReview.task.assignment':(params,context)=>exchangeControllerTaskReview(params,context,'assignment'),
   'codeReview.task.scope':(params,context)=>exchangeControllerTaskReview(params,context,'scope'),
   'codeReview.task.result':(params,context)=>exchangeControllerTaskReview(params,context,'result'),
- }),Date.now,path);await server.listen();return{server,path};
+ }),Date.now,path);await server.listen();const close=server.close.bind(server);server.close=async()=>{await close();await reviews.close();};return{server,path,reviews:reviews.host};
 }

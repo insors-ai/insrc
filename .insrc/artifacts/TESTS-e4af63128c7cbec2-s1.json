@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 15,
-        "contentHash": "0e89786376e90a8b772894939025101144d1444879770529ba8768448f06bbbb",
-        "at": "2026-11-11T14:14:50.937Z",
+        "number": 39,
+        "contentHash": "0608360e6d80fa882731bc8e60af4d6c00626591507798fc0c544bef205d6f3d",
+        "at": "2026-11-12T19:48:10.200Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "e4af63128c7cbec2",
     "storyId": "s1",
     "createdAt": "2026-11-09T07:52:13.312Z",
-    "updatedAt": "2026-11-11T14:14:50.780Z",
+    "updatedAt": "2026-11-12T19:48:09.913Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-09T04:29:20.389Z",
     "epicSlug": "isolate-each-code-design-review-its",
-    "revision": 15
+    "revision": 39
   },
   "body": {
     "tasks": [
@@ -486,8 +486,8 @@
       },
       {
         "taskId": "t8",
-        "commit": "2b4d3a339",
-        "ranAt": "2026-11-11T14:14:50.780Z",
+        "commit": "1635e86d6",
+        "ranAt": "2026-11-11T15:06:26.825Z",
         "testsPassed": true,
         "tests": [
           {
@@ -522,7 +522,7 @@
             "file": "src/daemon/threads/__tests__/review-workers.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 4255,
+            "durationMs": 4608,
             "titles": [
               {
                 "title": "canonical identities own one incarnation and preserve subject and cleanup exclusions",
@@ -530,6 +530,1168 @@
               },
               {
                 "title": "stale owner messages and targeted disconnects cannot mutate another review",
+                "result": "pass"
+              },
+              {
+                "title": "admission replay retains a native intent committed by the writer ahead of it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "76e049edb",
+        "ranAt": "2026-11-11T15:27:53.328Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/worker-admission.test.ts: durable acknowledgment precedes blocked source qualification and provider dispatch",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/worker-admission.test.ts",
+                "title": "durable acknowledgment precedes blocked source qualification and provider dispatch",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/worker-admission.test.ts: replay and controller admission-to-assignment retain one execution identity",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/worker-admission.test.ts",
+                "title": "replay and controller admission-to-assignment retain one execution identity",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/worker-admission.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6967,
+            "titles": [
+              {
+                "title": "durable acknowledgment precedes blocked source qualification and provider dispatch",
+                "result": "pass"
+              },
+              {
+                "title": "replay and controller admission-to-assignment retain one execution identity",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "aa9aa072f",
+        "ranAt": "2026-11-11T16:04:20.516Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review/design-review/__tests__/worker-admission.test.ts: durable admission and current workflow ancestry run in the owner worker",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/worker-admission.test.ts",
+                "title": "durable admission and current workflow ancestry run in the owner worker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review/design-review/__tests__/worker-admission.test.ts: subject invalidation explicit recovery and impact-selected chunks preserve saved feedback",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/worker-admission.test.ts",
+                "title": "subject invalidation explicit recovery and impact-selected chunks preserve saved feedback",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/worker-admission.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7851,
+            "titles": [
+              {
+                "title": "durable admission and current workflow ancestry run in the owner worker",
+                "result": "pass"
+              },
+              {
+                "title": "subject invalidation explicit recovery and impact-selected chunks preserve saved feedback",
+                "result": "pass"
+              },
+              {
+                "title": "cold unverified design recovery retains its original submission and qualifies before provider dispatch",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "f3c1b184a",
+        "ranAt": "2026-11-11T17:27:54.699Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/threads/__tests__/review-worker-recovery.test.ts: disposable daemon crash reconstructs unresolved guards and leaves unrelated reviews usable",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-recovery.test.ts",
+                "title": "disposable daemon crash reconstructs unresolved guards and leaves unrelated reviews usable",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/threads/__tests__/review-worker-clearance.test.ts: existing local broker approval binds exact guards and requires a separate resume",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-clearance.test.ts",
+                "title": "existing local broker approval binds exact guards and requires a separate resume",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-clearance.test.ts",
+                "title": "cleared failed attempts accept only a separate explicit next submission and preserve the failed record",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/threads/__tests__/review-worker-clearance.test.ts: stale partial repeated or lost-response clearance preserves remaining fences and audit receipts",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-clearance.test.ts",
+                "title": "stale partial repeated or lost-response clearance preserves remaining fences and audit receipts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/review-worker-clearance.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 11995,
+            "titles": [
+              {
+                "title": "code",
+                "result": "pass"
+              },
+              {
+                "title": "design",
+                "result": "pass"
+              },
+              {
+                "title": "existing local broker approval binds exact guards and requires a separate resume",
+                "result": "pass"
+              },
+              {
+                "title": "stale partial repeated or lost-response clearance preserves remaining fences and audit receipts",
+                "result": "pass"
+              },
+              {
+                "title": "denial expiry disconnect and changed retained guards cannot grant clearance",
+                "result": "pass"
+              },
+              {
+                "title": "receipt survives a post-application audit failure and replay repairs its audit without inference",
+                "result": "pass"
+              },
+              {
+                "title": "code",
+                "result": "pass"
+              },
+              {
+                "title": "design",
+                "result": "pass"
+              },
+              {
+                "title": "cleared failed attempts accept only a separate explicit next submission and preserve the failed record",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-worker-recovery.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5137,
+            "titles": [
+              {
+                "title": "disposable daemon crash reconstructs unresolved guards and leaves unrelated reviews usable",
+                "result": "pass"
+              },
+              {
+                "title": "legacy active missing guards reconstruct only the requested review fence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "8cf777a4a",
+        "ranAt": "2026-11-12T01:23:20.233Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/threads/__tests__/review-worker-progress.test.ts: pending admission and cached progress stay responsive during blocked worker computation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-progress.test.ts",
+                "title": "pending admission and cached progress stay responsive during blocked worker computation",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-progress.test.ts",
+                "title": "technical admission failures publish failed preparation without findings or provider dispatch",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-progress.test.ts",
+                "title": "the cross-thread board read carries only review progress and excludes workflow frames",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/worker-admission.test.ts",
+                "title": "replay and controller admission-to-assignment retain one execution identity",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "vscode-plugin/src/chat/__tests__/review-worker-progress.test.ts: admission DTOs render preparing or failure without empty success",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/review-worker-progress.test.ts",
+                "title": "admission DTOs render preparing or failure without empty success",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/review/ReviewWorkerProgressTest.kt: admission DTOs preserve unknown inventory and current review identity",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/__tests__/review-worker-progress-gradle.test.ts",
+                "title": "admission DTOs preserve unknown inventory and current review identity",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "jetbrains-plugin/__tests__/review-worker-progress-gradle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 12292,
+            "titles": [
+              {
+                "title": "admission DTOs preserve unknown inventory and current review identity",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-worker-progress.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8431,
+            "titles": [
+              {
+                "title": "code",
+                "result": "pass"
+              },
+              {
+                "title": "design",
+                "result": "pass"
+              },
+              {
+                "title": "pending admission and cached progress stay responsive during blocked worker computation",
+                "result": "pass"
+              },
+              {
+                "title": "code",
+                "result": "pass"
+              },
+              {
+                "title": "design",
+                "result": "pass"
+              },
+              {
+                "title": "technical admission failures publish failed preparation without findings or provider dispatch",
+                "result": "pass"
+              },
+              {
+                "title": "the cross-thread board read carries only review progress and excludes workflow frames",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/worker-admission.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7577,
+            "titles": [
+              {
+                "title": "durable acknowledgment precedes blocked source qualification and provider dispatch",
+                "result": "pass"
+              },
+              {
+                "title": "replay and controller admission-to-assignment retain one execution identity",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/chat/__tests__/review-worker-progress.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 410,
+            "titles": [
+              {
+                "title": "admission DTOs render preparing or failure without empty success",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t13",
+        "commit": "f8cda8670",
+        "ranAt": "2026-11-12T02:12:05.399Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/threads/__tests__/review-worker-publication.test.ts: publication retry after worker exit or lost receipt performs zero provider calls",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-publication.test.ts",
+                "title": "publication retry after worker exit or lost receipt performs zero provider calls",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/threads/__tests__/review-worker-cleanup.test.ts: approval cleanup retains active targets and preserves both-family permanent history",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-cleanup.test.ts",
+                "title": "approval cleanup retains active targets and preserves both-family permanent history",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/artifact-write-authority.test.ts",
+                "title": "artifact writes share the main queue and release only after worker reclamation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/threads/__tests__/review-worker-recovery.test.ts: shutdown drains host leases before worker reclamation and replacement",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-recovery.test.ts",
+                "title": "shutdown drains host leases before worker reclamation and replacement",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-recovery.test.ts",
+                "title": "disposable daemon crash reconstructs unresolved guards and leaves unrelated reviews usable",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-recovery.test.ts",
+                "title": "legacy active missing guards reconstruct only the requested review fence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/artifact-write-authority.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1601,
+            "titles": [
+              {
+                "title": "artifact writes share the main queue and release only after worker reclamation",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-worker-cleanup.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8587,
+            "titles": [
+              {
+                "title": "code",
+                "result": "pass"
+              },
+              {
+                "title": "design",
+                "result": "pass"
+              },
+              {
+                "title": "approval cleanup retains active targets and preserves both-family permanent history",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-worker-publication.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4015,
+            "titles": [
+              {
+                "title": "code",
+                "result": "pass"
+              },
+              {
+                "title": "design",
+                "result": "pass"
+              },
+              {
+                "title": "publication retry after worker exit or lost receipt performs zero provider calls",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-worker-recovery.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6678,
+            "titles": [
+              {
+                "title": "shutdown drains host leases before worker reclamation and replacement",
+                "result": "pass"
+              },
+              {
+                "title": "disposable daemon crash reconstructs unresolved guards and leaves unrelated reviews usable",
+                "result": "pass"
+              },
+              {
+                "title": "legacy active missing guards reconstruct only the requested review fence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t14",
+        "commit": "c4a74c15e",
+        "ranAt": "2026-11-12T04:36:38.374Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/__tests__/review-worker-routing.test.ts: every supported review method delegates heavy work to its dedicated owner",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-worker-routing.test.ts",
+                "title": "every supported review method delegates heavy work to its dedicated owner",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-worker-routing.test.ts",
+                "title": "production resume preserves failed qualified and no-document attempts and requires an explicit new attempt",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-worker-routing.test.ts",
+                "title": "production design recovery preserves qualified failures and only an explicit next attempt starts work",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-native-host.test.ts",
+                "title": "orderly native host disposal ignores late port closure and cannot close a replacement owner",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-native-host.test.ts",
+                "title": "unexpected native port loss shares explicit close work and notifies its owner once",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-recovery.test.ts",
+                "title": "legacy interrupted code history retains uncertainty on earlier attempts",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/pending-failure-history.test.ts",
+                "title": "pending-publication qualified failure survives new attempt publication approval cleanup and permanent reads",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/review-worker-routing.test.ts: optional session threading disabled cannot enable main or session review fallback",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-worker-routing.test.ts",
+                "title": "optional session threading disabled cannot enable main or session review fallback",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/review-worker-routing.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 54784,
+            "titles": [
+              {
+                "title": "every supported review method delegates heavy work to its dedicated owner",
+                "result": "pass"
+              },
+              {
+                "title": "optional session threading disabled cannot enable main or session review fallback",
+                "result": "pass"
+              },
+              {
+                "title": "production resume preserves failed qualified and no-document attempts and requires an explicit new attempt",
+                "result": "pass"
+              },
+              {
+                "title": "production design recovery preserves qualified failures and only an explicit next attempt starts work",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-native-host.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 601,
+            "titles": [
+              {
+                "title": "orderly native host disposal ignores late port closure and cannot close a replacement owner",
+                "result": "pass"
+              },
+              {
+                "title": "unexpected native port loss shares explicit close work and notifies its owner once",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-worker-recovery.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6744,
+            "titles": [
+              {
+                "title": "legacy interrupted code history retains uncertainty on earlier attempts",
+                "result": "pass"
+              },
+              {
+                "title": "shutdown drains host leases before worker reclamation and replacement",
+                "result": "pass"
+              },
+              {
+                "title": "disposable daemon crash reconstructs unresolved guards and leaves unrelated reviews usable",
+                "result": "pass"
+              },
+              {
+                "title": "legacy active missing guards reconstruct only the requested review fence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/pending-failure-history.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7389,
+            "titles": [
+              {
+                "title": "pending-publication qualified failure survives new attempt publication approval cleanup and permanent reads",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t15",
+        "commit": "8fe4b316c",
+        "ranAt": "2026-11-12T05:28:27.176Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/threads/__tests__/review-worker-isolation.test.ts: code code design design and mixed reviews use distinct real worker threads",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-isolation.test.ts",
+                "title": "code code design design and mixed reviews use distinct real worker threads",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-isolation.test.ts",
+                "title": "production controller exchanges and disconnect reclaim only their own review",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/threads/__tests__/review-worker-isolation.test.ts: blocked admission permits progress daemon status and an unrelated review before release",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-isolation.test.ts",
+                "title": "blocked admission permits progress daemon status and an unrelated review before release",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-isolation.test.ts",
+                "title": "installed production routing bounds never-ready and pre-save-hung boot without fallback",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/threads/__tests__/review-worker-recovery.test.ts: crash-boundary owner-loss and cleanup races retain targeted lifecycle guarantees",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-recovery.test.ts",
+                "title": "crash-boundary owner-loss and cleanup races retain targeted lifecycle guarantees",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-daemon.test.ts",
+                "title": "full daemon entrypoint retains both-family crash fences and failed-attempt recovery through public routes",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-workers.test.ts",
+                "title": "stale owner messages and targeted disconnects cannot mutate another review",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-progress.test.ts",
+                "title": "pending admission and cached progress stay responsive during blocked worker computation",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-clearance.test.ts",
+                "title": "cleared failed attempts accept only a separate explicit next submission and preserve the failed record",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-publication.test.ts",
+                "title": "publication retry after worker exit or lost receipt performs zero provider calls",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-cleanup.test.ts",
+                "title": "approval cleanup retains active targets and preserves both-family permanent history",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-processes.test.ts",
+                "title": "host leases precede spawn and enforce owner-bound replay and disposal",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/tools/__tests__/review-worker-shell.test.ts",
+                "title": "Git shell and raw-byte commands preserve output bounds and abort semantics through leases",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/review-worker-process.test.ts",
+                "title": "fake native review CLI streams and cancellation use host-owned leases",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/worker-admission.test.ts",
+                "title": "durable acknowledgment precedes blocked source qualification and provider dispatch",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/worker-admission.test.ts",
+                "title": "durable admission and current workflow ancestry run in the owner worker",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-worker-routing.test.ts",
+                "title": "production design recovery preserves qualified failures and only an explicit next attempt starts work",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/review-worker-process.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1657,
+            "titles": [
+              {
+                "title": "fake native review CLI streams and cancellation use host-owned leases",
+                "result": "pass"
+              },
+              {
+                "title": "review binary lookup cannot spawn synchronously on the worker",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/review-worker-routing.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 55138,
+            "titles": [
+              {
+                "title": "every supported review method delegates heavy work to its dedicated owner",
+                "result": "pass"
+              },
+              {
+                "title": "optional session threading disabled cannot enable main or session review fallback",
+                "result": "pass"
+              },
+              {
+                "title": "production resume preserves failed qualified and no-document attempts and requires an explicit new attempt",
+                "result": "pass"
+              },
+              {
+                "title": "production design recovery preserves qualified failures and only an explicit next attempt starts work",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-processes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 644,
+            "titles": [
+              {
+                "title": "host leases precede spawn and enforce owner-bound replay and disposal",
+                "result": "pass"
+              },
+              {
+                "title": "worker loss and unknown child cleanup fence only the owning review",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-worker-cleanup.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8895,
+            "titles": [
+              {
+                "title": "code",
+                "result": "pass"
+              },
+              {
+                "title": "design",
+                "result": "pass"
+              },
+              {
+                "title": "approval cleanup retains active targets and preserves both-family permanent history",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-worker-clearance.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 11947,
+            "titles": [
+              {
+                "title": "code",
+                "result": "pass"
+              },
+              {
+                "title": "design",
+                "result": "pass"
+              },
+              {
+                "title": "existing local broker approval binds exact guards and requires a separate resume",
+                "result": "pass"
+              },
+              {
+                "title": "stale partial repeated or lost-response clearance preserves remaining fences and audit receipts",
+                "result": "pass"
+              },
+              {
+                "title": "denial expiry disconnect and changed retained guards cannot grant clearance",
+                "result": "pass"
+              },
+              {
+                "title": "receipt survives a post-application audit failure and replay repairs its audit without inference",
+                "result": "pass"
+              },
+              {
+                "title": "code",
+                "result": "pass"
+              },
+              {
+                "title": "design",
+                "result": "pass"
+              },
+              {
+                "title": "cleared failed attempts accept only a separate explicit next submission and preserve the failed record",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-worker-daemon.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 60713,
+            "titles": [
+              {
+                "title": "full daemon entrypoint retains both-family crash fences and failed-attempt recovery through public routes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-worker-isolation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 29904,
+            "titles": [
+              {
+                "title": "code code design design and mixed reviews use distinct real worker threads",
+                "result": "pass"
+              },
+              {
+                "title": "blocked admission permits progress daemon status and an unrelated review before release",
+                "result": "pass"
+              },
+              {
+                "title": "never-ready",
+                "result": "pass"
+              },
+              {
+                "title": "before-save",
+                "result": "pass"
+              },
+              {
+                "title": "installed production routing bounds never-ready and pre-save-hung boot without fallback",
+                "result": "pass"
+              },
+              {
+                "title": "production controller exchanges and disconnect reclaim only their own review",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-worker-progress.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7627,
+            "titles": [
+              {
+                "title": "code",
+                "result": "pass"
+              },
+              {
+                "title": "design",
+                "result": "pass"
+              },
+              {
+                "title": "pending admission and cached progress stay responsive during blocked worker computation",
+                "result": "pass"
+              },
+              {
+                "title": "code",
+                "result": "pass"
+              },
+              {
+                "title": "design",
+                "result": "pass"
+              },
+              {
+                "title": "technical admission failures publish failed preparation without findings or provider dispatch",
+                "result": "pass"
+              },
+              {
+                "title": "the cross-thread board read carries only review progress and excludes workflow frames",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-worker-publication.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4038,
+            "titles": [
+              {
+                "title": "code",
+                "result": "pass"
+              },
+              {
+                "title": "design",
+                "result": "pass"
+              },
+              {
+                "title": "publication retry after worker exit or lost receipt performs zero provider calls",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-worker-recovery.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 47678,
+            "titles": [
+              {
+                "title": "crash-boundary owner-loss and cleanup races retain targeted lifecycle guarantees",
+                "result": "pass"
+              },
+              {
+                "title": "legacy interrupted code history retains uncertainty on earlier attempts",
+                "result": "pass"
+              },
+              {
+                "title": "shutdown drains host leases before worker reclamation and replacement",
+                "result": "pass"
+              },
+              {
+                "title": "disposable daemon crash reconstructs unresolved guards and leaves unrelated reviews usable",
+                "result": "pass"
+              },
+              {
+                "title": "legacy active missing guards reconstruct only the requested review fence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-workers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4502,
+            "titles": [
+              {
+                "title": "canonical identities own one incarnation and preserve subject and cleanup exclusions",
+                "result": "pass"
+              },
+              {
+                "title": "stale owner messages and targeted disconnects cannot mutate another review",
+                "result": "pass"
+              },
+              {
+                "title": "admission replay retains a native intent committed by the writer ahead of it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/__tests__/review-worker-shell.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5830,
+            "titles": [
+              {
+                "title": "Git shell and raw-byte commands preserve output bounds and abort semantics through leases",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/worker-admission.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 11825,
+            "titles": [
+              {
+                "title": "durable acknowledgment precedes blocked source qualification and provider dispatch",
+                "result": "pass"
+              },
+              {
+                "title": "replay and controller admission-to-assignment retain one execution identity",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/design-review/__tests__/worker-admission.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7443,
+            "titles": [
+              {
+                "title": "durable admission and current workflow ancestry run in the owner worker",
+                "result": "pass"
+              },
+              {
+                "title": "subject invalidation explicit recovery and impact-selected chunks preserve saved feedback",
+                "result": "pass"
+              },
+              {
+                "title": "cold unverified design recovery retains its original submission and qualifies before provider dispatch",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t16",
+        "commit": "75c00e950",
+        "ranAt": "2026-11-12T19:48:09.913Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/threads/__tests__/review-worker-package.test.ts: compiled worker entrypoints and both review families start from an isolated built package",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-package.test.ts",
+                "title": "compiled worker entrypoints and both review families start from an isolated built package",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/threads/__tests__/review-worker-package.test.ts: release instructions retain explicit recovery local trust and post-approval smoke ordering",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-package.test.ts",
+                "title": "release instructions retain explicit recovery local trust and post-approval smoke ordering",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/review-worker-package.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7952,
+            "titles": [
+              {
+                "title": "compiled worker entrypoints and both review families start from an isolated built package",
+                "result": "pass"
+              },
+              {
+                "title": "release instructions retain explicit recovery local trust and post-approval smoke ordering",
                 "result": "pass"
               }
             ],

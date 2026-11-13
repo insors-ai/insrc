@@ -36,14 +36,14 @@
       "description": ""
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 0,
-        "contentHash": "d12759f18ddecd1d88bb8dc4f3d37a74915115e7dae544e73b52f1a963b5a86a",
-        "at": "2026-10-06T17:47:38.720Z",
+        "number": 1,
+        "contentHash": "4937fec2968bff4d603b342e2767cfcd8ea0852bc53a05da9c2ce2ddac2f6985",
+        "at": "2026-11-12T01:23:43.549Z",
         "by": {
-          "id": "legacy:unknown",
-          "kind": "person",
+          "id": "insrc:system",
+          "kind": "system",
           "properties": {}
         }
       },
@@ -60,6 +60,13 @@
         }
       },
       "signoffs": []
+    },
+    "revision": 1,
+    "tracker": {
+      "adapter": "github",
+      "epicStatus": "open",
+      "storyStatus": {},
+      "lastSyncedAt": "2026-11-12T19:41:28.671Z"
     }
   },
   "body": {
@@ -747,6 +754,48 @@
         "sizeEstimate": "M",
         "dependsOn": [
           "s7"
+        ]
+      },
+      {
+        "id": "s9",
+        "title": "A request's size decides how deep and detailed its plan is, and a plan is checked to be executable",
+        "userValue": "Someone asking a broad question about a large codebase gets a plan that is wide and shallow and that the analyzer can finish, while someone asking about a small area gets a plan that goes deep, so a broad analysis reaches its final report in a reasonable time instead of spending the run inside deeper and deeper child plans.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "A request that measures XL or L",
+            "when": "the analyzer plans it",
+            "then": "the plan is breadth-first: many shallow, inexpensive tasks across the areas, and no area is explored by a child plan that is itself a large plan",
+            "operationalizes": []
+          },
+          {
+            "id": "ac2",
+            "given": "A request that measures M or S",
+            "when": "the analyzer plans it",
+            "then": "the plan is depth-first: fewer areas, each examined in detail, and child plans are allowed where they add depth",
+            "operationalizes": []
+          },
+          {
+            "id": "ac3",
+            "given": "A plan whose child plans, taken together, would exceed what the request's size allows",
+            "when": "the plan is validated",
+            "then": "it is refused with a reason that names the total and the limit, so that the planner can correct it, in the same way a wrong task count is refused today",
+            "operationalizes": []
+          },
+          {
+            "id": "ac4",
+            "given": "A plan accepted for a broad request",
+            "when": "the analyzer executes it",
+            "then": "the executor works within a budget set by the request's size and the run says when a budget was reached, instead of running on with no bound",
+            "operationalizes": []
+          },
+          {
+            "id": "ac5",
+            "given": "The broad docs request on this repository, which measured XL",
+            "when": "it is run end to end",
+            "then": "it reaches a final report within a stated time and says in its record how deep the plan went and how many tasks ran",
+            "operationalizes": []
+          }
         ]
       }
     ],

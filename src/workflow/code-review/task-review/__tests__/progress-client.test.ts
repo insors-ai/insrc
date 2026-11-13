@@ -7,7 +7,8 @@ import { join } from 'node:path';
 import type { LLMProvider } from '../../../../shared/types.js';
 import { saveCheckpoint,checkpointPath } from '../checkpoint.js';
 import assert from 'node:assert/strict';
-import { fixture } from './publication-fixture.js';
+import { fixture,hash } from './publication-fixture.js';
+import { reviewHost } from './controller-fixture.js';
 import { TaskReviewCoordinator } from '../coordinator.js';
 import { readTaskReviewProgress } from '../../../../daemon/task-review-rpc.js';
 import { pollTaskReviewProgress,formatReviewProgress,readReviewProgress } from '../progress-client.js';
@@ -16,16 +17,17 @@ import { ReviewProgressTracker } from '../progress.js';
 
 test('Read-only progress IPC validates scope and never invokes providers',async()=>{
  const f=await fixture();let calls=0;
+ const reviews=reviewHost(f.repo,()=>{calls++;throw Error('Must not invoke model');});
  try{
   const c=new TaskReviewCoordinator({sources:f.deps.sources,provider:()=>{calls++;throw Error('Must not invoke model');}});
   const path=f.repo+'/.insrc/tmp/code-review/publication.json',before=f.read(path);
   const view=await c.progress(f.repo,'publication',1);assert.equal(view.freshness,'unknown');assert.equal(view.progress,null);assert.equal(view.executionState,'inactive');assert.equal(view.completedTasks,1);
-  assert.deepEqual(await readTaskReviewProgress({repo:f.repo,reviewId:'publication',attempt:1}),view);
+  assert.deepEqual(await readTaskReviewProgress({repo:f.repo,epicHash:hash,reviewId:'publication',attempt:1}),view);
   await assert.rejects(readTaskReviewProgress({repo:f.repo,reviewId:'../escape',attempt:1}));
   await assert.rejects(c.progress(f.repo,'publication',2),/Missing attempt/);
   await assert.rejects(c.progress(f.repo,'publication',0),/positive/);
   assert.equal(calls,0);assert.equal(c.isActive(f.repo,'publication'),false);assert.deepEqual(f.read(path),before);
- }finally{f.cleanup();}
+ }finally{await reviews.close();f.cleanup();}
 });
 test('Polling helper emits immediate transitions and45sec updates and cancels cleanly',async()=>{
  const request={repo:'/repo',reviewId:'progress',attempt:1};let now=0,calls=0;const emitted:{at:number;text:string}[]=[];

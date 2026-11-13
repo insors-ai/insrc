@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-64d4b7db-9d13-4599-870d-1c9c4b8be381",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-11T16:06:14.388Z",
+    "epicCreatedAt": "2026-11-11T14:35:39.306Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1c09e09cd985026b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Print the enforced range in the depth policy",
+      "parent": {
+        "entityId": "STORY-1c09e09cd985026b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1c09e09cd985026b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-1c09e09cd985026b-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2b013f5eb87bf44b6114adbeb7e64748a576acf4fbbea506eb17fe23c00462a2",
+        "at": "2026-11-11T16:06:14.388Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T16:06:14.389Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Print the enforced range in the depth policy",
+    "summary": "Make renderDepthPolicy take its numbers from the leaf module, print the range once as the range that is enforced, remove the 'reduces the lower bound to half' wording, and delete the table copy in render-catalog.ts. Keep the scope-specific depth hints.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "for every scope and both focus values the printed range equals the INV-13 band",
+      "the output has no wording about halving",
+      "render-catalog.ts holds no band table",
+      "the existing renderDepthPolicy tests are updated and pass"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/analyze/planner/__tests__/driver-unit.test.ts: renderDepthPolicy prints the INV-13 range for every scope and focus value, without halving wording"
+      },
+      {
+        "level": "unit",
+        "name": "src/analyze/planner/__tests__/driver-unit.test.ts: no duplicate band table in the renderer"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

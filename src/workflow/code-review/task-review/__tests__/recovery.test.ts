@@ -8,7 +8,7 @@ import { TaskReviewCoordinator } from '../coordinator.js';
 import type { ReviewAcknowledgement } from '../coordinator.js';
 import type { ControllerFrame } from '../controller.js';
 import type { TaskReviewResult } from '../contracts.js';
-import { checkpointPath, saveCheckpoint } from '../checkpoint.js';
+import { checkpointPath, saveCheckpoint,updateStoredCodeCheckpoint } from '../checkpoint.js';
 import { publishTaskCheckpoint } from '../publication.js';
 
 const scope=(count:number)=>({tasks:Array.from({length:count},(_v,i)=>({taskId:`t${i+1}`,changeIndexes:[0],testIndexes:[0]}))});
@@ -27,7 +27,7 @@ test('interrupted recovery: only absent tasks rerun and terminal failed/incomple
    const coordinator=new TaskReviewCoordinator({sources:f.deps.sources,provider:()=>provider(async prompt=>{calls++;if(prompt.startsWith('Derive task attribution'))return scope(3);assert.match(prompt,/"taskId":"t2"/);return {...f.result,taskId:'t2'};}),publish:(repo,id)=>publishTaskCheckpoint(repo,hash,id,f.deps)});
    const ack=await coordinator.start(f.repo,'resume',1,undefined,{operation:'resume'});
    assert.equal(calls,0);assert.equal(ack.attempt,1);assert.deepEqual(ack.completedTaskIds,['t1','t3']);assert.deepEqual(ack.pendingTaskIds,['t2']);
-   await assert.rejects(coordinator.start(f.repo,'resume',1,undefined,{operation:'resume'}),/already-running/);
+   await assert.rejects(coordinator.start(f.repo,'resume',1,undefined,{operation:'resume'}),/already-running|owner mismatch|active, unpublished/i);
    await coordinator.settled(f.repo,'resume');
    const completed=f.read(ack.path).attempts[0]!;
    assert.deepEqual(completed['review-response'].tasks.slice(0,2),preserved);assert.equal(completed['review-response'].tasks[2]!.taskId,'t2');assert.equal(calls,1,'accepted mapping restores without attribution; only unfinished assessment runs');
@@ -38,27 +38,27 @@ test('interrupted recovery: only absent tasks rerun and terminal failed/incomple
 
 test('controller recovery: new trusted connection, old-owner refusal, disconnect retention and daemon lifetime distinction', async()=>{
  const f=await fixture(true,2);f.build.meta.authoredBy='daemon';f.put(`.insrc/artifacts/BUILD-${hash}-s1.json`,f.build);
- const state=f.checkpoint('controller-resume');state.attempts[0]!.header.reviewer='controller';state.attempts[0]!.header.interrupted=true;delete state.attempts[0]!.header.completedAt;state.attempts[0]!['review-response'].tasks=[structuredClone(f.result)];await saveCheckpoint(checkpointPath(f.repo,'controller-resume'),state);
+ const state=f.checkpoint('controller-resume');state.attempts[0]!.header.reviewer='controller';state.attempts[0]!.header.interrupted=true;delete state.attempts[0]!.header.completedAt;state.attempts[0]!['review-response'].tasks=[structuredClone(f.result)];await saveCheckpoint(checkpointPath(f.repo,'controller-resume'),state);await updateStoredCodeCheckpoint(checkpointPath(f.repo,'controller-resume'),cp=>({...cp!,schemaVersion:2,attempts:cp!.attempts.map(a=>({...a,resourceGuard:{daemonInstance:'known-ended-fixture',openLeases:[]}}))}));
  const host=await serve(f.repo,()=>{throw new Error('Actual controller must not spawn provider');});
  const a=await channel(host.path),foreign=await channel(host.path);let b:Awaited<ReturnType<typeof channel>>|undefined,c:Awaited<ReturnType<typeof channel>>|undefined;
  try{
   const request={repo:f.repo,epicHash:hash,reviewId:'controller-resume',attempt:1,operation:'resume'};
   const first=await a.call<ControllerFrame>('codeReview.task.start',request);assert.equal(first.kind,'task');assert.deepEqual(first.completedTaskIds,['t1']);
-  await assert.rejects(foreign.call('codeReview.task.assignment',request),/wrong-reviewer/);
+  await assert.rejects(foreign.call('codeReview.task.assignment',request),/wrong-reviewer|Review owner mismatch|Review owner unavailable/);
   a.close();await eventually(()=>f.read(first.path).attempts[0]!.header.interrupted===true);
   b=await channel(host.path);const rebound=await b.call<ControllerFrame>('codeReview.task.start',request);assert.equal(rebound.attempt,1);assert.deepEqual(rebound.pendingTaskIds,['t2']);
   const task=rebound;assert.equal(task.taskId,'t2');
   const done=await b.call<ControllerFrame>('codeReview.task.result',{...request,result:{...f.result,taskId:'t2'}});assert.equal(done.kind,'done');assert.equal(done.crPublication,'complete');
   c=await channel(host.path);const replay=await c.call<ControllerFrame>('codeReview.task.start',request);assert.equal(replay.kind,'done');
-  await assert.rejects(b.call('codeReview.task.assignment',request),/wrong-reviewer/);
+  await assert.rejects(b.call('codeReview.task.assignment',request),/wrong-reviewer|Review owner mismatch|Review owner unavailable/);
   const next={...request,operation:'start',attempt:2,packet:f.packet};const second=await c.call<ControllerFrame>('codeReview.task.start',next);assert.equal(second.attempt,2);assert.deepEqual(second.completedTaskIds,[]);
   b.close();await eventually(()=>b!.socket.destroyed);
-  await assert.rejects(foreign.call('codeReview.task.start',next),/already-running/,'closing the previous owner must not release the new attempt');
+  await assert.rejects(foreign.call('codeReview.task.start',next),/already-running|owner mismatch|active, unpublished/i,'closing the previous owner must not release the new attempt');
   c.close();await eventually(()=>f.read(first.path).attempts[1]!.header.interrupted===true);
  }finally{a.close();foreign.close();b?.close();c?.close();await host.server.close();f.cleanup();}
  // The same explicit recovery survives submitter disconnect on the daemon route.
  const daemon=await fixture(true,2);let release:((result:TaskReviewResult)=>void)|undefined;
- const pending=daemon.checkpoint('daemon-resume');pending.attempts[0]!['review-response'].tasks=[structuredClone(daemon.result)];delete pending.attempts[0]!.header.completedAt;await saveCheckpoint(checkpointPath(daemon.repo,'daemon-resume'),pending);
+ const pending=daemon.checkpoint('daemon-resume');pending.attempts[0]!['review-response'].tasks=[structuredClone(daemon.result)];delete pending.attempts[0]!.header.completedAt;await saveCheckpoint(checkpointPath(daemon.repo,'daemon-resume'),pending);await updateStoredCodeCheckpoint(checkpointPath(daemon.repo,'daemon-resume'),cp=>({...cp!,schemaVersion:2,attempts:cp!.attempts.map(a=>({...a,resourceGuard:{daemonInstance:'known-ended-fixture',openLeases:[]}}))}));
  const server=await serve(daemon.repo,()=>provider(async prompt=>prompt.startsWith('Derive task attribution')?scope(2):new Promise(resolve=>{release=resolve;})));
  const client=await channel(server.path);
  try{

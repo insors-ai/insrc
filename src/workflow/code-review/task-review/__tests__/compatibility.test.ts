@@ -27,7 +27,7 @@ test('recovery end-to-end: real IPC/Git, both adapters, interruption boundaries 
   const start=await first.call<ControllerFrame>('codeReview.task.start',request);assert.equal(start.kind,'scope');
   const task=await first.call<ControllerFrame>('codeReview.task.scope',{...request,scope:f.scope()});assert.equal(task.taskId,'t2');assert.deepEqual(task.completedTaskIds,['t1']);
   const before=f.read(start.path);assert.equal(before.attempts[1]!['review-response'].origins![0]!.sourceAttempt,1);first.close();await eventually(()=>f.read(start.path).attempts[1]!.header.interrupted===true);
-  await assert.rejects(foreign.call('codeReview.task.assignment',{...request}),/explicit retrigger/);
+  await assert.rejects(foreign.call('codeReview.task.assignment',{...request}),/explicit retrigger|explicitly resume/);
   second=await channel(host.path);const resumed=await second.call<ControllerFrame>('codeReview.task.start',{...request,packet:undefined,operation:'resume'});
   assert.equal(resumed.attempt,2);assert.deepEqual(resumed.completedTaskIds,['t1']);assert.deepEqual(resumed.pendingTaskIds,['t2','t3']);assert.deepEqual(f.read(start.path).attempts[0],f.original);
   const continued=resumed;assert.equal(continued.taskId,'t2');

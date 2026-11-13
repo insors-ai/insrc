@@ -22,7 +22,7 @@
           "entityId": "PLAN-e4af63128c7cbec2-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 2"
+          "fragment": "revision 7"
         },
         {
           "entityId": "TASK-e4af63128c7cbec2-s1-t4",
@@ -40,9 +40,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 2,
-        "contentHash": "2e4bb213f662e893ede6efdbef31ecd018c1b542743c0060709077f8c105fd57",
-        "at": "2026-11-11T12:23:32.479Z",
+        "number": 3,
+        "contentHash": "096ba48f9cf9914428f945e8fb257149cc1525fd5ebc452b8f8f068c6d72740c",
+        "at": "2026-11-11T15:00:24.537Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -60,20 +60,20 @@
         "at": "2026-11-09T07:42:48.086Z"
       }
     },
-    "revision": 2
+    "revision": 3
   },
   "body": {
     "title": "Add the main review-worker registry and trusted control bridge",
-    "summary": "Add proposed src/daemon/threads/review-workers.ts to own per-review routing, registered incarnations, bounded progress cache, subject/cleanup exclusions and trusted owner lifecycle bridging. Reuse current thread/status/supervisor services and review-state host authority; serialize only data, not AbortSignals, providers or live socket objects.",
+    "summary": "Add proposed src/daemon/threads/review-workers.ts to own per-review routing, registered incarnations, bounded progress cache, subject/cleanup exclusions and trusted owner lifecycle bridging. Reuse current thread/status/supervisor services and review-state host authority; serialize only data, not AbortSignals, providers or live socket objects. Component acceptance uses the registered real-worker host contract; it does not require the production installation, family execution transitions, or cleanup callers that depend on t9/t10/t13/t14.",
     "size": "L",
     "order": 8,
     "acceptanceChecks": [
       "Distinct valid review identities reserve distinct workers, including same-session and mixed-family submissions; no global review queue is added.",
-      "Main derives controller authority/reviewer routing from trusted host context and forwards action/execution/sequence envelopes only to the registered target.",
+      "The main registry requires a trusted-host scope/reviewer resolver, derives controller authority from server-owned connection context, and forwards action/execution/sequence envelopes only to the registered worker's installed family control handler. Tests prove wrong-owner/stale refusal and trusted dispatch reaching the family handler; admission-to-assignment execution is completed in t9/t10 and production resolver installation in t14.",
       "Worker loss/late messages cannot release another incarnation's reservation or mutate its progress; replacement waits for targeted process and store/lock reclamation.",
-      "Cross-worker design-subject and story/artifact cleanup exclusions preserve current guarantees without leaving authority in worker-local module globals.",
+      "Main-owned registry APIs enforce cross-worker design-subject and story/artifact cleanup exclusions in real-worker fixtures. Family execution and cleanup consumers are wired to these APIs in t9/t10/t13, with all production paths verified at t14/t15; this component task must not claim those downstream consumers are already migrated.",
       "Daemon reviewer lifetime survives observer disconnect; controller-owner loss interrupts only its owned reviews under current recovery rules.",
-      "Connect both installed native adapters to the main registry's ReviewProcessLeases using the registered worker/port/incarnation identity. Enforce host permission/provenance checks and verify same-family serialized durable open-intent acknowledgment before native launch; on worker loss the main retains cancellation, disposal proof and the exact review fence."
+      "Connect both installed CLI and shell/tool native adapters through the real worker registry's ReviewProcessLeases using registered worker/port/incarnation identity. Require host permission/provenance and binary-resolution callbacks with no permissive fallback, verify same-family serialized durable open-intent acknowledgments before native launch, and retain host cancellation/disposal proof and the exact review fence on worker loss. Exercise both adapters with explicit host-policy fixtures here; concrete production policy bindings and installed route enforcement are mandatory t14/t15 acceptance."
     ],
     "tests": [
       {

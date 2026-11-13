@@ -13,6 +13,12 @@
  * daemon worker code, so it is still refused on the live stores.
  */
 
+import { setReviewProgressSource } from '../../workflow/review/worker-progress-source.js';
+import { installArtifactWriteAuthority } from '../../workflow/artifact-core/write-authority.js';
+import { ARTIFACT_WRITE_ACQUIRE,ARTIFACT_WRITE_RELEASE } from './artifact-write-authority.js';
+import { installReviewCleanupOwner } from '../../workflow/review/cleanup-owner.js';
+import type { CleanupResult } from '../../workflow/code-review/task-review/cleanup.js';
+import { StatusBoardClient } from './status-board.js';
 import { isMainThread } from 'node:worker_threads';
 import type { MessagePort } from 'node:worker_threads';
 
@@ -74,6 +80,13 @@ export function startDaemonWorker(init: DaemonWorkerInit): HubClient {
 	installLockManager(init.lockBlock);
 	enableMaintenanceLock();
 	const hub = new HubClient(init.hubPort);
+ installReviewCleanupOwner(async target=>hub.request('review.lifecycle.cleanup',target) as Promise<CleanupResult|undefined>);
+ installArtifactWriteAuthority(async(repo,id)=>{
+  const token=await hub.request(ARTIFACT_WRITE_ACQUIRE,{repo,id});
+  if(typeof token!=='string')throw new Error('Invalid artifact queue receipt');
+  return async()=>{await hub.request(ARTIFACT_WRITE_RELEASE,{token});};
+ });
+ setReviewProgressSource(()=>new StatusBoardClient(hub).reviewProgress());
 	// Only the main thread touches the Keychain (ISSUE-fefa97b991537da7).
 	forwardKeystoreCalls(call => hub.request(KEYSTORE_OP, call));
 	wireWorkerStoreHealth(hub);

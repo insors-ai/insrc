@@ -43,7 +43,7 @@ export function appendCodeAdmission(identity: Pick<AdmissionCheckpoint, 'project
  const latest = previous?.attempts.at(-1);
  if (latest) requireReview(isCodeAdmission(latest)
   ? latest.header.status === 'failed' || latest.header.status === 'interrupted'
-  : !['pending', 'running'].includes(latest.header.status) && latest['review-response'].crPublication === 'complete', 'attempt', 'Previous attempt must be terminal');
+  : !['pending', 'running'].includes(latest.header.status) && (latest.header.status==='failed'||latest['review-response'].crPublication === 'complete'), 'attempt', 'Previous attempt must be terminal');
  return decodeStoredCheckpoint({ ...identity, schemaVersion: 2, attempts: [...(previous?.attempts ?? []), input] }) as AdmissionCheckpoint;
 }
 

@@ -21,6 +21,8 @@ export interface ReviewProcessReservation {
 /** A correlated save acknowledgment, verified by the main's registered worker
  * bridge. A worker-supplied boolean or arbitrary client receipt is insufficient. */
 export interface ReviewIntentReceipt {
+ /** Derived by the private checkpoint writer, never from submitted fields. */
+ readonly sourceValidation?:'unverified'|'qualified'|undefined;
  readonly checkpointPath: string; readonly attempt: number;
  readonly operationId: string; readonly workerIncarnation: string; readonly daemonInstance: string;
 }

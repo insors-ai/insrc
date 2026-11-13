@@ -22,7 +22,7 @@
           "entityId": "PLAN-e4af63128c7cbec2-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 2"
+          "fragment": "revision 7"
         },
         {
           "entityId": "TASK-e4af63128c7cbec2-s1-t1",
@@ -53,11 +53,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "f5be2c43a1fc0c7f2b727c7a897a569058ace5f3f7f7b4a270ef0eb5c16b5a64",
-        "at": "2026-11-09T07:42:48.088Z",
+        "number": 2,
+        "contentHash": "9727ad44cbb31b8a936cc4cd99983158bca3c235d54632a4ccdaf2ff30acd42c",
+        "at": "2026-11-11T15:00:24.545Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -75,7 +75,7 @@
         "at": "2026-11-09T07:42:48.090Z"
       }
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
     "title": "Adapt code review to durable background admission in its worker",
@@ -87,7 +87,8 @@
       "Same-input submission replay after lost acknowledgment observes saved work; conflicting pinned input is refused and admission failure persists with actionable diagnostics.",
       "Task attribution, dependency ordering, committed after-block scope, explicit final revision and existing projection limits remain unchanged.",
       "Controller review transitions from pending admission to its first assignment without duplicate admission/execution identities; trusted exchanges and explicit recovery remain valid.",
-      "Shared serialized checkpoint updates retain native open intents alongside task feedback/progress and correctly close only disposed leases."
+      "Shared serialized checkpoint updates retain native open intents alongside task feedback/progress and correctly close only disposed leases.",
+      "Connect code-family controller admission/execution and story-scope reservations to the main registry contract from t8; successful controller assignment/exchanges are exercised through the registered worker, with no worker-local authority replacing main ownership."
     ],
     "tests": [
       {

@@ -1,3 +1,4 @@
+import { reviewProgressForArtifact } from './review/worker-progress-source.js';
 import { designFindingViews } from './review/design-review/read.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
@@ -56,6 +57,7 @@ export interface OpenQuestionRef {
 }
 
 export interface ArtifactReviewView {
+ readonly reviewProgress?:import('../shared/review-worker-progress.js').ReviewWorkerStatus|undefined;
  readonly designFindings?:readonly import('./review/design-review/read.js').DesignFindingView[]|undefined;
  readonly designReview?:import('./review/design-review/contracts.js').DesignReviewConsolidated|undefined;
 	readonly artifactId:       string;   // canonical file identity, e.g. 'LLD-<hash>-s2'
@@ -234,10 +236,12 @@ export async function handleArtifactContent(
 	const blocked = stored !== undefined ? (isStoredDesignReview(stored)?stored.report.status!=='passed':effectiveReviewVerdict(stored.report, stored.resolutions)==='block') : lifecycleReview?.['verdict'] === 'block';
 
 	const feedback = feedbackLinesOf(repoPath, artifactId);
+ const reviewProgress=await reviewProgressForArtifact(repoPath,artifactId);
 
 	return {
 		artifactId,
 		kind,
+  ...(reviewProgress?{reviewProgress}:{}),
   ...(stored&&isStoredDesignReview(stored)?{designReview:stored.report,designFindings:designFindingViews(stored.history)}:{}),
 		renderedMarkdown,
 		openQuestions: oq,

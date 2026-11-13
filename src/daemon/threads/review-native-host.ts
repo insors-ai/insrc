@@ -33,6 +33,9 @@ export class ReviewNativeHost {
  private readonly acks=new Map<string,{resolve:()=>void;reject:(error:Error)=>void}>();
  private readonly stopServing:()=>void;
  private closing=false;
+ private disposed=false;
+ private closeWork:Promise<void>|undefined;
+ private readonly portClosed=()=>{if(this.disposed)return;void this.close().catch(()=>{/* Registry reclamation retains uncertain resources. */});this.deps.onLost();};
  constructor(private readonly deps:ReviewNativeHostDeps){
   const op=(raw:unknown)=>this.operation((raw as {reservation:ReviewProcessReservation}).reservation);
   this.stopServing=serveHub(deps.port,{
@@ -67,7 +70,7 @@ export class ReviewNativeHost {
    [prefix+'cancel']:async(raw)=>{const entry=op(raw);entry.outcome=await deps.leases.cancel(deps.owner,entry.sequence);return entry.outcome;},
    [prefix+'saveClosedIntent']:(raw)=>this.closeIntent(op(raw)),
   });
-  deps.port.once('close',()=>{void this.close();deps.onLost();});
+  deps.port.once('close',this.portClosed);
  }
  private active():void{if(this.closing)throw new Error('Review native owner closed');this.deps.assertActive();}
  private operation(r:ReviewProcessReservation):Operation{
@@ -77,6 +80,9 @@ export class ReviewNativeHost {
  verifyIntent(r:ReviewProcessReservation,receipt:ReviewIntentReceipt):void{
   const entry=this.operation(r);
   if(entry.intent!=='open'||!entry.receipt||!same(entry.receipt,receipt))throw new Error('Unverified native intent');
+ }
+ intentFor(r:ReviewProcessReservation):ReviewIntentReceipt{
+  const entry=this.operation(r);if(entry.intent!=='open'||!entry.receipt)throw new Error('Native intent is not verified');return structuredClone(entry.receipt);
  }
  private open(entry:Operation):Promise<ReviewIntentReceipt>{
   if(entry.intent==='open')return Promise.resolve(entry.receipt!);
@@ -104,12 +110,14 @@ export class ReviewNativeHost {
  }
  /** Aborts only this port's native owner. A lost writer leaves its saved intent
   * fenced for the explicit recovery workflow rather than erasing evidence. */
- async close():Promise<void>{
-  if(!this.closing){this.closing=true;for(const ack of this.acks.values())ack.reject(new Error('Review native owner closed'));this.acks.clear();}
-  await this.deps.leases.close(this.deps.owner);
+ close():Promise<void>{
+  if(this.disposed)return Promise.resolve();
+  if(!this.closeWork){this.closing=true;for(const ack of this.acks.values())ack.reject(new Error('Review native owner closed'));this.acks.clear();this.closeWork=this.deps.leases.close(this.deps.owner).then(()=>{});}
+  return this.closeWork;
  }
  /** Called while the writer is still alive on orderly shutdown. */
  async flushClosures():Promise<void>{
+  if(this.disposed)return;
   await this.close();
   for(const entry of this.operations.values()){
    if(entry.saving)await entry.saving;
@@ -117,6 +125,13 @@ export class ReviewNativeHost {
    if(entry.intent==='open')await this.closeIntent(entry);
   }
  }
- get reclaimable():boolean{return this.closing&&this.deps.leases.recheck(this.deps.owner)&&[...this.operations.values()].every(o=>o.intent==='absent'||o.intent==='closed');}
- dispose():void{if(!this.reclaimable)throw new Error('Review native resources fenced');this.stopServing();this.deps.port.close();this.deps.leases.release(this.deps.owner);}
+ get reclaimable():boolean{return this.disposed||this.closing&&this.deps.leases.recheck(this.deps.owner)&&[...this.operations.values()].every(o=>o.intent==='absent'||o.intent==='closed');}
+ /** Called only by this entry's main-owned broker recovery hold, after the
+  * worker has been reclaimed and its exact guard receipt was saved/audited. */
+ authorizeClearance(operationIds:readonly string[]):void{
+  if(!this.closing)throw new Error('Live native owners cannot be cleared');
+  const own=operationIds.filter(id=>this.operations.has(id));this.deps.leases.authorizeClearance(this.deps.owner,own);
+  for(const id of own)this.operations.get(id)!.intent='closed';
+ }
+ dispose():void{if(this.disposed)return;if(!this.reclaimable)throw new Error('Review native resources fenced');this.disposed=true;this.stopServing();this.deps.port.off('close',this.portClosed);this.deps.port.close();this.deps.leases.release(this.deps.owner);}
 }

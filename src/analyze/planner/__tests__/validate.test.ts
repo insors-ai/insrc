@@ -17,12 +17,14 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import {
 	SCOPE_BAND,
 	validatePlan,
 	type PlanInvariantId,
 } from '../index.js';
+import { taskCountFailure } from '../validate.js';
 import type {
 	AnalyzeTaskTemplate,
 	PlanTask,
@@ -596,4 +598,71 @@ test('SCOPE_BAND values match the design doc', () => {
 	assert.deepEqual(SCOPE_BAND['M'],  { lo: 20, hi: 40 });
 	assert.deepEqual(SCOPE_BAND['L'],  { lo: 30, hi: 60 });
 	assert.deepEqual(SCOPE_BAND['XL'], { lo: 40, hi: 80 });
+});
+
+test('the band module imports nothing from the validator or the renderer', () => {
+	const source = readFileSync(new URL('../scope-band.ts', import.meta.url), 'utf8');
+	const imports = [...source.matchAll(/^import[^;]*from\s+'([^']+)'/gms)].map(m => m[1]);
+	assert.ok(imports.length > 0);
+	for (const spec of imports) {
+		assert.ok(!/validate|render-catalog/.test(spec ?? ''), `unexpected import ${spec}`);
+	}
+});
+
+// ---------------------------------------------------------------------------
+// The task-count check on its own
+// ---------------------------------------------------------------------------
+
+/** A valid plan of `n` tasks (n >= 2): discovery, n-2 summaries, aggregator. */
+function planOfSize(n: number, scope: PlanTask['scope']): PlanTask {
+	const base = buildValidPlan();
+	const tasks: PlannedTask[] = [base.tasks[0]!];
+	for (let i = 2; i < n; i++) tasks.push(mkTask(i));
+	tasks.push({ ...base.tasks[base.tasks.length - 1]!, taskId: `t${String(n).padStart(2, '0')}` });
+	return { ...base, scope, tasks };
+}
+
+/** A plan of the aggregator alone. */
+function aggregatorOnly(scope: PlanTask['scope']): PlanTask {
+	const base = buildValidPlan();
+	return { ...base, scope, tasks: [{ ...base.tasks[base.tasks.length - 1]!, taskId: 't01' }] };
+}
+
+test('the task-count check agrees with validatePlan at every band boundary', () => {
+	for (const scope of ['XS', 'S', 'M', 'L', 'XL'] as const) {
+		for (const focused of [false, true]) {
+			const lo = focused ? Math.floor(SCOPE_BAND[scope].lo / 2) : SCOPE_BAND[scope].lo;
+			const hi = SCOPE_BAND[scope].hi;
+			for (const n of [lo - 1, lo, hi, hi + 1]) {
+				const label = `${scope} focused=${focused} n=${n}`;
+				// 0 tasks is INV-1's, which validatePlan reports before the count; 1 task is the aggregator alone.
+				const plan = n === 0 ? { ...planOfSize(2, scope), tasks: [] } : n === 1 ? aggregatorOnly(scope) : planOfSize(n, scope);
+				const direct = taskCountFailure(plan, { focused });
+				const viaValidate = validatePlan(plan, CATALOG, { focused });
+				const inBand = n >= lo && n <= hi;
+				if (inBand) {
+					assert.equal(direct, null, label);
+					assert.equal(viaValidate, null, label);
+				} else {
+					assert.equal(direct?.invariantId, 'INV-13', label);
+					assert.equal(direct?.message,
+						`task count ${n} is outside the scope band for ${scope} (${lo}-${hi}${focused ? ' focused' : ''})`, label);
+					assert.deepEqual(direct?.target, { count: n, scope, band: { lo, hi } }, label);
+					// validatePlan answers with the same failure, except for an empty plan, which INV-1 reports first.
+					if (n === 0) assert.equal(viaValidate?.invariantId, 'INV-1', label);
+					else assert.deepEqual(viaValidate, direct, label);
+				}
+			}
+		}
+	}
+});
+
+test('validatePlan keeps its invariant order and results for the existing cases', () => {
+	// An earlier invariant still wins over a wrong count...
+	const gapped = planOfSize(15, 'M');
+	gapped.tasks[3] = { ...gapped.tasks[3]!, taskId: 't09' };
+	assert.equal(validatePlan(gapped, CATALOG)?.invariantId, 'INV-2');
+	// ...the count alone is still INV-13, and a valid plan still passes.
+	assert.equal(validatePlan(planOfSize(15, 'M'), CATALOG)?.invariantId, 'INV-13');
+	assert.equal(validatePlan(buildValidPlan(), CATALOG), null);
 });

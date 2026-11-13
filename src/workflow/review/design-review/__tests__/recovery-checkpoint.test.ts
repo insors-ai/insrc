@@ -85,6 +85,7 @@ test('completed-unit summary guards reject duplicates unknown actions and missin
   ['Duplicate completed unit summary',x=>{x.unitSummaries!.push(structuredClone(x.unitSummaries![0]!));}],
   ['Unit summary names an unknown or duplicate action',x=>{x.unitSummaries![0]!.actionIds=['unknown'];}],
   ['Unit summary names an unknown or duplicate action',x=>{x.unitSummaries![0]!.actionIds=['resume-1','resume-1'];}],
+  ['Unit summary names an unverified recovery action',x=>{x.actions![0]!.validation='unverified';}],
   ['Completed planning summary has no accepted plan',x=>{delete x.plan;}],
   ['Completed unit summary has no accepted chunk',x=>{x.unitSummaries![0]!.phase='chunk_review';x.unitSummaries![0]!.unitId='content';}],
  ];

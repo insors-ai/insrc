@@ -32,19 +32,17 @@ const EVIDENCE_LAYERS = ['structure', 'surface', 'artefacts', 'upstream'] as con
 
 /**
  * The key of a list entry: the whole file or path the entry names, not a part of it. An entry is
- * `<file> :: <heading>`, `<kind> — <path>`, `` `<path>` `` or the path alone, with or without a bullet; a path may hold
+ * `<file> :: <heading>`, `<kind> — <path>`, `` `<path>` `` or the path alone (the kind form is kept whole), with or without a bullet; a path may hold
  * spaces. A line that is none of these (prose) is its own key, so only an identical line is ever dropped.
  */
 function lineKey(line: string): string | undefined {
 	const entry = line.replace(/^\s*(?:[-*+]|\d+[.)])\s+/, '').trim();
 	if (entry.length === 0) return undefined;
-	// A `<file> :: <heading>` entry names its whole file, whatever characters the file holds. Only an entry without
-	// that separator can start with a short kind word (`<kind> — <path>`), and the path after it is kept whole.
+	// A `<file> :: <heading>` entry names its whole file, whatever characters the file holds.
 	if (entry.includes(' :: ')) return entry.slice(0, entry.indexOf(' :: ')).replace(/^`|`$/g, '').trim() || undefined;
-	// A plain file name may hold the separator too, so a kind is taken off only where a real path (with a directory)
-	// follows it; anything else is kept whole and only an identical entry is dropped.
-	const kind = /^[A-Za-z][A-Za-z0-9_-]{0,30} — (.*\/.+)$/.exec(entry);
-	return (kind?.[1] ?? entry).replace(/^`|`$/g, '').trim() || undefined;
+	// `<kind> — <path>` and `<path>` cannot be told apart from the text alone (a directory may be named `Alpha — configs`),
+	// so an entry is kept whole: only an identical entry is dropped, and no file is ever lost to a kind prefix.
+	return entry.replace(/^`|`$/g, '').trim() || undefined;
 }
 
 /**

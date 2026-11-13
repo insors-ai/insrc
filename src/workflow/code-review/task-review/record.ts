@@ -2,11 +2,13 @@
 import { reviewUnavailable } from '../../review-unavailable.js';
 import { Type } from '@sinclair/typebox';
 import { isDeepStrictEqual } from 'node:util';
-import { decodeReview, StoredPacketSchema, requireReview, TaskResultSchema, TaskOriginSchema, CodeAdmissionAttemptSchema } from './contracts.js';
+import { decodeReview, StoredPacketSchema, requireReview, TaskResultSchema, TaskOriginSchema, CodeAdmissionAttemptSchema,QualifiedAttemptSchema } from './contracts.js';
 import type { CodeAdmissionAttempt } from './contracts.js';
 import { withoutReviewResourceGuard } from '../../review/resource-audit.js';
 import { contentHash } from '../../artifact-core/lifecycle.js';
 import type { CompletedReviewSummary, TaskBasedCodeReviewRecord, TaskReviewResult, ReviewAttempt } from './contracts.js';
+import { validateSavedAttribution } from './attribution-binding.js';
+import { validateFailureDiagnostics } from './diagnostics.js';
 import { aggregateTaskStatus, validateTaskResult, validateResultOrigins } from './results.js';
 
 import { FinalScopeSnapshotSchema } from './final-scope-contracts.js';
@@ -15,7 +17,7 @@ import { validateFinalScope } from './final-scope-history.js';
 const text = Type.String({ minLength: 1, maxLength: 65536 });
 const status = TaskResultSchema.properties.status;
 export const SummarySchema = Type.Object({ reviewId: text, attempt: Type.Integer({ minimum: 1 }), storyId: text, taskId: Type.Optional(text), reviewer: Type.Union([Type.Literal('daemon'), Type.Literal('controller')]), status,
- scope: Type.Object({...Type.Pick(StoredPacketSchema, ['storyId', 'taskId', 'documents', 'reviewSet', 'reviewRevision']).properties, finalScope:Type.Optional(FinalScopeSnapshotSchema)},{additionalProperties:false}), tasks: Type.Array(TaskResultSchema, { minItems: 1, maxItems: 10000 }), summary: text, completedAt: text,
+ scope: Type.Object({...Type.Pick(StoredPacketSchema, ['storyId', 'taskId', 'documents', 'reviewSet', 'reviewRevision']).properties, finalScope:Type.Optional(FinalScopeSnapshotSchema)},{additionalProperties:false}), tasks: Type.Array(TaskResultSchema, { maxItems: 10000 }), failedAttempt:Type.Optional(QualifiedAttemptSchema), summary: text, completedAt: text,
  finalScopeIdentity:Type.Optional(Type.String({pattern:'^[a-f0-9]{64}$'})), attributionIdentity:Type.Optional(Type.String({pattern:'^[a-f0-9]{64}$'})), taskScopeIdentities:Type.Optional(Type.Array(Type.Object({taskId:text,identity:Type.String({pattern:'^[a-f0-9]{64}$'})},{additionalProperties:false}),{maxItems:10000})),
  origins: Type.Optional(Type.Array(TaskOriginSchema, { maxItems:10000 })), reassessmentSummary: Type.Optional(text),
  buildFingerprint: Type.Optional(Type.String({ pattern: '^[a-f0-9]{64}$' })) }, { additionalProperties: false });
@@ -35,14 +37,15 @@ export function latestReviewSummaries(reviews: readonly CompletedReviewSummary[]
  return [...latest.values()];
 }
 export function latestReviewStatus(reviews: readonly CompletedReviewSummary[]): TaskReviewResult['status'] {
- return aggregateTaskStatus(latestReviewSummaries(reviews).flatMap(review=>review.tasks));
+ const latest=latestReviewSummaries(reviews);return latest.some(r=>r.failedAttempt)?'failed':aggregateTaskStatus(latest.flatMap(review=>review.tasks));
 }
 function bodyStatus(reviews: readonly CompletedReviewSummary[], failures: TaskReviewBody['admissionFailures']): TaskReviewResult['status'] {
  if (!reviews.length || failures?.some(f => !reviews.some(r => r.reviewId === f.reviewId && r.attempt > f.attempt.header.attempt))) return 'failed';
  return latestReviewStatus(reviews);
 }
+export function hasPreservedReviewFailures(body:TaskReviewBody):boolean{return!!body.admissionFailures||body.reviews.some(r=>r.failedAttempt);}
 export function codeReviewPreservationDigest(body: TaskReviewBody): string {
- return contentHash('code-review-preservation-v1', { body: { ...body, ...(body.admissionFailures ? { admissionFailures: body.admissionFailures.map(f => ({ ...f, attempt: withoutReviewResourceGuard(f.attempt) })) } : {}) }, citations: [] });
+ return contentHash('code-review-preservation-v1',{body:{...body,reviews:body.reviews.map(r=>r.failedAttempt?{...r,failedAttempt:withoutReviewResourceGuard(r.failedAttempt)}:r),...(body.admissionFailures?{admissionFailures:body.admissionFailures.map(f=>({...f,attempt:withoutReviewResourceGuard(f.attempt)}))}:{})},citations:[]});
 }
 /** Separate task-body validation: no legacy dimensions are synthesized. */
 export function validateTaskBody(input: unknown): TaskReviewBody {
@@ -60,6 +63,17 @@ export function validateTaskBody(input: unknown): TaskReviewBody {
   requireReview(!keys.has(key), 'reviews', 'Duplicate review-id/attempt'); keys.add(key);
   requireReview(review.storyId === body.storyId && review.scope.storyId.replace(/^STORY-[a-f0-9]{16}-/, '') === body.storyId && review.taskId === review.scope.taskId, 'scope', 'Review scope belongs to another story/task');
   requireReview(Number.isFinite(Date.parse(review.completedAt)), 'completedAt', 'Expected a completion timestamp');
+  if(review.failedAttempt){
+   const raw=review.failedAttempt,response=raw['review-response'],packet=raw.submitted;
+   validateSavedAttribution(raw);validateFailureDiagnostics(raw);
+   requireReview(raw.header.status==='failed'&&response.crPublication==='pending'&&raw.header.completedAt===review.completedAt&&raw.header.reviewer===review.reviewer&&raw.header.attempt===review.attempt&&review.status==='failed','failure','Only unchanged terminal failed execution can be retained');
+   requireReview(isDeepStrictEqual(review.tasks,response.tasks)&&isDeepStrictEqual(review.origins,response.origins)&&review.summary===(response.error??response.summary),'failure','Retained failure feedback changed');
+   const scope={...(packet.reviewRevision?{reviewRevision:packet.reviewRevision}:{}),storyId:packet.storyId,...(packet.taskId?{taskId:packet.taskId}:{}),documents:packet.documents,reviewSet:packet.reviewSet};
+   requireReview(isDeepStrictEqual(review.scope,scope)&&review.finalScopeIdentity===undefined&&review.attributionIdentity===undefined&&review.taskScopeIdentities===undefined&&review.buildFingerprint===undefined,'failure','Failed execution cannot claim completed scope or approval authority');
+   requireReview(new Set(response.tasks.map(t=>t.taskId)).size===response.tasks.length&&response.tasks.every(t=>raw.header.selectedTaskIds.includes(t.taskId)),'failure','Foreign retained task feedback');
+   continue;
+  }
+  requireReview(review.tasks.length>0,'tasks','A completed assessment must contain task feedback');
   requireReview(new Set(review.tasks.map(task=>task.taskId)).size === review.tasks.length && (!review.taskId || review.tasks.length === 1 && review.tasks[0]!.taskId === review.taskId), 'tasks', 'Duplicate or foreign task');
   const changes = review.scope.reviewSet.flatMap(pointer => pointer.files.map(file => ({ path:file.path, previousPath:file.previousPath ?? file.path, segments:file.segments })));
   const final=validateFinalScope(review);
@@ -73,7 +87,7 @@ export function validateTaskBody(input: unknown): TaskReviewBody {
  for(const review of body.reviews)for(const row of review.scope.finalScope?.tasks??[])if(row.decision.action==='reuse'){
   const sourceAttempt=row.decision.sourceAttempt;
   const source=body.reviews.find(r=>r.reviewId===review.reviewId&&r.attempt===sourceAttempt);
-  requireReview(source?.reviewer===review.reviewer&&source.scope.finalScope?.attributionState==='accepted'&&source.taskScopeIdentities?.find(t=>t.taskId===row.taskId)?.identity===row.identity,'origins','Reuse source lacks matching accepted final task identity');
+  requireReview(source?.reviewer===review.reviewer&&(source.scope.finalScope?.attributionState??source.failedAttempt?.header.attributionState)==='accepted'&&(source.taskScopeIdentities??source.failedAttempt?.header.taskScopeIdentities)?.find(t=>t.taskId===row.taskId)?.identity===row.identity,'origins','Reuse source lacks matching accepted final task identity');
  }
 
  requireReview(body.status === bodyStatus(body.reviews, body.admissionFailures), 'status', 'CR status disagrees with latest attempt outcomes');
@@ -110,9 +124,10 @@ export function mergeCodeAdmissionFailure(current: unknown, reviewId: string, at
 }
 export function renderTaskReview(bodyInput: unknown): string {
  const body = validateTaskBody(bodyInput);
- const lines = [`# Code review: ${body.storyId}`, '', `Status: **${body.status}** · task-based schema version ${body.admissionFailures ? 3 : 2}`, ''];
+ const lines = [`# Code review: ${body.storyId}`, '', `Status: **${body.status}** · task-based schema version ${hasPreservedReviewFailures(body) ? 3 : 2}`, ''];
  for (const { reviewId, attempt } of body.admissionFailures ?? []) lines.push(`## ${reviewId} — attempt ${attempt.header.attempt}: admission ${attempt.header.status}`, '', `Technical admission only; scope was not verified and no task assessment was performed. ${attempt.error ? `${attempt.error.code} (${attempt.error.field}): ${attempt.error.summary}` : 'Admission interrupted.'}`, '');
  for (const review of body.reviews) {
+  if(review.failedAttempt)lines.push('Qualified execution failed; its original input and feedback are retained without completed-assessment signoff.','');
   lines.push(`## ${review.reviewId} — attempt ${review.attempt}`, '', `Scope: ${review.taskId ? `task ${review.taskId}` : 'whole story'} · reviewer: ${review.reviewer} · ${review.completedAt}`, '', review.summary, '', '### Submitted scope', '');
   for (const pointer of review.scope.reviewSet) for (const file of pointer.files) lines.push(`- \`${pointer.commit}:${file.path}\` — ${JSON.stringify(file.segments)}`);
   if(review.scope.finalScope){

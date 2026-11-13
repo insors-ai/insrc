@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5af7747e-da8b-4a54-aba2-e427a08b2d89",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-11T16:06:14.383Z",
+    "epicCreatedAt": "2026-11-11T14:35:39.306Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1c09e09cd985026b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Move the band table into a leaf planner module",
+      "parent": {
+        "entityId": "STORY-1c09e09cd985026b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1c09e09cd985026b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "68a63d2b0feb145c1e77d9ca047a07f17b9b8d3ac71e9aefc9dd5125b8dab80c",
+        "at": "2026-11-11T16:06:14.384Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T16:06:14.385Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Move the band table into a leaf planner module",
+    "summary": "Create a leaf module in src/analyze/planner that holds the band table and the focused lower bound and imports nothing from the validator or the renderer. Make validate.ts import it and keep SCOPE_BAND exported from validate.ts (re-export) so planner/index.ts, analyze/index.ts and validate.test.ts keep working. No value changes.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "SCOPE_BAND values and the halved focused lower bound are identical to today's, shown by the existing 'SCOPE_BAND values match the design doc' test passing unchanged",
+      "the leaf module has no import from validate.ts or render-catalog.ts",
+      "tsc build and the planner tests pass"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/analyze/planner/__tests__/validate.test.ts: SCOPE_BAND values match the design doc"
+      },
+      {
+        "level": "unit",
+        "name": "src/analyze/planner/__tests__/validate.test.ts: the band module imports nothing from the validator or the renderer"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

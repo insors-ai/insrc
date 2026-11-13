@@ -23,7 +23,7 @@ async function admitted() {
 	git('init', '-q'); git('config', 'user.name', 'Fixture'); git('config', 'user.email', 'fixture@example.test');
 	const put = (path: string, value: unknown) => { mkdirSync(join(repo, path, '..'), { recursive: true }); writeFileSync(join(repo, path), typeof value === 'string' ? value : JSON.stringify(value)); };
 	const build = {
-		meta: { epicHash: hash, storyId: 's1', createdAt: '2026-11-03T00:00:00.000Z' },
+		meta: { authoredBy: 'controller', epicHash: hash, storyId: 's1', createdAt: '2026-11-03T00:00:00.000Z' },
 		body: { commit: 'abc1234', focus: 'Change the behaviour', summary: 'Changed it', tasks: [{ id: 's1', passed: true }], changeLog: [{ target: { file: 'src/a.ts' } }] },
 	};
 	put(buildPath, build); put('src/a.ts', 'first\nsecond\n');

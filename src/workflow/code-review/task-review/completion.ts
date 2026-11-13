@@ -1,6 +1,7 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { requireReview } from './contracts.js';
 import { latestReviewSummaries, validateTaskBody,hasPreservedReviewFailures } from './record.js';
+import { authorPartyOf } from '../../review/party.js';
 import { reviewedBuildFingerprint } from '../build-freshness.js';
 
 const object = (value:unknown):Record<string,unknown> => value && typeof value==='object' && !Array.isArray(value) ? value as Record<string,unknown> : {};
@@ -22,5 +23,7 @@ export function inspectTaskCompletion(input:unknown, build:unknown, epicHash:str
  if(ids.some(id=>typeof id!=='string') || ids.some(id=>!full.tasks.some(task=>task.taskId===id))) return {counts,gap:'Whole-story review does not cover every current BUILD task'};
  if(!full.buildFingerprint || full.buildFingerprint!==reviewedBuildFingerprint(build)) return {counts,gap:'BUILD has changed or the whole-story review has no BUILD binding'};
  if(meta['reviewedBy']!==full.reviewer) return {counts,gap:'Reviewer provenance does not match the full-story assessment'};
+ const author=authorPartyOf(record['meta']);
+ if(author==='unknown'||author===full.reviewer)return{counts,gap:'Whole-story review must be independent of the current BUILD author'};
  return {counts};
 }

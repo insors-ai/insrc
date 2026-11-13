@@ -57,6 +57,8 @@ test('failed admission survives successful next attempt publication and post-cle
   assert.match(renderTaskReview(body), /Technical admission only/);
   const head = JSON.parse(await readFile(receipt.jsonPath, 'utf8'));
   assert.equal(inspectTaskCompletion(head, f.build, hash, 's1').gap, undefined);
+  assert.match(inspectTaskCompletion(head,{...f.build,meta:{...f.build.meta,authoredBy:'daemon'}},hash,'s1').gap??'',/independent/);
+  assert.match(inspectTaskCompletion(head,{...f.build,meta:{...f.build.meta,authoredBy:undefined}},hash,'s1').gap??'',/independent/);
   const store = f.deps.through.store!, id = codeReviewArtifactId(hash, 's1');
   const count = (await store.history.log(id)).length;
   await publishTaskCheckpoint(f.repo, hash, cp.reviewId, f.deps);

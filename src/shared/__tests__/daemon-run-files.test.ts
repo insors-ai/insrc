@@ -14,9 +14,22 @@ import type { ProcessIdentity, ProcessIdentityReader } from '../daemon-process.j
 import { PATHS } from '../paths.js';
 
 let dir: string;
+let previousDaemonLog: string;
 const children: ChildProcess[] = [];
-beforeEach(() => { dir = mkdtempSync(join(tmpdir(), 'insrc-run-files-')); });
-afterEach(() => { for (const child of children.splice(0)) child.kill('SIGKILL'); rmSync(dir, { recursive: true, force: true }); });
+const liveWorkers: Worker[] = [];
+beforeEach(() => {
+	dir = mkdtempSync(join(tmpdir(), 'insrc-run-files-'));
+	// The recovery log is a per-test fixture: the suite never creates, truncates or chmods the real
+	// daemon log, and a fixture mode left behind by one test cannot leak into the next.
+	previousDaemonLog = PATHS.daemonLog;
+	Object.defineProperty(PATHS, 'daemonLog', { value: join(dir, 'daemon.log') });
+});
+afterEach(async () => {
+	for (const worker of liveWorkers.splice(0)) await Promise.allSettled([worker.terminate()]);
+	Object.defineProperty(PATHS, 'daemonLog', { value: previousDaemonLog });
+	for (const child of children.splice(0)) child.kill('SIGKILL');
+	rmSync(dir, { recursive: true, force: true });
+});
 
 test('managed guard serializes cooperating ownership and preserves observed replacement run files', () => {
 	const path = join(dir, 'guard'), pid = join(dir, 'daemon.pid'), socket = join(dir, 'daemon.sock');
@@ -119,9 +132,8 @@ function quarantineStamp(seconds: number): string {
 }
 
 function ensureDaemonLog(): void {
-	// A killed run can leave the log-write-failure fixture (mode 0o444) behind; restore the intended mode.
-	if (existsSync(PATHS.daemonLog)) chmodSync(PATHS.daemonLog, 0o600);
-	else writeFileSync(PATHS.daemonLog, '', { mode: 0o600 });
+	// PATHS.daemonLog is redirected to the per-test directory, so the fixture always starts fresh.
+	if (!existsSync(PATHS.daemonLog)) writeFileSync(PATHS.daemonLog, '', { mode: 0o600 });
 }
 
 /** Worker-thread racers for the retry race: each busy-spins mkdirSync on the guard path and grabs it the
@@ -140,6 +152,7 @@ for (;;) {
   catch { if (!spinning) { spinning = true; parentPort.postMessage('spinning'); } }
 }`;
 	const workers = Array.from({ length: count }, () => new Worker(source, { eval: true, workerData: { path } }));
+	for (const worker of workers) liveWorkers.push(worker);
 	const spinning = Promise.all(workers.map((worker) => new Promise<unknown>((resolve, reject) => {
 		worker.once('message', (message: unknown) => { if (message === 'spinning') resolve(message); });
 		worker.once('error', reject);
@@ -207,28 +220,53 @@ test('acquireRunFileGuard recomputes the conflict and throws when the retry mkdi
 	// attempt (the retry mkdir won anyway) is discarded and retried on a fresh guard, so the
 	// deterministic recompute path is exercised on the attempt that wins, never assumed.
 	let conflict: unknown, path = '';
-	let workers: Worker[] = [];
 	for (let attempt = 0; attempt < 12 && conflict === undefined; attempt++) {
 		path = join(dir, `guard-race-${attempt}`);
 		staleGuard(path, 'linux:stale-boot:111', 'nonce-race');
 		const racers = workerRacers(path, 4);
-		workers = racers.workers;
-		await racers.spinning; // every racer has already failed a mkdir: all are inside the spin loop
-		// A racer grabs the freed path before the single retry mkdir, so the retry EEXISTs. Even though the
-		// recompute's injected reader also reads the racer's record as gone, the reclaim does not run twice:
-		// the thrown conflict is recomputed against the racer's record, never the quarantined one.
-		try { acquireReclaim(path, acquiringOwner, () => undefined); }
-		catch (error) { conflict = error; continue; }
-		// Lost the window anyway: the retry mkdir reclaimed the path before a racer was scheduled.
-		await Promise.allSettled(workers.map((worker) => worker.terminate()));
-		workers = [];
+		try {
+			await racers.spinning; // every racer has already failed a mkdir: all are inside the spin loop
+			// A racer grabs the freed path before the single retry mkdir, so the retry EEXISTs. Even though the
+			// recompute's injected reader also reads the racer's record as gone, the reclaim does not run twice:
+			// the thrown conflict is recomputed against the racer's record, never the quarantined one.
+			try { acquireReclaim(path, acquiringOwner, () => undefined); }
+			catch (error) { conflict = error; }
+			// A lost window (the retry mkdir reclaimed the path before a racer was scheduled) falls through
+			// to the next attempt on the fresh guard; the racers are terminated either way below.
+		} finally {
+			// Racers never outlive their attempt, whatever its outcome: an unhandled spinner would spin
+			// on the CPU and hold the test process open forever.
+			await Promise.allSettled(racers.workers.map((worker) => worker.terminate()));
+		}
 	}
 	assert.ok(conflict instanceof Error && /ownership conflict/.test(conflict.message),
 		`every attempt lost the retry race to the parallel load: ${String(conflict)}`);
 	assert.equal(conflict.message.includes('nonce-race'), false, 'the conflict must be recomputed, not replayed');
 	assert.ok(/nonce=racer/.test(conflict.message) || /unverifiable owner/.test(conflict.message), 'the evidence names the racer: its record or its in-flight write');
 	assert.equal(quarantinedSiblings(path).length, 1); // the stale record is still quarantined
-	await Promise.allSettled(workers.map((worker) => worker.terminate()));
+});
+
+test('a paused reclaimer cannot quarantine the live replacement a starter acquired from the same dead guard', () => {
+	ensureDaemonLog();
+	const path = join(dir, 'guard');
+	staleGuard(path, 'linux:stale-boot:111', 'nonce-live');
+	let winner: RunFileGuard | undefined;
+	// The identity reader is the pause point: while the paused reclaimer renders its dead-owner verdict,
+	// a competing starter quarantines the same dead guard and completes its own acquisition, so the
+	// paused one resumes holding evidence about a record that no longer occupies the path.
+	const pausedReader: ProcessIdentityReader = () => {
+		winner ??= acquireReclaim(path, acquiringOwner, () => undefined);
+		return undefined; // the recorded owner is gone
+	};
+	// The paused reclaimer moves the winner's live guard aside, verifies the moved record is not the one
+	// it verdicted, restores the replacement and fails closed instead of double-acquiring the path.
+	assert.throws(() => acquireReclaim(path, acquiringOwner, pausedReader), /ownership conflict/);
+	const guard = winner!;
+	assert.doesNotThrow(() => guard.assertOwned()); // the live replacement keeps its guard, intact
+	assert.equal(quarantinedSiblings(path).length, 1); // only the dead record was ever quarantined
+	assert.equal(readFileSync(PATHS.daemonLog, 'utf8').split('\n').filter((line) => line.includes('nonce-live')).length, 1); // exactly the winner's recovery line
+	guard.release();
+	assert.equal(existsSync(path), false);
 });
 
 test('acquireRunFileGuard leaves a symlink guard as a conflict', () => {

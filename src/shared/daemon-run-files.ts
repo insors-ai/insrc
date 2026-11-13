@@ -39,14 +39,18 @@ export interface RunFileGuard {
 	release(): void;
 }
 
-function ownerRecord(path: string): { owner: ProcessIdentity; nonce: string } {
-	const value: unknown = JSON.parse(readFileSync(join(path, 'owner.json'), 'utf8'));
+function parseOwnerRecord(evidence: string): { owner: ProcessIdentity; nonce: string } {
+	const value: unknown = JSON.parse(evidence);
 	if (typeof value !== 'object' || value === null) throw new Error('invalid guard owner record');
 	const record = value as Record<string, unknown>, owner = record['owner'] as Partial<ProcessIdentity> | undefined;
 	if (typeof record['nonce'] !== 'string' || record['nonce'] === '' || owner === undefined || owner === null
 		|| !Number.isSafeInteger(owner.pid) || (owner.pid ?? 0) <= 0
 		|| typeof owner.startedAt !== 'string' || owner.startedAt === '' || typeof owner.commandLine !== 'string' || owner.commandLine === '') throw new Error('invalid guard owner identity');
 	return { owner: owner as ProcessIdentity, nonce: record['nonce'] };
+}
+
+function ownerRecord(path: string): { owner: ProcessIdentity; nonce: string } {
+	return parseOwnerRecord(readFileSync(join(path, 'owner.json'), 'utf8'));
 }
 
 /** A conflicting guard whose owner is live or unverifiable is never automatically reclaimed; only a conclusively
@@ -76,16 +80,20 @@ function bootSegment(startedAt: string): string | undefined {
  * the PID now carries. A same-boot PID reuse, a live owner, a darwin marker without a boot segment
  * and an unreadable record all withhold exactly as before.
  *
- * Returns true when the retry acquired the path. Returns false when the conflict was withheld, or a
- * competing starter won the retry: the caller then fails closed with the recomputed conflict rather
- * than reclaiming twice. A symlink throws first, so a link is never renamed whatever it targets.
+ * Returns true when the retry acquired the path. Returns false when the conflict was withheld, a
+ * competing starter won the retry, or the rename moved a replacement guard the verdict never
+ * examined (restored to the path first): the caller then fails closed with the recomputed
+ * conflict rather than reclaiming twice. A symlink throws first, so a link is never renamed
+ * whatever it targets.
  */
 function quarantineDeadGuard(path: string, read: ProcessIdentityReader): boolean {
 	if (runFileIdentity(path) === undefined) return false;
+	let evidence: string | undefined;
 	let record: { owner: ProcessIdentity; nonce: string } | undefined;
 	let conclusivelyDead = false;
 	try {
-		record = ownerRecord(path);
+		evidence = readFileSync(join(path, 'owner.json'), 'utf8');
+		record = parseOwnerRecord(evidence);
 		const state = processIdentityState(record.owner, read);
 		if (state === 'gone') conclusivelyDead = true;
 		else if (state === 'replaced') {
@@ -116,6 +124,25 @@ function quarantineDeadGuard(path: string, read: ProcessIdentityReader): boolean
 		}
 	}
 	if (quarantined) {
+		// The rename is atomic, but the evidence is not: a competing starter may have quarantined the
+		// dead guard and re-acquired the path between this verdict and this rename, so what moved may be
+		// a replacement guard. Verify the moved directory still carries the exact record verdicted dead;
+		// a fresh record carries a fresh nonce, so byte identity proves the directory is the one examined.
+		let movedEvidence: string | undefined;
+		try { movedEvidence = readFileSync(join(target, 'owner.json'), 'utf8'); } catch { /* an in-flight publication has no record yet */ }
+		if (movedEvidence !== evidence) {
+			// A replacement was moved aside: restore it so its live owner keeps the guard, then fail closed.
+			try { renameSync(target, path); }
+			catch (error) {
+				const code = (error as NodeJS.ErrnoException).code;
+				if (code !== 'ENOTEMPTY' && code !== 'EEXIST') throw error;
+				// The path was re-acquired while the replacement was held aside. The record is preserved
+				// where it was moved (its owner fails closed at its next ownership assertion) and the
+				// path's new owner stays the only live owner; say so and fail closed either way.
+				try { appendFileSync(PATHS.daemonLog, `insrc run-file guard recovery: a replacement guard at ${path} was moved to ${target} during a stale reclaim and could not be restored; its owner record is preserved there\n`); } catch { /* best effort */ }
+			}
+			return false;
+		}
 		// One best-effort recovery line; a log that cannot be written never blocks the restart.
 		const line = `insrc run-file guard recovery: quarantined stale guard at ${path} to ${target} (owner pid=${owner.pid}, start=${owner.startedAt}, nonce=${nonce})\n`;
 		try { appendFileSync(PATHS.daemonLog, line); } catch { /* best effort */ }

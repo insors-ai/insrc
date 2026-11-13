@@ -83,6 +83,11 @@ async function scenario(mode: 'healthy' | 'blocked' | 'guard-death') {
   const quarantined = readdirSync(join(home, '.insrc')).filter((name) => name.startsWith('daemon.run-files.guard.quarantine-'));
   assert.equal(quarantined.length, 1);
   assert.deepEqual(JSON.parse(readFileSync(join(home, '.insrc', quarantined[0]!, 'owner.json'), 'utf8')), guardOwner);
+ // The replacement is a live daemon spawned detached by the controller, so a passing run must
+ // register it for teardown like the healthy control — otherwise it keeps listening on a home
+ // that after() deletes — and hold to the same replacement identity and liveness.
+ const fresh = await captureStopTarget(Number(readFileSync(join(home, '.insrc/daemon.pid'), 'utf8'))); assert.ok(fresh); targets.push(fresh);
+ assert.notEqual(fresh.pid, identity.pid); assert.equal(await fresh.handle.hasExited(), false);
  }
  else {
   assert.equal(result.ok, true); assert.equal(startCount, 1); assert.equal(guardRemains, false);

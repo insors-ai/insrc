@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 39,
-        "contentHash": "0608360e6d80fa882731bc8e60af4d6c00626591507798fc0c544bef205d6f3d",
-        "at": "2026-11-12T19:48:10.200Z",
+        "number": 52,
+        "contentHash": "f65db5adb3c9cd51abb459d3782868032e3148842d2fc9f424d540d4a7e96aaa",
+        "at": "2026-11-13T09:30:51.039Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "e4af63128c7cbec2",
     "storyId": "s1",
     "createdAt": "2026-11-09T07:52:13.312Z",
-    "updatedAt": "2026-11-12T19:48:09.913Z",
+    "updatedAt": "2026-11-13T09:30:50.519Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-09T04:29:20.389Z",
     "epicSlug": "isolate-each-code-design-review-its",
-    "revision": 39
+    "revision": 52
   },
   "body": {
     "tasks": [
@@ -173,8 +173,8 @@
       },
       {
         "taskId": "t3",
-        "commit": "35c9f815f",
-        "ranAt": "2026-11-09T09:08:06.224Z",
+        "commit": "8ebc81c96",
+        "ranAt": "2026-11-13T08:44:35.855Z",
         "testsPassed": true,
         "tests": [
           {
@@ -222,10 +222,18 @@
             "file": "src/workflow/code-review/task-review/__tests__/admission-history.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1157,
+            "durationMs": 1428,
             "titles": [
               {
                 "title": "failed admission survives successful next attempt publication and post-cleanup reads",
+                "result": "pass"
+              },
+              {
+                "title": "published pass then technical admission failure still admits the next qualified attempt",
+                "result": "pass"
+              },
+              {
+                "title": "technical admission publication refuses unsupported CR versions without changing permanent bytes",
                 "result": "pass"
               }
             ],
@@ -235,7 +243,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/resource-preservation.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 960,
+            "durationMs": 929,
             "titles": [
               {
                 "title": "guard-only updates preserve report identity while reviewed-input or result mutations do not",
@@ -248,7 +256,7 @@
             "file": "src/workflow/review/design-review/__tests__/admission-history.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 874,
+            "durationMs": 844,
             "titles": [
               {
                 "title": "technical admission diagnostics remain non-review evidence across publication",
@@ -314,8 +322,8 @@
       },
       {
         "taskId": "t5",
-        "commit": "4fc8bee23",
-        "ranAt": "2026-11-11T12:23:50.106Z",
+        "commit": "8ebc81c96",
+        "ranAt": "2026-11-13T08:47:30.690Z",
         "testsPassed": true,
         "tests": [
           {
@@ -350,7 +358,7 @@
             "file": "src/agent/providers/__tests__/review-worker-process.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1759,
+            "durationMs": 1959,
             "titles": [
               {
                 "title": "fake native review CLI streams and cancellation use host-owned leases",
@@ -358,6 +366,10 @@
               },
               {
                 "title": "review binary lookup cannot spawn synchronously on the worker",
+                "result": "pass"
+              },
+              {
+                "title": "bound Vibe review worker starts through production native authorization and host leases",
                 "result": "pass"
               }
             ],
@@ -367,8 +379,8 @@
       },
       {
         "taskId": "t6",
-        "commit": "43d69ad70",
-        "ranAt": "2026-11-11T12:51:57.103Z",
+        "commit": "8ebc81c96",
+        "ranAt": "2026-11-13T08:50:12.653Z",
         "testsPassed": true,
         "tests": [
           {
@@ -403,7 +415,7 @@
             "file": "src/daemon/threads/__tests__/review-spawn-inventory.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 747,
+            "durationMs": 656,
             "titles": [
               {
                 "title": "all review-reachable native spawn and exec paths use the host bridge",
@@ -416,7 +428,7 @@
             "file": "src/daemon/tools/__tests__/review-worker-shell.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 5923,
+            "durationMs": 5770,
             "titles": [
               {
                 "title": "Git shell and raw-byte commands preserve output bounds and abort semantics through leases",
@@ -429,8 +441,8 @@
       },
       {
         "taskId": "t7",
-        "commit": "8e26d2c88",
-        "ranAt": "2026-11-11T13:38:50.061Z",
+        "commit": "8ebc81c96",
+        "ranAt": "2026-11-13T08:54:03.680Z",
         "testsPassed": true,
         "tests": [
           {
@@ -465,7 +477,7 @@
             "file": "src/daemon/threads/__tests__/review-worker-bootstrap.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 19609,
+            "durationMs": 29387,
             "titles": [
               {
                 "title": "real worker joins guards and starts from the registered entrypoint",
@@ -486,8 +498,8 @@
       },
       {
         "taskId": "t8",
-        "commit": "1635e86d6",
-        "ranAt": "2026-11-11T15:06:26.825Z",
+        "commit": "f05b5d891",
+        "ranAt": "2026-11-13T09:16:06.455Z",
         "testsPassed": true,
         "tests": [
           {
@@ -498,6 +510,11 @@
               {
                 "file": "src/daemon/threads/__tests__/review-workers.test.ts",
                 "title": "canonical identities own one incarnation and preserve subject and cleanup exclusions",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-publication.test.ts",
+                "title": "terminal drain retries idleness without requiring another checkpoint update",
                 "result": "pass"
               }
             ],
@@ -519,10 +536,39 @@
         ],
         "files": [
           {
+            "file": "src/daemon/threads/__tests__/review-worker-publication.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5788,
+            "titles": [
+              {
+                "title": "code",
+                "result": "pass"
+              },
+              {
+                "title": "design",
+                "result": "pass"
+              },
+              {
+                "title": "publication retry after worker exit or lost receipt performs zero provider calls",
+                "result": "pass"
+              },
+              {
+                "title": "cold public design publication admission does not alter execution actions or preservation identity",
+                "result": "pass"
+              },
+              {
+                "title": "terminal drain retries idleness without requiring another checkpoint update",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
             "file": "src/daemon/threads/__tests__/review-workers.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 4608,
+            "durationMs": 5163,
             "titles": [
               {
                 "title": "canonical identities own one incarnation and preserve subject and cleanup exclusions",
@@ -534,6 +580,10 @@
               },
               {
                 "title": "admission replay retains a native intent committed by the writer ahead of it",
+                "result": "pass"
+              },
+              {
+                "title": "foreign controller cannot retire an owner through next-attempt admission",
                 "result": "pass"
               }
             ],
@@ -596,8 +646,8 @@
       },
       {
         "taskId": "t10",
-        "commit": "aa9aa072f",
-        "ranAt": "2026-11-11T16:04:20.516Z",
+        "commit": "4a3a790d8",
+        "ranAt": "2026-11-13T09:01:01.884Z",
         "testsPassed": true,
         "tests": [
           {
@@ -632,7 +682,7 @@
             "file": "src/workflow/review/design-review/__tests__/worker-admission.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 7851,
+            "durationMs": 15324,
             "titles": [
               {
                 "title": "durable admission and current workflow ancestry run in the owner worker",
@@ -644,6 +694,14 @@
               },
               {
                 "title": "cold unverified design recovery retains its original submission and qualifies before provider dispatch",
+                "result": "pass"
+              },
+              {
+                "title": "rejected full restart retains the source attempt for subsequent explicit resume",
+                "result": "pass"
+              },
+              {
+                "title": "explicit restart refreshes independent reviewer authority after authorship changes",
                 "result": "pass"
               }
             ],
@@ -913,8 +971,8 @@
       },
       {
         "taskId": "t13",
-        "commit": "f8cda8670",
-        "ranAt": "2026-11-12T02:12:05.399Z",
+        "commit": "4a3a790d8",
+        "ranAt": "2026-11-13T09:05:19.154Z",
         "testsPassed": true,
         "tests": [
           {
@@ -977,7 +1035,7 @@
             "file": "src/daemon/threads/__tests__/artifact-write-authority.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1601,
+            "durationMs": 1693,
             "titles": [
               {
                 "title": "artifact writes share the main queue and release only after worker reclamation",
@@ -990,7 +1048,7 @@
             "file": "src/daemon/threads/__tests__/review-worker-cleanup.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 8587,
+            "durationMs": 10332,
             "titles": [
               {
                 "title": "code",
@@ -1011,7 +1069,7 @@
             "file": "src/daemon/threads/__tests__/review-worker-publication.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 4015,
+            "durationMs": 6196,
             "titles": [
               {
                 "title": "code",
@@ -1024,6 +1082,14 @@
               {
                 "title": "publication retry after worker exit or lost receipt performs zero provider calls",
                 "result": "pass"
+              },
+              {
+                "title": "cold public design publication admission does not alter execution actions or preservation identity",
+                "result": "pass"
+              },
+              {
+                "title": "terminal drain retries idleness without requiring another checkpoint update",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -1032,8 +1098,16 @@
             "file": "src/daemon/threads/__tests__/review-worker-recovery.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 6678,
+            "durationMs": 53625,
             "titles": [
+              {
+                "title": "crash-boundary owner-loss and cleanup races retain targeted lifecycle guarantees",
+                "result": "pass"
+              },
+              {
+                "title": "legacy interrupted code history retains uncertainty on earlier attempts",
+                "result": "pass"
+              },
               {
                 "title": "shutdown drains host leases before worker reclamation and replacement",
                 "result": "pass"
@@ -1053,8 +1127,8 @@
       },
       {
         "taskId": "t14",
-        "commit": "c4a74c15e",
-        "ranAt": "2026-11-12T04:36:38.374Z",
+        "commit": "f05b5d891",
+        "ranAt": "2026-11-13T09:10:50.351Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1119,7 +1193,7 @@
             "file": "src/daemon/__tests__/review-worker-routing.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 54784,
+            "durationMs": 62688,
             "titles": [
               {
                 "title": "every supported review method delegates heavy work to its dedicated owner",
@@ -1136,6 +1210,10 @@
               {
                 "title": "production design recovery preserves qualified failures and only an explicit next attempt starts work",
                 "result": "pass"
+              },
+              {
+                "title": "production cleanup preserves the explicit locator for a successful no-document review",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -1144,7 +1222,7 @@
             "file": "src/daemon/threads/__tests__/review-native-host.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 601,
+            "durationMs": 660,
             "titles": [
               {
                 "title": "orderly native host disposal ignores late port closure and cannot close a replacement owner",
@@ -1161,8 +1239,12 @@
             "file": "src/daemon/threads/__tests__/review-worker-recovery.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 6744,
+            "durationMs": 51198,
             "titles": [
+              {
+                "title": "crash-boundary owner-loss and cleanup races retain targeted lifecycle guarantees",
+                "result": "pass"
+              },
               {
                 "title": "legacy interrupted code history retains uncertainty on earlier attempts",
                 "result": "pass"
@@ -1186,7 +1268,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/pending-failure-history.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 7389,
+            "durationMs": 7099,
             "titles": [
               {
                 "title": "pending-publication qualified failure survives new attempt publication approval cleanup and permanent reads",
@@ -1648,8 +1730,8 @@
       },
       {
         "taskId": "t16",
-        "commit": "75c00e950",
-        "ranAt": "2026-11-12T19:48:09.913Z",
+        "commit": "69e74f592",
+        "ranAt": "2026-11-13T09:30:50.519Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1684,7 +1766,7 @@
             "file": "src/daemon/threads/__tests__/review-worker-package.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 7952,
+            "durationMs": 8130,
             "titles": [
               {
                 "title": "compiled worker entrypoints and both review families start from an isolated built package",

@@ -389,8 +389,9 @@ test('extension wiring: the repo-config panel probes mcp.status WITH the selecte
 // ordering and disposal drop — and assert the extension.ts binding (store root next to the
 // attachment store, injected input boundary, channel interceptor) by source scan.
 import { createScratchHost, SCRATCH_INTENT_TYPES, type ScratchChatSeam } from '../scratch-host.js';
+import { createScratchPanels, SCRATCHPADS_VIEW_TYPE, type ScratchPanels } from '../../panels/scratch-panels.js';
 import type { ScratchStore, ScratchEntry } from '../scratch-store.js';
-import type { ScratchPanels } from '../../panels/scratch-panels.js';
+import type { PanelFactory, PanelHandle } from '../../panels/types.js';
 import type { HostToWebview } from '../protocol.js';
 import { runShell, ofType } from './chat-shell.test.js';
 import { fire, type BodyStub } from './fake-dom.js';
@@ -612,6 +613,45 @@ test('extension-chat-wiring.test.ts: scratch-list error field renders the unavai
     renderHost.onMessage({ type: 'scratch-open-menu' });
     await flush();
     assert.deepEqual(labels(), ['20260113-090000-late', 'New scratchpad', 'Browse all'], 'a later success re-renders the recovered entries in the real menu');
+  }
+  // Panel-factory failure: the REAL controller returns undefined, logs a warning, and the
+  // next open retries and succeeds (the ac-mapped coverage the wiring suite must carry).
+  {
+    const warns: string[] = [];
+    const logger = { warn: (m: string) => { warns.push(m); } };
+    interface FakePanel extends PanelHandle { readonly viewType: string }
+    const made: FakePanel[] = [];
+    let failFactory = false;
+    const factory: PanelFactory = (o) => {
+      if (failFactory) throw new Error('editor busy');
+      const listeners: Array<() => void> = [];
+      const h: FakePanel = {
+        viewType: o.viewType,
+        setHtml: () => {},
+        reveal: () => {},
+        onDidDispose: (l) => { listeners.push(l); },
+        onMessage: () => {},
+        postMessage: () => {},
+        dispose: () => { listeners.forEach((l) => l()); },
+      };
+      made.push(h);
+      return h;
+    };
+    const panels = createScratchPanels({ panels: factory, store: fakeStore(), logger, genNonce: () => 'n' });
+    const first = await panels.openBrowse();
+    assert.ok(first !== undefined, 'the first browse opens');
+    assert.equal(made.length, 1);
+    assert.equal(made[0]!.viewType, SCRATCHPADS_VIEW_TYPE, 'the browse panel uses the scratchpads view type');
+    made[0]!.dispose(); // clear the cached singleton so the next open goes through the factory
+    failFactory = true;
+    const before = warns.length;
+    const failed = await panels.openBrowse();
+    assert.equal(failed, undefined, 'a factory failure returns undefined (never throws)');
+    assert.ok(warns.length > before && warns[warns.length - 1]!.includes('editor busy'), 'the failure is logged with its reason');
+    failFactory = false;
+    const retried = await panels.openBrowse();
+    assert.ok(retried !== undefined && made.length === 2, 'the next open retries and succeeds');
+    panels.dispose();
   }
 });
 

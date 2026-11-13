@@ -1,10 +1,11 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 
-import { lstatSync, mkdirSync, readFileSync, rmdirSync, unlinkSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, lstatSync, mkdirSync, readFileSync, renameSync, rmdirSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { processIdentityState, requireProcessIdentity } from './daemon-process.js';
+import { processIdentityState, readProcessIdentity, requireProcessIdentity } from './daemon-process.js';
 import type { ProcessIdentity, ProcessIdentityReader } from './daemon-process.js';
+import { PATHS } from './paths.js';
 
 export interface RunFileIdentity {
 	readonly dev: string;
@@ -48,7 +49,8 @@ function ownerRecord(path: string): { owner: ProcessIdentity; nonce: string } {
 	return { owner: owner as ProcessIdentity, nonce: record['nonce'] };
 }
 
-/** A conflicting or orphaned guard is never automatically reclaimed. */
+/** A conflicting guard whose owner is live or unverifiable is never automatically reclaimed; only a conclusively
+ * dead recorded owner is, in quarantineDeadGuard below. */
 export function runFileGuardConflict(path: string, read?: ProcessIdentityReader | undefined): string | undefined {
 	if (runFileIdentity(path) === undefined) return undefined;
 	let evidence: string;
@@ -60,17 +62,82 @@ export function runFileGuardConflict(path: string, read?: ProcessIdentityReader 
 	return `run-file ownership conflict at ${path}: ${evidence}. Restart is withheld. An operator must verify the original owner has ended and quarantine this exact guard before retrying; it was not reclaimed automatically.`;
 }
 
+/** The boot segment of a Linux start marker, or undefined when the marker carries none. */
+function bootSegment(startedAt: string): string | undefined {
+	const segments = startedAt.split(':');
+	return segments.length === 3 && segments[0] === 'linux' ? segments[1] : undefined;
+}
+
+/**
+ * Quarantine a stale guard whose recorded owner is conclusively dead and retry the mkdir once.
+ *
+ * Conclusively dead means the recorded PID has exited (state gone), or a reused PID whose recorded
+ * start marker names a previous boot: the occupant identity cannot be the recorded owner whatever
+ * the PID now carries. A same-boot PID reuse, a live owner, a darwin marker without a boot segment
+ * and an unreadable record all withhold exactly as before.
+ *
+ * Returns true when the retry acquired the path. Returns false when the conflict was withheld, or a
+ * competing starter won the retry: the caller then fails closed with the recomputed conflict rather
+ * than reclaiming twice. A symlink throws first, so a link is never renamed whatever it targets.
+ */
+function quarantineDeadGuard(path: string, read: ProcessIdentityReader): boolean {
+	if (runFileIdentity(path) === undefined) return false;
+	let record: { owner: ProcessIdentity; nonce: string } | undefined;
+	let conclusivelyDead = false;
+	try {
+		record = ownerRecord(path);
+		const occupant = read(record.owner.pid);
+		const recordedBoot = occupant === undefined ? undefined : bootSegment(record.owner.startedAt);
+		const occupantBoot = occupant === undefined ? undefined : bootSegment(occupant.startedAt);
+		conclusivelyDead = occupant === undefined
+			|| (recordedBoot !== undefined && occupantBoot !== undefined && recordedBoot !== occupantBoot);
+	} catch { /* an unreadable record or unreadable identity withholds, exactly as before */ }
+	if (!conclusivelyDead || record === undefined) return false;
+	const { owner, nonce } = record;
+	// Quarantine the exact guard the way an operator would, keeping its record as evidence. The recorded
+	// nonce disambiguates the second-precision timestamp; a collision takes the next suffix.
+	const base = `${path}.quarantine-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}-${nonce}`;
+	let target = base, suffix = 0, quarantined = false;
+	for (;;) {
+		while (existsSync(target)) target = `${base}.${++suffix}`;
+		try { renameSync(path, target); quarantined = true; break; }
+		catch (error) {
+			const code = (error as NodeJS.ErrnoException).code;
+			// The suffix candidate was taken between the check and the rename; take the next one.
+			if (code === 'ENOTEMPTY' || code === 'EEXIST') continue;
+			// A competing starter quarantined it first; the path may already be free.
+			if (code === 'ENOENT') break;
+			throw error;
+		}
+	}
+	if (quarantined) {
+		// One best-effort recovery line; a log that cannot be written never blocks the restart.
+		const line = `insrc run-file guard recovery: quarantined stale guard at ${path} to ${target} (owner pid=${owner.pid}, start=${owner.startedAt}, nonce=${nonce})\n`;
+		try { appendFileSync(PATHS.daemonLog, line); } catch { /* best effort */ }
+	}
+	try { mkdirSync(path, { mode: 0o700 }); return true; }
+	catch (error) {
+		if ((error as NodeJS.ErrnoException).code === 'EEXIST') return false;
+		throw error;
+	}
+}
+
 /** Atomic directory creation serializes cooperating startup and cleanup across asynchronous close. */
-export function acquireRunFileGuard(path: string, owner: ProcessIdentity = requireProcessIdentity(process.pid)): RunFileGuard {
+export function acquireRunFileGuard(path: string, owner: ProcessIdentity = requireProcessIdentity(process.pid), read: ProcessIdentityReader = readProcessIdentity): RunFileGuard {
 	try { mkdirSync(path, { mode: 0o700 }); }
 	catch (error) {
-		if ((error as NodeJS.ErrnoException).code === 'EEXIST') throw new Error(runFileGuardConflict(path) ?? `run-file guard changed during acquisition at ${path}`);
-		throw error;
+		if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
+		// A conclusively dead recorded owner is quarantined with one retry; every other conflict,
+		// including one the retry loses to a competing starter, fails closed with the conflict evidence.
+		if (!quarantineDeadGuard(path, read)) {
+			throw new Error(runFileGuardConflict(path, read) ?? `run-file guard changed during acquisition at ${path}`);
+		}
 	}
 	const directory = runFileIdentity(path)!;
 	const nonce = randomUUID();
 	const recordPath = join(path, 'owner.json');
-	// A crash or failed record write deliberately leaves a fail-closed orphan, never an unlocked partial publication.
+	// A crash or failed record write deliberately leaves a fail-closed orphan, never an unlocked partial
+	// publication; the next startup reclaims such an orphan only through the dead-owner quarantine above.
 	writeFileSync(recordPath, JSON.stringify({ owner, nonce }), { flag: 'wx', mode: 0o600 });
 	const recordIdentity = runFileIdentity(recordPath)!;
 	let released = false;

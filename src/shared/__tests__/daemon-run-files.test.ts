@@ -119,11 +119,12 @@ function ensureDaemonLog(): void {
 	if (!existsSync(PATHS.daemonLog)) writeFileSync(PATHS.daemonLog, '', { mode: 0o600 });
 }
 
-/** Spins on mkdir until the guard path is free, then holds it with its own owner record. */
-function guardFreeRacer(path: string): { child: ChildProcess; result: Promise<string> } {
+/** Spins on mkdir once ready, grabbing the guard path the moment it is free. */
+function guardFreeRacer(path: string): { child: ChildProcess; ready: Promise<void>; result: Promise<string> } {
 	const source = `import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 const path = process.argv[1];
+process.stdout.write('ready\\n');
 let done = false;
 for (let attempt = 0; attempt < 200000 && !done; attempt++) {
 	try { mkdirSync(path); writeFileSync(join(path, 'owner.json'), JSON.stringify({ owner: { pid: process.pid, startedAt: 'linux:current-boot:1', commandLine: 'racer' }, nonce: 'racer' }), { flag: 'wx', mode: 0o600 }); done = true; } catch { }
@@ -132,13 +133,26 @@ if (done) { process.stdout.write('acquired\\n'); process.on('message', () => pro
 else { process.stdout.write('lost\\n'); process.exit(1); }`;
 	const child = spawn(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', source, path], { stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
 	children.push(child); child.stdout!.setEncoding('utf8');
+	let settleReady: (() => void) | undefined, settleResult: ((value: string) => void) | undefined;
+	const ready = new Promise<void>((resolve, reject) => { settleReady = resolve; child.on('error', reject); });
 	const result = new Promise<string>((resolve, reject) => {
-		let output = '';
-		child.stdout!.on('data', (chunk: string) => { output += chunk; if (output.includes('\n')) resolve(output.trim()); });
-		child.on('error', reject);
-		child.on('exit', () => { if (output === '') reject(new Error('racer exited without a result')); });
+		settleResult = resolve;
+		child.on('exit', () => reject(new Error('racer exited without a result')));
 	});
-	return { child, result };
+	let buffer = '';
+	child.stdout!.on('data', (chunk: string) => {
+		buffer += chunk;
+		for (;;) {
+			const index = buffer.indexOf('\n');
+			if (index < 0) break;
+			const line = buffer.slice(0, index).trim();
+			buffer = buffer.slice(index + 1);
+			if (line === '') continue;
+			if (settleReady !== undefined) { settleReady(); settleReady = undefined; }
+			else settleResult!(line);
+		}
+	});
+	return { child, ready, result };
 }
 
 test("acquireRunFileGuard quarantines and acquires when the verdict is 'gone' (fake reader, mkdtemp guard)", () => {
@@ -199,7 +213,8 @@ test("acquireRunFileGuard withholds 'same', same-boot 'replaced', corrupt or mis
 test('acquireRunFileGuard recomputes the conflict and throws when the retry mkdir hits EEXIST', { skip: process.platform === 'win32', timeout: 10000 }, async () => {
 	const path = join(dir, 'guard');
 	staleGuard(path, 'linux:stale-boot:111', 'nonce-race');
-	const racer = guardFreeRacer(path); // spinning before the reclaim even starts
+	const racer = guardFreeRacer(path);
+	await racer.ready; // spinning before the reclaim even starts
 	// The racer grabs the freed path before the single retry mkdir, so the retry EEXISTs. Even though the
 	// recompute's injected reader also reads the racer's record as gone, the reclaim does not run twice.
 	assert.throws(() => acquireReclaim(path, undefined, () => undefined), /ownership conflict/);
@@ -231,7 +246,7 @@ test('acquireRunFileGuard suffixes the quarantine name on collision; owner.json 
 		mkdirSync(candidate); writeFileSync(join(candidate, 'sentinel'), 'occupied');
 	}
 	const guard = acquireReclaim(path, undefined, () => undefined);
-	const suffixed = quarantinedSiblings(path).filter((name) => name.endsWith(`.${nonce}.1`));
+	const suffixed = quarantinedSiblings(path).filter((name) => name.endsWith(`-${nonce}.1`));
 	assert.equal(suffixed.length, 1);
 	assert.equal(readFileSync(join(dir, suffixed[0]!, 'owner.json'), 'utf8'), record); // byte-identical evidence
 	assert.ok(readFileSync(PATHS.daemonLog, 'utf8').includes(nonce)); // the recovery line is keyed by the recorded nonce

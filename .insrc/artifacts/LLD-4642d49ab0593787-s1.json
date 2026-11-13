@@ -1,0 +1,1491 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1794551362794-fdm5ky",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-13T06:38:38.894Z",
+    "epicCreatedAt": "2026-11-13T06:38:38.894Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 555617,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4642d49ab0593787",
+    "epicSlug": "vs-code-plugin-scratchpads-insrc-scratches",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1794551362794-fdm5ky",
+    "hldEffectiveHash": "4642d49ab05937875f19515259d7eb6462b9450c4f63748f90ab18e833fe595e",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "VS Code plugin scratchpads: ~/.insrc/scratches store, chat-input scratchpad button with recent/new/browse-all menu, tabular browse webview, Send-to-chat on text selection",
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "Triage classified this as a feature (one cohesive story) reusing the chat webview attach-button/popup/PanelFactory/PATHS.insrc-store patterns; new surface is the ~/.insrc/scratches dir, new protocol message types, and a new scratchpad module + panels. Routed to standalone design.story (LLD) -> plan -> build.",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 3,
+        "contentHash": "062149f7c447b5917480314cd479fdaa985f9169985de992991fd1b6193336f2",
+        "at": "2026-11-13T07:49:27.800Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {
+            "note": "round-3 review corrections applied; content-hash recomputed and revision bumped per the reconcileLifecycle content-change rule"
+          }
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 1,
+        "reviewer": {
+          "id": "agent:design-review-daemon",
+          "kind": "agent",
+          "properties": {
+            "party": "daemon"
+          }
+        },
+        "party": "daemon",
+        "verdict": "block",
+        "counts": {
+          "HIGH": 2,
+          "MED": 8,
+          "LOW": 0
+        },
+        "at": "2026-11-13T06:47:49.107Z",
+        "report": {
+          "entityId": "LLD-4642d49ab0593787-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "7e651f7481c543d64bd776774e0041f05264a59011aa2c995a95a2fecd0c5a27"
+        }
+      },
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-13T08:30:03.813Z",
+        "override": {
+          "reason": "Three review rounds used on reviewId lld-4642d49ab0593787-s1-r1 (attempts 1-3): attempt 1 returned block (2 HIGH, 8 MED) and attempts 2-3 were invalidated mid-run by artifact_changed caused by off-ledger raw edits that desynced the lifecycle contentHash; all collected findings (round 1: 2 HIGH + 8 MED; round 2 chunks: 13 MED + 1 LOW; round 3 chunks: 7 MED) were corrected in the LLD and the head integrity was repaired (rev 3, contentHash recomputed with the framework canonical-JSON algorithm, self-verify OK). User explicitly chose \"approve with override\" after being shown the findings and the 3-round stop. Companion renderings could not be browser-verified (host unavailable); generated HTML sources were inspected instead."
+        }
+      }
+    },
+    "revision": 3,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "14b83025e31ea281ca9492f82c9784b714644236"
+  },
+  "body": {
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Chat-webview menu + dedicated scratchpad webview panels (all-in-plugin, plain files)",
+        "oneLineSummary": "Smallest fully-meeting shape: reuse the chat popup for the menu, new webview viewTypes for browse-all and the scratchpad document with floating Send-to-chat; storage via a new vscode-free scratch-store over ~/.insrc/scratches.",
+        "approach": "One new vscode-free module `vscode-plugin/src/chat/scratch-store.ts` (ScratchFs + node impl; list/create/read/delete over `~/.insrc/scratches/*.md` named `<yyyymmdd-hhmmss>-<slug>.md`), wired in extension.ts next to the attachment store as `join(PATHS.insrc, 'scratches')`. Chat webview: sibling `.attachbtn`-class icon button `#insrc-scratch` next to `#insrc-attach` opening the existing `.popup`/`.item` menu with recent items (top 5 by mtime), New, and Browse-all rows; new message types in protocol.ts. Browse-all = new webview panel viewType `insrc.scratchpads` and document = `insrc.scratchpad`, both owned by a new vscode-free scratch-panels controller (panels/scratch-panels.ts) wrapping the injected PanelFactory with a per-viewType create-or-reveal singleton cache and a setTitle operation, sharing the CSP+nonce shell extracted to panels/shell.ts; the browse table has name/date/icon-only open-delete rows. Opening a scratchpad = document viewType `insrc.scratchpad` with a floating Send-to-chat button on selection posting `send-to-chat`; host pushes `insert-into-input`; the chat webview inserts the text and focuses the input.",
+        "pros": [
+          "Matches existing patterns exactly (attach button family, histmenu popup, PanelFactory, PATHS.insrc stores, protocol lists) — least new surface, fully testable with fake-dom + fake fs.",
+          "No daemon IPC, plain files only — exactly the requested scope.",
+          "Icon-only buttons with title tooltips come free from the `.attachbtn`/`.popup .item` CSS family."
+        ],
+        "cons": [
+          "One new host→webview input-insertion message is needed (none exists).",
+          "The selection-handler script lives in the scratchpad document view, not the chat panel."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Native QuickPick + text-document editor with command-based send-to-chat",
+        "oneLineSummary": "Host-side QuickPick menu and a real text editor for scratchpads; selection send-to-chat via command rather than a floating webview button.",
+        "approach": "VS Code native `window.showQuickPick` for the menu (host-side), `window.createWebviewPanel` for the browse-all table, `vscode.window.showTextDocument` for opening a scratchpad (a real editor), Send-to-chat as a registered command on a status-bar affordance.",
+        "pros": [
+          "QuickPick is native, zero webview code for the menu.",
+          "A real text document gives syntax highlighting for free."
+        ],
+        "cons": [
+          "Native QuickPick moves the menu out of the in-panel dropdown next to the attach button.",
+          "A real text document cannot show a floating button on text selection — the user explicitly wants selection → floating button, which forces a webview document view anyway.",
+          "More host-side VS Code API surface, less reuse of the proven in-webview patterns."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Rank 3: a native QuickPick moves the menu out of the requested in-panel location next to attach, and a real text document cannot show the required floating Send-to-chat button on selection — the defining interaction is violated."
+      },
+      {
+        "id": "a3",
+        "name": "Sidebar tree view for browse-all + webview reader",
+        "oneLineSummary": "Register a scratchpads TreeDataProvider in a sidebar; chat button opens recent/new; tree provides browse-all and open/delete.",
+        "approach": "Scratchpads as a sidebar tree view (`TreeDataProvider` over ~/.insrc/scratches); chat button only for new/recent; browse-all = the tree itself; open renders in a webview reader pane.",
+        "pros": [
+          "Native VS Code navigation for the file list.",
+          "Delete/open are one-click in the tree."
+        ],
+        "cons": [
+          "Adds a sidebar contribution point (package.json views + tree provider) — more surface than asked; the user asked for a button next to attach + a tabular editor pane.",
+          "Tree views don't natively offer per-row icon-only open/delete buttons with hover text in the requested tabular layout."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Rank 4: a sidebar TreeDataProvider is not the requested editor-pane tabular view with per-row icon-only open/delete buttons, and adds an unrequested package.json views contribution (L cost)."
+      },
+      {
+        "id": "a4",
+        "name": "Single-webview overlay for browse + view",
+        "oneLineSummary": "Menu in chat webview; browse-all and scratchpad viewing as overlays within the same chat webview.",
+        "approach": "Chat-webview popup for the menu, but browse-all and single-scratchpad viewing rendered as overlay panes inside the SAME chat webview (no separate panel), with the Send-to-chat floating button inside that overlay.",
+        "pros": [
+          "One webview to maintain.",
+          "Send-to-chat insertion is same-document."
+        ],
+        "cons": [
+          "Overlays complicate the chat panel's state machine/viewGeneration logic; a separate panel matches the existing PanelFactory.",
+          "Selection handling inside the chat transcript collides with the existing selection-decision/edit-mode feature."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Rank 2: an overlay inside the chat webview is not an editor-pane panel, and selection handling there collides with the existing in-chat selection-decision/edit-mode feature."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "componentDependencyDefinition": {
+      "components": [
+        {
+          "description": "New vscode-free, deps-injected store (ScratchFs interface + node impl) managing plain .md files under ~/.insrc/scratches: list/create/read/delete, id validation, temp+rename writes. Mirrors attachment-store.ts.",
+          "id": "scratch-store",
+          "path": "vscode-plugin/src/chat/scratch-store.ts"
+        },
+        {
+          "description": "Webview-to-host and host-to-webview message unions plus the HOST_TO_WEBVIEW_TYPES / WEBVIEW_TO_HOST_TYPES const arrays (exhaustiveness asserted in protocol.test.ts). Gains the eight scratchpad message types.",
+          "id": "protocol",
+          "path": "vscode-plugin/src/chat/protocol.ts"
+        },
+        {
+          "description": "Inline-HTML chat webview: gains the #insrc-scratch .attachbtn sibling button next to #insrc-attach, the #insrc-scratchmenu .popup.chatmenu, bootstrap listeners, host-side switch cases, and the insert-into-input handler on #insrc-input (:2784).",
+          "id": "chat-panel",
+          "path": "vscode-plugin/src/chat/chat-panel.ts"
+        },
+        {
+          "description": "Extension activation: constructs createScratchStore with root join(PATHS.insrc, 'scratches') next to the attachment store (~:635), registers the scratch message handlers, and injects the panels factory (:447) used for the two new viewTypes.",
+          "id": "extension",
+          "path": "vscode-plugin/src/extension.ts"
+        },
+        {
+          "description": "NEW vscode-free scratch-panels controller: wraps the injected PanelFactory (extension.ts:447) with its own create-or-reveal singleton cache per viewType (mirroring openSingleton at webview-host.ts:214), exposes setTitle for tab-title updates on the cached insrc.scratchpad document panel, and owns the generation counter. Backs insrc.scratchpads (tabular browse) and insrc.scratchpad (document + floating Send-to-chat).",
+          "id": "scratch-panels",
+          "path": "vscode-plugin/src/panels/scratch-panels.ts"
+        },
+        {
+          "description": "Shared CSP+nonce shell (shellHtml) extracted from panels/webview-host.ts:635 into panels/shell.ts so the chat panel and both scratch viewTypes share the identical shell; existing CSP/nonce tests keep passing against the extraction.",
+          "id": "shell",
+          "path": "vscode-plugin/src/panels/shell.ts"
+        },
+        {
+          "description": "Shared path constant: PATHS.insrc = join(homedir(), '.insrc'); the scratches root derives from it, never a hard-coded path.",
+          "id": "paths",
+          "path": "src/shared/paths.ts"
+        }
+      ],
+      "dependencies": [
+        {
+          "from": "extension",
+          "label": "constructs and wires",
+          "to": "scratch-store"
+        },
+        {
+          "from": "extension",
+          "label": "registers host handlers for",
+          "to": "protocol"
+        },
+        {
+          "from": "extension",
+          "label": "passes panels factory + store into",
+          "to": "chat-panel"
+        },
+        {
+          "from": "extension",
+          "label": "creates scratch view panels through",
+          "to": "scratch-panels"
+        },
+        {
+          "from": "scratch-panels",
+          "label": "creates/reveals via factory, shell from",
+          "to": "shell"
+        },
+        {
+          "from": "chat-panel",
+          "label": "sends/receives typed messages via",
+          "to": "protocol"
+        },
+        {
+          "from": "extension",
+          "label": "derives scratches root from",
+          "to": "paths"
+        }
+      ],
+      "id": "scratchpads-components",
+      "narrative": "Shows the module boundary of the scratchpad feature: one new vscode-free store module, additive protocol messages, chat-webview DOM/bootstrap, extension wiring, plus the new scratch-panels controller and the extracted shared shell — with zero daemon/DB modules in the dependency set, matching the no-daemon-IPC constraint."
+    },
+    "contractDetails": {
+      "api": [
+        {
+          "errors": [
+            {
+              "condition": "root path is not a directory or mkdir fails (EACCES/ENOSPC)",
+              "type": "ScratchStoreError"
+            },
+            {
+              "condition": "id must match ^[A-Za-z0-9][A-Za-z0-9._-]*\\.md$ AND must not be '.' or '..' AND resolve (via path.resolve) to a path strictly inside the store root AND lstat must report a regular file (symlinks are refused, not followed); any violation -> ScratchRefused before ANY fs call beyond the lstat",
+              "type": "ScratchRefused"
+            }
+          ],
+          "name": "createScratchStore",
+          "parameters": [
+            {
+              "name": "deps",
+              "optional": false,
+              "purpose": "Deps-injected root (+ optional fs/clock/logger); fs is OPTIONAL and defaults to the node adapter (nodeScratchFs) when omitted — the exact optional-fs + node-default pattern of createAttachmentStore (vscode-plugin/src/chat/attachment-store.ts, wired at extension.ts:635), so production wiring can pass only { root, logger } (root = join(PATHS.insrc, 'scratches'), PATHS.insrc = join(homedir(), '.insrc') per src/shared/paths.ts:4-8)",
+              "type": "{ root: string; fs?: ScratchFs; now?: () => Date; logger?: Logger }"
+            }
+          ],
+          "postconditions": [
+            "Store is ready; the scratches root exists or is created lazily on first write",
+            "No daemon IPC is involved — pure filesystem"
+          ],
+          "preconditions": [
+            "deps.root is an absolute path under ~/.insrc"
+          ],
+          "returns": {
+            "meaning": "Store handle exposing list/create/read/delete; vscode-free so fake-dom/fake-fs tests can drive it",
+            "type": "ScratchStore"
+          },
+          "signature": "function createScratchStore(deps: ScratchStoreDeps): ScratchStore"
+        },
+        {
+          "errors": [
+            {
+              "condition": "readdir ENOENT (no scratches dir yet)",
+              "type": "returns [] (empty list, not an error)"
+            },
+            {
+              "condition": "readdir EACCES/other",
+              "type": "ScratchStoreError"
+            }
+          ],
+          "name": "listScratches",
+          "parameters": [
+            {
+              "name": "limit?",
+              "optional": true,
+              "purpose": "Cap the returned list (the popup menu passes 5 for recents); OMIT for the unbounded full list — browse-all calls listScratches() with no limit so no entry is ever omitted",
+              "type": "number | undefined"
+            }
+          ],
+          "postconditions": [
+            "Entries are sorted by mtime descending (most recent first)",
+            "Each entry carries id, name, mtime and size; ids are the file basenames"
+          ],
+          "preconditions": [
+            "Store created via createScratchStore"
+          ],
+          "returns": {
+            "meaning": "Metadata for every ~/.insrc/scratches/*.md file",
+            "type": "ScratchEntry[]"
+          },
+          "signature": "function listScratches(limit?: number): Promise<ScratchEntry[]>"
+        },
+        {
+          "errors": [
+            {
+              "condition": "write EACCES/ENOSPC or no free collision name within the ladder",
+              "type": "ScratchStoreError"
+            }
+          ],
+          "name": "createScratch",
+          "parameters": [
+            {
+              "name": "title",
+              "optional": false,
+              "purpose": "Human title for the new scratchpad; slugified into the file name",
+              "type": "string"
+            },
+            {
+              "name": "body?",
+              "optional": true,
+              "purpose": "Initial content; omitted = a short starter line inviting notes",
+              "type": "string | undefined"
+            }
+          ],
+          "postconditions": [
+            "A new file <yyyymmdd-hhmmss>-<slug>.md exists under the root (collision suffixes -2, -3, ... chosen by probing lstat for non-existence)",
+            "Publication is exclusive and cross-process safe: the temp file gets a unique name (pid + random suffix, not matching *.md), and the final link(oldpath, newpath) + unlink(temp) pair is atomic no-clobber (Node link() fails with EEXIST when the destination exists — unlike rename, which replaces it); on EEXIST the next suffix (-2, -3, ...) is probed and the pair retried, so a concurrent create in another VS Code window can never replace an existing scratchpad and both complete contents survive; any failure BEFORE the link() is a failed create with no scratchpad created (temp best-effort removed); link() itself is the single atomic publication point — once it succeeds the scratchpad EXISTS and the create is a success, so a subsequent unlink(temp) failure is non-fatal: the orphaned temp name does not match *.md, is invisible to listScratches, and is best-effort cleaned on the next create; the documented failure is never returned after publication, and a retry in that window cannot double-create because the EEXIST suffix ladder covers it",
+            "Content is written to the temp file first (never a partial .md visible); publication is the link(oldpath, newpath) + unlink(temp) pair ONLY — rename is never used anywhere in the store, because rename would replace a destination created after the existence probe; link() is the sole atomic no-clobber publication primitive (EEXIST -> next suffix)",
+            "The new entry appears at the head of listScratches unless an existing entry has a strictly later mtime (e.g. a future-dated file) or an equal-mtime tie resolved by id ascending"
+          ],
+          "preconditions": [
+            "title is a non-empty string"
+          ],
+          "returns": {
+            "meaning": "The created entry's metadata",
+            "type": "Promise<ScratchEntry>"
+          },
+          "signature": "function createScratch(title: string, body?: string): Promise<ScratchEntry>"
+        },
+        {
+          "errors": [
+            {
+              "condition": "id must match ^[A-Za-z0-9][A-Za-z0-9._-]*\\.md$ AND must not be '.' or '..' AND resolve (via path.resolve) to a path strictly inside the store root AND the file is opened with open(path, O_RDONLY | O_NOFOLLOW) and fstat on that fd must report a regular file — a no-follow open, so a symlink swapped in after any earlier check still yields ELOOP -> ScratchRefused and is never followed; any violation -> ScratchRefused before ANY read beyond that open/fstat",
+              "type": "ScratchRefused"
+            },
+            {
+              "condition": "the no-follow open rejects ENOENT (file missing before open) OR a read on that fd rejects ENOENT (file deleted between open and read) — both map to ScratchNotFound; the single fd is the source of truth, so validation and read cannot observe different files",
+              "type": "ScratchNotFound"
+            }
+          ],
+          "name": "readScratch",
+          "parameters": [
+            {
+              "name": "id",
+              "optional": false,
+              "purpose": "File basename of the scratchpad to open in the document view",
+              "type": "string"
+            }
+          ],
+          "postconditions": [
+            "The full markdown content is returned for rendering",
+            "Content is rendered via textContent/escapeHtml only — CSP invariant kept",
+            "The document panel tracks a monotonically increasing openGeneration per scratch-open request; when the async read resolves, the host applies it only if its generation matches the panel’s current generation (a stale read is dropped). Title/content/selection state are replaced atomically; deleting id X closes the panel only if it currently displays X AND invalidates every still-pending open of X: each scratch-open captures its openGeneration at click time and deleteScratch bumps that scratchpad's epoch, so an in-flight readScratch(X) that resolves late finds a generation mismatch and its render is dropped — not merely a panel-close guard; a stale ScratchNotFound for another id is ignored; disposing the panel invalidates its generation check"
+          ],
+          "preconditions": [
+            "Store created; id passes the filename validation (see errors) before any fs call"
+          ],
+          "returns": {
+            "meaning": "Full text content plus entry metadata",
+            "type": "Promise<{ entry: ScratchEntry; content: string }>"
+          },
+          "signature": "function readScratch(id: string): Promise<{ entry: ScratchEntry; content: string }>"
+        },
+        {
+          "errors": [
+            {
+              "condition": "id must match ^[A-Za-z0-9][A-Za-z0-9._-]*\\.md$ AND must not be '.' or '..' AND resolve (via path.resolve) to a path strictly inside the store root AND lstat must report a regular file (symlinks are refused, not followed); any violation -> ScratchRefused before ANY fs call beyond the lstat",
+              "type": "ScratchRefused"
+            },
+            {
+              "condition": "lstat reports ENOENT (already deleted before validation) OR unlink rejects with ENOENT (deleted between lstat and unlink)",
+              "type": "treated as success (delete is idempotent: missing file at any checkpoint resolves successfully and refreshes the table / closes the panel only if it displays that id)"
+            }
+          ],
+          "name": "deleteScratch",
+          "parameters": [
+            {
+              "name": "id",
+              "optional": false,
+              "purpose": "File basename to delete from the browse table row or the document view",
+              "type": "string"
+            }
+          ],
+          "postconditions": [
+            "The file is gone (or was already gone) and drops out of listScratches",
+            "Deleting the currently open document closes that panel"
+          ],
+          "preconditions": [
+            "Store created; id passes the filename validation (see errors) before any fs call; delete uses lstat-confirmed regular files only and unlink (never recursive rm), so a symlink or directory named *.md can never be removed"
+          ],
+          "returns": {
+            "meaning": "Void",
+            "type": "Promise<void>"
+          },
+          "signature": "function deleteScratch(id: string): Promise<void>"
+        },
+        {
+          "errors": [
+            {
+              "condition": "unknown payload.type in the host switch",
+              "type": "ignored (never throws — postMessage failures are swallowed per extension.ts:465-468 pattern)"
+            },
+            {
+              "condition": "title prompt cancelled or empty after trim -> no createScratch call; menu re-renders with the unchanged list",
+              "type": "no-op (cancelled)"
+            }
+          ],
+          "name": "chat host message handlers (switch on payload.type, chat-panel.ts:3566 pattern)",
+          "parameters": [
+            {
+              "name": "msg",
+              "optional": false,
+              "purpose": "Webview→host messages 'scratch-open-menu' | 'scratch-new' (TITLELESS intent — the host acquires the title itself) | 'scratch-open' {id} | 'scratch-delete' {id} | 'scratch-browse' | 'send-to-chat' {text}; host→webview 'scratch-list' {entries} | 'insert-into-input' {text} — each added to its OWN direction's union and const list (WEBVIEW_TO_HOST_TYPES :403 / HOST_TO_WEBVIEW_TYPES :378), exhaustiveness + direction isolation asserted in protocol.test.ts",
+              "type": "WebviewToHostMessage | HostToWebviewMessage"
+            }
+          ],
+          "postconditions": [
+            "'scratch-open-menu' replies with 'scratch-list' of the top 5",
+            "'scratch-new' (titleless) → host prompts for a title via the injected prompt-for-title boundary (window.showInputBox, extension.ts:606, fake in tests), then createScratch(title), replies 'scratch-list', opens the document view",
+            "'scratch-open' opens/creates-or-reveals the insrc.scratchpad document panel",
+            "'scratch-delete' deletes then refreshes any open browse table",
+            "'scratch-browse' opens/creates-or-reveals the insrc.scratchpads table panel",
+            "'send-to-chat' first REVEALS the chat panel (panel.reveal() — the chat does not retain its page while hidden and its readiness handshake discards covered tabs, so a hidden chat cannot reliably receive the insertion), waits for the chat webview's ready handshake before posting, then pushes 'insert-into-input' {text} to the chat webview; if the chat panel was disposed meanwhile the message is dropped silently (same swallow pattern); text must be a string; it is truncated multibyte-safe so the final string INCLUDING the trailing '…' stays within 65,536 UTF-8 bytes",
+            "title handoff is concrete: the webview sends titleless 'scratch-new'; ONLY the host asks the user (injected showInputBox boundary); cancel/empty-after-trim = no createScratch call and the menu re-renders with the unchanged list. The title is validated at runtime too (must be a string) alongside ids/texts",
+            "on any store failure the host replies 'scratch-list' { entries: [], error: '<reason>' } — an explicit optional error field (attachments-pending pattern), distinct from a successful empty list"
+          ],
+          "preconditions": [
+            "Chat panel is alive; scratch store is wired in extension.ts next to :635"
+          ],
+          "returns": {
+            "meaning": "Side effects on panels + webviews; no return value",
+            "type": "void"
+          },
+          "signature": "handleChatMessage(msg: WebviewToHostMessage): Promise<void>"
+        },
+        {
+          "errors": [
+            {
+              "condition": "panels factory throws (editor API failure)",
+              "type": "undefined returned + logged via panelLog (never throws; the handler degrades to a VS Code notification)"
+            }
+          ],
+          "name": "scratch webview panels via the injected PanelFactory (extension.ts:447)",
+          "parameters": [
+            {
+              "name": "viewType",
+              "optional": false,
+              "purpose": "'insrc.scratchpads' | 'insrc.scratchpad' — insrc.scratchpads = browse-all tabular editor-pane view (columns Name, Modified; per-row icon-only Open/Delete buttons with title hover text + data-id); insrc.scratchpad = singleton single-document view with a selectionchange listener",
+              "type": "ScratchViewType"
+            },
+            {
+              "name": "title",
+              "optional": false,
+              "purpose": "Panel title at creation (scratchpad name for the document view); the handle ALSO exposes setTitle(title) so a cached singleton can replace the editor tab title",
+              "type": "string"
+            }
+          ],
+          "postconditions": [
+            "Browse table rows post scratch-open {id} / scratch-delete {id}; the document view posts send-to-chat {text} from its floating button on non-empty selection",
+            "Both viewTypes are single-instance create-or-reveal; onDidDispose clears the cached handle so the next open creates fresh. Switching the insrc.scratchpad singleton from A to B calls setTitle(B) + setHtml on the SAME cached panel, so the editor tab title updates together with content and selection state"
+          ],
+          "preconditions": [
+            "Panels factory injected at extension.ts:447; the shared CSP+nonce shell (shellHtml, webview-host.ts:635) is extracted to panels/shell.ts (or re-exported) so the scratch panels get the identical shell"
+          ],
+          "returns": {
+            "meaning": "A live PanelHandle (setHtml/reveal/setTitle/onDidDispose/onMessage/postMessage/dispose) — setTitle is an injected title-update operation with a production adapter calling the underlying WebviewPanel title setter (the stock PanelHandle at panels/types.ts:134-135 has none). A new vscode-free scratch-panels controller wraps the factory with its own create-or-reveal singleton cache per viewType (mirroring the private openSingleton in panels/webview-host.ts:214); undefined + panelLog warning on creation failure",
+            "type": "PanelHandle | undefined"
+          },
+          "signature": "panels({ viewType: ScratchViewType, title: string }): PanelHandle | undefined"
+        },
+        {
+          "errors": [
+            {
+              "condition": "selection empty or collapsed",
+              "type": "floating button stays hidden"
+            }
+          ],
+          "name": "floating Send-to-chat button (document view bootstrap)",
+          "parameters": [
+            {
+              "name": "sel",
+              "optional": false,
+              "purpose": "window.getSelection() on selectionchange inside the insrc.scratchpad document view; button is icon-only with title=\"Send to chat\"",
+              "type": "Selection"
+            }
+          ],
+          "postconditions": [
+            "A floating icon-only button (title=\"Send to chat\") appears near the selection and posts { type: 'send-to-chat', text } with the captured selection text (captured at selectionchange, before the click, so focus/selectionchange cannot lose it)",
+            "Host pushes 'insert-into-input' to the chat webview, which applies ONE deterministic insertion rule to the editable textarea #insrc-input (chat-panel.ts:2784; #insrc-prompt at :2783 is the send/stop span and is NEVER an insertion target): the text is spliced in at the caret position, REPLACING any active selection range; if the caret is at the very end of the value (or selection info is unavailable) it appends with a single separating newline when the current value is non-empty; all other existing content is preserved; then focuses #insrc-input; the turn is NEVER auto-sent"
+          ],
+          "preconditions": [
+            "Document view is open and has focus"
+          ],
+          "returns": {
+            "meaning": "UI side effect only",
+            "type": "void"
+          },
+          "signature": "onSelectionChange(sel: Selection): void"
+        }
+      ],
+      "surfaceLevel": "public"
+    },
+    "dataModelChanges": [
+      {
+        "callSites": [
+          "vscode-plugin/src/extension.ts:635",
+          "vscode-plugin/src/extension.ts:636",
+          "src/shared/paths.ts:4",
+          "src/shared/paths.ts:8"
+        ],
+        "change": "new",
+        "details": "ScratchEntry { id, name, mtime, size } — metadata for one ~/.insrc/scratches/<yyyymmdd-hhmmss>-<slug>.md file. id = file basename; validated as a *.md filename that is not '.'/'..' and resolves strictly inside the store root, with lstat confirming a regular file (symlinks refused), before any fs call. Stored as plain markdown files; no daemon store, no LMDB/Lance row. Entries are enumerated by readdir + lstat (ENOENT → []), symlinks and non-files skipped, sorted by mtime desc (size in bytes, mtime in ms since epoch, ties broken by id ascending for deterministic order), optionally limited (menu top 5). Name-after-restart policy: the file basename retains only the slug, not the original title, so after a restart ScratchEntry.name is reconstructed from the id (the <yyyymmdd-hhmmss>-<slug> basename) — the original showInputBox title is not persisted.",
+        "entity": "ScratchEntry / scratchpad file under ~/.insrc/scratches"
+      },
+      {
+        "callSites": [
+          "vscode-plugin/src/chat/protocol.ts:346",
+          "vscode-plugin/src/chat/protocol.ts:378",
+          "vscode-plugin/src/chat/protocol.ts:403",
+          "vscode-plugin/src/chat/__tests__/protocol.test.ts"
+        ],
+        "change": "new",
+        "details": "Eight new message types added to the webview→host and host→webview unions, each to its OWN direction's const array only: webview→host 'scratch-open-menu', 'scratch-new' (titleless intent; the host acquires the title via the injected showInputBox boundary), 'scratch-open' {id}, 'scratch-delete' {id}, 'scratch-browse', 'send-to-chat' {text} go in WEBVIEW_TO_HOST_TYPES (protocol.ts:403); host→webview 'scratch-list' {entries, error?}, 'insert-into-input' {text} go in HOST_TO_WEBVIEW_TYPES (:378). Payload field names are part of the contract; ids/texts/titles must be strings at runtime (non-string payloads are rejected by the host switch). protocol.test.ts gains direction-isolation assertions: each new type appears in its own array and NOT in the other's, and the unions cover the arrays exactly.",
+        "entity": "Webview↔host protocol messages (protocol.ts)"
+      },
+      {
+        "callSites": [
+          "vscode-plugin/src/chat/chat-panel.ts:2796",
+          "vscode-plugin/src/chat/chat-panel.ts:2766",
+          "vscode-plugin/src/chat/chat-panel.ts:2289",
+          "vscode-plugin/src/chat/chat-panel.ts:2296",
+          "vscode-plugin/src/chat/chat-panel.ts:2465",
+          "vscode-plugin/src/chat/chat-panel.ts:2486",
+          "vscode-plugin/src/chat/chat-panel.ts:3566",
+          "vscode-plugin/src/chat/chat-panel.ts:2783"
+        ],
+        "change": "new",
+        "details": "Chat webview DOM additions: a sibling icon-only button #insrc-scratch (class attachbtn, inline SVG, title=\"scratchpads\") directly next to #insrc-attach (:2796); a dropdown #insrc-scratchmenu reusing the .popup.chatmenu / .item pattern of #insrc-histmenu (:2766, opens upward :2289, rows :2296) whose items are recent entries + \"New scratchpad\" + \"Browse all\"; one bootstrap listener (:2465-2486 pattern) posting 'scratch-open-menu'; the host 'insert-into-input' handler inserts text into #insrc-input (:2784) and focuses it — #insrc-prompt (:2783) is the send/stop span and is NEVER an insertion target. Attach flow (.attachbar :2787, 'pick-attachments' :3566) untouched.",
+        "entity": "Chat status-bar UI: scratchpad button + popup menu + input insertion"
+      },
+      {
+        "callSites": [
+          "vscode-plugin/src/extension.ts:447",
+          "vscode-plugin/src/panels/webview-host.ts:162",
+          "vscode-plugin/src/panels/types.ts"
+        ],
+        "change": "new",
+        "details": "Two new webview viewTypes through the existing injected PanelFactory: 'insrc.scratchpads' (browse-all tabular editor-pane view: columns Name and Modified, per-row icon-only Open/Delete buttons with title hover text and data-id) and 'insrc.scratchpad' (single-document view rendering scratch content via textContent only, with the selectionchange → floating icon-only \"Send to chat\" button). Both keep the shared CSP+nonce shell (extracted to panels/shell.ts) and create-or-reveal single-instance lifecycle owned by a NEW vscode-free scratch-panels controller (panels/scratch-panels.ts) wrapping the injected PanelFactory; the controller exposes setTitle on its handle, and the singleton document view calls setTitle + setHtml on the same panel when switching scratchpads. The insrc.scratchpad document view is a SINGLETON panel with a generation counter: opening B while A is displayed bumps the generation, replaces title+content+selection state on render, and discards a late-resolving read of A; ScratchNotFound closes the panel only when the failing id is the one currently displayed.",
+        "entity": "Scratchpad webview panel viewTypes"
+      }
+    ],
+    "errorPaths": {
+      "edgeCases": [
+        {
+          "expected": "listScratches returns [] — the menu shows only \"New scratchpad\" + \"Browse all\", and Browse all shows an empty table with a hint row",
+          "input": "No ~/.insrc/scratches directory exists yet (fresh install) — readdir ENOENT"
+        },
+        {
+          "expected": "File name gets a -2 (then -3, ...) suffix and the entry is created without error",
+          "input": "Two scratchpads created within the same second from the same title (yyyymmdd-hhmmss-slug collision)"
+        },
+        {
+          "expected": "createScratch slugifies the title (lowercase, spaces to dashes, non [a-z0-9-] dropped) so the generated id always matches ^[A-Za-z0-9._-]+$; an all-symbol title falls back to 'scratch'",
+          "input": "Title containing unicode, spaces, slashes or other non-slug characters"
+        },
+        {
+          "expected": "The entry is skipped from the list (not a crash); an entry whose stat fails is dropped rather than failing the whole list",
+          "input": "A file in ~/.insrc/scratches disappears between readdir and stat"
+        },
+        {
+          "expected": "Non-.md files in the scratches dir are ignored by listScratches; the temp file from an interrupted write is ignored (its name does not end in .md)",
+          "input": "Directory contains unrelated files (e.g. .DS_Store, a leftover .tmp)"
+        },
+        {
+          "expected": "send-to-chat is accepted up to 64 KiB; larger selections are truncated so the FINAL inserted string including the trailing ellipsis stays within 65,536 UTF-8 bytes, and still inserted",
+          "input": "User selects more than 64 KiB of text in the scratchpad document view"
+        },
+        {
+          "expected": "readScratch/deleteScratch refuse before touching the filesystem (ScratchRefused); the host handler logs and ignores the message",
+          "input": "A webview-to-host scratch-open/scratch-delete payload carries an id with path separators or shell metacharacters (../, ;, spaces)"
+        },
+        {
+          "expected": "Deleting an already-deleted id resolves successfully — ENOENT at lstat or at unlink is success (idempotent delete); the browse table just re-renders without the row",
+          "input": "User double-clicks Delete on the same browse-table row"
+        },
+        {
+          "expected": "A subsequent store operation (list/read/delete) detects the external deletion at its own lstat and resolves ScratchNotFound (the panel closes only if it displays that id) or drops the row from the browse table; no watcher closes the panel live, and selecting/sending already-rendered text does NOT re-read the file — the guarantee is narrowed to the next store operation",
+          "input": "The scratchpad file backing an open insrc.scratchpad document view is deleted (from the browse table or the filesystem)"
+        },
+        {
+          "expected": "insert-into-input splices the text at the caret of #insrc-input — replacing an active range selection; appending with one separating newline only when the caret is at the end and the draft is non-empty — and focuses #insrc-input; the turn is NOT sent",
+          "input": "Chat input #insrc-input already contains unsent text (caret mid-draft or an active selection range) when insert-into-input arrives"
+        },
+        {
+          "expected": "The floating button stays hidden; nothing is posted",
+          "input": "User clicks into the document without selecting any text (collapsed selection) and selectionchange fires"
+        }
+      ],
+      "errorCases": [
+        {
+          "detection": "fs.mkdir/readdir/writeFile rejects with code EACCES, ENOSPC, EROFS, or the root is not a directory",
+          "recoverable": true,
+          "response": "createScratchStore/list/create surface ScratchStoreError; the host handler catches, logs via panelLog and replies 'scratch-list' { entries: [], error: 'scratchpads unavailable: <reason>' } — a typed error distinct from a successful empty list (optional error field, attachments-pending pattern); the menu renders the error row and still offers Browse all, which shows an error row; a later successful scratch-open-menu re-renders the real list (recovery by retry)",
+          "scenario": "~/.insrc/scratches cannot be created or written (read-only home, disk full, permissions)",
+          "userImpact": "Scratchpads cannot be listed/created; the attach flow and chat itself keep working (failure is contained to the scratch features)"
+        },
+        {
+          "detection": "id fails the ^[A-Za-z0-9._-]+$ check before any fs call",
+          "recoverable": true,
+          "response": "readScratch/deleteScratch throw ScratchRefused; host logs and ignores the message — no filesystem access happens",
+          "scenario": "Malicious or malformed id in a webview message (path traversal ../, separators, metacharacters)",
+          "userImpact": "No impact; the attempt is refused and logged"
+        },
+        {
+          "detection": "lstat or readFile on the id rejects with ENOENT",
+          "recoverable": true,
+          "response": "readScratch maps ENOENT (at lstat or readFile) to ScratchNotFound; deleteScratch maps ENOENT (at lstat or unlink) to success; the host closes the document panel ONLY if it currently displays that id, and refreshes the browse table so the stale row disappears. There is no file watcher: an already-rendered document stays open until the next interaction (narrowed guarantee — external deletion is detected on read, not observed live)",
+          "scenario": "Opening or deleting a scratchpad whose file was deleted out-of-band while the menu/table was showing",
+          "userImpact": "Stale menu/table row resolves on next interaction; no crash"
+        },
+        {
+          "detection": "writeFile of the temp file or the rename fails mid-create",
+          "recoverable": true,
+          "response": "ScratchStoreError surfaces to the host; the temp file is best-effort removed; no partial .md file is left visible (temp name does not match the *.md listing filter)",
+          "scenario": "Crash or EACCES/ENOSPC between temp write and rename during createScratch",
+          "userImpact": "No scratchpad is created; user can retry from the menu"
+        },
+        {
+          "detection": "readdir succeeds but a stat on an entry rejects, or an entry is a directory named *.md",
+          "recoverable": true,
+          "response": "listScratches skips entries whose stat fails or that are not files; a fully unreadable dir (non-ENOENT error) surfaces ScratchStoreError and the menu shows the unavailable row",
+          "scenario": "Corrupt or permission-restricted entries inside ~/.insrc/scratches",
+          "userImpact": "List degrades to the readable entries instead of failing wholesale"
+        },
+        {
+          "detection": "panels.create throws or the webview fails to load",
+          "recoverable": true,
+          "response": "Handler never throws (extension.ts:465-468 swallow pattern); error is logged via panelLog and surfaced as a VS Code notification only",
+          "scenario": "Browse-all or document webview panel cannot be created",
+          "userImpact": "Click does nothing visible except a logged/notification error; chat stays usable"
+        },
+        {
+          "detection": "postMessage to a disposed webview (chat panel closed while scratchpad document posts send-to-chat)",
+          "recoverable": true,
+          "response": "The swallow pattern at extension.ts:465-468 discards the post; no error propagates",
+          "scenario": "send-to-chat posted after the chat webview was closed or reloaded",
+          "userImpact": "Nothing is inserted; the selection is simply not delivered that once"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "source": "c1",
+          "text": "The attach flow is untouched: #insrc-attach button, .attachbar, and the 'pick-attachments' host case at chat-panel.ts:3566 keep their exact behavior; the scratchpad button is a sibling, not a modification."
+        },
+        {
+          "source": "c1",
+          "text": "Webview CSP invariant: scratch content is rendered via textContent/escapeHtml only — never innerHTML with user content; new panels reuse the CSP+nonce shell from createWebviewPanelHost (panels/webview-host.ts:162)."
+        },
+        {
+          "source": "c2",
+          "text": "Protocol exhaustiveness: every new message type appears in the protocol.ts union of its OWN direction AND in that direction's const array ONLY (host→webview types in HOST_TO_WEBVIEW_TYPES :378, webview→host types in WEBVIEW_TO_HOST_TYPES :403); protocol.test.ts asserts exhaustiveness, direction isolation (each new type in its own array and NOT the other's) and that each union covers its const array exactly."
+        },
+        {
+          "source": "c3",
+          "text": "Store pattern: the scratch store stays vscode-free and deps-injected (ScratchFs interface + node impl) exactly like attachment-store.ts, so tests drive it with fakes; root comes from PATHS.insrc (src/shared/paths.ts:4-8), never a hard-coded path."
+        },
+        {
+          "source": "c1",
+          "text": "Send-to-chat never auto-sends a turn: insert-into-input only inserts text into #insrc-input (:2784) and focuses it; the user presses send."
+        },
+        {
+          "source": "c4",
+          "text": "Plain files, no daemon IPC: scratchpads are .md files under ~/.insrc/scratches only; no LMDB/Lance/daemon socket usage is introduced."
+        }
+      ]
+    },
+    "hldContextSlice": {
+      "adjacentBoundaries": [],
+      "boundary": {
+        "depends": [],
+        "internal": "VS Code plugin scratchpads: ~/.insrc/scratches store, chat-input scratchpad button with recent/new/browse-all menu, tabular browse webview, Send-to-chat on text selection",
+        "owns": [],
+        "storyId": "s1"
+      },
+      "consumedContracts": [],
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "nonFunctional": {},
+      "ownedContracts": [],
+      "rolloutPhase": "standalone"
+    },
+    "interactionWithShared": [],
+    "migration": {
+      "backwardCompat": "Fully backward compatible: no existing public API, protocol message, store root, or package.json contribution is changed or removed. The webview→host and host→webview unions only gain new message types (additive); protocol.test.ts's exhaustiveness assertion is updated in the same change. The attach flow, chat-attachments store, and all existing webview panels are untouched. Older extension versions simply have no scratchpad button; no data exists to migrate because ~/.insrc/scratches starts empty.",
+      "dataRewriteRequired": false,
+      "migrationSteps": [
+        {
+          "action": "Add the vscode-free scratch-store.ts module (ScratchFs interface + node impl, createScratchStore/listScratches/createScratch/readScratch/deleteScratch) with its unit tests and fake-scratch-fs.ts — new files only, no edits to existing modules",
+          "order": 1,
+          "rollbackable": true
+        },
+        {
+          "action": "Extend protocol.ts: add the six webview→host types to the webview→host union + WEBVIEW_TO_HOST_TYPES (:403) and the two host→webview types to the host→webview union + HOST_TO_WEBVIEW_TYPES (:378) — each type in its own direction's array only; update protocol.test.ts expectations — additive only",
+          "order": 2,
+          "rollbackable": true
+        },
+        {
+          "action": "Wire the store in extension.ts next to the createAttachmentStore call (~:635): createScratchStore({ root: join(PATHS.insrc, 'scratches'), logger: panelLog }) — fs omitted, node adapter default applies (mirrors attachment-store wiring) and register the six new host message handlers plus the insert-into-input push; no changes to existing handlers",
+          "order": 3,
+          "rollbackable": true
+        },
+        {
+          "action": "Add the chat webview DOM + bootstrap in chat-panel.ts: sibling #insrc-scratch .attachbtn icon button next to #insrc-attach (:2796), #insrc-scratchmenu .popup.chatmenu with recent/New/Browse-all items, the click listener posting scratch-open-menu, and the insert-into-input handler targeting #insrc-input (:2784); CSS reuses existing .attachbtn/.popup/.item rules so only minimal new styles are added",
+          "order": 4,
+          "rollbackable": true
+        },
+        {
+          "action": "Add the two webview viewTypes (insrc.scratchpads tabular browse view, insrc.scratchpad document view with floating Send-to-chat on selection) through the existing injected PanelFactory (extension.ts:447) with the shared CSP+nonce shell from panels/webview-host.ts:162; single-instance create-or-reveal per viewType",
+          "order": 5,
+          "rollbackable": true
+        },
+        {
+          "action": "Create the scratches root lazily on first write (mkdir recursive inside createScratch); no pre-creation step needed, no existing directory is modified",
+          "order": 6,
+          "rollbackable": true
+        }
+      ],
+      "stateAfter": "VS Code plugin ships scratchpads: plain markdown files under ~/.insrc/scratches (created lazily on first use) managed by a vscode-free scratch-store; the chat status bar shows an icon-only scratchpad button next to the attach button whose popup lists the 5 most recent scratchpads plus New scratchpad and Browse all; Browse all opens a single-instance tabular editor-pane webview (Name, Modified, icon-only Open/Delete per row); Open shows the scratchpad in a document webview where selecting text reveals a floating icon-only Send-to-chat button that inserts the selection into the chat input and focuses it (never auto-sends); all eight new protocol messages are additive to the existing unions and their own direction's type lists (direction-isolated); scratch-new is a titleless intent with the title acquired host-side via showInputBox; the singleton document panel updates its tab title via setTitle when switching scratchpads; no daemon IPC, no migration of existing data (the dir starts empty).",
+      "stateBefore": "Per s1 bundles (c1-c4): the chat status bar has only the attach button #insrc-attach (chat-panel.ts:2796) wired to 'pick-attachments' (host switch :3566); the only popup menu is #insrc-histmenu (.popup.chatmenu :2766, wiring :2532-2544); protocol.ts has no scratchpad messages (:346, :378, :403); extension.ts wires only chat-attachments (:635) and chat-sessions (:636) stores under PATHS.insrc (src/shared/paths.ts:4-8) and injects the panels factory at :447 whose core is createWebviewPanelHost (panels/webview-host.ts:162); there is no ~/.insrc/scratches usage anywhere and no scratchpad UI or protocol types exist.",
+      "zeroDowntime": true
+    },
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "id": "scratchpad-send-to-chat",
+      "messages": [
+        {
+          "description": "Clicking the scratchpad icon button posts scratch-open-menu to the extension host.",
+          "from": "chat-webview",
+          "kind": "call",
+          "label": "post { type: 'scratch-open-menu' }",
+          "to": "extension-host"
+        },
+        {
+          "description": "Host calls listScratches(5) on the scratch store (plain .md files under ~/.insrc/scratches).",
+          "from": "extension-host",
+          "kind": "call",
+          "label": "listScratches(5)",
+          "to": "scratch-store"
+        },
+        {
+          "description": "Store returns entries sorted by mtime desc.",
+          "from": "scratch-store",
+          "kind": "return",
+          "label": "ScratchEntry[]",
+          "to": "extension-host"
+        },
+        {
+          "description": "Host pushes the recent list to the chat webview, which renders the popup menu (recent + New scratchpad + Browse all).",
+          "from": "extension-host",
+          "kind": "call",
+          "label": "push { type: 'scratch-list', entries }",
+          "to": "chat-webview"
+        },
+        {
+          "description": "Selecting a row (or Browse all) posts scratch-open / scratch-browse; host branches: scratch-browse goes STRAIGHT to the insrc.scratchpads tabular panel (no readScratch — there is no document id); only scratch-open proceeds to readScratch(id) + document panel.",
+          "from": "chat-webview",
+          "kind": "call",
+          "label": "post { type: 'scratch-open', id } (menu row) OR { type: 'scratch-browse' } (Browse all — carries NO id; the host fetches listScratches() with no limit for the table)",
+          "to": "extension-host"
+        },
+        {
+          "from": "extension-host",
+          "to": "extension-host",
+          "kind": "recurse",
+          "label": "branch: scratch-open -> readScratch(id); scratch-browse -> table panel, no read",
+          "description": "The two menu branches diverge here: a scratch-open {id} continues into readScratch(id) with the click-time generation; Browse all renders the insrc.scratchpads table from a SEPARATE unbounded listScratches() call (NO limit argument) — the menu list is listScratches(5) and must NOT be reused, because with more than five scratchpads the capped list would silently omit older entries from Browse all (contradicting ac3 and the list contract). The browse fetch and its render are generation-checked exactly like opens."
+        },
+        {
+          "description": "scratch-open branch only: host calls readScratch(id) (async) and create-or-reveals the singleton insrc.scratchpad document panel via the scratch-panels controller (setTitle + generation bump).",
+          "from": "extension-host",
+          "kind": "call",
+          "label": "readScratch(id)",
+          "to": "scratch-store"
+        },
+        {
+          "description": "Store returns the file content; the host renders it into the document panel via setHtml (textContent-only) only if the generation still matches — a slow read for a previously opened scratchpad is dropped.",
+          "from": "scratch-store",
+          "kind": "return",
+          "label": "content (generation-checked)",
+          "to": "extension-host"
+        },
+        {
+          "description": "Document view is live: content rendered, selection now possible.",
+          "from": "extension-host",
+          "kind": "call",
+          "label": "panel.setHtml(render(content))",
+          "to": "scratch-doc-view"
+        },
+        {
+          "description": "Document view renders content via textContent only; on selectionchange with a non-empty selection the floating icon-only Send-to-chat button appears.",
+          "from": "scratch-doc-view",
+          "kind": "recurse",
+          "label": "selectionchange -> show floating button (title=\"Send to chat\")",
+          "to": "scratch-doc-view"
+        },
+        {
+          "description": "Clicking the floating button posts the selected text (capped at 64 KiB) to the host.",
+          "from": "scratch-doc-view",
+          "kind": "call",
+          "label": "post { type: 'send-to-chat', text }",
+          "to": "extension-host"
+        },
+        {
+          "description": "Host pushes the text to the chat webview; the chat webview inserts it at the cursor (or appends) of #insrc-input and focuses it — the turn is NEVER auto-sent.",
+          "from": "extension-host",
+          "kind": "call",
+          "label": "push { type: 'insert-into-input', text }",
+          "to": "chat-webview"
+        },
+        {
+          "description": "Chat webview inserts text into #insrc-input and focuses it; user presses send.",
+          "from": "chat-webview",
+          "kind": "return",
+          "label": "insert into #insrc-input + focus (no send)",
+          "to": "extension-host"
+        }
+      ],
+      "narrative": "The Send-to-chat flow crosses three surfaces (scratchpad document view, extension host, chat webview) over the new protocol messages; the diagram pins the ordering and the invariant that text is only inserted into the chat input, never submitted.",
+      "participants": [
+        {
+          "description": "Inline-HTML chat webview: #insrc-scratch button, #insrc-scratchmenu popup, editable textarea #insrc-input (send/stop is the separate #insrc-prompt span).",
+          "id": "chat-webview",
+          "label": "Chat webview"
+        },
+        {
+          "description": "VS Code extension host: message switch, scratch store access, panel factory.",
+          "id": "extension-host",
+          "label": "Extension host"
+        },
+        {
+          "description": "Vscode-free store over plain .md files in ~/.insrc/scratches.",
+          "id": "scratch-store",
+          "label": "ScratchStore"
+        },
+        {
+          "description": "insrc.scratchpad webview panel: document content + floating Send-to-chat button on selection.",
+          "id": "scratch-doc-view",
+          "label": "Scratchpad document view"
+        }
+      ],
+      "truncations": [
+        {
+          "atParticipant": "extension-host",
+          "note": "Browse-table open/delete rows post scratch-open/scratch-delete through the same host switch; elided for brevity."
+        }
+      ]
+    },
+    "summary": {
+      "audience": "product",
+      "prose": "This story adds scratchpads to the VS Code chat: a scratchpad icon button next to the attach button opens a menu with recent scratchpads, a New scratchpad item and a Browse all item. Browse all opens a tabular editor pane (name, date, icon-only open/delete) over the scratchpads stored as plain markdown files in ~/.insrc/scratches. Opening a scratchpad shows its content in an editor pane where selecting text reveals a floating \"Send to chat\" button that drops the selection into the chat input (never auto-sends). No daemon IPC is added. Acceptance criteria: ac1 = scratchpads are stored as plain .md files under ~/.insrc/scratches via the vscode-free store (list/create/read/delete); ac2 = an icon-only scratchpad button next to the attach button opens a popup with the 5 most recent entries + New scratchpad + Browse all; ac3 = Browse all opens a single-instance tabular editor pane (Name, Modified, icon-only Open/Delete per row); ac4 = opening a scratchpad shows a document pane where selecting text reveals a floating icon-only Send-to-chat button that inserts the selection into #insrc-input and focuses it (never auto-sends); ac5 = every new button is icon-only with a title hover text. Editing existing scratchpad content inside the plugin is OUT OF SCOPE for this increment (the document view is read-only; content is created via New and edited as a plain file outside the plugin; re-opening a scratchpad re-reads the file, so externally edited content is picked up on the next open). Round-3 review corrections: link()-only publication with post-link unlink-failure semantics defined; O_NOFOLLOW fd-based reads; send-to-chat reveals the chat and awaits its ready handshake; the popup menu itself is now depicted in the UX mock; delete invalidates pending opens of the deleted id; browse-all fetches an unbounded list."
+    },
+    "testStrategy": {
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "scratch-store.test.ts: listScratches returns entries sorted by mtime desc with id/name/mtime/size",
+            "scratch-store.test.ts: createScratch writes <yyyymmdd-hhmmss>-<slug>.md via temp+rename and it appears at list head",
+            "extension-chat-wiring.test.ts: extension.ts constructs createScratchStore with root join(PATHS.insrc, 'scratches')"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "chat-panel.test.ts: #insrc-scratch sibling button with class attachbtn + inline SVG + title exists next to #insrc-attach",
+            "chat-panel.test.ts: #insrc-scratchmenu .popup.chatmenu renders recent items + New scratchpad + Browse all from a scratch-list push",
+            "chat-panel.test.ts: bootstrap click on #insrc-scratch posts {type:'scratch-open-menu'}"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "scratch-panel.test.ts: browse viewType insrc.scratchpads renders a table with Name and Modified columns",
+            "scratch-panel.test.ts: each row has icon-only Open/Delete buttons (title hover text, data-id) posting scratch-open/scratch-delete",
+            "scratch-panel.test.ts: empty list renders a hint row; create-or-reveal reuses a single panel instance"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "scratch-panel.test.ts: document viewType insrc.scratchpad renders content via textContent only",
+            "scratch-panel.test.ts: selectionchange with non-empty selection shows the floating icon-only Send-to-chat button (title) which posts send-to-chat {text}",
+            "chat-panel.test.ts: host insert-into-input handler inserts into #insrc-input (:2784) per the deterministic rule — caret mid-draft in a non-empty draft, and an active range selection replaced — and focuses it without sending"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "chat-panel.test.ts + scratch-panel.test.ts: every button in the new UI is icon-only with a title attribute (assert no visible text content on buttons)",
+            "protocol.test.ts: all eight new message types appear in their own direction's union + const array only, with direction-isolation and union/array-equality assertions passing"
+          ]
+        }
+      ],
+      "testFramework": "node:test + node:assert/strict via npx tsx --test (repo convention; vscode-plugin suites run with the default node, daemon suites need node 22 on PATH)",
+      "testLevels": [
+        {
+          "fixturesNeeded": [
+            "fake-scratch-fs.ts (in-memory ScratchFs, mirrors fake-attachment-fs.ts)",
+            "fixed clock injected via deps.now for deterministic yyyymmdd-hhmmss names"
+          ],
+          "level": "unit",
+          "purpose": "Prove the vscode-free store contract: list/create/read/delete over ~/.insrc/scratches, sorting, slug naming, collision suffixes, temp+rename writes, id validation, ENOENT→[] / idempotent delete, error mapping (ScratchRefused/ScratchNotFound/ScratchStoreError)",
+          "subjects": [
+            "vscode-plugin/src/chat/scratch-store.ts (new)",
+            "vscode-plugin/src/chat/__tests__/scratch-store.test.ts (new)",
+            "vscode-plugin/src/chat/__tests__/fake-scratch-fs.ts (new)",
+            "refusal tests: ids '.', '..', traversal strings, symlinks and directories named *.md cause ScratchRefused with ZERO fs mutation calls (the fake fs records calls)",
+            "concurrent-create test using TWO INDEPENDENT store instances over the SAME real (tmp) directory with filesystem-faithful link/rename semantics: racing creates on the same basename both succeed with distinct files and both complete contents survive (exclusive publication via link()+unlink, EEXIST retry of the suffix ladder)",
+            "ENOENT tests: absence before lstat and disappearance between lstat and the final read/unlink"
+          ]
+        },
+        {
+          "fixturesNeeded": [
+            "fake-dom.ts (existing)",
+            "a fake panels factory recording create() calls by viewType/title"
+          ],
+          "level": "integration",
+          "purpose": "Prove the wiring: protocol type exhaustiveness, chat webview button+menu markup and bootstrap posts, host switch cases for all six webview→host messages and both host→webview pushes, panel create-or-reveal for both viewTypes, insert-into-input behavior on #insrc-input, and the floating Send-to-chat button on selection in the document view",
+          "subjects": [
+            "vscode-plugin/src/chat/protocol.ts (extended)",
+            "vscode-plugin/src/chat/chat-panel.ts (button, menu, bootstrap, host cases)",
+            "vscode-plugin/src/chat/__tests__/protocol.test.ts (exhaustiveness + direction isolation + union/array equality)",
+            "vscode-plugin/src/chat/__tests__/chat-panel.test.ts (button/menu/insert-into-input)",
+            "vscode-plugin/src/chat/__tests__/scratch-panel.test.ts (new: browse table + document view + floating button)",
+            "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts (store root wiring next to extension.ts:635)",
+            "vscode-plugin/src/extension.ts (createScratchStore wiring + handler registration)",
+            "chat-panel.test.ts insert-into-input targets #insrc-input (existing textarea content preserved; no submit-turn/cancel-turn posted)",
+            "scratch-new title acquisition end-to-end (prompt cancelled -> no create + unchanged list; prompt answered -> create + list refresh + document open)",
+            "scratch-list error field renders the unavailable row and a later success recovers",
+            "scratch-panel.test.ts A->B document switching asserting setTitle(B) on the SAME panel instance (tab title updated) alongside content, with reversed read completion",
+            "stale ENOENT, deleting a non-displayed document, generation guard",
+            "closing/reopening the document panel during an outstanding read (dispose invalidates the generation, late read dropped)",
+            "panels-factory failure returns undefined + logged notification and the next click retries; existing CSP/nonce tests preserved when the shell is extracted to panels/shell.ts",
+            "selection-to-button click preserving the captured selection across focus/selectionchange",
+            "UTF-8 cap: final inserted string incl. ellipsis within 65,536 bytes, with a multibyte boundary case"
+          ]
+        },
+        {
+          "fixturesNeeded": [
+            "none — no live daemon or network is touched; scratchpads are plain files"
+          ],
+          "level": "smoke",
+          "purpose": "Smoke the real extension host path only if a display/VS Code test harness is available; otherwise covered by the integration fake-dom suite. No live LLM or daemon calls — the feature adds zero daemon IPC",
+          "subjects": [
+            "manual/optional smoke: click scratchpad button in the chat status bar, create a scratchpad, browse all, select text, Send to chat"
+          ]
+        }
+      ]
+    },
+    "uxDefinition": {
+      "type": "AdaptiveCard",
+      "version": "1.5",
+      "narrative": "The story introduces three user-facing surfaces — the chat status-bar button + popup menu, the tabular Browse-all editor pane, and the scratchpad document pane with its floating Send-to-chat button on text selection — and pins that every button is icon-only with hover text (title). The chat layout matches the live two-row structure (input bar with send + textarea; separate status bar with attach + scratchpad). Separate cards show the browse pane populated, empty and error states, and the document pane with a highlighted selection and the floating button anchored at it. Empty and error states of the menu are shown as well.",
+      "body": [
+        {
+          "type": "TextBlock",
+          "text": "0 · Chat status bar (input row)",
+          "weight": "bolder",
+          "size": "medium",
+          "description": "Section header for the chat input row surface."
+        },
+        {
+          "type": "Container",
+          "description": "Chat panel, matching the live layout at chat-panel.ts:2780-2796: the INPUT BAR row holds the send/stop span #insrc-prompt (:2783, LEADING) beside the editable textarea #insrc-input (:2784); the SEPARATE STATUS BAR row below holds the existing attach icon button #insrc-attach (:2796) and, directly next to it, the new scratchpad icon button #insrc-scratch.",
+          "items": [
+            {
+              "type": "ColumnSet",
+              "description": "Input bar row (chat-panel.ts:2780): send/stop control first, then the text area — NOT attach/scratch/send in one row.",
+              "columns": [
+                {
+                  "type": "Column",
+                  "width": "auto",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "[❯ send/stop]",
+                      "description": "Send/stop span #insrc-prompt (role=button, chat-panel.ts:2783) — leading the input bar; NEVER an insertion target."
+                    }
+                  ]
+                },
+                {
+                  "type": "Column",
+                  "width": "stretch",
+                  "items": [
+                    {
+                      "type": "Input.Text",
+                      "id": "chat-input",
+                      "placeholder": "message…",
+                      "isMultiline": true,
+                      "description": "The editable chat textarea #insrc-input (chat-panel.ts:2784) — the ONLY insertion target for send-to-chat text."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "ColumnSet",
+              "description": "Separate status bar row (chat-panel.ts:2794): attach button, then the scratchpad button as its direct sibling.",
+              "columns": [
+                {
+                  "type": "Column",
+                  "width": "auto",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "[attach icon]",
+                      "description": "Existing attach button #insrc-attach (unchanged): icon-only .attachbtn with title hover text (chat-panel.ts:2796)."
+                    }
+                  ]
+                },
+                {
+                  "type": "Column",
+                  "width": "auto",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "[scratchpad icon]",
+                      "color": "accent",
+                      "description": "NEW sibling button #insrc-scratch: icon-only .attachbtn + inline SVG + title=\"scratchpads\"; click posts scratch-open-menu."
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "TextBlock",
+          "text": "2 · Scratchpads popup menu (opens upward from the scratchpad button)",
+          "weight": "bolder",
+          "size": "medium",
+          "description": "Section header for the popup."
+        },
+        {
+          "type": "Container",
+          "description": "The popup menu that opens upward from the #insrc-scratch button on click: recent entries (top 5 from listScratches(5)), each row posting scratch-open {id}, then a separator and the action rows \"New scratchpad\" (posts titleless scratch-new — the host acquires the title) and \"Browse all\" (posts scratch-browse). EMPTY state (list = []): only the two action rows plus a \"(none yet)\" hint; ERROR state (scratch-list error field): an error row, while New/Browse remain available so recovery is possible.",
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "Recent",
+              "weight": "bolder",
+              "isSubtle": true,
+              "description": "Section label over the recent list (max 5)."
+            },
+            {
+              "type": "ColumnSet",
+              "description": "Recent entry row (repeated per entry, at most 5).",
+              "columns": [
+                {
+                  "type": "Column",
+                  "width": "stretch",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "20261113-143012-deploy-notes.md",
+                      "description": "Recent entry name; clicking the row posts {type:\"scratch-open\", id}."
+                    }
+                  ]
+                },
+                {
+                  "type": "Column",
+                  "width": "auto",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "[open icon]",
+                      "color": "accent",
+                      "description": "Icon-only (title=\"Open\") affordance on the row."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "TextBlock",
+              "text": "(none yet)",
+              "isSubtle": true,
+              "description": "EMPTY state: shown instead of recent rows when the list is empty (dir absent -> [])."
+            },
+            {
+              "type": "TextBlock",
+              "text": "scratchpads unavailable: EACCES",
+              "color": "attention",
+              "isSubtle": true,
+              "description": "ERROR state row from the scratch-list error field; the New/Browse rows below stay available."
+            },
+            {
+              "type": "ColumnSet",
+              "description": "Action rows at the menu bottom, after a separator.",
+              "columns": [
+                {
+                  "type": "Column",
+                  "width": "stretch",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "+ New scratchpad",
+                      "description": "Posts titleless {type:\"scratch-new\"}; the host prompts for the title via the injected showInputBox boundary."
+                    }
+                  ]
+                },
+                {
+                  "type": "Column",
+                  "width": "stretch",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "☰ Browse all",
+                      "description": "Posts {type:\"scratch-browse\"}; opens the tabular editor pane (insrc.scratchpads)."
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Container",
+          "description": "Tabular editor-pane table (POPULATED state): Name | Modified | Open | Delete — every action is an icon-only button with title hover text and data-id.",
+          "items": [
+            {
+              "type": "ColumnSet",
+              "description": "Table header row.",
+              "columns": [
+                {
+                  "type": "Column",
+                  "width": "stretch",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "Name",
+                      "weight": "bolder"
+                    }
+                  ]
+                },
+                {
+                  "type": "Column",
+                  "width": "auto",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "Modified",
+                      "weight": "bolder"
+                    }
+                  ]
+                },
+                {
+                  "type": "Column",
+                  "width": "auto",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "[open]",
+                      "weight": "bolder"
+                    }
+                  ]
+                },
+                {
+                  "type": "Column",
+                  "width": "auto",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "[delete]",
+                      "weight": "bolder"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "ColumnSet",
+              "description": "One data row: scratchpad name, modification date, and the two icon-only action buttons.",
+              "columns": [
+                {
+                  "type": "Column",
+                  "width": "stretch",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "20261113-143012-deploy-notes.md"
+                    }
+                  ]
+                },
+                {
+                  "type": "Column",
+                  "width": "auto",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "2026-11-13 14:30"
+                    }
+                  ]
+                },
+                {
+                  "type": "Column",
+                  "width": "auto",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "[open icon]",
+                      "color": "accent",
+                      "description": "Icon-only Open button: title=\"Open\", data-id=<file basename>; posts scratch-open {id}."
+                    }
+                  ]
+                },
+                {
+                  "type": "Column",
+                  "width": "auto",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "[delete icon]",
+                      "color": "attention",
+                      "description": "Icon-only Delete button: title=\"Delete\", data-id=<basename>; posts scratch-delete {id}; idempotent on repeat clicks (ENOENT = success)."
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Container",
+          "description": "Browse pane EMPTY and ERROR states (separate from the populated table): a successful empty list renders a hint row only; a store failure (typed error field of scratch-list) renders an error row with retry recovery on the next menu open.",
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "(no scratchpads yet — create one from the chat menu)",
+              "isSubtle": true,
+              "description": "EMPTY state hint row when the list is empty (fresh install, dir absent → [])."
+            },
+            {
+              "type": "TextBlock",
+              "text": "scratchpads unavailable: EACCES",
+              "color": "attention",
+              "isSubtle": true,
+              "description": "ERROR state row: the optional error field of scratch-list; Browse-all table shows the same error row; a later successful list recovers."
+            }
+          ]
+        },
+        {
+          "type": "TextBlock",
+          "text": "6 · Browse-all editor pane (insrc.scratchpads)",
+          "weight": "bolder",
+          "size": "medium",
+          "description": "Section header for the tabular browse pane."
+        },
+        {
+          "type": "Container",
+          "description": "Tabular editor-pane table: Name | Modified | Open | Delete — every action is an icon-only button with title hover text and data-id; an empty list shows a hint row; a store error shows an error row.",
+          "items": [
+            {
+              "type": "ColumnSet",
+              "description": "Table header row.",
+              "columns": [
+                {
+                  "type": "Column",
+                  "width": "stretch",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "Name",
+                      "weight": "bolder"
+                    }
+                  ]
+                },
+                {
+                  "type": "Column",
+                  "width": "auto",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "Modified",
+                      "weight": "bolder"
+                    }
+                  ]
+                },
+                {
+                  "type": "Column",
+                  "width": "auto",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "Open",
+                      "weight": "bolder"
+                    }
+                  ]
+                },
+                {
+                  "type": "Column",
+                  "width": "auto",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "Delete",
+                      "weight": "bolder"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "ColumnSet",
+              "description": "One data row: scratchpad name, modification date, and the two icon-only action buttons.",
+              "columns": [
+                {
+                  "type": "Column",
+                  "width": "stretch",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "20261113-143012-deploy-notes.md"
+                    }
+                  ]
+                },
+                {
+                  "type": "Column",
+                  "width": "auto",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "2026-11-13 14:30"
+                    }
+                  ]
+                },
+                {
+                  "type": "Column",
+                  "width": "auto",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "[open icon]",
+                      "color": "accent",
+                      "description": "Icon-only Open button: title=\"Open\", data-id=<file basename>; posts scratch-open {id}."
+                    }
+                  ]
+                },
+                {
+                  "type": "Column",
+                  "width": "auto",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "[delete icon]",
+                      "color": "attention",
+                      "description": "Icon-only Delete button: title=\"Delete\", data-id=<basename>; posts scratch-delete {id}; idempotent on repeat clicks."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "TextBlock",
+              "text": "(no scratchpads yet — create one from the chat menu)",
+              "isSubtle": true,
+              "description": "Empty-state hint row when the list is empty (fresh install)."
+            }
+          ]
+        },
+        {
+          "type": "TextBlock",
+          "text": "8 · Scratchpad document pane (insrc.scratchpad) + Send to chat",
+          "weight": "bolder",
+          "size": "medium",
+          "description": "Section header for the document view."
+        },
+        {
+          "type": "Container",
+          "description": "Singleton document pane rendering the scratchpad markdown via textContent only (CSP-safe); a non-empty text selection in the content reveals a floating icon-only Send-to-chat button anchored at the selection (depicted beside the highlighted run); clicking posts send-to-chat {text} (selection captured at selectionchange; truncated so the final string incl. ellipsis stays within 65,536 UTF-8 bytes).",
+          "items": [
+            {
+              "type": "ColumnSet",
+              "description": "Document content with an active selection and the floating button placed at the selection.",
+              "columns": [
+                {
+                  "type": "Column",
+                  "width": "stretch",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "…deploy the release, then «verify the canary metrics» and notify…",
+                      "wrap": true,
+                      "description": "Scratchpad content with the selected run «verify the canary metrics» highlighted."
+                    }
+                  ]
+                },
+                {
+                  "type": "Column",
+                  "width": "auto",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "[↗]",
+                      "color": "accent",
+                      "description": "Floating icon-only Send-to-chat button positioned at the selection (title=\"Send to chat\"); hidden on collapsed/empty selection; click posts {type:\"send-to-chat\", text} — the host inserts into #insrc-input and focuses it, NEVER auto-sends."
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "ux-mock",
+        "relPath": "docs/standalone/vs-code-plugin-scratchpads-insrc-scratches-E202611134642d49a/S001/ux-mock.html",
+        "title": "UX mock"
+      },
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/vs-code-plugin-scratchpads-insrc-scratches-E202611134642d49a/S001/sequence-diagram.html",
+        "title": "Sequence diagram"
+      },
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/vs-code-plugin-scratchpads-insrc-scratches-E202611134642d49a/S001/component-dependency.html",
+        "title": "Component dependencies"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "quotedText": "s1 analyze bundle c1 (chat webview status bar): the status bar already hosts the icon-only attach button at :2796 with .attachbtn class and inline SVG; a scratchpad button slots in as a sibling with the same class family; the existing popup pattern is #insrc-histmenu .popup.chatmenu at :2766 wired at :2532-2544; host switch case 'pick-attachments' at :3566; bootstrap wiring at :2465-2486; #insrc-prompt at :2783.",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:2796"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "quotedText": "s1 analyze bundle c2 (protocol): webview→host union at :346, HOST_TO_WEBVIEW_TYPES at :378, WEBVIEW_TO_HOST_TYPES at :403, const arrays asserted for exhaustiveness in protocol.test.ts — new scratchpad messages are added to both the unions and the const lists.",
+      "ref": "vscode-plugin/src/chat/protocol.ts:346"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "quotedText": "s1 analyze bundle c3 (extension wiring): extension.ts:635 constructs createAttachmentStore({ root: join(PATHS.insrc, 'chat-attachments'), logger }); panels factory injected at extension.ts:447 via vscode.window.createWebviewPanel(viewType, title, column, { enableScripts: true }); VS-Code-free core createWebviewPanelHost at panels/webview-host.ts:162 with types in panels/types.ts.",
+      "ref": "vscode-plugin/src/extension.ts:635"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "quotedText": "s1 analyze bundle c4 (store pattern + tests): attachment-store.ts is a vscode-free deps-injected module with an AttachmentFs interface and node impl; tests inject fake-attachment-fs.ts; chat-panel.test.ts + fake-dom.ts drive the inline-HTML bootstrap; protocol.test.ts asserts type-list exhaustiveness; suites run via npx tsx --test with node:test + node:assert/strict.",
+      "ref": "vscode-plugin/src/chat/attachment-store.ts:1"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "quotedText": "PATHS.insrc is join(homedir(), '.insrc') — the scratches root derives from it, never a hard-coded path.",
+      "ref": "src/shared/paths.ts:4"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "quotedText": "CSP+nonce shell and single-instance create-or-reveal lifecycle shared by all webview panels; the two new scratch viewTypes reuse it.",
+      "ref": "vscode-plugin/src/panels/webview-host.ts:162"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "quotedText": "Protocol type lists asserted exhaustively — each new message type must appear in its own direction's union and const array only; the tests also assert union/array equality.",
+      "ref": "vscode-plugin/src/chat/__tests__/protocol.test.ts"
+    }
+  ]
+}

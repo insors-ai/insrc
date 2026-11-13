@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 38,
-        "contentHash": "4849803b53d12bdfe5eae6a2ddbcfaa0d183f32ed409814fed547bb1eed580b2",
-        "at": "2026-11-13T11:32:44.181Z",
+        "number": 40,
+        "contentHash": "892a1224d6727a5c769b3b733700d681acb953dca4bcff8eba4f02acd7280601",
+        "at": "2026-11-13T11:35:02.514Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "4642d49ab0593787",
     "storyId": "s1",
     "createdAt": "2026-11-13T08:59:23.823Z",
-    "updatedAt": "2026-11-13T11:32:44.123Z",
+    "updatedAt": "2026-11-13T11:35:02.462Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-13T06:38:38.894Z",
     "epicSlug": "vs-code-plugin-scratchpads-insrc-scratches",
-    "revision": 38
+    "revision": 40
   },
   "body": {
     "tasks": [
@@ -1938,8 +1938,8 @@
       },
       {
         "taskId": "t5",
-        "commit": "e5f820bc6",
-        "ranAt": "2026-11-13T11:32:44.123Z",
+        "commit": "ae1d3633c",
+        "ranAt": "2026-11-13T11:33:56.198Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1987,7 +1987,7 @@
             "file": "vscode-plugin/src/panels/__tests__/scratch-panel.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 440,
+            "durationMs": 455,
             "titles": [
               {
                 "title": "scratch-panel.test.ts: browse viewType insrc.scratchpads renders a table with Name and Modified columns (ac3)",
@@ -2156,8 +2156,8 @@
       },
       {
         "taskId": "t7",
-        "commit": "c8d18af2e",
-        "ranAt": "2026-11-13T11:22:16.549Z",
+        "commit": "ae1d3633c",
+        "ranAt": "2026-11-13T11:35:02.462Z",
         "testsPassed": true,
         "tests": [
           {
@@ -2220,7 +2220,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "No display/VS Code harness in this environment; covered by the integration fake-dom suite (runShell + createScratchHost + createScratchPanels over fakes) in extension-chat-wiring.test.ts — 72/72 pass, tsc clean @c8d18af2e."
+              "evidence": "No display/VS Code harness in this environment; covered by the integration fake-dom suite (runShell + createScratchHost + createScratchPanels over fakes) in extension-chat-wiring.test.ts — 72/72 pass, tsc clean @ae1d3633c."
             }
           }
         ],
@@ -2229,7 +2229,7 @@
             "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 624,
+            "durationMs": 652,
             "titles": [
               {
                 "title": "the shell script runs: a windowed restore shows one page at the bottom with the bar, a page request round-trips and keeps the reader's place, a live row does not move a reader who scrolled up, and an old-style restore still works",

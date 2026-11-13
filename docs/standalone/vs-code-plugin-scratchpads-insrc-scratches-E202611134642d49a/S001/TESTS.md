@@ -130,7 +130,7 @@ Run at 2026-11-13T11:31:23.838Z on commit `e5f820bc6`. Tests check: **passed**. 
 
 ## t5
 
-Run at 2026-11-13T11:32:44.123Z on commit `e5f820bc6`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-13T11:33:56.198Z on commit `ae1d3633c`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: scratch-panel.test.ts: browse viewType insrc.scratchpads renders a table with Name and Modified columns (ac3)**
 
@@ -154,7 +154,7 @@ Run at 2026-11-13T11:32:44.123Z on commit `e5f820bc6`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `vscode-plugin/src/panels/__tests__/scratch-panel.test.ts` | 0 | 10 | 0.4 s |  |
+| `vscode-plugin/src/panels/__tests__/scratch-panel.test.ts` | 0 | 10 | 0.5 s |  |
 
 ## t6
 
@@ -198,7 +198,7 @@ Run at 2026-11-13T10:06:39.666Z on commit `76ccce876`. Tests check: **passed**. 
 
 ## t7
 
-Run at 2026-11-13T11:22:16.549Z on commit `c8d18af2e`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+Run at 2026-11-13T11:35:02.462Z on commit `ae1d3633c`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 **integration: extension-chat-wiring.test.ts: extension.ts constructs createScratchStore with root join(PATHS.insrc, 'scratches') (ac1)**
 
@@ -226,10 +226,10 @@ Run at 2026-11-13T11:22:16.549Z on commit `c8d18af2e`. Tests check: **passed**. 
 
 **smoke: manual/optional smoke: click scratchpad button in the chat status bar, create a scratchpad, browse all, select text, Send to chat (only if a display/VS Code harness is available; otherwise covered by the integration fake-dom suite — no live LLM or daemon calls)**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: No display/VS Code harness in this environment; covered by the integration fake-dom suite (runShell + createScratchHost + createScratchPanels over fakes) in extension-chat-wiring.test.ts — 72/72 pass, tsc clean @c8d18af2e.
+Reported by the builder, not run by the gate: **pass**. Evidence: No display/VS Code harness in this environment; covered by the integration fake-dom suite (runShell + createScratchHost + createScratchPanels over fakes) in extension-chat-wiring.test.ts — 72/72 pass, tsc clean @ae1d3633c.
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts` | 0 | 72 | 0.6 s |  |
+| `vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts` | 0 | 72 | 0.7 s |  |

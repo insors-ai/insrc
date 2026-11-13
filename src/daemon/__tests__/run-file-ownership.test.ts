@@ -1,15 +1,16 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, rmSync, existsSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, existsSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { connect } from 'node:net';
 import { once } from 'node:events';
-import { fork } from 'node:child_process';
+import { fork, spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { DaemonRunFileOwnership, endForRunFileConflict } from '../run-file-ownership.js';
 import { acquireRunFileGuard } from '../../shared/daemon-run-files.js';
+import { readProcessIdentity } from '../../shared/daemon-process.js';
 import { IpcServer, directDispatch } from '../server.js';
 
 function fixture() {
@@ -72,6 +73,28 @@ test('Startup-error, fatal and stale-file cleanup honor ownership', async () => 
   assert.equal(killed, true); assert.match(readFileSync(logPath, 'utf8'), /without cleanup/);
   const unstarted = new IpcServer(directDispatch({}), Date.now, f.paths.socketFile, f.owner);
   await unstarted.close(); assert.equal(readFileSync(f.paths.socketFile, 'utf8'), 'foreign');
+ } finally { f.cleanup(); }
+});
+
+test('startup lease acquires over a guard whose owner.json records a genuinely exited child process', async () => {
+ const f = fixture();
+ try {
+  // A real short-lived process, whose recorded identity is then genuinely dead: the real verdict path,
+  // no injected reader, exactly what a crashed daemon leaves behind.
+  const child = spawn(process.execPath, ['-e', 'process.on("message", () => process.exit(0))'], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
+  const identity = readProcessIdentity(child.pid);
+  assert.ok(identity !== undefined, 'the child identity was captured while it was alive');
+  const ended = once(child, 'exit'); child.send('exit'); await ended;
+  const record = JSON.stringify({ owner: identity, nonce: 'exited-owner' });
+  mkdirSync(f.paths.guardPath);
+  writeFileSync(join(f.paths.guardPath, 'owner.json'), record);
+  const lease = f.owner.lease();
+  assert.equal(existsSync(join(f.paths.guardPath, 'owner.json')), true, 'a fresh record under the reclaimed guard');
+  const quarantined = readdirSync(f.dir).filter((name) => name.startsWith('guard.quarantine-'));
+  assert.equal(quarantined.length, 1);
+  assert.equal(readFileSync(join(f.dir, quarantined[0]!, 'owner.json'), 'utf8'), record);
+  lease.release();
+  assert.equal(existsSync(f.paths.guardPath), false);
  } finally { f.cleanup(); }
 });
 

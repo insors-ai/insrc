@@ -1,0 +1,454 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1794549254332-p1haji",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-13T05:55:40.344Z",
+    "epicCreatedAt": "2026-11-13T05:55:40.344Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 84739,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "cda6558e4b0e4bea",
+    "epicSlug": "recover-run-file-guards-whose-recorded",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1794549254332-p1haji",
+    "hldEffectiveHash": "cda6558e4b0e4beaf03116cbafc8830acb28c25acf8fc8cdb1acd4d58b4057a1",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Recover run-file guards whose recorded owner is conclusively dead instead of withholding daemon restart",
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b768f70eff5e9a6f502b2e979623960674e19f5b27674ca288bc0417f2d3d357",
+        "at": "2026-11-13T05:55:40.931Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-13T06:06:52.924Z",
+        "override": {
+          "reason": "Daemon design review unavailable: attempt 1 rejected standalone LLD provenance at admission (no Epic/ISSUE link), attempt 2 failed with a daemon-side busy error (known broken review path since 2026-11-01). Controller self-review completed with fresh reads verifying all citations (c1-c6, c8) and the fail-closed guarantees; user approved in-chat."
+        }
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "6c0996d330cdd355826a6a91b84ade080289d2c2"
+  },
+  "body": {
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Reclaim inside the shared acquireRunFileGuard (dead-owner verdict + rename-to-quarantine + retry)",
+        "oneLineSummary": "The EEXIST branch itself decides dead vs live and self-heals; all guard consumers inherit it for free.",
+        "approach": "On EEXIST inside acquireRunFileGuard (src/shared/daemon-run-files.ts:64-92), before throwing runFileGuardConflict: read the existing owner.json, compute the liveness verdict with processIdentityState (src/shared/daemon-process.ts:77-80) plus a boot-id comparison. If conclusively dead - 'gone', or the recorded boot-id differs from the current boot (a previous-boot record is dead even when its PID reads 'replaced') - rename the stale guard directory to a quarantine name (timestamp + recorded nonce, matching the manual-quarantine convention) and retry the mkdir once. Rename+mkdir is atomic against competing starters (kernel-serialized on the same parent). Missing/corrupt/unreadable owner.json keeps the existing fail-closed throw. Recovery logged (prior owner identity + quarantine path) so the owner record survives as evidence. No new exports; every consumer - startup lease, supervisor borrow, legacy cutover, vault guard - inherits it. borrowRunFileGuard and removeOwnedRunFile untouched.",
+        "pros": [
+          "Smallest surface that fully meets the Story: one module, one branch",
+          "Fixes every consumer path at once - all four funnel through acquireRunFileGuard",
+          "Reuses the existing PID-reuse-safe identity machinery; no new identity code",
+          "Prior owner.json preserved by rename, keeping the evidence trail",
+          "Competing starters stay serialized; a live concurrent starter can never lose its guard"
+        ],
+        "cons": [
+          "acquireRunFileGuard grows from a pure mkdir-or-throw primitive to one with a recovery side effect - the 'crash mid-publication is deliberately fail-closed' comment must be narrowed to the unverifiable-owner case",
+          "the retry must not mask a live owner (retry happens only after a successful rename, so a live owner's guard is never renamed)"
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Recovery at the daemon ownership wrapper (DaemonRunFileOwnership.lease)",
+        "oneLineSummary": "Keep the shared primitive pure; make the daemon's ownership wrapper the recovery policy owner.",
+        "approach": "Keep acquireRunFileGuard fail-closed and instead teach DaemonRunFileOwnership.lease (src/daemon/run-file-ownership.ts:51-62) to pre-recover: catch runFileGuardConflict, run the same dead-owner verdict, quarantine-and-retry, then re-acquire. The shared primitive stays a pure mkdir-mutex; recovery is a policy of the daemon's ownership wrapper where isAlreadyRunning (:117-135) already implements the analogous stale pid-file policy.",
+        "pros": [
+          "The shared module's fail-closed contract and documented crash-mid-publication invariant stay byte-identical",
+          "Recovery lives beside isAlreadyRunning, the existing staleness-recovery precedent",
+          "Blast radius confined to the daemon startup path this Issue was reproduced against"
+        ],
+        "cons": [
+          "The keystore vault guard (src/shared/keystore.ts:96-100) and legacy cutover (src/daemon/legacy-daemon-cutover.ts:29-98) do NOT go through DaemonRunFileOwnership, so the offline maintenance tool keeps the original orphan failure - the fix is only half-delivered",
+          "Verdict + quarantine + retry logic duplicated if any second consumer needs it; two recovery policies to keep in sync",
+          "runFileGuardConflict must carry the recorded owner details to the wrapper so the verdict can be recomputed"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Leaves vault guard and cutover unfixed; violates shared-module placement."
+      },
+      {
+        "id": "a3",
+        "name": "Separate shared recovery module consumed by acquireRunFileGuard",
+        "oneLineSummary": "Factor verdict + quarantine + retry into its own exported unit that the guard calls on conflict.",
+        "approach": "New module exporting reclaimIfConclusivelyDead(path, identityReader) returning 'reclaimed' | 'unverifiable' | 'alive', implementing verdict + rename + log; acquireRunFileGuard calls it on EEXIST and throws runFileGuardConflict unless it reports 'reclaimed'. The decision table gets its own focused test file; the guard module keeps only the retry wiring.",
+        "pros": [
+          "The verdict table (gone / boot-mismatch / replaced / same / unreadable) is testable in isolation from the mkdir mechanics",
+          "Guard module stays small; recovery policy is deletable without touching the mutex",
+          "Natural seam if a future CLI wants an operator 'why was my start withheld' probe"
+        ],
+        "cons": [
+          "A module boundary nobody asked for: one caller, one use",
+          "Splits the guard's failure handling across two files",
+          "Larger import/dependency footprint for no additional reuse today"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "All constraints met but adds a one-caller module boundary."
+      },
+      {
+        "id": "a4",
+        "name": "Reclaim (a1) plus separately close the shutdown-deadline orphan window",
+        "oneLineSummary": "Also change the fail-closed cleanup so it never re-creates the guard the watchdog's SIGKILL can orphan.",
+        "approach": "The dead-owner reclaim of a1 AND additionally stop the most common orphan at its source: change clearRunFiles (src/daemon/run-file-ownership.ts:106-114) so shutdown cleanup removes daemon.pid/daemon.sock without re-creating the guard (or reorder the watchdog arming so it cannot kill inside the guard window), removing the shutdown-deadline race observed at 2026-11-13 05:01.",
+        "pros": [
+          "Eliminates the most frequently observed orphan at its cause rather than healing it afterward",
+          "Would reduce recovery-path log noise to genuinely external kills only"
+        ],
+        "cons": [
+          "Out of scope: the Issue's recorded user decision is that with dead-owner reclaim in place the known orphan windows become benign and are NOT separately fixed",
+          "Touches the fail-closed shutdown path (src/daemon/shutdown.ts:164-170) and the watchdog contract - the most safety-critical code in the daemon",
+          "Two independent behavior changes in one Story; each deserves its own ledger entry if ever pursued"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Contradicts the ISSUE's scope decision; touches fail-closed shutdown code."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "contractDetails": {
+      "api": [
+        {
+          "errors": [],
+          "name": "acquireRunFileGuard",
+          "parameters": [
+            {
+              "name": "path",
+              "optional": false,
+              "purpose": "guard directory",
+              "type": "string"
+            },
+            {
+              "name": "owner",
+              "optional": true,
+              "purpose": "identity to record in owner.json",
+              "type": "ProcessIdentity"
+            },
+            {
+              "name": "read",
+              "optional": true,
+              "purpose": "injected ProcessIdentityReader for verdicts and tests",
+              "type": "ProcessIdentityReader"
+            }
+          ],
+          "postconditions": [
+            "On success the guard directory holds a fresh owner.json naming the caller",
+            "On reclaim the stale guard persists as a quarantine sibling with owner.json intact",
+            "On withhold the guard directory is byte-identical to before the call"
+          ],
+          "preconditions": [
+            "The parent of `path` exists and is writable",
+            "On EEXIST the recorded owner identity is readable and a verdict is computable"
+          ],
+          "returns": {
+            "meaning": "the acquired guard; the EEXIST branch reclaims conclusively-dead occupants and retries the mkdir once",
+            "type": "RunFileGuard"
+          },
+          "signature": "acquireRunFileGuard(path: string, owner?: ProcessIdentity, read?: ProcessIdentityReader): RunFileGuard"
+        }
+      ],
+      "surfaceLevel": "internal-shared"
+    },
+    "dataModelChanges": [],
+    "errorPaths": {
+      "edgeCases": [
+        {
+          "expected": "Reclaim",
+          "input": "Previous-boot 'replaced' (boot segments mismatch)"
+        },
+        {
+          "expected": "Reclaim",
+          "input": "Verdict 'gone' (PID positively absent)"
+        },
+        {
+          "expected": "Withhold; only 'gone'",
+          "input": "darwin 'replaced' (no boot segment)"
+        },
+        {
+          "expected": "Symlink conflict",
+          "input": "Guard path is a symlink"
+        },
+        {
+          "expected": "Renamed whole",
+          "input": "Extra files beside owner.json"
+        },
+        {
+          "expected": "Suffixed name",
+          "input": "Quarantine name already taken"
+        }
+      ],
+      "errorCases": [
+        {
+          "detection": "EEXIST; verdict 'same'",
+          "recoverable": true,
+          "response": "Throw conflict unchanged",
+          "scenario": "Live owner",
+          "userImpact": "Withheld"
+        },
+        {
+          "detection": "'replaced'; same boot",
+          "recoverable": true,
+          "response": "Withhold; death not provable",
+          "scenario": "Same-boot PID reuse",
+          "userImpact": "Withheld"
+        },
+        {
+          "detection": "ownerRecord()/reader throws",
+          "recoverable": true,
+          "response": "Withhold; unreadable is never dead",
+          "scenario": "Unverifiable owner",
+          "userImpact": "Withheld"
+        },
+        {
+          "detection": "Retry mkdir EEXIST",
+          "recoverable": true,
+          "response": "Recompute conflict vs new occupant; throw",
+          "scenario": "Competing starter wins retry",
+          "userImpact": "Retry after release"
+        },
+        {
+          "detection": "renameSync throws",
+          "recoverable": true,
+          "response": "Suffix retry; persistent failure rethrows, guard untouched",
+          "scenario": "Rename fails",
+          "userImpact": "Withheld as before"
+        },
+        {
+          "detection": "appendFileSync throws",
+          "recoverable": true,
+          "response": "Swallow; quarantine dir is evidence",
+          "scenario": "Log write fails",
+          "userImpact": "Reclaim succeeds"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "source": "c1",
+          "text": "A live owner ('same') is never reclaimed."
+        },
+        {
+          "source": "c2",
+          "text": "A missing or unreadable owner record is never treated as dead."
+        },
+        {
+          "source": "c3",
+          "text": "Rename-then-mkdir preserves the atomic arbitration between starters."
+        },
+        {
+          "source": "c4",
+          "text": "The child never removes a supervisor-owned guard; borrowRunFileGuard untouched."
+        },
+        {
+          "source": "c5",
+          "text": "Nothing is recursively deleted; the reclaim renames the directory whole."
+        },
+        {
+          "source": "c6",
+          "text": "The reclaim lives in shared acquireRunFileGuard; vault guard and cutover inherit it."
+        }
+      ]
+    },
+    "hldContextSlice": {
+      "adjacentBoundaries": [],
+      "boundary": {
+        "depends": [],
+        "internal": "Recover run-file guards whose recorded owner is conclusively dead instead of withholding daemon restart",
+        "owns": [],
+        "storyId": "s1"
+      },
+      "consumedContracts": [],
+      "frameworkSummary": "Standalone feature - no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "nonFunctional": {},
+      "ownedContracts": [],
+      "rolloutPhase": "standalone"
+    },
+    "interactionWithShared": [],
+    "migration": {
+      "backwardCompat": "Additive: call sites, conflict message and owner.json format unchanged; supervisor protocol untouched.",
+      "dataRewriteRequired": false,
+      "migrationSteps": [
+        {
+          "action": "Reclaim decision-table unit tests first (red)",
+          "order": 1,
+          "prerequisiteFlags": [
+            "test-first"
+          ],
+          "rollbackable": true
+        },
+        {
+          "action": "EEXIST branch: read owner record, verdict, compare boot segments",
+          "order": 2,
+          "rollbackable": true
+        },
+        {
+          "action": "Reclaim: quarantine rename (timestamp+nonce, suffixed), daemonLog line, one retry, recompute on retry EEXIST",
+          "order": 3,
+          "rollbackable": true
+        },
+        {
+          "action": "Extend integration suites (lease, vault guard)",
+          "order": 4,
+          "rollbackable": true
+        },
+        {
+          "action": "Update comments at src/shared/daemon-run-files.ts:51 and :73",
+          "order": 5,
+          "rollbackable": true
+        },
+        {
+          "action": "Full sweep; shutdown suites unchanged",
+          "order": 6,
+          "rollbackable": true
+        }
+      ],
+      "stateAfter": "Conclusively-dead occupants reclaim: quarantine rename keeping owner.json, one daemonLog line, one mkdir retry; live/same-boot/unverifiable still throw; all consumers inherit.",
+      "stateBefore": "Every existing guard withholds: EEXIST throws runFileGuardConflict, verdict discarded; each orphan blocks restart until manual quarantine (six since 2026-11-02).",
+      "zeroDowntime": true
+    },
+    "openQuestions": [],
+    "testStrategy": {
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: 'gone' -> quarantine + retry acquires (src/shared/__tests__/daemon-run-files.test.ts)",
+            "int: lease over a dead-owner guard (src/daemon/__tests__/run-file-ownership.test.ts)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: previous-boot 'replaced' -> quarantine + acquire"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: owner.json byte-identical; nonce in quarantine name; daemonLog line by nonce"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "unit: retry EEXIST -> recompute conflict, throw"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "unit: 'same'/same-boot 'replaced'/missing or corrupt owner.json/throwing reader -> withhold"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "int: vault guard reclaims (src/daemon/__tests__/keystore-guard.test.ts); supervisor suites unchanged"
+          ]
+        },
+        {
+          "criterionId": "ac7",
+          "provingTests": [
+            "shutdown suites unchanged (src/daemon/__tests__/shutdown-*.test.ts)"
+          ]
+        }
+      ],
+      "testFramework": "node:test via `npx tsx --test 'src/**/__tests__/*.test.ts'`",
+      "testLevels": [
+        {
+          "fixturesNeeded": [
+            "mkdtemp guards + owner.json",
+            "fake reader (same/gone/replaced)",
+            "nonce for the daemonLog scan"
+          ],
+          "level": "unit",
+          "purpose": "Decision table via injected reader over mkdtemp guards.",
+          "subjects": [
+            "gone / previous-boot replaced -> quarantine + acquire",
+            "same / same-boot replaced / unverifiable -> conflict, nothing renamed",
+            "quarantine name = timestamp + nonce; owner.json intact; daemonLog line",
+            "symlink -> conflict; name collision -> suffix"
+          ]
+        },
+        {
+          "fixturesNeeded": [
+            "dead-owner guard fixture"
+          ],
+          "level": "integration",
+          "purpose": "Consumers inherit the reclaim; untouched consumers keep contracts.",
+          "subjects": [
+            "lease over a dead-owner guard (src/daemon/__tests__/run-file-ownership.test.ts)",
+            "vault guard reclaims (src/daemon/__tests__/keystore-guard.test.ts); borrowRunFileGuard unchanged (src/daemon/__tests__/supervisor-run-files.test.ts)"
+          ]
+        }
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/shared/daemon-run-files.ts:52-61"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/shared/daemon-process.ts:36-80"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/shared/daemon-run-files.ts:63"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/shared/daemon-run-files.ts:94-113"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/shared/daemon-run-files.ts:88"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/shared/keystore.ts:96-100"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-fb49f73c0a8fb900"
+    }
+  ]
+}

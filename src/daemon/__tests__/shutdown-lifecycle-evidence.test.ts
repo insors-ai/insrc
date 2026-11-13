@@ -5,7 +5,7 @@ import { spawn, execFileSync } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { once } from 'node:events';
 import { connect } from 'node:net';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { captureStopTarget } from '../../shared/daemon-process-client.js';
@@ -76,7 +76,14 @@ async function scenario(mode: 'healthy' | 'blocked' | 'guard-death') {
  const elapsedMs = Date.now() - started;
  const guardRemains = existsSync(join(home, '.insrc/daemon.run-files.guard'));
  const startCount = existsSync(starts) ? readFileSync(starts, 'utf8').trim().split('\n').length : 0;
- if (mode === 'guard-death') { assert.equal(result.ok, false); assert.match(result.error, /ownership conflict.*state=gone/); assert.equal(startCount, 0); assert.equal(guardRemains, true); }
+ if (mode === 'guard-death') {
+  // The killed owner is conclusively dead, so the new startup quarantines the stale guard and proceeds:
+  // the restart completes exactly like the healthy control, and the dead owner's record survives as evidence.
+  assert.equal(result.ok, true); assert.equal(startCount, 1); assert.equal(guardRemains, false);
+  const quarantined = readdirSync(join(home, '.insrc')).filter((name) => name.startsWith('daemon.run-files.guard.quarantine-'));
+  assert.equal(quarantined.length, 1);
+  assert.deepEqual(JSON.parse(readFileSync(join(home, '.insrc', quarantined[0]!, 'owner.json'), 'utf8')), guardOwner);
+ }
  else {
   assert.equal(result.ok, true); assert.equal(startCount, 1); assert.equal(guardRemains, false);
   const fresh = await captureStopTarget(Number(readFileSync(join(home, '.insrc/daemon.pid'), 'utf8'))); assert.ok(fresh); targets.push(fresh); assert.notEqual(fresh.pid, identity.pid); assert.equal(await fresh.handle.hasExited(), false);
@@ -85,7 +92,7 @@ async function scenario(mode: 'healthy' | 'blocked' | 'guard-death') {
  if (mode === 'blocked' || mode === 'guard-death') assert.equal(signal, 'SIGKILL'); else assert.equal(exitCode, 0);
  return { mode, startedAt, original: identity, configuredDeadlineMs: bound, elapsedMs, termination: { exitCode, signal }, restart: result, startCount, guardRemains, guardOwner, watchdogPid: Number(readFileSync(watchdogFile, 'utf8')), log: readFileSync(log, 'utf8') };
 }
-test('Guard-owner death prevents restart while the healthy control restarts normally', { timeout: 15000 }, async () => {
+test('Guard-owner death reclaims the stale guard so the restart proceeds like the healthy control', { timeout: 15000 }, async () => {
  const cases = [];
  for (const mode of ['blocked', 'healthy', 'guard-death'] as const) cases.push(await scenario(mode));
  const evidence = { recordedAt: new Date().toISOString(), platform: process.platform, node: process.version, historicalCause: 'October 13 native cause remains deferred and unproven', installedDaemonSmoke: 'not performed', cases };

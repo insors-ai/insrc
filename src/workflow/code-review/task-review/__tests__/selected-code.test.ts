@@ -11,7 +11,7 @@ import { parsePacket, decodeReview, PacketSchema } from '../contracts.js';
 import { prepareReviewAdmission } from '../admission.js';
 import { checkpointPath, saveCheckpoint } from '../checkpoint.js';
 
-test('selected code: exact pinned after blocks reach attribution and assessment without prior or surrounding source', async () => {
+test('selected code: exact pinned after blocks reach assessment and references reach attribution without prior or surrounding source', async () => {
  const f = await fixture(true, 3);
  try {
   const parent = f.packet.reviewSet[0]!.commit;
@@ -27,11 +27,14 @@ test('selected code: exact pinned after blocks reach attribution and assessment 
   assert.ok(!reads.includes(`${parent}:source.js`), 'old implementation is fetched only if needed');
   assert.deepEqual(selectedCode(prepared.changes[0]!).blocks, [{ lines: [1, 1], code: 'export const total = 3;\n' }]);
   const task = deriveTaskAssignments(prepared, ['t1','t2','t3'].map(taskId => ({ taskId, changeIndexes: [0], testIndexes: [0] })))[0]!;
-  for (const prompt of [attributionPrompt(prepared), assignmentPrompt(prepared, task, [])]) {
+  for (const prompt of [assignmentPrompt(prepared, task, [])]) {
    assert.ok(prompt.includes('export const total = 3;\\n'));
    for (const forbidden of ['UNCHOSEN_NEW_CODE', 'WORKTREE_ONLY_SECRET', 'export const total = 2;', '"before":', '"bytes":']) assert.ok(!prompt.includes(forbidden), forbidden);
   }
   assert.match(attributionPrompt(prepared), /"index":0/);
+  assert.ok(!attributionPrompt(prepared).includes('export const total'));
+  assert.ok(attributionPrompt(prepared).includes(commit));
+  assert.match(attributionPrompt(prepared), /"after":\[1,1\]/);
   const old = structuredClone(f.packet); old.reviewSet[0]!.files[0]!.segments[0]!.before = [1, 1];
   assert.throws(() => parsePacket(old), /Unexpected property|Before-version/);
   assert.throws(() => decodeReview(PacketSchema, old));

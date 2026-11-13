@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 32,
-        "contentHash": "5fb143504b75d1017bcfa3bd558c8d1df00376385c20f8be0988a8b5ed0e990a",
-        "at": "2026-11-13T11:20:11.915Z",
+        "number": 38,
+        "contentHash": "4849803b53d12bdfe5eae6a2ddbcfaa0d183f32ed409814fed547bb1eed580b2",
+        "at": "2026-11-13T11:32:44.181Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "4642d49ab0593787",
     "storyId": "s1",
     "createdAt": "2026-11-13T08:59:23.823Z",
-    "updatedAt": "2026-11-13T11:20:11.865Z",
+    "updatedAt": "2026-11-13T11:32:44.123Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-13T06:38:38.894Z",
     "epicSlug": "vs-code-plugin-scratchpads-insrc-scratches",
-    "revision": 32
+    "revision": 38
   },
   "body": {
     "tasks": [
@@ -668,9 +668,9 @@
       },
       {
         "taskId": "t4",
-        "commit": "44dc3a876",
-        "ranAt": "2026-11-13T09:39:11.744Z",
-        "testsPassed": false,
+        "commit": "e5f820bc6",
+        "ranAt": "2026-11-13T11:31:23.838Z",
+        "testsPassed": true,
         "tests": [
           {
             "name": "chat-panel.test.ts: #insrc-scratch sibling button with class attachbtn + inline SVG + title exists next to #insrc-attach (ac2, ac5)",
@@ -733,6 +733,11 @@
                 "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
                 "title": "chat-panel.test.ts + scratch-panel.test.ts: every button in the new UI is icon-only with a title attribute — no visible text content on buttons (ac5)",
                 "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/panels/__tests__/scratch-panel.test.ts",
+                "title": "chat-panel.test.ts + scratch-panel.test.ts: every button in the new UI is icon-only with a title attribute — no visible text content on buttons (ac5)",
+                "result": "pass"
               }
             ],
             "files": []
@@ -741,9 +746,9 @@
         "files": [
           {
             "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
-            "exitCode": 1,
+            "exitCode": 0,
             "timedOut": false,
-            "durationMs": 10811,
+            "durationMs": 10697,
             "titles": [
               {
                 "title": "the shell script runs: a windowed restore shows one page at the bottom with the bar, a page request round-trips and keeps the reader's place, a live row does not move a reader who scrolled up, and an old-style restore still works",
@@ -1507,7 +1512,7 @@
               },
               {
                 "title": "the shell embeds the pager: line() appends through it, session-restored replays with absolute keys through its reset, transcript-page goes to prepend, live rows are stamped and trimmed, and the provider lock settles from total",
-                "result": "fail"
+                "result": "pass"
               },
               {
                 "title": "the shell is still one nonce'd inline script, with no direct scrollTop write outside the pager, no innerHTML outside the guarded markdown path and no remote origin",
@@ -1555,7 +1560,7 @@
               },
               {
                 "title": "host: a submit stores the user's text with the attachments on the row, echoes them on user-row, sends a prompt that ends with the attached-files block of absolute paths, passes readDirs, and clears the pending list",
-                "result": "fail"
+                "result": "pass"
               },
               {
                 "title": "host: a submit with blank text and an attachment runs a turn and names the chat from the attachment; with blank text and none it is a no-op",
@@ -1878,17 +1883,63 @@
                 "result": "pass"
               }
             ],
-            "otherFailures": [
-              "the shell embeds the pager: line() appends through it, session-restored replays with absolute keys through its reset, transcript-page goes to prepend, live rows are stamped and trimmed, and the provider lock settles from total",
-              "host: a submit stores the user's text with the attachments on the row, echoes them on user-row, sends a prompt that ends with the attached-files block of absolute paths, passes readDirs, and clears the pending list"
-            ]
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/panels/__tests__/scratch-panel.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 404,
+            "titles": [
+              {
+                "title": "scratch-panel.test.ts: browse viewType insrc.scratchpads renders a table with Name and Modified columns (ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: each row has icon-only Open/Delete buttons (title hover text, data-id) posting scratch-open/scratch-delete (ac3, ac5)",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: empty list renders a hint row; create-or-reveal reuses a single panel instance; panel-factory failure returns undefined + logged and next click retries (ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: document viewType insrc.scratchpad renders content via textContent only (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: selectionchange with non-empty selection shows the floating icon-only Send-to-chat button (title) which posts send-to-chat {text}; selection-to-button click preserves the captured selection across focus/selectionchange (ac4, ac5)",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: A->B document switching asserts setTitle(B) on the SAME panel instance alongside content, with reversed read completion (generation guard)",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: stale ENOENT, deleting a non-displayed document, delete invalidates pending opens of the deleted id, closing/reopening the document panel during an outstanding read (dispose invalidates the generation, late read dropped)",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: UTF-8 cap — final inserted string incl. ellipsis within 65,536 bytes, with a multibyte boundary case",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: browseHtml error row and empty hint are CSP-safe (escaped)",
+                "result": "pass"
+              },
+              {
+                "title": "chat-panel.test.ts + scratch-panel.test.ts: every button in the new UI is icon-only with a title attribute — no visible text content on buttons (ac5)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
           }
         ]
       },
       {
         "taskId": "t5",
-        "commit": "76ccce876",
-        "ranAt": "2026-11-13T10:07:49.609Z",
+        "commit": "e5f820bc6",
+        "ranAt": "2026-11-13T11:32:44.123Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1936,7 +1987,7 @@
             "file": "vscode-plugin/src/panels/__tests__/scratch-panel.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 424,
+            "durationMs": 440,
             "titles": [
               {
                 "title": "scratch-panel.test.ts: browse viewType insrc.scratchpads renders a table with Name and Modified columns (ac3)",
@@ -1972,6 +2023,10 @@
               },
               {
                 "title": "scratch-panel.test.ts: browseHtml error row and empty hint are CSP-safe (escaped)",
+                "result": "pass"
+              },
+              {
+                "title": "chat-panel.test.ts + scratch-panel.test.ts: every button in the new UI is icon-only with a title attribute — no visible text content on buttons (ac5)",
                 "result": "pass"
               }
             ],
@@ -2101,8 +2156,8 @@
       },
       {
         "taskId": "t7",
-        "commit": "ba92fed38",
-        "ranAt": "2026-11-13T11:20:11.865Z",
+        "commit": "c8d18af2e",
+        "ranAt": "2026-11-13T11:22:16.549Z",
         "testsPassed": true,
         "tests": [
           {
@@ -2165,7 +2220,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "No display/VS Code harness in this environment; covered by the integration fake-dom suite (runShell + createScratchHost + createScratchPanels over fakes) in extension-chat-wiring.test.ts — 72/72 pass, tsc clean @ba92fed38."
+              "evidence": "No display/VS Code harness in this environment; covered by the integration fake-dom suite (runShell + createScratchHost + createScratchPanels over fakes) in extension-chat-wiring.test.ts — 72/72 pass, tsc clean @c8d18af2e."
             }
           }
         ],
@@ -2174,7 +2229,7 @@
             "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 603,
+            "durationMs": 624,
             "titles": [
               {
                 "title": "the shell script runs: a windowed restore shows one page at the bottom with the bar, a page request round-trips and keeps the reader's place, a live row does not move a reader who scrolled up, and an old-style restore still works",

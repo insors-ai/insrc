@@ -392,6 +392,8 @@ import { createScratchHost, SCRATCH_INTENT_TYPES, type ScratchChatSeam } from '.
 import type { ScratchStore, ScratchEntry } from '../scratch-store.js';
 import type { ScratchPanels } from '../../panels/scratch-panels.js';
 import type { HostToWebview } from '../protocol.js';
+import { runShell, ofType } from './chat-shell.test.js';
+import { fire, type BodyStub } from './fake-dom.js';
 
 interface FakeScratchStore extends ScratchStore {
   readonly calls: string[];
@@ -504,6 +506,13 @@ test('extension-chat-wiring.test.ts: scratch-new title acquisition end-to-end â€
   await flush();
   assert.deepEqual(store.created, [], 'a blank-trimmed prompt creates nothing');
   assert.equal(chat.posted.filter((m) => m.type === 'scratch-list').length, 1, 'the unchanged list is re-sent again');
+  // Non-string prompt answer: dropped (no create), unchanged list re-sent.
+  chat.posted.length = 0;
+  promptAnswer = 42 as unknown as string | undefined;
+  host.onMessage({ type: 'scratch-new' });
+  await flush();
+  assert.deepEqual(store.created, [], 'a non-string prompt answer creates nothing');
+  assert.equal(chat.posted.filter((m) => m.type === 'scratch-list').length, 1, 'the unchanged list is re-sent after a malformed title');
   // Answered prompt: create + browse refresh + document open + re-sent list.
   chat.posted.length = 0;
   promptAnswer = 'My Pad';
@@ -572,6 +581,38 @@ test('extension-chat-wiring.test.ts: scratch-list error field renders the unavai
   assert.equal(chat.posted.filter((m) => m.type === 'insert-into-input').length, 1, 'a non-string send-to-chat text is dropped');
   // Both host->webview pushes are the protocol's two scratch pushes.
   assert.ok(chat.posted.some((m) => m.type === 'scratch-list') && chat.posted.some((m) => m.type === 'insert-into-input'), 'both host->webview pushes (scratch-list, insert-into-input) are used');
+  // End-to-end render: the REAL webview shell (runShell) shows the error row from a failed
+  // store and re-renders the recovered entries from a later successful push.
+  {
+    const v = runShell({ hostDeps: { scratchpads: { enabled: true } } });
+    const menu = v.el('insrc-scratchmenu');
+    const renderStore = fakeStore();
+    const renderHost = createScratchHost({
+      store: renderStore,
+      panels: fakePanels(),
+      chat: {
+        open: () => {},
+        ready: () => Promise.resolve(),
+        disposed: () => false,
+        post: (m) => { if (m.type === 'scratch-list') v.msg(m); },
+      },
+      promptTitle: async () => undefined,
+    });
+    const lblOf = (c: BodyStub): string => (c.querySelector('.lbl') as BodyStub | null)?.textContent ?? '';
+    const labels = (): string[] => menu.children.map(lblOf);
+    fire(v.el('insrc-scratch'), 'click');
+    assert.deepEqual(ofType(v, 'scratch-open-menu'), [{ type: 'scratch-open-menu' }], 'the status-bar scratch button posts scratch-open-menu into the host router');
+    renderStore.failList = true;
+    renderHost.onMessage({ type: 'scratch-open-menu' });
+    await flush();
+    assert.equal(labels().length, 1, 'the failure renders exactly one row');
+    assert.match(labels()[0]!, /^scratchpads unavailable: .*EACCES/, 'the real menu renders the unavailable error row');
+    assert.equal(menu.children[0]!.attrs['aria-disabled'], 'true', 'the error row is disabled in the real render');
+    renderStore.failList = false;
+    renderHost.onMessage({ type: 'scratch-open-menu' });
+    await flush();
+    assert.deepEqual(labels(), ['20260113-090000-late', 'New scratchpad', 'Browse all'], 'a later success re-renders the recovered entries in the real menu');
+  }
 });
 
 test('extension-chat-wiring.test.ts: send-to-chat reveals the chat panel, awaits the ready handshake, then pushes insert-into-input capped at 65,536 UTF-8 bytes; disposed chat drops silently', async () => {

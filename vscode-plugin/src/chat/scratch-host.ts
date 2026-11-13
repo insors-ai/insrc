@@ -90,10 +90,16 @@ export function createScratchHost(deps: ScratchHostDeps): ScratchHost {
         return;
       case 'scratch-new':
         void (async (): Promise<void> => {
-          // Titleless intent: the host acquires the title via the injected prompt. A cancelled
-          // or blank-trimmed prompt creates nothing and re-sends the UNCHANGED list.
-          const title = await deps.promptTitle();
-          if (title === undefined || title.trim() === '') {
+          // Titleless intent: the host acquires the title via the injected prompt. A cancelled,
+          // non-string or blank-trimmed prompt creates nothing and re-sends the UNCHANGED list.
+          const raw = await deps.promptTitle();
+          if (typeof raw !== 'string') {
+            if (raw !== undefined) log.warn('[scratches] dropped malformed scratch-new: non-string title');
+            void sendScratchList();
+            return;
+          }
+          const title = raw;
+          if (title.trim() === '') {
             void sendScratchList();
             return;
           }

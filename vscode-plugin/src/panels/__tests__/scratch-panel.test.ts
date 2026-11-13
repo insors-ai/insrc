@@ -59,6 +59,7 @@ interface Harness {
   controller: ReturnType<typeof createScratchPanels>;
   sentToChat: string[];
   titles: string[];
+  warns: string[];
   failFactory: boolean;
 }
 
@@ -66,6 +67,7 @@ function harness(): Harness {
   const panels: FakePanel[] = [];
   const titles: string[] = [];
   const sentToChat: string[] = [];
+  const warns: string[] = [];
   let failFactory = false;
   const fake = fakeScratchFs();
   const store = createScratchStore({ root: ROOT, fs: fake.fs });
@@ -81,7 +83,7 @@ function harness(): Harness {
     genNonce: () => 'N',
     setPanelTitle: (_p, t) => { titles.push(t); },
     onSendToChat: (t) => { sentToChat.push(t); },
-    logger: { warn: () => {} },
+    logger: { warn: (m) => { warns.push(m); } },
   });
   return {
     panels,
@@ -91,6 +93,7 @@ function harness(): Harness {
     controller,
     sentToChat,
     titles,
+    warns,
     get failFactory() { return failFactory; },
     set failFactory(v: boolean) { failFactory = v; },
   } as Harness;
@@ -178,6 +181,7 @@ test('scratch-panel.test.ts: empty list renders a hint row; create-or-reveal reu
   const first = await h.controller.openBrowse();
   assert.ok(first !== undefined);
   assert.ok(h.panels[0]!.html.includes('No scratchpads yet'), 'empty hint row');
+  assert.ok(/<tr class="scratch-empty-row">/.test(h.panels[0]!.html), 'the empty hint is a table row inside the browse table');
   const again = await h.controller.openBrowse();
   assert.equal(h.panels.length, 1, 'create-or-reveal reuses the single instance');
   assert.equal(again, first);
@@ -186,12 +190,16 @@ test('scratch-panel.test.ts: empty list renders a hint row; create-or-reveal reu
   h.fake.failOn = (c) => (c.op === 'readdir' ? Object.assign(new Error('EACCES'), { code: 'EACCES' }) : undefined);
   await h.controller.refreshBrowse();
   assert.ok(h.panels[0]!.html.includes('scratchpads unavailable:'), 'error row renders the failure');
+  assert.ok(/<tr class="scratch-error-row">/.test(h.panels[0]!.html), 'the error is a table row inside the browse table');
   h.fake.failOn = undefined;
   // Factory failure: undefined returned, a warning logged, next click retries.
   h.panels[0]!.userClose();
   h.failFactory = true;
+  const warnsBefore = h.warns.length;
   const failed = await h.controller.openBrowse();
   assert.equal(failed, undefined, 'creation failure returns undefined (never throws)');
+  assert.ok(h.warns.length > warnsBefore, 'a warning was logged on the factory failure');
+  assert.ok(h.warns[h.warns.length - 1]!.includes('editor busy'), 'the warning carries the failure reason');
   assert.equal(h.panels.length, 1, 'no panel was cached');
   h.failFactory = false;
   const retried = await h.controller.openBrowse();

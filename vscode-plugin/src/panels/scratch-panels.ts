@@ -84,11 +84,13 @@ const SEND_ICON = '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"
 
 /** The browse table body (content only — the shell wraps it). */
 export function browseHtml(entries: readonly ScratchEntry[], error?: string): string {
+  const head = `<table class="scratch-table"><thead><tr><th>Name</th><th>Modified</th><th></th></tr></thead><tbody>`;
+  const tail = `</tbody></table>`;
   if (error !== undefined) {
-    return `<div class="error" role="alert">${escapeAttr(error)}</div>`;
+    return head + `<tr class="scratch-error-row"><td colspan="3" class="error" role="alert">${escapeAttr(error)}</td></tr>` + tail;
   }
   if (entries.length === 0) {
-    return `<p class="placeholder">No scratchpads yet — create one from the chat panel's scratchpad menu.</p>`;
+    return head + `<tr class="scratch-empty-row"><td colspan="3" class="placeholder">No scratchpads yet — create one from the chat panel's scratchpad menu.</td></tr>` + tail;
   }
   const rows = entries.map((e) => {
     const name = escapeAttr(e.name);
@@ -100,7 +102,7 @@ export function browseHtml(entries: readonly ScratchEntry[], error?: string): st
       `<button type="button" class="scratch-delete" data-id="${escapeAttr(e.id)}" title="delete" aria-label="delete ${name}">${DELETE_ICON}</button>` +
       `</td></tr>`;
   }).join('');
-  return `<table class="scratch-table"><thead><tr><th>Name</th><th>Modified</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+  return head + rows + tail;
 }
 
 const BROWSE_STYLE =

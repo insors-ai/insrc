@@ -222,12 +222,13 @@ test('daemon-ctl.sh honours a non-executable INSRC_NODE_BIN by failing closed, n
 	} finally { f.cleanup(); }
 });
 
-test('daemon-ctl.sh start spawns the daemon and stop shuts it down under a node-free GUI PATH (the original startup failure)', () => {
+test('daemon-ctl.sh start spawns the daemon and stop reaches the lifecycle helper under a node-free GUI PATH (the original startup failure)', () => {
 	const f = fixture();
 	// The exact failure before the fix was the stop_managed_daemon call inside
 	// cmd_start dying on a bare `node` (exit 4, "node: command not found")
 	// before spawn. With a resolved node, start must reach spawn, the stand-in
-	// daemon must come up and answer status, and stop must reach the helper.
+	// daemon must come up and answer status, and stop must get all the way
+	// into the lifecycle helper over the resolved node.
 	writeFileSync(join(f.root, 'out/daemon/index.js'), fakeDaemonEntry(f));
 	const nodeBinDir = join(f.home, 'node-bin');
 	mkdirSync(nodeBinDir, { recursive: true });
@@ -246,16 +247,21 @@ test('daemon-ctl.sh start spawns the daemon and stop shuts it down under a node-
 		const statusOut = `${status.stdout}${status.stderr}`;
 		assert.equal(status.status, 0, statusOut);
 		assert.match(statusOut, /"uptime": 1/);
-		// Stop must reach the lifecycle helper over the resolved node. The
-		// stand-in is not a real insrc daemon, so the capability broker refuses
-		// the IPC drain (exit 4 from the helper is expected); what the test
-		// proves is that stop got all the way into the helper — no bare-node
-		// failure — and reported the outcome.
+		// Stop must run the lifecycle helper with the resolved node. The exit
+		// code distinguishes the paths: 2 would be node resolution failing
+		// closed (the pre-fix symptom), while 0/4 mean the helper executed and
+		// reported its own outcome — "daemon shut down" where the kernel
+		// permits the capability capture, "daemon lifecycle refused" where the
+		// broker denies it (this sandbox's hardened runtime denies
+		// task_for_pid, the same refusal the pre-existing forced-stop tests
+		// see on main). Either way the bare-node failure is gone.
 		const stop = spawnSync('bash', [SCRIPT, 'stop'], { encoding: 'utf8', timeout: 15000, env });
 		const stopOut = `${stop.stdout}${stop.stderr}`;
+		assert.notEqual(stop.status, 2, `node resolution must not fail closed: ${stopOut}`);
 		assert.doesNotMatch(stopOut, /node: command not found/);
 		assert.match(stopOut, /stopping daemon/, 'stop reached the lifecycle path');
-		assert.match(stopOut, /ERROR: daemon lifecycle refused|daemon shut down/, 'helper outcome reported');
+		assert.match(stopOut, /daemon lifecycle refused|daemon shut down/, 'lifecycle helper executed and reported its outcome');
+		assert.ok(stop.status === 0 || stop.status === 4, `helper outcome only: ${stop.status} ${stopOut}`);
 	} finally {
 		// Kill any stand-in daemon the start spawned.
 		if (existsSync(f.pid)) {

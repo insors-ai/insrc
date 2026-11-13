@@ -30,19 +30,37 @@ test('Promotion requires passing source-built evidence for the exact signed head
 	const script = new URL('../../../scripts/prepare-source-release.mjs', import.meta.url);
 	const stage = () => execFileSync(process.execPath, [script.pathname, qualification, repo, 'v2', '7',
 		signingKey, signingKey + '.pub', installer], { cwd: repo, encoding: 'utf8', stdio: 'pipe' });
-	const result = 'ok - source built qualification\n';
-	await writeFile(join(root, 'result.tap'), result);
-	const evidence = { version: 1, commit, tree, checks: ['fresh-start', 'fresh-idle', 'legacy-broker-denied',
-		'managed-running', 'managed-stopped', 'guarded-rollback', 'restored-retry', 'linux-regression', 'full-regression']
-		.map(name => ({ name, result: 'pass', file: 'result.tap', sha256: createHash('sha256').update(result).digest('hex') })) };
+	const names = ['fresh-start', 'fresh-idle', 'legacy-broker-denied', 'managed-running', 'managed-stopped',
+		'guarded-rollback', 'restored-retry', 'linux-regression', 'full-regression'];
+	const results = new Map(names.map(name => [name, JSON.stringify({
+		version: 1, name, commit, tree, execution: 'source-build', exitCode: 0, passed: 1, failed: 0, skipped: 0,
+	})]));
+	for (const [name, bytes] of results) await writeFile(join(root, name + '.json'), bytes);
+	const evidence = { version: 1, commit, tree, checks: names.map(name => ({
+		name, result: 'pass', file: name + '.json', sha256: createHash('sha256').update(results.get(name)!).digest('hex'),
+	})) };
 	await writeFile(qualification, JSON.stringify({ ...evidence, commit: 'a'.repeat(40) }));
 	assert.throws(stage, /does not match/);
 	await writeFile(qualification, JSON.stringify({ ...evidence, checks: evidence.checks.slice(1) }));
 	assert.throws(stage, /missing passing qualification/);
 	await writeFile(qualification, JSON.stringify(evidence));
-	await writeFile(join(root, 'result.tap'), 'replaced result');
+	const failedName = 'fresh-start';
+	const failedFile = join(root, failedName + '.json');
+	await writeFile(failedFile, 'replaced result');
 	assert.throws(stage, /receipt differs/);
-	await writeFile(join(root, 'result.tap'), result);
+	const failed = JSON.stringify({ ...JSON.parse(results.get(failedName)!), failed: 1, exitCode: 1 });
+	await writeFile(failedFile, failed);
+	await writeFile(qualification, JSON.stringify({ ...evidence, checks: evidence.checks.map(check =>
+		check.name === failedName ? { ...check, sha256: createHash('sha256').update(failed).digest('hex') } : check) }));
+	assert.throws(stage, /did not record a passing source build/);
+	await writeFile(failedFile, results.get(failedName)!);
+	await writeFile(qualification, JSON.stringify(evidence));
+	const diverged = join(root, 'diverged');
+	git('clone', '-q', repo, diverged);
+	execFileSync('/usr/bin/git', ['-C', diverged, '-c', 'user.name=Release Test', '-c', 'user.email=release@example.invalid',
+		'commit', '-qm', 'diverged', '--allow-empty']);
+	assert.throws(() => execFileSync(process.execPath, [script.pathname, qualification, diverged, 'v2', '7',
+		signingKey, signingKey + '.pub', installer], { cwd: repo, stdio: 'pipe' }), /branch does not match/);
 	const signed = JSON.parse(stage()) as { staged: string; tag: string; tagObject: string };
 	assert.equal(git('rev-parse', signed.staged), signed.tagObject);
 	assert.equal(git('tag', '--list', signed.tag), '');

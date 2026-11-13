@@ -19,6 +19,8 @@ const tag = 'insrc-release/' + branch;
 git('check-ref-format', 'refs/tags/' + tag);
 const commit = git('rev-parse', '--verify', 'refs/heads/' + branch + '^{commit}');
 const tree = git('rev-parse', '--verify', commit + '^{tree}');
+const remoteHead = git('ls-remote', '--exit-code', '--refs', '--', repoUrl, 'refs/heads/' + branch);
+if (remoteHead !== commit + '\trefs/heads/' + branch) throw new Error('configured source branch does not match the proposed head');
 const catalog = git('rev-parse', '--verify', commit + ':release/macos-compatibility.json');
 const catalogSize = Number(git('cat-file', '-s', catalog));
 if (git('cat-file', '-t', catalog) !== 'blob' || !Number.isSafeInteger(catalogSize)
@@ -40,6 +42,12 @@ for (const name of required) {
 	if (!info.isFile() || info.size === 0 || info.size > 16 * 1024 * 1024
 		|| createHash('sha256').update(readFileSync(file)).digest('hex') !== entries[0].sha256) {
 		throw new Error('qualification receipt differs for ' + name);
+	}
+	const report = JSON.parse(readFileSync(file, 'utf8'));
+	if (report.version !== 1 || report.name !== name || report.commit !== commit || report.tree !== tree
+		|| report.execution !== 'source-build' || report.exitCode !== 0 || !Number.isSafeInteger(report.passed)
+		|| report.passed < 1 || report.failed !== 0 || report.skipped !== 0) {
+		throw new Error('qualification receipt did not record a passing source build for ' + name);
 	}
 }
 const script = fileURLToPath(new URL('./bundle-release-bootstrap.mjs', import.meta.url));

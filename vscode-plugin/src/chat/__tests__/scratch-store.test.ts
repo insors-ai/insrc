@@ -210,6 +210,22 @@ test('scratch-store.test.ts: readScratch opens with O_RDONLY|O_NOFOLLOW + fstat 
   fake.files.delete(`${ROOT}/20260101-000000-ok.md`);
   await assert.rejects(store.readScratch('20260101-000000-ok.md'), (e: unknown) => e instanceof ScratchRefused);
 
+  // TOCTOU race: the id passes resolveInside validation, then the path swaps to a
+  // symlink at the moment of the no-follow open -> the open itself yields ELOOP.
+  seed(fake, '20260101-000001-swap.md', 'innocent', 5);
+  fake.failOn = (c) => {
+    if (c.op === 'open' && c.path.endsWith('20260101-000001-swap.md')) {
+      fake.kinds.set(`${ROOT}/20260101-000001-swap.md`, 'symlink');
+      fake.linkTargets.set(`${ROOT}/20260101-000001-swap.md`, '/etc/passwd');
+      fake.files.delete(`${ROOT}/20260101-000001-swap.md`);
+    }
+    return undefined; // let the open proceed and observe the swapped kind
+  };
+  await assert.rejects(store.readScratch('20260101-000001-swap.md'), (e: unknown) => e instanceof ScratchRefused);
+  fake.failOn = undefined;
+  fake.kinds.delete(`${ROOT}/20260101-000001-swap.md`);
+  fake.linkTargets.delete(`${ROOT}/20260101-000001-swap.md`);
+
   // A directory named *.md: the open succeeds (as a real O_RDONLY open on a dir does)
   // and the fd fstat reports isFile=false -> ScratchRefused.
   fake.kinds.set(`${ROOT}/20260101-000000-ok.md`, 'dir');

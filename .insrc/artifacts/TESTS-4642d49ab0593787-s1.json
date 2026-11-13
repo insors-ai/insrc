@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 56,
-        "contentHash": "b2f8919602fc6348a14313b94aa51bfd5d278439dbdf970b672e7bba23a1cf71",
-        "at": "2026-11-13T11:58:40.945Z",
+        "number": 57,
+        "contentHash": "4f5592800962c891a6b460cbfa64c65657b2dbcf5986aa154c7e2a5f39ea5f6d",
+        "at": "2026-11-13T12:00:09.529Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,18 +23,18 @@
     "epicHash": "4642d49ab0593787",
     "storyId": "s1",
     "createdAt": "2026-11-13T08:59:23.823Z",
-    "updatedAt": "2026-11-13T11:58:40.894Z",
+    "updatedAt": "2026-11-13T12:00:09.478Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-13T06:38:38.894Z",
     "epicSlug": "vs-code-plugin-scratchpads-insrc-scratches",
-    "revision": 56
+    "revision": 57
   },
   "body": {
     "tasks": [
       {
         "taskId": "t1",
-        "commit": "7f6911c0f",
-        "ranAt": "2026-11-13T11:58:40.894Z",
+        "commit": "990385080",
+        "ranAt": "2026-11-13T12:00:09.478Z",
         "testsPassed": true,
         "tests": [
           {
@@ -121,7 +121,7 @@
             "file": "vscode-plugin/src/chat/__tests__/scratch-store.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 310,
+            "durationMs": 315,
             "titles": [
               {
                 "title": "scratch-store.test.ts: listScratches returns entries sorted by mtime desc with id/name/mtime/size (ENOENT->[], non-.md skipped, limit cap, ties id asc)",

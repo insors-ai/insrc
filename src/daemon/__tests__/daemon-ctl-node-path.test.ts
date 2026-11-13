@@ -18,7 +18,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -40,7 +40,10 @@ function fixture(): Fixture {
 	for (const p of ['.insrc', 'root/.git', 'root/src', 'empty-bin', 'tools']) {
 		mkdirSync(join(home, p), { recursive: true });
 	}
-	for (const util of ['bash', 'sh', 'git', 'date', 'mkdir', 'ps', 'uname', 'cat', 'tee', 'sleep', 'env', 'disown']) {
+	// spawn_daemon execs `env INSRC_MODE=daemon "$NODE_BIN" ...`, and env execs
+	// its child by PATH lookup, so env + the basics must all be in the
+	// node-free PATH too.
+	for (const util of ['bash', 'sh', 'git', 'date', 'mkdir', 'ps', 'uname', 'cat', 'tee', 'sleep', 'env', 'echo']) {
 		const src = spawnSync('bash', ['-c', `command -v ${util}`], { encoding: 'utf8' }).stdout.trim();
 		if (src) symlinkSync(src, join(toolsDir, util));
 	}
@@ -118,24 +121,29 @@ test('daemon-ctl.sh resolves node from INSRC_NODE_BIN when PATH has no node', ()
 	} finally { f.cleanup(); }
 });
 
-test('daemon-ctl.sh absolutizes a relative INSRC_NODE_BIN against the caller cwd', () => {
+test('daemon-ctl.sh absolutizes a relative INSRC_NODE_BIN against the caller cwd so spawn_daemon can execute it', () => {
 	const f = fixture();
+	// spawn_daemon does `cd "$DAEMON_ROOT" && exec env ... "$NODE_BIN"`, so a
+	// relative NODE_BIN would resolve against the daemon root, not the caller.
+	// Assert the pin directly: run the script's own prologue with a relative
+	// INSRC_NODE_BIN and check the pinned NODE_BIN is absolute and identical to
+	// the caller-side node.
+	const callerDir = join(f.home, 'caller');
+	const callerTools = join(callerDir, 'tools');
+	mkdirSync(callerTools, { recursive: true });
+	symlinkSync(process.execPath, join(callerTools, 'node'));
 	try {
-		// Relative override resolved from the CALLER's directory, not the
-		// daemon root (spawn_daemon cds there before executing).
-		const callerDir = join(f.home, 'caller');
-		const toolsDir = join(callerDir, 'tools');
-		mkdirSync(toolsDir, { recursive: true });
-		const relNode = 'tools/node';
-		symlinkSync(process.execPath, join(toolsDir, 'node'));
-		const r = spawnSync('bash', [SCRIPT, 'status'], {
-			encoding: 'utf8', timeout: 15000, cwd: callerDir,
-			env: guiEnv(f, { INSRC_NODE_BIN: relNode }),
+		const harness = join(f.home, 'prologue.sh');
+		const prologue = readFileSync(SCRIPT, 'utf8').split('# ---------------------------------------------------------------------------\n# Helpers')[0]!;
+		writeFileSync(harness, `${prologue}\nprintf '%s\\n' "$NODE_BIN"\n`);
+		const r = spawnSync('bash', [harness, 'status'], {
+			encoding: 'utf8', timeout: 10000, cwd: callerDir,
+			env: guiEnv(f, { INSRC_NODE_BIN: 'tools/node' }),
 		});
-		const out = `${r.stdout}${r.stderr}`;
-		assert.notEqual(r.status, 2, out);
-		assert.doesNotMatch(out, /node: command not found/);
-		assert.match(out, /daemon not reachable/);
+		const pinned = r.stdout.trim().split('\n').at(-1)!;
+		assert.match(pinned, /^\//, `pinned NODE_BIN must be absolute, got ${pinned}`);
+		// /tmp is a symlink to /private/tmp on macOS; compare against the real path.
+		assert.equal(pinned, join(realpathSync(callerTools), 'node'));
 	} finally { f.cleanup(); }
 });
 
@@ -238,15 +246,16 @@ test('daemon-ctl.sh start spawns the daemon and stop shuts it down under a node-
 		const statusOut = `${status.stdout}${status.stderr}`;
 		assert.equal(status.status, 0, statusOut);
 		assert.match(statusOut, /"uptime": 1/);
-		// Stop must reach the lifecycle helper over the resolved node: the
-		// helper runs (no "node: command not found") and owns the outcome. The
-		// stand-in is not a real insrc daemon so the capability broker refuses
-		// the drain; the assertion that matters is that the script got all the
-		// way to the helper instead of dying on a bare node.
+		// Stop must reach the lifecycle helper over the resolved node. The
+		// stand-in is not a real insrc daemon, so the capability broker refuses
+		// the IPC drain (exit 4 from the helper is expected); what the test
+		// proves is that stop got all the way into the helper — no bare-node
+		// failure — and reported the outcome.
 		const stop = spawnSync('bash', [SCRIPT, 'stop'], { encoding: 'utf8', timeout: 15000, env });
 		const stopOut = `${stop.stdout}${stop.stderr}`;
 		assert.doesNotMatch(stopOut, /node: command not found/);
 		assert.match(stopOut, /stopping daemon/, 'stop reached the lifecycle path');
+		assert.match(stopOut, /ERROR: daemon lifecycle refused|daemon shut down/, 'helper outcome reported');
 	} finally {
 		// Kill any stand-in daemon the start spawned.
 		if (existsSync(f.pid)) {

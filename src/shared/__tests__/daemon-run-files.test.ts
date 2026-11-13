@@ -100,6 +100,8 @@ test('killed guard owner is conclusively dead, so the next startup quarantines t
 const acquireReclaim = acquireRunFileGuard as (path: string, owner?: ProcessIdentity, read?: ProcessIdentityReader) => RunFileGuard;
 
 const RECORDED_PID = 424242;
+/** The acquiring startup's identity as a fixture, so no test path probes a real process. */
+const acquiringOwner: ProcessIdentity = { pid: process.pid, startedAt: 'linux:current-boot:1', commandLine: 'test-startup' };
 
 function staleGuard(path: string, startedAt: string, nonce: string): void {
 	mkdirSync(path);
@@ -160,7 +162,7 @@ test("acquireRunFileGuard quarantines and acquires when the verdict is 'gone' (f
 	const path = join(dir, 'guard'), nonce = randomUUID();
 	const record = JSON.stringify({ owner: { pid: RECORDED_PID, startedAt: 'linux:stale-boot:111', commandLine: 'recorded-daemon' }, nonce });
 	staleGuard(path, 'linux:stale-boot:111', nonce);
-	const guard = acquireReclaim(path, undefined, () => undefined); // reader: the recorded owner is gone
+	const guard = acquireReclaim(path, acquiringOwner, () => undefined); // reader: the recorded owner is gone
 	assert.equal(guard.path, path);
 	const names = quarantinedSiblings(path);
 	assert.equal(names.length, 1);
@@ -174,7 +176,7 @@ test("acquireRunFileGuard quarantines and acquires on previous-boot 'replaced' (
 	const path = join(dir, 'guard');
 	staleGuard(path, 'linux:stale-boot:111', 'nonce-prevboot');
 	const replacement: ProcessIdentity = { pid: RECORDED_PID, startedAt: 'linux:current-boot:999', commandLine: 'reused-pid' };
-	const guard = acquireReclaim(path, undefined, () => replacement); // reused PID, but a different boot
+	const guard = acquireReclaim(path, acquiringOwner, () => replacement); // reused PID, but a different boot
 	assert.equal(guard.path, path);
 	assert.equal(quarantinedSiblings(path).length, 1);
 	guard.release();
@@ -193,20 +195,20 @@ test("acquireRunFileGuard withholds 'same', same-boot 'replaced', corrupt or mis
 	];
 	for (const [label, setup, reader] of cases) {
 		rmSync(path, { recursive: true, force: true }); setup();
-		assert.throws(() => acquireReclaim(path, undefined, reader), /not reclaimed automatically/, label);
+		assert.throws(() => acquireReclaim(path, acquiringOwner, reader), /not reclaimed automatically/, label);
 		assert.equal(quarantinedSiblings(path).length, 0, label);
 	}
 	rmSync(path, { recursive: true, force: true });
 	mkdirSync(path); writeFileSync(join(path, 'owner.json'), 'malformed');
-	assert.throws(() => acquireReclaim(path, undefined, () => undefined), /not reclaimed automatically/, 'corrupt owner.json');
+	assert.throws(() => acquireReclaim(path, acquiringOwner, () => undefined), /not reclaimed automatically/, 'corrupt owner.json');
 	assert.equal(quarantinedSiblings(path).length, 0, 'corrupt owner.json');
 	rmSync(path, { recursive: true, force: true });
 	mkdirSync(path);
-	assert.throws(() => acquireReclaim(path, undefined, () => undefined), /not reclaimed automatically/, 'missing owner.json');
+	assert.throws(() => acquireReclaim(path, acquiringOwner, () => undefined), /not reclaimed automatically/, 'missing owner.json');
 	assert.equal(quarantinedSiblings(path).length, 0, 'missing owner.json');
 	rmSync(path, { recursive: true, force: true });
 	staleGuard(path, 'linux:current-boot:111', 'nonce-throwing');
-	assert.throws(() => acquireReclaim(path, undefined, () => { throw new Error('unreadable'); }), /not reclaimed automatically/, 'throwing reader');
+	assert.throws(() => acquireReclaim(path, acquiringOwner, () => { throw new Error('unreadable'); }), /not reclaimed automatically/, 'throwing reader');
 	assert.equal(quarantinedSiblings(path).length, 0, 'throwing reader');
 });
 
@@ -216,8 +218,14 @@ test('acquireRunFileGuard recomputes the conflict and throws when the retry mkdi
 	const racer = guardFreeRacer(path);
 	await racer.ready; // spinning before the reclaim even starts
 	// The racer grabs the freed path before the single retry mkdir, so the retry EEXISTs. Even though the
-	// recompute's injected reader also reads the racer's record as gone, the reclaim does not run twice.
-	assert.throws(() => acquireReclaim(path, undefined, () => undefined), /ownership conflict/);
+	// recompute's injected reader also reads the racer's record as gone, the reclaim does not run twice:
+	// the thrown conflict is recomputed against the racer's record, never the quarantined one.
+	let conflict: unknown;
+	try { acquireReclaim(path, acquiringOwner, () => undefined); }
+	catch (error) { conflict = error; }
+	assert.ok(conflict instanceof Error && /ownership conflict/.test(conflict.message), String(conflict));
+	assert.equal(conflict.message.includes('nonce-race'), false, 'the conflict must be recomputed, not replayed');
+	assert.ok(/nonce=racer/.test(conflict.message) || /unverifiable owner/.test(conflict.message), 'the evidence names the racer: its record or its in-flight write');
 	assert.equal(await racer.result, 'acquired');
 	assert.equal(quarantinedSiblings(path).length, 1); // the stale record is still quarantined
 	racer.child.kill('SIGKILL');
@@ -229,7 +237,7 @@ test('acquireRunFileGuard leaves a symlink guard as a conflict', () => {
 	staleGuard(target, 'linux:stale-boot:111', 'nonce-link');
 	const link = join(dir, 'guard');
 	symlinkSync(target, link);
-	assert.throws(() => acquireReclaim(link, undefined, () => undefined), /symbolic link/);
+	assert.throws(() => acquireReclaim(link, acquiringOwner, () => undefined), /symbolic link/);
 	assert.equal(lstatSync(link).isSymbolicLink(), true); // the link is not renamed away
 	assert.equal(quarantinedSiblings(link).length, 0);
 });
@@ -245,22 +253,27 @@ test('acquireRunFileGuard suffixes the quarantine name on collision; owner.json 
 		const candidate = `${path}.quarantine-${quarantineStamp(second)}-${nonce}`;
 		mkdirSync(candidate); writeFileSync(join(candidate, 'sentinel'), 'occupied');
 	}
-	const guard = acquireReclaim(path, undefined, () => undefined);
+	const guard = acquireReclaim(path, acquiringOwner, () => undefined);
 	const suffixed = quarantinedSiblings(path).filter((name) => name.endsWith(`-${nonce}.1`));
 	assert.equal(suffixed.length, 1);
 	assert.equal(readFileSync(join(dir, suffixed[0]!, 'owner.json'), 'utf8'), record); // byte-identical evidence
-	assert.ok(readFileSync(PATHS.daemonLog, 'utf8').includes(nonce)); // the recovery line is keyed by the recorded nonce
+	assert.equal(readFileSync(PATHS.daemonLog, 'utf8').split('\n').filter((line) => line.includes(nonce)).length, 1); // exactly one recovery line, keyed by the recorded nonce
 	guard.release();
 	// The same reclaim succeeds when the recovery line cannot be written.
 	rmSync(path, { recursive: true, force: true });
 	const quiet = randomUUID();
 	staleGuard(path, 'linux:stale-boot:222', quiet);
-	const mode = statSync(PATHS.daemonLog).mode & 0o777;
-	chmodSync(PATHS.daemonLog, 0o444);
-	try {
-		const recovered = acquireReclaim(path, undefined, () => undefined);
-		assert.equal(recovered.path, path);
-		assert.equal(quarantinedSiblings(path).filter((name) => name.endsWith(quiet)).length, 1);
-		recovered.release();
-	} finally { chmodSync(PATHS.daemonLog, mode); }
+	// Root ignores the mode bits, so the write-failure fixture proves itself only unprivileged.
+	if ((process.getuid?.() ?? 0) !== 0) {
+		const mode = statSync(PATHS.daemonLog).mode & 0o777;
+		chmodSync(PATHS.daemonLog, 0o444);
+		try {
+			const recovered = acquireReclaim(path, acquiringOwner, () => undefined);
+			assert.equal(recovered.path, path);
+			assert.equal(quarantinedSiblings(path).filter((name) => name.endsWith(quiet)).length, 1);
+			recovered.release();
+			// The swallow, positively: the restart was not blocked and no recovery line landed for the quiet nonce.
+			assert.equal(readFileSync(PATHS.daemonLog, 'utf8').split('\n').filter((line) => line.includes(quiet)).length, 0);
+		} finally { chmodSync(PATHS.daemonLog, mode); }
+	}
 });

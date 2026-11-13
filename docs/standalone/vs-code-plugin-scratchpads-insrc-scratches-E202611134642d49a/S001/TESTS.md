@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 26 pass, 0 fail, 0 skipped, 1 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 27 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -70,22 +70,20 @@ Run at 2026-11-13T09:15:43.373Z on commit `18c3cbbc3`. Tests check: **passed**. 
 
 ## t3
 
-Run at 2026-11-13T12:01:26.649Z on commit `77fa51688`. Tests check: **failed**. 1 pass, 0 fail, 0 skipped, 1 not found; 0 reported by the builder and not run by the gate.
-
-named test cases that did not pass: not found: 'webview-host.test.ts + chat-shell.test.ts: existing CSP/nonce tests preserved when the shell is extracted to panels/shell.ts (shell output byte-identical, all existing assertions pass unmodified)' in vscode-plugin/src/chat/__tests__/chat-shell.test.ts
+Run at 2026-11-13T12:10:05.316Z on commit `e53544b29`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: webview-host.test.ts + chat-shell.test.ts: existing CSP/nonce tests preserved when the shell is extracted to panels/shell.ts (shell output byte-identical, all existing assertions pass unmodified)**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | webview-host.test.ts + chat-shell.test.ts: existing CSP/nonce tests preserved when the shell is extracted to panels/shell.ts (shell output byte-identical, all existing assertions pass unmodified) | `vscode-plugin/src/panels/__tests__/webview-host.test.ts` |
-| not found | webview-host.test.ts + chat-shell.test.ts: existing CSP/nonce tests preserved when the shell is extracted to panels/shell.ts (shell output byte-identical, all existing assertions pass unmodified) | `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` |
+| pass | webview-host.test.ts + chat-shell.test.ts: existing CSP/nonce tests preserved when the shell is extracted to panels/shell.ts (shell output byte-identical, all existing assertions pass unmodified) | `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` | 0 | 42 | 0.5 s |  |
+| `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` | 0 | 43 | 0.7 s |  |
 | `vscode-plugin/src/panels/__tests__/webview-host.test.ts` | 0 | 45 | 0.4 s |  |
 
 ## t4

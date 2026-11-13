@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 58,
-        "contentHash": "2e33e6ce589e072544364a4faf9a952a4b279d26adb681e9ca711f3afc0aeba3",
-        "at": "2026-11-13T12:01:26.702Z",
+        "number": 59,
+        "contentHash": "d32960f1f9ff191d0c2106ebe9c2ba560a7da727aeeba689f938b994778c01e8",
+        "at": "2026-11-13T12:10:05.377Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "4642d49ab0593787",
     "storyId": "s1",
     "createdAt": "2026-11-13T08:59:23.823Z",
-    "updatedAt": "2026-11-13T12:01:26.649Z",
+    "updatedAt": "2026-11-13T12:10:05.316Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-13T06:38:38.894Z",
     "epicSlug": "vs-code-plugin-scratchpads-insrc-scratches",
-    "revision": 58
+    "revision": 59
   },
   "body": {
     "tasks": [
@@ -274,9 +274,9 @@
       },
       {
         "taskId": "t3",
-        "commit": "77fa51688",
-        "ranAt": "2026-11-13T12:01:26.649Z",
-        "testsPassed": false,
+        "commit": "e53544b29",
+        "ranAt": "2026-11-13T12:10:05.316Z",
+        "testsPassed": true,
         "tests": [
           {
             "name": "webview-host.test.ts + chat-shell.test.ts: existing CSP/nonce tests preserved when the shell is extracted to panels/shell.ts (shell output byte-identical, all existing assertions pass unmodified)",
@@ -291,7 +291,7 @@
               {
                 "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
                 "title": "webview-host.test.ts + chat-shell.test.ts: existing CSP/nonce tests preserved when the shell is extracted to panels/shell.ts (shell output byte-identical, all existing assertions pass unmodified)",
-                "result": "not found"
+                "result": "pass"
               }
             ],
             "files": []
@@ -302,7 +302,7 @@
             "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 543,
+            "durationMs": 652,
             "titles": [
               {
                 "title": "the shell script runs: a windowed restore shows one page at the bottom with the bar, a page request round-trips and keeps the reader's place, a live row does not move a reader who scrolled up, and an old-style restore still works",
@@ -318,6 +318,10 @@
               },
               {
                 "title": "shell: the attach button is icon-only with an aria-label, sits first in the status bar, and the content security policy is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "webview-host.test.ts + chat-shell.test.ts: existing CSP/nonce tests preserved when the shell is extracted to panels/shell.ts (shell output byte-identical, all existing assertions pass unmodified)",
                 "result": "pass"
               },
               {
@@ -479,7 +483,7 @@
             "file": "vscode-plugin/src/panels/__tests__/webview-host.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 437,
+            "durationMs": 443,
             "titles": [
               {
                 "title": "showStatusMenu offers EXACTLY five items, including Manage Connections and Delivery Board, and routes each choice to the matching panel",
@@ -664,8 +668,7 @@
             ],
             "otherFailures": []
           }
-        ],
-        "note": "named test cases that did not pass: not found: 'webview-host.test.ts + chat-shell.test.ts: existing CSP/nonce tests preserved when the shell is extracted to panels/shell.ts (shell output byte-identical, all existing assertions pass unmodified)' in vscode-plugin/src/chat/__tests__/chat-shell.test.ts"
+        ]
       },
       {
         "taskId": "t4",

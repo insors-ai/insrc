@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { execFile, execFileSync, spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { mkdir, mkdtemp, readFile, readdir, realpath, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, realpath, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { createConnection } from 'node:net';
 import { dirname, join } from 'node:path';
@@ -176,6 +176,10 @@ test('Tagged compatibility rejects a conflicting declaration and admits a known 
 
 test('Changed local runtime bytes block cutover or offline rollback', { skip: process.platform !== 'darwin' }, async t => {
 	const f = await fixture(t);
+	const link = join(f.old, 'out/unmeasured.js');
+	await symlink('../version.txt', link);
+	await assert.rejects(captureManagedReleasePin(f.old, f.options.runtime), /outside the measured runtime/);
+	await rm(link);
 	const staged = await stageManagedRelease(f.options);
 	assert.ok(staged.prior && staged.compatibility);
 	const install = (pin: typeof staged.candidate) => ({ version: 1 as const, stateRoot: f.options.stateRoot,

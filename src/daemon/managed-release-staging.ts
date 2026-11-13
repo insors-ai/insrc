@@ -96,11 +96,16 @@ async function declaration(root: string): Promise<ReleaseCompatibility | undefin
 
 async function fingerprint(root: string, runtime: string): Promise<string> {
 	const hash = createHash('sha256');
+	const measured = new Set<string>();
+	const linkedTargets = new Set<string>();
 	async function visit(path: string, name: string): Promise<void> {
 		const info = await lstat(path);
+		measured.add(path);
 		hash.update(JSON.stringify([name, info.mode, info.isFile() ? info.size : null]) + '\n');
 		if (info.isSymbolicLink()) {
-			if (!inside(root, await realpath(path))) throw new Error('release link escapes its checkout');
+			const target = await realpath(path);
+			if (!inside(root, target)) throw new Error('release link escapes its checkout');
+			linkedTargets.add(target);
 			const link = await readlink(path);
 			hash.update(JSON.stringify(isAbsolute(link) ? relative(dirname(path), link) : link) + '\n');
 		} else if (info.isDirectory()) {
@@ -125,9 +130,17 @@ async function fingerprint(root: string, runtime: string): Promise<string> {
 	}
 	await access(runtime, constants.X_OK);
 	await visit(runtime, 'node-runtime');
-	for (const name of ['out', 'node_modules', 'package-lock.json', 'packages/project-memory/dist']) {
+	for (const name of ['out', 'node_modules', 'package.json', 'package-lock.json', 'packages/project-memory']) {
 		await visit(join(root, name), name);
 	}
+	for (const name of ['scripts', '.npmrc']) {
+		const path = join(root, name);
+		const present = await lstat(path).catch((error: NodeJS.ErrnoException) => {
+			if (error.code !== 'ENOENT') throw error;
+		});
+		if (present !== undefined) await visit(path, name);
+	}
+	if ([...linkedTargets].some(target => !measured.has(target))) throw new Error('release link target is outside the measured runtime');
 	return hash.digest('hex');
 }
 

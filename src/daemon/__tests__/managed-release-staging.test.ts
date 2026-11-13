@@ -14,10 +14,12 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { open } from 'lmdb';
 import { accepted, ManagedDaemonControl, openManagedSupervisorLink } from '../../cli/services/managed-daemon-control.js';
-import { InstallationMutationGate } from '../../shared/installation-mutation-gate.js';
+import { InstallationMutationGate, recordedSourceRelease } from '../../shared/installation-mutation-gate.js';
+import { readDarwinIncarnation } from '../../shared/darwin-lifecycle.js';
 import { rpc } from '../../shared/ipc-client.js';
 import { installFreshSelectorMember, inspectManagedJob, installationPaths, readInstallationSelector, registerManagedJob, removeManagedJob } from '../../shared/managed-daemon-installation.js';
 import { retainManagedReleaseVerifier } from '../managed-update-preparation.js';
+import { stageManagedUpdate } from '../managed-update-handoff.js';
 import { captureManagedReleasePin, stageManagedRelease, verifyStagedReleasePin } from '../managed-release-staging.js';
 import type { ManagedReleaseQualification } from '../managed-release-staging.js';
 import { readTaggedReleaseCompatibility } from '../release-compatibility.js';
@@ -171,14 +173,40 @@ test('Tagged compatibility rejects a conflicting declaration and admits a known 
 	assert.deepEqual(staged.compatibility?.candidate, pair.candidate);
 });
 
-test('Changed local runtime bytes block cutover or offline rollback', async t => {
+test('Changed local runtime bytes block cutover or offline rollback', { skip: process.platform !== 'darwin' }, async t => {
 	const f = await fixture(t);
 	const staged = await stageManagedRelease(f.options);
-	assert.ok(staged.prior);
+	assert.ok(staged.prior && staged.compatibility);
+	const install = (pin: typeof staged.candidate) => ({ version: 1 as const, stateRoot: f.options.stateRoot,
+		releaseRoot: pin.root, runtime: pin.runtime, releaseId: pin.commit, pathEnv: '/usr/bin:/bin', enabled: true });
+	const prior = install(staged.prior);
+	const candidate = install(staged.candidate);
+	const gate = new InstallationMutationGate(prior.stateRoot);
+	const source = { channel: f.options.source, sequence: 1, tagObject: 'a'.repeat(40),
+		commit: candidate.releaseId, tree: 'b'.repeat(40) };
+	await gate.observeSourceRelease(source);
+	const update = await gate.reserve({ kind: 'update', owner: await readDarwinIncarnation(process.pid), predecessor: {
+		priorRelease: prior.releaseId, priorCommit: prior.releaseId, candidateRelease: candidate.releaseId,
+		wasRunning: true, generation: 'incumbent', pins: { prior, candidate },
+	} });
+	assert.equal(update.kind, 'update');
+	if (update.kind !== 'update') throw new Error('expected update reservation');
 	await writeFile(f.dependency, 'changed incumbent runtime bytes');
-	await assert.rejects(verifyStagedReleasePin(staged.prior), /pinned release changed/);
-	await writeFile(join(staged.candidate.root, 'out/daemon/index.js'), 'changed candidate runtime bytes');
-	await assert.rejects(verifyStagedReleasePin(staged.candidate), /pinned release changed/);
+	const unexpected = async (): Promise<never> => assert.fail('tampered bytes reached a cutover mutation');
+	await assert.rejects(stageManagedUpdate(gate, update, { prior, candidate, compatibility: staged.compatibility,
+		sourceRelease: { source, catalog: 'c'.repeat(40), priorFingerprint: staged.prior.fingerprint,
+			candidateFingerprint: staged.candidate.fingerprint, launchProfile: 'managed' },
+	}, {
+		connect: async () => ({ close() {}, async call(request) {
+			assert.equal(request.op, 'status');
+			return { v: 1, id: 'status', ok: true, state: 'running', generation: 'incumbent' };
+		} }),
+		remove: unexpected, select: unexpected, register: unexpected, inspectStores: unexpected,
+	}), /pinned release changed/);
+	const active = (await gate.read()).active;
+	assert.ok(active?.kind === 'update');
+	assert.deepEqual(recordedSourceRelease(active)?.source, source);
+	assert.equal(active.entries.some(entry => entry.step === 'predecessor-stop'), false);
 });
 
 test('The stopped installed controller fetches and commits a qualified update without daemon IPC', {

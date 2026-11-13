@@ -169,16 +169,21 @@ export function documentBootstrap(): string {
     `var s=window.getSelection?window.getSelection():null;` +
     `var t=s&&s.toString?s.toString():'';` +
     `if(t!==''){captured=t;if(sendBtn){sendBtn.hidden=false;` +
-    // Anchor the floating button at the selection's caret rect when available.
+    // Anchor the floating button at the selection's caret rect (viewport-relative,
+    // matching position:fixed — no scroll offsets).
     `var r=s.getRangeAt?s.getRangeAt(0).getBoundingClientRect():null;` +
-    `if(r){sendBtn.style.left=Math.max(4,Math.floor(r.right+window.scrollX-28))+'px';sendBtn.style.top=Math.max(4,Math.floor(r.bottom+window.scrollY+6))+'px';}` +
+    `if(r){sendBtn.style.left=Math.max(4,Math.floor(r.right-28))+'px';sendBtn.style.top=Math.max(4,Math.floor(r.bottom+6))+'px';}` +
     `}}` +
     // A collapsed selection (e.g. the button click moving focus) hides the button but
     // does NOT clear the latch — the click reads `captured`, so the text is never lost.
     `else if(s&&s.isCollapsed){if(sendBtn)sendBtn.hidden=true;}` +
     `});` +
     `if(sendBtn)sendBtn.addEventListener('click',function(){` +
-    `if(captured!=='')vs.postMessage({v:1,payload:{type:'send-to-chat',text:captured}});` +
+    // The webview-side cap uses the same multibyte-safe rule as the host-side capUtf8:
+    // the posted string, ellipsis included, stays within 65,536 UTF-8 bytes.
+    `var out=captured;var cb=0;for(var ci=0;ci<captured.length;ci++){cb+=captured.charCodeAt(ci)<0x80?1:captured.charCodeAt(ci)<0x800?2:captured.charCodeAt(ci)<0xD800||captured.charCodeAt(ci)>0xDFFF?3:4;}` +
+    `if(cb>65536){var budget=65533;out='';for(var cj=0;cj<captured.length;cj++){var ch=captured.charAt(cj);var b=ch.charCodeAt(0)<0x80?1:ch.charCodeAt(0)<0x800?2:ch.charCodeAt(0)<0xD800||ch.charCodeAt(0)>0xDFFF?3:4;if(b>budget)break;out+=ch;budget-=b;}out+='\\u2026';}` +
+    `if(out!=='')vs.postMessage({v:1,payload:{type:'send-to-chat',text:out}});` +
     `captured='';sendBtn.hidden=true;` +
     `});` +
     // Host pushes arrive as messages; content is applied via textContent only (never innerHTML).

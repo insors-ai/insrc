@@ -282,12 +282,21 @@ test('scratch-panel.test.ts: selectionchange with non-empty selection shows the 
   for (const l of docListeners) l();
   assert.equal((sendBtn as unknown as { hidden: boolean }).hidden, false, 'button revealed on a non-empty selection');
   const style = (sendBtn as unknown as { style: Record<string, string> }).style;
-  assert.equal(style['left'], '92px', 'button anchored at the selection caret rect (right-28)');
-  assert.equal(style['top'], '246px', 'button anchored below the selection rect (bottom+6)');
+  assert.equal(style['left'], '92px', 'button anchored at the selection caret rect (right-28, viewport-relative)');
+  assert.equal(style['top'], '246px', 'button anchored below the selection rect (bottom+6, viewport-relative)');
   selection = { toString: () => '', isCollapsed: true }; // the focus/selectionchange that follows the click
   for (const l of docListeners) l();
   fire(sendBtn, 'click');
   assert.deepEqual(JSON.parse(JSON.stringify(sent)), [{ v: 1, payload: { type: 'send-to-chat', text: 'selected <text>' } }], 'the captured selection was posted, not lost to the focus change');
+  // Webview-side cap: a >65,536-byte selection is truncated in the bootstrap before posting.
+  const big = '😀'.repeat(20_000); // 80,000 UTF-8 bytes
+  selection = { toString: () => big, isCollapsed: false };
+  for (const l of docListeners) l();
+  fire(sendBtn, 'click');
+  const bigMsg = sent.at(-1) as { payload: { type: string; text: string } };
+  assert.equal(bigMsg.payload.type, 'send-to-chat');
+  assert.ok(Buffer.byteLength(bigMsg.payload.text, 'utf8') <= 65_536, 'the posted text is capped within 65,536 bytes webview-side');
+  assert.ok(bigMsg.payload.text.endsWith('…'), 'the posted text carries the trailing ellipsis');
 });
 
 test('scratch-panel.test.ts: A->B document switching asserts setTitle(B) on the SAME panel instance alongside content, with reversed read completion (generation guard)', async () => {
@@ -335,25 +344,29 @@ test('scratch-panel.test.ts: stale ENOENT, deleting a non-displayed document, de
   await seed(h, 'b.md', 'B', 2);
   await seed(h, 'gone.md', 'G', 3);
 
-  // Stale ENOENT delivered to openDocument: a read of gone.md rejects ScratchNotFound
-  // while the panel displays a.md — the not-found path must NOT close the shown panel.
+  // Stale ENOENT delivered to openDocument: open a.md (shown), then open gone.md whose
+  // read REJECTS ScratchNotFound after a delayed failure — gone.md never existed; the
+  // not-found path must not close the panel, and re-displaying a.md must survive it.
   const handle = await h.controller.openDocument('a.md');
   assert.ok(handle !== undefined);
   assert.equal(h.controller.showingId, 'a.md');
-  // Drive the controller's ScratchNotFound path for an id it does NOT show: the guard
-  // (showingId === id) must refuse to dispose.
-  const staleOpen = h.controller.openDocument('gone.md');
-  await staleOpen; // gone.md's read rejects ScratchNotFound; showingId is now 'gone.md'... checkpoint below
-  // Re-open a.md so the panel displays it, then deliver a stale not-found for gone.md:
+  // gone.md was seeded, then deleted before its (gated) read completes: a genuine
+  // stale-ENOENT rejection for an id the panel does not show.
+  await h.store.deleteScratch('gone.md');
+  const staleOpen = h.controller.openDocument('gone.md'); // readScratch('gone.md') rejects ScratchNotFound
+  await staleOpen;
+  // showingId was claimed by the gone.md open; re-display a.md, then deliver ANOTHER
+  // stale not-found (older generation) — it must be ignored, not close the a.md panel.
   await h.controller.openDocument('a.md');
   assert.equal(h.controller.showingId, 'a.md');
-  // A second, stale ScratchNotFound for gone.md (its generation is older) must be ignored:
   const staleAgain = h.controller.openDocument('gone.md');
-  await staleAgain;
-  // Restore the display of a.md; the stale gone.md open must not have torn it down.
+  await staleAgain; // rejects ScratchNotFound again; generation/showingId guards must hold
   await h.controller.openDocument('a.md');
   assert.equal(h.controller.showingId, 'a.md', 'a stale ScratchNotFound for another id does not close the shown panel');
-  assert.ok(!h.panels.some((p) => p.disposed), 'the displayed panel was not disposed by the stale ENOENT');
+  const shownPanel = h.panels.find((p) => !p.disposed && p.viewType === SCRATCHPAD_VIEW_TYPE);
+  assert.ok(shownPanel !== undefined, 'a live document panel still exists for the shown id');
+  const contentPushes = shownPanel!.posted.filter((m) => (m as { payload?: { type?: string } }).payload?.type === 'scratch-content');
+  assert.ok(contentPushes.some((m) => (m as { payload: { text: string } }).payload.text === 'A'), 'the shown panel received its content and was not torn down by the stale ENOENT');
 
   // Delete invalidates pending opens of the deleted id: open b.md with a gated read, delete b.md, then let the read finish.
   let release!: () => void;
@@ -418,11 +431,14 @@ test('scratch-panel.test.ts: stale ENOENT, deleting a non-displayed document, de
   await new Promise((r) => setTimeout(r, 10));
   assert.ok(panelC2.posted.some((m) => (m as { payload?: { type?: string } }).payload?.type === 'scratch-content'), 'the reopened panel receives its content');
 
-  // Deleting a NON-displayed document does not close the shown one.
+  // Deleting a NON-displayed document does not close the shown one: actually delete
+  // b.md (via the browse row path semantics) while a.md is displayed.
   const shown = await h.controller.openDocument('a.md');
   assert.ok(shown !== undefined);
+  await h.store.deleteScratch('b.md');
+  h.controller.invalidateId('b.md');
   h.controller.closeDocumentIfShowing('b.md'); // b.md is not displayed
-  assert.equal(h.controller.showingId, 'a.md', 'closing a non-displayed id leaves the shown document open');
+  assert.equal(h.controller.showingId, 'a.md', 'deleting/closing a non-displayed id leaves the shown document open');
   h.controller.closeDocumentIfShowing('a.md');
   assert.equal(h.controller.showingId, undefined, 'closing the displayed id closes it');
 });

@@ -580,6 +580,17 @@ test('extension-chat-wiring.test.ts: scratch-list error field renders the unavai
   assert.ok(!panels.calls.includes('openDocument:42'), 'a non-string scratch-open id is dropped');
   assert.deepEqual(store.deleted, ['b.md'], 'a non-string scratch-delete id is dropped');
   assert.equal(chat.posted.filter((m) => m.type === 'insert-into-input').length, 1, 'a non-string send-to-chat text is dropped');
+  // Malformed/unknown payload.type: the runtime guard drops them without throwing or dispatching.
+  const dispatchesBefore = store.calls.length + panels.calls.length + chat.posted.length;
+  assert.doesNotThrow(() => {
+    host.onMessage(42 as unknown as WebviewToHost);
+    host.onMessage(null as unknown as WebviewToHost);
+    host.onMessage({ type: 7 } as unknown as WebviewToHost);
+    host.onMessage({ type: 'not-a-scratch-intent' } as unknown as WebviewToHost);
+    host.onMessage({} as unknown as WebviewToHost);
+  });
+  await flush();
+  assert.equal(store.calls.length + panels.calls.length + chat.posted.length, dispatchesBefore, 'a non-string or unknown payload.type dispatches nothing');
   // Both host->webview pushes are the protocol's two scratch pushes.
   assert.ok(chat.posted.some((m) => m.type === 'scratch-list') && chat.posted.some((m) => m.type === 'insert-into-input'), 'both host->webview pushes (scratch-list, insert-into-input) are used');
   // End-to-end render: the REAL webview shell (runShell) shows the error row from a failed

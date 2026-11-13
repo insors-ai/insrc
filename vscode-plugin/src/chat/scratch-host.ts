@@ -84,6 +84,11 @@ export function createScratchHost(deps: ScratchHostDeps): ScratchHost {
   };
 
   const onMessage = (msg: WebviewToHost): void => {
+    // Runtime guard: a non-string or unknown type is ignored without throwing.
+    if (typeof msg !== 'object' || msg === null || typeof msg.type !== 'string' || !SCRATCH_INTENT_TYPES.has(msg.type)) {
+      log.warn('[scratches] dropped malformed message: non-string or unknown type');
+      return;
+    }
     switch (msg.type) {
       case 'scratch-open-menu':
         void sendScratchList();

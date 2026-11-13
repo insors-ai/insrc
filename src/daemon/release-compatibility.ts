@@ -2,6 +2,8 @@
 
 import { lstat } from 'node:fs/promises';
 import { join } from 'node:path';
+import { recordedReleaseQualification } from '../shared/installation-mutation-gate.js';
+import { releaseMetadataDigest } from '../shared/managed-release-trust.js';
 import type { MutationReservation } from '../shared/installation-mutation-gate.js';
 
 const FORMAT_KEYS = ['lance', 'repoAndIndexQueue', 'config', 'workflowAndSession'] as const;
@@ -61,8 +63,12 @@ export function requireQualifiedReleasePair(
 
 /** Read the exact pair the update owner qualified before displacing the predecessor. */
 export function qualifiedPairFromReservation(reservation: Extract<MutationReservation, { kind: 'update' }>): QualifiedReleasePair {
+	const admitted = recordedReleaseQualification(reservation);
 	const step = reservation.entries.find(entry => entry.step === COMPATIBILITY_STEP);
 	if (step?.receipt !== COMPATIBILITY_RECEIPT) throw new Error('update lacks durable release qualification');
+	if (admitted !== undefined && admitted.qualification.compatibilityDigest !== releaseMetadataDigest(Buffer.from(step.intent))) {
+		throw new Error('durable writable formats differ from the signed qualification');
+	}
 	const value: unknown = JSON.parse(step.intent);
 	if (!object(value)) throw new Error('invalid release qualification');
 	const prior = readReleaseCompatibility(value.prior);

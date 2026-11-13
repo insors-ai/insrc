@@ -4,8 +4,9 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { accepted, openManagedSupervisorLink } from '../cli/services/managed-daemon-control.js';
 import type { ManagedSupervisorLink } from '../cli/services/managed-daemon-control.js';
 import type { SupervisorReply } from '../shared/daemon-supervisor-protocol.js';
-import type { MutationReservation, InstallationMutationGate } from '../shared/installation-mutation-gate.js';
+import type { AdmittedReleaseQualification, MutationReservation, InstallationMutationGate } from '../shared/installation-mutation-gate.js';
 import type { RunFileGuard } from '../shared/daemon-run-files.js';
+import { releaseMetadataDigest } from '../shared/managed-release-trust.js';
 import {
 	installFreshSelectorMember, publishManagedSelector, registerManagedJob, removeManagedJob, requireQuiescentInstallation,
 } from '../shared/managed-daemon-installation.js';
@@ -23,6 +24,7 @@ export interface ManagedUpdatePins {
 	readonly prior: ManagedInstallation;
 	readonly candidate: ManagedInstallation;
 	readonly compatibility: QualifiedReleasePair;
+	readonly releaseQualification?: Omit<AdmittedReleaseQualification, 'updateId'>;
 }
 
 export function qualifyManagedUpdate(
@@ -94,7 +96,9 @@ export interface HandoffReceipt {
 	readonly generation: string | null;
 }
 
-export async function recordManagedUpdatePins(gate: Gate, update: Update, pins: ManagedUpdatePins): Promise<void> {
+export async function recordManagedUpdatePins(
+	gate: Gate & Partial<Pick<InstallationMutationGate, 'admitReleaseQualification'>>, update: Update, pins: ManagedUpdatePins,
+): Promise<void> {
 	const { prior, candidate, compatibility } = pins;
 	const { predecessor } = update;
 	if (predecessor.priorRelease !== prior.releaseId || predecessor.candidateRelease !== candidate.releaseId
@@ -102,9 +106,17 @@ export async function recordManagedUpdatePins(gate: Gate, update: Update, pins: 
 		throw new Error('update reservation does not match pinned releases');
 	}
 	await gate.admit(update);
+	const compatibilityIntent = JSON.stringify(compatibility);
+	if (pins.releaseQualification !== undefined) {
+		if (gate.admitReleaseQualification === undefined) throw new Error('signed release admission is unavailable');
+		if (pins.releaseQualification.qualification.compatibilityDigest !== releaseMetadataDigest(Buffer.from(compatibilityIntent))) {
+			throw new Error('writable formats differ from the signed qualification');
+		}
+		await gate.admitReleaseQualification(update, { updateId: update.id, ...pins.releaseQualification });
+	}
 	await gate.recordIntent(update, 'release-pins', JSON.stringify({ prior, candidate }));
 	await gate.recordReceipt(update, 'release-pins', 'pinned for this transaction');
-	await gate.recordIntent(update, COMPATIBILITY_STEP, JSON.stringify(compatibility));
+	await gate.recordIntent(update, COMPATIBILITY_STEP, compatibilityIntent);
 	await gate.recordReceipt(update, COMPATIBILITY_STEP, COMPATIBILITY_RECEIPT);
 }
 

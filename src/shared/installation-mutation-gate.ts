@@ -11,6 +11,8 @@ import type { DarwinIncarnation, DarwinLaunchJob } from './darwin-lifecycle.js';
 import { SupervisorLifecycleError } from './daemon-supervisor-protocol.js';
 import type { ManagedInstallation } from './managed-daemon-installation.js';
 import type { RunFileIdentity } from './daemon-run-files.js';
+import { assertReleaseTrustFloor, readReleaseQualificationReceipt, readReleaseTrustFloor, RELEASE_FENCE_FRESHNESS_MS } from './managed-release-trust.js';
+import type { ReleaseQualificationReceipt, ReleaseTrustFloor } from './managed-release-trust.js';
 
 const HELPER = fileURLToPath(new URL('../../out/bin/insrc-darwin-lifecycle', import.meta.url));
 const MAX_BYTES = 128 * 1024;
@@ -84,6 +86,48 @@ export interface InstallationJournal {
 	readonly root: string;
 	readonly active: MutationReservation | null;
 	readonly outcome: DurableUpdateOutcome | null;
+	readonly releaseTrust?: ReleaseTrustFloor;
+}
+
+export const RELEASE_TRUST_STEP = 'release-trust';
+
+export interface AdmittedReleaseQualification {
+	readonly updateId: string;
+	readonly qualification: ReleaseQualificationReceipt;
+	readonly priorFingerprint: string;
+	readonly candidateFingerprint: string;
+}
+
+function readAdmittedReleaseQualification(value: unknown, active: Extract<MutationReservation, { kind: 'update' }>): AdmittedReleaseQualification {
+	if (!object(value) || Object.keys(value).length !== 4 || value.updateId !== active.id
+		|| typeof value.priorFingerprint !== 'string' || !/^[a-f0-9]{64}$/.test(value.priorFingerprint)
+		|| typeof value.candidateFingerprint !== 'string' || !/^[a-f0-9]{64}$/.test(value.candidateFingerprint)) {
+		return conflict('invalid durable release qualification receipt');
+	}
+	const qualification = readReleaseQualificationReceipt(value.qualification);
+	if (qualification.priorCommit !== active.predecessor.priorCommit
+		|| qualification.priorCommit !== active.predecessor.priorRelease
+		|| qualification.candidateCommit !== active.predecessor.candidateRelease) {
+		return conflict('release qualification belongs to another update pair');
+	}
+	return { updateId: active.id, qualification, priorFingerprint: value.priorFingerprint, candidateFingerprint: value.candidateFingerprint };
+}
+
+function requireFreshReleaseAdmission(proof: AdmittedReleaseQualification, floor: ReleaseTrustFloor | undefined): void {
+	const { trust, validUntil } = proof.qualification;
+	const now = Date.now();
+	assertReleaseTrustFloor(trust, floor);
+	if (now < trust.observedAt || now >= validUntil || now - trust.observedAt > RELEASE_FENCE_FRESHNESS_MS) {
+		conflict('release trust requires a fresh verification before cutover');
+	}
+}
+
+/** Read only the recorded decision during offline recovery. No network or fresh trust is required. */
+export function recordedReleaseQualification(active: Extract<MutationReservation, { kind: 'update' }>): AdmittedReleaseQualification | undefined {
+	const step = active.entries.find(entry => entry.step === RELEASE_TRUST_STEP);
+	if (step === undefined) return undefined; // Historical journal.
+	if (step.receipt !== 'verified') return conflict('release qualification admission is incomplete');
+	return readAdmittedReleaseQualification(JSON.parse(step.intent), active);
 }
 
 export type RecoveryDecision = 'idle' | 'uncommitted' | 'activate' | 'finish-rollback' | 'fenced';
@@ -215,6 +259,7 @@ function readJournal(bytes: string, root: string, uid: number): InstallationJour
 		|| !text(outcome.detail) || (outcome.finishedAt !== undefined
 			&& (typeof outcome.finishedAt !== 'string' || !Number.isFinite(Date.parse(outcome.finishedAt)))))) conflict('invalid installation outcome');
 	const journal = parsed as unknown as InstallationJournal;
+	if (journal.releaseTrust !== undefined) readReleaseTrustFloor(journal.releaseTrust);
 	if (journal.active?.kind === 'start' && journal.active.activation !== undefined
 		&& journal.active.activation.installation.stateRoot !== root) conflict('fresh activation names another installation root');
 	if (journal.active?.kind === 'update' && journal.active.predecessor.launch !== undefined
@@ -369,6 +414,32 @@ export class InstallationMutationGate {
 		});
 	}
 
+	/** Commit the monotonic floor and immutable receipt together, before any cutover intent. */
+	async admitReleaseQualification(authority: MutationAuthority, proof: AdmittedReleaseQualification): Promise<void> {
+		await assertLiveOwner(authority.owner, this.helper);
+		await this.arbitrate(async state => {
+			const active = this.admitted(state, authority);
+			if (active.kind !== 'update' || active.predecessor.preparing === true || active.entries.length !== 0) {
+				return conflict('release qualification must precede cutover');
+			}
+			this.permit(state, active, 'lifecycle');
+			const verified = readAdmittedReleaseQualification(proof, active);
+			requireFreshReleaseAdmission(verified, state.releaseTrust);
+			const entry = { step: RELEASE_TRUST_STEP, intent: JSON.stringify(verified), receipt: 'verified' };
+			await this.write({ ...state, releaseTrust: verified.qualification.trust, active: { ...active, entries: [entry] } });
+		});
+	}
+
+	/** Advance trust independently of qualification so an observed revocation cannot be replayed away. */
+	async observeReleaseTrust(observed: ReleaseTrustFloor): Promise<void> {
+		const floor = readReleaseTrustFloor(observed);
+		await this.arbitrate(async state => {
+			assertReleaseTrustFloor(floor, state.releaseTrust);
+			if (floor.observedAt > Date.now()) conflict('release trust observation is from the future');
+			await this.write({ ...state, releaseTrust: floor });
+		});
+	}
+
 	private async append(
 		authority: MutationAuthority, step: string, kind: 'intent' | 'receipt', detail: string, purpose: MutationPurpose,
 	): Promise<void> {
@@ -377,6 +448,12 @@ export class InstallationMutationGate {
 			const active = this.admitted(state, authority);
 			const last = active.entries.at(-1);
 			this.permit(state, active, purpose);
+			if (kind === 'intent' && active.kind === 'update'
+				&& (step === 'legacy-launcher-fence' || (step === 'predecessor-stop'
+					&& !active.entries.some(entry => entry.step === 'legacy-launcher-fence')))) {
+				const qualification = recordedReleaseQualification(active);
+				if (qualification !== undefined) requireFreshReleaseAdmission(qualification, state.releaseTrust);
+			}
 			if (kind === 'intent' && ((last !== undefined && last.receipt === undefined)
 				|| active.entries.some(entry => entry.step === step) || active.entries.length >= MAX_STEPS)) {
 				conflict('installation journal has an unresolved, repeated or excess intent');

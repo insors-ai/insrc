@@ -4,11 +4,13 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 27 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 26 pass, 0 fail, 0 skipped, 1 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
-Run at 2026-11-13T09:03:43.670Z on commit `6b3b36151`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-13T11:41:54.270Z on commit `b7125c2b6`. Tests check: **failed**. 5 pass, 0 fail, 0 skipped, 1 not found; 0 reported by the builder and not run by the gate.
+
+named test cases that did not pass: not found: 'scratch-store.test.ts: createScratch writes <yyyymmdd-hhmmss>-<slug>.md via temp write + link()+unlink publication (never rename), collision ladder -2/-3, slug rules incl. all-symbol fallback 'scratch'; entry appears at list head' in vscode-plugin/src/chat/__tests__/scratch-store.test.ts
 
 **unit: scratch-store.test.ts: listScratches returns entries sorted by mtime desc with id/name/mtime/size (ENOENT->[], non-.md skipped, limit cap, ties id asc)**
 
@@ -20,7 +22,7 @@ Run at 2026-11-13T09:03:43.670Z on commit `6b3b36151`. Tests check: **passed**. 
 
 | Result | Test | File |
 | :--- | :--- | :--- |
-| pass | scratch-store.test.ts: createScratch writes <yyyymmdd-hhmmss>-<slug>.md via temp write + link()+unlink publication (never rename), collision ladder -2/-3, slug rules incl. all-symbol fallback; entry appears at list head | `vscode-plugin/src/chat/__tests__/scratch-store.test.ts` |
+| not found | scratch-store.test.ts: createScratch writes <yyyymmdd-hhmmss>-<slug>.md via temp write + link()+unlink publication (never rename), collision ladder -2/-3, slug rules incl. all-symbol fallback 'scratch'; entry appears at list head | `vscode-plugin/src/chat/__tests__/scratch-store.test.ts` |
 
 **unit: scratch-store.test.ts: refusal tests — ids '.', '..', traversal strings, symlinks and directories named *.md cause ScratchRefused with ZERO fs mutation calls recorded by fake-scratch-fs**
 
@@ -50,7 +52,7 @@ Run at 2026-11-13T09:03:43.670Z on commit `6b3b36151`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `vscode-plugin/src/chat/__tests__/scratch-store.test.ts` | 0 | 11 | 0.4 s |  |
+| `vscode-plugin/src/chat/__tests__/scratch-store.test.ts` | 0 | 11 | 0.3 s |  |
 
 ## t2
 

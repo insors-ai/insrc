@@ -79,7 +79,7 @@ test('scratch-store.test.ts: listScratches surfaces ScratchStoreError on a non-E
   await assert.rejects(store.listScratches(), (e: unknown) => e instanceof ScratchStoreError);
 });
 
-test('scratch-store.test.ts: createScratch writes <yyyymmdd-hhmmss>-<slug>.md via temp write + link()+unlink publication (never rename), collision ladder -2/-3, slug rules incl. all-symbol fallback; entry appears at list head', async () => {
+test("scratch-store.test.ts: createScratch writes <yyyymmdd-hhmmss>-<slug>.md via temp write + link()+unlink publication (never rename), collision ladder -2/-3, slug rules incl. all-symbol fallback 'scratch'; entry appears at list head", async () => {
   // Local-time stamp of the fixed clock, computed the same way the store does.
   const d = new Date('2026-11-13T08:30:00Z');
   const p2 = (n: number): string => String(n).padStart(2, '0');

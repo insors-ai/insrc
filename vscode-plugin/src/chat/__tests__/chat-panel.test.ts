@@ -4604,7 +4604,7 @@ test('the shell embeds the pager: line() appends through it, session-restored re
   // An older page goes to prepend; live rows are tracked (stamped, then trimmed) with their row index.
   assert.match(html, /else if\(m\.type==='transcript-page'\)\{pager\.prepend\(m\);\}/);
   assert.match(html, /if\(m\.type==='turn-event'\)\{const ev=m\.event;pager\.track\(m\.rowIndex,function\(\)\{/);
-  assert.match(html, /else if\(m\.type==='user-row'\)\{pager\.track\(m\.rowIndex,function\(\)\{reg\.appendKeyed\(reg\.toViewModel\(\{role:'user',text:m\.text,attachments:m\.attachments\}\),m\.key\);\}\);\}/);
+  assert.match(html, /else if\(m\.type==='user-row'\)\{pager\.track\(m\.rowIndex,function\(\)\{reg\.appendKeyed\(reg\.toViewModel\(\{role:'user',text:m\.text,attachments:m\.attachments,at:m\.at\}\),m\.key\);\}\);\}/);
   assert.match(html, /else if\(m\.type==='transcript-row'\)\{pager\.track\(m\.rowIndex,function\(\)\{var r=m\.row;if\(r&&r\.role==='diff'&&r\.replaces!=null\)\{reg\.redrawDiff\(r\);\}else if\(r\)\{reg\.renderRow\(reg\.toViewModel\(r\)\);\}\}\);\}/, 'a row the host pushed is tracked with its index too');
   assert.match(html, /function track\(rowIndex,fn\)\{var from=term\.children\.length;try\{return fn\(\);\}finally\{stamp\(from,rowIndex\);if\(!rendering&&following\(\)\)toBottom\(\);trimIfNeeded\(\);showJump\(\);\}\}/, 'track stamps the new nodes, moves a following view to the bottom once the row is filled, and then trims');
   assert.match(html, /else if\(m\.type==='run-config'\)\{curProv=m\.provider\|\|'';if\(rb\)\{rb\.setAttribute\('data-provider',m\.provider\|\|''\);rb\.setAttribute\('data-model',m\.model\|\|''\);rb\.setAttribute\('data-effort',m\.effort\|\|''\);\}reg\.setRunIdentity\(m\.provider\|\|'',m\.model\|\|''\);rlabel\(\);elabel\(\);updatePickers\(\);\}/, 'the run-config echo branch re-seeds the identity, then settles the buttons from the session');
@@ -4875,6 +4875,9 @@ function attachHarness(opts: { adapter?: StreamAdapter | undefined; wrapStore?: 
     providers: registry({ claude: adapter }, ['claude']),
     store: sessions,
     cwd: () => '/repo',
+    // Fixed clock: the live user-row echo carries the persisted row's `at`
+    // (e4ce70ad1ae43d31/s1), so the assertions below can deep-equal it.
+    now: () => '2026-11-13T00:00:00.000Z',
     logger: { warn: () => {}, error: (m) => errors.push(m) },
     ...(opts.queue !== undefined ? { queue: opts.queue } : {}),
     attachments: {
@@ -5159,8 +5162,9 @@ test("host: a submit stores the user's text with the attachments on the row, ech
   // The stored row keeps the user's own words and lists the files; no path block in its text.
   const stored = h.sessions.get(sid)!.transcript[0]!;
   assert.deepEqual({ ...stored, at: 'x' }, { role: 'user', text: 'look at these', at: 'x', attachments: refs });
-  // The live echo carries the same attachments, under the row's key.
-  assert.deepEqual(userRows(h.fc), [{ type: 'user-row', target: { sessionId: sid, viewGeneration: 1 }, text: 'look at these', key: 'r0', rowIndex: 0, attachments: refs }]);
+  // The live echo carries the same attachments, under the row's key, plus the
+  // persisted row's `at` (the harness pins now() to a fixed instant).
+  assert.deepEqual(userRows(h.fc), [{ type: 'user-row', target: { sessionId: sid, viewGeneration: 1 }, text: 'look at these', key: 'r0', rowIndex: 0, attachments: refs, at: '2026-11-13T00:00:00.000Z' }]);
   // The files stay on disk: the message refers to them.
   assert.deepEqual(attFiles(h), [`${dir}/1-shot.png`, `${dir}/2-mynotes.txt`]);
 
@@ -5172,7 +5176,7 @@ test("host: a submit stores the user's text with the attachments on the row, ech
   assert.equal(h.runs[1]!.prompt, 'and again');
   const row = h.sessions.get(sid)!.transcript.filter((r) => r.role === 'user')[1]!;
   assert.deepEqual(Object.keys(row), ['role', 'text', 'at']);
-  assert.deepEqual(Object.keys(userRows(h.fc)[1]!), ['type', 'target', 'text', 'key', 'rowIndex']);
+  assert.deepEqual(Object.keys(userRows(h.fc)[1]!), ['type', 'target', 'text', 'key', 'rowIndex', 'at']);
   assert.equal(h.pendings().length, pendingPosts, 'a message without attachments posts no pending list');
 });
 

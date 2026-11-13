@@ -14,7 +14,7 @@ import {
   createScratchStore,
   nodeScratchFs,
 } from '../scratch-store.js';
-import { eacces, fakeScratchFs } from './fake-scratch-fs.js';
+import { eacces, eexist, fakeScratchFs } from './fake-scratch-fs.js';
 
 const ROOT = '/root/scratches';
 
@@ -150,7 +150,8 @@ test('scratch-store.test.ts: refusal tests — ids \'.\', \'..\', traversal stri
   await assert.rejects(store.deleteScratch('evil.md'), (e: unknown) => e instanceof ScratchRefused);
   await assert.rejects(store.readScratch('evil.md'), (e: unknown) => e instanceof ScratchRefused);
   await assert.rejects(store.deleteScratch('dir.md'), (e: unknown) => e instanceof ScratchRefused);
-  // Every refusal above made ZERO fs mutation calls.
+  await assert.rejects(store.readScratch('dir.md'), (e: unknown) => e instanceof ScratchRefused);
+  // Every refusal above — including the directory read — made ZERO fs mutation calls.
   assert.deepEqual(fake.mutationsSince(mark), []);
 });
 
@@ -263,6 +264,22 @@ test('scratch-store.test.ts: concurrent-create race with two independent store i
     const cb = await readFile(join(dir, rb.id), 'utf8');
     assert.equal(ca, 'from A');
     assert.equal(cb, 'from B');
+
+    // Forced EEXIST: a fake-fs create where the first link() loses the race must
+    // retry with the next suffix — proving the EEXIST branch, not just lstat avoidance.
+    const ff = fakeScratchFs();
+    await ff.fs.mkdir(ROOT);
+    const fixed = fixedNow('2026-11-13T08:30:00Z');
+    const store2 = createScratchStore({ root: ROOT, fs: ff.fs, now: fixed });
+    let linkAttempts = 0;
+    ff.failOn = (c) => {
+      if (c.op === 'link' && linkAttempts++ === 0) return eexist(c.to ?? '');
+      return undefined;
+    };
+    const retried = await store2.createScratch('Race Pad', 'from C');
+    assert.match(retried.id, /-race-pad-2\.md$/);
+    assert.equal(linkAttempts, 2); // first link threw EEXIST, second published -2
+    assert.equal(Buffer.from(ff.files.get(`${ROOT}/${retried.id}`) ?? []).toString('utf8'), 'from C');
     // listScratches sees both, newest first by mtime (tie -> id asc).
     const list = await a.listScratches();
     assert.equal(list.length, 2);

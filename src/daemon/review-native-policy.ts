@@ -89,6 +89,10 @@ export async function authorizeReviewNative(key:ReviewKey,command:ReviewNativeCo
   return;
  }
  if(command.kind!=='cli'||reviewer!=='daemon'||receipt?.sourceValidation!=='qualified')throw new Error('Qualified independent reviewer required for native inference');
+ // Vibe's app-server receives its readonly session configuration over stdin;
+ // CliProvider verifies the effective runtime tool policy before turn/start.
+ let vibe:string|undefined;try{vibe=await resolveReviewBinary({command:'vibe-app-server'});}catch{}
+ if(command.command===vibe){if(command.args.length!==0||!command.keepStdinOpen)throw new Error('Unsupported Vibe app-server arguments');return;}
  for(const kind of ['claude','codex'] as const){let binary:string;try{binary=await resolveReviewBinary({command:kind});}catch{continue;}if(command.command===binary){readonlyCli(kind,command.args,key);return;}}
  throw new Error('Unsupported review CLI executable');
 }

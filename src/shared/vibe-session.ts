@@ -99,7 +99,7 @@ function startTransport(options: VibeSessionOptions): VibeTransport {
 	const review = reviewNativeTransport();
 	const managed = review ? launchReviewShell(review, options.command, options.args ?? [], {
 		cwd: options.cwd, env: options.env, signal: options.signal, stdio: ['pipe', 'pipe', 'pipe'],
-	}) : undefined;
+	}, 'cli') : undefined;
 	const ownGroup = !review && options.inheritProcessGroup !== true && process.platform !== 'win32';
 	const child = managed ? managed.child as ChildProcessWithoutNullStreams : spawn(options.command, options.args ?? [], {
 		stdio: ['pipe', 'pipe', 'pipe'],

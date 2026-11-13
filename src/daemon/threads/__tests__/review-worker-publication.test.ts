@@ -35,3 +35,15 @@ test('publication retry after worker exit or lost receipt performs zero provider
   assert.equal((await history.log(id)).filter(e=>e.operation==='review'||e.operation==='update'||e.operation==='create').length,before,'retry must preserve one permanent publication');
  });
 });
+
+test('cold public design publication admission does not alter execution actions or preservation identity',async t=>{
+ const f=impactFixture(t);await saveDesignCheckpoint(f.repo,{...f.checkpoint,attempts:[f.baseline]});
+ const {loadStoredDesignCheckpoint}=await import('../../../workflow/review/design-review/checkpoint.js');
+ const {persistReviewWorkerAdmission}=await import('../review-worker-admission.js');
+ const {designPreservationDigest}=await import('../../../workflow/review/design-review/history.js');
+ const before=(await loadStoredDesignCheckpoint(f.repo,'review-1'))!,request={phase:'recover',repo:f.repo,reviewId:'review-1',attempt:1,actionId:'cold-publication',operation:'retry_publication'};
+ await persistReviewWorkerAdmission({key:{project:f.repo,family:'design',reviewId:'review-1'},incarnation:'cold-publication',attempt:1,reviewer:before.subject!.reviewer,actionId:request.actionId,subject:f.id,submitted:request});
+ const after=(await loadStoredDesignCheckpoint(f.repo,'review-1'))!;
+ assert.deepEqual(after.attempts[0]!.actions,before.attempts[0]!.actions);
+ assert.equal(designPreservationDigest(after),designPreservationDigest(before));
+});

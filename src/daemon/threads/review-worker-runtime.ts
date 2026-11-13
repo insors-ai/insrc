@@ -79,6 +79,7 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
   let progressSequence=0,publishing=false,maintenanceWork=false,publishingStored=false,lastProgressStamp:string|undefined,observationAttempt=init.review.attempt;
   const snapshot=async()=>{
    const observation=code?await code.progress():await design!.progress();
+   if(design)observationAttempt=design.currentAttempt();
    // This worker owns the live admission even before execute has been requested.
    if(code&&observation.admission&&observation.status==='pending')Object.assign(observation,{interrupted:false,executionState:'starting',freshness:'live'});
    if(publishingStored&&!observation.admission){

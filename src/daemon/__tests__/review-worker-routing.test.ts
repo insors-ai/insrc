@@ -163,3 +163,28 @@ test('production design recovery preserves qualified failures and only an explic
  }
  assert.equal(Atomics.load(calls,0),0,'clearance/rejected recovery never invokes a reviewer');
 });
+
+test('production cleanup preserves the explicit locator for a successful no-document review',async t=>{
+ const code=await fixture(true);t.after(code.cleanup);
+ const {prepareReviewPacket}=await import('../../workflow/code-review/task-review/packet.js');
+ const {bindTaskFinalIdentities}=await import('../../workflow/code-review/task-review/attribution-binding.js');
+ const {reviewedBuildFingerprint}=await import('../../workflow/code-review/build-freshness.js');
+ for(const kind of ['DEF','LLD','PLAN'])await rm(join(code.repo,`.insrc/artifacts/${kind}-${hash}${kind==='DEF'?'':'-s1'}.json`));
+ Object.assign(code.build.meta,{standalone:true,authoredBy:'daemon'});Object.assign(code.build.body,{focus:'Inspect fixture behavior',tasks:[{id:'s1',passed:true}]});code.put(`.insrc/artifacts/BUILD-${hash}-s1.json`,code.build);
+ const packet={...code.packet,documents:{}};delete packet.taskId;
+ const {readStoryRoute}=await import('../../workflow/code-review/task-review/route-source.js');
+ const prepared=await prepareReviewPacket(packet,code.deps.sources,false,await readStoryRoute(code.repo,hash,'s1'));
+ const cp=code.checkpoint('no-documents');delete cp.taskId;const attempt=cp.attempts[0]!;attempt.submitted=packet;attempt.header.selectedTaskIds=['s1'];attempt.header.reviewer='controller';attempt.header.status='passed';attempt.header.buildFingerprint=reviewedBuildFingerprint(code.build);
+ if(prepared.derived)attempt.header.derived=prepared.derived;
+ attempt.header.attributionState='pending';delete attempt.header.attributionIdentity;delete attempt.header.acceptedAttribution;delete attempt.header.taskScopeIdentities;
+ attempt['review-response'].tasks=[{...structuredClone(code.result),taskId:'s1'}];
+ await bindTaskFinalIdentities({path:checkpointPath(code.repo,cp.reviewId),checkpoint:cp,attempt,prepared},[{taskId:'s1',changeIndexes:[0],testIndexes:[0],decision:{action:'initial'}}]);
+ await saveCheckpoint(checkpointPath(code.repo,cp.reviewId),cp);
+ const calls=new Int32Array(new SharedArrayBuffer(4));
+ const host=new ProductionReviews({services:new ThreadServices(()=>({startedAt:0,modelState:{status:'ready'},installedCommit:'fixture'})),registeredRepos:async()=>new Set([code.repo]),track:()=>{},start:(svc,input,port,deps)=>startReviewWorkerBootstrap(svc,input,port,{...deps,start:(s,n,_script,extra,created)=>startWorker(s,n,'__tests__/helpers/review-maintenance',{workerData:{...extra!.workerData,calls:calls.buffer},transferList:extra!.transferList},created)})});
+ installProductionReviews(host);t.after(()=>host.shutdown());const context={connectionIdentity:'no-documents',daemonEpoch:'epoch',connectionSignal:new AbortController().signal};
+ await host.registry.publishStored({key:{project:code.repo,family:'code',reviewId:cp.reviewId},attempt:1,actionId:'publish',submitted:{},route:{epicHash:hash,storyId:'s1'}},context);
+ const {approveArtifactByJsonPath}=await import('../../workflow/gates.js');const {lifecycleFor}=await import('../lifecycle-registry.js');await approveArtifactByJsonPath(join(code.repo,`.insrc/artifacts/BUILD-${hash}-s1.json`),{lifecycle:lifecycleFor(code.repo).service});
+ const cleaned=await host.registry.cleanupApproved({project:code.repo,family:'code',epicHash:hash,storyId:'s1'});
+ assert.ok(cleaned.deleted.includes(checkpointPath(code.repo,cp.reviewId)),JSON.stringify(cleaned));assert.equal(Atomics.load(calls,0),0);
+});

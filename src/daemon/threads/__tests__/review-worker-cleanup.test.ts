@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
-import { rm } from 'node:fs/promises';
+import { rm,readFile,writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fixture,hash } from '../../../workflow/code-review/task-review/__tests__/publication-fixture.js';
 import { impactFixture } from '../../../workflow/review/design-review/__tests__/impact-fixtures.js';
@@ -85,6 +85,15 @@ test('approval cleanup retains active targets and preserves both-family permanen
   assert.equal(failed.admission.validation,'unverified');assert.equal(failed.status,'failed');
   const log=await lifecycle.store.history.log(id);
   assert.ok(log.some(e=>(e.outcome?.data as any)?.kind==='review-resource-audit'),'clearance receipts survive checkpoint deletion');
+  if(code){
+   const permanent=join(repo,`.insrc/artifacts/${id}.json`),raw=await readFile(permanent,'utf8'),head=JSON.parse(raw);
+   try{
+    await writeFile(permanent,JSON.stringify({...head,meta:{...head.meta,schemaVersion:99}}));
+    await assert.rejects(registry.storedProgress(key,2,{epicHash,storyId:'s1'}),/Unsupported permanent CR version/);
+    await writeFile(permanent,JSON.stringify({...head,meta:{...head.meta,schemaVersion:2}}));
+    await assert.rejects(registry.storedProgress(key,2,{epicHash,storyId:'s1'}),/capability mismatch/);
+   }finally{await writeFile(permanent,raw);}
+  }
   assert.equal(Atomics.load(calls,0),0);
  });
 });

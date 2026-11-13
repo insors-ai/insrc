@@ -7,6 +7,7 @@ import { syncBuiltinESMExports } from 'node:module';
 import { chmod, mkdtemp, mkdir, open, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { authorizeReviewNative } from '../../../daemon/review-native-policy.js';
 import { CliProvider } from '../cli-provider.js';
 import { ReviewProcessLeases } from '../../../daemon/threads/review-processes.js';
 import { withReviewNativeTransport } from '../../../shared/review-process-bridge.js';
@@ -15,10 +16,10 @@ import type { ReviewProcessReservation } from '../../../shared/review-native.js'
 import { runInProcessGroup } from '../../../shared/process-group.js';
 
 const schema={type:'object',required:['ok'],properties:{ok:{type:'boolean'}},additionalProperties:false};
-async function fixture(t:{after:(fn:()=>Promise<void>)=>void}){
+async function fixture(t:{after:(fn:()=>Promise<void>)=>void},production=false){
  const repo=await mkdtemp(join(tmpdir(),'review-cli-bridge-')),events:string[]=[],resolved:string[]=[];
  const path=join(repo,'.insrc/tmp/code-review/fixture.json');let sequence=0;
- const leases=new ReviewProcessLeases({daemonInstance:'cli-test',authorize:()=>{events.push('authorize');},verifyIntent:async r=>{
+ const leases=new ReviewProcessLeases({daemonInstance:'cli-test',authorize:async(r,c,signal)=>{if(production)await authorizeReviewNative(r.key,c,'daemon',signal,{sourceValidation:'qualified',checkpointPath:path,attempt:1,operationId:r.operationId,workerIncarnation:r.workerIncarnation,daemonInstance:r.daemonInstance});events.push('authorize');},verifyIntent:async r=>{
   const saved=JSON.parse(await readFile(path,'utf8'));assert.equal(saved.operationId,r.operationId);assert.equal(saved.workerIncarnation,r.workerIncarnation);events.push('verified');
  }});
  const owner=leases.register({project:repo,family:'code',reviewId:'fixture'},'incarnation');
@@ -28,7 +29,7 @@ async function fixture(t:{after:(fn:()=>Promise<void>)=>void}){
  const transport:ReviewNativeTransport={
   resolveBinary:async command=>{resolved.push(command);return binary;},
   reserve:async command=>{events.push('reserved');return leases.reserve(owner,++sequence,command);},
-  saveOpenIntent:async r=>{await durable(r);events.push('saved');return{checkpointPath:path,attempt:1,operationId:r.operationId,workerIncarnation:r.workerIncarnation,daemonInstance:r.daemonInstance};},
+  saveOpenIntent:async r=>{await durable(r);events.push('saved');return{sourceValidation:'qualified',checkpointPath:path,attempt:1,operationId:r.operationId,workerIncarnation:r.workerIncarnation,daemonInstance:r.daemonInstance};},
   start:async(r,receipt,consume)=>leases.start(owner,number(r),receipt,async output=>{events.push('output');assert.ok(output.bytes.byteLength<=65536);await consume(output);}).result,
   waitStarted:async r=>({spawned:(await leases.waitStarted(owner,number(r))).spawned}),
   write:(r,bytes,end)=>leases.write(owner,number(r),bytes,end),
@@ -42,10 +43,10 @@ async function fixture(t:{after:(fn:()=>Promise<void>)=>void}){
    :[{type:'item.completed',item:{type:'agent_message',text:'{"ok":true}'}},{type:'turn.completed'}];
   await writeFile(binary,'#!/usr/bin/env node\nprocess.stdin.resume();process.stdin.once("end",()=>{process.stdout.write('+JSON.stringify(frames.map(f=>JSON.stringify(f)+'\n').join(''))+');setInterval(()=>{},1000)});');await chmod(binary,0o755);
  }
- return{repo,events,resolved,transport,leases,owner,cli};
+ return{repo,events,resolved,transport,leases,owner,cli,setBinary:(path:string)=>{binary=path;}};
 }
-async function threadFixture(t:{after:(fn:()=>Promise<void>)=>void},h:Awaited<ReturnType<typeof fixture>>,noTransport=false){
- const worker=new Worker(new URL('./helpers/review-process-worker.mjs',import.meta.url),{workerData:{role:'review',repo:h.repo,noTransport,provider:new URL('../cli-provider.ts',import.meta.url).href,bridge:new URL('../../../shared/review-process-bridge.ts',import.meta.url).href,guard:new URL('../../../shared/review-native-guard.ts',import.meta.url).href}});
+async function threadFixture(t:{after:(fn:()=>Promise<void>)=>void},h:Awaited<ReturnType<typeof fixture>>,noTransport=false,kind='claude'){
+ const worker=new Worker(new URL('./helpers/review-process-worker.mjs',import.meta.url),{workerData:{role:'review',repo:h.repo,noTransport,kind,provider:new URL('../cli-provider.ts',import.meta.url).href,bridge:new URL('../../../shared/review-process-bridge.ts',import.meta.url).href,guard:new URL('../../../shared/review-native-guard.ts',import.meta.url).href}});
  let next=0,parsedThread=0;const acknowledgments=new Map<number,{resolve:()=>void;reject:(error:Error)=>void}>();
  let active!:()=>void;const activity=new Promise<void>(r=>{active=r;});
  const done=new Promise<{value?:unknown;error?:string;threadId:number}>((resolve,reject)=>{
@@ -110,4 +111,28 @@ test('review binary lookup cannot spawn synchronously on the worker',async t=>{
  const guarded=await fixture(t);await guarded.cli('claude');
  const unbound=await threadFixture(t,guarded,true);
  assert.match((await unbound.done).error!,/native transport is not installed/);assert.equal(guarded.events.length,0,'an unbound review worker cannot fall back to local spawning');await unbound.closed;
+});
+
+test('bound Vibe review worker starts through production native authorization and host leases',async t=>{
+ const h=await fixture(t,true),binary=join(h.repo,'vibe-app-server'),savedPath=process.env['PATH'];
+ const source=`#!${process.execPath}
+const {createInterface}=require('node:readline');
+const model={name:'mistral-vibe-cli-latest',alias:'mistral-medium-3.5',thinking:'high',thinkingLevels:['off','high']};
+const reply=(id,result)=>process.stdout.write(JSON.stringify({jsonrpc:'2.0',id,result})+'\\n');
+const event=(method,params)=>process.stdout.write(JSON.stringify({jsonrpc:'2.0',method,params:{sessionId:'vibe-test',...params}})+'\\n');
+createInterface({input:process.stdin}).on('line',line=>{const {method,id,params}=JSON.parse(line);
+if(method==='initialize')reply(id,{});
+else if(method==='session/start')reply(id,{state:{session:{id:'vibe-test'}}});
+else if(method==='runtime/read')reply(id,{runtime:{config:{activeModel:model,models:[model]},tools:[{name:'read_file'}],bypassToolPermissions:false}});
+else if(method==='config/model/write')reply(id,{status:'applied'});
+else if(method==='turn/start'){const turn={id:'turn-1',sessionId:'vibe-test',status:'in_progress'};reply(id,{turn});event('turn/started',{turn});event('history/entryAdded',{turnId:turn.id,entry:{id:'m1',type:'message',role:'assistant',content:[{type:'text',text:'{"ok":true}'}]}});event('turn/completed',{turn:{...turn,status:'completed'}});}
+});setInterval(()=>{},1000);`;
+ await writeFile(binary,source);await chmod(binary,0o755);h.setBinary(binary);process.env['PATH']=h.repo+':'+savedPath;
+ t.after(async()=>{if(savedPath===undefined)delete process.env['PATH'];else process.env['PATH']=savedPath;});
+ const w=await threadFixture(t,h,false,'vibe');
+ let timer:ReturnType<typeof setTimeout>|undefined;
+ const out=await Promise.race([w.done,new Promise<never>((_,reject)=>{timer=setTimeout(()=>reject(new Error('Vibe worker stalled: '+JSON.stringify(h.events))),10000);})]).finally(()=>clearTimeout(timer));
+ await w.closed;
+ assert.deepEqual(out.value,{ok:true},out.error);assert.ok(out.threadId>0);assert.equal(w.parsedThread(),out.threadId);
+ assert.ok(h.events.indexOf('saved')<h.events.indexOf('authorize'));assert.ok(h.events.includes('closed'));
 });

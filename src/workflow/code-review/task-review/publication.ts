@@ -123,7 +123,11 @@ async function publishTechnicalAdmission(project: string, hash: string, cp: Stor
  const folder = storyRecordFolderArgs(project, hash, story, {}, { kind: 'read' });
  const paths = codeReviewArtifactPaths(project, hash, story, folder.epicCreatedAt, folder.workItemKind, folder.epicSlug);
  await auditResources(cp, id, deps);
- await store.updateAndLog(id, deps.through.actor, current => {
+ await store.updateAndLog(id, deps.through.actor, async current => {
+  try {
+   const prior=JSON.parse(await readFile(paths.json,'utf8')) as {meta?:{schemaVersion?:unknown}};
+   requireReview(prior.meta?.schemaVersion===undefined||[1,2,3].includes(prior.meta.schemaVersion as number),'CR','Unsupported prior CR version');
+  } catch(error) { if((error as NodeJS.ErrnoException).code!=='ENOENT')throw error; }
   let body: unknown = Object.keys(current.payload.body).length ? current.payload.body : undefined;
   for (const failure of cp.attempts) if (isCodeAdmission(failure)) body = mergeCodeAdmissionFailure(body, cp.reviewId, failure);
   const accepted = validateTaskBody(body);

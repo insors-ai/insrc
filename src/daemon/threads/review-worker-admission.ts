@@ -30,6 +30,7 @@ export async function persistReviewWorkerAdmission(input:ReviewBootstrapInput):P
   }
   if(last?.header.attempt===input.attempt){
    if(last.resourceGuard?.clearance)throw new Error('Resource clearance requires a separate explicit resume');
+   if(!isCodeAdmission(last)&&['passed','changes_requested'].includes(last.header.status)&&last['review-response'].crPublication==='complete'&&last.header.reviewer===input.reviewer&&isDeepStrictEqual(last.submitted,packet))return prior!;
    if(!isCodeAdmission(last)||!['pending','running'].includes(last.header.status)||last.header.reviewer!==input.reviewer||!isDeepStrictEqual(last.submitted,packet))throw new Error('Pinned admission cannot be replaced');
    // Identical lost-ack replay consumes no new attempt and still fsyncs.
    return prior!;
@@ -42,7 +43,9 @@ export async function persistReviewWorkerAdmission(input:ReviewBootstrapInput):P
   if(input.submitted&&typeof input.submitted==='object'&&Reflect.get(input.submitted,'phase')==='recover'){
    const recovery=decodeDesign(DesignRequestSchemas.recover,input.submitted);
    if(recovery.repo!==input.key.project||recovery.reviewId!==input.key.reviewId||recovery.attempt!==input.attempt||recovery.actionId!==input.actionId)throw new Error('Foreign design recovery admission');
-   await admitDesignRecovery(input.key.project,input.key.reviewId,recovery);
+   if(recovery.operation==='retry_publication') {
+    await updateStoredDesignCheckpoint(input.key.project,input.key.reviewId,cp=>{if(!cp||cp.attempts.at(-1)?.number!==input.attempt)throw new Error('Stored publication attempt missing');if(cp.attempts.at(-1)!.status==='failed')throw new Error('Failed review requires the next attempt');return cp;});
+   } else await admitDesignRecovery(input.key.project,input.key.reviewId,recovery);
    return{kind:'review-admission-saved',key:input.key,incarnation:input.incarnation,attempt:input.attempt,checkpointPath:path};
   }
   const request=decodeDesign(DesignRequestSchemas.start,input.submitted);

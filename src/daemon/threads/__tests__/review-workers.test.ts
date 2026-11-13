@@ -110,3 +110,11 @@ test('admission replay retains a native intent committed by the writer ahead of 
  await mutation;assert.deepEqual(await replay,ack);
  assert.deepEqual((await loadStoredCheckpoint(ack.checkpointPath))?.attempts.at(-1)?.resourceGuard,guard);
 });
+
+test('foreign controller cannot retire an owner through next-attempt admission',async t=>{
+ const f=await fixture(t,'controller'),owner=context('owner'),foreign=context('foreign');
+ const input=f.submit('next-owner'),ack=await f.registry.admit(input,owner.context),worker=f.started.get('next-owner')!;
+ await assert.rejects(f.registry.admit({...input,attempt:2,actionId:'foreign-next'},foreign.context),/owner mismatch/);
+ assert.equal(f.registry.identity(ack.key)!.incarnation,ack.incarnation);
+ assert.notEqual(worker.worker.threadId,-1,'foreign request must not close the incumbent worker');
+});

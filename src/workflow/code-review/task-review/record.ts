@@ -39,7 +39,7 @@ export function latestReviewSummaries(reviews: readonly CompletedReviewSummary[]
 export function latestReviewStatus(reviews: readonly CompletedReviewSummary[]): TaskReviewResult['status'] {
  const latest=latestReviewSummaries(reviews);return latest.some(r=>r.failedAttempt)?'failed':aggregateTaskStatus(latest.flatMap(review=>review.tasks));
 }
-function bodyStatus(reviews: readonly CompletedReviewSummary[], failures: TaskReviewBody['admissionFailures']): TaskReviewResult['status'] {
+export function bodyStatus(reviews: readonly CompletedReviewSummary[], failures: TaskReviewBody['admissionFailures']): TaskReviewResult['status'] {
  if (!reviews.length || failures?.some(f => !reviews.some(r => r.reviewId === f.reviewId && r.attempt > f.attempt.header.attempt))) return 'failed';
  return latestReviewStatus(reviews);
 }

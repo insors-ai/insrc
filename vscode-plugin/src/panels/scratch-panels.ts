@@ -162,6 +162,12 @@ export function documentBootstrap(): string {
   return `const vs=acquireVsCodeApi();` +
     `const doc=document.getElementById('insrc-scratchdoc');` +
     `const sendBtn=document.getElementById('insrc-sendtochat');` +
+    // Webview-ready handshake: the host replays any content posted before the bootstrap
+    // installed its listener, so an early read completion can never be lost.
+    `var pending=null;` +
+    `window.addEventListener('message',function(e){var m=e.data&&e.data.payload;if(!m)return;` +
+    `if(m.type==='scratch-content'&&typeof m.text==='string'){if(doc)doc.textContent=m.text;else pending=m.text;}});` +
+    `vs.postMessage({v:1,payload:{type:'scratch-ready'}});` +
     // The captured selection text, latched at selectionchange so a later focus (the
     // button click) or selectionchange cannot lose it before the click handler reads it.
     `var captured='';` +
@@ -174,9 +180,10 @@ export function documentBootstrap(): string {
     `var r=s.getRangeAt?s.getRangeAt(0).getBoundingClientRect():null;` +
     `if(r){sendBtn.style.left=Math.max(4,Math.floor(r.right-28))+'px';sendBtn.style.top=Math.max(4,Math.floor(r.bottom+6))+'px';}` +
     `}}` +
-    // A collapsed selection (e.g. the button click moving focus) hides the button but
-    // does NOT clear the latch — the click reads `captured`, so the text is never lost.
-    `else if(s&&s.isCollapsed){if(sendBtn)sendBtn.hidden=true;}` +
+    // A collapsed selection hides the button but does NOT clear the latch — the click
+    // reads `captured`, so the text is never lost. The button stays visible while it
+    // itself holds focus (the click in flight); otherwise it hides.
+    `else if(s&&s.isCollapsed){if(sendBtn&&!(sendBtn.contains&&sendBtn.contains(document.activeElement))&&document.activeElement!==sendBtn)sendBtn.hidden=true;}` +
     `});` +
     `if(sendBtn)sendBtn.addEventListener('click',function(){` +
     // Webview-side cap, same rule as the host-side capUtf8: the posted string, ellipsis
@@ -188,9 +195,8 @@ export function documentBootstrap(): string {
     `if(out!=='')vs.postMessage({v:1,payload:{type:'send-to-chat',text:out}});` +
     `captured='';sendBtn.hidden=true;` +
     `});` +
-    // Host pushes arrive as messages; content is applied via textContent only (never innerHTML).
-    `window.addEventListener('message',function(e){var m=e.data&&e.data.payload;if(!m)return;` +
-    `if(m.type==='scratch-content'&&typeof m.text==='string'){doc.textContent=m.text;}});`;
+    // If content arrived before the doc element was reachable, apply the replay now.
+    `if(pending!==null&&doc){doc.textContent=pending;pending=null;}`;
 }
 
 export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
@@ -203,6 +209,10 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
   let showingId: string | undefined;
   /** Per-id epoch: bumped on delete; a pending open of a stale epoch is dropped. */
   const epochs = new Map<string, number>();
+  /** Generations whose webview already signalled scratch-ready. */
+  const readyGenerations = new Set<number>();
+  /** Content read before the webview was ready, keyed by generation, replayed on scratch-ready. */
+  const pendingContent = new Map<number, { id: string; content: string }>();
   let disposed = false;
 
   const wrap = (panel: PanelHandle): ScratchPanelHandle => ({
@@ -317,6 +327,16 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
           if (env === null || env.v !== 1 || typeof env.payload !== 'object' || env.payload === null) return;
           const msg = env.payload as { type?: unknown; text?: unknown };
           if (msg.type === 'send-to-chat' && typeof msg.text === 'string') sendToChat(capUtf8(msg.text));
+          else if (msg.type === 'scratch-ready') {
+            // The webview finished installing its listeners: replay the current
+            // generation's content so a read that completed before readiness is not lost.
+            readyGenerations.add(docGeneration);
+            const pending = pendingContent.get(docGeneration);
+            if (pending !== undefined && !disposed && showingId === pending.id) {
+              pendingContent.delete(docGeneration);
+              try { docHandle?.postMessage({ v: 1, payload: { type: 'scratch-content', text: pending.content } }); } catch { /* best-effort */ }
+            }
+          }
         });
       },
       () => docHandle,
@@ -343,6 +363,10 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
       // Generation guard: a late read of A is dropped when B was opened meanwhile; a stale
       // epoch (the id was deleted) drops it too; dispose bumps the generation as well.
       if (disposed || docGeneration !== generation || (epochs.get(id) ?? 0) !== epoch || showingId !== id) return handle;
+      // Replay-safe: post immediately, and ALSO hold a replay copy keyed by generation so
+      // the webview's scratch-ready handshake (fired after setHtml installs listeners)
+      // can recover the content if the webview was not yet listening when we posted.
+      pendingContent.set(generation, { id, content });
       handle.postMessage({ v: 1, payload: { type: 'scratch-content', text: content } });
     } catch (err) {
       if (err instanceof ScratchNotFound) {

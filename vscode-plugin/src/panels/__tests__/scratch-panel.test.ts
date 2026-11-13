@@ -287,15 +287,17 @@ test('scratch-panel.test.ts: selectionchange with non-empty selection shows the 
   selection = { toString: () => '', isCollapsed: true }; // the focus/selectionchange that follows the click
   for (const l of docListeners) l();
   fire(sendBtn, 'click');
-  assert.deepEqual(JSON.parse(JSON.stringify(sent)), [{ v: 1, payload: { type: 'send-to-chat', text: 'selected <text>' } }], 'the captured selection was posted, not lost to the focus change');
+  const posted = JSON.parse(JSON.stringify(sent)) as Array<{ v: number; payload: { type: string; text?: string } }>;
+  assert.deepEqual(posted.filter((m) => m.payload.type === 'send-to-chat'), [{ v: 1, payload: { type: 'send-to-chat', text: 'selected <text>' } }], 'the captured selection was posted, not lost to the focus change');
+  assert.ok(posted.some((m) => m.payload.type === 'scratch-ready'), 'the bootstrap signalled scratch-ready');
   // Webview-side cap: a >65,536-byte selection is truncated in the bootstrap before
   // posting, WITHOUT splitting surrogate pairs.
   const big = '😀'.repeat(20_000); // 80,000 UTF-8 bytes
   selection = { toString: () => big, isCollapsed: false };
   for (const l of docListeners) l();
   fire(sendBtn, 'click');
-  const bigMsg = sent.at(-1) as { payload: { type: string; text: string } };
-  assert.equal(bigMsg.payload.type, 'send-to-chat');
+  const bigMsg = sent.map((m) => m as { payload: { type: string; text?: string } }).filter((m) => m.payload.type === 'send-to-chat').at(-1)!;
+  assert.ok(bigMsg !== undefined, 'the big selection was posted as send-to-chat');
   assert.ok(Buffer.byteLength(bigMsg.payload.text, 'utf8') <= 65_536, 'the posted text is capped within 65,536 bytes webview-side');
   assert.ok(bigMsg.payload.text.endsWith('…'), 'the posted text carries the trailing ellipsis');
   const cappedBody = bigMsg.payload.text.slice(0, -1); // without the ellipsis

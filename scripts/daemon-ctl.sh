@@ -38,6 +38,14 @@
 #   4 install / build / start failed
 #
 # Log path: /tmp/insrc/daemon-ctl-YYYYMMDD-HHMMSS-<pid>.log
+#
+# Node resolution: GUI-launched callers (the VS Code extension host, JetBrains)
+# run with a PATH that may not contain node, so the script never relies on a
+# bare `node` lookup. INSRC_NODE_BIN wins; otherwise a node on PATH; otherwise
+# the well-known install locations (overridable for tests via
+# INSRC_NODE_LOCATIONS, a colon-separated list that replaces them); otherwise
+# the runtime recorded at install time (~/.insrc/daemon-node). Failing all of
+# those is a usage-class error.
 
 set -euo pipefail
 
@@ -46,6 +54,43 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 
 DAEMON_ROOT="${INSRC_DAEMON_ROOT:-$HOME/.insrc/daemon}"
+NODE_BIN_FILE="$HOME/.insrc/daemon-node"
+
+resolve_node() {
+	if [ -n "${INSRC_NODE_BIN:-}" ]; then
+		if [ -x "$INSRC_NODE_BIN" ]; then echo "$INSRC_NODE_BIN"; return 0; fi
+		return 1
+	fi
+	if command -v node >/dev/null 2>&1; then command -v node; return 0; fi
+	local dir
+	if [ -n "${INSRC_NODE_LOCATIONS+x}" ]; then
+		# Test seam: an explicit (possibly empty) colon-separated list REPLACES
+		# the built-in well-known locations, so tests run hermetically.
+		local IFS=:
+		for dir in $INSRC_NODE_LOCATIONS; do
+			[ -n "$dir" ] || continue
+			if [ -x "$dir/node" ]; then echo "$dir/node"; return 0; fi
+		done
+	else
+		for dir in /opt/homebrew/bin /usr/local/bin "$HOME/.nvm/versions/node"/*/bin "$DAEMON_ROOT/node_modules/.bin"; do
+			if [ -x "$dir/node" ]; then echo "$dir/node"; return 0; fi
+		done
+	fi
+	if [ -f "$NODE_BIN_FILE" ]; then
+		local recorded
+		# Strip whitespace with shell builtins only: the GUI PATH may
+		# lack even coreutils, so no tr/sed/awk here.
+		local line
+		recorded=""
+		while IFS= read -r line || [ -n "$line" ]; do
+			recorded="$recorded${line//[[:space:]]/}"
+		done < "$NODE_BIN_FILE"
+		if [ -n "$recorded" ] && [ -x "$recorded" ]; then echo "$recorded"; return 0; fi
+	fi
+	return 1
+}
+
+NODE_BIN="$(resolve_node)" || { echo "node not found: set INSRC_NODE_BIN or install Node.js >= 20 (https://nodejs.org/)" >&2; exit 2; }
 DAEMON_SRC="$DAEMON_ROOT"                         # npm install / build run at the repo root
 DAEMON_ENTRY="$DAEMON_ROOT/out/daemon/index.js"   # compiled daemon entry
 PID_FILE="$HOME/.insrc/daemon.pid"
@@ -194,7 +239,7 @@ npm_build() {
 spawn_daemon() {
 	[ -f "$DAEMON_ENTRY" ] || die "built daemon not found at $DAEMON_ENTRY -- run '$0 update' first" 4
 	log "spawning daemon ($DAEMON_ENTRY)"
-	( cd "$DAEMON_ROOT" && exec env INSRC_MODE=daemon node --import tsx/esm "$DAEMON_ENTRY" >>"$DAEMON_LOG" 2>&1 </dev/null ) &
+	( cd "$DAEMON_ROOT" && exec env INSRC_MODE=daemon "$NODE_BIN" --import tsx/esm "$DAEMON_ENTRY" >>"$DAEMON_LOG" 2>&1 </dev/null ) &
 	disown 2>/dev/null || true
 }
 
@@ -209,7 +254,7 @@ stop_managed_daemon() {
   return 4
  fi
  local result
- if result=$(node "$helper" "$STOP_WAIT_SECS" 2>&1); then
+ if result=$("$NODE_BIN" "$helper" "$STOP_WAIT_SECS" 2>&1); then
   log "$result"
  else
   log "ERROR: $result"
@@ -232,9 +277,9 @@ wait_for_daemon_ready() {
 }
 
 # Query daemon.status over the Unix socket via a small node client
-# (node is guaranteed present). Prints the JSON result or exits non-zero.
+# (the resolved $NODE_BIN, never a bare PATH lookup). Prints the JSON result or exits non-zero.
 socket_status() {
-	node -e '
+	"$NODE_BIN" -e '
 		const net = require("node:net");
 		const sock = process.env.HOME + "/.insrc/daemon.sock";
 		const s = net.createConnection(sock);
@@ -264,7 +309,7 @@ supervised_lifecycle() {
 	[ -e "$manifest" ] || [ -L "$manifest" ] || [ -e "$journal" ] || [ -L "$journal" ] || return 10
 	local helper="$DAEMON_ROOT/out/bin/insrc-daemon-control.js" result rc
 	[ -f "$helper" ] || { log "ERROR: managed lifecycle helper missing at $helper"; return 4; }
-	if result=$(node "$helper" "$1" "$STOP_WAIT_SECS" 2>&1); then
+	if result=$("$NODE_BIN" "$helper" "$1" "$STOP_WAIT_SECS" 2>&1); then
 		log "$result"
 		return 0
 	else

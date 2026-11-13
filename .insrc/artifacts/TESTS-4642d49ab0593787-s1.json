@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 45,
-        "contentHash": "956837ac24b91b4256d373bd1a0d50f8cd90ebc5b0e85ec8e886f77fdb2db829",
-        "at": "2026-11-13T11:41:54.324Z",
+        "number": 46,
+        "contentHash": "9bd65a9406263ff9d9eb3325ed51b50df8cf6b62ecfb0f663d480b7d3dcd494e",
+        "at": "2026-11-13T11:44:03.014Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,19 +23,19 @@
     "epicHash": "4642d49ab0593787",
     "storyId": "s1",
     "createdAt": "2026-11-13T08:59:23.823Z",
-    "updatedAt": "2026-11-13T11:41:54.270Z",
+    "updatedAt": "2026-11-13T11:44:02.962Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-13T06:38:38.894Z",
     "epicSlug": "vs-code-plugin-scratchpads-insrc-scratches",
-    "revision": 45
+    "revision": 46
   },
   "body": {
     "tasks": [
       {
         "taskId": "t1",
-        "commit": "b7125c2b6",
-        "ranAt": "2026-11-13T11:41:54.270Z",
-        "testsPassed": false,
+        "commit": "7732fb74e",
+        "ranAt": "2026-11-13T11:44:02.962Z",
+        "testsPassed": true,
         "tests": [
           {
             "name": "scratch-store.test.ts: listScratches returns entries sorted by mtime desc with id/name/mtime/size (ENOENT->[], non-.md skipped, limit cap, ties id asc)",
@@ -58,7 +58,7 @@
               {
                 "file": "vscode-plugin/src/chat/__tests__/scratch-store.test.ts",
                 "title": "scratch-store.test.ts: createScratch writes <yyyymmdd-hhmmss>-<slug>.md via temp write + link()+unlink publication (never rename), collision ladder -2/-3, slug rules incl. all-symbol fallback 'scratch'; entry appears at list head",
-                "result": "not found"
+                "result": "pass"
               }
             ],
             "files": []
@@ -121,7 +121,7 @@
             "file": "vscode-plugin/src/chat/__tests__/scratch-store.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 337,
+            "durationMs": 387,
             "titles": [
               {
                 "title": "scratch-store.test.ts: listScratches returns entries sorted by mtime desc with id/name/mtime/size (ENOENT->[], non-.md skipped, limit cap, ties id asc)",
@@ -132,7 +132,7 @@
                 "result": "pass"
               },
               {
-                "title": "scratch-store.test.ts: createScratch writes <yyyymmdd-hhmmss>-<slug>.md via temp write + link()+unlink publication (never rename), collision ladder -2/-3, slug rules incl. all-symbol fallback; entry appears at list head",
+                "title": "scratch-store.test.ts: createScratch writes <yyyymmdd-hhmmss>-<slug>.md via temp write + link()+unlink publication (never rename), collision ladder -2/-3, slug rules incl. all-symbol fallback 'scratch'; entry appears at list head",
                 "result": "pass"
               },
               {
@@ -170,8 +170,7 @@
             ],
             "otherFailures": []
           }
-        ],
-        "note": "named test cases that did not pass: not found: 'scratch-store.test.ts: createScratch writes <yyyymmdd-hhmmss>-<slug>.md via temp write + link()+unlink publication (never rename), collision ladder -2/-3, slug rules incl. all-symbol fallback 'scratch'; entry appears at list head' in vscode-plugin/src/chat/__tests__/scratch-store.test.ts"
+        ]
       },
       {
         "taskId": "t2",

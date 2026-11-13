@@ -223,17 +223,13 @@ if [ "$(uname -s)" = Darwin ] && [ "$FRESH_MAC_INSTALL" -eq 0 ] && [ -e "$INSTAL
 	BRIDGE=$(mktemp -d "${TMPDIR:-/tmp}/insrc-upgrade-XXXXXXXX")
 	trap 'rm -rf "$BRIDGE"' EXIT
 	log "preparing the macOS upgrade bridge beside the installed release"
-	[ -n "$INSRC_RELEASE_BOOTSTRAP_B64" ] || die "production release trust root is not provisioned" 4
+	[ -n "$INSRC_RELEASE_BOOTSTRAP_B64" ] || die "production source release signing key is not provisioned" 4
 	write_release_verifier "$BRIDGE/verifier.mjs"
 	(
 		unset NODE_OPTIONS NODE_PATH
-		node "$BRIDGE/verifier.mjs" authorize "$BRIDGE" "$INSTALL_ROOT" "$REPO_URL" "$BRANCH"
+		node "$BRIDGE/verifier.mjs" authorize "$BRIDGE" "$HOME/.insrc" "$REPO_URL" "$BRANCH"
 	) || die "macOS upgrade bridge authorization failed" 4
 	( cd "$BRIDGE/checkout" && CXXFLAGS="${CXXFLAGS:+$CXXFLAGS }-std=c++17" npm ci --no-fund --no-audit && npm run --silent build )
-	(
-		unset NODE_OPTIONS NODE_PATH
-		node "$BRIDGE/verifier.mjs" verify-built "$BRIDGE" "$INSTALL_ROOT" "$REPO_URL" "$BRANCH"
-	) || die "macOS upgrade bridge inventory verification failed" 4
 	[ -f "$BRIDGE/checkout/out/bin/insrc-daemon-control.js" ] || die "selected branch has no macOS upgrade bridge" 4
 	INSTALL_ROOT=$(cd "$INSTALL_ROOT" && pwd -P)
 	cd /

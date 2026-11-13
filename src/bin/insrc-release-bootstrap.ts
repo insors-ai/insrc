@@ -1,173 +1,142 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 
-import { createPublicKey } from 'node:crypto';
-import type { KeyObject } from 'node:crypto';
 import { execFile } from 'node:child_process';
-import { chmod, lstat, mkdtemp, readFile, realpath, writeFile } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
+import { constants } from 'node:fs';
+import { lstat, open, realpath, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
-import { observeReleaseTrust, verifyReleaseQualification, releaseMetadataDigest } from '../shared/managed-release-trust.js';
-import type { ReleaseTrustFloor } from '../shared/managed-release-trust.js';
-import { measureManagedReleaseInventory } from '../daemon/managed-release-inventory.js';
+import { assertSourceReleaseFloor, readVerifiedSourceRelease } from '../shared/managed-source-release.js';
+import type { VerifiedSourceRelease } from '../shared/managed-source-release.js';
 
-// Release packaging replaces the empty key with the independently provisioned
-// production SPKI. The development artifact cannot authorize any update.
-declare const __INSRC_RELEASE_ROOT__: string | undefined;
-const PINNED_RELEASE_ROOT = typeof __INSRC_RELEASE_ROOT__ === 'string' ? __INSRC_RELEASE_ROOT__ : '';
-
-export function packagedReleaseRootKey(): KeyObject {
-	if (PINNED_RELEASE_ROOT.length === 0) throw new Error('production release trust root is not provisioned');
-	return createPublicKey({ key: Buffer.from(PINNED_RELEASE_ROOT, 'base64'), format: 'der', type: 'spki' });
-}
-
+declare const __INSRC_RELEASE_KEY__: string | undefined;
 const exec = promisify(execFile);
-const TRUST_REF = 'refs/notes/insrc-release-trust';
-const PROOF_REF = 'refs/notes/insrc-daemon-updates';
-const LOCAL_HEAD = 'refs/insrc/candidate';
-const MAX_GIT_OUTPUT = 48 * 1024 * 1024;
+const HEAD_REF = 'refs/insrc/candidate';
+const TAG_REF = 'refs/insrc/release-tag';
+const PRINCIPAL = 'insrc-release';
+const CATALOG = 'release/macos-compatibility.json';
 
 interface BootstrapInput {
 	readonly workspace: string;
-	readonly incumbent: string;
+	readonly stateRoot: string;
 	readonly repoUrl: string;
 	readonly branch: string;
-	readonly rootKey: KeyObject;
-	readonly observeTrust?: (trust: ReleaseTrustFloor) => Promise<void>;
+	readonly publicKey: string;
 }
 
-const PROOF_FIELDS = ['keyId', 'qualification', 'priorInventory', 'candidateInventory', 'compatibility'] as const;
-type ReleaseNote = Record<typeof PROOF_FIELDS[number], string>;
-
-function proofOf(raw: string): ReleaseNote {
-	const value: unknown = JSON.parse(raw);
-	if (typeof value !== 'object' || value === null || Array.isArray(value)) throw new Error('invalid release note');
-	if (JSON.stringify(value) !== raw || Object.keys(value).length !== PROOF_FIELDS.length || !PROOF_FIELDS.every(key =>
-		Object.hasOwn(value, key) && typeof (value as Record<string, unknown>)[key] === 'string')) {
-		throw new Error('invalid release note');
+async function sourceFloors(stateRoot: string): Promise<VerifiedSourceRelease[]> {
+	const directory = join(stateRoot, 'managed-lifecycle');
+	const owner = await lstat(directory).catch((error: NodeJS.ErrnoException) => {
+		if (error.code !== 'ENOENT') throw error;
+	});
+	if (owner === undefined) return [];
+	if (!owner.isDirectory() || owner.uid !== process.getuid?.() || (owner.mode & 0o077) !== 0) {
+		throw new Error('installation journal directory is not private and owned');
 	}
-	return value as ReleaseNote;
+	const file = await open(join(directory, 'journal.json'), constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK)
+		.catch((error: NodeJS.ErrnoException) => { if (error.code !== 'ENOENT') throw error; });
+	if (file === undefined) return [];
+	try {
+		const info = await file.stat();
+		if (!info.isFile() || info.uid !== owner.uid || info.nlink !== 1 || (info.mode & 0o077) !== 0 || info.size > 128 * 1024) {
+			throw new Error('installation journal is not a bounded private file');
+		}
+		const state = JSON.parse(await file.readFile('utf8')) as { version?: number; root?: string; sourceReleases?: unknown[] };
+		if (state.version !== 1 || state.root !== stateRoot) throw new Error('invalid installation journal identity');
+		return state.sourceReleases?.map(readVerifiedSourceRelease) ?? [];
+	} finally { await file.close(); }
 }
 
-/** Fetch and authenticate Git objects without checking out or running candidate files. */
-export async function fetchReleaseAuthorization(input: BootstrapInput) {
-	const { workspace, incumbent, repoUrl, branch } = input;
+/** Fetch both refs together and authenticate the immutable source before any checkout. */
+export async function fetchReleaseAuthorization({ workspace, stateRoot, repoUrl, branch, publicKey }: BootstrapInput) {
 	if (!/^(?:https:\/\/[^\s]+|ssh:\/\/[^\s]+|[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+:[^\s]+|\/[^\s]+)$/.test(repoUrl)
-		|| !/^[a-zA-Z0-9][a-zA-Z0-9._/-]*$/.test(branch)) throw new Error('invalid release source');
+		|| /[\u0000-\u0020\u007f]/.test(repoUrl) || repoUrl.length > 2048
+		|| !/^[a-zA-Z0-9][a-zA-Z0-9._/-]{0,127}$/.test(branch)) throw new Error('invalid release source');
+	if (!/^ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI[A-Za-z0-9+/]{43}$/.test(publicKey)) {
+		throw new Error('trusted Ed25519 release signing key is not provisioned');
+	}
 	const ownedWorkspace = await realpath(workspace);
 	const info = await lstat(ownedWorkspace);
 	if (!info.isDirectory() || info.uid !== process.getuid?.() || (info.mode & 0o077) !== 0) {
 		throw new Error('release bootstrap workspace is not private');
 	}
-	const { rootKey } = input;
+	const canonicalState = await realpath(stateRoot);
+	const stateInfo = await lstat(canonicalState);
+	if (!stateInfo.isDirectory() || stateInfo.uid !== process.getuid?.() || (stateInfo.mode & 0o022) !== 0) {
+		throw new Error('installation state is not an owned directory');
+	}
+	const allowedSigners = join(ownedWorkspace, 'allowed-signers');
+	await writeFile(allowedSigners, `${PRINCIPAL} ${publicKey}\n`, { flag: 'wx', mode: 0o600 });
 	const env = {
-		PATH: '/usr/bin:/bin', HOME: homedir(), GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: '/dev/null',
-		GIT_TERMINAL_PROMPT: '0', GIT_OPTIONAL_LOCKS: '0',
-		// SSH must use the user's existing host trust and credentials without
-		// inheriting executable Git or SSH configuration from the checkout.
+		PATH: '/usr/bin:/bin', HOME: homedir(), LC_ALL: 'C', GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: '/dev/null',
+		GIT_TERMINAL_PROMPT: '0', GIT_OPTIONAL_LOCKS: '0', GIT_NO_REPLACE_OBJECTS: '1',
 		...(process.env['SSH_AUTH_SOCK'] === undefined ? {} : { SSH_AUTH_SOCK: process.env['SSH_AUTH_SOCK'] }),
 		GIT_SSH_COMMAND: '/usr/bin/ssh -F /dev/null -o BatchMode=yes -o StrictHostKeyChecking=yes',
 	};
 	const git = async (cwd: string, args: string[]): Promise<string> => (await exec('/usr/bin/git', [
 		'-C', cwd, '-c', 'core.hooksPath=/dev/null', '-c', 'protocol.ext.allow=never', ...args,
-	], { env, timeout: 120_000, maxBuffer: MAX_GIT_OUTPUT, encoding: 'utf8' })).stdout.trimEnd();
+	], { env, timeout: 120_000, maxBuffer: 128 * 1024, encoding: 'utf8' })).stdout.trimEnd();
 	await git(ownedWorkspace, ['check-ref-format', '--branch', branch]);
 	const repository = join(ownedWorkspace, 'objects.git');
 	await git(ownedWorkspace, ['init', '--quiet', '--bare', '--template=', repository]);
+	const tagName = `insrc-release/${branch}`;
 	await git(repository, ['fetch', '--quiet', '--no-tags', '--depth=1', '--', repoUrl,
-		`refs/heads/${branch}:${LOCAL_HEAD}`, `${TRUST_REF}:${TRUST_REF}`]);
-	const candidateCommit = await git(repository, ['rev-parse', '--verify', `${LOCAL_HEAD}^{commit}`]);
-	const candidateTree = await git(repository, ['rev-parse', '--verify', `${LOCAL_HEAD}^{tree}`]);
-	const priorCommit = await git(incumbent, ['rev-parse', '--verify', 'HEAD^{commit}']);
-	const priorTree = await git(incumbent, ['rev-parse', '--verify', 'HEAD^{tree}']);
-	const trustEnvelope = Buffer.from(await git(repository, ['notes', `--ref=${TRUST_REF}`, 'show', candidateCommit]));
-	const now = Date.now();
-	const trust = observeReleaseTrust(rootKey, trustEnvelope, now);
-	await input.observeTrust?.(trust);
-	await git(repository, ['fetch', '--quiet', '--no-tags', '--depth=1', '--', repoUrl, `${PROOF_REF}:${PROOF_REF}`]);
-	const proof = proofOf(await git(repository, ['notes', `--ref=${PROOF_REF}`, 'show', candidateCommit]));
-	const qualificationEnvelope = Buffer.from(proof.qualification, 'base64');
-	const qualification = verifyReleaseQualification({ rootKey, trustEnvelope, qualificationEnvelope, keyId: proof.keyId,
-		channel: { repoUrl, branch }, priorCommit, candidateCommit, priorTree, candidateTree, now });
-	const priorBytes = Buffer.from(proof.priorInventory, 'base64');
-	const candidateBytes = Buffer.from(proof.candidateInventory, 'base64');
-	const priorInventory = { bytes: priorBytes, digest: releaseMetadataDigest(priorBytes) };
-	const candidateInventory = { bytes: candidateBytes, digest: releaseMetadataDigest(candidateBytes) };
-	const reference = Buffer.from(JSON.stringify([priorInventory.digest, candidateInventory.digest]));
-	const compatibility = Buffer.from(proof.compatibility, 'base64');
-	if (releaseMetadataDigest(reference) !== qualification.referenceDigest
-		|| releaseMetadataDigest(compatibility) !== qualification.compatibilityDigest) {
-		throw new Error('release inventory or writable formats are unauthorized');
+		`refs/heads/${branch}:${HEAD_REF}`, `refs/tags/${tagName}:${TAG_REF}`]);
+	const tagObject = await git(repository, ['rev-parse', '--verify', `${TAG_REF}^{tag}`]);
+	await git(repository, ['-c', 'gpg.format=ssh', '-c', 'gpg.ssh.program=/usr/bin/ssh-keygen',
+		'-c', `gpg.ssh.allowedSignersFile=${allowedSigners}`, 'verify-tag', tagObject]);
+	const tag = await git(repository, ['cat-file', 'tag', tagObject]);
+	const commit = await git(repository, ['rev-parse', '--verify', `${HEAD_REF}^{commit}`]);
+	const tree = await git(repository, ['rev-parse', '--verify', `${HEAD_REF}^{tree}`]);
+	const parts = /^(object [^\n]+)\n(type [^\n]+)\n(tag [^\n]+)\ntagger [^\n]+\n\n([^\n]+)\n-----BEGIN SSH SIGNATURE-----\n[A-Za-z0-9+/=\n]+\n-----END SSH SIGNATURE-----$/.exec(tag);
+	if (parts?.[1] !== `object ${commit}` || parts[2] !== 'type commit' || parts[3] !== `tag ${tagName}`) {
+		throw new Error('signed release tag does not directly authorize the candidate branch head');
 	}
-	await chmod(repository, 0o700);
-	return { git, ownedWorkspace, repository, qualification, priorInventory, candidateInventory, compatibility, proof };
+	const metadata: unknown = JSON.parse(parts[4]!);
+	const sequence = (metadata as { sequence?: unknown } | null)?.sequence;
+	const channel = { repoUrl, branch };
+	if (typeof sequence !== 'number' || JSON.stringify({ version: 1, ...channel, sequence }) !== parts[4]) {
+		throw new Error('signed release tag does not name the configured channel and sequence');
+	}
+	const receipt = readVerifiedSourceRelease({ channel, sequence, tagObject, commit, tree });
+	assertSourceReleaseFloor(receipt, await sourceFloors(canonicalState));
+	return { receipt, git, ownedWorkspace, repository, stateRoot: canonicalState };
 }
 
 export async function checkoutAuthorizedRelease(
 	authorization: Awaited<ReturnType<typeof fetchReleaseAuthorization>>, checkout: string,
 ): Promise<void> {
-	const { git, ownedWorkspace, repository, qualification } = authorization;
+	const { git, ownedWorkspace, repository, receipt, stateRoot } = authorization;
+	assertSourceReleaseFloor(receipt, await sourceFloors(stateRoot));
 	await git(ownedWorkspace, ['clone', '--quiet', '--no-checkout', '--no-local', '--template=', '--', repository, checkout]);
-	await git(checkout, ['fetch', '--quiet', '--no-tags', '--', repository, LOCAL_HEAD]);
-	await git(checkout, ['checkout', '--quiet', '--detach', qualification.candidateCommit, '--']);
-	if (await git(checkout, ['rev-parse', '--verify', 'HEAD^{tree}']) !== qualification.candidateTree) {
-		throw new Error('authenticated checkout tree changed');
-	}
-	await git(checkout, ['remote', 'set-url', 'origin', qualification.channel.repoUrl]);
-	await git(checkout, ['config', 'insrc.releaseBranch', qualification.channel.branch]);
+	await git(checkout, ['fetch', '--quiet', '--no-tags', '--', repository, HEAD_REF]);
+	await git(checkout, ['checkout', '--quiet', '--detach', receipt.commit, '--']);
+	if (await git(checkout, ['rev-parse', '--verify', 'HEAD^{tree}']) !== receipt.tree) throw new Error('authenticated checkout tree changed');
+	await git(checkout, ['remote', 'set-url', 'origin', receipt.channel.repoUrl]);
+	await git(checkout, ['config', 'insrc.releaseBranch', receipt.channel.branch]);
 }
 
-/** Check out only the Git tree authenticated by the already trusted verifier. */
-export async function authenticateReleaseBootstrap(input: BootstrapInput): Promise<void> {
-	const authorization = await fetchReleaseAuthorization(input);
-	const { ownedWorkspace, qualification } = authorization;
-	await checkoutAuthorizedRelease(authorization, join(ownedWorkspace, 'checkout'));
-	// This private record is passed only to the controller that was just authenticated.
-	await writeFile(join(ownedWorkspace, 'qualification.json'), JSON.stringify({
-		qualification,
-	}), { flag: 'wx', mode: 0o600 });
-}
-
-/** Reauthenticate the signed reference and check the built bridge before starting it. */
-async function verifyBuiltBridge(input: BootstrapInput): Promise<void> {
-	const refresh = await mkdtemp(join(input.workspace, 'refresh-'));
-	const { git, repository, qualification, candidateInventory, compatibility } = await fetchReleaseAuthorization({ ...input, workspace: refresh });
-	const ownedWorkspace = await realpath(input.workspace);
-	const checkout = join(ownedWorkspace, 'checkout');
-	const recorded = JSON.parse(await readFile(join(ownedWorkspace, 'qualification.json'), 'utf8')) as {
-		qualification?: { qualificationDigest?: string };
-	};
-	if (recorded.qualification?.qualificationDigest !== qualification.qualificationDigest
-		|| await git(checkout, ['rev-parse', '--verify', 'HEAD^{tree}']) !== qualification.candidateTree
-		|| await git(repository, ['rev-parse', '--verify', `${LOCAL_HEAD}^{commit}`]) !== qualification.candidateCommit) {
-		throw new Error('release qualification changed while building the bridge');
-	}
-	const declaration = JSON.stringify((JSON.parse(compatibility.toString('utf8')) as { candidate: unknown }).candidate) + '\n';
-	await writeFile(join(checkout, 'out/release-compatibility.json'), declaration, { flag: 'wx', mode: 0o600 })
-		.catch((error: NodeJS.ErrnoException) => { if (error.code !== 'EEXIST') throw error; });
-	await measureManagedReleaseInventory(checkout, await realpath(process.execPath), candidateInventory);
-}
-
-// The shell invokes the bundled copy of this module. A normal module import
-// performs no release operation.
 if (process.argv[1] !== undefined && fileURLToPath(import.meta.url) === await realpath(resolve(process.argv[1])).catch(() => '')) {
-	const [mode, workspace, incumbent, repoUrl, branch, checkout] = process.argv.slice(2);
+	const [mode, workspace, stateRoot, repoUrl, branch, checkout] = process.argv.slice(2);
 	try {
-		if (workspace === undefined || incumbent === undefined || repoUrl === undefined || branch === undefined) {
-			throw new Error('release bootstrap requires a workspace, incumbent, repository and branch');
+		if (workspace === undefined || stateRoot === undefined || repoUrl === undefined || branch === undefined
+			|| (mode !== 'authorize' && mode !== 'qualification')) throw new Error('invalid release bootstrap invocation');
+		const publicKey = typeof __INSRC_RELEASE_KEY__ === 'string' ? __INSRC_RELEASE_KEY__ : '';
+		const authorization = await fetchReleaseAuthorization({ workspace, stateRoot, repoUrl, branch, publicKey });
+		const catalog = await authorization.git(authorization.repository, ['rev-parse', '--verify',
+			`${authorization.receipt.tree}:${CATALOG}`]);
+		const size = Number(await authorization.git(authorization.repository, ['cat-file', '-s', catalog]));
+		if (!Number.isSafeInteger(size) || size < 1 || size > 64 * 1024) throw new Error('invalid release compatibility catalog size');
+		const compatibility = await authorization.git(authorization.repository, ['cat-file', 'blob', catalog]);
+		if (mode === 'authorize') {
+			await checkoutAuthorizedRelease(authorization, join(authorization.ownedWorkspace, 'checkout'));
+			await writeFile(join(authorization.ownedWorkspace, 'source-release.json'),
+				JSON.stringify(authorization.receipt), { flag: 'wx', mode: 0o600 });
+		} else {
+			if (checkout !== undefined) await checkoutAuthorizedRelease(authorization, checkout);
+			process.stdout.write(JSON.stringify({ receipt: authorization.receipt, catalog, compatibility }));
 		}
-		const input = { workspace, incumbent, repoUrl, branch, rootKey: packagedReleaseRootKey() };
-		if (mode === 'authorize') await authenticateReleaseBootstrap(input);
-		else if (mode === 'verify-built') await verifyBuiltBridge(input);
-		else if (mode === 'qualification') {
-			const result = await fetchReleaseAuthorization({ ...input, observeTrust: async trust => {
-				await writeFile(join(workspace, 'observed-trust.json'), JSON.stringify(trust), { flag: 'wx', mode: 0o600 });
-			} });
-			if (checkout !== undefined) await checkoutAuthorizedRelease(result, checkout);
-			process.stdout.write(JSON.stringify({ qualification: result.qualification, proof: result.proof }));
-		}
-		else throw new Error('unsupported release bootstrap mode');
 	} catch (error) {
 		process.stderr.write(`release bootstrap: ${error instanceof Error ? error.message : String(error)}\n`);
 		process.exitCode = 4;

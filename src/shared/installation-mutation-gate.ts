@@ -13,6 +13,8 @@ import type { ManagedInstallation } from './managed-daemon-installation.js';
 import type { RunFileIdentity } from './daemon-run-files.js';
 import { assertReleaseTrustFloor, readReleaseQualificationReceipt, readReleaseTrustFloor, RELEASE_FENCE_FRESHNESS_MS } from './managed-release-trust.js';
 import type { ReleaseQualificationReceipt, ReleaseTrustFloor } from './managed-release-trust.js';
+import { assertSourceReleaseFloor, readVerifiedSourceRelease } from './managed-source-release.js';
+import type { VerifiedSourceRelease } from './managed-source-release.js';
 
 const HELPER = fileURLToPath(new URL('../../out/bin/insrc-darwin-lifecycle', import.meta.url));
 const MAX_BYTES = 128 * 1024;
@@ -87,9 +89,39 @@ export interface InstallationJournal {
 	readonly active: MutationReservation | null;
 	readonly outcome: DurableUpdateOutcome | null;
 	readonly releaseTrust?: ReleaseTrustFloor;
+	readonly sourceReleases?: readonly VerifiedSourceRelease[];
 }
 
 export const RELEASE_TRUST_STEP = 'release-trust';
+export const SOURCE_RELEASE_STEP = 'source-release';
+
+export interface AdmittedSourceRelease {
+	readonly source: VerifiedSourceRelease;
+	readonly catalog: string;
+	readonly priorFingerprint: string;
+	readonly candidateFingerprint: string;
+	readonly launchProfile: string;
+}
+
+function readAdmittedSourceRelease(value: unknown, update: Extract<MutationReservation, { kind: 'update' }>): AdmittedSourceRelease {
+	if (!object(value) || typeof value.catalog !== 'string' || !/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/.test(value.catalog)
+		|| typeof value.priorFingerprint !== 'string' || !/^[a-f0-9]{64}$/.test(value.priorFingerprint)
+		|| typeof value.candidateFingerprint !== 'string' || !/^[a-f0-9]{64}$/.test(value.candidateFingerprint)
+		|| typeof value.launchProfile !== 'string' || !/^(?:managed|legacy-(?:direct|stopped|shell-job|node-job))$/.test(value.launchProfile)) {
+		return conflict('invalid durable source release receipt');
+	}
+	const source = readVerifiedSourceRelease(value.source);
+	if (source.commit !== update.predecessor.candidateRelease) return conflict('source release belongs to another update');
+	return { source, catalog: value.catalog, priorFingerprint: value.priorFingerprint,
+		candidateFingerprint: value.candidateFingerprint, launchProfile: value.launchProfile };
+}
+
+export function recordedSourceRelease(update: Extract<MutationReservation, { kind: 'update' }>): AdmittedSourceRelease | undefined {
+	const entry = update.entries.find(item => item.step === SOURCE_RELEASE_STEP);
+	if (entry === undefined) return undefined;
+	if (entry.receipt !== 'verified') return conflict('source release admission is incomplete');
+	return readAdmittedSourceRelease(JSON.parse(entry.intent), update);
+}
 
 export interface AdmittedReleaseQualification {
 	readonly updateId: string;
@@ -260,6 +292,10 @@ function readJournal(bytes: string, root: string, uid: number): InstallationJour
 			&& (typeof outcome.finishedAt !== 'string' || !Number.isFinite(Date.parse(outcome.finishedAt)))))) conflict('invalid installation outcome');
 	const journal = parsed as unknown as InstallationJournal;
 	if (journal.releaseTrust !== undefined) readReleaseTrustFloor(journal.releaseTrust);
+	if (journal.sourceReleases !== undefined) {
+		if (!Array.isArray(journal.sourceReleases)) conflict('invalid signed source release floor');
+		for (const release of journal.sourceReleases) readVerifiedSourceRelease(release);
+	}
 	if (journal.active?.kind === 'start' && journal.active.activation !== undefined
 		&& journal.active.activation.installation.stateRoot !== root) conflict('fresh activation names another installation root');
 	if (journal.active?.kind === 'update' && journal.active.predecessor.launch !== undefined
@@ -440,6 +476,38 @@ export class InstallationMutationGate {
 		});
 	}
 
+	/** Keep a monotonic floor for each signed source channel under the journal lock. */
+	async observeSourceRelease(source: VerifiedSourceRelease): Promise<void> {
+		const release = readVerifiedSourceRelease(source);
+		await this.arbitrate(async state => {
+			const floors = state.sourceReleases ?? [];
+			assertSourceReleaseFloor(release, floors);
+			if (floors.some(item => item.tagObject === release.tagObject && item.channel.repoUrl === release.channel.repoUrl
+				&& item.channel.branch === release.channel.branch)) return;
+			const others = floors.filter(item => item.channel.repoUrl !== release.channel.repoUrl || item.channel.branch !== release.channel.branch);
+			await this.write({ ...state, sourceReleases: [...others, release] });
+		});
+	}
+
+	async admitSourceRelease(authority: MutationAuthority, proof: AdmittedSourceRelease): Promise<void> {
+		await assertLiveOwner(authority.owner, this.helper);
+		await this.arbitrate(async state => {
+			const active = this.admitted(state, authority);
+			if (active.kind !== 'update' || active.predecessor.preparing || active.entries.length) {
+				return conflict('source release admission must precede cutover');
+			}
+			this.permit(state, active, 'lifecycle');
+			const checked = readAdmittedSourceRelease(proof, active);
+			assertSourceReleaseFloor(checked.source, state.sourceReleases ?? []);
+			if (!state.sourceReleases?.some(floor => floor.tagObject === checked.source.tagObject
+				&& floor.channel.repoUrl === checked.source.channel.repoUrl && floor.channel.branch === checked.source.channel.branch)) {
+				return conflict('source release is not the observed channel head');
+			}
+			const entry = { step: SOURCE_RELEASE_STEP, intent: JSON.stringify(checked), receipt: 'verified' };
+			await this.write({ ...state, active: { ...active, entries: [entry] } });
+		});
+	}
+
 	private async append(
 		authority: MutationAuthority, step: string, kind: 'intent' | 'receipt', detail: string, purpose: MutationPurpose,
 	): Promise<void> {
@@ -453,6 +521,8 @@ export class InstallationMutationGate {
 					&& !active.entries.some(entry => entry.step === 'legacy-launcher-fence')))) {
 				const qualification = recordedReleaseQualification(active);
 				if (qualification !== undefined) requireFreshReleaseAdmission(qualification, state.releaseTrust);
+				const source = recordedSourceRelease(active);
+				if (source !== undefined) assertSourceReleaseFloor(source.source, state.sourceReleases ?? []);
 			}
 			if (kind === 'intent' && ((last !== undefined && last.receipt === undefined)
 				|| active.entries.some(entry => entry.step === step) || active.entries.length >= MAX_STEPS)) {

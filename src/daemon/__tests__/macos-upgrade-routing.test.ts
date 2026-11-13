@@ -48,10 +48,6 @@ if [ "$2" = "authorize" ]; then
   : > "$3/checkout/out/bin/insrc-daemon-control.js"
   exit 0
 fi
-if [ "$2" = "verify-built" ]; then
-  printf 'verify-built\n' >> "$INSRC_TEST_TRACE"
-  exit 0
-fi
 if [ "$2" = "prepare-legacy-upgrade" ]; then
   printf 'controller:%s:%s:%s\\n' "$3" "$4" "$5" >> "$INSRC_TEST_TRACE"
   rm -rf "$6"
@@ -64,7 +60,7 @@ exit 45`);
 	const origin = '/qualified/origin';
 	const requireBridge = async () => {
 		const events = (await readFile(trace, 'utf8')).trim().split('\n');
-		assert.deepEqual(events, [`authorize:${origin}:v2`, 'npm:ci', 'npm:run', 'verify-built',
+		assert.deepEqual(events, [`authorize:${origin}:v2`, 'npm:ci', 'npm:run',
 			`controller:${checkout}:${origin}:v2`]);
 		assert.equal(await readFile(join(checkout, 'incumbent'), 'utf8'), 'executable release');
 	};

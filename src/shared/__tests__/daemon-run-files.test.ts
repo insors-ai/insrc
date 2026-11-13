@@ -246,7 +246,7 @@ test('acquireRunFileGuard recomputes the conflict and throws when the retry mkdi
 	assert.equal(quarantinedSiblings(path).length, 1); // the stale record is still quarantined
 });
 
-test('a paused reclaimer cannot quarantine the live replacement a starter acquired from the same dead guard', () => {
+test('a paused reclaimer cannot quarantine or vacate the live replacement a starter acquired from the same dead guard', () => {
 	ensureDaemonLog();
 	const path = join(dir, 'guard');
 	staleGuard(path, 'linux:stale-boot:111', 'nonce-live');
@@ -258,15 +258,43 @@ test('a paused reclaimer cannot quarantine the live replacement a starter acquir
 		winner ??= acquireReclaim(path, acquiringOwner, () => undefined);
 		return undefined; // the recorded owner is gone
 	};
-	// The paused reclaimer moves the winner's live guard aside, verifies the moved record is not the one
-	// it verdicted, restores the replacement and fails closed instead of double-acquiring the path.
+	// The paused reclaimer re-reads the evidence before touching anything, finds the winner's fresh record
+	// in place of the verdicted one, and fails closed: the live replacement is never renamed, vacated or
+	// polluted, and the recomputed conflict names the replacement instead of replaying the stale verdict.
 	assert.throws(() => acquireReclaim(path, acquiringOwner, pausedReader), /ownership conflict/);
 	const guard = winner!;
-	assert.doesNotThrow(() => guard.assertOwned()); // the live replacement keeps its guard, intact
+	assert.doesNotThrow(() => guard.assertOwned()); // the live replacement keeps its guard, intact and in place
+	assert.deepEqual(readdirSync(path), ['owner.json']); // the failed reclaim left no claim or other residue
 	assert.equal(quarantinedSiblings(path).length, 1); // only the dead record was ever quarantined
 	assert.equal(readFileSync(PATHS.daemonLog, 'utf8').split('\n').filter((line) => line.includes('nonce-live')).length, 1); // exactly the winner's recovery line
 	guard.release();
 	assert.equal(existsSync(path), false);
+});
+
+test('a standing reclaim claim with a live or unreadable holder withholds; a conclusively dead holder is recovered once', () => {
+	const path = join(dir, 'guard');
+	staleGuard(path, 'linux:stale-boot:111', 'nonce-claim');
+	// A live claim holder: the reader renders the holder's identity as the current occupant of its PID,
+	// so a later reclaimer honors the standing claim instead of renaming the guard out from under it.
+	const holder: ProcessIdentity = { pid: RECORDED_PID, startedAt: 'linux:current-boot:222', commandLine: 'claim-holder' };
+	writeFileSync(join(path, 'reclaim.claim'), JSON.stringify({ owner: holder, nonce: 'claim-live' }));
+	assert.throws(() => acquireReclaim(path, acquiringOwner, () => holder), /not reclaimed automatically/);
+	assert.equal(quarantinedSiblings(path).length, 0); // nothing was renamed
+	assert.equal(existsSync(join(path, 'reclaim.claim')), true); // the live holder's claim is preserved
+	// An unreadable claim also withholds: its holder cannot be verdicted, so it is never removed.
+	writeFileSync(join(path, 'reclaim.claim'), 'malformed');
+	assert.throws(() => acquireReclaim(path, acquiringOwner, () => undefined), /not reclaimed automatically/);
+	assert.equal(quarantinedSiblings(path).length, 0, 'unreadable claim');
+	// A conclusively dead holder is recovered: the claim is removed, re-claimed by this reclaimer, and
+	// the guard is quarantined; neither the evidence directory nor the fresh guard keeps the claim.
+	writeFileSync(join(path, 'reclaim.claim'), JSON.stringify({ owner: { pid: RECORDED_PID, startedAt: 'linux:stale-boot:111', commandLine: 'crashed-reclaimer' }, nonce: 'claim-dead' }));
+	const guard = acquireReclaim(path, acquiringOwner, () => undefined);
+	assert.equal(guard.path, path);
+	const names = quarantinedSiblings(path);
+	assert.equal(names.length, 1);
+	assert.deepEqual(readdirSync(join(dir, names[0]!)), ['owner.json']); // the quarantined evidence keeps exactly the stale record
+	assert.deepEqual(readdirSync(path), ['owner.json']); // the fresh guard keeps exactly its own record
+	guard.release();
 });
 
 test('acquireRunFileGuard leaves a symlink guard as a conflict', () => {

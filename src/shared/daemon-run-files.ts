@@ -72,6 +72,46 @@ function bootSegment(startedAt: string): string | undefined {
 	return segments.length === 3 && segments[0] === 'linux' ? segments[1] : undefined;
 }
 
+/** The recorded owner is conclusively dead when its PID has exited (state gone), or when a reused PID's
+ * recorded start marker names a previous boot: the occupant identity cannot be the recorded owner
+ * whatever the PID now carries. Every other state withholds. */
+function conclusivelyDeadOwner(record: { owner: ProcessIdentity; nonce: string }, read: ProcessIdentityReader): boolean {
+	const state = processIdentityState(record.owner, read);
+	if (state === 'gone') return true;
+	if (state !== 'replaced') return false;
+	const occupant = read(record.owner.pid);
+	const recordedBoot = occupant === undefined ? undefined : bootSegment(record.owner.startedAt);
+	const occupantBoot = occupant === undefined ? undefined : bootSegment(occupant.startedAt);
+	return recordedBoot !== undefined && occupantBoot !== undefined && recordedBoot !== occupantBoot;
+}
+
+/** The guard's serialized reclaim claim: an exclusive file inside the guard directory. Exactly one
+ * reclaimer at a time may hold it, pinning the examined evidence between the confirming re-read and
+ * the quarantine rename. A standing claim is honored unless its recorded holder is conclusively dead
+ * (the same verdict as a stale guard owner), in which case it is removed and the claim retried once;
+ * any other contention or failure leaves the guard untouched and withholds. The claim retires with the
+ * quarantine rename that carries it out of the canonical path. */
+const RECLAIM_CLAIM = 'reclaim.claim';
+
+function claimGuardForReclaim(path: string, owner: ProcessIdentity, read: ProcessIdentityReader): boolean {
+	const claimPath = join(path, RECLAIM_CLAIM);
+	const claim = (): boolean => {
+		try { writeFileSync(claimPath, JSON.stringify({ owner, nonce: randomUUID() }), { flag: 'wx', mode: 0o600 }); return true; }
+		catch { return false; } // a claim that cannot be created leaves the guard untouched and withholds
+	};
+	if (claim()) return true;
+	let holder: { owner: ProcessIdentity; nonce: string };
+	try { holder = parseOwnerRecord(readFileSync(claimPath, 'utf8')); } catch { return false; }
+	if (!conclusivelyDeadOwner(holder, read)) return false;
+	try { unlinkSync(claimPath); } catch { return false; } // another reclaimer already recovered it
+	return claim();
+}
+
+/** The owner record currently published inside the guard, or undefined when it is absent or unreadable. */
+function guardEvidence(path: string): string | undefined {
+	try { return readFileSync(join(path, 'owner.json'), 'utf8'); } catch { return undefined; }
+}
+
 /**
  * Quarantine a stale guard whose recorded owner is conclusively dead and retry the mkdir once.
  *
@@ -80,33 +120,40 @@ function bootSegment(startedAt: string): string | undefined {
  * the PID now carries. A same-boot PID reuse, a live owner, a darwin marker without a boot segment
  * and an unreadable record all withhold exactly as before.
  *
- * Returns true when the retry acquired the path. Returns false when the conflict was withheld, a
- * competing starter won the retry, or the rename moved a replacement guard the verdict never
- * examined (restored to the path first): the caller then fails closed with the recomputed
- * conflict rather than reclaiming twice. A symlink throws first, so a link is never renamed
- * whatever it targets.
+ * The reclaimer never renames a directory it did not examine: the verdict's record is re-read before
+ * anything is touched, and an exclusive claim file inside the guard serializes reclaimers, so no
+ * competing starter can replace the examined guard between the confirming re-read and the rename —
+ * a stale verdict cannot vacate a live replacement acquired from the same dead guard mid-verdict.
+ * Returns true when the retry acquired the path. Returns false when the conflict was withheld, the
+ * evidence changed under the claim, claim contention withstood, or a competing starter won the
+ * retry: the caller then fails closed with the recomputed conflict rather than reclaiming twice.
+ * A symlink throws first, so a link is never renamed whatever it targets.
  */
-function quarantineDeadGuard(path: string, read: ProcessIdentityReader): boolean {
+function quarantineDeadGuard(path: string, owner: ProcessIdentity, read: ProcessIdentityReader): boolean {
 	if (runFileIdentity(path) === undefined) return false;
 	let evidence: string | undefined;
 	let record: { owner: ProcessIdentity; nonce: string } | undefined;
 	let conclusivelyDead = false;
 	try {
 		evidence = readFileSync(join(path, 'owner.json'), 'utf8');
-		record = parseOwnerRecord(evidence);
-		const state = processIdentityState(record.owner, read);
-		if (state === 'gone') conclusivelyDead = true;
-		else if (state === 'replaced') {
-			// A reused PID: conclusively dead only when the recorded start marker names a previous boot,
-			// so the occupant identity cannot be the recorded owner whatever the PID now carries.
-			const occupant = read(record.owner.pid);
-			const recordedBoot = occupant === undefined ? undefined : bootSegment(record.owner.startedAt);
-			const occupantBoot = occupant === undefined ? undefined : bootSegment(occupant.startedAt);
-			conclusivelyDead = recordedBoot !== undefined && occupantBoot !== undefined && recordedBoot !== occupantBoot;
-		}
+		const parsed = parseOwnerRecord(evidence);
+		conclusivelyDead = conclusivelyDeadOwner(parsed, read);
+		record = parsed;
 	} catch { /* an unreadable record or unreadable identity withholds, exactly as before */ }
-	if (!conclusivelyDead || record === undefined) return false;
-	const { owner, nonce } = record;
+	if (!conclusivelyDead || record === undefined || evidence === undefined) return false;
+	// Confirm the verdict's record still occupies the path before touching anything: a competing starter
+	// may have quarantined the dead guard and published a live replacement since the verdict was read.
+	if (guardEvidence(path) !== evidence) return false;
+	// Serialize reclaimers: the claim pins the examined evidence, so the confirming re-read below cannot
+	// be invalidated by another reclaimer replacing the guard before the rename moves it.
+	if (!claimGuardForReclaim(path, owner, read)) return false;
+	if (guardEvidence(path) !== evidence) {
+		// The path is no longer the guard this verdict examined: retire the claim without moving anything
+		// and fail closed; the recomputed conflict names the replacement's live owner.
+		try { unlinkSync(join(path, RECLAIM_CLAIM)); } catch { /* best effort */ }
+		return false;
+	}
+	const { owner: recordedOwner, nonce } = record;
 	// Quarantine the exact guard the way an operator would, keeping its record as evidence. The recorded
 	// nonce disambiguates the second-precision timestamp; a collision takes the next suffix.
 	const base = `${path}.quarantine-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}-${nonce}`;
@@ -124,27 +171,11 @@ function quarantineDeadGuard(path: string, read: ProcessIdentityReader): boolean
 		}
 	}
 	if (quarantined) {
-		// The rename is atomic, but the evidence is not: a competing starter may have quarantined the
-		// dead guard and re-acquired the path between this verdict and this rename, so what moved may be
-		// a replacement guard. Verify the moved directory still carries the exact record verdicted dead;
-		// a fresh record carries a fresh nonce, so byte identity proves the directory is the one examined.
-		let movedEvidence: string | undefined;
-		try { movedEvidence = readFileSync(join(target, 'owner.json'), 'utf8'); } catch { /* an in-flight publication has no record yet */ }
-		if (movedEvidence !== evidence) {
-			// A replacement was moved aside: restore it so its live owner keeps the guard, then fail closed.
-			try { renameSync(target, path); }
-			catch (error) {
-				const code = (error as NodeJS.ErrnoException).code;
-				if (code !== 'ENOTEMPTY' && code !== 'EEXIST') throw error;
-				// The path was re-acquired while the replacement was held aside. The record is preserved
-				// where it was moved (its owner fails closed at its next ownership assertion) and the
-				// path's new owner stays the only live owner; say so and fail closed either way.
-				try { appendFileSync(PATHS.daemonLog, `insrc run-file guard recovery: a replacement guard at ${path} was moved to ${target} during a stale reclaim and could not be restored; its owner record is preserved there\n`); } catch { /* best effort */ }
-			}
-			return false;
-		}
+		// The claim retired with the rename that carried it out of the canonical path; remove it from the
+		// quarantined evidence so the stale record directory keeps exactly what its owner published.
+		try { unlinkSync(join(target, RECLAIM_CLAIM)); } catch { /* best effort */ }
 		// One best-effort recovery line; a log that cannot be written never blocks the restart.
-		const line = `insrc run-file guard recovery: quarantined stale guard at ${path} to ${target} (owner pid=${owner.pid}, start=${owner.startedAt}, nonce=${nonce})\n`;
+		const line = `insrc run-file guard recovery: quarantined stale guard at ${path} to ${target} (owner pid=${recordedOwner.pid}, start=${recordedOwner.startedAt}, nonce=${nonce})\n`;
 		try { appendFileSync(PATHS.daemonLog, line); } catch { /* best effort */ }
 	}
 	try { mkdirSync(path, { mode: 0o700 }); return true; }
@@ -161,7 +192,7 @@ export function acquireRunFileGuard(path: string, owner: ProcessIdentity = requi
 		if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
 		// A conclusively dead recorded owner is quarantined with one retry; every other conflict,
 		// including one the retry loses to a competing starter, fails closed with the conflict evidence.
-		if (!quarantineDeadGuard(path, read)) {
+		if (!quarantineDeadGuard(path, owner, read)) {
 			throw new Error(runFileGuardConflict(path, read) ?? `run-file guard changed during acquisition at ${path}`);
 		}
 	}

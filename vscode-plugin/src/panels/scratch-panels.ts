@@ -82,6 +82,29 @@ const OPEN_ICON = '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"
 const DELETE_ICON = '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M3 4h10M6.5 4V2.8A.8.8 0 0 1 7.3 2h1.4a.8.8 0 0 1 .8.8V4M5 4l.6 9.2A.8.8 0 0 0 6.4 14h3.2a.8.8 0 0 0 .8-.8L11 4"/></svg>';
 const SEND_ICON = '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M14 2 7 9M14 2 9.5 14l-2.5-5L2 6.5 14 2Z"/></svg>';
 
+export const SEND_TO_CHAT_CAP = 65_536;
+const ELLIPSIS = '…';
+
+/**
+ * Multibyte-safe UTF-8 cap for send-to-chat text: the FINAL string, trailing
+ * ellipsis included, stays within SEND_TO_CHAT_CAP bytes. A multibyte char
+ * straddling the cut is dropped whole.
+ */
+export function capUtf8(s: string, cap: number = SEND_TO_CHAT_CAP): string {
+  const bytes = Buffer.byteLength(s, 'utf8');
+  if (bytes <= cap) return s;
+  const ellipsisBytes = Buffer.byteLength(ELLIPSIS, 'utf8');
+  let budget = cap - ellipsisBytes;
+  let out = '';
+  for (const ch of s) {
+    const b = Buffer.byteLength(ch, 'utf8');
+    if (b > budget) break;
+    out += ch;
+    budget -= b;
+  }
+  return out + ELLIPSIS;
+}
+
 /** The browse table body (content only — the shell wraps it). */
 export function browseHtml(entries: readonly ScratchEntry[], error?: string): string {
   const head = `<table class="scratch-table"><thead><tr><th>Name</th><th>Modified</th><th></th></tr></thead><tbody>`;
@@ -130,7 +153,7 @@ export function documentBodyHtml(): string {
 const DOC_STYLE =
   `.scratch-doc-wrap{position:relative;}` +
   `.scratch-doc{white-space:pre-wrap;word-break:break-word;font-family:var(--vscode-editor-font-family,monospace);}` +
-  `.scratch-send{position:fixed;right:18px;bottom:18px;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;background:var(--vscode-button-background,#0e639c);color:var(--vscode-button-foreground,#fff);border:none;border-radius:6px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.35);}` +
+  `.scratch-send{position:fixed;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;background:var(--vscode-button-background,#0e639c);color:var(--vscode-button-foreground,#fff);border:none;border-radius:6px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.35);}` +
   `.scratch-send[hidden]{display:none;}` +
   `.scratch-send svg{width:15px;height:15px;}`;
 
@@ -145,7 +168,11 @@ export function documentBootstrap(): string {
     `document.addEventListener('selectionchange',function(){` +
     `var s=window.getSelection?window.getSelection():null;` +
     `var t=s&&s.toString?s.toString():'';` +
-    `if(t!==''){captured=t;if(sendBtn)sendBtn.hidden=false;}` +
+    `if(t!==''){captured=t;if(sendBtn){sendBtn.hidden=false;` +
+    // Anchor the floating button at the selection's caret rect when available.
+    `var r=s.getRangeAt?s.getRangeAt(0).getBoundingClientRect():null;` +
+    `if(r){sendBtn.style.left=Math.max(4,Math.floor(r.right+window.scrollX-28))+'px';sendBtn.style.top=Math.max(4,Math.floor(r.bottom+window.scrollY+6))+'px';}` +
+    `}}` +
     // A collapsed selection (e.g. the button click moving focus) hides the button but
     // does NOT clear the latch — the click reads `captured`, so the text is never lost.
     `else if(s&&s.isCollapsed){if(sendBtn)sendBtn.hidden=true;}` +
@@ -273,7 +300,6 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
   const openDocument = async (id: string): Promise<ScratchPanelHandle | undefined> => {
     const generation = ++docGeneration;
     const epoch = epochs.get(id) ?? 0;
-    showingId = id;
     const handle = openSingleton(
       SCRATCHPAD_VIEW_TYPE,
       id,
@@ -283,7 +309,7 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
           const env = m as { v?: unknown; payload?: unknown } | null;
           if (env === null || env.v !== 1 || typeof env.payload !== 'object' || env.payload === null) return;
           const msg = env.payload as { type?: unknown; text?: unknown };
-          if (msg.type === 'send-to-chat' && typeof msg.text === 'string') sendToChat(msg.text);
+          if (msg.type === 'send-to-chat' && typeof msg.text === 'string') sendToChat(capUtf8(msg.text));
         });
       },
       () => docHandle,
@@ -291,6 +317,9 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
     );
     if (handle === undefined) return undefined;
     // FIRST-CLASS A->B switch: setTitle(id) + setHtml on the SAME cached panel instance.
+    // showingId is claimed only once the handle exists — a failed creation of a new panel
+    // must not clobber the id another open is displaying.
+    showingId = id;
     try {
       handle.setTitle(id);
     } catch (err) {

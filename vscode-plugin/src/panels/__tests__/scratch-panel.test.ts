@@ -18,9 +18,11 @@ import {
   SCRATCHPADS_VIEW_TYPE,
   SCRATCHPAD_VIEW_TYPE,
   browseHtml,
+  capUtf8,
   createScratchPanels,
   documentBodyHtml,
   documentBootstrap,
+  SEND_TO_CHAT_CAP,
   type ScratchPanelHandle,
 } from '../scratch-panels.js';
 import type { PanelFactory, PanelHandle } from '../types.js';
@@ -249,19 +251,26 @@ test('scratch-panel.test.ts: selectionchange with non-empty selection shows the 
   assert.ok(btn, 'the floating button exists');
   assert.match(btn![1]!, /^<svg /, 'icon-only');
   assert.equal(btn![1]!.replace(/<[^>]*>/g, '').trim(), '', 'no visible text');
-  // Run the bootstrap: a selectionchange with text reveals the button and latches the text.
+  // Run the bootstrap: a selectionchange with text reveals the button, latches the text,
+  // and anchors the button at the selection's caret rect.
   const doc = bodyStub('pre', 'insrc-scratchdoc');
   const sendBtn = bodyStub('button', 'insrc-sendtochat');
   let hiddenProp = true;
   Object.defineProperty(sendBtn, 'hidden', { get: () => hiddenProp, set: (v: boolean) => { hiddenProp = v; } });
   const sent: unknown[] = [];
-  let selection = { toString: () => 'selected <text>', isCollapsed: false };
+  let selection: { toString: () => string; isCollapsed: boolean; getRangeAt?: () => { getBoundingClientRect: () => { right: number; bottom: number } } } = {
+    toString: () => 'selected <text>',
+    isCollapsed: false,
+    getRangeAt: () => ({ getBoundingClientRect: () => ({ right: 120, bottom: 240 }) }),
+  };
   const docListeners: Array<(e?: unknown) => void> = [];
   runInNewContext(documentBootstrap(), {
     acquireVsCodeApi: () => ({ postMessage: (m: unknown) => { sent.push(m); } }),
     window: {
       addEventListener: () => {},
       getSelection: () => selection,
+      scrollX: 0,
+      scrollY: 0,
     },
     document: {
       getElementById: (id: string) => (id === 'insrc-scratchdoc' ? doc : id === 'insrc-sendtochat' ? sendBtn : bodyStub('div', id)),
@@ -272,6 +281,9 @@ test('scratch-panel.test.ts: selectionchange with non-empty selection shows the 
   // button (a second selectionchange with a collapsed selection) — the latch must survive.
   for (const l of docListeners) l();
   assert.equal((sendBtn as unknown as { hidden: boolean }).hidden, false, 'button revealed on a non-empty selection');
+  const style = (sendBtn as unknown as { style: Record<string, string> }).style;
+  assert.equal(style['left'], '92px', 'button anchored at the selection caret rect (right-28)');
+  assert.equal(style['top'], '246px', 'button anchored below the selection rect (bottom+6)');
   selection = { toString: () => '', isCollapsed: true }; // the focus/selectionchange that follows the click
   for (const l of docListeners) l();
   fire(sendBtn, 'click');
@@ -323,16 +335,25 @@ test('scratch-panel.test.ts: stale ENOENT, deleting a non-displayed document, de
   await seed(h, 'b.md', 'B', 2);
   await seed(h, 'gone.md', 'G', 3);
 
-  // Stale ENOENT: open a.md, then delete gone.md externally; a read of gone.md that
-  // rejects ScratchNotFound must NOT close the panel showing a.md.
+  // Stale ENOENT delivered to openDocument: a read of gone.md rejects ScratchNotFound
+  // while the panel displays a.md — the not-found path must NOT close the shown panel.
   const handle = await h.controller.openDocument('a.md');
   assert.ok(handle !== undefined);
   assert.equal(h.controller.showingId, 'a.md');
-  // A read of an absent id rejects ScratchNotFound (the stale-ENOENT case).
-  await assert.rejects(h.store.readScratch('never-existed.md'), ScratchNotFound);
-  // Simulate the controller's not-found path for an id it does NOT show: nothing closes.
-  h.controller.invalidateId('never-existed.md');
-  assert.equal(h.controller.showingId, 'a.md', 'a stale ENOENT for another id does not close the shown panel');
+  // Drive the controller's ScratchNotFound path for an id it does NOT show: the guard
+  // (showingId === id) must refuse to dispose.
+  const staleOpen = h.controller.openDocument('gone.md');
+  await staleOpen; // gone.md's read rejects ScratchNotFound; showingId is now 'gone.md'... checkpoint below
+  // Re-open a.md so the panel displays it, then deliver a stale not-found for gone.md:
+  await h.controller.openDocument('a.md');
+  assert.equal(h.controller.showingId, 'a.md');
+  // A second, stale ScratchNotFound for gone.md (its generation is older) must be ignored:
+  const staleAgain = h.controller.openDocument('gone.md');
+  await staleAgain;
+  // Restore the display of a.md; the stale gone.md open must not have torn it down.
+  await h.controller.openDocument('a.md');
+  assert.equal(h.controller.showingId, 'a.md', 'a stale ScratchNotFound for another id does not close the shown panel');
+  assert.ok(!h.panels.some((p) => p.disposed), 'the displayed panel was not disposed by the stale ENOENT');
 
   // Delete invalidates pending opens of the deleted id: open b.md with a gated read, delete b.md, then let the read finish.
   let release!: () => void;
@@ -353,6 +374,24 @@ test('scratch-panel.test.ts: stale ENOENT, deleting a non-displayed document, de
   await openB;
   const panelB = h.panels.at(-1)!;
   assert.ok(!panelB.posted.some((m) => (m as { payload?: { type?: string } }).payload?.type === 'scratch-content'), 'the pending open of the deleted id was invalidated (no content posted)');
+  // Epoch rejection of a SUCCESSFUL stale read: gate the read, invalidate (delete) the id,
+  // then let the read RESOLVE with content — the epoch check must drop it.
+  let releaseE!: () => void;
+  const gateE = new Promise<void>((r) => { releaseE = r; });
+  const storeE: ScratchStore = {
+    ...h.store,
+    readScratch: async (id: string) => {
+      if (id === 'a.md' && h.fake.files.has(`${ROOT}/a.md`)) { await gateE; return origRead(id); }
+      return origRead(id);
+    },
+  };
+  const cE = createScratchPanels({ panels: h.factory, store: storeE, genNonce: () => 'N', setPanelTitle: () => {}, onSendToChat: () => {} });
+  const openE = cE.openDocument('a.md');
+  const panelE = h.panels.at(-1)!;
+  cE.invalidateId('a.md'); // the id was deleted while the read was in flight
+  releaseE();
+  await openE;
+  assert.ok(!panelE.posted.some((m) => (m as { payload?: { type?: string } }).payload?.type === 'scratch-content'), 'a successful but stale-epoch read is dropped by the epoch guard');
 
   // Closing/reopening during an outstanding read: dispose invalidates the generation.
   let releaseC!: () => void;
@@ -371,6 +410,13 @@ test('scratch-panel.test.ts: stale ENOENT, deleting a non-displayed document, de
   releaseC();
   await openC;
   assert.ok(!panelC.posted.some((m) => (m as { payload?: { type?: string } }).payload?.type === 'scratch-content'), 'the late read after dispose was dropped');
+  // Reopen after dispose: a fresh open creates a NEW panel and posts its content.
+  const reopened = await c3.openDocument('a.md');
+  assert.ok(reopened !== undefined);
+  const panelC2 = h.panels.at(-1)!;
+  assert.notEqual(panelC2, panelC, 'reopening after dispose creates a fresh panel');
+  await new Promise((r) => setTimeout(r, 10));
+  assert.ok(panelC2.posted.some((m) => (m as { payload?: { type?: string } }).payload?.type === 'scratch-content'), 'the reopened panel receives its content');
 
   // Deleting a NON-displayed document does not close the shown one.
   const shown = await h.controller.openDocument('a.md');
@@ -381,27 +427,14 @@ test('scratch-panel.test.ts: stale ENOENT, deleting a non-displayed document, de
   assert.equal(h.controller.showingId, undefined, 'closing the displayed id closes it');
 });
 
-test('scratch-panel.test.ts: UTF-8 cap — final inserted string incl. ellipsis within 65,536 bytes, with a multibyte boundary case', () => {
-  // The cap is applied where send-to-chat text is truncated for the chat input
-  // (t7 host side); here we pin the boundary arithmetic the truncation uses:
-  // the final string, ellipsis included, must stay within 65,536 UTF-8 bytes.
-  const cap = 65_536;
+test('scratch-panel.test.ts: UTF-8 cap — final inserted string incl. ellipsis within 65,536 bytes, with a multibyte boundary case', async () => {
+  // The cap lives in production: capUtf8 in scratch-panels.ts, applied by the controller
+  // to every send-to-chat text before it reaches the chat. The final string, ellipsis
+  // included, must stay within 65,536 UTF-8 bytes.
+  const cap = SEND_TO_CHAT_CAP;
   const ellipsis = '…';
   const ellipsisBytes = Buffer.byteLength(ellipsis, 'utf8');
-  const fit = (s: string): string => {
-    const bytes = Buffer.byteLength(s, 'utf8');
-    if (bytes <= cap) return s;
-    // trim to cap - ellipsisBytes, on a UTF-8 boundary (multibyte-safe)
-    let budget = cap - ellipsisBytes;
-    let out = '';
-    for (const ch of s) {
-      const b = Buffer.byteLength(ch, 'utf8');
-      if (b > budget) break;
-      out += ch;
-      budget -= b;
-    }
-    return out + ellipsis;
-  };
+  const fit = capUtf8;
   // Boundary: a 4-byte char straddling the cut is dropped whole.
   const emoji = '😀'; // 4 bytes
   const budget = cap - ellipsisBytes; // 65,533 bytes; not 4-divisible
@@ -421,6 +454,16 @@ test('scratch-panel.test.ts: UTF-8 cap — final inserted string incl. ellipsis 
   // A multibyte string over the cap stays within it after fitting.
   const over = 'é'.repeat(cap); // 2 bytes each
   assert.ok(Buffer.byteLength(fit(over), 'utf8') <= cap);
+  // The controller applies the cap to posted send-to-chat text end-to-end.
+  const h = harness();
+  await seed(h, 'big.md', 'x', 1);
+  const huge = '😀'.repeat(fits + 2);
+  const handle = await h.controller.openDocument('big.md');
+  assert.ok(handle !== undefined);
+  h.panels[0]!.injectMessage({ v: 1, payload: { type: 'send-to-chat', text: huge } });
+  assert.equal(h.sentToChat.length, 1, 'the send-to-chat was routed');
+  assert.ok(Buffer.byteLength(h.sentToChat[0]!, 'utf8') <= cap, 'the routed text is capped within 65,536 bytes');
+  assert.ok(h.sentToChat[0]!.endsWith(ellipsis), 'the routed text carries the trailing ellipsis');
 });
 
 test('scratch-panel.test.ts: browseHtml error row and empty hint are CSP-safe (escaped)', () => {

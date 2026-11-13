@@ -179,10 +179,12 @@ export function documentBootstrap(): string {
     `else if(s&&s.isCollapsed){if(sendBtn)sendBtn.hidden=true;}` +
     `});` +
     `if(sendBtn)sendBtn.addEventListener('click',function(){` +
-    // The webview-side cap uses the same multibyte-safe rule as the host-side capUtf8:
-    // the posted string, ellipsis included, stays within 65,536 UTF-8 bytes.
-    `var out=captured;var cb=0;for(var ci=0;ci<captured.length;ci++){cb+=captured.charCodeAt(ci)<0x80?1:captured.charCodeAt(ci)<0x800?2:captured.charCodeAt(ci)<0xD800||captured.charCodeAt(ci)>0xDFFF?3:4;}` +
-    `if(cb>65536){var budget=65533;out='';for(var cj=0;cj<captured.length;cj++){var ch=captured.charAt(cj);var b=ch.charCodeAt(0)<0x80?1:ch.charCodeAt(0)<0x800?2:ch.charCodeAt(0)<0xD800||ch.charCodeAt(0)>0xDFFF?3:4;if(b>budget)break;out+=ch;budget-=b;}out+='\\u2026';}` +
+    // Webview-side cap, same rule as the host-side capUtf8: the posted string, ellipsis
+    // included, stays within 65,536 UTF-8 bytes. Iterate with codePointAt so a 4-byte
+    // char (surrogate pair) is charged and emitted as ONE unit — never split.
+    `var out=captured;` +
+    `var cb=0;for(var ci=0;ci<captured.length;){var cp=captured.codePointAt(ci);cb+=cp<0x80?1:cp<0x800?2:cp<0x10000?3:4;ci+=cp>0xFFFF?2:1;}` +
+    `if(cb>65536){var budget=65533;out='';for(var cj=0;cj<captured.length;){var cp2=captured.codePointAt(cj);var b=cp2<0x80?1:cp2<0x800?2:cp2<0x10000?3:4;if(b>budget)break;out+=String.fromCodePoint(cp2);budget-=b;cj+=cp2>0xFFFF?2:1;}out+='\\u2026';}` +
     `if(out!=='')vs.postMessage({v:1,payload:{type:'send-to-chat',text:out}});` +
     `captured='';sendBtn.hidden=true;` +
     `});` +

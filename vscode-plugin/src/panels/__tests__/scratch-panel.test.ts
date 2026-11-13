@@ -288,7 +288,8 @@ test('scratch-panel.test.ts: selectionchange with non-empty selection shows the 
   for (const l of docListeners) l();
   fire(sendBtn, 'click');
   assert.deepEqual(JSON.parse(JSON.stringify(sent)), [{ v: 1, payload: { type: 'send-to-chat', text: 'selected <text>' } }], 'the captured selection was posted, not lost to the focus change');
-  // Webview-side cap: a >65,536-byte selection is truncated in the bootstrap before posting.
+  // Webview-side cap: a >65,536-byte selection is truncated in the bootstrap before
+  // posting, WITHOUT splitting surrogate pairs.
   const big = '😀'.repeat(20_000); // 80,000 UTF-8 bytes
   selection = { toString: () => big, isCollapsed: false };
   for (const l of docListeners) l();
@@ -297,6 +298,9 @@ test('scratch-panel.test.ts: selectionchange with non-empty selection shows the 
   assert.equal(bigMsg.payload.type, 'send-to-chat');
   assert.ok(Buffer.byteLength(bigMsg.payload.text, 'utf8') <= 65_536, 'the posted text is capped within 65,536 bytes webview-side');
   assert.ok(bigMsg.payload.text.endsWith('…'), 'the posted text carries the trailing ellipsis');
+  const cappedBody = bigMsg.payload.text.slice(0, -1); // without the ellipsis
+  assert.ok(!/�/.test(bigMsg.payload.text), 'no replacement char: no surrogate pair was split');
+  assert.equal(cappedBody, '😀'.repeat(Math.floor(65_533 / 4)), 'whole 4-byte chars only: 16,383 emoji fit the 65,533-byte budget');
 });
 
 test('scratch-panel.test.ts: A->B document switching asserts setTitle(B) on the SAME panel instance alongside content, with reversed read completion (generation guard)', async () => {
@@ -344,29 +348,40 @@ test('scratch-panel.test.ts: stale ENOENT, deleting a non-displayed document, de
   await seed(h, 'b.md', 'B', 2);
   await seed(h, 'gone.md', 'G', 3);
 
-  // Stale ENOENT delivered to openDocument: open a.md (shown), then open gone.md whose
-  // read REJECTS ScratchNotFound after a delayed failure — gone.md never existed; the
-  // not-found path must not close the panel, and re-displaying a.md must survive it.
+  // Stale ENOENT race: open a.md (shown), then start a GATED open of gone.md whose read
+  // will reject ScratchNotFound, then re-open b.md so the panel displays b.md, and only
+  // then release gone.md's rejection — a stale not-found arriving while another id is
+  // displayed must NOT close the shown panel.
   const handle = await h.controller.openDocument('a.md');
   assert.ok(handle !== undefined);
   assert.equal(h.controller.showingId, 'a.md');
-  // gone.md was seeded, then deleted before its (gated) read completes: a genuine
-  // stale-ENOENT rejection for an id the panel does not show.
-  await h.store.deleteScratch('gone.md');
-  const staleOpen = h.controller.openDocument('gone.md'); // readScratch('gone.md') rejects ScratchNotFound
+  await h.store.deleteScratch('gone.md'); // gone.md now rejects ScratchNotFound on read
+  let releaseGone!: () => void;
+  const gateGone = new Promise<void>((r) => { releaseGone = r; });
+  const origRead2 = h.store.readScratch.bind(h.store);
+  const storeG: ScratchStore = {
+    ...h.store,
+    readScratch: async (id: string) => {
+      if (id === 'gone.md') { await gateGone; return origRead2(id); } // rejects AFTER the gate
+      return origRead2(id);
+    },
+  };
+  const cG = createScratchPanels({ panels: h.factory, store: storeG, genNonce: () => 'N', setPanelTitle: () => {}, onSendToChat: () => {} });
+  const staleOpen = cG.openDocument('gone.md'); // read is gated, will reject late
+  const openB2 = cG.openDocument('b.md'); // panel now displays b.md
+  await openB2;
+  assert.equal(cG.showingId, 'b.md');
+  const docPanel = h.panels.at(-1)!; // the singleton document panel both opens share
+  const bPushed = docPanel.posted.some((m) => (m as { payload?: { type?: string; text?: string } }).payload?.type === 'scratch-content' && (m as { payload: { text: string } }).payload.text === 'B');
+  assert.ok(bPushed, 'b.md content was posted to the singleton document panel');
+  releaseGone(); // now the stale ScratchNotFound for gone.md arrives while b.md is shown
   await staleOpen;
-  // showingId was claimed by the gone.md open; re-display a.md, then deliver ANOTHER
-  // stale not-found (older generation) — it must be ignored, not close the a.md panel.
-  await h.controller.openDocument('a.md');
-  assert.equal(h.controller.showingId, 'a.md');
-  const staleAgain = h.controller.openDocument('gone.md');
-  await staleAgain; // rejects ScratchNotFound again; generation/showingId guards must hold
-  await h.controller.openDocument('a.md');
-  assert.equal(h.controller.showingId, 'a.md', 'a stale ScratchNotFound for another id does not close the shown panel');
-  const shownPanel = h.panels.find((p) => !p.disposed && p.viewType === SCRATCHPAD_VIEW_TYPE);
-  assert.ok(shownPanel !== undefined, 'a live document panel still exists for the shown id');
-  const contentPushes = shownPanel!.posted.filter((m) => (m as { payload?: { type?: string } }).payload?.type === 'scratch-content');
-  assert.ok(contentPushes.some((m) => (m as { payload: { text: string } }).payload.text === 'A'), 'the shown panel received its content and was not torn down by the stale ENOENT');
+  await new Promise((r) => setTimeout(r, 10)); // let any stale completion land
+  assert.equal(cG.showingId, 'b.md', 'a stale ScratchNotFound for another id does not close the shown panel');
+  assert.ok(!docPanel.disposed, 'the singleton document panel was not disposed by the stale ENOENT');
+  const contentPushes = docPanel.posted.filter((m) => (m as { payload?: { type?: string } }).payload?.type === 'scratch-content');
+  assert.ok(contentPushes.some((m) => (m as { payload: { text: string } }).payload.text === 'B'), 'the shown panel received its content and was not torn down by the stale ENOENT');
+  assert.ok(!contentPushes.some((m) => (m as { payload: { text: string } }).payload.text === 'G'), 'no content was posted for the deleted gone.md');
 
   // Delete invalidates pending opens of the deleted id: open b.md with a gated read, delete b.md, then let the read finish.
   let release!: () => void;

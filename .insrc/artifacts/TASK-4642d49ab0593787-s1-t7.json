@@ -1,0 +1,114 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6711cb28-ec4d-48af-a0ed-a0663d608c23",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-13T08:52:27.255Z",
+    "epicCreatedAt": "2026-11-13T06:38:38.894Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4642d49ab0593787",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Extension wiring: scratch store construction + all host message handlers",
+      "parent": {
+        "entityId": "STORY-4642d49ab0593787-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-4642d49ab0593787-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-4642d49ab0593787-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-4642d49ab0593787-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-4642d49ab0593787-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-4642d49ab0593787-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "af0ac5889f51692939c3e4ec387a710b3a458f50a4adc8cc124933c8f9959d3c",
+        "at": "2026-11-13T08:52:27.261Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-13T08:52:27.268Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Extension wiring: scratch store construction + all host message handlers",
+    "summary": "Wire the feature in vscode-plugin/src/extension.ts: construct the scratch store with root join(PATHS.insrc, 'scratches') next to the attachment store (~:635), instantiate the scratch-panels controller with the factory (:447), and register all host message handlers (menu/new/open/delete/browse/send-to-chat incl. reveal+ready-handshake before insert-into-input, typed error replies, input validation). Plus extension-chat-wiring.test.ts. No daemon IPC.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "extension.ts constructs createScratchStore({ root: join(PATHS.insrc, 'scratches'), logger: panelLog }) next to the createAttachmentStore call (~:635) — fs omitted so the node default applies; root derives from PATHS.insrc (src/shared/paths.ts:4), never hard-coded",
+      "registers the six new webview->host handlers (scratch-open-menu -> scratch-list top 5; titleless scratch-new -> injected showInputBox boundary (extension.ts:606) then createScratch, cancel/empty-after-trim = no-op with unchanged list; scratch-open -> readScratch + document panel via the controller; scratch-delete -> delete then refresh open browse table and close document panel if it displays the id; scratch-browse -> unbounded listScratches + table panel; send-to-chat -> reveal chat panel, await its ready handshake, then push insert-into-input {text} capped at 65,536 UTF-8 bytes incl. ellipsis; disposed chat drops silently per :465-468 swallow pattern)",
+      "store failure replies 'scratch-list' { entries: [], error: 'scratchpads unavailable: <reason>' } (typed optional error field, attachments-pending pattern), distinct from a successful empty list",
+      "instantiates the scratch-panels controller with the panels factory (:447) and store and routes both panel message flows (browse rows, document send-to-chat)",
+      "non-string ids/texts/titles rejected by the host switch; unknown payload.type ignored without throwing",
+      "extension-chat-wiring.test.ts asserts the createScratchStore root wiring next to extension.ts:635; handler behaviors covered per acceptanceMapping (scratch-new cancel/answer end-to-end, scratch-list error row + later recovery, panel-factory failure -> undefined + logged + retry)",
+      "no daemon IPC anywhere: no LMDB/Lance/socket usage introduced (grep-verifiable)"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "extension-chat-wiring.test.ts: extension.ts constructs createScratchStore with root join(PATHS.insrc, 'scratches') (ac1)"
+      },
+      {
+        "level": "integration",
+        "name": "extension-chat-wiring.test.ts: scratch-new title acquisition end-to-end — prompt cancelled -> no create + unchanged list; prompt answered -> create + list refresh + document open"
+      },
+      {
+        "level": "integration",
+        "name": "extension-chat-wiring.test.ts: scratch-list error field renders the unavailable row and a later success recovers; host switch cases for all six webview->host messages and both host->webview pushes"
+      },
+      {
+        "level": "integration",
+        "name": "extension-chat-wiring.test.ts: send-to-chat reveals the chat panel, awaits the ready handshake, then pushes insert-into-input capped at 65,536 UTF-8 bytes; disposed chat drops silently"
+      },
+      {
+        "level": "smoke",
+        "name": "manual/optional smoke: click scratchpad button in the chat status bar, create a scratchpad, browse all, select text, Send to chat (only if a display/VS Code harness is available; otherwise covered by the integration fake-dom suite — no live LLM or daemon calls)"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

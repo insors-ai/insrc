@@ -1,0 +1,190 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 27,
+        "contentHash": "697b8b383dc17f9d962b33826ea56f7b9472cae718cb35dc9e090e632a3175e9",
+        "at": "2026-11-13T11:13:55.882Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-483137c5-4931-41ee-bf60-e17869406f69",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-13T08:59:23.823Z",
+    "epicCreatedAt": "2026-11-13T06:38:38.894Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4642d49ab0593787",
+    "storyId": "s1",
+    "revision": 27,
+    "updatedAt": "2026-11-13T11:13:20.622Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "vs-code-plugin-scratchpads-insrc-scratches"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": false
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": false
+      },
+      {
+        "id": "t4",
+        "passed": false
+      },
+      {
+        "id": "t5",
+        "passed": false
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": false
+      }
+    ],
+    "summary": "t7 verdict fixes landed @dc29b3f2d: new vscode-free chat/scratch-host.ts owns the six scratch intents over injected boundaries (executable in tests); extension.ts builds the scratch store directly after createAttachmentStore at ~/.insrc/scratches, uses the showInputBox boundary via promptTitle, routes the six intents through SCRATCH_INTENT_TYPES in the wrapped chat channel, and send-to-chat opens the chat before the disposed check then awaits ready and pushes the capped insert-into-input. Non-string ids/texts are runtime-rejected with a warn. The four PLAN-named tests now execute the real createScratchHost over fakes (cancel/blank/answer flows, error+recovery, reveal/ready/cap/disposed ordering, 65,536-byte cap, malformed fields) — 39/39 wiring+scratch-panel pass, 6/6 t4 chat tests, tsc clean.",
+    "testRecord": {
+      "md": "docs/standalone/vs-code-plugin-scratchpads-insrc-scratches-E202611134642d49a/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/fake-scratch-fs.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-13T11:13:20.622Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/scratch-store.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-13T11:13:20.622Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/scratch-store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-13T11:13:20.622Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/protocol.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-13T11:13:20.622Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/protocol.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-13T11:13:20.622Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-13T11:13:20.622Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-13T11:13:20.622Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/__tests__/webview-host.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-13T11:13:20.622Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/shell.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-13T11:13:20.622Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/webview-host.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-13T11:13:20.622Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-13T11:13:20.622Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/__tests__/scratch-panel.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-13T11:13:20.622Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/scratch-panels.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-13T11:13:20.622Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-13T11:13:20.622Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/extension.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-13T11:13:20.622Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/scratch-host.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-13T11:13:20.622Z"
+      }
+    ],
+    "commit": "4a303f175"
+  },
+  "citations": []
+}

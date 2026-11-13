@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-84bfe766-20f3-4048-b4fb-445ce97e9561",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-13T08:52:27.209Z",
+    "epicCreatedAt": "2026-11-13T06:38:38.894Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4642d49ab0593787",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Extract shared webview CSP+nonce shell into panels/shell.ts",
+      "parent": {
+        "entityId": "STORY-4642d49ab0593787-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-4642d49ab0593787-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ef0283ab2d0b8a4a932ec09b209f9ea8315186ac7391e85ffe2c5faff6649921",
+        "at": "2026-11-13T08:52:27.214Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-13T08:52:27.216Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Extract shared webview CSP+nonce shell into panels/shell.ts",
+    "summary": "Extract the shared CSP+nonce shell (shellHtml) from panels/webview-host.ts:635 into a new panels/shell.ts so the chat panel and both scratch viewTypes share the identical shell; webview-host re-exports/uses it; existing CSP/nonce tests keep passing.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "panels/shell.ts exports the shared CSP+nonce shellHtml extracted verbatim from panels/webview-host.ts:635",
+      "webview-host.ts re-uses the extraction; all existing CSP/nonce tests keep passing unchanged (panels/__tests__/webview-host.test.ts, chat-shell.test.ts)",
+      "chat panel and both scratch viewTypes consume the identical shell from panels/shell.ts"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "webview-host.test.ts + chat-shell.test.ts: existing CSP/nonce tests preserved when the shell is extracted to panels/shell.ts (shell output byte-identical, all existing assertions pass unmodified)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

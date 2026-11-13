@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3b3c19f4-acf5-40b4-8b09-339380b92e6e",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-13T08:52:27.218Z",
+    "epicCreatedAt": "2026-11-13T06:38:38.894Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4642d49ab0593787",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Chat webview: scratchpad button, popup menu, insert-into-input handler",
+      "parent": {
+        "entityId": "STORY-4642d49ab0593787-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-4642d49ab0593787-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-4642d49ab0593787-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9bece85bc71db6ff3a85e26b22603ba51b398ff9d9df6aee02cc458b4f6a1b8f",
+        "at": "2026-11-13T08:52:27.224Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-13T08:52:27.226Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Chat webview: scratchpad button, popup menu, insert-into-input handler",
+    "summary": "Chat webview DOM + bootstrap in vscode-plugin/src/chat/chat-panel.ts: sibling icon-only #insrc-scratch .attachbtn button next to #insrc-attach, #insrc-scratchmenu .popup.chatmenu (recent + New scratchpad + Browse all + empty/error rows), click listener posting scratch-open-menu, and the insert-into-input handler on #insrc-input (:2784). Attach flow proven untouched by unmodified existing tests; chat-panel.test.ts extended.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "#insrc-scratch sibling button (class attachbtn, inline SVG icon, title=\"scratchpads\") rendered directly next to #insrc-attach (:2796) in the statusbar (:2794)",
+      "attach flow byte-for-byte untouched — proven by the pre-existing attach tests (chat-shell.test.ts:332-340 and :530, chat-panel.test.ts:5046) passing UNMODIFIED alongside the 'pick-attachments' host case at chat-panel.ts:3566",
+      "#insrc-scratchmenu .popup.chatmenu reusing the #insrc-histmenu pattern (:2766; opens upward :2289, rows :2296) renders recent entries + \"New scratchpad\" + \"Browse all\" from a 'scratch-list' push, plus empty-state hint and error row ('scratchpads unavailable: <reason>')",
+      "bootstrap click listener on #insrc-scratch posts {type:'scratch-open-menu'}; menu rows post scratch-open {id} / scratch-new (titleless) / scratch-browse",
+      "host->webview 'insert-into-input' handler applies the deterministic insertion rule to #insrc-input (:2784) only: splice at caret replacing an active range selection; append with one separating newline only when caret at end and value non-empty; focus #insrc-input; #insrc-prompt (:2783) is NEVER a target; never posts submit/cancel",
+      "CSS reuses existing .attachbtn/.popup/.item rules; only minimal new styles added",
+      "chat-panel.test.ts gains assertions for button markup, menu render from scratch-list, bootstrap post, and insert-into-input mid-draft-caret and active-range cases"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "chat-panel.test.ts: #insrc-scratch sibling button with class attachbtn + inline SVG + title exists next to #insrc-attach (ac2, ac5)"
+      },
+      {
+        "level": "integration",
+        "name": "chat-panel.test.ts: #insrc-scratchmenu .popup.chatmenu renders recent items + New scratchpad + Browse all from a scratch-list push, incl. empty-state hint and error row (ac2)"
+      },
+      {
+        "level": "integration",
+        "name": "chat-panel.test.ts: bootstrap click on #insrc-scratch posts {type:'scratch-open-menu'} (ac2)"
+      },
+      {
+        "level": "integration",
+        "name": "chat-panel.test.ts: host insert-into-input handler inserts into #insrc-input (:2784) per the deterministic rule — caret mid-draft in a non-empty draft, and an active range selection replaced — existing content preserved, focuses it, no submit-turn/cancel-turn posted (ac4)"
+      },
+      {
+        "level": "integration",
+        "name": "chat-panel.test.ts + scratch-panel.test.ts: every button in the new UI is icon-only with a title attribute — no visible text content on buttons (ac5)"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

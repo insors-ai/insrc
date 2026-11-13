@@ -130,7 +130,7 @@ Run at 2026-11-13T11:31:23.838Z on commit `e5f820bc6`. Tests check: **passed**. 
 
 ## t5
 
-Run at 2026-11-13T11:37:23.202Z on commit `2e1003950`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-13T11:38:29.874Z on commit `dd6ec3af7`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: scratch-panel.test.ts: browse viewType insrc.scratchpads renders a table with Name and Modified columns (ac3)**
 

@@ -70,7 +70,7 @@ Run at 2026-11-13T09:15:43.373Z on commit `18c3cbbc3`. Tests check: **passed**. 
 
 ## t3
 
-Run at 2026-11-13T12:10:05.316Z on commit `e53544b29`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-13T12:12:12.872Z on commit `b0ce5feaa`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: webview-host.test.ts + chat-shell.test.ts: existing CSP/nonce tests preserved when the shell is extracted to panels/shell.ts (shell output byte-identical, all existing assertions pass unmodified)**
 
@@ -83,8 +83,8 @@ Run at 2026-11-13T12:10:05.316Z on commit `e53544b29`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` | 0 | 43 | 0.7 s |  |
-| `vscode-plugin/src/panels/__tests__/webview-host.test.ts` | 0 | 45 | 0.4 s |  |
+| `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` | 0 | 43 | 0.6 s |  |
+| `vscode-plugin/src/panels/__tests__/webview-host.test.ts` | 0 | 45 | 0.5 s |  |
 
 ## t4
 

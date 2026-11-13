@@ -2,19 +2,19 @@
 
 # Build (standalone) — Story s1
 
-**Standalone:** yes  ·  **Created:** 2026-11-13T08:59:23.823Z  ·  **Updated:** 2026-11-13T12:10:05.316Z
+**Standalone:** yes  ·  **Created:** 2026-11-13T08:59:23.823Z  ·  **Updated:** 2026-11-13T12:12:12.872Z
 
-**Commit:** da8d22eec
+**Commit:** 1def314cd
 
 ## Summary
 
-t3 fix: chat panel renderShell now renders through the shared panels/shell.ts shellHtml (cspExtra img-src data:, headExtra chat styles, bodyClass insrc-term, hideTitle) instead of hand-assembling its own CSP/nonce document; shellCsp inserts the extra directive after default-src so the chat policy is byte-identical to before. Added the shared-titled test to chat-shell.test.ts. 43/43 chat-shell, 350/350 across chat-panel+scratch-store+webview-host+scratch-panel, tsc clean in both projects.
+t3 round 2: added git-grounded verbatim-extraction evidence — the shared-titled test in webview-host.test.ts now diffs the extracted shell.ts no-opts path against the original shellHtml at 40c2fa8b3^:webview-host.ts:635 (CSP string byte-equal, style block verbatim), and shell.ts's header documents the provenance commit. Chat panel consumes the identical shell (check 3 already satisfied). 88/88 across webview-host + chat-shell, tsc clean.
 
 ## Tasks validated
 
 - ✓ `t1`
 - ✓ `t2`
-- ✗ `t3`
+- ✓ `t3`
 - ✓ `t4`
 - ✓ `t5`
 - ✓ `t6`
@@ -24,33 +24,33 @@ t3 fix: chat panel renderShell now renders through the shared panels/shell.ts sh
 
 ## Changes
 
-- `vscode-plugin/src/chat/__tests__/fake-scratch-fs.ts` — **insrc-build** (2026-11-13T12:10:05.316Z)
-- `vscode-plugin/src/chat/__tests__/scratch-store.test.ts` — **insrc-build** (2026-11-13T12:10:05.316Z)
-- `vscode-plugin/src/chat/scratch-store.ts` — **insrc-build** (2026-11-13T12:10:05.316Z)
-- `vscode-plugin/src/chat/__tests__/protocol.test.ts` — **insrc-build** (2026-11-13T12:10:05.316Z)
-- `vscode-plugin/src/chat/protocol.ts` — **insrc-build** (2026-11-13T12:10:05.316Z)
-- `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` — **insrc-build** (2026-11-13T12:10:05.316Z)
-- `vscode-plugin/src/chat/chat-panel.ts` — **insrc-build** (2026-11-13T12:10:05.316Z)
-- `vscode-plugin/src/panels/__tests__/webview-host.test.ts` — **insrc-build** (2026-11-13T12:10:05.316Z)
-- `vscode-plugin/src/panels/shell.ts` — **insrc-build** (2026-11-13T12:10:05.316Z)
-- `vscode-plugin/src/panels/webview-host.ts` — **insrc-build** (2026-11-13T12:10:05.316Z)
-- `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` — **insrc-build** (2026-11-13T12:10:05.316Z)
-- `vscode-plugin/src/panels/__tests__/scratch-panel.test.ts` — **insrc-build** (2026-11-13T12:10:05.316Z)
-- `vscode-plugin/src/panels/scratch-panels.ts` — **insrc-build** (2026-11-13T12:10:05.316Z)
-- `vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts` — **insrc-build** (2026-11-13T12:10:05.316Z)
-- `vscode-plugin/src/extension.ts` — **insrc-build** (2026-11-13T12:10:05.316Z)
-- `vscode-plugin/src/chat/scratch-host.ts` — **insrc-build** (2026-11-13T12:10:05.316Z)
-- `.insrc/artifacts/EPIC-4642d49ab0593787.json` — **insrc-build** (2026-11-13T12:10:05.316Z)
-- `.insrc/artifacts/EPIC-4642d49ab0593787.log.jsonl` — **insrc-build** (2026-11-13T12:10:05.316Z)
-- `.insrc/artifacts/TASK-4642d49ab0593787-s1-t1.json` — **insrc-build** (2026-11-13T12:10:05.316Z)
-- `.insrc/artifacts/TASK-4642d49ab0593787-s1-t2.json` — **insrc-build** (2026-11-13T12:10:05.316Z)
-- `.insrc/artifacts/TASK-4642d49ab0593787-s1-t3.json` — **insrc-build** (2026-11-13T12:10:05.316Z)
-- `.insrc/artifacts/TASK-4642d49ab0593787-s1-t4.json` — **insrc-build** (2026-11-13T12:10:05.316Z)
-- `.insrc/artifacts/TASK-4642d49ab0593787-s1-t5.json` — **insrc-build** (2026-11-13T12:10:05.316Z)
-- `.insrc/artifacts/TASK-4642d49ab0593787-s1-t6.json` — **insrc-build** (2026-11-13T12:10:05.316Z)
-- `.insrc/artifacts/TASK-4642d49ab0593787-s1-t7.json` — **insrc-build** (2026-11-13T12:10:05.316Z)
-- `.insrc/artifacts/TASKS-4642d49ab0593787-s1.json` — **insrc-build** (2026-11-13T12:10:05.316Z)
-- `.insrc/artifacts/TASKS-4642d49ab0593787-s1.log.jsonl` — **insrc-build** (2026-11-13T12:10:05.316Z)
-- `docs/standalone/vs-code-plugin-scratchpads-insrc-scratches-E202611134642d49a/S001/component-dependency.html` — **insrc-build** (2026-11-13T12:10:05.316Z)
-- `docs/standalone/vs-code-plugin-scratchpads-insrc-scratches-E202611134642d49a/S001/sequence-diagram.html` — **insrc-build** (2026-11-13T12:10:05.316Z)
-- `docs/standalone/vs-code-plugin-scratchpads-insrc-scratches-E202611134642d49a/S001/ux-mock.html` — **insrc-build** (2026-11-13T12:10:05.316Z)
+- `vscode-plugin/src/chat/__tests__/fake-scratch-fs.ts` — **insrc-build** (2026-11-13T12:12:12.872Z)
+- `vscode-plugin/src/chat/__tests__/scratch-store.test.ts` — **insrc-build** (2026-11-13T12:12:12.872Z)
+- `vscode-plugin/src/chat/scratch-store.ts` — **insrc-build** (2026-11-13T12:12:12.872Z)
+- `vscode-plugin/src/chat/__tests__/protocol.test.ts` — **insrc-build** (2026-11-13T12:12:12.872Z)
+- `vscode-plugin/src/chat/protocol.ts` — **insrc-build** (2026-11-13T12:12:12.872Z)
+- `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` — **insrc-build** (2026-11-13T12:12:12.872Z)
+- `vscode-plugin/src/chat/chat-panel.ts` — **insrc-build** (2026-11-13T12:12:12.872Z)
+- `vscode-plugin/src/panels/__tests__/webview-host.test.ts` — **insrc-build** (2026-11-13T12:12:12.872Z)
+- `vscode-plugin/src/panels/shell.ts` — **insrc-build** (2026-11-13T12:12:12.872Z)
+- `vscode-plugin/src/panels/webview-host.ts` — **insrc-build** (2026-11-13T12:12:12.872Z)
+- `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` — **insrc-build** (2026-11-13T12:12:12.872Z)
+- `vscode-plugin/src/panels/__tests__/scratch-panel.test.ts` — **insrc-build** (2026-11-13T12:12:12.872Z)
+- `vscode-plugin/src/panels/scratch-panels.ts` — **insrc-build** (2026-11-13T12:12:12.872Z)
+- `vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts` — **insrc-build** (2026-11-13T12:12:12.872Z)
+- `vscode-plugin/src/extension.ts` — **insrc-build** (2026-11-13T12:12:12.872Z)
+- `vscode-plugin/src/chat/scratch-host.ts` — **insrc-build** (2026-11-13T12:12:12.872Z)
+- `.insrc/artifacts/EPIC-4642d49ab0593787.json` — **insrc-build** (2026-11-13T12:12:12.872Z)
+- `.insrc/artifacts/EPIC-4642d49ab0593787.log.jsonl` — **insrc-build** (2026-11-13T12:12:12.872Z)
+- `.insrc/artifacts/TASK-4642d49ab0593787-s1-t1.json` — **insrc-build** (2026-11-13T12:12:12.872Z)
+- `.insrc/artifacts/TASK-4642d49ab0593787-s1-t2.json` — **insrc-build** (2026-11-13T12:12:12.872Z)
+- `.insrc/artifacts/TASK-4642d49ab0593787-s1-t3.json` — **insrc-build** (2026-11-13T12:12:12.872Z)
+- `.insrc/artifacts/TASK-4642d49ab0593787-s1-t4.json` — **insrc-build** (2026-11-13T12:12:12.872Z)
+- `.insrc/artifacts/TASK-4642d49ab0593787-s1-t5.json` — **insrc-build** (2026-11-13T12:12:12.872Z)
+- `.insrc/artifacts/TASK-4642d49ab0593787-s1-t6.json` — **insrc-build** (2026-11-13T12:12:12.872Z)
+- `.insrc/artifacts/TASK-4642d49ab0593787-s1-t7.json` — **insrc-build** (2026-11-13T12:12:12.872Z)
+- `.insrc/artifacts/TASKS-4642d49ab0593787-s1.json` — **insrc-build** (2026-11-13T12:12:12.872Z)
+- `.insrc/artifacts/TASKS-4642d49ab0593787-s1.log.jsonl` — **insrc-build** (2026-11-13T12:12:12.872Z)
+- `docs/standalone/vs-code-plugin-scratchpads-insrc-scratches-E202611134642d49a/S001/component-dependency.html` — **insrc-build** (2026-11-13T12:12:12.872Z)
+- `docs/standalone/vs-code-plugin-scratchpads-insrc-scratches-E202611134642d49a/S001/sequence-diagram.html` — **insrc-build** (2026-11-13T12:12:12.872Z)
+- `docs/standalone/vs-code-plugin-scratchpads-insrc-scratches-E202611134642d49a/S001/ux-mock.html` — **insrc-build** (2026-11-13T12:12:12.872Z)

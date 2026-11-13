@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 59,
-        "contentHash": "d32960f1f9ff191d0c2106ebe9c2ba560a7da727aeeba689f938b994778c01e8",
-        "at": "2026-11-13T12:10:05.377Z",
+        "number": 60,
+        "contentHash": "495df436bccd3838aff779bb424b6d52f3cfe3a8f92a0d8e5bc6af7f8537fb45",
+        "at": "2026-11-13T12:12:12.926Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "4642d49ab0593787",
     "storyId": "s1",
     "createdAt": "2026-11-13T08:59:23.823Z",
-    "updatedAt": "2026-11-13T12:10:05.316Z",
+    "updatedAt": "2026-11-13T12:12:12.872Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-13T06:38:38.894Z",
     "epicSlug": "vs-code-plugin-scratchpads-insrc-scratches",
-    "revision": 59
+    "revision": 60
   },
   "body": {
     "tasks": [
@@ -274,8 +274,8 @@
       },
       {
         "taskId": "t3",
-        "commit": "e53544b29",
-        "ranAt": "2026-11-13T12:10:05.316Z",
+        "commit": "b0ce5feaa",
+        "ranAt": "2026-11-13T12:12:12.872Z",
         "testsPassed": true,
         "tests": [
           {
@@ -302,7 +302,7 @@
             "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 652,
+            "durationMs": 602,
             "titles": [
               {
                 "title": "the shell script runs: a windowed restore shows one page at the bottom with the bar, a page request round-trips and keeps the reader's place, a live row does not move a reader who scrolled up, and an old-style restore still works",
@@ -483,7 +483,7 @@
             "file": "vscode-plugin/src/panels/__tests__/webview-host.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 443,
+            "durationMs": 486,
             "titles": [
               {
                 "title": "showStatusMenu offers EXACTLY five items, including Manage Connections and Delivery Board, and routes each choice to the matching panel",

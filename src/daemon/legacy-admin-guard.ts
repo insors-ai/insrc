@@ -10,6 +10,7 @@ interface GuardOptions {
 	readonly requestPublicStop: () => Promise<unknown>;
 	readonly attest: (table: 'main' | 'worker', thread: number) => void;
 	readonly registerMainDrain: (drain: () => unknown) => void;
+	readonly registerWorkerDrain?: (drain: () => unknown) => void;
 }
 
 type AdminHandlers = Record<string, (...args: never[]) => unknown>;
@@ -26,6 +27,7 @@ export function installLegacyAdminGuard(options: GuardOptions): void {
 		if (drain === undefined || handlers['daemon.update'] === undefined
 			|| (table === 'main') !== (threadId === 0)) throw new Error('archived admin table does not match the qualified layout');
 		if (table === 'main') options.registerMainDrain(drain);
+		else options.registerWorkerDrain?.(drain);
 		options.attest(table, threadId);
 		return {
 			...handlers,

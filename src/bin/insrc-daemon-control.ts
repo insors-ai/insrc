@@ -16,6 +16,8 @@ import { activateFreshManagedDaemon } from '../daemon/fresh-managed-activation.j
 import { captureManagedReleasePin } from '../daemon/managed-release-staging.js';
 import { admitManagedPreparation, prepareLegacyUpgrade, retainManagedReleaseVerifier, runManagedPreparation } from '../daemon/managed-update-preparation.js';
 import { PATHS } from '../shared/paths.js';
+import { requestLegacyDrain, restoredLegacyDrainPath } from '../daemon/legacy-private-drain.js';
+import { stopRestoredLegacyProcess } from '../daemon/legacy-public-stop.js';
 
 const NOT_MANAGED = 10;
 
@@ -54,6 +56,15 @@ async function stage(release: string | undefined, releaseId: string | undefined,
 }
 
 async function main(command: string): Promise<void> {
+	if (command === 'stop-restored-legacy') {
+		const [pid] = process.argv.slice(3);
+		if (pid === undefined || !/^\d+$/.test(pid)) throw new Error('invalid restored legacy PID');
+		const root = await realpath(PATHS.insrc);
+		const target = await readDarwinIncarnation(Number(pid));
+		await stopRestoredLegacyProcess(root, target,
+			id => requestLegacyDrain(restoredLegacyDrainPath(root), target, id, undefined, 'stop'));
+		return;
+	}
 	if (command === 'dispatch') {
 		const [root, name, ...args] = process.argv.slice(3);
 		if (root === undefined || await realpath(PATHS.insrc) !== root || !['daemon-ctl.sh', 'insrc', 'insrc-mcp.js', 'insrc-daemon-install.sh'].includes(name ?? '')) {

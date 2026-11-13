@@ -35,6 +35,7 @@ function hash(bytes: Buffer): string { return createHash('sha256').update(bytes)
 /** Build the private rollback descriptor without invoking the archived shell launcher. */
 export async function guardedLegacyShellJob(
 	legacy: Legacy, prior: ManagedInstallation, archive: string, preload: string, destination: string,
+	context?: string,
 ): Promise<{ job: typeof legacy.job; bytes: Buffer; descriptorHash: string }> {
 	const { job } = legacy;
 	const original = join(prior.releaseRoot, 'scripts/daemon-ctl.sh');
@@ -68,6 +69,7 @@ export async function guardedLegacyShellJob(
 	}
 	environment.set('INSRC_DAEMON_ROOT', prior.releaseRoot);
 	environment.set('INSRC_MODE', 'daemon');
+	if (context !== undefined) environment.set('INSRC_LEGACY_ROLLBACK_CONTEXT', context);
 	if (environment.get('HOME') !== dirname(prior.stateRoot)) throw new Error('legacy shell launch job belongs to another state root');
 	const text = (value: string) => '<string>' + value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;') + '</string>';
 	const field = (key: string, value: string) => '<key>' + key + '</key>' + value;

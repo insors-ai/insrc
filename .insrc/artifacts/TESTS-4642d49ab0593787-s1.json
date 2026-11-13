@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 30,
-        "contentHash": "b8a6a963ab134f5e09b16161ed1ef4bb67a27e2c70f400a6cbbd63a1c327c4f1",
-        "at": "2026-11-13T11:13:20.670Z",
+        "number": 32,
+        "contentHash": "5fb143504b75d1017bcfa3bd558c8d1df00376385c20f8be0988a8b5ed0e990a",
+        "at": "2026-11-13T11:20:11.915Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "4642d49ab0593787",
     "storyId": "s1",
     "createdAt": "2026-11-13T08:59:23.823Z",
-    "updatedAt": "2026-11-13T11:13:20.622Z",
+    "updatedAt": "2026-11-13T11:20:11.865Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-13T06:38:38.894Z",
     "epicSlug": "vs-code-plugin-scratchpads-insrc-scratches",
-    "revision": 30
+    "revision": 32
   },
   "body": {
     "tasks": [
@@ -2101,8 +2101,8 @@
       },
       {
         "taskId": "t7",
-        "commit": "4a303f175",
-        "ranAt": "2026-11-13T11:13:20.622Z",
+        "commit": "ba92fed38",
+        "ranAt": "2026-11-13T11:20:11.865Z",
         "testsPassed": true,
         "tests": [
           {
@@ -2165,7 +2165,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "No display/VS Code harness in this environment; covered by the integration fake-dom suite (runShell + createScratchHost + createScratchPanels over fakes) in extension-chat-wiring.test.ts — 72/72 pass, tsc clean @4a303f175."
+              "evidence": "No display/VS Code harness in this environment; covered by the integration fake-dom suite (runShell + createScratchHost + createScratchPanels over fakes) in extension-chat-wiring.test.ts — 72/72 pass, tsc clean @ba92fed38."
             }
           }
         ],
@@ -2174,7 +2174,7 @@
             "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 641,
+            "durationMs": 603,
             "titles": [
               {
                 "title": "the shell script runs: a windowed restore shows one page at the bottom with the bar, a page request round-trips and keeps the reader's place, a live row does not move a reader who scrolled up, and an old-style restore still works",

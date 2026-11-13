@@ -201,7 +201,7 @@ Run at 2026-11-13T10:06:39.666Z on commit `76ccce876`. Tests check: **passed**. 
 
 ## t7
 
-Run at 2026-11-13T11:15:23.712Z on commit `40e228b06`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+Run at 2026-11-13T11:20:11.865Z on commit `ba92fed38`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 **integration: extension-chat-wiring.test.ts: extension.ts constructs createScratchStore with root join(PATHS.insrc, 'scratches') (ac1)**
 
@@ -229,7 +229,7 @@ Run at 2026-11-13T11:15:23.712Z on commit `40e228b06`. Tests check: **passed**. 
 
 **smoke: manual/optional smoke: click scratchpad button in the chat status bar, create a scratchpad, browse all, select text, Send to chat (only if a display/VS Code harness is available; otherwise covered by the integration fake-dom suite — no live LLM or daemon calls)**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: No display/VS Code harness in this environment; covered by the integration fake-dom suite (runShell + createScratchHost + createScratchPanels over fakes) in extension-chat-wiring.test.ts — 72/72 pass, tsc clean @4a303f175.
+Reported by the builder, not run by the gate: **pass**. Evidence: No display/VS Code harness in this environment; covered by the integration fake-dom suite (runShell + createScratchHost + createScratchPanels over fakes) in extension-chat-wiring.test.ts — 72/72 pass, tsc clean @ba92fed38.
 
 **Files run**
 

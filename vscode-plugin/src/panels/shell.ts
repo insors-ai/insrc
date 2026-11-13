@@ -1,11 +1,17 @@
 /**
  * Story E202611134642d49a:S001 t3 — the shared webview HTML shell, extracted VERBATIM
- * from panels/webview-host.ts so the chat panel and both scratch viewTypes
+ * from panels/webview-host.ts:635 (commit 40c2fa8b3^ still carries the original at
+ * exactly that line) so the chat panel and both scratch viewTypes
  * (insrc.scratchpads / insrc.scratchpad) render through the identical CSP+nonce
  * shell. vscode-free: pure string assembly, importable from tests.
  *
  * The shell carries a strict CSP that only permits the nonce'd bootstrap script
  * (and inline styles); `bootstrap`, when present, is that single nonce'd script.
+ * The ONLY post-extraction change is the `opts` parameter on shellHtml (cspExtra /
+ * headExtra / bodyClass / hideTitle) so the chat panel can reuse the same frame with
+ * its own img-src data: directive and styles; with no opts the output is
+ * byte-identical to the original webview-host.ts:635 function, which the existing
+ * CSP/nonce tests pin.
  */
 
 import { escapeHtml } from './html.js';

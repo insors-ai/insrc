@@ -515,3 +515,28 @@ test('scratch-panel.test.ts: browseHtml error row and empty hint are CSP-safe (e
   assert.ok(withName.includes('a&lt;b&gt;'), 'entry names escaped');
   void textOf;
 });
+
+test('chat-panel.test.ts + scratch-panel.test.ts: every button in the new UI is icon-only with a title attribute — no visible text content on buttons (ac5)', () => {
+  // Executed HERE (the scratch-panel side of the shared ac5 name): every button the
+  // scratchpad panels render — the browse rows' Open/Delete and the document view's
+  // floating Send-to-chat — is icon-only (inline SVG, zero visible text) and carries a
+  // strict title= hover. The chat-panel side of this name runs in chat-panel.test.ts
+  // over the status-bar buttons; together they cover every button the feature added.
+  const browse = browseHtml([{ id: '20260113-083000-pad.md', name: 'pad', mtime: 300, size: 4 }]);
+  const doc = documentBodyHtml();
+  for (const [label, html] of [['browse', browse], ['document', doc]] as const) {
+    const buttons = html.match(/<button\b[^>]*>[\s\S]*?<\/button>/g) ?? [];
+    assert.ok(buttons.length > 0, `${label} view renders at least one button`);
+    for (const b of buttons) {
+      const open = /<button\b([^>]*)>/.exec(b)![1]!;
+      assert.ok(/\stitle="[^"]+"/.test(open), `${label} button carries a title= hover: ${open}`);
+      const inner = b.replace(/^<button\b[^>]*>/, '').replace(/<\/button>$/, '');
+      assert.match(inner, /^<svg /, `${label} button is icon-only (inline SVG): ${b.slice(0, 100)}`);
+      assert.equal(inner.replace(/<[^>]*>/g, '').trim(), '', `${label} button has no visible text content`);
+    }
+  }
+  // The two browse row buttons and the one floating send-to-chat button are exactly the
+  // buttons the scratchpad panels add.
+  assert.equal((browse.match(/<button\b/g) ?? []).length, 2, 'browse renders exactly Open + Delete per row');
+  assert.equal((doc.match(/<button\b/g) ?? []).length, 1, 'document renders exactly the Send-to-chat button');
+});

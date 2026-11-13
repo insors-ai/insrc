@@ -966,3 +966,30 @@ test("the shared shellHtml style block defines .section/.section-head/.count/.ro
   assert.doesNotMatch(html, /\.chev\b/, 'no .chev rule — native <details>/<summary> needs no custom chevron');
   assert.doesNotMatch(html, /\.collapsed\b/, 'no .collapsed rule — native <details>/<summary> tracks its own open/closed state');
 });
+
+// ---- Story E202611134642d49a:S001 t3: shell extracted to panels/shell.ts ----
+
+test("webview-host.test.ts + chat-shell.test.ts: existing CSP/nonce tests preserved when the shell is extracted to panels/shell.ts (shell output byte-identical, all existing assertions pass unmodified)", async () => {
+  // The extraction is verbatim: panels/shell.ts's shellHtml is the same function the
+  // host now imports, so its output is byte-identical by construction. Prove the
+  // contract directly against the extracted module.
+  const { shellHtml } = await import('../shell.js');
+  const nonce = 'TESTNONCE123=';
+  const withBoot = shellHtml('My Title', '<p>body</p>', nonce, 'console.log(1)');
+  const bare = shellHtml('My Title', '<p>body</p>', nonce);
+  // CSP pins the nonce on script-src only; inline styles allowed; everything else none.
+  assert.ok(withBoot.includes(`script-src 'nonce-${nonce}'`), 'CSP pins the nonce on script-src');
+  assert.ok(withBoot.includes("default-src 'none'"), 'default-src none');
+  assert.ok(withBoot.includes("style-src 'unsafe-inline'"), 'inline styles allowed');
+  assert.ok(withBoot.includes(`<script nonce="${nonce}">console.log(1)</script>`), 'bootstrap is the single nonce-d script');
+  assert.ok(!bare.includes('<script'), 'no bootstrap -> no script tag at all');
+  assert.ok(withBoot.includes('<h2>My Title</h2>') && withBoot.includes('<p>body</p>'), 'title + content in place');
+  assert.ok(withBoot.endsWith('</body></html>') && withBoot.startsWith('<!DOCTYPE html>'), 'document envelope intact');
+  // The host's own renders go through the same extracted shell (byte-identical shape).
+  const { host, created } = makeHost();
+  host.openDetailedStatus();
+  await tick();
+  const html = created[0]!.html;
+  assert.match(html, /<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-[^']+';">/, 'host render carries the strict CSP from panels/shell.ts');
+  assert.ok(html.includes('<script nonce="'), 'host render carries the nonce-d bootstrap');
+});

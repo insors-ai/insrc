@@ -3633,6 +3633,22 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       case 'open-code-ref':
         if (links !== undefined) void links.openCodeRef(msg.path, msg.line);
         return;
+      // Story E202611134642d49a:S001 t2: the six scratchpad intents are declared in the
+      // protocol, but their HANDLERS are wired by the extension host (t7) through the
+      // injected scratch boundary — the chat panel itself has no scratchpad case yet.
+      // The payload fields are part of the contract: a non-string id/text here is a
+      // malformed message and is REJECTED (dropped, never throws) just like the default.
+      case 'scratch-open-menu':
+      case 'scratch-new':
+      case 'scratch-browse':
+        return; // titleless intents: no payload fields to validate
+      case 'scratch-open':
+      case 'scratch-delete':
+        if (typeof msg.id !== 'string') { log.warn('[chat] dropped malformed scratch message: non-string id'); return; }
+        return; // accepted; the t7 handler consumes it
+      case 'send-to-chat':
+        if (typeof msg.text !== 'string') { log.warn('[chat] dropped malformed send-to-chat: non-string text'); return; }
+        return; // accepted; the t7 handler consumes it
       default:
         // docs-decision (S007) or any unknown/forward variant: accepted-but-ignored
         // seam — never an error.

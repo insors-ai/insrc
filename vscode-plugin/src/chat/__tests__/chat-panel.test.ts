@@ -8494,3 +8494,35 @@ test('ISSUE-7dc5ecde2730fb17: an open panel keeps both repeating timers without 
     globalThis.clearInterval = realClear;
   }
 });
+
+// ---- Story E202611134642d49a:S001 t2: scratchpad messages are accepted-but-forwarded
+// (handlers land in t7) and non-string payloads are REJECTED (dropped + warned) ----
+
+test('host: scratchpad messages with valid payloads are accepted without throwing and post nothing; non-string id/text is dropped with a warning', async () => {
+  const fc = fakeChannel();
+  const warns: string[] = [];
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: scriptedAdapter([]) }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo', logger: { warn: (m) => warns.push(m), error: () => {} } });
+  host.open();
+  const before = fc.posted.length;
+  assert.doesNotThrow(() => {
+    fc.send(env('scratch-open-menu'));
+    fc.send(env('scratch-new'));
+    fc.send(env('scratch-browse'));
+    fc.send(env('scratch-open', { id: '20260113-083000-pad.md' }));
+    fc.send(env('scratch-delete', { id: '20260113-083000-pad.md' }));
+    fc.send(env('send-to-chat', { text: 'selected text' }));
+  });
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(fc.posted.length, before, 'well-formed scratchpad messages post nothing from the panel (t7 owns the replies)');
+  assert.deepEqual(warns, [], 'no warning for well-formed payloads');
+  assert.doesNotThrow(() => {
+    fc.send(env('scratch-open', { id: 42 }));
+    fc.send(env('scratch-delete', {}));
+    fc.send(env('send-to-chat', { text: null }));
+  });
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(warns.length, 3, 'each non-string payload is dropped with its own warning');
+  assert.match(warns.join('\n'), /non-string id/);
+  assert.match(warns.join('\n'), /non-string text/);
+  assert.equal(fc.posted.length, before, 'malformed payloads post nothing either');
+});

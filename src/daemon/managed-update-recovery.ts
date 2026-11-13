@@ -257,12 +257,14 @@ class Rollback {
 				else await this.operations.quiescent(prior);
 				return prior.releaseId;
 			});
+			await verifyPrior();
 			if (legacy !== undefined) await this.legacyOperations.verify(legacy, prior, wasRunning);
 			else if (launch?.kind === 'direct') await verifyDirectLegacyService(prior, launch);
 			else await this.operations.quiescent(prior);
 			return;
 		}
 
+		await verifyPrior();
 		await this.journal('rollback-job', prior.releaseId, async () => {
 			await verifyPrior();
 			const job = await this.operations.inspect(prior);
@@ -280,6 +282,7 @@ class Rollback {
 				if (status.state === 'running' && status.generation !== null) return status.generation;
 				if (!inactive(status)) throw new Error('prior generation is in transition');
 				await this.revalidate();
+				await verifyPrior();
 				const start = accepted(await link.call({ op: 'start', generation: status.generation, updateId: initial.id }));
 				if (start.generation === null) throw new Error('prior daemon did not start');
 				const ready = await waitForGeneration(link, start.generation, 'running', 70_000);
@@ -287,6 +290,7 @@ class Rollback {
 				return start.generation;
 			}));
 		}
+		await verifyPrior();
 		const restored = entry(await this.state(), 'rollback-start')?.receipt;
 		await requireReady(this.operations, prior, initial.predecessor.wasRunning, restored);
 	}

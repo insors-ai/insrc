@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 40,
-        "contentHash": "892a1224d6727a5c769b3b733700d681acb953dca4bcff8eba4f02acd7280601",
-        "at": "2026-11-13T11:35:02.514Z",
+        "number": 41,
+        "contentHash": "4d7fcebec4e2069f48fc9e9d8b5966b668044b0f56b89e55cf1458f30706bbf6",
+        "at": "2026-11-13T11:36:10.834Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "4642d49ab0593787",
     "storyId": "s1",
     "createdAt": "2026-11-13T08:59:23.823Z",
-    "updatedAt": "2026-11-13T11:35:02.462Z",
+    "updatedAt": "2026-11-13T11:36:10.781Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-13T06:38:38.894Z",
     "epicSlug": "vs-code-plugin-scratchpads-insrc-scratches",
-    "revision": 40
+    "revision": 41
   },
   "body": {
     "tasks": [
@@ -1938,8 +1938,8 @@
       },
       {
         "taskId": "t5",
-        "commit": "ae1d3633c",
-        "ranAt": "2026-11-13T11:33:56.198Z",
+        "commit": "d59524dff",
+        "ranAt": "2026-11-13T11:36:10.781Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1987,7 +1987,7 @@
             "file": "vscode-plugin/src/panels/__tests__/scratch-panel.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 455,
+            "durationMs": 415,
             "titles": [
               {
                 "title": "scratch-panel.test.ts: browse viewType insrc.scratchpads renders a table with Name and Modified columns (ac3)",

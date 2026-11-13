@@ -130,7 +130,7 @@ Run at 2026-11-13T11:31:23.838Z on commit `e5f820bc6`. Tests check: **passed**. 
 
 ## t5
 
-Run at 2026-11-13T11:33:56.198Z on commit `ae1d3633c`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-13T11:36:10.781Z on commit `d59524dff`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: scratch-panel.test.ts: browse viewType insrc.scratchpads renders a table with Name and Modified columns (ac3)**
 
@@ -154,7 +154,7 @@ Run at 2026-11-13T11:33:56.198Z on commit `ae1d3633c`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `vscode-plugin/src/panels/__tests__/scratch-panel.test.ts` | 0 | 10 | 0.5 s |  |
+| `vscode-plugin/src/panels/__tests__/scratch-panel.test.ts` | 0 | 10 | 0.4 s |  |
 
 ## t6
 

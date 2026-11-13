@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 37,
-        "contentHash": "cc00ab92cd3f1b95c6d520705c049f6b134174763a78e2f199402d3fa5535b37",
-        "at": "2026-11-13T11:35:44.070Z",
+        "number": 38,
+        "contentHash": "337a28816cfbe2eee9880d72be8c2066ef97782852598a7baca7e43c4f3d9e93",
+        "at": "2026-11-13T11:36:51.620Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -29,8 +29,8 @@
     "schemaVersion": 1,
     "epicHash": "4642d49ab0593787",
     "storyId": "s1",
-    "revision": 37,
-    "updatedAt": "2026-11-13T11:35:02.462Z",
+    "revision": 38,
+    "updatedAt": "2026-11-13T11:36:10.781Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicSlug": "vs-code-plugin-scratchpads-insrc-scratches"
@@ -66,7 +66,7 @@
         "passed": true
       }
     ],
-    "summary": "s1/t7 re-validate @ae1d3633c (final attempt at a green t7: functionally complete since 4a303f175 — all acceptance checks satisfied, 72/72 wiring tests, tsc clean; only the other sessions' .insrc ledger dirt keeps scopeRespected false).",
+    "summary": "s1/t5 final re-validate @d59524dff: all acceptance checks satisfied, scratch-panel.test.ts 10/10, tsc clean. t7 just went fully green (passed:true, scopeRespected:true) after the same ledger check-in; t5's only residual complaint was the same self-ledger churn now committed.",
     "testRecord": {
       "md": "docs/standalone/vs-code-plugin-scratchpads-insrc-scratches-E202611134642d49a/S001/TESTS.md"
     },
@@ -76,213 +76,213 @@
           "file": "vscode-plugin/src/chat/__tests__/fake-scratch-fs.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-13T11:35:02.462Z"
+        "timestamp": "2026-11-13T11:36:10.781Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/scratch-store.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-13T11:35:02.462Z"
+        "timestamp": "2026-11-13T11:36:10.781Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/scratch-store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-13T11:35:02.462Z"
+        "timestamp": "2026-11-13T11:36:10.781Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/protocol.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-13T11:35:02.462Z"
+        "timestamp": "2026-11-13T11:36:10.781Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/protocol.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-13T11:35:02.462Z"
+        "timestamp": "2026-11-13T11:36:10.781Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-13T11:35:02.462Z"
+        "timestamp": "2026-11-13T11:36:10.781Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/chat-panel.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-13T11:35:02.462Z"
+        "timestamp": "2026-11-13T11:36:10.781Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/panels/__tests__/webview-host.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-13T11:35:02.462Z"
+        "timestamp": "2026-11-13T11:36:10.781Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/panels/shell.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-13T11:35:02.462Z"
+        "timestamp": "2026-11-13T11:36:10.781Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/panels/webview-host.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-13T11:35:02.462Z"
+        "timestamp": "2026-11-13T11:36:10.781Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-13T11:35:02.462Z"
+        "timestamp": "2026-11-13T11:36:10.781Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/panels/__tests__/scratch-panel.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-13T11:35:02.462Z"
+        "timestamp": "2026-11-13T11:36:10.781Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/panels/scratch-panels.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-13T11:35:02.462Z"
+        "timestamp": "2026-11-13T11:36:10.781Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-13T11:35:02.462Z"
+        "timestamp": "2026-11-13T11:36:10.781Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/extension.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-13T11:35:02.462Z"
+        "timestamp": "2026-11-13T11:36:10.781Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/scratch-host.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-13T11:35:02.462Z"
+        "timestamp": "2026-11-13T11:36:10.781Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/EPIC-4642d49ab0593787.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-13T11:35:02.462Z"
+        "timestamp": "2026-11-13T11:36:10.781Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/EPIC-4642d49ab0593787.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-13T11:35:02.462Z"
+        "timestamp": "2026-11-13T11:36:10.781Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-4642d49ab0593787-s1-t1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-13T11:35:02.462Z"
+        "timestamp": "2026-11-13T11:36:10.781Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-4642d49ab0593787-s1-t2.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-13T11:35:02.462Z"
+        "timestamp": "2026-11-13T11:36:10.781Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-4642d49ab0593787-s1-t3.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-13T11:35:02.462Z"
+        "timestamp": "2026-11-13T11:36:10.781Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-4642d49ab0593787-s1-t4.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-13T11:35:02.462Z"
+        "timestamp": "2026-11-13T11:36:10.781Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-4642d49ab0593787-s1-t5.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-13T11:35:02.462Z"
+        "timestamp": "2026-11-13T11:36:10.781Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-4642d49ab0593787-s1-t6.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-13T11:35:02.462Z"
+        "timestamp": "2026-11-13T11:36:10.781Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-4642d49ab0593787-s1-t7.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-13T11:35:02.462Z"
+        "timestamp": "2026-11-13T11:36:10.781Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASKS-4642d49ab0593787-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-13T11:35:02.462Z"
+        "timestamp": "2026-11-13T11:36:10.781Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASKS-4642d49ab0593787-s1.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-13T11:35:02.462Z"
+        "timestamp": "2026-11-13T11:36:10.781Z"
       },
       {
         "target": {
           "file": "docs/standalone/vs-code-plugin-scratchpads-insrc-scratches-E202611134642d49a/S001/component-dependency.html"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-13T11:35:02.462Z"
+        "timestamp": "2026-11-13T11:36:10.781Z"
       },
       {
         "target": {
           "file": "docs/standalone/vs-code-plugin-scratchpads-insrc-scratches-E202611134642d49a/S001/sequence-diagram.html"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-13T11:35:02.462Z"
+        "timestamp": "2026-11-13T11:36:10.781Z"
       },
       {
         "target": {
           "file": "docs/standalone/vs-code-plugin-scratchpads-insrc-scratches-E202611134642d49a/S001/ux-mock.html"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-13T11:35:02.462Z"
+        "timestamp": "2026-11-13T11:36:10.781Z"
       }
     ],
-    "commit": "ae1d3633c"
+    "commit": "d59524dff"
   },
   "citations": []
 }

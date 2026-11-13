@@ -399,13 +399,14 @@ import { fire, type BodyStub } from './fake-dom.js';
 interface FakeScratchStore extends ScratchStore {
   readonly calls: string[];
   failList: boolean;
+  failCreate: boolean;
   entries: ScratchEntry[];
   created: string[];
   deleted: string[];
 }
 const fakeStore = (): FakeScratchStore => {
   const s: FakeScratchStore = {
-    calls: [], failList: false, created: [], deleted: [],
+    calls: [], failList: false, failCreate: false, created: [], deleted: [],
     entries: [{ id: '20260113-090000-late.md', name: '20260113-090000-late', mtime: 400, size: 1 }],
     listScratches: async (limit?: number) => {
       s.calls.push(`list:${limit ?? 'all'}`);
@@ -414,6 +415,7 @@ const fakeStore = (): FakeScratchStore => {
     },
     createScratch: async (title: string) => {
       s.calls.push(`create:${title}`);
+      if (s.failCreate) throw new Error('ENOSPC: no space left on device');
       s.created.push(title);
       const e: ScratchEntry = { id: `${title}.md`, name: title, mtime: 500, size: 0 };
       s.entries = [e, ...s.entries];
@@ -524,6 +526,31 @@ test('extension-chat-wiring.test.ts: scratch-new title acquisition end-to-end â€
   const lists = chat.posted.filter((m) => m.type === 'scratch-list');
   assert.equal(lists.length, 1, 'the changed list is re-sent');
   assert.equal(((lists[0] as { entries: ScratchEntry[] }).entries)[0]?.id, 'My Pad.md', 'the new scratchpad heads the list');
+});
+
+test('extension-chat-wiring.test.ts: scratch-new with a FAILING create still re-sends the list but WITH the error field (the menu must not look healthy after a failed create)', async () => {
+  const store = fakeStore();
+  const panels = fakePanels();
+  const chat = fakeChat();
+  const host = createScratchHost({ store, panels, chat, promptTitle: async () => 'Broken Pad', logger: { warn: () => {} } });
+  store.failCreate = true; // createScratch rejects; the subsequent listScratches succeeds
+  host.onMessage({ type: 'scratch-new' });
+  await flush();
+  assert.deepEqual(store.created, [], 'nothing was created');
+  assert.deepEqual(panels.calls, [], 'no browse refresh / document open on a failed create');
+  const lists = chat.posted.filter((m) => m.type === 'scratch-list');
+  assert.equal(lists.length, 1, 'the list is still re-sent after a failed create');
+  const list = lists[0] as { entries: ScratchEntry[]; error?: string };
+  assert.deepEqual(list.entries, store.entries.slice(0, 5), 'the entries are the (unchanged, successful) list');
+  assert.match(list.error ?? '', /^create failed: Error: ENOSPC: no space left on device$/, 'the re-sent list carries the create error, not a silent healthy menu');
+  // A later successful create recovers: the next list has NO error field.
+  chat.posted.length = 0;
+  store.failCreate = false;
+  host.onMessage({ type: 'scratch-new' });
+  await flush();
+  const recovered = chat.posted.filter((m) => m.type === 'scratch-list');
+  assert.equal(recovered.length, 1, 'the recovered create re-sends the list');
+  assert.ok(!('error' in (recovered[0] as object)), 'the recovered list carries no error field');
 });
 
 test('extension-chat-wiring.test.ts: scratch-list error field renders the unavailable row and a later success recovers; host switch cases for all six webview->host messages and both host->webview pushes', async () => {

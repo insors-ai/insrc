@@ -59,10 +59,15 @@ export const SCRATCH_MENU_LIMIT = 5;
 export function createScratchHost(deps: ScratchHostDeps): ScratchHost {
   const log = deps.logger ?? { warn: () => {} };
 
-  /** Answer scratch-open-menu with the recent top-5; a store failure carries the error field. */
-  const sendScratchList = async (): Promise<void> => {
+  /**
+   * Answer scratch-open-menu with the recent top-5; a store failure carries the error
+   * field. `forceError` lets a caller that already failed (e.g. scratch-new's create)
+   * still push the error line even when the list itself succeeds — otherwise the menu
+   * would look healthy and hide the failure.
+   */
+  const sendScratchList = async (forceError?: string | undefined): Promise<void> => {
     let entries: readonly ScratchEntry[] = [];
-    let error: string | undefined;
+    let error: string | undefined = forceError;
     try {
       entries = await deps.store.listScratches(SCRATCH_MENU_LIMIT);
     } catch (err) {
@@ -114,8 +119,10 @@ export function createScratchHost(deps: ScratchHostDeps): ScratchHost {
             await deps.panels.openDocument(entry.id);
             void sendScratchList();
           } catch (err) {
+            // The create failed: re-send the list WITH the error so the menu surfaces
+            // the failure instead of silently looking unchanged/healthy.
             log.warn(`[scratches] create failed: ${String(err)}`);
-            void sendScratchList();
+            void sendScratchList(`create failed: ${String(err)}`);
           }
         })();
         return;

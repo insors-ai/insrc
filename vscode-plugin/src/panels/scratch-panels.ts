@@ -316,6 +316,14 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
 
   const openDocument = async (id: string): Promise<ScratchPanelHandle | undefined> => {
     const generation = ++docGeneration;
+    // Retire the previous generation's bookkeeping: this open's setHtml replaces the
+    // old webview (or the panel was disposed/closed, which also bumps the counter),
+    // so a stored replay copy for it can never be consumed — drop it so neither map
+    // grows without bound across opens.
+    if (generation > 1) {
+      readyGenerations.delete(generation - 1);
+      pendingContent.delete(generation - 1);
+    }
     const epoch = epochs.get(id) ?? 0;
     const handle = openSingleton(
       SCRATCHPAD_VIEW_TYPE,
@@ -330,6 +338,9 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
           else if (msg.type === 'scratch-ready') {
             // The webview finished installing its listeners: replay the current
             // generation's content so a read that completed before readiness is not lost.
+            // The ready flag STAYS for this generation (retired when the next open bumps
+            // the counter) so a read completing AFTER ready is not retained either —
+            // only a not-yet-ready generation may hold a replay copy.
             readyGenerations.add(docGeneration);
             const pending = pendingContent.get(docGeneration);
             if (pending !== undefined && !disposed && showingId === pending.id) {
@@ -363,10 +374,13 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
       // Generation guard: a late read of A is dropped when B was opened meanwhile; a stale
       // epoch (the id was deleted) drops it too; dispose bumps the generation as well.
       if (disposed || docGeneration !== generation || (epochs.get(id) ?? 0) !== epoch || showingId !== id) return handle;
-      // Replay-safe: post immediately, and ALSO hold a replay copy keyed by generation so
-      // the webview's scratch-ready handshake (fired after setHtml installs listeners)
-      // can recover the content if the webview was not yet listening when we posted.
-      pendingContent.set(generation, { id, content });
+      // Replay-safe: post immediately, and hold a replay copy keyed by generation ONLY
+      // while the webview has not yet signalled scratch-ready for this generation (the
+      // handshake fires after setHtml installs listeners, so it can recover content
+      // posted before it was listening). Once the generation is ready the content is
+      // already delivered — retaining it would leak, since no later scratch-ready can
+      // consume it.
+      if (!readyGenerations.has(generation)) pendingContent.set(generation, { id, content });
       handle.postMessage({ v: 1, payload: { type: 'scratch-content', text: content } });
     } catch (err) {
       if (err instanceof ScratchNotFound) {

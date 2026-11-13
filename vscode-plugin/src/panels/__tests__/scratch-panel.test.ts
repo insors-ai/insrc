@@ -353,6 +353,73 @@ test('scratch-panel.test.ts: A->B document switching asserts setTitle(B) on the 
   assert.deepEqual(contents, ['content B']);
 });
 
+test('scratch-panel.test.ts: scratch-ready vs read-completion ordering — ready BEFORE the read completes delivers content exactly once and retains no replay copy; read BEFORE ready replays once and a second ready never re-posts (t6 readyGenerations/pendingContent retention)', async () => {
+  const contentsOf = (panel: FakePanel): string[] =>
+    panel.posted.filter((m) => (m as { payload?: { type?: string } }).payload?.type === 'scratch-content')
+      .map((m) => (m as { payload: { text: string } }).payload.text);
+
+  // Order 1: scratch-ready arrives while the read is still in flight. The read's
+  // completion must post directly and must NOT retain a pendingContent copy (the
+  // generation is already ready) — a later duplicate ready must not re-post.
+  {
+    const h = harness();
+    await seed(h, 'a.md', 'content A', 1);
+    let release!: () => void;
+    const gate = new Promise<void>((r) => { release = r; });
+    const origRead = h.store.readScratch.bind(h.store);
+    const store: ScratchStore = {
+      ...h.store,
+      readScratch: async (id: string) => {
+        if (id === 'a.md') { await gate; return origRead(id); }
+        return origRead(id);
+      },
+    };
+    const c = createScratchPanels({ panels: h.factory, store, genNonce: () => 'N', setPanelTitle: () => {}, onSendToChat: () => {} });
+    const open = c.openDocument('a.md');
+    await new Promise((r) => setTimeout(r, 10));
+    const panel = h.panels.at(-1)!;
+    panel.injectMessage({ v: 1, payload: { type: 'scratch-ready' } }); // ready BEFORE the read resolves
+    release();
+    await open;
+    await new Promise((r) => setTimeout(r, 10));
+    assert.deepEqual(contentsOf(panel), ['content A'], 'the post-ready read posts its content exactly once');
+    panel.injectMessage({ v: 1, payload: { type: 'scratch-ready' } }); // duplicate ready: nothing to replay
+    await new Promise((r) => setTimeout(r, 10));
+    assert.deepEqual(contentsOf(panel), ['content A'], 'a duplicate scratch-ready does not re-post — no replay copy was retained for a ready generation');
+  }
+
+  // Order 2: the read completes BEFORE scratch-ready. The content is posted once and a
+  // replay copy is retained; the first ready replays it (second delivery, expected —
+  // the webview was not listening yet), and a SECOND ready must not re-post again.
+  {
+    const h = harness();
+    await seed(h, 'b.md', 'content B', 2);
+    const c = createScratchPanels({ panels: h.factory, store: h.store, genNonce: () => 'N', setPanelTitle: () => {}, onSendToChat: () => {} });
+    await c.openDocument('b.md'); // read resolves immediately, before any ready
+    await new Promise((r) => setTimeout(r, 10));
+    const panel = h.panels.at(-1)!;
+    assert.deepEqual(contentsOf(panel), ['content B'], 'the pre-ready read posted its content once');
+    panel.injectMessage({ v: 1, payload: { type: 'scratch-ready' } });
+    await new Promise((r) => setTimeout(r, 10));
+    assert.deepEqual(contentsOf(panel), ['content B', 'content B'], 'the first ready replays the retained copy (the webview was not yet listening)');
+    panel.injectMessage({ v: 1, payload: { type: 'scratch-ready' } });
+    await new Promise((r) => setTimeout(r, 10));
+    assert.deepEqual(contentsOf(panel), ['content B', 'content B'], 'a second ready does not re-post — the replay copy was consumed');
+    // A NEXT open retires the previous generation's bookkeeping: open another doc, then
+    // a ready for the OLD webview state must not replay the old generation again.
+    await seed(h, 'c.md', 'content C', 3);
+    await c.openDocument('c.md');
+    await new Promise((r) => setTimeout(r, 10));
+    const panel2 = h.panels.at(-1)!;
+    assert.equal(panel2, panel, 'the document singleton is reused across opens');
+    panel2.injectMessage({ v: 1, payload: { type: 'scratch-ready' } });
+    await new Promise((r) => setTimeout(r, 10));
+    // The new generation's own retained copy replays (its read completed pre-ready);
+    // the OLD generation's copy was retired at the generation bump and is NOT replayed.
+    assert.deepEqual(contentsOf(panel2), ['content B', 'content B', 'content C', 'content C'], 'the new generation replays only its own content — the old generation was retired, never re-posted');
+  }
+});
+
 test('scratch-panel.test.ts: stale ENOENT, deleting a non-displayed document, delete invalidates pending opens of the deleted id, closing/reopening the document panel during an outstanding read (dispose invalidates the generation, late read dropped)', async () => {
   const h = harness();
   await seed(h, 'a.md', 'A', 1);

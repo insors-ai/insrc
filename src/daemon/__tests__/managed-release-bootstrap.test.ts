@@ -94,14 +94,11 @@ test('Only an authorized channel tag can reach checkout and npm', async t => {
 	await tag(2, key, 'HEAD', '/wrong-channel');
 	await denied(/configured channel/);
 	await tag(2);
+	await assert.rejects(shell(), error => (error as { code?: number }).code === 1);
+	await rm(trace);
 	const valid = await mkdtemp(join(root, 'valid-'));
 	await authorize(valid);
 	assert.equal(await readFile(join(valid, 'checkout/candidate'), 'utf8'), 'candidate source');
-	const receipt = JSON.parse(await readFile(join(valid, 'source-release.json'), 'utf8'));
-	const journal = join(state, 'managed-lifecycle');
-	await mkdir(journal, { mode: 0o700 });
-	await writeFile(join(journal, 'journal.json'), JSON.stringify({ version: 1, root: state, active: null, outcome: null,
-		sourceReleases: [receipt] }), { mode: 0o600 });
 	await authorize(await mkdtemp(join(root, 'retry-')));
 	await tag(1);
 	await denied(/stale/);

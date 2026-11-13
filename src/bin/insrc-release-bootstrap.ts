@@ -1,8 +1,9 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 
 import { execFile } from 'node:child_process';
+import { createHash, randomUUID } from 'node:crypto';
 import { constants } from 'node:fs';
-import { lstat, open, realpath, writeFile } from 'node:fs/promises';
+import { link, lstat, mkdir, open, readdir, realpath, rm, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -46,6 +47,52 @@ async function sourceFloors(stateRoot: string): Promise<VerifiedSourceRelease[]>
 		if (state.version !== 1 || state.root !== stateRoot) throw new Error('invalid installation journal identity');
 		return state.sourceReleases?.map(readVerifiedSourceRelease) ?? [];
 	} finally { await file.close(); }
+}
+
+/** The installer runs before the lifecycle helper exists. Publish immutable observations
+ * by sequence so concurrent installers cannot replace an already accepted tag. */
+async function persistBootstrapFloor(stateRoot: string, release: VerifiedSourceRelease): Promise<void> {
+	const channel = createHash('sha256').update(JSON.stringify(release.channel)).digest('hex');
+	const directory = join(stateRoot, 'source-release-' + channel);
+	await mkdir(directory, { mode: 0o700 }).catch((error: NodeJS.ErrnoException) => {
+		if (error.code !== 'EEXIST') throw error;
+	});
+	const owner = await lstat(directory);
+	if (!owner.isDirectory() || owner.uid !== process.getuid?.() || (owner.mode & 0o077) !== 0) {
+		throw new Error('source release journal is not a private owned directory');
+	}
+	const name = String(release.sequence).padStart(16, '0');
+	const path = join(directory, name);
+	const verify = async () => {
+		const newest = (await readdir(directory)).filter(item => /^\d{16}$/.test(item)).sort().at(-1);
+		if (newest === undefined) return;
+		const file = await open(join(directory, newest), constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+		try {
+			const info = await file.stat();
+			if (!info.isFile() || info.uid !== owner.uid || (info.mode & 0o077) !== 0 || info.size > 4096) {
+				throw new Error('invalid source release journal record');
+			}
+			const existing = readVerifiedSourceRelease(JSON.parse(await file.readFile('utf8')));
+			if (JSON.stringify(existing.channel) !== JSON.stringify(release.channel)
+				|| String(existing.sequence).padStart(16, '0') !== newest) throw new Error('invalid source release journal channel');
+			assertSourceReleaseFloor(release, [existing]);
+		} finally { await file.close(); }
+	};
+	await verify();
+	const temporary = join(directory, '.' + randomUUID());
+	const file = await open(temporary, 'wx', 0o600);
+	try {
+		try { await file.writeFile(JSON.stringify(release)); await file.sync(); }
+		finally { await file.close(); }
+		await link(temporary, path).catch((error: NodeJS.ErrnoException) => {
+			if (error.code !== 'EEXIST') throw error;
+		});
+		await verify();
+		for (const parent of [directory, stateRoot]) {
+			const dir = await open(parent, constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW);
+			try { await dir.sync(); } finally { await dir.close(); }
+		}
+	} finally { await rm(temporary, { force: true }); }
 }
 
 /** Fetch both refs together and authenticate the immutable source before any checkout. */
@@ -109,6 +156,7 @@ export async function checkoutAuthorizedRelease(
 ): Promise<void> {
 	const { git, ownedWorkspace, repository, receipt, stateRoot } = authorization;
 	assertSourceReleaseFloor(receipt, await sourceFloors(stateRoot));
+	await persistBootstrapFloor(stateRoot, receipt);
 	await git(ownedWorkspace, ['clone', '--quiet', '--no-checkout', '--no-local', '--template=', '--', repository, checkout]);
 	await git(checkout, ['fetch', '--quiet', '--no-tags', '--', repository, HEAD_REF]);
 	await git(checkout, ['checkout', '--quiet', '--detach', receipt.commit, '--']);

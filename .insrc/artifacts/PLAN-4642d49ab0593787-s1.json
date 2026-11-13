@@ -1,0 +1,508 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1794558632722-vzhg63",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-13T08:44:13.204Z",
+    "epicCreatedAt": "2026-11-13T06:38:38.894Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 820079,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4642d49ab0593787",
+    "epicSlug": "vs-code-plugin-scratchpads-insrc-scratches",
+    "storyId": "s1",
+    "lldRunId": "wf-1794551362794-fdm5ky",
+    "lldEffectiveHash": "4642d49ab05937875f19515259d7eb6462b9450c4f63748f90ab18e833fe595e",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d02d5dd88658c1d3e8e69a197e0572bb2ee35f87538b752138125de7c2fdba74",
+        "at": "2026-11-13T08:44:13.297Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-13T08:52:25.305Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "aa7016b6a384419a4547376e892ac593156ae7a5"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Building this Story adds a fully in-plugin scratchpads feature to the VS Code chat, in seven small units: a vscode-free filesystem store over ~/.insrc/scratches (the trickiest part — atomic link-only publication, no-follow reads, idempotent delete), additive direction-isolated protocol messages, a shared CSP shell extraction, the chat status-bar button + popup menu + input insertion, a scratch-panels controller with the tabular browse-all view, its singleton document view with the floating Send-to-chat button and generation/epoch guards, and finally the extension-host wiring that ties store + panels + handlers together. No daemon IPC is introduced anywhere; every unit is proven by unit/integration fake-dom+fs tests, with an optional manual smoke as the only non-automated level."
+    },
+    "tasks": [
+      {
+        "acceptanceChecks": [
+          "vscode-plugin/src/chat/scratch-store.ts + __tests__/fake-scratch-fs.ts are new files only (no edits to existing modules)",
+          "createScratchStore({root}) with fs omitted defaults to the node adapter; production wiring passes only { root, logger }",
+          "listScratches() returns ScratchEntry[] {id,name,mtime,size} sorted mtime desc (ties id asc), ENOENT readdir -> [], skips non-files/failed stats/non-.md, optional limit cap (menu uses 5; browse-all omits)",
+          "createScratch(title, body?) writes <yyyymmdd-hhmmss>-<slug>.md (slug: lowercase, spaces->dashes, non [a-z0-9-] dropped, all-symbol -> 'scratch'), collision ladder -2,-3 via lstat probes",
+          "publication is link(temp,new)+unlink(temp) ONLY (never rename): temp name has pid+random suffix and does not match *.md; EEXIST -> next suffix; post-link unlink failure is non-fatal and never returned as failure",
+          "readScratch validates id (^[A-Za-z0-9][A-Za-z0-9._-]*\\.md$, not '.'/'..', resolve strictly inside root) then open(O_RDONLY|O_NOFOLLOW)+fstat regular file -> else ScratchRefused; ENOENT at open or fd-read -> ScratchNotFound; single fd is source of truth",
+          "deleteScratch validates via lstat regular file (symlinks refused -> ScratchRefused), unlink only (never recursive), ENOENT at lstat or unlink treated as success (idempotent)",
+          "error mapping: EACCES/ENOSPC/EROFS/not-a-dir -> ScratchStoreError; unit tests with fake fs prove refusal paths make ZERO fs mutation calls",
+          "unit suite scratch-store.test.ts passes incl. two-instance concurrent-create race over a real tmp dir proving exclusive publication"
+        ],
+        "dependsOn": [],
+        "derivedFrom": [
+          "c3",
+          "c4"
+        ],
+        "id": "t1",
+        "order": 1,
+        "size": "M",
+        "summary": "New vscode-free store module vscode-plugin/src/chat/scratch-store.ts (ScratchFs interface + nodeScratchFs node default, createScratchStore/listScratches/createScratch/readScratch/deleteScratch) over plain .md files in the store root, mirroring attachment-store.ts's optional-fs + deps-injected pattern; plus fake-scratch-fs.ts and scratch-store.test.ts unit tests. link()-only atomic no-clobber publication, O_NOFOLLOW fd reads, ENOENT->[] and idempotent delete, ScratchRefused/ScratchNotFound/ScratchStoreError mapping. No daemon IPC.",
+        "tests": [
+          {
+            "level": "unit",
+            "name": "scratch-store.test.ts: listScratches returns entries sorted by mtime desc with id/name/mtime/size (ENOENT->[], non-.md skipped, limit cap, ties id asc)"
+          },
+          {
+            "level": "unit",
+            "name": "scratch-store.test.ts: createScratch writes <yyyymmdd-hhmmss>-<slug>.md via temp write + link()+unlink publication (never rename), collision ladder -2/-3, slug rules incl. all-symbol fallback 'scratch'; entry appears at list head"
+          },
+          {
+            "level": "unit",
+            "name": "scratch-store.test.ts: refusal tests — ids '.', '..', traversal strings, symlinks and directories named *.md cause ScratchRefused with ZERO fs mutation calls recorded by fake-scratch-fs"
+          },
+          {
+            "level": "unit",
+            "name": "scratch-store.test.ts: concurrent-create race with two independent store instances over the same real tmp dir — both racing creates succeed with distinct files, contents intact (link()+unlink exclusive publication, EEXIST suffix retry)"
+          },
+          {
+            "level": "unit",
+            "name": "scratch-store.test.ts: ENOENT mapping — readdir ENOENT -> []; absence before lstat and disappearance between lstat and final read/unlink -> ScratchNotFound (read) / success (delete, idempotent)"
+          },
+          {
+            "level": "unit",
+            "name": "scratch-store.test.ts: readScratch opens with O_RDONLY|O_NOFOLLOW + fstat single-fd regular-file check — symlink swapped in after validation yields ELOOP -> ScratchRefused; error mapping EACCES/ENOSPC/EROFS -> ScratchStoreError"
+          }
+        ],
+        "title": "Scratch store module + unit tests (vscode-free, fake-fs drivable)"
+      },
+      {
+        "acceptanceChecks": [
+          "six webview->host types ('scratch-open-menu', titleless 'scratch-new', 'scratch-open' {id}, 'scratch-delete' {id}, 'scratch-browse', 'send-to-chat' {text}) added ONLY to the webview->host union and WEBVIEW_TO_HOST_TYPES (protocol.ts:403)",
+          "two host->webview types ('scratch-list' {entries, error?}, 'insert-into-input' {text}) added ONLY to the host->webview union and HOST_TO_WEBVIEW_TYPES (:378)",
+          "protocol.test.ts asserts exhaustiveness, direction isolation (each new type in its own array and NOT the other's), and union/array equality — all passing",
+          "payload field names are part of the contract; ids/texts/titles are strings at runtime (non-strings rejected by the host switch)",
+          "change is purely additive — no existing message type, union member, or array entry altered"
+        ],
+        "dependsOn": [],
+        "derivedFrom": [
+          "c2"
+        ],
+        "id": "t2",
+        "order": 2,
+        "size": "S",
+        "summary": "Extend vscode-plugin/src/chat/protocol.ts with the eight scratchpad message types, each in its OWN direction's union + const array only (direction-isolated), and update protocol.test.ts exhaustiveness/direction-isolation assertions. Purely additive.",
+        "tests": [
+          {
+            "level": "integration",
+            "name": "protocol.test.ts: all eight new message types appear in their own direction's union + const array only, with direction-isolation and union/array-equality assertions passing (ac5)"
+          }
+        ],
+        "title": "Protocol: 8 new direction-isolated message types + exhaustiveness tests"
+      },
+      {
+        "acceptanceChecks": [
+          "panels/shell.ts exports the shared CSP+nonce shellHtml extracted verbatim from panels/webview-host.ts:635",
+          "webview-host.ts re-uses the extraction; all existing CSP/nonce tests keep passing unchanged (panels/__tests__/webview-host.test.ts, chat-shell.test.ts)",
+          "chat panel and both scratch viewTypes consume the identical shell from panels/shell.ts"
+        ],
+        "dependsOn": [],
+        "derivedFrom": [
+          "c1"
+        ],
+        "id": "t3",
+        "order": 3,
+        "size": "S",
+        "summary": "Extract the shared CSP+nonce shell (shellHtml) from panels/webview-host.ts:635 into a new panels/shell.ts so the chat panel and both scratch viewTypes share the identical shell; webview-host re-exports/uses it; existing CSP/nonce tests keep passing.",
+        "tests": [
+          {
+            "level": "integration",
+            "name": "webview-host.test.ts + chat-shell.test.ts: existing CSP/nonce tests preserved when the shell is extracted to panels/shell.ts (shell output byte-identical, all existing assertions pass unmodified)"
+          }
+        ],
+        "title": "Extract shared webview CSP+nonce shell into panels/shell.ts"
+      },
+      {
+        "acceptanceChecks": [
+          "#insrc-scratch sibling button (class attachbtn, inline SVG icon, title=\"scratchpads\") rendered directly next to #insrc-attach (:2796) in the statusbar (:2794)",
+          "attach flow byte-for-byte untouched — proven by the pre-existing attach tests (chat-shell.test.ts:332-340 and :530, chat-panel.test.ts:5046) passing UNMODIFIED alongside the 'pick-attachments' host case at chat-panel.ts:3566",
+          "#insrc-scratchmenu .popup.chatmenu reusing the #insrc-histmenu pattern (:2766; opens upward :2289, rows :2296) renders recent entries + \"New scratchpad\" + \"Browse all\" from a 'scratch-list' push, plus empty-state hint and error row ('scratchpads unavailable: <reason>')",
+          "bootstrap click listener on #insrc-scratch posts {type:'scratch-open-menu'}; menu rows post scratch-open {id} / scratch-new (titleless) / scratch-browse",
+          "host->webview 'insert-into-input' handler applies the deterministic insertion rule to #insrc-input (:2784) only: splice at caret replacing an active range selection; append with one separating newline only when caret at end and value non-empty; focus #insrc-input; #insrc-prompt (:2783) is NEVER a target; never posts submit/cancel",
+          "CSS reuses existing .attachbtn/.popup/.item rules; only minimal new styles added",
+          "chat-panel.test.ts gains assertions for button markup, menu render from scratch-list, bootstrap post, and insert-into-input mid-draft-caret and active-range cases"
+        ],
+        "dependsOn": [
+          "t2"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "id": "t4",
+        "order": 4,
+        "size": "M",
+        "summary": "Chat webview DOM + bootstrap in vscode-plugin/src/chat/chat-panel.ts: sibling icon-only #insrc-scratch .attachbtn button next to #insrc-attach, #insrc-scratchmenu .popup.chatmenu (recent + New scratchpad + Browse all + empty/error rows), click listener posting scratch-open-menu, and the insert-into-input handler on #insrc-input (:2784). Attach flow proven untouched by unmodified existing tests; chat-panel.test.ts extended.",
+        "tests": [
+          {
+            "level": "integration",
+            "name": "chat-panel.test.ts: #insrc-scratch sibling button with class attachbtn + inline SVG + title exists next to #insrc-attach (ac2, ac5)"
+          },
+          {
+            "level": "integration",
+            "name": "chat-panel.test.ts: #insrc-scratchmenu .popup.chatmenu renders recent items + New scratchpad + Browse all from a scratch-list push, incl. empty-state hint and error row (ac2)"
+          },
+          {
+            "level": "integration",
+            "name": "chat-panel.test.ts: bootstrap click on #insrc-scratch posts {type:'scratch-open-menu'} (ac2)"
+          },
+          {
+            "level": "integration",
+            "name": "chat-panel.test.ts: host insert-into-input handler inserts into #insrc-input (:2784) per the deterministic rule — caret mid-draft in a non-empty draft, and an active range selection replaced — existing content preserved, focuses it, no submit-turn/cancel-turn posted (ac4)"
+          },
+          {
+            "level": "integration",
+            "name": "chat-panel.test.ts + scratch-panel.test.ts: every button in the new UI is icon-only with a title attribute — no visible text content on buttons (ac5)"
+          }
+        ],
+        "title": "Chat webview: scratchpad button, popup menu, insert-into-input handler"
+      },
+      {
+        "acceptanceChecks": [
+          "vscode-plugin/src/panels/scratch-panels.ts is a NEW vscode-free controller wrapping the injected PanelFactory (extension.ts:447) with its own create-or-reveal singleton cache per viewType (mirroring openSingleton webview-host.ts:214); onDidDispose clears the cached handle",
+          "handle exposes setHtml/reveal/setTitle/onDidDispose/onMessage/postMessage/dispose — setTitle is an injected op with a production adapter to the underlying WebviewPanel title; stock PanelHandle (panels/types.ts:134-135) has none",
+          "insrc.scratchpads browse view renders a tabular editor pane: Name + Modified columns, per-row icon-only Open/Delete buttons with title hover text and data-id posting scratch-open {id}/scratch-delete {id}, empty hint row, error row; table data comes from an UNBOUNDED listScratches() (no limit) fetched by the host, never the capped menu list",
+          "panel creation failure returns undefined + panelLog warning (never throws) and next click retries",
+          "scratch-panel.test.ts (new) covers browse table, row buttons, empty/error states, create-or-reveal reuse of a single panel instance"
+        ],
+        "dependsOn": [
+          "t2",
+          "t3"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "id": "t5",
+        "order": 5,
+        "size": "M",
+        "summary": "NEW vscode-free scratch-panels controller (panels/scratch-panels.ts): wraps the injected PanelFactory with per-viewType create-or-reveal singletons + injected setTitle, and implements the insrc.scratchpads browse-all tabular editor-pane view (Name/Modified columns, icon-only Open/Delete rows with title hover text + data-id, empty/error rows, unbounded list data). Plus the browse-table half of scratch-panel.test.ts.",
+        "tests": [
+          {
+            "level": "integration",
+            "name": "scratch-panel.test.ts: browse viewType insrc.scratchpads renders a table with Name and Modified columns (ac3)"
+          },
+          {
+            "level": "integration",
+            "name": "scratch-panel.test.ts: each row has icon-only Open/Delete buttons (title hover text, data-id) posting scratch-open/scratch-delete (ac3, ac5)"
+          },
+          {
+            "level": "integration",
+            "name": "scratch-panel.test.ts: empty list renders a hint row; create-or-reveal reuses a single panel instance; panel-factory failure returns undefined + logged and next click retries (ac3)"
+          }
+        ],
+        "title": "Scratch panels controller + browse-all table view (insrc.scratchpads)"
+      },
+      {
+        "acceptanceChecks": [
+          "insrc.scratchpad document view renders content via textContent only (CSP-safe)",
+          "selectionchange with non-empty selection reveals the floating icon-only Send-to-chat button (title=\"Send to chat\") anchored at the selection; collapsed selection keeps it hidden; click posts {type:'send-to-chat', text} with the text captured at selectionchange (focus/selectionchange cannot lose it), truncated multibyte-safe so the final string incl. ellipsis stays within 65,536 UTF-8 bytes (boundary test included)",
+          "FIRST-CLASS contract — singleton A->B switch: opening B while A is displayed calls setTitle(B)+setHtml on the SAME cached panel instance, bumps the per-open generation counter, and drops a late-resolving read of A; verified by the reversed-read-completion test named in the LLD testStrategy",
+          "deleteScratch(id) bumps that id's epoch invalidating every pending open of it (in-flight read of a deleted id is dropped, not rendered); ScratchNotFound closes the panel only if it currently displays that failing id; a stale ScratchNotFound for another id is ignored; dispose invalidates the generation check",
+          "scratch-panel.test.ts document-view tests cover textContent-only render, floating button on selection, A->B setTitle on same instance with reversed read completion, stale ENOENT, deleting a non-displayed document, generation guard, dispose-during-read, selection-to-button click preserving the captured selection, UTF-8 cap boundary case"
+        ],
+        "dependsOn": [
+          "t5"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "id": "t6",
+        "order": 6,
+        "size": "M",
+        "summary": "Add the insrc.scratchpad document view to the scratch-panels controller: textContent-only content render, selectionchange floating icon-only Send-to-chat button posting capped send-to-chat {text} (text captured at selectionchange), singleton with per-open generation counter (A->B switch = setTitle+setHtml on the same panel, late reads dropped), epoch bump on delete invalidating pending opens, ScratchNotFound closes the panel only if it displays that id. Plus the document-view half of scratch-panel.test.ts.",
+        "tests": [
+          {
+            "level": "integration",
+            "name": "scratch-panel.test.ts: document viewType insrc.scratchpad renders content via textContent only (ac4)"
+          },
+          {
+            "level": "integration",
+            "name": "scratch-panel.test.ts: selectionchange with non-empty selection shows the floating icon-only Send-to-chat button (title) which posts send-to-chat {text}; selection-to-button click preserves the captured selection across focus/selectionchange (ac4, ac5)"
+          },
+          {
+            "level": "integration",
+            "name": "scratch-panel.test.ts: A->B document switching asserts setTitle(B) on the SAME panel instance alongside content, with reversed read completion (generation guard)"
+          },
+          {
+            "level": "integration",
+            "name": "scratch-panel.test.ts: stale ENOENT, deleting a non-displayed document, delete invalidates pending opens of the deleted id, closing/reopening the document panel during an outstanding read (dispose invalidates the generation, late read dropped)"
+          },
+          {
+            "level": "integration",
+            "name": "scratch-panel.test.ts: UTF-8 cap — final inserted string incl. ellipsis within 65,536 bytes, with a multibyte boundary case"
+          }
+        ],
+        "title": "Document view (insrc.scratchpad): render + floating Send-to-chat + generation/epoch guards"
+      },
+      {
+        "acceptanceChecks": [
+          "extension.ts constructs createScratchStore({ root: join(PATHS.insrc, 'scratches'), logger: panelLog }) next to the createAttachmentStore call (~:635) — fs omitted so the node default applies; root derives from PATHS.insrc (src/shared/paths.ts:4), never hard-coded",
+          "registers the six new webview->host handlers (scratch-open-menu -> scratch-list top 5; titleless scratch-new -> injected showInputBox boundary (extension.ts:606) then createScratch, cancel/empty-after-trim = no-op with unchanged list; scratch-open -> readScratch + document panel via the controller; scratch-delete -> delete then refresh open browse table and close document panel if it displays the id; scratch-browse -> unbounded listScratches + table panel; send-to-chat -> reveal chat panel, await its ready handshake, then push insert-into-input {text} capped at 65,536 UTF-8 bytes incl. ellipsis; disposed chat drops silently per :465-468 swallow pattern)",
+          "store failure replies 'scratch-list' { entries: [], error: 'scratchpads unavailable: <reason>' } (typed optional error field, attachments-pending pattern), distinct from a successful empty list",
+          "instantiates the scratch-panels controller with the panels factory (:447) and store and routes both panel message flows (browse rows, document send-to-chat)",
+          "non-string ids/texts/titles rejected by the host switch; unknown payload.type ignored without throwing",
+          "extension-chat-wiring.test.ts asserts the createScratchStore root wiring next to extension.ts:635; handler behaviors covered per acceptanceMapping (scratch-new cancel/answer end-to-end, scratch-list error row + later recovery, panel-factory failure -> undefined + logged + retry)",
+          "no daemon IPC anywhere: no LMDB/Lance/socket usage introduced (grep-verifiable)"
+        ],
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t5",
+          "t6"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "id": "t7",
+        "order": 7,
+        "size": "M",
+        "summary": "Wire the feature in vscode-plugin/src/extension.ts: construct the scratch store with root join(PATHS.insrc, 'scratches') next to the attachment store (~:635), instantiate the scratch-panels controller with the factory (:447), and register all host message handlers (menu/new/open/delete/browse/send-to-chat incl. reveal+ready-handshake before insert-into-input, typed error replies, input validation). Plus extension-chat-wiring.test.ts. No daemon IPC.",
+        "tests": [
+          {
+            "level": "integration",
+            "name": "extension-chat-wiring.test.ts: extension.ts constructs createScratchStore with root join(PATHS.insrc, 'scratches') (ac1)"
+          },
+          {
+            "level": "integration",
+            "name": "extension-chat-wiring.test.ts: scratch-new title acquisition end-to-end — prompt cancelled -> no create + unchanged list; prompt answered -> create + list refresh + document open"
+          },
+          {
+            "level": "integration",
+            "name": "extension-chat-wiring.test.ts: scratch-list error field renders the unavailable row and a later success recovers; host switch cases for all six webview->host messages and both host->webview pushes"
+          },
+          {
+            "level": "integration",
+            "name": "extension-chat-wiring.test.ts: send-to-chat reveals the chat panel, awaits the ready handshake, then pushes insert-into-input capped at 65,536 UTF-8 bytes; disposed chat drops silently"
+          },
+          {
+            "level": "smoke",
+            "name": "manual/optional smoke: click scratchpad button in the chat status bar, create a scratchpad, browse all, select text, Send to chat (only if a display/VS Code harness is available; otherwise covered by the integration fake-dom suite — no live LLM or daemon calls)"
+          }
+        ],
+        "title": "Extension wiring: scratch store construction + all host message handlers"
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "coveredByTaskIds": [
+          "t1"
+        ],
+        "lldStrategyItem": "vscode-plugin/src/chat/scratch-store.ts (new)"
+      },
+      {
+        "coveredByTaskIds": [
+          "t1"
+        ],
+        "lldStrategyItem": "vscode-plugin/src/chat/__tests__/scratch-store.test.ts (new)"
+      },
+      {
+        "coveredByTaskIds": [
+          "t1"
+        ],
+        "lldStrategyItem": "vscode-plugin/src/chat/__tests__/fake-scratch-fs.ts (new)"
+      },
+      {
+        "coveredByTaskIds": [
+          "t1"
+        ],
+        "lldStrategyItem": "refusal tests: ids '.', '..', traversal strings, symlinks and directories named *.md cause ScratchRefused with ZERO fs mutation calls (the fake fs records calls)"
+      },
+      {
+        "coveredByTaskIds": [
+          "t1"
+        ],
+        "lldStrategyItem": "concurrent-create test using TWO INDEPENDENT store instances over the SAME real (tmp) directory with filesystem-faithful link/rename semantics: racing creates on the same basename both succeed with distinct files and both complete contents survive (exclusive publication via link()+unlink, EEXIST retry of the suffix ladder)"
+      },
+      {
+        "coveredByTaskIds": [
+          "t1"
+        ],
+        "lldStrategyItem": "ENOENT tests: absence before lstat and disappearance between lstat and the final read/unlink"
+      },
+      {
+        "coveredByTaskIds": [
+          "t2",
+          "t4",
+          "t5",
+          "t6",
+          "t7"
+        ],
+        "lldStrategyItem": "vscode-plugin/src/chat/protocol.ts (extended)"
+      },
+      {
+        "coveredByTaskIds": [
+          "t4"
+        ],
+        "lldStrategyItem": "vscode-plugin/src/chat/chat-panel.ts (button, menu, bootstrap, host cases)"
+      },
+      {
+        "coveredByTaskIds": [
+          "t2"
+        ],
+        "lldStrategyItem": "vscode-plugin/src/chat/__tests__/protocol.test.ts (exhaustiveness + direction isolation + union/array equality)"
+      },
+      {
+        "coveredByTaskIds": [
+          "t4"
+        ],
+        "lldStrategyItem": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts (button/menu/insert-into-input)"
+      },
+      {
+        "coveredByTaskIds": [
+          "t5",
+          "t6"
+        ],
+        "lldStrategyItem": "vscode-plugin/src/chat/__tests__/scratch-panel.test.ts (new: browse table + document view + floating button)"
+      },
+      {
+        "coveredByTaskIds": [
+          "t7"
+        ],
+        "lldStrategyItem": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts (store root wiring next to extension.ts:635)"
+      },
+      {
+        "coveredByTaskIds": [
+          "t7"
+        ],
+        "lldStrategyItem": "vscode-plugin/src/extension.ts (createScratchStore wiring + handler registration)"
+      },
+      {
+        "coveredByTaskIds": [
+          "t4"
+        ],
+        "lldStrategyItem": "chat-panel.test.ts insert-into-input targets #insrc-input (existing textarea content preserved; no submit-turn/cancel-turn posted)"
+      },
+      {
+        "coveredByTaskIds": [
+          "t7"
+        ],
+        "lldStrategyItem": "scratch-new title acquisition end-to-end (prompt cancelled -> no create + unchanged list; prompt answered -> create + list refresh + document open)"
+      },
+      {
+        "coveredByTaskIds": [
+          "t7"
+        ],
+        "lldStrategyItem": "scratch-list error field renders the unavailable row and a later success recovers"
+      },
+      {
+        "coveredByTaskIds": [
+          "t6"
+        ],
+        "lldStrategyItem": "scratch-panel.test.ts A->B document switching asserting setTitle(B) on the SAME panel instance (tab title updated) alongside content, with reversed read completion"
+      },
+      {
+        "coveredByTaskIds": [
+          "t6"
+        ],
+        "lldStrategyItem": "stale ENOENT, deleting a non-displayed document, generation guard"
+      },
+      {
+        "coveredByTaskIds": [
+          "t6"
+        ],
+        "lldStrategyItem": "closing/reopening the document panel during an outstanding read (dispose invalidates the generation, late read dropped)"
+      },
+      {
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ],
+        "lldStrategyItem": "panels-factory failure returns undefined + logged notification and the next click retries; existing CSP/nonce tests preserved when the shell is extracted to panels/shell.ts"
+      },
+      {
+        "coveredByTaskIds": [
+          "t6"
+        ],
+        "lldStrategyItem": "selection-to-button click preserving the captured selection across focus/selectionchange"
+      },
+      {
+        "coveredByTaskIds": [
+          "t6"
+        ],
+        "lldStrategyItem": "UTF-8 cap: final inserted string incl. ellipsis within 65,536 bytes, with a multibyte boundary case"
+      },
+      {
+        "coveredByTaskIds": [
+          "t7"
+        ],
+        "lldStrategyItem": "manual/optional smoke: click scratchpad button in the chat status bar, create a scratchpad, browse all, select text, Send to chat"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "quotedText": "The attach flow is untouched: #insrc-attach button, .attachbar, and the 'pick-attachments' host case at chat-panel.ts:3566 keep their exact behavior; the scratchpad button is a sibling, not a modification. Webview CSP invariant: scratch content is rendered via textContent/escapeHtml only — never innerHTML with user content; new panels reuse the CSP+nonce shell from createWebviewPanelHost (panels/webview-host.ts:162). Send-to-chat never auto-sends a turn: insert-into-input only inserts text into #insrc-input (:2784) and focuses it; the user presses send.",
+      "ref": "LLD s1 (LLD-4642d49ab0593787-s1) invariantsToPreserve — chat surface + CSP + shell + insert-into-input invariants"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "quotedText": "Protocol exhaustiveness: every new message type appears in the protocol.ts union of its OWN direction AND in that direction's const array ONLY (host→webview types in HOST_TO_WEBVIEW_TYPES :378, webview→host types in WEBVIEW_TO_HOST_TYPES :403); protocol.test.ts asserts exhaustiveness, direction isolation (each new type in its own array and NOT the other's) and that each union covers its const array exactly.",
+      "ref": "LLD s1 (LLD-4642d49ab0593787-s1) invariantsToPreserve — protocol direction-isolation contract"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "quotedText": "Store pattern: the scratch store stays vscode-free and deps-injected (ScratchFs interface + node impl) exactly like attachment-store.ts, so tests drive it with fakes; root comes from PATHS.insrc (src/shared/paths.ts:4-8), never a hard-coded path.",
+      "ref": "LLD s1 (LLD-4642d49ab0593787-s1) invariantsToPreserve — vscode-free deps-injected store pattern over PATHS.insrc"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "quotedText": "Plain files, no daemon IPC: scratchpads are .md files under ~/.insrc/scratches only; no LMDB/Lance/daemon socket usage is introduced.",
+      "ref": "LLD s1 (LLD-4642d49ab0593787-s1) invariantsToPreserve — no-daemon-IPC scope constraint"
+    }
+  ]
+}

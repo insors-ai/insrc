@@ -8,7 +8,7 @@ What the build validation gate ran for each Task of this Story, and what each te
 
 ## t1
 
-Run at 2026-11-13T11:57:26.648Z on commit `3b770b064`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-13T11:58:40.894Z on commit `7f6911c0f`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: scratch-store.test.ts: listScratches returns entries sorted by mtime desc with id/name/mtime/size (ENOENT->[], non-.md skipped, limit cap, ties id asc)**
 

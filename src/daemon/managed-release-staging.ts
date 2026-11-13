@@ -12,6 +12,7 @@ import { checkUpdateSource } from '../shared/update-source.js';
 import type { UpdateSource } from '../shared/update-source.js';
 import { readReleaseCompatibility, requireQualifiedReleasePair } from './release-compatibility.js';
 import type { QualifiedReleasePair, ReleaseCompatibility } from './release-compatibility.js';
+import { measureManagedReleaseInventory } from './managed-release-inventory.js';
 
 const exec = promisify(execFile);
 const COMMIT = /^(?:[a-f0-9]{40}|[a-f0-9]{64})$/;
@@ -24,7 +25,14 @@ export interface ManagedReleaseQualification {
 	readonly pairs: readonly (QualifiedReleasePair & {
 		/** Captured from the qualified predecessor build and runtime, outside the live installation. */
 		readonly priorFingerprint: string;
+		readonly priorInventory?: RuntimeInventoryReference;
+		readonly candidateInventory?: RuntimeInventoryReference;
 	})[];
+}
+
+interface RuntimeInventoryReference {
+	readonly bytes: Buffer;
+	readonly digest: string;
 }
 
 export interface StagedReleasePin {
@@ -32,6 +40,7 @@ export interface StagedReleasePin {
 	readonly runtime: string;
 	readonly commit: string;
 	readonly fingerprint: string;
+	readonly inventoryVersion?: 1;
 }
 
 interface StageOptions {
@@ -147,7 +156,9 @@ export async function captureManagedReleasePin(root: string, runtime: string): P
 export async function verifyStagedReleasePin(release: StagedReleasePin): Promise<void> {
 	if (await cleanCheckoutCommit(release.root) !== release.commit
 		|| await realpath(release.runtime) !== release.runtime
-		|| await fingerprint(release.root, release.runtime) !== release.fingerprint) {
+		|| await (release.inventoryVersion === 1
+			? measureManagedReleaseInventory(release.root, release.runtime)
+			: fingerprint(release.root, release.runtime)) !== release.fingerprint) {
 		throw new Error('pinned release changed before cutover');
 	}
 }
@@ -175,6 +186,7 @@ export async function stageManagedRelease(options: StageOptions): Promise<{
 	if (priorRoot !== undefined && inside(priorRoot, releases)) throw new Error('staging would mutate the installed release');
 	let prior: StagedReleasePin | undefined;
 	let compatibility: QualifiedReleasePair | undefined;
+	let candidateInventory: RuntimeInventoryReference | undefined;
 	if (options.prior !== undefined) {
 		const { root: priorRoot, runtime: priorRuntime } = options.prior;
 		const commit = await cleanCheckoutCommit(priorRoot);
@@ -188,8 +200,16 @@ export async function stageManagedRelease(options: StageOptions): Promise<{
 		}
 		const qualifiedCandidate = readReleaseCompatibility(qualified.candidate);
 		compatibility = requireQualifiedReleasePair(priorProfile, candidateProfile, [{ prior: priorProfile, candidate: qualifiedCandidate }]);
-		prior = await pin(priorRoot, await realpath(priorRuntime), commit);
-		if (prior.fingerprint !== qualified.priorFingerprint) {
+		const resolvedPriorRuntime = await realpath(priorRuntime);
+		if ((qualified.priorInventory === undefined) !== (qualified.candidateInventory === undefined)) {
+			throw new Error('runtime inventory must qualify both releases');
+		}
+		candidateInventory = qualified.candidateInventory;
+		prior = qualified.priorInventory === undefined ? await pin(priorRoot, resolvedPriorRuntime, commit) : {
+			root: priorRoot, runtime: resolvedPriorRuntime, commit, inventoryVersion: 1,
+			fingerprint: await measureManagedReleaseInventory(priorRoot, resolvedPriorRuntime, qualified.priorInventory),
+		};
+		if (qualified.priorInventory === undefined && prior.fingerprint !== qualified.priorFingerprint) {
 			throw new Error('installed executable bytes differ from trusted qualification');
 		}
 	}
@@ -221,7 +241,10 @@ export async function stageManagedRelease(options: StageOptions): Promise<{
 		}
 		if (await cleanCheckoutCommit(root) !== candidateProfile.releaseId) throw new Error('candidate commit changed during build');
 		await access(join(root, 'out/bin/insrc-daemon-supervisor.js'), constants.R_OK);
-		const candidate = await pin(root, runtime, candidateProfile.releaseId);
+		const candidate: StagedReleasePin = candidateInventory === undefined ? await pin(root, runtime, candidateProfile.releaseId) : {
+			root, runtime, commit: candidateProfile.releaseId, inventoryVersion: 1,
+			fingerprint: await measureManagedReleaseInventory(root, runtime, candidateInventory),
+		};
 		if (prior !== undefined) await verifyStagedReleasePin(prior);
 		destination = undefined;
 		return { candidate, ...(prior !== undefined ? { prior } : {}), ...(compatibility !== undefined ? { compatibility } : {}) };

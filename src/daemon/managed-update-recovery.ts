@@ -7,13 +7,15 @@ import type { ManagedSupervisorLink } from '../cli/services/managed-daemon-contr
 import { matchesDarwinPeer, readDarwinIncarnation } from '../shared/darwin-lifecycle.js';
 import type { DarwinIncarnation } from '../shared/darwin-lifecycle.js';
 import type { RunFileGuard } from '../shared/daemon-run-files.js';
+import { measureManagedReleaseInventory } from './managed-release-inventory.js';
+import { recordedReleaseQualification } from '../shared/installation-mutation-gate.js';
 import type { InstallationMutationGate, MutationReservation } from '../shared/installation-mutation-gate.js';
 import {
 	inspectManagedJob, publishManagedSelector, registerManagedJob, removeManagedJob,
 	readManagedInstallation, requireAbsentManagedSelector, requireQuiescentInstallation, restoreAbsentManagedSelector, verifyFreshSelectorOwnership, verifyManagedSelectorFiles,
 } from '../shared/managed-daemon-installation.js';
 import type { ManagedInstallation, RegisteredManagedJob } from '../shared/managed-daemon-installation.js';
-import { connectManagedSupervisor, recordManagedUpdatePins, stageManagedCandidate, stageManagedUpdate, waitForGeneration } from './managed-update-handoff.js';
+import { connectManagedSupervisor, recordManagedUpdatePins, stageManagedCandidate, stageManagedUpdate, verifyManagedUpdateInventory, waitForGeneration } from './managed-update-handoff.js';
 import type { HandoffEffects, HandoffReceipt, ManagedUpdatePins } from './managed-update-handoff.js';
 import { recoverManagedTransaction, settleManagedUpdate } from './managed-update-transaction.js';
 import { drainLegacyDaemonForCutover, observeLegacyDrain } from './legacy-daemon-cutover.js';
@@ -231,6 +233,13 @@ class Rollback {
 			});
 		}
 		await verifyRollbackSelector(initial, this.operations);
+		const releaseProof = recordedReleaseQualification(initial);
+		const verifyPrior = async () => {
+			if (releaseProof !== undefined
+				&& await measureManagedReleaseInventory(prior.releaseRoot, prior.runtime) !== releaseProof.priorFingerprint) {
+				throw new Error('pinned rollback inventory changed');
+			}
+		};
 
 		if (legacyUpdate) {
 			await this.journal('rollback-legacy-service', prior.releaseId, async () => {
@@ -238,6 +247,7 @@ class Rollback {
 					await settleLegacyRunGuard(this.gate, initial, prior.stateRoot, this.purpose, this.legacyOperations.helper);
 					await restoreLegacyLauncher(this.gate, initial, this.legacyOperations.helper, this.purpose);
 				}
+				await verifyPrior();
 				if (legacy !== undefined) await this.legacyOperations.restore(legacy, prior, wasRunning, this.revalidate);
 				else if (launch?.kind === 'direct') await restoreDirectLegacyService(prior, launch, this.revalidate);
 				else await this.operations.quiescent(prior);
@@ -250,6 +260,7 @@ class Rollback {
 		}
 
 		await this.journal('rollback-job', prior.releaseId, async () => {
+			await verifyPrior();
 			const job = await this.operations.inspect(prior);
 			if (job?.pid == null) {
 				if (job !== undefined) await this.operations.remove(prior, this.revalidate);
@@ -345,8 +356,13 @@ export async function completeLegacyMigration(
 		async stage() {
 			await verifyRollbackSelector(update, operations);
 			await verifyOriginalLegacyRoute(update, legacyOperations);
-			if (launch !== undefined) await fenceLegacyLauncher(gate, update, legacyOperations.helper);
-			await recordManagedUpdatePins(gate, update, pins);
+			await verifyManagedUpdateInventory(pins);
+			if (pins.releaseQualification !== undefined) await recordManagedUpdatePins(gate, update, pins);
+			if (launch !== undefined) {
+				const archive = await fenceLegacyLauncher(gate, update, legacyOperations.helper);
+				await verifyManagedUpdateInventory(pins, archive);
+			}
+			if (pins.releaseQualification === undefined) await recordManagedUpdatePins(gate, update, pins);
 			await gate.recordIntent(update, 'predecessor-stop', entry);
 			let guard: RunFileGuard | undefined;
 			if (launch === undefined) {

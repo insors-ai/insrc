@@ -7,6 +7,7 @@ import type { SupervisorReply } from '../shared/daemon-supervisor-protocol.js';
 import type { AdmittedReleaseQualification, MutationReservation, InstallationMutationGate } from '../shared/installation-mutation-gate.js';
 import type { RunFileGuard } from '../shared/daemon-run-files.js';
 import { releaseMetadataDigest } from '../shared/managed-release-trust.js';
+import { measureManagedReleaseInventory } from './managed-release-inventory.js';
 import {
 	installFreshSelectorMember, publishManagedSelector, registerManagedJob, removeManagedJob, requireQuiescentInstallation,
 } from '../shared/managed-daemon-installation.js';
@@ -25,6 +26,16 @@ export interface ManagedUpdatePins {
 	readonly candidate: ManagedInstallation;
 	readonly compatibility: QualifiedReleasePair;
 	readonly releaseQualification?: Omit<AdmittedReleaseQualification, 'updateId'>;
+}
+
+/** Recheck signed raw pins at the live mutation boundary. The prior may have been archived. */
+export async function verifyManagedUpdateInventory(pins: ManagedUpdatePins, priorRoot = pins.prior.releaseRoot): Promise<void> {
+	const proof = pins.releaseQualification;
+	if (proof === undefined) return;
+	if (await measureManagedReleaseInventory(priorRoot, pins.prior.runtime) !== proof.priorFingerprint
+		|| await measureManagedReleaseInventory(pins.candidate.releaseRoot, pins.candidate.runtime) !== proof.candidateFingerprint) {
+		throw new Error('pinned runtime inventory changed before cutover');
+	}
 }
 
 export function qualifyManagedUpdate(
@@ -139,6 +150,7 @@ export async function stageManagedUpdate(
 			|| (predecessor.generation !== undefined && predecessor.generation !== status.generation)) {
 			throw new Error('predecessor state changed after update reservation');
 		}
+		await verifyManagedUpdateInventory(pins);
 		await intent('predecessor-stop', JSON.stringify({ generation: status.generation, state: status.state }));
 		let stopped = status;
 		if (status.state === 'running' && status.generation !== null) {

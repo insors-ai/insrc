@@ -140,23 +140,21 @@ test('scratch-store.test.ts: refusal tests — ids \'.\', \'..\', traversal stri
   fake.linkTargets.set(`${ROOT}/evil.md`, '/etc/passwd');
   fake.dirs.add(`${ROOT}/dir.md`);
   fake.kinds.set(`${ROOT}/dir.md`, 'dir');
+  const mark = fake.calls.length;
 
   for (const bad of ['.', '..', 'a/b.md', '../x.md', 'noext', '.md', 'x.MD', '20260101-a.md/../../evil.md', '', 'x y.md']) {
-    const mark = fake.calls.length;
     await assert.rejects(store.readScratch(bad), (e: unknown) => e instanceof ScratchRefused, `read ${JSON.stringify(bad)}`);
     await assert.rejects(store.deleteScratch(bad), (e: unknown) => e instanceof ScratchRefused, `delete ${JSON.stringify(bad)}`);
-    assert.deepEqual(fake.mutationsSince(mark), [], `no fs mutation for ${JSON.stringify(bad)}`);
   }
-
-  // Symlink and directory named *.md are refused by the lstat/open checks.
+  // Symlink and directory named *.md are refused too (ELOOP at the no-follow open / lstat).
   await assert.rejects(store.deleteScratch('evil.md'), (e: unknown) => e instanceof ScratchRefused);
   await assert.rejects(store.readScratch('evil.md'), (e: unknown) => e instanceof ScratchRefused);
   await assert.rejects(store.deleteScratch('dir.md'), (e: unknown) => e instanceof ScratchRefused);
-  // Refusals never mutated the fs.
-  assert.deepEqual(fake.mutationsSince(0).filter((c) => c.op === 'unlink' && c.path !== `${ROOT}/evil.md`), []);
+  // Every refusal above made ZERO fs mutation calls.
+  assert.deepEqual(fake.mutationsSince(mark), []);
 });
 
-test('scratch-store.test.ts: ENOENT mapping — readdir ENOENT -> []; absence before lstat and disappearance between lstat and the final read/unlink -> ScratchNotFound (read) / success (delete, idempotent)', async () => {
+test('scratch-store.test.ts: ENOENT mapping — readdir ENOENT -> []; absence before lstat and disappearance between lstat and final read/unlink -> ScratchNotFound (read) / success (delete, idempotent)', async () => {
   const { fake, store } = setup();
   await fake.fs.mkdir(ROOT);
   // Absence before open -> ScratchNotFound.
@@ -211,20 +209,39 @@ test('scratch-store.test.ts: readScratch opens with O_RDONLY|O_NOFOLLOW + fstat 
   fake.files.delete(`${ROOT}/20260101-000000-ok.md`);
   await assert.rejects(store.readScratch('20260101-000000-ok.md'), (e: unknown) => e instanceof ScratchRefused);
 
-  // A directory named *.md: the no-follow open refuses it (EISDIR maps to ScratchRefused
-  // via the not-a-regular-file guard in the store).
+  // A directory named *.md: the open succeeds (as a real O_RDONLY open on a dir does)
+  // and the fd fstat reports isFile=false -> ScratchRefused.
   fake.kinds.set(`${ROOT}/20260101-000000-ok.md`, 'dir');
   fake.files.delete(`${ROOT}/20260101-000000-ok.md`);
   await assert.rejects(store.readScratch('20260101-000000-ok.md'), (e: unknown) => e instanceof ScratchRefused);
   fake.kinds.set(`${ROOT}/20260101-000000-ok.md`, 'file');
   fake.files.set(`${ROOT}/20260101-000000-ok.md`, Buffer.from('hello scratch', 'utf8'));
 
-  // Error mapping: EACCES on readdir/create surfaces as ScratchStoreError.
+  // Error mapping: EACCES/ENOSPC/EROFS on readdir/create surface as ScratchStoreError.
   fake.failOn = (c) => (c.op === 'readdir' ? eacces(c.path) : undefined);
   await assert.rejects(store.listScratches(), (e: unknown) => e instanceof ScratchStoreError);
   fake.failOn = (c) => (c.op === 'writeFile' ? Object.assign(new Error('ENOSPC'), { code: 'ENOSPC' }) : undefined);
   await assert.rejects(store.createScratch('full disk'), (e: unknown) => e instanceof ScratchStoreError);
+  fake.failOn = (c) => (c.op === 'mkdir' ? Object.assign(new Error('EROFS'), { code: 'EROFS' }) : undefined);
+  await assert.rejects(store.createScratch('read only'), (e: unknown) => e instanceof ScratchStoreError);
   fake.failOn = undefined;
+});
+
+test('scratch-store.test.ts: createScratchStore with fs omitted defaults to the node adapter (production path passes only { root, logger })', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'insrc-scratch-defaultfs-'));
+  try {
+    const store = createScratchStore({ root: dir }); // no fs: the node default applies
+    const entry = await store.createScratch('Default FS', 'real body');
+    const { readFile } = await import('node:fs/promises');
+    assert.equal(await readFile(join(dir, entry.id), 'utf8'), 'real body');
+    const { entry: readBack } = await store.readScratch(entry.id);
+    assert.equal(readBack.id, entry.id);
+    assert.deepEqual((await store.listScratches()).map((e) => e.id), [entry.id]);
+    await store.deleteScratch(entry.id);
+    assert.deepEqual(await store.listScratches(), []);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 });
 
 test('scratch-store.test.ts: concurrent-create race with two independent store instances over the same real tmp dir — both racing creates succeed with distinct files, contents intact (link()+unlink exclusive publication, EEXIST suffix retry)', async () => {

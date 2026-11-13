@@ -151,7 +151,28 @@ export function fakeScratchFs(): FakeScratchFs {
       const k = kindOf(path);
       if (k === 'symlink') throw eloop(path); // O_NOFOLLOW
       if (k === undefined) throw enoent(path);
-      if (k === 'dir') throw Object.assign(new Error(`EISDIR: ${path}`), { code: 'EISDIR' });
+      // A real O_RDONLY open on a directory succeeds; the fstat on the fd is what
+      // reports isFile=false. Model that faithfully.
+      if (k === 'dir') {
+        let closed = false;
+        const handle: ScratchFsHandle = {
+          read: async () => {
+            record({ op: 'read', path });
+            if (closed) throw Object.assign(new Error('EBADF'), { code: 'EBADF' });
+            throw Object.assign(new Error(`EISDIR: ${path}`), { code: 'EISDIR' });
+          },
+          stat: async () => {
+            const e = record({ op: 'fstat', path });
+            if (e !== undefined) throw e;
+            return { isFile: false, size: 0, mtimeMs: mtimes.get(path) ?? 0 };
+          },
+          close: async () => {
+            record({ op: 'close', path });
+            closed = true;
+          },
+        };
+        return handle;
+      }
       let closed = false;
       let pos = 0;
       const handle: ScratchFsHandle = {

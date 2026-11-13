@@ -225,14 +225,26 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
     } catch (e) {
       throw storeError(e);
     }
-    // Exclusive publication: link() is the single atomic no-clobber point.
+    // Exclusive publication: link() is the single atomic no-clobber point. Each
+    // candidate name is first probed with lstat (occupied -> next suffix); a
+    // concurrent create can still win between probe and link, which the EEXIST
+    // branch covers.
     for (let suffix = 0; ; suffix++) {
       const id = suffix === 0 ? `${base}.md` : `${base}-${suffix + 1}.md`;
       const final = join(root, id);
       try {
+        await fs.lstat(final);
+        continue; // probed occupied: next suffix
+      } catch (e) {
+        if (errCode(e) !== 'ENOENT') {
+          try { await fs.unlink(temp); } catch (rmErr) { log.warn(`[scratches] could not remove temp ${temp}: ${String(rmErr)}`); }
+          throw storeError(e);
+        }
+      }
+      try {
         await fs.link(temp, final);
       } catch (e) {
-        if (errCode(e) === 'EEXIST') continue; // collision: probe the next suffix
+        if (errCode(e) === 'EEXIST') continue; // lost the race: probe the next suffix
         try { await fs.unlink(temp); } catch (rmErr) { log.warn(`[scratches] could not remove temp ${temp}: ${String(rmErr)}`); }
         throw storeError(e);
       }
@@ -243,7 +255,12 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
       } catch (rmErr) {
         log.warn(`[scratches] could not remove temp ${temp}: ${String(rmErr)}`);
       }
-      const st = await fs.lstat(final);
+      let st;
+      try {
+        st = await fs.lstat(final);
+      } catch (e) {
+        throw storeError(e);
+      }
       return entryOf(id, st);
     }
     // Unreachable: the ladder always either publishes or throws.
@@ -262,7 +279,13 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
       throw storeError(e);
     }
     try {
-      const st = await handle.stat();
+      let st;
+      try {
+        st = await handle.stat();
+      } catch (e) {
+        if (errCode(e) === 'ENOENT') throw new ScratchNotFound(`'${id}' disappeared while reading`);
+        throw storeError(e);
+      }
       if (!st.isFile) throw new ScratchRefused(`'${id}' is not a regular file`);
       const chunks: Uint8Array[] = [];
       for (;;) {

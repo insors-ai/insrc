@@ -11,14 +11,33 @@
 import { escapeHtml } from './html.js';
 
 /**
+ * The base CSP every shell document carries: scripts only via the per-render nonce,
+ * inline styles allowed, nothing else loads. `extra` inserts directives right after
+ * `default-src` (e.g. the chat panel's load-bearing `img-src data:` for its header
+ * glyph), so a caller's full policy stays byte-identical to its pre-extraction form.
+ */
+export function shellCsp(nonce: string, extra?: string): string {
+  return `default-src 'none';${extra ?? ''} style-src 'unsafe-inline'; script-src 'nonce-${nonce}';`;
+}
+
+/** The chat panel's load-bearing `img-src data:` directive (header glyph data-URI SVG). */
+export const IMG_DATA_CSP = ' img-src data:;';
+
+/** Back-compat alias kept for the chat's existing call sites. */
+export const cspWithImgData = (nonce: string): string => shellCsp(nonce, IMG_DATA_CSP);
+
+/**
  * The shared webview HTML shell (title + content). Carries a strict CSP that
  * only permits the nonce'd bootstrap script (and inline styles); `bootstrap`,
  * when present, is that single nonce'd script. VS-Code-theme-friendly, minimal.
  */
-export function shellHtml(title: string, content: string, nonce: string, bootstrap?: string): string {
-  const csp = `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';`;
+export function shellHtml(title: string, content: string, nonce: string, bootstrap?: string, opts?: { readonly cspExtra?: string | undefined; readonly headExtra?: string | undefined; readonly bodyClass?: string | undefined; readonly hideTitle?: boolean | undefined }): string {
+  const csp = shellCsp(nonce, opts?.cspExtra);
   const script = bootstrap !== undefined ? `<script nonce="${nonce}">${bootstrap}</script>` : '';
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${csp}"><style>
+  const titleEl = opts?.hideTitle === true ? '' : `<h2>${escapeHtml(title)}</h2>`;
+  const bodyClass = opts?.bodyClass !== undefined ? ` class="${escapeHtml(opts.bodyClass)}"` : '';
+  const headExtra = opts?.headExtra ?? '';
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${csp}">${headExtra}<style>
     body { font-family: var(--vscode-font-family, sans-serif); padding: 12px; }
     .tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--vscode-panel-border, #666); margin-bottom: 12px; }
     .tab { padding: 4px 8px; cursor: pointer; opacity: 0.7; background: none; border: none; color: inherit; font: inherit; }
@@ -106,5 +125,5 @@ export function shellHtml(title: string, content: string, nonce: string, bootstr
     .status-chip.ok { background: rgba(35, 134, 54, 0.25); color: #81c995; }
     .status-chip.warn { background: rgba(187, 128, 9, 0.25); color: #e8b94a; }
     .status-chip.off { opacity: 0.7; }
-  </style></head><body><h2>${escapeHtml(title)}</h2>${content}${script}</body></html>`;
+  </style></head><body${bodyClass}>${titleEl}${content}${script}</body></html>`;
 }

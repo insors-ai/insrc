@@ -49,6 +49,11 @@ import {
   type FsSeam,
   type DiffView,
 } from './edit-governor.js';
+// Story E202611134642d49a:S001 t3: the chat consumes the SAME shared CSP+nonce shell
+// as the other webview panels (panels/shell.ts). The chat-specific bits (img-src data:
+// for the header glyph, marked/hljs in the one nonce'd script, its own styles) are
+// passed as shell arguments so the CSP/nonce frame itself is single-sourced.
+import { shellHtml, IMG_DATA_CSP } from '../panels/shell.js';
 
 /** The injected panel seam (mirrors extension.ts's PanelHandle). All vscode API lives here. */
 export interface ChatPanelChannel {
@@ -2126,15 +2131,15 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
 
   const renderShell = (): string => {
     const nonce = genNonce();
-    const style = renderStyle(theme); // a complete <style>…</style> (sc1 palette: --it-* tokens)
     // `img-src data:` is load-bearing, not decoration: the header session switcher paints its
     // clock/history glyph as an inline data-URI SVG background layer (.chrome #insrc-history below).
     // A CSS background-image url() is fetched under `img-src`, so without this directive it inherits
     // `default-src 'none'` and the browser blocks the icon while the sibling linear-gradient arrow
     // layers (not fetches) still paint — the glyph silently disappears. Scoped to `data:` ONLY: no
     // remote origin becomes loadable, scripts stay nonce-only, and default-src stays 'none'.
-    const csp = `default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';`;
-    // The chat-surface LAYOUT (S003), ported VERBATIM from the reviewed S001 design mock
+    // Story E202611134642d49a:S001 t3: the CSP+nonce frame itself now comes from the shared
+    // panels/shell.ts shellHtml; only this directive differs from the other panels.
+    const chatCspExtra = IMG_DATA_CSP;
     // (docs/epics/…/S001/mocks.html): a single-dark terminal .box (chrome header · .pad transcript
     // with row/gutter markers · dashed .inputline with a ❯ caret · .statusbar), filling the panel
     // edge to edge. The sc1 renderTerminalStyle still supplies the marker ::before glyphs; this
@@ -2424,6 +2429,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // Keyboard focus is shown in the theme's focus colour (last, so it wins over the rules above).
       `#insrc-prompt:focus-visible,#insrc-older:focus-visible,.segsel:focus-visible,.attachbtn:focus-visible,.attchip__x:focus-visible,.insrc-attchip:focus-visible{outline:1px solid var(--focus);outline-offset:1px;}` +
       `</style>`;
+    // Story E202611134642d49a:S001 t3: the chat renders through the SAME shared shell as the
+    // other webview panels. The chat keeps its own body markup; everything else — CSP meta
+    // (with the chat-only img-src data: extra), the nonce'd single script — comes from
+    // shellHtml. The chat's styles are appended as headExtra AFTER the shell's own <style>
+    // so the shell rules keep their cascade position; the title <h2> is suppressed because
+    // the chat paints its own .chrome header.
+    const chatStyles = renderStyle(theme) + layoutStyle;
     const provCls = surfaceClass('provider-dropdown');
     const histCls = surfaceClass('history-dropdown');
     const available = deps.providers.available;
@@ -2795,17 +2807,14 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // host re-sends theme + active session + history and the dropdown/transcript are always
       // repopulated instead of being lost to a post-after-setHtml race.
       `vs.postMessage({v:1,payload:{type:'ready',targetedActions:true}});`;
-    return (
-      `<!DOCTYPE html><html><head><meta charset="utf-8">` +
-      `<meta http-equiv="Content-Security-Policy" content="${attr(csp)}">` +
-      `${style}${layoutStyle}</head>` +
+    return shellHtml(
+      '',
       // The body carries ONLY `insrc-term` (which defines the --it-* tokens + base font the marker
       // rows inherit). It must NOT carry a surface class (surfaceClass('chat') etc.): that rule is
       // `.insrc-term-chat{display:block;border:…}` and, as a class (0,1,0), it OVERRIDES the element
       // rule `body{display:flex}` (0,0,1) — collapsing the whole flex-fill layout so the panel box
       // only grows to content height (the "box doesn't fill / input floats mid-panel" bug). Surface
       // classes belong on the inner surface divs, never the root body.
-      `<body class="insrc-term">` +
       `<div class="box">` +
       // Fixed header (mock .chrome): the active-chats chip LEFT-aligned + the session switcher RIGHT-aligned.
       // Story 546198e11c24c1e3/s1: both are <button> triggers (aria-haspopup='menu') with custom
@@ -2877,8 +2886,15 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `<div id="insrc-catalog" hidden data-catalog="${catalogJson}" data-status="${catalogStatus}"></div>` +
       `</span>` +
       `</div>` +
-      `</div>` +
-      `<script nonce="${nonce}">${MARKED_SRC}\n;${HLJS_SRC}\n;${bootstrap}</script></body></html>`
+      `</div>`,
+      nonce,
+      `${MARKED_SRC}\n;${HLJS_SRC}\n;${bootstrap}`,
+      // Story E202611134642d49a:S001 t3: the shared shell frame (CSP meta + nonce'd single
+      // script + envelope). The chat-only `img-src data:` (header glyph data-URI) is the
+      // cspExtra; the chat's own styles ride as headExtra AFTER the shell's <style> so the
+      // shell rules keep their cascade position; the title <h2> is suppressed because the
+      // chat paints its own .chrome header.
+      { cspExtra: chatCspExtra, headExtra: `<style>${chatStyles}</style>`, bodyClass: 'insrc-term', hideTitle: true },
     );
   };
 

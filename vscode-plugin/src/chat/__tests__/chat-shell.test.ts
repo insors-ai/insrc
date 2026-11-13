@@ -362,6 +362,31 @@ test('shell: the attach button is icon-only with an aria-label, sits first in th
   assert.ok(off.includes('<span class="runctl">'), 'the bottom-right runctl group is present');
 });
 
+test("webview-host.test.ts + chat-shell.test.ts: existing CSP/nonce tests preserved when the shell is extracted to panels/shell.ts (shell output byte-identical, all existing assertions pass unmodified)", async () => {
+  // Story E202611134642d49a:S001 t3: the chat panel renders through the SAME shared shell as
+  // the other webview panels (panels/shell.ts), so its CSP meta, nonce'd single script and
+  // document envelope come from shellHtml — not from a hand-assembled document in chat-panel.
+  const { shellHtml } = await import('../../panels/shell.js');
+  const html = runShell().html;
+  // The chat document IS the shared shell's envelope: doctype, head with charset + CSP meta,
+  // one nonce'd script, closing tags — exactly what shellHtml emits (hideTitle: the chat
+  // paints its own .chrome header, so no <h2>).
+  assert.ok(html.startsWith('<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; img-src data:; style-src \'unsafe-inline\'; script-src \'nonce-N\';">'), 'the chat document starts with the shared shell frame + the chat-only img-src data: extra');
+  assert.ok(html.endsWith('</body></html>'), 'the chat document ends with the shared shell envelope');
+  assert.ok(!html.includes('<h2>'), 'hideTitle: the chat paints its own .chrome header, no shell <h2>');
+  assert.equal((html.match(/<script\b/g) ?? []).length, 1, 'still exactly one script tag');
+  assert.match(html, /<script nonce="N">/, 'the single script carries the render nonce');
+  assert.ok(html.includes('<body class="insrc-term">'), 'the body carries only insrc-term');
+  // The chat's own styles ride as headExtra AFTER the shell's <style> block, so the shell
+  // rules keep their cascade position — the same contract shellHtml documents.
+  const shellStyleEnd = html.indexOf('</style>');
+  assert.ok(shellStyleEnd > 0 && html.indexOf('<body', shellStyleEnd) > 0 || html.slice(0, html.indexOf('<body')).includes('</style></head>'), 'the shared shell <style> closes the head before the body');
+  assert.ok(html.includes('<style>') && html.indexOf('<style>') < html.indexOf('<body'), 'styles are inside the head');
+  // Byte-parity of the frame with the extracted module: the same call shellHtml makes.
+  const probed = shellHtml('', '<p>probe</p>', 'N', undefined, { cspExtra: ' img-src data:;', hideTitle: true, bodyClass: 'insrc-term' });
+  assert.ok(probed.startsWith(html.slice(0, html.indexOf('<style>'))), 'the chat frame is byte-identical to shellHtml\'s envelope for the same nonce + cspExtra');
+});
+
 test('shell script: a chip click on a sent message posts open-attachment, and the error sentence is shown and cleared', () => {
   const v = runShell({ attach: true });
   const sentFile = { id: '1-a.png', name: 'a.png', kind: 'image', size: 10, path: '/att/s1/1-a.png' };

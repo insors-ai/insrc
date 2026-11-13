@@ -1,0 +1,707 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 7,
+        "contentHash": "4b9e9a9ab5d973285f3fb9f8730aa47a09befab7994840dc7bf8abf4ebf1af5d",
+        "at": "2026-11-13T08:23:42.734Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "cda6558e4b0e4bea",
+    "storyId": "s1",
+    "createdAt": "2026-11-13T06:27:53.175Z",
+    "updatedAt": "2026-11-13T08:23:42.529Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-13T05:55:40.344Z",
+    "epicSlug": "recover-run-file-guards-whose-recorded",
+    "revision": 7
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "0b54c8de7",
+        "ranAt": "2026-11-13T06:30:06.183Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "acquireRunFileGuard quarantines and acquires when the verdict is 'gone' (fake reader, mkdtemp guard)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/daemon-run-files.test.ts",
+                "title": "acquireRunFileGuard quarantines and acquires when the verdict is 'gone' (fake reader, mkdtemp guard)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "acquireRunFileGuard quarantines and acquires on previous-boot 'replaced' (boot segments mismatch)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/daemon-run-files.test.ts",
+                "title": "acquireRunFileGuard quarantines and acquires on previous-boot 'replaced' (boot segments mismatch)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "acquireRunFileGuard withholds 'same', same-boot 'replaced', corrupt or missing owner.json and a throwing reader; nothing is renamed",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/daemon-run-files.test.ts",
+                "title": "acquireRunFileGuard withholds 'same', same-boot 'replaced', corrupt or missing owner.json and a throwing reader; nothing is renamed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "acquireRunFileGuard recomputes the conflict and throws when the retry mkdir hits EEXIST",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/daemon-run-files.test.ts",
+                "title": "acquireRunFileGuard recomputes the conflict and throws when the retry mkdir hits EEXIST",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "acquireRunFileGuard leaves a symlink guard as a conflict",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/daemon-run-files.test.ts",
+                "title": "acquireRunFileGuard leaves a symlink guard as a conflict",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "acquireRunFileGuard suffixes the quarantine name on collision; owner.json stays byte-identical and one daemonLog line is keyed by the recorded nonce; a log-write failure is swallowed",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/daemon-run-files.test.ts",
+                "title": "acquireRunFileGuard suffixes the quarantine name on collision; owner.json stays byte-identical and one daemonLog line is keyed by the recorded nonce; a log-write failure is swallowed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/daemon-run-files.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 610,
+            "titles": [
+              {
+                "title": "managed guard serializes cooperating ownership and preserves observed replacement run files",
+                "result": "pass"
+              },
+              {
+                "title": "replaced or rewritten files and changed guard nonces are preserved",
+                "result": "pass"
+              },
+              {
+                "title": "unverifiable guard records and symlinks fail closed without automatic reclamation",
+                "result": "pass"
+              },
+              {
+                "title": "cross-process guard race admits exactly one owner and releases for the next startup",
+                "result": "pass"
+              },
+              {
+                "title": "killed guard owner is conclusively dead, so the next startup quarantines the stale guard and acquires",
+                "result": "pass"
+              },
+              {
+                "title": "acquireRunFileGuard quarantines and acquires when the verdict is 'gone' (fake reader, mkdtemp guard)",
+                "result": "pass"
+              },
+              {
+                "title": "acquireRunFileGuard quarantines and acquires on previous-boot 'replaced' (boot segments mismatch)",
+                "result": "pass"
+              },
+              {
+                "title": "acquireRunFileGuard withholds 'same', same-boot 'replaced', corrupt or missing owner.json and a throwing reader; nothing is renamed",
+                "result": "pass"
+              },
+              {
+                "title": "acquireRunFileGuard recomputes the conflict and throws when the retry mkdir hits EEXIST",
+                "result": "pass"
+              },
+              {
+                "title": "acquireRunFileGuard leaves a symlink guard as a conflict",
+                "result": "pass"
+              },
+              {
+                "title": "acquireRunFileGuard suffixes the quarantine name on collision; owner.json stays byte-identical and one daemonLog line is keyed by the recorded nonce; a log-write failure is swallowed",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "30f45ce73",
+        "ranAt": "2026-11-13T06:32:35.327Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the t1 decision-table suite turns green against the implementation (no new tests)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/daemon-run-files.test.ts",
+                "title": "acquireRunFileGuard quarantines and acquires when the verdict is 'gone' (fake reader, mkdtemp guard)",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/daemon-run-files.test.ts",
+                "title": "acquireRunFileGuard quarantines and acquires on previous-boot 'replaced' (boot segments mismatch)",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/daemon-run-files.test.ts",
+                "title": "acquireRunFileGuard withholds 'same', same-boot 'replaced', corrupt or missing owner.json and a throwing reader; nothing is renamed",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/daemon-run-files.test.ts",
+                "title": "acquireRunFileGuard recomputes the conflict and throws when the retry mkdir hits EEXIST",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/daemon-run-files.test.ts",
+                "title": "acquireRunFileGuard leaves a symlink guard as a conflict",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/daemon-run-files.test.ts",
+                "title": "acquireRunFileGuard suffixes the quarantine name on collision; owner.json stays byte-identical and one daemonLog line is keyed by the recorded nonce; a log-write failure is swallowed",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/daemon-run-files.test.ts",
+                "title": "killed guard owner is conclusively dead, so the next startup quarantines the stale guard and acquires",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/daemon-run-files.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 661,
+            "titles": [
+              {
+                "title": "managed guard serializes cooperating ownership and preserves observed replacement run files",
+                "result": "pass"
+              },
+              {
+                "title": "replaced or rewritten files and changed guard nonces are preserved",
+                "result": "pass"
+              },
+              {
+                "title": "unverifiable guard records and symlinks fail closed without automatic reclamation",
+                "result": "pass"
+              },
+              {
+                "title": "cross-process guard race admits exactly one owner and releases for the next startup",
+                "result": "pass"
+              },
+              {
+                "title": "killed guard owner is conclusively dead, so the next startup quarantines the stale guard and acquires",
+                "result": "pass"
+              },
+              {
+                "title": "acquireRunFileGuard quarantines and acquires when the verdict is 'gone' (fake reader, mkdtemp guard)",
+                "result": "pass"
+              },
+              {
+                "title": "acquireRunFileGuard quarantines and acquires on previous-boot 'replaced' (boot segments mismatch)",
+                "result": "pass"
+              },
+              {
+                "title": "acquireRunFileGuard withholds 'same', same-boot 'replaced', corrupt or missing owner.json and a throwing reader; nothing is renamed",
+                "result": "pass"
+              },
+              {
+                "title": "acquireRunFileGuard recomputes the conflict and throws when the retry mkdir hits EEXIST",
+                "result": "pass"
+              },
+              {
+                "title": "acquireRunFileGuard leaves a symlink guard as a conflict",
+                "result": "pass"
+              },
+              {
+                "title": "acquireRunFileGuard suffixes the quarantine name on collision; owner.json stays byte-identical and one daemonLog line is keyed by the recorded nonce; a log-write failure is swallowed",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "51b5328fd",
+        "ranAt": "2026-11-13T06:37:32.119Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "startup lease acquires over a guard whose owner.json records a genuinely exited child process (src/daemon/__tests__/run-file-ownership.test.ts)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/run-file-ownership.test.ts",
+                "title": "startup lease acquires over a guard whose owner.json records a genuinely exited child process",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "vault guard reclaims a genuinely-exited-owner guard through the real readProcessIdentity verdict path (src/daemon/__tests__/keystore-guard.test.ts)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/keystore-guard.test.ts",
+                "title": "vault guard reclaims a genuinely-exited-owner guard through the real readProcessIdentity verdict path",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/supervisor-run-files.test.ts",
+                "title": "Guarded stale run files and replacement ownership",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/supervisor-run-files.test.ts",
+                "title": "Run-file mutation rejects a mismatched grant, channel or generation",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/supervisor-run-files.test.ts",
+                "title": "Partially published run files stay fenced while startup reap is unconfirmed",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/supervisor-run-files.test.ts",
+                "title": "Repeated or stale lease release cannot change the physical run-file guard",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/supervisor-run-files.test.ts",
+                "title": "Queued release before and after escalation preserves shutdown guard",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/supervisor-run-files.test.ts",
+                "title": "Kill startup child before PID, after PID, and after socket publication before ready",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/keystore-guard.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7845,
+            "titles": [
+              {
+                "title": "guard: a daemon holding no vault fails requests while maintenance holds the guard and succeeds after release",
+                "result": "pass"
+              },
+              {
+                "title": "guard: maintenance refuses and releases the guard when the daemon socket exists after acquiring it",
+                "result": "pass"
+              },
+              {
+                "title": "maintenance: the offline tool reads the vault once",
+                "result": "pass"
+              },
+              {
+                "title": "vault guard reclaims a genuinely-exited-owner guard through the real readProcessIdentity verdict path",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/run-file-ownership.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1967,
+            "titles": [
+              {
+                "title": "Replacement run files survive original daemon cleanup and implicit socket unlink",
+                "result": "pass"
+              },
+              {
+                "title": "Startup publication and awaited close are serialized under the same guard",
+                "result": "pass"
+              },
+              {
+                "title": "Startup-error, fatal and stale-file cleanup honor ownership",
+                "result": "pass"
+              },
+              {
+                "title": "startup lease acquires over a guard whose owner.json records a genuinely exited child process",
+                "result": "pass"
+              },
+              {
+                "title": "Real startup-error, fatal and backstop paths preserve replacements and skip unsafe exit hooks",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/supervisor-run-files.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 545,
+            "titles": [
+              {
+                "title": "Guarded stale run files and replacement ownership",
+                "result": "pass"
+              },
+              {
+                "title": "Run-file mutation rejects a mismatched grant, channel or generation",
+                "result": "pass"
+              },
+              {
+                "title": "Partially published run files stay fenced while startup reap is unconfirmed",
+                "result": "pass"
+              },
+              {
+                "title": "Repeated or stale lease release cannot change the physical run-file guard",
+                "result": "pass"
+              },
+              {
+                "title": "Queued release before and after escalation preserves shutdown guard",
+                "result": "pass"
+              },
+              {
+                "title": "Kill startup child before PID, after PID, and after socket publication before ready",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "1a6d72e6e",
+        "ranAt": "2026-11-13T08:23:42.529Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "full sweep npx tsx --test 'src/**/__tests__/*.test.ts' exits clean with shutdown and supervisor suites unmodified",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/shutdown-bounded.test.ts",
+                "title": "Watchdog arm failure self-kills before blocked native cleanup",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-bounded.test.ts",
+                "title": "Bounded shutdown preserves lock-loss, fatal and normal cleanup behavior",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-bounded.test.ts",
+                "title": "Repeated signals and guarded async close preserve ownership",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-lifecycle-evidence.test.ts",
+                "title": "Guard-owner death reclaims the stale guard so the restart proceeds like the healthy control",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-lifecycle-evidence.test.ts",
+                "title": "Compiled helper packaging and affected lifecycle regression suites",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+                "title": "status after failure: storeFailure names another process and does not contain 'semume'",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+                "title": "store failure to stop: exit within 5 seconds, pid file and socket gone, second start succeeds, last log line names the skipped close",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+                "title": "fatal after failure: an unhandled rejection with the store failed ends the process within 5 seconds",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+                "title": "healthy shutdown is unchanged: queue drained, connections closed in order, normal exit",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+                "title": "with the store failed no path calls exit: the shutdown, its backstop, a failure found during the drain, and any other exit",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+                "title": "Store-child fixture exercises owned publication watchdog readiness and guarded close",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-watchdog.test.ts",
+                "title": "Independent watchdog bounds a disposable blocked parent and disarms after healthy exit",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-watchdog.test.ts",
+                "title": "Ready handshake reports spawn failure, early exit and timeout",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-watchdog.test.ts",
+                "title": "Watchdog never signals after reparenting and imports only Node built-ins",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-watchdog.test.ts",
+                "title": "Watchdog IPC disconnect during readiness releases its shared broker session without signalling the parent",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-watchdog.test.ts",
+                "title": "IPC transport loss never disarms the deadline for a blocked parent or blocked exit hook",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-watchdog.test.ts",
+                "title": "Backward wall-clock adjustment cannot extend the independent monotonic shutdown duration",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/supervisor-run-files.test.ts",
+                "title": "Guarded stale run files and replacement ownership",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/supervisor-run-files.test.ts",
+                "title": "Run-file mutation rejects a mismatched grant, channel or generation",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/supervisor-run-files.test.ts",
+                "title": "Partially published run files stay fenced while startup reap is unconfirmed",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/supervisor-run-files.test.ts",
+                "title": "Repeated or stale lease release cannot change the physical run-file guard",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/supervisor-run-files.test.ts",
+                "title": "Queued release before and after escalation preserves shutdown guard",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/supervisor-run-files.test.ts",
+                "title": "Kill startup child before PID, after PID, and after socket publication before ready",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/shutdown-bounded.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 24482,
+            "titles": [
+              {
+                "title": "Watchdog arm failure self-kills before blocked native cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "Bounded shutdown preserves lock-loss, fatal and normal cleanup behavior",
+                "result": "pass"
+              },
+              {
+                "title": "Repeated signals and guarded async close preserve ownership",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/shutdown-lifecycle-evidence.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 22402,
+            "titles": [
+              {
+                "title": "Guard-owner death reclaims the stale guard so the restart proceeds like the healthy control",
+                "result": "pass"
+              },
+              {
+                "title": "Compiled helper packaging and affected lifecycle regression suites",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3792,
+            "titles": [
+              {
+                "title": "status after failure: storeFailure names another process and does not contain 'semume'",
+                "result": "pass"
+              },
+              {
+                "title": "store failure to stop: exit within 5 seconds, pid file and socket gone, second start succeeds, last log line names the skipped close",
+                "result": "pass"
+              },
+              {
+                "title": "fatal after failure: an unhandled rejection with the store failed ends the process within 5 seconds",
+                "result": "pass"
+              },
+              {
+                "title": "healthy shutdown is unchanged: queue drained, connections closed in order, normal exit",
+                "result": "pass"
+              },
+              {
+                "title": "with the store failed no path calls exit: the shutdown, its backstop, a failure found during the drain, and any other exit",
+                "result": "pass"
+              },
+              {
+                "title": "Store-child fixture exercises owned publication watchdog readiness and guarded close",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/shutdown-watchdog.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 27643,
+            "titles": [
+              {
+                "title": "Independent watchdog bounds a disposable blocked parent and disarms after healthy exit",
+                "result": "pass"
+              },
+              {
+                "title": "Ready handshake reports spawn failure, early exit and timeout",
+                "result": "pass"
+              },
+              {
+                "title": "Watchdog never signals after reparenting and imports only Node built-ins",
+                "result": "pass"
+              },
+              {
+                "title": "Watchdog IPC disconnect during readiness releases its shared broker session without signalling the parent",
+                "result": "pass"
+              },
+              {
+                "title": "IPC transport loss never disarms the deadline for a blocked parent or blocked exit hook",
+                "result": "pass"
+              },
+              {
+                "title": "Backward wall-clock adjustment cannot extend the independent monotonic shutdown duration",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/supervisor-run-files.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 582,
+            "titles": [
+              {
+                "title": "Guarded stale run files and replacement ownership",
+                "result": "pass"
+              },
+              {
+                "title": "Run-file mutation rejects a mismatched grant, channel or generation",
+                "result": "pass"
+              },
+              {
+                "title": "Partially published run files stay fenced while startup reap is unconfirmed",
+                "result": "pass"
+              },
+              {
+                "title": "Repeated or stale lease release cannot change the physical run-file guard",
+                "result": "pass"
+              },
+              {
+                "title": "Queued release before and after escalation preserves shutdown guard",
+                "result": "pass"
+              },
+              {
+                "title": "Kill startup child before PID, after PID, and after socket publication before ready",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

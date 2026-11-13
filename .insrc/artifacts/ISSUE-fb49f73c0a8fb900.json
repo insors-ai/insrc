@@ -1,0 +1,133 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1794547831604-jwujov",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-13T05:31:36.358Z",
+    "epicCreatedAt": "2026-11-13T05:31:36.358Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "glm-5.3:cloud"
+        }
+      ]
+    },
+    "elapsedMs": 64753,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "fb49f73c0a8fb900",
+    "epicSlug": "recover-run-file-guards-whose-recorded",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8c0988a69baf6959362e9bd0c528cfb80853cfe6f568675d650efeb59e375d85",
+        "at": "2026-11-13T05:31:36.364Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-13T05:41:32.940Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "parentRef": {
+      "epicHash": "fb49f73c0a8fb900",
+      "slug": "EPIC-fb49f73c0a8fb900"
+    }
+  },
+  "body": {
+    "fixIntent": "Daemon startup automatically recovers a run-file guard whose recorded owner is conclusively dead, replacing the manual operator quarantine with a supported, self-healing path. Liveness is decided by the existing full process identity (pid plus boot-id plus start-ticks plus command line, so a reused PID cannot fake liveness), and a guard recorded under a previous boot is treated as conclusively dead even when its PID now reads as replaced. The recovery is recorded with a log entry and retains the previous owner record as inspectable evidence, and it stays atomic with respect to competing daemon starters so concurrent startups remain serialized. Live owners keep full protection: a guard whose owner is alive, or whose owner record is missing, corrupt or otherwise unverifiable, still withholds restart, and an unreadable identity is never silently treated as dead. With conclusively-dead guards self-healing at startup, the known orphan windows — the shutdown-deadline race between the in-process fail-closed cleanup and the native shutdown watchdog, an external SIGKILL while the startup lease is held, and interrupted publication or release — become benign and are not separately fixed. This replaces the recovery stance of the prior record (docs/standalone/prevent-orphaned-daemon-run-file-guards-E20261108350bdba6/ISSUE.md), whose diagnosis this record extends with the confirmed initiating sequence.",
+    "reproduction": "Update or restart the daemon after a previous daemon exit that died while holding the run-file guard. Observed: the new start refuses ~/.insrc/daemon.run-files.guard with `run-file ownership conflict ... state=gone ... Restart is withheld. An operator must verify the original owner has ended and quarantine this exact guard before retrying; it was not reclaimed automatically`, and startup proceeds only after the operator manually moves the guard directory aside. Confirmed initiating sequence (/tmp/.insrc/daemon.log, 2026-11-13 05:01:14–34 UTC) (c10): a daemon.shutdown RPC whose queue drain exceeded the 20-second hard-exit backstop; at the deadline the in-process fallback ran failClosed, whose cleanup (clearPid → clearRunFiles, c4) re-creates the guard directory and owner.json just to remove daemon.pid and daemon.sock, while the independent native shutdown-watchdog process (c6) — armed at the same deadline — independently SIGKILLed the daemon from outside. The SIGKILL can land inside clearRunFiles' guard window, leaving a complete owner.json naming a now-dead process: exactly `state=gone`. Frequency: six manually quarantined guards under ~/.insrc since 2026-11-02 (2026-11-02, 11-04, 11-08, 11-09, 11-11, 11-13) (c11); the 11-02 incident quarantined a guard with owner.json missing (unverifiable-owner variant, an interrupted release). Expected: a routine update/restart succeeds without operator filesystem surgery when the recorded owner is provably dead, while live or unverifiable owners remain protected.",
+    "rootCause": "The run-file guard is a mkdir-mutex whose owner record is only removed by an orderly release (unlink owner.json, then rmdir). Any process death between acquire and release leaves the directory behind with a dead recorded owner, and startup classifies every existing guard as a conflict it must not reclaim — even when its own liveness probe (`processIdentityState`, c3) has already established that the recorded owner is positively absent (`state=gone`). The liveness verdict is computed and then discarded instead of driving recovery. Concretely, the daemon dies holding the guard in three code-supported windows: (1) the shutdown-deadline race — the in-process failClosed path (c5) re-creates the guard inside clearRunFiles (c4) at the same moment the native watchdog (c6) independently SIGKILLs the process, so the kill can land inside the re-created guard window; (2) an external SIGKILL while the startup lease is held; (3) an interrupted publication or release, which the acquisition path documents as a deliberate fail-closed orphan (c2) and which yields the unverifiable-owner variant. Because reclamation is withheld for all of these (c1), each one blocks the next restart until an operator quarantines the guard by hand.",
+    "title": "Recover run-file guards whose recorded owner is conclusively dead instead of withholding daemon restart"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "quotedText": "A conflicting or orphaned guard is never automatically reclaimed. ... Restart is withheld. An operator must verify the original owner has ended and quarantine this exact guard before retrying; it was not reclaimed automatically.",
+      "ref": "src/shared/daemon-run-files.ts:52-61"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "quotedText": "A crash or failed record write deliberately leaves a fail-closed orphan, never an unlocked partial publication.",
+      "ref": "src/shared/daemon-run-files.ts:64-92"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "quotedText": "Undefined means positively absent/exited; an unreadable identity throws and never permits a kill.",
+      "ref": "src/shared/daemon-process.ts:37-80"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "quotedText": "clearRunFiles(): void — verifies then removes the pid file and socket under the shared guard.",
+      "ref": "src/daemon/run-file-ownership.ts:106-114"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "quotedText": "else failClosed(new Error('shutdown deadline exceeded'));",
+      "ref": "src/daemon/shutdown.ts:187"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "quotedText": "IPC is advisory after capability capture: transport loss cannot disarm the deadline. ... diagnostic('shutdown deadline exceeded; terminating retained parent capability'); await target!.handle.terminate();",
+      "ref": "src/bin/insrc-shutdown-watchdog.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "quotedText": "The hard-exit backstop fires at HARD_EXIT_MS regardless of queue state.",
+      "ref": "src/daemon/index.ts:631-642"
+    },
+    {
+      "id": "c8",
+      "kind": "stakeholder",
+      "ref": "User decision, 2026-11-13: on startup, check whether the guard's recorded owner process is alive; a conclusively dead owner is cleared automatically with a log entry, replacing manual operator quarantine as the routine recovery path."
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "quotedText": "Expected: routine update/restart does not repeatedly require manual filesystem surgery; proven stale ownership has a safe supported recovery path, while uncertain/live ownership remains protected.",
+      "ref": "docs/standalone/prevent-orphaned-daemon-run-file-guards-E20261108350bdba6/ISSUE.md"
+    },
+    {
+      "id": "c10",
+      "kind": "doc",
+      "quotedText": "shutdown-stage entries 2026-11-13T05:01:14.127Z (watchdog arm) → 05:01:34.289Z (in-process deadline fallback, shutdown failed: shutdown deadline exceeded), followed by no exit-hooks stage; the guard owner named pid 1434506 (state gone) was quarantined at 2026-11-13 05:03 UTC.",
+      "ref": "/tmp/.insrc/daemon.log"
+    },
+    {
+      "id": "c11",
+      "kind": "doc",
+      "quotedText": "Six quarantined guard directories under /home/subho/.insrc since 2026-11-02, five with an owner.json naming out/daemon/index.js (2026-11-04, 11-08, 11-09, 11-11, 11-13) and one (2026-11-02) empty — the unverifiable-owner variant.",
+      "ref": "/home/subho/.insrc/daemon.run-files.guard.quarantine-20261113T050300Z-6089811f/owner.json"
+    }
+  ]
+}

@@ -201,7 +201,7 @@ Run at 2026-11-13T10:06:39.666Z on commit `76ccce876`. Tests check: **passed**. 
 
 ## t7
 
-Run at 2026-11-13T11:13:20.622Z on commit `4a303f175`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+Run at 2026-11-13T11:15:23.712Z on commit `40e228b06`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 **integration: extension-chat-wiring.test.ts: extension.ts constructs createScratchStore with root join(PATHS.insrc, 'scratches') (ac1)**
 

@@ -1,19 +1,30 @@
 # Story s4 — full sweep record (2026-11-14)
 
-Run once after t1–t13, in foreground chunks, on a machine with no docker and no Redis.
-Command shape: `npx tsx --test --test-force-exit --test-concurrency=N '<glob>'`.
+Run once after t1–t13, in the background with `--test-force-exit --test-concurrency=4`, on a machine with
+no docker. Every test file under `src/` was run in one of five groups.
 
-| Chunk | Tests | Pass | Skipped | Fail | Notes |
-|---|---|---|---|---|---|
-| `src/analyze/**` | 1404 | 1304 | 95 (live, gated) | 2 | `role-router-global-tiers`, `provider-bypass-audit`: both assert on daemon review files that another session has uncommitted changes in |
-| `src/db`, `indexer`, `mcp`, `agent`, `config`, `docgen`, `understanding`, `design` | 1900 | 1835 | 20 | 45 | all in review / MCP-stream / ollama-private-transport / config-catalog / no-live-store (missing files or exports in the other session's review work); none in the analyzer, the exploration cache or the data drivers |
-| `src/daemon/db`, `src/daemon/tools` | — | — | — | — | hit the 580 s limit; the failures listed were docker/service-backed `CM-S*` probe tests and daemon approval/review tests |
-| `src/shared`, `cli`, `daemon/steps`, `artifact-theme` | — | — | — | — | hit the time limit, no result |
-| `src/workflow`, rest of `src/daemon` | — | — | — | — | not run |
+| Group | Tests | Pass | Skipped | Fail |
+|---|---|---|---|---|
+| `src/analyze/**` | 1404 | 1304 | 95 (live, gated) | 2 |
+| `src/db`, `indexer`, `mcp`, `agent`, `config`, `docgen`, `understanding`, `design` | 1900 | 1835 | 20 | 45 |
+| `src/workflow/**` | 2368 | 2212 | 1 | 155 |
+| `src/daemon/**`, `src/shared/**`, `src/cli/**` | 3100 | 2822 | 83 | 193 |
 
-The sweep is **partial**. Live checks: `search-text-live.test.ts` passed with `INSRC_LIVE_TESTS=1`
-(live `search.text` equals `grep`'s count); `redis-etcd-live.test.ts` is written and gated
-(`INSRC_LIVE_TESTS=1` and `INSRC_TEST_REDIS_URL`) but was **not run**: no Redis server was available.
+(`src/artifact-theme` and `src/bin` ran only in an earlier partial chunk.)
+
+## Which failures are this Story's
+
+Every file that had a failure (213 files) was run again on a checkout of the commit before this Story's
+first change (`8617331d3^`). Of the 213, 81 passed there. Those 81 were sorted by area and the ones near this Story's code (analyzer, exploration cache, data drivers, search) were run and debugged by hand:
+
+- Mine, now fixed: `daemon/steps/__tests__/adherence-cache.test.ts` (it called `constraintRecordPathFor` with the
+  signature t9 removed) and `daemon/db/__tests__/driver-field-audit.test.ts` (it fingerprints driver sources; t10
+  changed `etcd.ts`, `redis.ts` and `db-driver.ts`, not how fields are read, so the three digests were updated).
+  Both pass again.
+- Not mine: `search-guard.test.ts` hangs for 280 s at the baseline and at HEAD alike. The rest of the 81 are the
+  review, workflow-gate, shutdown and thread tests of another session's uncommitted review work in the same tree
+  (`PENDING REVIEW RE-IMPLEMENTATION`, esbuild `Transform failed` syntax errors, missing review history).
+- The other 132 files fail at the baseline as well.
 
 ## Live checks, run 2026-11-14
 

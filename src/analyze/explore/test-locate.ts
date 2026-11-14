@@ -36,16 +36,13 @@ import type {
 	TestLocateOutput,
 } from './types.js';
 import { buildCompleteness } from '../completeness.js';
-import { GRAPH_BASIS_NOTE, graphCompleteness, reachedLimit } from './completeness-facts.js';
+import { GRAPH_BASIS_NOTE, graphCompleteness } from './completeness-facts.js';
 
 const log = getLogger('analyze:explore:test-locate');
 
 // ---------------------------------------------------------------------------
 // Configuration
 // ---------------------------------------------------------------------------
-
-const DEFAULT_TOP_K = 20;
-const MAX_TOP_K     = 100;
 
 const TEST_PATH_RX = /(^|\/)(tests?|__tests__|test|spec|specs)\/|(^|\/)(test_|spec_)/i;
 const TEST_STEM_RX = /^(test_|spec_)|(_test|_spec)$/i;
@@ -58,7 +55,6 @@ const TESTABLE_KINDS: readonly EntityKind[] = ['function', 'method', 'class'];
 
 interface TestLocateParams {
 	readonly subject: string;
-	readonly topK?:   number;
 }
 
 function parseParams(exp: Exploration): TestLocateParams {
@@ -67,10 +63,7 @@ function parseParams(exp: Exploration): TestLocateParams {
 	if (subject.length === 0) {
 		throw new Error('test.locate: params.subject is required (non-empty string)');
 	}
-	const topK = typeof p['topK'] === 'number' && p['topK']! > 0
-		? Math.min(MAX_TOP_K, Math.floor(p['topK'] as number))
-		: DEFAULT_TOP_K;
-	return { subject, topK };
+	return { subject };
 }
 
 // ---------------------------------------------------------------------------
@@ -147,7 +140,6 @@ export async function runTestLocate(
 
 	// Combine: entity hits first (they're more specific), then
 	// file-level hits, deduped by (file, entityId).
-	const topK = params.topK ?? DEFAULT_TOP_K;
 	const combined: TestLocateHit[] = [];
 	const seen = new Set<string>();
 	for (const list of [entityHits, Array.from(hitsByFile.values())]) {
@@ -155,11 +147,9 @@ export async function runTestLocate(
 			const key = `${h.file}::${h.entityId ?? h.name}`;
 			if (seen.has(key)) continue;
 			seen.add(key);
-			// Past the limit the hit is still counted, so the result can say how many exist.
-			if (combined.length < topK) combined.push(h);
+			combined.push(h);
 		}
 	}
-	const found = seen.size;
 
 	captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{
 			runId:      ctx.runId,
@@ -174,8 +164,7 @@ export async function runTestLocate(
 		type:         'test.locate',
 		completeness: graphCompleteness({
 			returned: combined.length,
-			found,
-			limited:  found > topK ? [reachedLimit('tests', topK, 'overall', found)] : [],
+			found:    combined.length,
 		}),
 		subject:      params.subject,
 		hits:         combined,

@@ -310,77 +310,7 @@ test('the fixture gives every lookup something to return, so the table is not a 
 // Count limits, each with its scope
 // ---------------------------------------------------------------------------
 
-test('each lookup that stops at a count reports the limit with its scope', async () => {
-	// symbol.locate: two functions are named chargeCard, one is kept.
-	const sym = await runSymbolLocate(exp('symbol.locate', { names: ['chargeCard'], limit: 1 }), ctx);
-	assert.equal(sym.hits.length, 1);
-	assert.deepEqual(limitOf(sym.completeness, 'symbols'), { what: 'symbols', limit: 1, scope: 'overall', reason: '2 symbols were found and 1 are kept' });
-	assert.equal(sym.completeness.total, 2);
-	assert.equal(sym.completeness.complete, false);
-	// ...and within the limit nothing is reported and the result is complete.
-	const symAll = await runSymbolLocate(exp('symbol.locate', { names: ['chargeCard'] }), ctx);
-	assert.equal(symAll.completeness.limited, undefined);
-	assert.equal(symAll.completeness.complete, true);
-	assert.equal(symAll.completeness.total, 2);
-
-	// usage.example: three callers, two kept. The total the old `totalCallers` field held is in the record.
-	const use = await runUsageExample(exp('usage.example', { entityId: seeded['charge']!.id, topK: 2 }), ctx);
-	assert.equal(use.callers.length, 2);
-	assert.equal(limitOf(use.completeness, 'callers').scope, 'overall');
-	assert.equal(use.completeness.total, 3, 'the number the removed `totalCallers` field held');
-
-	// usage.example by an ambiguous name: the callers of one definition are read and the other is named as skipped.
-	const amb = await runUsageExample(exp('usage.example', { symbolName: 'chargeCard' }), ctx);
-	assert.equal(amb.completeness.complete, false);
-	assert.match(amb.completeness.skipped![0]!.what, /^1 other entity named chargeCard$/);
-
-	// import.graph: two lists, each cut to topK: a limit on each list, not on their sum.
-	const imp = await runImportGraph(exp('import.graph', { path: join(REPO, 'src/pay'), topK: 1 }), ctx);
-	assert.equal(imp.summary.topImporters.length, 1);
-	assert.equal(imp.summary.topImportees.length, 1);
-	assert.equal(limitOf(imp.completeness, 'importing files').scope, 'per-group');
-	assert.equal(limitOf(imp.completeness, 'imported files').scope, 'per-group');
-	assert.equal(imp.completeness.returned, 2);
-	assert.equal(imp.completeness.total, 4);
-
-	// test.locate: three hits (two test functions and their file), one kept; the rest are still counted.
-	const tst = await runTestLocate(exp('test.locate', { subject: 'chargeCard', topK: 1 }), ctx);
-	assert.equal(tst.hits.length, 1);
-	assert.equal(limitOf(tst.completeness, 'tests').limit, 1);
-	assert.equal(tst.completeness.total, 3);
-
-	// concept.resolve: more candidates match than the one kept.
-	const con = await runConceptResolve(exp('concept.resolve', { query: 'pay charge', limit: 1 }), ctx);
-	assert.equal(con.hits.length, 1);
-	assert.equal(limitOf(con.completeness, 'matches').scope, 'overall');
-	assert.ok(con.completeness.total! > 1);
-	// A limit a plan gives below 1 never makes the lookup fail. Zero and a
-	// negative number are not a limit at all (the default applies); a fraction
-	// floors to zero, and at least one hit is kept.
-	for (const limit of [0, -3]) {
-		const all = await runConceptResolve(exp('concept.resolve', { query: 'pay charge', limit }), ctx);
-		assert.equal(all.hits.length, con.completeness.total, `limit ${limit}`);
-		assert.equal(all.completeness.limited, undefined, `limit ${limit}`);
-	}
-	const fraction = await runConceptResolve(exp('concept.resolve', { query: 'pay charge', limit: 0.4 }), ctx);
-	assert.equal(fraction.hits.length, 1);
-	assert.equal(limitOf(fraction.completeness, 'matches').limit, 1);
-
-	// manifests.locate: two manifests, one kept; `families` still counts the ones returned.
-	const man = await runManifestsLocate(exp('manifests.locate', { topK: 1 }), ctx);
-	assert.equal(man.hits.length, 1);
-	assert.equal(limitOf(man.completeness, 'manifests').limit, 1);
-	assert.equal(man.completeness.total, 2);
-	assert.equal(Object.values(man.families).reduce((a, b) => a + b, 0), 1);
-
-	// convention.detect: nine bases, eight kept; one base has six subclasses and five are named.
-	const conv = await runConventionDetect(exp('convention.detect', { path: join(REPO, 'src/pay') }), ctx);
-	assert.equal(conv.baseClassIdioms.length, 8);
-	assert.equal(limitOf(conv.completeness, 'base-class idioms').scope, 'overall');
-	assert.equal(conv.completeness.total, 9);
-	const named = limitOf(conv.completeness, 'named subclasses per base');
-	assert.deepEqual([named.limit, named.scope], [5, 'per-group']);
-
+test('each document and capability lookup that stops at a count reports the limit with its scope', async () => {
 	// doc.mention: the retrieval returns a full page and cannot say how many more match.
 	const men = await runDocMention(exp('doc.mention', { subject: 'refund', limit: 1 }), ctx);
 	assert.equal(men.hits.length, 1);
@@ -403,19 +333,154 @@ test('each lookup that stops at a count reports the limit with its scope', async
 	assert.equal(limitOf(cap.completeness, 'candidate modules').limit, 1);
 });
 
-test('data-model.trace reports its overall limit and both per-target limits', async () => {
-	const out = await runDataModelTrace(exp('data-model.trace', { entityName: 'Model' }), ctx);
-	assert.equal(out.nodes.length, 4, 'five classes are named Model and four are traced');
-	const first = out.nodes.find(n => n.entityId === seeded['model0']!.id)!;
-	assert.equal(first.fields.length, 12, 'thirteen fields, twelve kept');
-	assert.equal(first.topCallers.length, 6, 'seven callers, six kept');
+// ---------------------------------------------------------------------------
+// The graph and symbol lookups return every result
+// ---------------------------------------------------------------------------
 
-	assert.deepEqual(limitOf(out.completeness, 'targets'), { what: 'targets', limit: 4, scope: 'overall', reason: '5 targets were found and 4 are kept' });
-	assert.deepEqual(limitOf(out.completeness, 'fields per target'), { what: 'fields per target', limit: 12, scope: 'per-group', reason: 'a target has 13 fields and 12 are kept for each' });
-	assert.deepEqual(limitOf(out.completeness, 'callers per target'), { what: 'callers per target', limit: 6, scope: 'per-group', reason: 'a target has 7 callers and 6 are kept for each' });
-	assert.equal(out.completeness.limited!.length, 3);
-	assert.equal(out.completeness.total, 5);
-	assert.equal(out.completeness.complete, false);
+/** Seed entities and relations on top of the fixture. */
+async function seed(entities: Entity[], relations: Relation[] = []): Promise<void> {
+	await upsertEntities(await getDb(), entities);
+	if (relations.length > 0) await upsertRelations(await getDb(), relations);
+}
+
+/** A lookup's record states no limit, and says so by listing none. */
+function noLimit(c: Completeness, who: string): void {
+	assert.equal(c.limited, undefined, `${who}: no limited entry`);
+}
+
+test('symbol-locate, test-locate, import-graph, usage-example, concept-resolve, manifests-locate, data-model-trace and convention-detect return every result at, one over and zero versus the former limit with no limited entry', async () => {
+	// symbol.locate: former limit 50. A limit a plan passes is ignored.
+	for (const [n, word] of [[50, 'bulksyma'], [51, 'bulksymb']] as const) {
+		await seed(Array.from({ length: n }, (_, i) => ent('function', word, `src/bulk/${word}${i}.ts`)));
+		const out = await runSymbolLocate(exp('symbol.locate', { names: [word], limit: 3 }), ctx);
+		assert.equal(out.hits.length, n, `symbol.locate with ${n}`);
+		noLimit(out.completeness, `symbol.locate with ${n}`);
+		assert.equal(out.completeness.total, n);
+		assert.equal(out.completeness.complete, true);
+	}
+	const symNone = await runSymbolLocate(exp('symbol.locate', { names: ['nosuchsymbolzz'] }), ctx);
+	assert.deepEqual([symNone.hits.length, symNone.completeness.complete], [0, true]);
+	noLimit(symNone.completeness, 'symbol.locate with 0');
+
+	// test.locate: former limit 20. Test functions that name the subject.
+	for (const [n, word] of [[20, 'zzalpha'], [21, 'zzbravo']] as const) {
+		await seed(Array.from({ length: n }, (_, i) => ent('function', `test${word}${i}`, `src/bulk/__tests__/t${word}${i}.test.ts`)));
+		const out = await runTestLocate(exp('test.locate', { subject: word, topK: 2 }), ctx);
+		assert.equal(out.hits.filter(h => h.kind !== 'file').length, n, `test.locate with ${n}`);
+		noLimit(out.completeness, `test.locate with ${n}`);
+	}
+	const tstNone = await runTestLocate(exp('test.locate', { subject: 'zznothingmatches' }), ctx);
+	assert.equal(tstNone.hits.length, 0);
+	noLimit(tstNone.completeness, 'test.locate with 0');
+
+	// usage.example: former limit 12 callers.
+	for (const [n, word] of [[12, 'zztargeta'], [13, 'zztargetb']] as const) {
+		const target = ent('function', word, `src/bulk/${word}.ts`);
+		const callers = Array.from({ length: n }, (_, i) => ent('function', `${word}Caller${i}`, `src/bulk/${word}c${i}.ts`));
+		await seed([target, ...callers], callers.map(c => edge('CALLS', c, target)));
+		const out = await runUsageExample(exp('usage.example', { entityId: target.id, topK: 2 }), ctx);
+		assert.equal(out.callers.length, n, `usage.example with ${n}`);
+		noLimit(out.completeness, `usage.example with ${n}`);
+		assert.equal(out.completeness.total, n);
+	}
+	const lonely = ent('function', 'zzlonely', 'src/bulk/zzlonely.ts');
+	await seed([lonely]);
+	const useNone = await runUsageExample(exp('usage.example', { entityId: lonely.id }), ctx);
+	assert.equal(useNone.callers.length, 0);
+	noLimit(useNone.completeness, 'usage.example with 0');
+
+	// import.graph: former limit 15 on each of the two lists.
+	for (const [n, word] of [[15, 'zzimpa'], [16, 'zzimpb']] as const) {
+		const inside = ent('file', `${word}.ts`, `src/${word}/${word}.ts`);
+		const importers = Array.from({ length: n }, (_, i) => ent('file', `imp${i}.ts`, `src/${word}out/importer${i}.ts`));
+		const importees = Array.from({ length: n }, (_, i) => ent('file', `dep${i}.ts`, `src/${word}out/dep${i}.ts`));
+		await seed([inside, ...importers, ...importees], [
+			...importers.map(f => edge('IMPORTS', f, inside)),
+			...importees.map(f => edge('IMPORTS', inside, f)),
+		]);
+		const out = await runImportGraph(exp('import.graph', { path: join(REPO, `src/${word}`), topK: 2 }), ctx);
+		assert.equal(out.summary.topImporters.length, n, `import.graph importers with ${n}`);
+		assert.equal(out.summary.topImportees.length, n, `import.graph importees with ${n}`);
+		noLimit(out.completeness, `import.graph with ${n}`);
+	}
+	const alone = ent('file', 'zzalone.ts', 'src/zzalone/zzalone.ts');
+	await seed([alone]);
+	const impNone = await runImportGraph(exp('import.graph', { path: join(REPO, 'src/zzalone') }), ctx);
+	assert.deepEqual([impNone.summary.topImporters.length, impNone.summary.topImportees.length], [0, 0]);
+	noLimit(impNone.completeness, 'import.graph with 0');
+
+	// concept.resolve: former limit 20. Every match is returned, and the record says how many.
+	for (const [n, word] of [[20, 'zzconcepta'], [21, 'zzconceptb']] as const) {
+		await seed(Array.from({ length: n }, (_, i) => ent('function', `${word}${i}`, `src/${word}/f${i}.ts`)));
+		const out = await runConceptResolve(exp('concept.resolve', { query: word, limit: 3 }), ctx);
+		assert.ok(out.hits.length >= n, `concept.resolve with ${n} returned ${out.hits.length}`);
+		assert.equal(out.completeness.total, out.hits.length, 'every match found is returned');
+		noLimit(out.completeness, `concept.resolve with ${n}`);
+	}
+	const conNone = await runConceptResolve(exp('concept.resolve', { query: 'zznoconceptmatch' }), ctx);
+	assert.equal(conNone.hits.length, 0);
+	noLimit(conNone.completeness, 'concept.resolve with 0');
+
+	// manifests.locate: former limit 200. Two manifests are in the fixture already.
+	const before = (await runManifestsLocate(exp('manifests.locate', { topK: 1 }), ctx)).hits.length;
+	assert.equal(before, 2, 'a topK is ignored');
+	for (const [n, word] of [[200, 'zzmania'], [201, 'zzmanb']] as const) {
+		await seed(Array.from({ length: n }, (_, i) => ent('document', `m${i}.yaml`, `k8s/${word}/m${i}.yaml`, { language: 'yaml', artifact: true, body: 'apiVersion: v1\nkind: ConfigMap\n' })));
+		const out = await runManifestsLocate(exp('manifests.locate', {}), ctx);
+		assert.equal(out.hits.filter(h => h.file.includes(`/${word}/`)).length, n, `manifests.locate with ${n}`);
+		noLimit(out.completeness, `manifests.locate with ${n}`);
+	}
+
+	// data-model.trace: former limits 4 targets, 12 fields and 6 callers for each target.
+	for (const [n, word] of [[4, 'ZzTargetsA'], [5, 'ZzTargetsB']] as const) {
+		await seed(Array.from({ length: n }, (_, i) => ent('class', word, `src/models/${word}${i}.ts`)));
+		const out = await runDataModelTrace(exp('data-model.trace', { entityName: word }), ctx);
+		assert.equal(out.nodes.length, n, `data-model.trace targets with ${n}`);
+		noLimit(out.completeness, `data-model.trace targets with ${n}`);
+	}
+	for (const [n, word] of [[12, 'ZzFieldsA'], [13, 'ZzFieldsB']] as const) {
+		const model = ent('class', word, `src/models/${word}.ts`);
+		const fields = Array.from({ length: n }, (_, i) => ent('property' as EntityKind, `${word}f${i}`, `src/models/${word}.ts`, { startLine: 40 + i }));
+		await seed([model, ...fields], fields.map(f => edge('DEFINES', model, f)));
+		const out = await runDataModelTrace(exp('data-model.trace', { entityName: word }), ctx);
+		assert.equal(out.nodes[0]!.fields.length, n, `data-model.trace fields with ${n}`);
+		noLimit(out.completeness, `data-model.trace fields with ${n}`);
+	}
+	for (const [n, word] of [[6, 'ZzCallersA'], [7, 'ZzCallersB']] as const) {
+		const model = ent('class', word, `src/models/${word}.ts`);
+		const callers = Array.from({ length: n }, (_, i) => ent('function', `${word}Caller${i}`, `src/other/${word}c${i}.ts`));
+		await seed([model, ...callers], callers.map(c => edge('CALLS', c, model)));
+		const out = await runDataModelTrace(exp('data-model.trace', { entityName: word }), ctx);
+		assert.equal(out.nodes[0]!.topCallers.length, n, `data-model.trace callers with ${n}`);
+		noLimit(out.completeness, `data-model.trace callers with ${n}`);
+	}
+	const dmNone = await runDataModelTrace(exp('data-model.trace', { entityName: 'ZzNoSuchModel' }), ctx);
+	assert.equal(dmNone.nodes.length, 0);
+	noLimit(dmNone.completeness, 'data-model.trace with 0');
+
+	// convention.detect: former limits 8 base-class idioms and 5 named subclasses for each. The fixture's nine bases,
+	// one with six subclasses, are one over both.
+	const conv = await runConventionDetect(exp('convention.detect', { path: join(REPO, 'src/pay') }), ctx);
+	assert.equal(conv.baseClassIdioms.length, 9);
+	assert.equal(Math.max(...conv.baseClassIdioms.map(i => i.representativeSubclasses.length)), 6);
+	noLimit(conv.completeness, 'convention.detect over');
+	for (const [n, word] of [[8, 'ZzBasesA'], [5, 'ZzSubsB']] as const) {
+		const dir = `src/zz${word}`;
+		const bases = word === 'ZzBasesA'
+			? Array.from({ length: n }, (_, i) => ent('class', `${word}Base${i}`, `src/lib/${word}${i}.ts`))
+			: [ent('class', `${word}Base`, `src/lib/${word}.ts`)];
+		const subs = word === 'ZzBasesA'
+			? bases.map((_, i) => ent('class', `${word}Sub${i}`, `${dir}/s${i}.ts`))
+			: Array.from({ length: n }, (_, i) => ent('class', `${word}Sub${i}`, `${dir}/s${i}.ts`));
+		await seed([...bases, ...subs], subs.map((sub, i) => edge('INHERITS', sub, bases[word === 'ZzBasesA' ? i : 0]!)));
+		const out = await runConventionDetect(exp('convention.detect', { path: join(REPO, dir) }), ctx);
+		assert.equal(out.baseClassIdioms.length, word === 'ZzBasesA' ? n : 1, `convention.detect with ${n} ${word}`);
+		assert.equal(out.baseClassIdioms[0]!.representativeSubclasses.length, word === 'ZzBasesA' ? 1 : n);
+		noLimit(out.completeness, `convention.detect with ${n} ${word}`);
+	}
+	const convNone = await runConventionDetect(exp('convention.detect', { path: join(REPO, 'src/zznothing') }), ctx);
+	assert.equal(convNone.baseClassIdioms.length, 0);
+	noLimit(convNone.completeness, 'convention.detect with 0');
 });
 
 // ---------------------------------------------------------------------------

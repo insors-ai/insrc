@@ -93,7 +93,8 @@ export async function runClassHierarchy(
 		targets = await findEntitiesByName(
 			db,
 			[params.symbolName!],
-			{ repo: ctx.repoPath, kinds: TARGET_KINDS },
+			// No limit: the name index returns 50 unless told otherwise.
+			{ repo: ctx.repoPath, kinds: TARGET_KINDS, limit: Number.POSITIVE_INFINITY },
 		);
 		// Prefer real definitions over test/spec doubles.
 		targets = targets.filter(e => e.artifact !== true);

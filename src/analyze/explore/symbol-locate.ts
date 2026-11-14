@@ -28,16 +28,13 @@ import type {
 	SymbolHit,
 	SymbolLocateOutput,
 } from './types.js';
-import { graphCompleteness, reachedLimit } from './completeness-facts.js';
+import { graphCompleteness } from './completeness-facts.js';
 
 const log = getLogger('analyze:explore:symbol-locate');
 
 // ---------------------------------------------------------------------------
 // Configuration
 // ---------------------------------------------------------------------------
-
-const DEFAULT_LIMIT = 50;
-const MAX_LIMIT = 200;
 
 const DEFAULT_KINDS: readonly EntityKind[] = [
 	'function', 'method', 'class', 'interface', 'type', 'variable', 'module',
@@ -50,7 +47,6 @@ const DEFAULT_KINDS: readonly EntityKind[] = [
 interface SymbolLocateParams {
 	readonly names:        readonly string[];
 	readonly kinds?:       readonly EntityKind[];
-	readonly limit?:       number;
 	readonly matchMode?:   'exact' | 'substring';
 }
 
@@ -71,14 +67,10 @@ function parseParams(exp: Exploration): SymbolLocateParams {
 	const kinds = Array.isArray(kindsRaw)
 		? kindsRaw.filter(k => typeof k === 'string') as EntityKind[]
 		: undefined;
-	const limit = typeof p['limit'] === 'number' && p['limit']! > 0
-		? Math.min(MAX_LIMIT, Math.floor(p['limit'] as number))
-		: DEFAULT_LIMIT;
 	const matchMode = p['matchMode'] === 'substring' ? 'substring' : 'exact';
 	return {
 		names,
 		kinds: kinds ?? DEFAULT_KINDS,
-		limit,
 		matchMode,
 	};
 }
@@ -100,6 +92,8 @@ export async function runSymbolLocate(
 		matched = await findEntitiesByName(db, params.names, {
 			repo:  ctx.repoPath,
 			kinds: params.kinds!,
+			// No limit: the name index returns 50 unless told otherwise.
+			limit: Number.POSITIVE_INFINITY,
 		});
 	}
 
@@ -132,15 +126,13 @@ export async function runSymbolLocate(
 	// cites the compiled file as if it were canonical.
 	matched = matched.filter(e => ctx.ignoreFilter.isIncluded(e.file));
 
-	// Cap + sort deterministically (by file:line for stable output).
+	// Sort deterministically (by file:line for stable output). Every match is returned.
 	matched.sort((a, b) => {
 		if (a.file !== b.file) return a.file.localeCompare(b.file);
 		return a.startLine - b.startLine;
 	});
-	const limit = params.limit ?? DEFAULT_LIMIT;
-	const capped = matched.slice(0, limit);
 
-	const hits: SymbolHit[] = capped.map(e => ({
+	const hits: SymbolHit[] = matched.map(e => ({
 		entityId:  e.id,
 		name:      e.name,
 		kind:      e.kind,
@@ -163,7 +155,6 @@ export async function runSymbolLocate(
 		completeness: graphCompleteness({
 			returned: hits.length,
 			found:    matched.length,
-			limited:  matched.length > limit ? [reachedLimit('symbols', limit, 'overall', matched.length)] : [],
 		}),
 		names: params.names,
 		hits,

@@ -61,15 +61,13 @@ import type {
 } from './types.js';
 import { buildCompleteness } from '../completeness.js';
 import type { Completeness, SkippedItem } from '../completeness.js';
-import { GRAPH_BASIS_NOTE, graphCompleteness, reachedLimit } from './completeness-facts.js';
+import { GRAPH_BASIS_NOTE, graphCompleteness } from './completeness-facts.js';
 
 const log = getLogger('analyze:explore:concept-resolve');
 
 // ---------------------------------------------------------------------------
 // Configuration
 // ---------------------------------------------------------------------------
-
-const MAX_HITS = 20;
 
 /** Stopwords to drop from queries -- common English filler + generic
  *  code-jargon that would false-match everywhere. */
@@ -500,7 +498,6 @@ function structuralEntityCandidates(
 
 interface ConceptResolveParams {
 	readonly query:       string;
-	readonly limit?:      number;
 	/** Bias to include/exclude kinds. Default: include all. */
 	readonly includeKinds?: readonly ('dir' | 'file' | 'entity')[];
 }
@@ -511,16 +508,12 @@ function parseParams(exp: Exploration): ConceptResolveParams {
 	if (query.length === 0) {
 		throw new Error(`concept.resolve: params.query is required (non-empty string)`);
 	}
-	const limit = typeof p['limit'] === 'number' && p['limit']! > 0
-		? Math.min(MAX_HITS, Math.floor(p['limit'] as number))
-		: MAX_HITS;
 	const includeKindsRaw = p['includeKinds'];
 	const includeKinds = Array.isArray(includeKindsRaw)
 		? includeKindsRaw.filter(k => k === 'dir' || k === 'file' || k === 'entity') as ('dir' | 'file' | 'entity')[]
 		: undefined;
 	return {
 		query,
-		limit,
 		...(includeKinds !== undefined ? { includeKinds } : {}),
 	};
 }
@@ -588,11 +581,8 @@ export async function runConceptResolve(
 		if (prev === undefined || s.score > prev.score) byKey.set(k, s);
 	}
 
-	// A limit below 1 is not a limit a result can be cut to: at least one hit is kept.
-	const limit = Math.max(1, Math.floor(params.limit ?? MAX_HITS));
 	const ranked = Array.from(byKey.values())
-		.sort((a, b) => b.score - a.score)
-		.slice(0, limit);
+		.sort((a, b) => b.score - a.score);
 
 	const hits: ConceptHit[] = ranked.map(r => ({
 		kind:  r.kind,
@@ -622,7 +612,6 @@ export async function runConceptResolve(
 		completeness: graphCompleteness({
 			returned: hits.length,
 			found:    byKey.size,
-			limited:  byKey.size > limit ? [reachedLimit('matches', limit, 'overall', byKey.size)] : [],
 			skipped,
 			rule:     `Directories more than ${MAX_DIR_DEPTH} levels below the repository root are not candidates.`,
 		}),

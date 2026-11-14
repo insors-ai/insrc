@@ -29,16 +29,13 @@ import type {
 	UsageExampleHit,
 	UsageExampleOutput,
 } from './types.js';
-import { graphCompleteness, reachedLimit } from './completeness-facts.js';
+import { graphCompleteness } from './completeness-facts.js';
 
 const log = getLogger('analyze:explore:usage-example');
 
 // ---------------------------------------------------------------------------
 // Configuration
 // ---------------------------------------------------------------------------
-
-const DEFAULT_TOP_K = 12;
-const MAX_TOP_K     = 40;
 
 const DEFAULT_TARGET_KINDS: readonly EntityKind[] = [
 	'function', 'method', 'class',
@@ -54,7 +51,6 @@ interface UsageExampleParams {
 	readonly symbolName?: string;
 	readonly entityId?:   string;
 	readonly kinds?:      readonly EntityKind[];
-	readonly topK?:       number;
 }
 
 function parseParams(exp: Exploration): UsageExampleParams {
@@ -75,14 +71,10 @@ function parseParams(exp: Exploration): UsageExampleParams {
 	const kinds = Array.isArray(kindsRaw)
 		? kindsRaw.filter(k => typeof k === 'string') as EntityKind[]
 		: undefined;
-	const topK = typeof p['topK'] === 'number' && p['topK']! > 0
-		? Math.min(MAX_TOP_K, Math.floor(p['topK'] as number))
-		: DEFAULT_TOP_K;
 	return {
 		...(symbolName !== undefined && symbolName.length > 0 ? { symbolName } : {}),
 		...(entityId   !== undefined && entityId.length   > 0 ? { entityId }   : {}),
 		...(kinds      !== undefined && kinds.length > 0     ? { kinds }      : {}),
-		topK,
 	};
 }
 
@@ -112,7 +104,8 @@ export async function runUsageExample(
 			await findEntitiesByName(
 				db,
 				[params.symbolName!],
-				{ repo: ctx.repoPath, kinds: targetKinds },
+				// No limit: the name index returns 50 unless told otherwise.
+				{ repo: ctx.repoPath, kinds: targetKinds, limit: Number.POSITIVE_INFINITY },
 			)
 		)
 			// Drop stale entities under gitignored paths so the compiled
@@ -147,16 +140,14 @@ export async function runUsageExample(
 	// (2) 1-hop callers via CALLS predecessors.
 	const callers = await findCallers(db, target.id);
 
-	// (3) Cap deterministically -- rank by file+line so results are
-	// reproducible across runs (same input, same output).
+	// (3) Rank by file+line so results are reproducible across runs (same input, same output).
+	// Every caller is returned.
 	callers.sort((a, b) => {
 		if (a.file !== b.file) return a.file.localeCompare(b.file);
 		return a.startLine - b.startLine;
 	});
-	const topK = params.topK ?? DEFAULT_TOP_K;
-	const capped = callers.slice(0, topK);
 
-	const hits: UsageExampleHit[] = capped.map(e => ({
+	const hits: UsageExampleHit[] = callers.map(e => ({
 		entityId:  e.id,
 		name:      e.name,
 		kind:      e.kind,
@@ -182,7 +173,6 @@ export async function runUsageExample(
 			repoCompleteness: ctx.repoCompleteness,
 			returned: hits.length,
 			found:    callers.length,
-			limited:  callers.length > topK ? [reachedLimit('callers', topK, 'overall', callers.length)] : [],
 			// Several entities carry the name and the callers of only one were read.
 			skipped:  ambiguousCandidates > 1
 				? [{

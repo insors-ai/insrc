@@ -364,12 +364,10 @@ test('symbol-locate, test-locate, import-graph, usage-example, concept-resolve, 
 
 	// test.locate: former limit 20. Test functions that name the subject.
 	for (const [n, word] of [[20, 'zzalpha'], [21, 'zzbravo']] as const) {
-		await seed(Array.from({ length: n }, (_, i) => ent('function', `test${word}${i}`, `src/bulk/__tests__/t${word}${i}.test.ts`)));
+		await seed(Array.from({ length: n }, (_, i) => ent('function', `test${word}${i}`, `src/bulk/__tests__/${word.slice(2)}${i}.test.ts`)));
 		const out = await runTestLocate(exp('test.locate', { subject: word, topK: 2 }), ctx);
-		// Each test function names the subject, and so does its file: n entity hits and n file hits, every one returned.
-		assert.equal(out.hits.filter(h => h.kind !== 'file').length, n, `test.locate entities with ${n}`);
-		assert.equal(out.hits.filter(h => h.kind === 'file').length, n, `test.locate files with ${n}`);
-		assert.equal(out.completeness.total, 2 * n);
+		// Only the test functions name the subject (their files do not): exactly n hits, every one returned.
+		assert.equal(out.hits.length, n, `test.locate with ${n}`);
 		noLimit(out.completeness, `test.locate with ${n}`);
 	}
 	const tstNone = await runTestLocate(exp('test.locate', { subject: 'zznothingmatches' }), ctx);
@@ -416,7 +414,7 @@ test('symbol-locate, test-locate, import-graph, usage-example, concept-resolve, 
 	for (const [n, word] of [[20, 'zzconcepta'], [21, 'zzconceptb']] as const) {
 		await seed(Array.from({ length: n }, (_, i) => ent('function', `${word}${i}`, `src/${word}/f${i}.ts`)));
 		const out = await runConceptResolve(exp('concept.resolve', { query: word, limit: 3 }), ctx);
-		assert.ok(out.hits.length >= n, `concept.resolve with ${n} returned ${out.hits.length}`);
+		assert.equal(out.hits.length, n, `concept.resolve with ${n}`);
 		assert.equal(out.completeness.total, out.hits.length, 'every match found is returned');
 		noLimit(out.completeness, `concept.resolve with ${n}`);
 	}

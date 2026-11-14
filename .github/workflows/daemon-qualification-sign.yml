@@ -1,0 +1,50 @@
+name: Sign daemon qualification candidate
+on:
+  workflow_dispatch:
+    inputs:
+      run_id: { required: true, type: string }
+      artifact_id: { required: true, type: string }
+      commit: { required: true, type: string }
+      sequence: { required: true, type: string }
+      compatibility: { required: true, type: string, description: Approved compatibility JSON }
+permissions:
+  contents: read
+  actions: read
+jobs:
+  sign:
+    if: github.ref == 'refs/heads/v2' && github.ref_protected
+    environment: daemon-pilot-qualification
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.22.1'
+      - name: Fetch exact candidate and compatibility input
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ inputs.run_id }}
+          ARTIFACT_ID: ${{ inputs.artifact_id }}
+          COMMIT: ${{ inputs.commit }}
+          COMPATIBILITY: ${{ inputs.compatibility }}
+        run: |
+          bash scripts/daemon-release-artifact.sh "$RUN_ID" "$ARTIFACT_ID" "$COMMIT" "$RUNNER_TEMP/candidate"
+          printf '%s' "$COMPATIBILITY" > "$RUNNER_TEMP/compatibility.json"
+      - name: Sign qualification manifest
+        env:
+          COMMIT: ${{ inputs.commit }}
+          SEQUENCE: ${{ inputs.sequence }}
+          INSRC_QUALIFICATION_KEY: ${{ secrets.INSRC_QUALIFICATION_KEY }}
+        run: node scripts/prepare-daemon-qualification.mjs "$RUNNER_TEMP/candidate" "$COMMIT" "$SEQUENCE" "$RUNNER_TEMP/compatibility.json"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: qualification-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/candidate/manifest.json
+            ${{ runner.temp }}/candidate/manifest.qualification.sig
+          if-no-files-found: error
+          retention-days: 14

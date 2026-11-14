@@ -1,6 +1,6 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { constants } from 'node:fs';
-import { open, rename, unlink, rmdir, readdir, writeFile, mkdir } from 'node:fs/promises';
+import { open, rename, unlink, rmdir, readdir, writeFile, mkdir, link } from 'node:fs/promises';
 import { join, dirname, relative } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { isDeepStrictEqual as same } from 'node:util';
@@ -16,6 +16,8 @@ import { reviewWorkerCheckpoint } from '../../daemon/threads/review-worker-contr
 import { reviewRuntimePath } from '../../daemon/threads/review-runtime-store.js';
 import { writeReviewBytes } from '../code-review/task-review/checkpoint.js';
 import { contextRoot, preparationDigest } from './prepared-context.js';
+import { ownedCleanupContext } from './cleanup-context-ownership.js';
+import type { CleanupContextOwner } from './cleanup-context-ownership.js';
 import { decodePreparationCheckpoint } from './preparation-checkpoint.js';
 import type { PreparationHistory } from './history-binding.js';
 import { publicationEvidenceDigest } from './publication-proof.js';
@@ -30,6 +32,8 @@ export interface PreparedCleanupDeps {
  readonly store: ArtifactStore;
  /** Main's exact subject/worker/native/context fence. Never supplied over RPC. */
  assertIdle(): Promise<void>;
+ /** Main-issued retained context ownership; never inferred from directory names. */
+ contexts(): Promise<readonly CleanupContextOwner[]>;
  /** Fault injection wraps real claim, rename, unlink and fsync boundaries. */
  readonly boundary?: ((stage: string, path: string) => Promise<void> | void) | undefined;
  readonly onDeleted?: ((reviewId: string) => Promise<void> | void) | undefined;
@@ -112,10 +116,56 @@ async function executePreparedCleanup(target: ReviewCleanupTarget, key: ReviewKe
   await cleanupParents(key.project, ['.insrc', 'tmp', 'review-cleanup', key.family, key.reviewId], true);
   const privateStat = (await cleanupStat(directory))!;
   if ((privateStat.mode & 0o077n) !== 0n || process.getuid && privateStat.uid !== BigInt(process.getuid())) throw new Error('Unsafe private cleanup claim directory');
-  const saved = await cleanupStat(manifest);
+  let saved = await cleanupStat(manifest);
+  if (!saved) {
+   const names = await readdir(directory);
+   if (names.length) {
+    if (names.length !== 1 || !/^claim\.json\.[a-f0-9-]{36}\.tmp$/.test(names[0]!)) throw new Error('Unverifiable private cleanup state has no durable claim');
+    const temporary = join(directory, names[0]!), raw = await cleanupBytes(temporary, reviewJsonLimit());
+    let candidate: CleanupClaim | undefined;
+    try { candidate = decodeCleanupClaim(JSON.parse(raw.bytes.toString('utf8')), key, reviewJsonLimit()); }
+    catch (error) {
+     const prefix = '{"schemaVersion":1,"key":', text = raw.bytes.toString('utf8');
+     if (!(error instanceof SyntaxError) || !prefix.startsWith(text) && !text.startsWith(prefix)) throw error;
+     // An interrupted write is not a claim. Preserve its bytes outside the
+     // active claim directory, then qualify a NEW claim from the still-present
+     // original resources. Never delete or confer authority on the fragment.
+     const parts = ['.insrc', 'tmp', 'review-cleanup-orphans', key.family, key.reviewId]; await cleanupParents(key.project, parts, true);
+     const quarantine = join(key.project, ...parts), stat = (await cleanupStat(quarantine))!;
+     if ((stat.mode & 0o077n) !== 0n || process.getuid && stat.uid !== BigInt(process.getuid())) throw new Error('Unsafe orphan quarantine');
+     const destination = join(quarantine, `${names[0]}.${bytesDigest(raw.bytes)}`), existing = await cleanupStat(destination);
+     if (existing) {
+      const kept = await cleanupBytes(destination, reviewJsonLimit());
+      if (kept.stat.dev !== raw.stat.dev || kept.stat.ino !== raw.stat.ino || !kept.bytes.equals(raw.bytes)) throw new Error('Orphan quarantine destination conflicts; retain both files');
+     } else await physical('link.orphan', destination, () => link(temporary, destination));
+     await sync(destination);
+     let parent = quarantine; for (;;) { await sync(parent); if (parent === key.project) break; parent = dirname(parent); }
+     await physical('unlink.orphan-fragment', temporary, async () => {
+      const current = await cleanupBytes(temporary, reviewJsonLimit());
+      if (current.stat.dev !== raw.stat.dev || current.stat.ino !== raw.stat.ino || !current.bytes.equals(raw.bytes)) throw new Error('Orphan fragment changed during quarantine');
+      await unlink(temporary);
+     });
+     await sync(directory); result.retained.push(destination);
+    }
+    // A hard-killed writer does not run finally. Promote only the complete
+    // temp bytes whose exact digest was already recorded in permanent history.
+    // link is atomic/no-clobber; a retry can also recover its leftover alias.
+    if (candidate) {
+     await verifyClaim(deps.store, candidate, first);
+     await physical('link.claim', manifest, () => link(temporary, manifest)); await sync(directory);
+     saved = await cleanupStat(manifest);
+    }
+   }
+  }
   if (saved) {
    claim = decodeCleanupClaim(JSON.parse((await cleanupBytes(manifest, reviewJsonLimit())).bytes.toString('utf8')), key, reviewJsonLimit());
    await verifyClaim(deps.store, claim, first);
+   const claimedFile = (await cleanupBytes(manifest, reviewJsonLimit())).stat;
+   for (const name of await readdir(directory)) if (/^claim\.json\.[a-f0-9-]{36}\.tmp$/.test(name)) {
+    const temporary = join(directory, name), alias = await cleanupBytes(temporary, reviewJsonLimit());
+    if (alias.stat.ino !== claimedFile.ino || alias.stat.dev !== claimedFile.dev || !same(JSON.parse(alias.bytes.toString('utf8')), claim)) throw new Error('Unverified temporary cleanup claim retained');
+    await physical('unlink.orphan', temporary, () => unlink(temporary)); await sync(directory);
+   }
   } else {
    if ((await readdir(directory)).length) throw new Error('Private cleanup state has no durable claim; retain for inspection');
    const log = await deps.store.history.log(first.permanent.artifactId);
@@ -137,7 +187,7 @@ async function executePreparedCleanup(target: ReviewCleanupTarget, key: ReviewKe
    if (decoded.format !== 'current') throw new Error('Explicit inactive migration is required before prepared cleanup');
    const history = decoded.checkpoint as PreparationHistory, last = history.attempts.at(-1)!;
    const published = 'review-response' in last ? last['review-response'].crPublication === 'complete' : 'publication' in last && last.publication?.state === 'complete';
-   if (!published || publicationEvidenceDigest(history) !== first.proof.evidenceDigest || history.runtime.runtimeId !== first.proof.runtime.runtimeId) throw new Error('Latest review is unpublished or not completely preserved');
+   if (!published || !history.context || publicationEvidenceDigest(history) !== first.proof.evidenceDigest || history.runtime.runtimeId !== first.proof.runtime.runtimeId) throw new Error('Latest review is unpublished or not completely preserved');
    const runtimeFile = await cleanupBytes(reviewRuntimePath(key), REVIEW_RUNTIME_MAX_BYTES), runtime = decodeReviewRuntime(JSON.parse(runtimeFile.bytes.toString('utf8')), key);
    if (runtime.state !== 'terminal' || runtime.cancellation || runtime.resourceGuard.openLeases.length || runtime.runtimeId !== history.runtime.runtimeId
     || runtime.attempt !== first.proof.runtime.attempt || runtime.checkpointBinding.inputDigest !== history.runtime.inputDigest
@@ -145,7 +195,7 @@ async function executePreparedCleanup(target: ReviewCleanupTarget, key: ReviewKe
    await cleanupParents(key.project, ['.insrc', 'tmp', key.family === 'code' ? 'code-review' : 'design-review'], false);
    await cleanupParents(key.project, ['.insrc', 'tmp', 'review-runtime', key.family], false);
    await cleanupParents(key.project, ['.insrc', 'tmp', 'review-context', key.family, key.reviewId], false);
-   const context = await inventoryCleanupContext(contextRoot(key));
+   const context = await ownedCleanupContext(key, await deps.contexts(), [history.context!.historyBindingDigest, ...first.bindingHeads]);
    claim = decodeCleanupClaim({ schemaVersion: 1, key, attempt: runtime.attempt, claimId: randomUUID(), runtimeId: runtime.runtimeId,
     checkpointDigest: bytesDigest(checkpoint.bytes), checkpointFileIdentity: { dev: String(checkpoint.stat.dev), ino: String(checkpoint.stat.ino) }, closedAuditDigest: closedAuditDigest(first.proof, runtime),
     ...(history.context ? { context: history.context } : {}), approvalRevision: first.approvalRevision, permanent: first.permanent,
@@ -168,12 +218,14 @@ async function executePreparedCleanup(target: ReviewCleanupTarget, key: ReviewKe
     mkdir,
     rename: (from, to) => physical('rename', String(to), () => rename(from, to)), unlink: path => physical('unlink.tmp', String(path), () => unlink(path)),
    });
-   // Persist every newly created ancestor before any source root can move.
-   let parent = dirname(directory);
-   for (;;) { await sync(parent); if (parent === key.project) break; parent = dirname(parent); }
   }
   const pinned = claim;
   if (pinned.deletions.find(e => e.kind === 'checkpoint')?.contentDigest !== pinned.checkpointDigest) throw new Error('Cleanup checkpoint digest mismatch');
+  // A recovered temp may have been killed BEFORE its file or ancestor fsync.
+  // Establish durability now, never infer it from visibility after a crash.
+  await sync(manifest); await sync(directory);
+  let parent = dirname(directory);
+  for (;;) { await sync(parent); if (parent === key.project) break; parent = dirname(parent); }
   const claimStamp = (await cleanupBytes(manifest, reviewJsonLimit())).stat;
   const check = async () => {
    await deps.assertIdle(); await pins.check(); await cleanupParents(key.project, ['.insrc', 'tmp', 'review-cleanup', key.family, key.reviewId], false);

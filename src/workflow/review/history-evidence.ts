@@ -32,10 +32,19 @@ async function read(path: string, limit: number): Promise<Buffer> {
   if (offset !== st.size) throw new Error('History evidence changed'); return bytes.subarray(0, offset);
  } finally { await file.close(); }
 }
-async function directory(source: ReadyContextReceipt): Promise<string> {
+type EvidenceSource = Pick<ReadyContextReceipt, 'key' | 'attempt' | 'generationId' | 'manifestDigest'>;
+async function directory(source: EvidenceSource, create = true): Promise<string> {
  const root = contextRoot(source.key); if (await realpath(root) !== root) throw new Error('Unsafe history evidence root');
- const path = join(root, 'history-evidence'); await mkdir(path, { mode: 0o700 }).catch(e => { if ((e as NodeJS.ErrnoException).code !== 'EEXIST') throw e; });
+ const path = join(root, 'history-evidence'); if (create) await mkdir(path, { mode: 0o700 }).catch(e => { if ((e as NodeJS.ErrnoException).code !== 'EEXIST') throw e; });
  const st = await lstat(path); if (!st.isDirectory() || st.isSymbolicLink() || await realpath(path) !== path) throw new Error('Unsafe history evidence directory'); return path;
+}
+/** One immutable metadata node, authenticated by its caller's expected head.
+ * Reading it grants neither a context borrow nor execution authority. */
+export async function readHistoryEvidenceManifest(source: EvidenceSource, id: string) {
+ if (!/^[a-f0-9]{64}$/.test(id)) throw new Error('Invalid history evidence identity');
+ const raw = await read(join(await directory(source, false), `${id}.json`), reviewJsonLimit()), value: unknown = JSON.parse(raw.toString());
+ if (!Value.Check(schema, value) || preparationDigest(value) !== id || !same(value.key, source.key) || value.attempt !== source.attempt || value.generationId !== source.generationId || value.sourceManifestDigest !== source.manifestDigest) throw new Error('Unbound history evidence manifest');
+ return { manifest: value, rawDigest: hash(raw) };
 }
 /** Validates only bounded evidence metadata; no source/model calls. The caller
  * must supply a source receipt obtained from the current private registry. */
@@ -43,8 +52,7 @@ export async function verifyHistoryEvidenceChain(source: ReadyContextReceipt, he
  const seen = new Set<string>(), chain: Entry[][] = []; let count = 0;
  while (head !== source.manifestDigest) {
   if (!/^[a-f0-9]{64}$/.test(head) || seen.has(head) || seen.size >= 10000) throw new Error('Invalid history evidence lineage'); seen.add(head);
-  const value: unknown = JSON.parse((await read(join(await directory(source), `${head}.json`), reviewJsonLimit())).toString());
-  if (!Value.Check(schema, value) || preparationDigest(value) !== head || !same(value.key, source.key) || value.attempt !== source.attempt || value.generationId !== source.generationId || value.sourceManifestDigest !== source.manifestDigest) throw new Error('Unbound history evidence manifest');
+  const { manifest: value } = await readHistoryEvidenceManifest(source, head);
   count += value.objects.length; if (count > 100000) throw new Error('History evidence lineage exceeds inventory bound');
   chain.push(value.objects); head = value.previousDigest;
  }

@@ -392,7 +392,8 @@ background command that exits when the checkpoint reaches a terminal status. Nev
 a placeholder or no-op wait, and stop any armed wait before ending a turn that asks the
 user a question. Show meaningful status and completed-chunk progress to the user, and
 wait for full completion before corrections or approval. Default polling returns
-metadata only. Set includeResult true and use afterCompletedChunk/nextCompletedChunk to retrieve one completed chunk per page.
+metadata only. Set includeResult true and use afterCompletedChunk/nextCompletedChunk
+to retrieve one completed chunk per page.
 Polling does not renew activity or execute model calls. The checkpoint path is returned.
 
 For a controller reviewer, `assignment` returns the current planning, impact or chunk prompt,

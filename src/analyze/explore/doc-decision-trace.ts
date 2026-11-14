@@ -51,12 +51,11 @@ import type {
 import { buildCompleteness } from '../completeness.js';
 import type { PartialFinding, PartlyReadItem, SkippedItem } from '../completeness.js';
 import { carriedCompleteness, DOC_INDEX_RULE, reachedLimit, vectorPassSkipped } from './completeness-facts.js';
-import { createItemMeasurer } from './item-measure.js';
+import { createItemMeasurer, readItemWhole } from './item-measure.js';
 import { errorMessage, LookupFailedError } from './lookup-failed.js';
 import type { CarriedCompletenessFacts } from './completeness-facts.js';
 
 /** How much of each retrieved section's stored body the model is given. */
-const SECTION_BODY_CHARS = 2_000;
 
 const log = getLogger('analyze:explore:doc-decision-trace');
 
@@ -266,16 +265,15 @@ export async function prepareDocDecisionTrace(
 			skipped.push({ what: `${s.file} § ${s.heading}`, reason: 'the section is no longer in the index' });
 			continue;
 		}
-		const body = (entity.body ?? '').slice(0, SECTION_BODY_CHARS);
+		// The whole section, from its file; a section the file cannot confirm is reported as not covered.
+		const { body, notCovered } = await readItemWhole(measurer, `${s.file} § ${s.heading}`, entity);
 		hydrated.push({
 			entityId: s.entityId,
 			file:     s.file,
 			heading:  s.heading,
 			body,
 		});
-		// The model reads this much of the section; say so when the section is longer.
-		const cut = await measurer.partlyRead(`${s.file} § ${s.heading}`, entity, body.length);
-		if (cut !== undefined) partlyRead.push(cut);
+		if (notCovered !== undefined) partlyRead.push(notCovered);
 	}
 
 	const promptContent = loadPromptFile();

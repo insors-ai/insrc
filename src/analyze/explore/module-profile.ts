@@ -40,7 +40,7 @@ import type {
 } from './types.js';
 import { buildCompleteness } from '../completeness.js';
 import type { PartlyReadItem, SkippedItem } from '../completeness.js';
-import { createItemMeasurer } from './item-measure.js';
+import { createItemMeasurer, readItemWhole } from './item-measure.js';
 import type { ItemMeasurer } from './item-measure.js';
 
 const log = getLogger('analyze:explore:module-profile');
@@ -64,19 +64,12 @@ const INDEX_FILENAMES = new Set([
 /**
  * Signature substrings that identify a file as an entry point --
  * HTTP handler, CLI main, service registration, etc. Matched
- * against the file body's first 4 KB.
+ * against the whole file, read from disk.
  */
-/** How much of a file's stored body is scanned for an entry-point marker. */
-const ENTRYPOINT_SCAN_CHARS = 4096;
-
-/**
- * What the entry-point list rests on. The index stores no content for a
- * source file's own entity, so for those files only the name is checked; the
- * markers are looked for where a stored body exists.
- */
+/** What the entry-point list rests on. */
 const ENTRYPOINT_RULE =
-	'Entry points are recognised by file name, and by a marker in the first 4,096 characters of a file whose content the index stores; ' +
-	'the index stores no content for a source file itself, so such a file is recognised by name only.';
+	'Entry points are recognised by file name, and by a marker anywhere in a file, which is read from disk once the index confirms it holds the file; ' +
+	'a file the index cannot confirm is named as not covered.';
 
 const ENTRYPOINT_MARKERS: readonly RegExp[] = [
 	/if\s+__name__\s*==\s*['"]__main__['"]/,
@@ -254,8 +247,9 @@ async function profileDir(
 			continue;
 		}
 		const bodyMatchEntity = entities.find(e => e.file === f.file && e.kind === 'file');
-		const body = (bodyMatchEntity?.body ?? '').slice(0, ENTRYPOINT_SCAN_CHARS);
-		if (body.length === 0) continue;
+		if (bodyMatchEntity === undefined) continue;
+		// The whole file, read from disk once the index confirms it holds the file; an unconfirmable file is not covered.
+		const { body, notCovered } = await readItemWhole(measurer, f.file, bodyMatchEntity);
 		let found = false;
 		for (const rx of ENTRYPOINT_MARKERS) {
 			if (rx.test(body)) {
@@ -264,11 +258,8 @@ async function profileDir(
 				break;
 			}
 		}
-		// A marker past the scanned part would have been missed.
-		if (!found && bodyMatchEntity !== undefined) {
-			const cut = await measurer.partlyRead(f.file, bodyMatchEntity, body.length);
-			if (cut !== undefined) partlyRead.push(cut);
-		}
+		// A file that could not be confirmed was not scanned in full.
+		if (!found && notCovered !== undefined) partlyRead.push(notCovered);
 	}
 
 	// entityCount + totalBytes across the WHOLE subtree, not just
@@ -329,18 +320,15 @@ async function profileFile(
 		if (e.isExported === true) exports.push(e.name);
 	}
 	exports.sort();
-	const body = (fileEntity?.body ?? '').slice(0, ENTRYPOINT_SCAN_CHARS);
 	const entrypoints: string[] = [];
 	if (INDEX_FILENAMES.has(basename(file))) entrypoints.push(file);
-	else {
+	else if (fileEntity !== undefined) {
+		// The whole file, read from disk once the index confirms it holds the file; an unconfirmable file is not covered.
+		const { body, notCovered } = await readItemWhole(measurer, file, fileEntity);
 		for (const rx of ENTRYPOINT_MARKERS) {
 			if (rx.test(body)) { entrypoints.push(file); break; }
 		}
-		// A marker past the scanned part would have been missed.
-		if (entrypoints.length === 0 && fileEntity !== undefined && body.length > 0) {
-			const cut = await measurer.partlyRead(file, fileEntity, body.length);
-			if (cut !== undefined) partlyRead.push(cut);
-		}
+		if (entrypoints.length === 0 && notCovered !== undefined) partlyRead.push(notCovered);
 	}
 	return {
 		path:        file,

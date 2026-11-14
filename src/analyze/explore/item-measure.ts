@@ -56,6 +56,23 @@ export function summarisedFrom(
 	return measurer.partlyRead(entity.file, entity, Math.min(summariserCut, stored));
 }
 
+/**
+ * The item's whole content, for a lookup that reads it. The content comes from
+ * the item's file when the file still holds it. An item the file cannot confirm
+ * is read from its stored body, and the entry says it is not covered, with the
+ * reason; it is never presented as read.
+ */
+export async function readItemWhole(
+	measurer: ItemMeasurer,
+	what:     string,
+	entity:   StoredItem,
+): Promise<{ readonly body: string; readonly notCovered?: PartlyReadItem }> {
+	const m = await measurer.measure(entity);
+	if (m.content !== undefined) return { body: m.content };
+	const body = entity.body ?? '';
+	return { body, notCovered: partlyReadEntry(what, body.length, m) };
+}
+
 /** One measurer per lookup run. `entities`, when the lookup already holds the repo's entities, saves the graph reads. */
 export function createItemMeasurer(db: DbClient, entities?: readonly Entity[]): ItemMeasurer {
 	const hashByFile = new Map<string, string | undefined>();

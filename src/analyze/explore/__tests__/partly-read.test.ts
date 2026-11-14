@@ -32,7 +32,6 @@ import { finalizeDocDecisionTrace, prepareDocDecisionTrace } from '../doc-decisi
 import { runDocMention } from '../doc-mention.js';
 import { createItemMeasurer } from '../item-measure.js';
 import { runManifestsLocate } from '../manifests-locate.js';
-import { runModuleProfile } from '../module-profile.js';
 import type { Exploration, ExplorationRunnerContext, ExplorationType } from '../types.js';
 
 const NOW = '2026-10-08T10:00:00.000Z';
@@ -94,66 +93,58 @@ test.afterEach(async () => {
 });
 
 // ---------------------------------------------------------------------------
-// The document lookups' 2,000-character cut
+// The document lookups read a section whole
 // ---------------------------------------------------------------------------
 
-test('a document lookup that cuts a 100,000-character section to 2,000 reports it against the section\'s real length (mutation: measure the stored body)', async () => {
+test('doc.constraint.enumerate and doc.decision.trace read a section longer than the former cut whole and report an unconfirmable section as not covered', async () => {
 	const big = section('Refund rules');
-	const real = lines(GUIDE, big).length;
+	const whole = lines(GUIDE, big);
 	// The fixture is the case the design names: the section is over 100,000 characters
 	// and the indexer stored its first 8,192 with the marker.
-	assert.ok(real > 100_000, `the section is ${real} characters`);
+	assert.ok(whole.length > 100_000, `the section is ${whole.length} characters`);
 	assert.equal(big.body.length, 8_192 + INDEXER_CUT_MARKER.length);
+	const guide = join(REPO, 'docs/guide.md');
 
 	const prep = await prepareDocConstraintEnumerate({ subject: 'refund', repoPath: REPO, db: await getDb() });
 	if (prep.kind !== 'narrow-llm') throw new Error('the fixture has sections that mention refund');
 	const facts = prep.prepared.completenessFacts;
 	assert.ok(facts !== undefined, 'prepare carries its facts');
-	const guide = join(REPO, 'docs/guide.md');
-	const entry = (facts.partlyRead ?? []).find(p => p.what === `${guide} § Refund rules`);
-	assert.deepEqual(entry, { what: `${guide} § Refund rules`, readChars: 2_000, totalChars: real },
-		'2,000 of the section\'s real length, not of the 8,192 the index stores');
-	// The cut keeps its value: the model is still given exactly 2,000 characters of it.
-	assert.ok(prep.userTurn.includes(big.body.slice(0, 2_000)));
-	assert.equal(prep.userTurn.includes(big.body.slice(0, 2_001)), false);
+	// The model is given the whole section, read from its file, and nothing is reported as cut.
+	assert.ok(prep.userTurn.includes(whole), 'the whole section is in the prompt');
+	assert.deepEqual(facts.partlyRead ?? [], []);
 
-	// A section shorter than the cut is not reported.
-	assert.equal((facts.partlyRead ?? []).some(p => p.what.endsWith('§ Refund short')), false);
-
-	// finalize builds the record from what prepare carried.
+	// finalize builds the record from what prepare carried: no partly read entry.
 	const out = finalizeDocConstraintEnumerate(prep.prepared, {
 		subject: 'refund', notFoundNote: '',
 		constraints: [{ constraint: 'Refunds MUST be issued within 30 days.', kind: 'must', sourceEntityId: big.id, file: guide, heading: 'Refund rules', rationale: '' }],
 	});
-	assert.deepEqual(out.completeness.partlyRead, facts.partlyRead);
-	assert.equal(out.completeness.complete, false);
+	assert.equal(out.completeness.partlyRead, undefined);
 	assert.equal(out.completeness.basisNote, DOC_INDEX_RULE);
 
-	// The decision lookup makes the same cut and the same report.
+	// The decision lookup reads the section whole as well.
 	const dprep = await prepareDocDecisionTrace({ topic: 'refund', repoPath: REPO, db: await getDb() });
 	if (dprep.kind !== 'narrow-llm') throw new Error('the fixture has sections that mention refund');
-	const dentry = (dprep.prepared.completenessFacts?.partlyRead ?? []).find(p => p.what === `${guide} § Refund rules`);
-	assert.deepEqual(dentry, { what: `${guide} § Refund rules`, readChars: 2_000, totalChars: real });
-	const dout = finalizeDocDecisionTrace(dprep.prepared, { topic: 'refund', notFoundNote: '', decisions: [] } as Parameters<typeof finalizeDocDecisionTrace>[1]);
-	assert.deepEqual(dout.completeness.partlyRead, dprep.prepared.completenessFacts?.partlyRead);
-});
+	assert.ok(dprep.userTurn.includes(whole), 'the whole section is in the prompt');
+	assert.deepEqual(dprep.prepared.completenessFacts?.partlyRead ?? [], []);
 
-test('a section whose file changed since it was indexed is reported as partly read with no length claimed', async () => {
-	const guide = join(REPO, 'docs/guide.md');
+	// The file changed since it was indexed: it cannot be confirmed to hold either section, so neither is
+	// presented as read. Each is reported with no length claimed, and the stored body is what the model gets.
 	writeFileSync(guide, `# Guide\n\nA new first paragraph.\n\n${GUIDE}`);
-
-	const prep = await prepareDocConstraintEnumerate({ subject: 'refund', repoPath: REPO, db: await getDb() });
-	if (prep.kind !== 'narrow-llm') throw new Error('the fixture has sections that mention refund');
-	const entry = (prep.prepared.completenessFacts?.partlyRead ?? []).find(p => p.what === `${guide} § Refund rules`);
-	// It is still known to be partly read: 2,000 of a stored body that is itself cut.
-	assert.deepEqual(entry, {
-		what: `${guide} § Refund rules`, readChars: 2_000, totalChars: null,
-		totalNote: 'the file changed since it was indexed',
-	});
-	// A short section of the changed file: the file cannot be confirmed to hold it, so it is never presented as read.
-	const short = (prep.prepared.completenessFacts?.partlyRead ?? []).find(p => p.what.endsWith('§ Refund short'));
-	assert.equal(short?.totalChars, null);
-	assert.equal(short?.totalNote, 'the file changed since it was indexed');
+	for (const run of [
+		await prepareDocConstraintEnumerate({ subject: 'refund', repoPath: REPO, db: await getDb() }),
+		await prepareDocDecisionTrace({ topic: 'refund', repoPath: REPO, db: await getDb() }),
+	]) {
+		if (run.kind !== 'narrow-llm') throw new Error('the fixture has sections that mention refund');
+		const entries = run.prepared.completenessFacts?.partlyRead ?? [];
+		assert.deepEqual(entries.find(p => p.what === `${guide} § Refund rules`), {
+			what: `${guide} § Refund rules`, readChars: big.body.length, totalChars: null,
+			totalNote: 'the file changed since it was indexed',
+		});
+		const short = entries.find(p => p.what.endsWith('§ Refund short'));
+		assert.equal(short?.totalChars, null);
+		assert.equal(short?.totalNote, 'the file changed since it was indexed');
+		assert.equal(run.userTurn.includes(whole), false, 'the changed file is not read in its place');
+	}
 });
 
 // ---------------------------------------------------------------------------
@@ -183,48 +174,6 @@ test('a lookup that passes on a stored body uncut reports the item as partly rea
 });
 
 // ---------------------------------------------------------------------------
-// module.profile's 4,096-character scan
-// ---------------------------------------------------------------------------
-
-test('module.profile reports each file it cut with the kept and full lengths', async () => {
-	// A file whose content the index stores (as some file entities do), longer
-	// than the scan, with no entry-point marker in the part that is scanned.
-	const write = async (rel: string, source: string, storedBody: string): Promise<void> => {
-		const file = join(REPO, rel);
-		mkdirSync(dirname(file), { recursive: true });
-		writeFileSync(file, source);
-		const e: Entity = {
-			id: makeEntityId(REPO, file, 'file', file), kind: 'file', name: rel, language: 'python', repoId: 1, repo: REPO, file,
-			startLine: 1, endLine: source.split('\n').length, body: storedBody, embedding: [], indexedAt: NOW,
-			hash: indexerFileHash(source),
-		};
-		await upsertEntities(await getDb(), [e]);
-	};
-	const long = `${'# padding line\n'.repeat(400)}if __name__ == "__main__":\n    run()\n`;
-	assert.ok(long.length > 4_096);
-	await write('svc/late_main.py', long, long);                       // the marker lies past the scan
-	const early = `if __name__ == "__main__":\n    run()\n${'# padding line\n'.repeat(400)}`;
-	await write('svc/early_main.py', early, early);                    // the marker is found: the cut did not matter
-	await write('svc/short.py', 'x = 1\n', 'x = 1\n');                 // shorter than the scan
-	await write('svc/unstored.py', long, '');                          // the index stores no content, as for a source file
-
-	const out = await runModuleProfile(exp('module.profile', { path: join(REPO, 'svc') }), ctx);
-	assert.deepEqual(out.profile.entrypoints, [join(REPO, 'svc/early_main.py')], 'the scan still reads 4,096 characters and no more');
-	assert.deepEqual(out.completeness.partlyRead, [{ what: join(REPO, 'svc/late_main.py'), readChars: 4_096, totalChars: long.length }]);
-	assert.equal(out.completeness.complete, false);
-	assert.equal(out.completeness.basis, 'filesystem');
-	// What the list rests on is stated: a file with no stored content is recognised by name only.
-	assert.match(out.completeness.basisNote ?? '', /the index stores no content for a source file itself/);
-
-	// The single-file form makes the same report.
-	const one = await runModuleProfile(exp('module.profile', { path: join(REPO, 'svc/late_main.py') }), ctx);
-	assert.deepEqual(one.completeness.partlyRead, [{ what: join(REPO, 'svc/late_main.py'), readChars: 4_096, totalChars: long.length }]);
-	const found = await runModuleProfile(exp('module.profile', { path: join(REPO, 'svc/early_main.py') }), ctx);
-	assert.equal(found.completeness.partlyRead, undefined);
-	assert.equal(found.completeness.complete, true);
-});
-
-// ---------------------------------------------------------------------------
 // prepare -> finalize
 // ---------------------------------------------------------------------------
 
@@ -236,12 +185,15 @@ test('each of the three lookups that pause for a model call builds its record in
 		assert.equal(c.partlyRead, undefined);
 	};
 
+	// The file changed since it was indexed, so each section it holds is reported as not covered.
+	writeFileSync(join(REPO, 'docs/guide.md'), `# Guide\n\nA new first paragraph.\n\n${GUIDE}`);
+
 	// doc.constraint.enumerate
 	const cprep = await prepareDocConstraintEnumerate({ subject: 'refund', repoPath: REPO, db });
 	if (cprep.kind !== 'narrow-llm') throw new Error('unreachable');
 	const craw = { subject: 'refund', notFoundNote: '', constraints: [] };
 	const carried: readonly PartlyReadItem[] = cprep.prepared.completenessFacts!.partlyRead!;
-	assert.equal(carried.length, 1);
+	assert.equal(carried.length, 2);
 	assert.deepEqual(finalizeDocConstraintEnumerate(cprep.prepared, craw).completeness.partlyRead, carried);
 	// A value minted before the field existed, as an in-flight step state would hold.
 	const { completenessFacts: _c, ...oldC } = cprep.prepared;

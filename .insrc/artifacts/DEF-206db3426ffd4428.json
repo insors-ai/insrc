@@ -28,10 +28,10 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 3,
-        "contentHash": "e9e7e6f205140951382906b271bef040b32cd2eb8cdda4d92cf3a8195d442559",
+        "contentHash": "c6dd209dc3998a6fb182e25d879db46abcb7637792235c19330473bb75d7f45e",
         "at": "2026-11-13T05:16:46.663Z",
         "by": {
           "id": "insrc:system",
@@ -65,15 +65,15 @@
         }
       },
       "approval": {
-        "revision": 2,
+        "revision": 3,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-09T07:44:28.217Z",
+        "at": "2026-11-14T17:39:17.303Z",
         "override": {
-          "reason": "Independent review completed all six chunks with zero findings and resolved all four prior findings. The remaining incomplete verification was limited to the reviewer’s GitHub connectivity. Authenticated GitHub checks independently confirmed the predecessor epic #41, stories #42–#44, and successor #146 are open. Reciprocal tracker linkage and disposition are a separate follow-up. User explicitly approved the presented DEF with this override."
+          "reason": "Controller self-review of DEF rev 3 (s7 non-goal narrowed, k1 extended, FR004 added); daemon design review unavailable and its rev-2 review is stale."
         }
       }
     },
@@ -84,7 +84,7 @@
         "s1": "closed",
         "s2": "open"
       },
-      "lastSyncedAt": "2026-11-13T06:21:45.768Z"
+      "lastSyncedAt": "2026-11-14T12:06:44.963Z"
     }
   },
   "body": {
@@ -103,8 +103,8 @@
         "rationale": "Initial delivery targets VS Code chat and verified native CLI surfaces."
       },
       {
-        "text": "General job scheduling, arbitrary process attachment or automatic task restart",
-        "rationale": "Initial delegates observe instrumented, authorized executions."
+        "text": "Recurring or scheduled jobs, attaching to pre-existing processes, and automatic restart of a task",
+        "rationale": "Observation covers instrumented, authorized executions. Launching an authorized one-shot command as a daemon-owned task is in scope (s7); scheduling, recurrence, attachment to existing processes and automatic restart stay excluded."
       },
       {
         "text": "Fabricated ETA or progress, raw model output as progress, and universal MCP Tasks support",
@@ -137,7 +137,7 @@
       {
         "id": "k1",
         "type": "contract",
-        "text": "Cover workflow and analyze operations through their supported IPC entry points, design reviews, code reviews and managed test sweeps with a shared authorized task/attempt progress contract.",
+        "text": "Cover workflow and analyze operations through their supported IPC entry points, design reviews, code reviews and managed test sweeps and authorized one-shot commands launched as daemon-owned tasks with a shared authorized task/attempt progress contract.",
         "source": "c1"
       },
       {
@@ -565,6 +565,11 @@
         {
           "id": "E20261109206db342:FR003",
           "statement": "Supported clients show native updates without extra model calls, and users can explicitly enable one-minute fallback observation where supported.",
+          "scope": "doc"
+        },
+        {
+          "id": "E20261109206db342:FR004",
+          "statement": "Users can launch an authorized long-running command as a daemon-owned task, end the turn, and still see its measured progress and terminal result in the originating chat while the chat's session lock is released.",
           "scope": "doc"
         }
       ]

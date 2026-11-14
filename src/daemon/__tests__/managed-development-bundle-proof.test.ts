@@ -72,13 +72,29 @@ test('managed development proof revalidates signed identity and pinned runtime',
 		const gate = {
 			async reserve() { return active = { kind: 'restart', id: 'test', owner, entries: [] }; },
 			async read() { return { ...JSON.parse(await readFile(journalPath, 'utf8')), active }; },
+			async recordIntent() {},
+			async recordReceipt() {},
 			async release() { active = null; },
 		} as unknown as InstallationMutationGate;
+		const operations: string[] = [];
 		const control = new ManagedDaemonControl(install, {
 			gate, owner: async () => owner,
-			ensure: async () => assert.fail('tampered runtime must be rejected before service mutation'),
+			ensure: async () => { operations.push('ensure'); },
+			open: async () => ({
+				async call({ op }) {
+					operations.push(op);
+					return op === 'start'
+						? { ok: true as const, state: 'running' as const, generation: 'new' }
+						: { ok: true as const, state: 'idle' as const, generation: null };
+				},
+				close() {},
+			}),
 		});
 		await assert.rejects(control.run('restart'), /runtime changed/);
+		assert.deepEqual(operations, []);
+		await writeFile(runtime, 'runtime fixture');
+		assert.deepEqual(await control.run('restart'), { alreadyRunning: false, forced: false });
+		assert.deepEqual(operations, ['ensure', 'status', 'start']);
 		assert.equal(active, null);
 		assert.equal(await readFile(journalPath, 'utf8'), journal);
 	} finally {

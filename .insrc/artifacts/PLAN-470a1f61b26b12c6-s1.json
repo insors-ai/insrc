@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1794658028751-iwq96c",
+    "runId": "wf-1794660168696-um4zur",
     "repoPath": "/home/subho/work/dev/insors/insrc",
-    "createdAt": "2026-11-14T12:10:27.022Z",
+    "createdAt": "2026-11-14T12:44:35.936Z",
     "epicCreatedAt": "2026-11-14T08:55:28.320Z",
     "standalone": true,
     "attribution": {
@@ -16,7 +16,7 @@
         }
       ]
     },
-    "elapsedMs": 196958,
+    "elapsedMs": 104783,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "470a1f61b26b12c6",
@@ -28,9 +28,9 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 1,
-        "contentHash": "5b94baefe66fdcc018c51f817758939d108c59db8c8a73e675dfc414a23422eb",
-        "at": "2026-11-14T12:10:27.435Z",
+        "number": 2,
+        "contentHash": "53f3b91700ed7c99b5fd601463d3d90f30d71524bdb3e389cb4c533fe402a17c",
+        "at": "2026-11-14T12:44:36.788Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -39,27 +39,27 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 1,
+        "revision": 2,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-14T12:17:32.929Z"
+        "at": "2026-11-14T12:52:01.467Z"
       }
     },
-    "revision": 1,
     "envelope": {
       "description": "",
       "references": [],
       "attachments": []
     },
-    "rangeBase": "10f93f0b9a2e7ccad25d9e8a01a7096b3804e64c"
+    "revision": 2,
+    "rangeBase": "bf3a7f53f0fc0f27c137469bc34e52cf0c7a56c0"
   },
   "body": {
     "summary": {
       "audience": "technical",
-      "prose": "Fourteen dependency-ordered tasks implement the approved holistic preparation correction for both review families. Focused validation accompanies each task; full production-route fault, scope and performance qualification follows integration. Existing judges, source scope and human approval remain; the stopped prior review is not resumed and daemon deployment stays after BUILD approval."
+      "prose": "Fourteen dependency-ordered tasks implement the approved holistic preparation correction for both review families. Focused validation accompanies each task; full production-route fault, scope and performance qualification follows integration. Existing judges, source scope and human approval remain; the stopped prior review is not resumed and daemon deployment stays after BUILD approval. Foundation adapters are validated before production wiring; t12/t13 explicitly verify the coordinated production cutover."
     },
     "tasks": [
       {
@@ -116,9 +116,9 @@
         "dependsOn": [
           "t2"
         ],
-        "summary": "Replace hot full-history resource writes with a sole-main-writer compact runtime adapter, preserving actual atomic write outcomes and host lease proof.",
+        "summary": "Implement the sole-main-writer compact runtime persistence adapter and verify it through the real ReviewNativeHost/ReviewProcessLeases boundary. Preserve atomic save outcomes and host closure proof. Do not activate production storage before t7-t12 integration and coordinated cutover.",
         "acceptanceChecks": [
-          "Open intent before spawn; confirmed disposal before close; uncertain writes retain fences; progress writes do not serialize full history.",
+          "At the compact adapter/native-host boundary: open intent precedes spawn; closure requires confirmed disposal; uncertain writes retain fences; native/progress updates leave full history unchanged. Production public-route wiring is required in t12/t13, not this foundation task.",
           "Run and record this task's focused validation before advancing; cross-cutting qualification does not replace these checks."
         ],
         "derivedFrom": [
@@ -127,7 +127,7 @@
         "tests": [
           {
             "level": "integration",
-            "name": "Extend worker resource/outcome tests: open-before-spawn, disposal-before-close, uncertain writes, interrupted init and zero full-history native updates."
+            "name": "Compact adapter/native-host integration: open-before-spawn, disposal-before-close, uncertain writes, injected initialization interruption, actual proof replacement and zero full-history native/progress updates; production wiring qualified in t12/t13."
           }
         ]
       },
@@ -333,7 +333,8 @@
         "summary": "Migrate supported old inactive records under exact fences; preserve inputs/results/actions and unresolved guards; wire all production consumers to new execution without flags or legacy dual writers.",
         "acceptanceChecks": [
           "Interrupted migration never loses proof; old-only rollback rejected after new formats; no automatic scans/resume, no partial daemon deployment or stopped-attempt restart.",
-          "Run and record this task's focused validation before advancing; cross-cutting qualification does not replace these checks."
+          "Run and record this task's focused validation before advancing; cross-cutting qualification does not replace these checks.",
+          "Wire the real production review ownership, both-family checkpoint/native resource, progress, publication, approval and cleanup paths to compact runtime; no test-only adapter or legacy active-writer fallback remains for new execution."
         ],
         "derivedFrom": [
           "c8"
@@ -356,7 +357,8 @@
         "summary": "Run both-family production fixtures covering all route matrices, source equivalence, tampering, write windows, native disposal, cancellation and cleanup/migration crashes.",
         "acceptanceChecks": [
           "Two independent review sessions remain isolated; full-history writes/native command=0; all mandatory source/test coverage preserved; no user socket/DB or hosted quota used.",
-          "Run and record this task's focused validation before advancing; cross-cutting qualification does not replace these checks."
+          "Run and record this task's focused validation before advancing; cross-cutting qualification does not replace these checks.",
+          "Through actual registered production review routes, prove native resource and progress writes perform zero full-history mutations for both code and design reviews."
         ],
         "derivedFrom": [
           "c1",

@@ -8,7 +8,7 @@
 **LLD run:** `wf-1794655838217-bnsgsk`
 **LLD effective hash:** `f2e6e79848fc...`
 
-Fourteen dependency-ordered tasks implement the approved holistic preparation correction for both review families. Focused validation accompanies each task; full production-route fault, scope and performance qualification follows integration. Existing judges, source scope and human approval remain; the stopped prior review is not resumed and daemon deployment stays after BUILD approval.
+Fourteen dependency-ordered tasks implement the approved holistic preparation correction for both review families. Focused validation accompanies each task; full production-route fault, scope and performance qualification follows integration. Existing judges, source scope and human approval remain; the stopped prior review is not resumed and daemon deployment stays after BUILD approval. Foundation adapters are validated before production wiring; t12/t13 explicitly verify the coordinated production cutover.
 
 ## Contents
 
@@ -20,20 +20,20 @@ Fourteen dependency-ordered tasks implement the approved holistic preparation co
 
 | # | Task | Size | Status | Depends on | Tests | Derived from |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| 1 | **`t1`** Retain workload fixture and establish managed baseline | M | — | — | integration: Proposed retained-fixture baseline: real managed Git, exact171-file/four-attempt scope and operation/write counters; deterministic provider not called before ready. | [[c1]] [[c8]] |
-| 2 | **`t2`** Define versioned preparation and operational contracts | M | — | `t1` | unit: Proposed exact contracts: supported historical/version3 checkpoint decode, RuntimeV1 bound, manifest/history/cleanup binding identity and forged capabilities. | [[c2]] [[c3]] |
-| 3 | **`t3`** Implement compact host runtime durability | L | — | `t2` | integration: Extend worker resource/outcome tests: open-before-spawn, disposal-before-close, uncertain writes, interrupted init and zero full-history native updates. | [[c3]] |
-| 4 | **`t4`** Implement reserved disk-backed source sessions | L | — | `t2` | integration: Proposed source-session tests: batching/framing/hash equivalence, per-packet budgets, above-memory disk retention, aggregate reservation exhaustion and zero duplicate queries. | [[c4]] |
-| 5 | **`t5`** Implement stable qualified source contexts and private borrows | L | — | `t3`, `t4` | integration: Proposed context acquisition tests: private worker receipts/borrows, ready ordering, warm cross-worker handoff, tamper/restart invalidation and eviction restrictions. | [[c2]] [[c4]] |
-| 6 | **`t6`** Implement successor history validation and result commits | M | — | `t5` | integration: Proposed history binding tests: successive task/chunk feedback and new evidence, old-history tamper, checkpoint/runtime crash reconciliation and no source/model rerun. | [[c2]] [[c3]] |
-| 7 | **`t7`** Integrate code review preparation across routes | L | — | `t6` | integration: Extend route-admission/projection-lineage/final-scope tests: all workflow story/task routes, merge/rename/delete witnesses, aliases and exact selected after blocks. | [[c5]] |
-| 8 | **`t8`** Integrate design review latest-subject preparation | L | — | `t6` | integration: Extend design subject-monitor/recovery tests: latest DEF/HLD/LLD routes, impact/chunk reuse, target invalidation/user restart and unrelated edit stability. | [[c5]] |
-| 9 | **`t9`** Add exact cancellation and preparation progress surfaces | L | — | `t7`, `t8` | integration: Extend worker isolation/progress/recovery and MCP wire fixtures: cancel exact review during preparation/tool/model/publication races, owner rejection, resource fence and nullable genuine counters. | [[c6]] |
-| 10 | **`t10`** Integrate publication and approval with new proof | L | — | `t7`, `t8` | integration: Extend both-family publication/approval tests: complete new CR capabilities, warm zero reconstruction, publication-only retry zero model calls and current-author/BUILD freshness. | [[c7]] |
-| 11 | **`t11`** Implement resumable cleanup claims for both families | L | — | `t9`, `t10` | integration: Extend both-family cleanup tests: fault every claim/rename/unlink/fsync boundary; cleanup retry after runtime/checkpoint removal, approval/file mismatch and arbitrary missing-runtime refusal. | [[c7]] |
-| 12 | **`t12`** Implement explicit inactive-record migration and coordinated cutover | M | — | `t11` | integration: Proposed migration/cutover tests: inactive v1/v2 byte-preserving upgrade, legacy guards, interrupted migration, unknown capabilities and unsupported old-reader downgrade. | [[c8]] |
-| 13 | **`t13`** Qualify failure, concurrency and scope equivalence | L | — | `t12` | integration: Full disposable production two-session matrix through public routes and both families, all crash/tamper/native-loss cases, complete scope equivalence and bounded runtime writes. | [[c1]] [[c3]] [[c5]] [[c6]] [[c7]] [[c8]] |
-| 14 | **`t14`** Qualify performance, packaging and deployment handoff | L | — | `t13` | integration: Managed cold x3/warm/history-growth performance gates on supported Node/native package, npm build plus source-free package smoke; no deployed daemon mutation. | [[c1]] [[c8]] |
+| 1 | **`t1`** Retain workload fixture and establish managed baseline | M | approved r1 | — | integration: Proposed retained-fixture baseline: real managed Git, exact171-file/four-attempt scope and operation/write counters; deterministic provider not called before ready. | [[c1]] [[c8]] |
+| 2 | **`t2`** Define versioned preparation and operational contracts | M | approved r1 | `t1` | unit: Proposed exact contracts: supported historical/version3 checkpoint decode, RuntimeV1 bound, manifest/history/cleanup binding identity and forged capabilities. | [[c2]] [[c3]] |
+| 3 | **`t3`** Implement compact host runtime durability | L | approved r1 | `t2` | integration: Compact adapter/native-host integration: open-before-spawn, disposal-before-close, uncertain writes, injected initialization interruption, actual proof replacement and zero full-history native/progress updates; production wiring qualified in t12/t13. | [[c3]] |
+| 4 | **`t4`** Implement reserved disk-backed source sessions | L | approved r1 | `t2` | integration: Proposed source-session tests: batching/framing/hash equivalence, per-packet budgets, above-memory disk retention, aggregate reservation exhaustion and zero duplicate queries. | [[c4]] |
+| 5 | **`t5`** Implement stable qualified source contexts and private borrows | L | approved r1 | `t3`, `t4` | integration: Proposed context acquisition tests: private worker receipts/borrows, ready ordering, warm cross-worker handoff, tamper/restart invalidation and eviction restrictions. | [[c2]] [[c4]] |
+| 6 | **`t6`** Implement successor history validation and result commits | M | approved r1 | `t5` | integration: Proposed history binding tests: successive task/chunk feedback and new evidence, old-history tamper, checkpoint/runtime crash reconciliation and no source/model rerun. | [[c2]] [[c3]] |
+| 7 | **`t7`** Integrate code review preparation across routes | L | approved r1 | `t6` | integration: Extend route-admission/projection-lineage/final-scope tests: all workflow story/task routes, merge/rename/delete witnesses, aliases and exact selected after blocks. | [[c5]] |
+| 8 | **`t8`** Integrate design review latest-subject preparation | L | approved r1 | `t6` | integration: Extend design subject-monitor/recovery tests: latest DEF/HLD/LLD routes, impact/chunk reuse, target invalidation/user restart and unrelated edit stability. | [[c5]] |
+| 9 | **`t9`** Add exact cancellation and preparation progress surfaces | L | approved r1 | `t7`, `t8` | integration: Extend worker isolation/progress/recovery and MCP wire fixtures: cancel exact review during preparation/tool/model/publication races, owner rejection, resource fence and nullable genuine counters. | [[c6]] |
+| 10 | **`t10`** Integrate publication and approval with new proof | L | approved r1 | `t7`, `t8` | integration: Extend both-family publication/approval tests: complete new CR capabilities, warm zero reconstruction, publication-only retry zero model calls and current-author/BUILD freshness. | [[c7]] |
+| 11 | **`t11`** Implement resumable cleanup claims for both families | L | approved r1 | `t9`, `t10` | integration: Extend both-family cleanup tests: fault every claim/rename/unlink/fsync boundary; cleanup retry after runtime/checkpoint removal, approval/file mismatch and arbitrary missing-runtime refusal. | [[c7]] |
+| 12 | **`t12`** Implement explicit inactive-record migration and coordinated cutover | M | approved r1 | `t11` | integration: Proposed migration/cutover tests: inactive v1/v2 byte-preserving upgrade, legacy guards, interrupted migration, unknown capabilities and unsupported old-reader downgrade. | [[c8]] |
+| 13 | **`t13`** Qualify failure, concurrency and scope equivalence | L | approved r1 | `t12` | integration: Full disposable production two-session matrix through public routes and both families, all crash/tamper/native-loss cases, complete scope equivalence and bounded runtime writes. | [[c1]] [[c3]] [[c5]] [[c6]] [[c7]] [[c8]] |
+| 14 | **`t14`** Qualify performance, packaging and deployment handoff | L | approved r1 | `t13` | integration: Managed cold x3/warm/history-growth performance gates on supported Node/native package, npm build plus source-free package smoke; no deployed daemon mutation. | [[c1]] [[c8]] |
 
 ### 1.1 TASK-470a1f61b26b12c6-s1-t1 — Retain workload fixture and establish managed baseline
 
@@ -53,10 +53,10 @@ Add proposed exact checkpoint3, RuntimeV1, source manifest, HistoryBindingV1, cl
 
 ### 1.3 TASK-470a1f61b26b12c6-s1-t3 — Implement compact host runtime durability
 
-Replace hot full-history resource writes with a sole-main-writer compact runtime adapter, preserving actual atomic write outcomes and host lease proof.
+Implement the sole-main-writer compact runtime persistence adapter and verify it through the real ReviewNativeHost/ReviewProcessLeases boundary. Preserve atomic save outcomes and host closure proof. Do not activate production storage before t7-t12 integration and coordinated cutover.
 
 **Acceptance checks:**
-- Open intent before spawn; confirmed disposal before close; uncertain writes retain fences; progress writes do not serialize full history.
+- At the compact adapter/native-host boundary: open intent precedes spawn; closure requires confirmed disposal; uncertain writes retain fences; native/progress updates leave full history unchanged. Production public-route wiring is required in t12/t13, not this foundation task.
 - Run and record this task's focused validation before advancing; cross-cutting qualification does not replace these checks.
 
 ### 1.4 TASK-470a1f61b26b12c6-s1-t4 — Implement reserved disk-backed source sessions
@@ -131,6 +131,7 @@ Migrate supported old inactive records under exact fences; preserve inputs/resul
 **Acceptance checks:**
 - Interrupted migration never loses proof; old-only rollback rejected after new formats; no automatic scans/resume, no partial daemon deployment or stopped-attempt restart.
 - Run and record this task's focused validation before advancing; cross-cutting qualification does not replace these checks.
+- Wire the real production review ownership, both-family checkpoint/native resource, progress, publication, approval and cleanup paths to compact runtime; no test-only adapter or legacy active-writer fallback remains for new execution.
 
 ### 1.13 TASK-470a1f61b26b12c6-s1-t13 — Qualify failure, concurrency and scope equivalence
 
@@ -139,6 +140,7 @@ Run both-family production fixtures covering all route matrices, source equivale
 **Acceptance checks:**
 - Two independent review sessions remain isolated; full-history writes/native command=0; all mandatory source/test coverage preserved; no user socket/DB or hosted quota used.
 - Run and record this task's focused validation before advancing; cross-cutting qualification does not replace these checks.
+- Through actual registered production review routes, prove native resource and progress writes perform zero full-history mutations for both code and design reviews.
 
 ### 1.14 TASK-470a1f61b26b12c6-s1-t14 — Qualify performance, packaging and deployment handoff
 

@@ -29,17 +29,20 @@ esac
 			[new URL('../check-daemon-release-policy.sh', import.meta.url).pathname, target],
 			{ env: { ...env, ...override }, encoding: 'utf8' }).status;
 		assert.equal(run(), 0);
-		const qualification = JSON.stringify({ ...policy, name: 'daemon-pilot-qualification' });
-		assert.equal(run({ POLICY: qualification }, 'daemon-pilot-qualification'), 0);
-		assert.notEqual(run({ POLICY: qualification, STATE: 'false' }, 'daemon-pilot-qualification'), 0);
-		for (const override of [
-			{ STATE: 'false' }, { STATE: 'missing' }, { GITHUB_REF: 'refs/heads/v2' }, { GITHUB_REF: 'refs/tags/main' },
-			{ POLICY: JSON.stringify({ ...policy, can_admins_bypass: true }) },
-			{ POLICY: JSON.stringify({ ...policy, protection_rules: [] }) },
-			{ POLICY: 'unavailable' }, { POLICY: 'not json' }, { REFS: '{}' },
-			{ REFS: JSON.stringify({ total_count: 1, branch_policies: [{ ...ref, type: 'tag' }] }) },
-			{ REFS: JSON.stringify({ total_count: 2, branch_policies: [ref, { name: 'v2', type: 'branch' }] }) },
-		]) assert.notEqual(run(override as Record<string, string>), 0, JSON.stringify(override));
+		for (const target of ['daemon-pilot-qualification', 'daemon-pilot-production']) {
+			const current = { ...policy, name: target };
+			const base = { POLICY: JSON.stringify(current) };
+			assert.equal(run(base, target), 0);
+			for (const override of [
+				{ STATE: 'false' }, { STATE: 'missing' }, { GITHUB_REF: 'refs/heads/v2' }, { GITHUB_REF: 'refs/tags/main' },
+				{ POLICY: JSON.stringify({ ...current, can_admins_bypass: true }) },
+				{ POLICY: JSON.stringify({ ...current, protection_rules: [] }) },
+				{ POLICY: JSON.stringify({ ...current, protection_rules: [{ ...current.protection_rules[0], prevent_self_review: false }] }) },
+				{ POLICY: 'unavailable' }, { POLICY: 'not json' }, { REFS: '{}' },
+				{ REFS: JSON.stringify({ total_count: 1, branch_policies: [{ ...ref, type: 'tag' }] }) },
+				{ REFS: JSON.stringify({ total_count: 2, branch_policies: [ref, { name: 'v2', type: 'branch' }] }) },
+			]) assert.notEqual(run({ ...base, ...override } as Record<string, string>, target), 0, `${target}: ${JSON.stringify(override)}`);
+		}
 	} finally { rmSync(root, { recursive: true, force: true }); }
 });
 

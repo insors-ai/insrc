@@ -1,0 +1,516 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1794639851378-gchapf",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-14T07:04:31.542Z",
+    "epicCreatedAt": "2026-11-14T06:38:49.736Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 19848,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8a036e6436ae82ab",
+    "epicSlug": "pilot-prebuilt-macos-daemon-releases",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1794639851378-gchapf",
+    "hldEffectiveHash": "e47bf71ad6dd01d8cf9fa4079c47cf117ba842af834e0ffbadbff4c374b5df04",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Pilot prebuilt macOS daemon releases",
+    "standalone": true,
+    "sizeClass": "feature",
+    "triageRationale": "A single opt-in macOS arm64 release path connects two surfaces, release automation and existing install/lifecycle; it requires several tasks but no new daemon subsystem or Linux story.",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 3,
+        "contentHash": "18e63bd3f251586f02adbb519593857f2a1adc09eff347b2406c247a92390db8",
+        "at": "2026-11-14T07:04:31.663Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T07:24:08.468Z",
+        "override": {
+          "reason": "The automated design reviewer exhausted its retries on coverage planning before reviewing the revised design. A manual self-review identified four findings, all addressed in this revision. The user explicitly approved the presented revision with this override."
+        }
+      }
+    },
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "revision": 3,
+    "rangeBase": "af15b745228ce582ea2fe7004b4dea3b08d7ffbe"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "An opt-in macOS arm64 path stages verified prebuilt bytes into the managed lifecycle. Existing source delivery remains the default. No pilot workflow runs tests on Actions. The generated HLD base run and effective hash are standalone workflow provenance, not an upstream HLD. A separately authenticated bootstrap covers clean installations; local qualification uses isolated candidate signing and the same install path as production."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Pilot prebuilt macOS daemon releases"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "api": [
+        {
+          "name": "Build candidate",
+          "signature": "commit SHA + version → candidate run ID, artifact ID and archive digest",
+          "parameters": [],
+          "returns": {
+            "type": "result",
+            "meaning": "Success identifies the exact artifact; failure stops the operation."
+          },
+          "errors": [
+            {
+              "type": "ReleaseGate",
+              "condition": "Invalid, inconsistent or missing evidence or incompatible target."
+            }
+          ],
+          "preconditions": [
+            "Use trusted workflow on protected branch; resolve and verify exact full commit and allowed version.",
+            "The build job has no signing or publishing credentials."
+          ],
+          "postconditions": [
+            "Package pinned Node 22, compiled entrypoints, required assets, production dependencies and native helper/supervisor binaries; record target and minimum macOS version.",
+            "Upload exactly one archive and bounded build metadata; do not execute test suites.",
+            "After build, a separate protected qualification-signing job verifies the exact run/artifact and archive digest, then signs the bounded candidate manifest using only the dedicated pre-release key and namespace. No Actions test commands run. The build job never accesses either signing key; qualification signing cannot publish or access the production key."
+          ]
+        },
+        {
+          "name": "Record local qualification",
+          "signature": "candidate identity + results → release qualification record",
+          "parameters": [],
+          "returns": {
+            "type": "result",
+            "meaning": "Success identifies the exact artifact; failure stops the operation."
+          },
+          "errors": [
+            {
+              "type": "ReleaseGate",
+              "condition": "Invalid, inconsistent or missing evidence or incompatible target."
+            }
+          ],
+          "preconditions": [
+            "Verify the run, artifact and SHA-256 before using the bundle on a dedicated test install.",
+            "Run appropriate source tests against the same commit and exact candidate install, migration, restart and rollback checks.",
+            "Use the independently authenticated pilot verifier in explicit qualification mode with the qualification public key and candidate signature. This mode accepts the same manifest bytes and uses the same parser, archive checks and lifecycle as production; only trust domain and state root differ. Require a disposable macOS account or VM with its own state root, LaunchAgent identity and sockets; a real checkout install and representative existing state are created within that account for migration. The qualification key is never trusted in production mode."
+          ],
+          "postconditions": [
+            "Record commit, version, platform, digest, run/artifact IDs, macOS version and pass evidence.",
+            "Write UTF-8 qualification.v1.json in the dedicated release-control Git record: schemaVersion=1, candidate {repository,commit,version,target,runId,artifactId,archiveSha256,archiveBytes}, host {macOSVersion,arch,nodeVersion}, tests [{id,result,evidenceSha256}], and qualifiedAt. Include the evidence files in the same record; hash and verify each. Each required test ID appears once and is pass."
+          ]
+        },
+        {
+          "name": "Promote candidate",
+          "signature": "approved qualification record → signed manifest and GitHub prerelease",
+          "parameters": [],
+          "returns": {
+            "type": "result",
+            "meaning": "Success identifies the exact artifact; failure stops the operation."
+          },
+          "errors": [
+            {
+              "type": "ReleaseGate",
+              "condition": "Invalid, inconsistent or missing evidence or incompatible target."
+            }
+          ],
+          "preconditions": [
+            "Separate protected workflow; fetch exact artifact by run and artifact ID, recompute SHA-256 and verify it against approved qualification.",
+            "Fail if required publish protection unavailable; no fallback to branch head, latest candidate or rebuild.",
+            "Promotion accepts the exact full SHA of a release-control commit on a protected branch with mandatory designated-owner review and stale-review dismissal. It checks ancestry from protected ref, reads the record from that commit only, requires matching repository/workflow/run/head SHA and archive ID, recomputes all evidence and archive digests, and obtains release environment approval for this run covering the displayed input SHA and candidate SHA-256. If protections cannot be enforced, fail without signing or publishing.",
+            "Compare the qualified manifest SHA-256 against the candidate manifest and verify the qualification signature. Sign the same manifest bytes under the production key and namespace; production promotion must not change release identity, sequence, compatibility, or archive bytes. Include manifest SHA-256 in the qualification record and release-control approval."
+          ],
+          "postconditions": [
+            "Sign canonical manifest and publish the exact qualified bytes as a prerelease. Fail closed on existing conflicting tag/version/assets."
+          ]
+        },
+        {
+          "name": "Stage prebuilt release",
+          "signature": "opt-in version + trusted manifest and archive → managed candidate",
+          "parameters": [],
+          "returns": {
+            "type": "result",
+            "meaning": "Success identifies the exact artifact; failure stops the operation."
+          },
+          "errors": [
+            {
+              "type": "ReleaseGate",
+              "condition": "Invalid, inconsistent or missing evidence or incompatible target."
+            }
+          ],
+          "preconditions": [
+            "Verify project signature with pinned public trust before parsing trusted claims; verify version, platform, compatibility and archive digest before extraction.",
+            "Reject unsafe entries; stage in a private directory on same volume, with no writes to live state until existing lifecycle gates pass.",
+            "Preflight bounded entry count, total unpacked bytes and individual sizes. Allow directories, regular files and only relative in-tree symbolic links to declared regular payload files, created after file extraction with no-follow parent walking. Reject absolute/traversal names or targets, duplicates, case-fold collisions, hard links, special files, setuid/setgid, and invalid ownership/modes; require a private user-owned same-volume stage with no pre-existing entries.",
+            "Bootstrap trust: the pilot operator receives the bootstrap package checksum through a separately authenticated project announcement, pinned to a specific release of the bootstrap tools. Verify it using macOS shasum before executing any bootstrap code; downloading a checksum next to the untrusted package is insufficient. This package pins the production verification key and contains its own verifier/runtime. Production mode enforces the production namespace and key; qualification mode uses a separate test key, namespace, and disposable installation. Neither path executes code from the daemon archive before verifying signature, target, archive size and digest and staging it safely. No host Git, npm or compiler is needed for clean install. Fail closed if the trust pin is unavailable or mismatched.",
+            "After bounded signature verification, strict v1 parsing rejects unknown fields, invalid channel/version and unsupported OS or CPU. Admission explicitly branches under the mutation lock: a genuinely fresh root has no activation selector, previous state, running daemon, or unfinished journal and uses fresh managed activation without a predecessor; ambiguous ownership fails closed. An existing install must use the upgrade path, identify its exact source or bundle predecessor, and require the signed, exact predecessor/candidate compatibility pair and crash-safe reopening before drain. A dirty or unresolved legacy checkout stays untouched. Fresh activation does not require a signed predecessor pair.",
+            "Replay: application-owned, user-private durable state stores a separate floor for each trust domain and release channel, keyed independently of active selector, with highest sequence and accepted identity (signed manifest SHA-256 and archive SHA-256). No floor means first admission in that channel, after trust/target/compatibility and staged-byte verification. Before drain/cutover, under the existing installation mutation lock, durably write the accepted floor and prepared transaction before any live mutation; flush files and parent directories. Persist floor before exposing the journal as prepared so a crash between them can only require retrying the same or a newer manifest, never allow downgrade. Reject a lower sequence or an equal sequence with different identity; allow exact identity retry. Recovery may restore only the transaction's already pinned predecessor offline and must never lower the floor. Corrupt or unreadable floors fail closed; a missing floor is valid only when no prior prebuilt trust state for that channel was initialized."
+          ],
+          "postconditions": [
+            "Use managed pinning, activation, health checks and recovery while retaining the previous qualified installation for safe rollback.",
+            "Persist a versioned release-proof record in the managed activation journal before drain. Source proof keeps the existing checkout identity and fingerprint. Bundle proof keeps release root, canonical runtime path, commit/release ID, trust domain, channel, manifest SHA-256, archive SHA-256, and measured relocated runtime fingerprint. Retain the exact signed manifest and detached signature in the private local release metadata store for the lifetime of the active installation and any pending rollback. Journal binds their identity and both prior/candidate pins with compatibility and launch profile. Legacy source-only journals decode under existing rules; unknown proof versions fail closed. Reverify signature, identities and runtime fingerprint from disk before switching or restoring an installation, without network or archive re-download, and dispatch source pin checks only for source roots. Recovery consults the admitted journal instead of running new release-floor admission."
+          ]
+        }
+      ],
+      "surfaceLevel": "public"
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Candidate identity",
+        "change": "new",
+        "details": "One Actions build produces one archive for a commit, version and target. Local qualification and the protected promotion job both consume the same run ID, artifact ID and SHA-256.",
+        "callSites": []
+      },
+      {
+        "entity": "Signed release manifest v1",
+        "change": "new",
+        "details": "One release manifest declares archive name, exact size, SHA-256, commit, release version and sequence, channel, target/OS minimum, Node and compatibility metadata. Its detached project signature authenticates the manifest, which authenticates the one archive. Installed trust pins project keys; key recovery and rotation are explicit release operations.",
+        "callSites": []
+      },
+      {
+        "entity": "Local qualification record v1",
+        "change": "new",
+        "details": "One protected release-control commit owns one release qualification record and evidence set, binding one candidate run, artifact ID, commit, version, target and archive digest. The promotion execution binds its separate approval to that immutable source revision and the same digest.",
+        "callSites": []
+      },
+      {
+        "entity": "Managed bundle release proof and channel floor",
+        "change": "new",
+        "details": "One managed transaction owns one candidate pin and zero or one predecessor pin. A bundle pin references one retained signed manifest and the relocated runtime fingerprint. Older source-only records remain readable. A per-domain/channel floor persists independently of the transaction and selector; restoration uses only the transaction's pinned predecessor and never rewinds the floor.",
+        "callSites": [
+          "src/daemon/managed-update-handoff.ts",
+          "src/daemon/managed-update-recovery.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Artifact was substituted, expired or lost",
+          "detection": "Recompute digest and require the exact approved artifact ID and run ID.",
+          "response": "Stop; build a new candidate and qualify it locally.",
+          "userImpact": "No release is published.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Candidate cannot start after draining predecessor",
+          "detection": "Managed identity and bounded readiness checks fail.",
+          "response": "Restore the pinned predecessor only when compatibility and current lifecycle safeguards permit; otherwise retain the journal and surface recovery instructions.",
+          "userImpact": "Controlled rollback or actionable stop.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Invalid manifest, unsupported target or corrupt archive",
+          "detection": "Signature, schema, platform, sequence and digest checks precede extraction and activation.",
+          "response": "Fail closed before touching active installation.",
+          "userImpact": "Current installation remains usable.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Bootstrap hash or candidate/production signature domain mismatch",
+          "detection": "Check bootstrap pin before execution and verify manifest against the selected namespace and key before parsing.",
+          "response": "Reject without daemon archive execution or changes to live state.",
+          "userImpact": "Operator needs a trusted bootstrap and matching signature.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Power loss between advancing floor and preparing journal",
+          "detection": "The floor exists but no activation transaction is prepared.",
+          "response": "Keep current daemon and floor; resume only by staging the identical admitted manifest or a newer release.",
+          "userImpact": "Retry does not require a rebuild or downgrade.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Two promotion attempts for one version",
+          "expected": "Serialize publication; identical already released bytes may be reported as already published, conflicting bytes fail."
+        },
+        {
+          "input": "Archive paths or links could leave the staging directory",
+          "expected": "Reject before writing outside the private staging boundary."
+        },
+        {
+          "input": "Migration from a dirty source checkout",
+          "expected": "Keep previous clone and existing state intact; refuse unsafe migration rather than overwriting it."
+        }
+      ],
+      "invariantsToPreserve": []
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "contract",
+          "purpose": "Verify fail-closed package trust and promotion",
+          "subjects": [
+            "Local malicious-manifest, archive entry, and digest mismatch fixtures",
+            "Local workflow lint and protected-input/promotion tests"
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "Qualify exact archive on a real Apple Silicon Mac",
+          "subjects": [
+            "Fresh install, clone migration with state, supervisor restart, rollback after failed upgrade",
+            "Verify installed runtime needs no host Git, npm or compiler"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "Local workflow lint, build metadata and no-hosted-test inspection"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "Local exact candidate lifecycle on a dedicated Mac profile",
+            "Use a clean Mac account without Git, npm, compiler or predecessor; reject tampered bootstrap before execution and qualify the isolated test signature with the same production parser",
+            "Migrate a disposable clone with representative state; interrupt at prepared, pre-selector switch, readiness, and rollback boundaries and verify offline restoration and unchanged floor"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "Reject unsigned/altered manifest, wrong signer/schema/OS/CPU, lower sequence and same sequence with changed digest",
+            "Reject changed archive/evidence, expired or wrong run/artifact ID, missing failed or unapproved qualification",
+            "Reject traversal, outward symlinks, symlink parent escape, hard links, special files and case-fold collisions",
+            "Reject absent/unmatched/incompatible predecessor pair before drain; verify bundle pin tampering blocks activation or recovery",
+            "Reject qualification signature in production mode, require identical candidate and published manifest bytes and archive, read legacy journals offline and reject unknown bundle proof versions",
+            "Power-loss floor/journal boundary; exact same-sequence retry succeeds, mismatched same-sequence or lower sequence fails even after restoring predecessor"
+          ]
+        }
+      ],
+      "testFramework": "Local Node test runner, shell integration checks and a documented Apple Silicon qualification run. GitHub workflows build and promote; no test jobs or test commands. Acceptance criteria: ac1 builds one unpublished macOS arm64 archive from the requested commit without hosted test suites; ac2 qualifies the exact archive locally through clean installation, clone migration preserving existing state, restart and compatible rollback; ac3 publishes the exact approved archive and rejects broken trust or compatibility before activation."
+    },
+    "migration": {
+      "stateBefore": "Existing source installs plus new opted-in hosts.",
+      "stateAfter": "Same daemon state and client endpoints; chosen pilot installs use a verified prebuilt release.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Authenticate bootstrap, verify and stage in isolation, then distinguish pristine fresh install from upgrade. For upgrade require a qualified predecessor and prove compatibility before preparing the journal.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Under the existing mutation lock, persist the channel floor and versioned release proofs before switching or draining. Retain and pin the source checkout when migrating.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Verify new generation via readiness and exercise restart on dedicated host; restore compatible predecessor if activation fails.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No state format or IPC change; supported predecessor pairs must be explicit and verified. Do not change ordinary source installs.",
+      "zeroDowntime": false,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Promote a qualified candidate archive",
+        "oneLineSummary": "Promote one immutable artifact by digest.",
+        "approach": "Build once in GitHub Actions, qualify the archive locally, sign the manifest and publish those exact bytes after approval.",
+        "pros": [
+          "One test-to-release identity",
+          "No hosted test runs"
+        ],
+        "cons": [
+          "Requires artifact retention and an explicit approval handoff"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Bundle source and compile on install",
+        "oneLineSummary": "Distribute a signed source snapshot.",
+        "approach": "Keep host compilation and replace the Git checkout with a versioned signed source archive.",
+        "pros": [
+          "Mostly reuses current machinery"
+        ],
+        "cons": [
+          "Still requires a host compiler",
+          "Local qualification cannot cover the bytes built on another host"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Does not deliver prebuilt runtime."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "narrative": "Shows separate qualification and production trust domains and how the same archive and manifest bytes move through both signing steps.",
+      "participants": [
+        {
+          "id": "build",
+          "label": "Candidate build",
+          "description": "GitHub Actions builds without signing or publish privileges"
+        },
+        {
+          "id": "qualifier",
+          "label": "Qualification signer",
+          "description": "Protected job holds only the candidate signing identity and cannot publish"
+        },
+        {
+          "id": "local",
+          "label": "Local Mac",
+          "description": "Release operator validates this exact archive locally"
+        },
+        {
+          "id": "promote",
+          "label": "Protected promotion",
+          "description": "Verifies approval inputs and signs manifest"
+        },
+        {
+          "id": "release",
+          "label": "GitHub Release",
+          "description": "Stores the published manifest and bundle"
+        },
+        {
+          "id": "install",
+          "label": "Pilot installer",
+          "description": "Verifies download and hands staged candidate to managed lifecycle"
+        }
+      ],
+      "messages": [
+        {
+          "from": "build",
+          "to": "qualifier",
+          "label": "Provide immutable candidate artifact identity",
+          "description": "Qualification signer verifies the exact archive digest and produces a detached qualification signature."
+        },
+        {
+          "from": "qualifier",
+          "to": "local",
+          "label": "Provide candidate archive and qualification signature",
+          "description": "A separately authenticated bootstrap verifies the candidate in an isolated local Mac environment."
+        },
+        {
+          "from": "local",
+          "to": "promote",
+          "label": "Submit qualification and approved digest",
+          "description": "The protected qualification record binds the exact run, artifact, signed manifest bytes and archive digest."
+        },
+        {
+          "from": "promote",
+          "to": "build",
+          "label": "Retrieve candidate by exact identity",
+          "description": "Promotion checks the archived bytes again and does not rebuild"
+        },
+        {
+          "from": "promote",
+          "to": "release",
+          "label": "Publish qualified bytes and signed manifest",
+          "description": "Archive and manifest correspond to the approved digest"
+        },
+        {
+          "from": "release",
+          "to": "install",
+          "label": "Deliver versioned bundle",
+          "description": "Installer verifies signature, target and digest before extraction and activation"
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/pilot-prebuilt-macos-daemon-releases-E202611148a036e64/S001/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "scripts/insrc-daemon-install.sh"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "scripts/prepare-source-release.mjs"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/bin/insrc-release-bootstrap.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/managed-release-staging.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/daemon/managed-update-preparation.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/daemon/fresh-managed-activation.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/daemon/managed-update-handoff.ts"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/daemon/managed-update-recovery.ts"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/daemon/__tests__/managed-release-staging.test.ts"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": ".github/workflows/ci.yml"
+    },
+    {
+      "id": "c11",
+      "kind": "stakeholder",
+      "ref": "User request: run release qualification tests locally; use GitHub Actions for building, signing and publication."
+    }
+  ]
+}

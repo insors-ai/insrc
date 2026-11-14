@@ -4,6 +4,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fixture, hash } from '../../code-review/task-review/__tests__/publication-fixture.js';
 import { prepareReviewPacket } from '../../code-review/task-review/packet.js';
+import { validateResultOrigins } from '../../code-review/task-review/results.js';
 import { completedSummary } from '../../code-review/task-review/summary.js';
 import { validateTaskBody, codeReviewPreservationDigest } from '../../code-review/task-review/record.js';
 import { writeReviewBytes, CheckpointSaveError } from '../../code-review/task-review/checkpoint.js';
@@ -103,6 +104,12 @@ test('accepted feedback or pinned attribution edits fence descendants without an
  await assert.rejects(history.accept(bad), /Accepted task feedback changed/);
  assert.throws(() => history.latest(), /fenced/); await assert.rejects(history.accept(await f.read()), /fenced/);
  assert.equal(f.source.snapshot().physicalQueries, before);
+ const attributed = await code(t), bound = await HistoryBindingSession.open(attributed.receipt, attributed.cp, { authorize: attributed.authorize, validate: attributed.validate, capacity: attributed.capacity, limits: attributed.limits, invalidateSource: attributed.invalidateSource });
+ const changed = await attributed.read(), queries = attributed.source.snapshot().physicalQueries;
+ changed.attempts[0].header.attributionIdentity = '0'.repeat(64);
+ await assert.rejects(bound.accept(changed), /Accepted mapping\/decision binding mismatch|Accepted attribution changed/);
+ assert.throws(() => bound.latest(), /fenced/);
+ assert.equal(attributed.source.snapshot().physicalQueries, queries);
 });
 
 test('lost checkpoint acknowledgment reconciles a durable result and lagging runtime without repeating model or source work', async t => {
@@ -120,6 +127,7 @@ test('lost checkpoint acknowledgment reconciles a durable result and lagging run
 });
 
 test('accepted task origins cannot be removed or rewritten by a successor', async t => {
+ for (const change of ['remove', 'rewrite']) await t.test(change, async t => {
  const f = await code(t);
  // Isolate prefix immutability: origin validity is independently exercised by
  // the concrete family validator below; this fixture models its accepted output.
@@ -127,9 +135,12 @@ test('accepted task origins cannot be removed or rewritten by a successor', asyn
  cp.attempts[0]['review-response'].origins = [{ taskId: 't1', sourceAttempt: 1, reason: 'accepted provenance fixture' }];
  await writeReviewBytes(f.path, JSON.stringify(cp), 8 * 1024 * 1024);
  const history = await HistoryBindingSession.open(f.receipt, cp, { authorize: f.authorize, validate: async () => ({}), capacity: f.capacity, limits: f.limits, invalidateSource: f.invalidateSource });
- const next = await f.read(); delete next.attempts[0]['review-response'].origins;
+ const next = await f.read();
+ if (change === 'remove') delete next.attempts[0]['review-response'].origins;
+ else next.attempts[0]['review-response'].origins[0].reason = 'rewritten provenance';
  await assert.rejects(history.accept(next), /Accepted task origins changed/);
  assert.throws(() => history.latest(), /fenced/);
+ });
 });
 
 test('new feedback cannot reuse an absent or current-attempt origin', async t => {
@@ -137,6 +148,11 @@ test('new feedback cannot reuse an absent or current-attempt origin', async t =>
  const cp = await f.read(); cp.attempts[0]['review-response'].tasks.push(f.result('t1')); cp.attempts[0]['review-response'].origins = [{ taskId: 't1', sourceAttempt: 1, reason: 'invalid reuse fixture' }];
  await assert.rejects(history.accept(cp), /Origin/);
  assert.equal((await f.read()).attempts[0]['review-response'].tasks.length, 0);
+ assert.throws(() => validateResultOrigins([
+  { attempt: 1, reviewer: 'daemon', tasks: [], origins: [] },
+  { attempt: 2, reviewer: 'daemon', tasks: [f.result('t1')], origins: [{ taskId: 't1', sourceAttempt: 1, reason: 'absent prior result' }] },
+ ]), /Origin/);
+
 });
 
 test('design plan and dependency-ordered chunk results get successor bindings without changing source generation', async t => {

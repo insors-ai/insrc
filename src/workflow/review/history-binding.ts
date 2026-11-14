@@ -186,8 +186,8 @@ export class HistoryBindingSession {
   } catch (error) { this.failed = true; throw new HistoryBindingSaveError(error, path, token); }
  }
  accept(input: unknown): Promise<HistoryBoundaryReceipt> {
-  const candidate = current(input, this.source);
-  const work = this.tail.then(async () => { if (this.failed) throw new Error('History owner fenced; explicit reconciliation required'); try { return await this.commit(candidate); } catch (error) { this.failed = true; throw error; } });
+  const submitted = structuredClone(input);
+  const work = this.tail.then(async () => { if (this.failed) throw new Error('History owner fenced; explicit reconciliation required'); try { return await this.commit(current(submitted, this.source)); } catch (error) { this.failed = true; throw error; } });
   this.tail = work.then(() => {}, () => {}); return work;
  }
  latest(): HistoryBoundaryReceipt { if (!this.receipt || this.failed) throw new Error('History boundary unavailable/fenced'); return structuredClone(this.receipt); }

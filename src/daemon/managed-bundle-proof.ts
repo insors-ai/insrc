@@ -46,6 +46,21 @@ export async function verifyManagedBundleManifest(proof: ManagedBundleProof, rel
 		pem = buffer.subarray(0, bytesRead);
 	} finally { await anchor.close(); }
 	const key = createPublicKey(pem);
+	if (proof.floor.domain === 'development') {
+		const metadataPath = fileURLToPath(new URL('../../scripts/daemon-development-metadata.mjs', import.meta.url));
+		const { verifyDevelopmentManifest } = await import(metadataPath) as {
+			verifyDevelopmentManifest: (bytes: Buffer, signature: Buffer, key: Buffer) => {
+				manifest: Record<string, unknown>; manifestSha256: string;
+			};
+		};
+		const { manifest, manifestSha256 } = verifyDevelopmentManifest(bytes, signature, pem);
+		if (manifestSha256 !== proof.floor.manifestSha256 || manifest.repository !== proof.floor.repository ||
+			manifest.commit !== releaseId || manifest.sequence !== proof.floor.sequence ||
+			manifest.archiveSha256 !== proof.floor.archiveSha256 || manifest.runtimeFingerprint !== proof.fingerprint) {
+			throw new Error('pinned development bundle identity changed');
+		}
+		return manifest;
+	}
 	const domain = Buffer.from(`insrc-daemon-bundle-${proof.floor.domain}-v1\0`);
 	if (key.asymmetricKeyType !== 'ed25519' || bytes.length === 0 || bytes.length > 64 * 1024 || signature.length !== 64
 		|| createHash('sha256').update(bytes).digest('hex') !== proof.floor.manifestSha256

@@ -2,7 +2,7 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
-import { chmod, lstat, mkdir, mkdtemp, readFile, readdir, realpath, rm, stat, writeFile } from 'node:fs/promises';
+import { chmod, copyFile, lstat, mkdir, mkdtemp, readFile, readdir, realpath, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -124,6 +124,7 @@ async function buildDevelopmentRuntime(checkout, stage) {
 		execFileSync('npm', args, { cwd: checkout, env, stdio: 'inherit' });
 	}
 	await stageRuntime(checkout, stage, await realpath(process.execPath));
+	await copyFile(join(checkout, 'scripts/daemon-development-metadata.mjs'), join(stage, 'scripts/daemon-development-metadata.mjs'));
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main(process.argv.slice(2));

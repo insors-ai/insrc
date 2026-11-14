@@ -15,7 +15,7 @@ import { assertReleaseTrustFloor, readReleaseQualificationReceipt, readReleaseTr
 import type { ReleaseQualificationReceipt, ReleaseTrustFloor } from './managed-release-trust.js';
 import { assertSourceReleaseFloor, readVerifiedSourceRelease } from './managed-source-release.js';
 import type { VerifiedSourceRelease } from './managed-source-release.js';
-import { advanceDaemonBundleReleaseFloor, readDaemonBundleReleaseFloor } from './daemon-bundle-release-floor.js';
+import { advanceDaemonBundleReleaseFloor, bundleReleaseFloorKey, readDaemonBundleReleaseFloor } from './daemon-bundle-release-floor.js';
 import type { DaemonBundleReleaseFloor } from './daemon-bundle-release-floor.js';
 import { readManagedBundleProof } from '../daemon/managed-bundle-proof.js';
 import type { ManagedBundleProof } from '../daemon/managed-bundle-proof.js';
@@ -320,8 +320,9 @@ function readJournal(bytes: string, root: string, uid: number): InstallationJour
 		const domains = new Set<string>();
 		for (const value of journal.daemonBundleFloors) {
 			const floor = readDaemonBundleReleaseFloor(value);
-			if (domains.has(floor.domain)) conflict('duplicate daemon bundle floor');
-			domains.add(floor.domain);
+			const key = bundleReleaseFloorKey(floor);
+			if (domains.has(key)) conflict('duplicate daemon bundle floor');
+			domains.add(key);
 		}
 	}
 	if (journal.sourceReleases !== undefined) {
@@ -450,6 +451,12 @@ export class InstallationMutationGate {
 				conflict('installed daemon requires a signed bundle update');
 			}
 			if (!validRequest(request) || request.owner.uid !== uid) conflict('invalid installation owner');
+			const proof = request.kind === 'start' ? request.activation?.bundleProof
+				: request.kind === 'update' ? request.predecessor.bundleProof?.candidate : undefined;
+			if ((proof?.floor.domain === 'development' || daemonBundleFloor?.domain === 'development') &&
+				JSON.stringify(proof?.floor) !== JSON.stringify(daemonBundleFloor)) {
+				conflict('development reservation floor differs from its pinned proof');
+			}
 			if (request.kind === 'start' && request.activation !== undefined
 				&& request.activation.installation.stateRoot !== this.root) conflict('fresh activation names another installation root');
 			if (request.kind === 'update' && request.predecessor.launch !== undefined

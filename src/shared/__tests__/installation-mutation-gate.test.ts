@@ -39,12 +39,15 @@ function fixture(): { root: string; gate: InstallationMutationGate } {
 	return { root, gate: new InstallationMutationGate(root, helper) };
 }
 
-test('bundle activation retains its proof, rejects source updates and preserves the prior on rollback', options, async () => {
+for (const trust of [
+	{ domain: 'production', channel: 'macos-arm64-pilot' },
+	{ domain: 'development', channel: 'development', repository: 'https://github.com/example/project.git' },
+] as const) test(`${trust.domain} bundle activation retains proof and admission floor on rollback`, options, async () => {
 	const { gate, root } = fixture();
 	const release = 'a'.repeat(40);
 	const installation = { version: 1 as const, stateRoot: root, releaseRoot: join(root, 'release-1'), releaseId: release,
 		runtime: join(root, 'release-1/tools/node'), pathEnv: '/usr/bin:/bin', enabled: true };
-	const proof = { version: 1 as const, floor: { domain: 'production' as const, channel: 'macos-arm64-pilot' as const, sequence: 1,
+	const proof = { version: 1 as const, floor: { ...trust, sequence: 1,
 		manifestSha256: 'a'.repeat(64), archiveSha256: 'b'.repeat(64) }, fingerprint: 'c'.repeat(64),
 		manifestBase64: 'e30=', signatureBase64: Buffer.alloc(64).toString('base64') };
 	const start = await gate.reserve({ kind: 'start', owner, activation: { installation, startChild: true,
@@ -66,6 +69,17 @@ test('bundle activation retains its proof, rejects source updates and preserves 
 	const state = await gate.read();
 	assert.deepEqual(state.installedBundle, { releaseRoot: installation.releaseRoot, proof });
 	assert.deepEqual(state.daemonBundleFloors, [next.floor]);
+	const request = { kind: 'update' as const, owner, predecessor: {
+		priorRelease: release, priorCommit: release, candidateRelease: candidate.releaseId, wasRunning: true,
+		pins: { prior: installation, candidate }, bundleProof: { priorBundle: proof, candidate: next },
+	} };
+	const different = { ...next, floor: { ...next.floor, archiveSha256: 'e'.repeat(64) } };
+	await assert.rejects(gate.reserve({ ...request, predecessor: {
+		...request.predecessor, bundleProof: { priorBundle: proof, candidate: different },
+	} }, different.floor), /replay or replace/);
+	const retry = await gate.reserve(request, next.floor);
+	assert.deepEqual((await gate.read()).daemonBundleFloors, [next.floor]);
+	await gate.cancelUnstartedUpdate(retry);
 });
 
 async function rejects(code: SupervisorErrorCode, result: Promise<unknown>): Promise<void> {

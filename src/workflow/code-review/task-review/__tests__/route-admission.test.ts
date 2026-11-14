@@ -11,6 +11,10 @@ import { TaskReviewInputError } from '../contracts.js';
 import type { ReviewPacket } from '../contracts.js';
 import { prepareReviewAdmission } from '../admission.js';
 import { saveCheckpoint } from '../checkpoint.js';
+import { CodePreparation } from '../../../review/code-preparation.js';
+import { reviewPreparationLimits } from '../../../../config/review.js';
+import { ReviewPreparationCapacity } from '../../../review/source-session.js';
+import { PreparedContextReader } from '../../../review/prepared-context.js';
 import { prepareReviewPacket } from '../packet.js';
 
 registerGitTools();
@@ -44,7 +48,12 @@ function fixture() {
 		reviewSet: [{ commit, parent: base, files: [{ path: 'src/a.ts', segments: [{ after: [1, 1] }] }] }], tests: [],
 	});
 	const sources = new RegistryReviewSources({ repoPath: repo, sessionId: 'task-review-route-admission', requestId: 1, send: () => {} });
-	const admit = (packet: ReviewPacket, epicHash: string, id = 'review-1') => prepareReviewAdmission(repo, id, 1, packet, 'daemon', sources, { epicHash });
+	const admit = async (packet: ReviewPacket, epicHash: string, id = 'review-1') => {
+  const limits = reviewPreparationLimits(join(repo, 'missing-config.json')), capacity = new ReviewPreparationCapacity(limits.cacheMaxBytes);
+  const preparation = await CodePreparation.create({ project: repo, family: 'code', reviewId: id }, sources, limits, capacity);
+  try { return await preparation.prepare(repo, id, 1, packet, 'daemon', sources, { epicHash }); }
+  finally { await preparation.close(); }
+ };
 	return { repo, at, packetWith, sources, admit, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
 }
 const refused = (promise: Promise<unknown>, message: RegExp) => assert.rejects(promise, (error: unknown) => error instanceof TaskReviewInputError && message.test(error.message));
@@ -96,4 +105,54 @@ test('src/workflow/code-review/task-review/__tests__/route-admission.test.ts: re
 		assert.deepEqual(stored.tasks[0]!.acceptanceChecks, ['Fix it']);
 		assert.equal(stored.epicHash, ISSUE_ONLY);
 	} finally { f.cleanup(); }
+});
+
+
+test('shared preparation retains route-qualified views for pinned recovery without native refetch', async () => {
+ const f = fixture();
+ try {
+  const limits = reviewPreparationLimits(join(f.repo, 'missing-config.json')), capacity = new ReviewPreparationCapacity(limits.cacheMaxBytes);
+  const key = { project: f.repo, family: 'code' as const, reviewId: 'shared-recovery' };
+  const preparation = await CodePreparation.create(key, f.sources, limits, capacity);
+  const packet = f.packetWith({ issue: f.at(`ISSUE-${ISSUE_ONLY}`) });
+  const admitted = await preparation.prepare(f.repo, key.reviewId, 1, packet, 'daemon', f.sources, { epicHash: ISSUE_ONLY });
+  await saveCheckpoint(admitted.path, admitted.checkpoint);
+  const expected = await prepareReviewPacket(admitted.attempt.submitted, preparation.sources, true, undefined, admitted.attempt.header.derived);
+  const receipt = await preparation.seal(admitted);
+  await preparation.close();
+  rmSync(join(f.repo, artifact(`ISSUE-${ISSUE_ONLY}`)));
+  const reader = await PreparedContextReader.open(receipt, limits, async () => {}, async error => { throw error; });
+  let nativeCalls = 0;
+  const sources: typeof f.sources = new Proxy(f.sources, { get() { return async () => { nativeCalls++; throw new Error('Native access forbidden on warm recovery'); }; } });
+  const cachedSources = {
+   commit: (oid: string) => reader.query('commit', [oid]),
+   file: (oid: string, path: string) => reader.query('file', [oid, path]),
+   isAncestor: (a: string, b: string) => reader.query('isAncestor', [a, b]),
+   changedRanges: (oid: string, parent: string | null, paths: readonly string[]) => reader.query('changedRanges', [oid, parent, paths]),
+   pathChanges: (a: string, b: string, path: string) => reader.query('pathChanges', [a, b, path]),
+  } as import('../sources.js').ReviewSources;
+  const recovered = await CodePreparation.reuse(key, reader, cachedSources, limits, capacity);
+  const resumed = await recovered.prepare(f.repo, key.reviewId, 1, undefined, 'daemon', sources, { operation: 'resume', epicHash: ISSUE_ONLY });
+  assert.deepEqual(resumed.prepared, structuredClone(expected));
+  assert.equal(nativeCalls, 0);
+  const changed = structuredClone(packet); changed.functionalSummary = 'changed pinned input';
+  await assert.rejects(recovered.prepare(f.repo, key.reviewId, 1, changed, 'daemon', sources, { operation: 'resume', epicHash: ISSUE_ONLY }), /pinned/);
+  await recovered.close();
+ } finally { f.cleanup(); }
+});
+
+
+test('shared preparation preserves task selection and canonical story aliases across planned routes', async () => {
+ const f = fixture();
+ try {
+  for (const hash of [PLAN_STORY, DEF_STORY]) {
+   const documents = { ...(hash === DEF_STORY ? { story: f.at(`DEF-${hash}`) } : {}), lld: f.at(`LLD-${hash}-s1`), plan: f.at(`PLAN-${hash}-s1`) };
+   const packet = { ...f.packetWith(documents), storyId: `STORY-${hash}-s1`, taskId: 't1' };
+   const admitted = await f.admit(packet, hash, `task-${hash}`);
+   assert.deepEqual(admitted.attempt.header.selectedTaskIds, ['t1']);
+   assert.equal(admitted.prepared.packet.storyId, packet.storyId);
+   assert.deepEqual(admitted.prepared.packet.reviewSet, packet.reviewSet);
+   assert.deepEqual(admitted.prepared.projection!.entries[0]!.segments, [{ after: [1, 1] }]);
+  }
+ } finally { f.cleanup(); }
 });

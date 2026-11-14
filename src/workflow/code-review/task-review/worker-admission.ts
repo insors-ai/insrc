@@ -21,7 +21,7 @@ export class CodeReviewWorker {
  isActive():boolean{return this.preparing||this.coordinator.isActive(this.input.key.project,this.input.key.reviewId);}
  constructor(private readonly input:ReviewBootstrapInput,deps:TaskReviewDeps,private readonly epicHash?:string){
   requireReview(input.key.family==='code','reviewer','Code worker required');
-  this.coordinator=new TaskReviewCoordinator({...deps,prepare:prepareWorkerCodeAdmission,read:readQualifiedCodeCheckpoint,save:saveWorkerCodeCheckpoint});
+  this.coordinator=new TaskReviewCoordinator({...deps,prepare:deps.prepare??prepareWorkerCodeAdmission,read:readQualifiedCodeCheckpoint,save:saveWorkerCodeCheckpoint});
  }
  /** Returns before source work; no provider/qualification is awaited here. */
  execute(owner?:ControllerReviewOwner,operation:'start'|'resume'='start'):void{

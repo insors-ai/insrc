@@ -99,7 +99,7 @@ export async function writePreparedContext(identity: PreparedSourceIdentity, vie
   ancestors.add(value);
   try {
    if (Array.isArray(value)) { const result: Node[] = []; for (const item of value) result.push(await node(item, refs, ancestors, depth + 1)); return ['array', result]; }
-   const result: [string, Node][] = []; for (const [key, item] of Object.entries(value).sort(([a], [b]) => a.localeCompare(b))) result.push([key, await node(item, refs, ancestors, depth + 1)]);
+   const result: [string, Node][] = []; for (const [key, item] of Object.entries(value)) result.push([key, await node(item, refs, ancestors, depth + 1)]);
    return ['object', result];
   } finally { ancestors.delete(value); }
  }
@@ -168,6 +168,10 @@ export class PreparedContextReader {
  private async checkFiles(): Promise<void> {
   const path = join(contextRoot(this.receipt.key), this.receipt.generationId);
   if (await realpath(path) !== path || await PreparedContextReader.stamp(join(path, 'manifest.json')) !== this.manifestStamp) throw new Error('Prepared context manifest replaced during borrow');
+ }
+ async verify(): Promise<void> {
+  await this.authorize();
+  try { await this.checkFiles(); } catch (error) { await this.invalidate(error); throw error; }
  }
  async view(id: string): Promise<unknown> {
   await this.authorize();

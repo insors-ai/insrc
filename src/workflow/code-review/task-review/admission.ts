@@ -33,9 +33,12 @@ export interface ReviewAdmissionContext {
   * No renumbering: the qualified view excludes technical-only attempts. */
  readonly accepted?:{readonly admission:CodeAdmissionAttempt;readonly prior:ReviewCheckpoint|undefined;readonly historyLength:number}|undefined;
  readonly qualifiedHistory?:ReviewCheckpoint|undefined;
+ /** Private worker adapter; never a wire field or submitter-provided scope. */
+ readonly preparePacket?: typeof prepareReviewPacket | undefined;
 }
 export async function prepareReviewAdmission(project: string, reviewId: string, attempt: number, input: unknown,
  reviewer: ReviewerParty, sources: ReviewSources, context: ReviewAdmissionContext = {}): Promise<AdmittedReview> {
+ const preparePacket = context.preparePacket ?? prepareReviewPacket;
  const request = decodeReview(context.operation === 'resume' ? SavedReviewRequestSchema : ReviewRequestSchema, { reviewId, attempt, ...(input !== undefined ? { packet: input } : {}), ...(context.operation !== undefined ? { operation: context.operation } : {}) });
  const operation = request.operation ?? 'start';
  const capacity=async(review:AdmittedReview):Promise<AdmittedReview>=>{if(review.prepared.projection&&review.attempt['review-response'].crPublication!=='complete'){review.capacity=await readCapacityBaseline(review.checkpoint.project,review.prepared.epicHash,review.checkpoint.storyId);qualifyReviewCapacity(review);}return review;};
@@ -56,7 +59,7 @@ export async function prepareReviewAdmission(project: string, reviewId: string, 
   for (const [index, entry] of saved.attempts.entries()) {
    requireReview(Number.isFinite(Date.parse(entry.header.createdAt)) && (!entry.header.completedAt || Number.isFinite(Date.parse(entry.header.completedAt))), 'checkpoint', 'Invalid attempt timestamp');
    validateFailureDiagnostics(entry);
-   const prepared = await prepareReviewPacket(entry.submitted, sources, true, undefined, entry.header.derived);
+   const prepared = await preparePacket(entry.submitted, sources, true, undefined, entry.header.derived);
    requireReview(!entry.submitted.reviewRevision || entry.header.finalScopeIdentity === prepared.projection?.identity, 'attribution', 'Saved final scope does not match pinned source');
    const boundAssignments = await restoreAcceptedAssignments({ path, checkpoint: saved, attempt: entry, prepared, priorTaskInputs });
    if(boundAssignments)priorTaskInputs.set(entry.header.attempt,new Map(boundAssignments.map(a=>[a.taskId,taskInputFingerprint(prepared,a)])));
@@ -108,7 +111,7 @@ export async function prepareReviewAdmission(project: string, reviewId: string, 
  if (latest) requireReview(!['pending', 'running'].includes(latest.header.status) && (latest.header.status==='failed'||latest['review-response'].crPublication === 'complete'), 'attempt', 'attempt-conflict: previous attempt must be terminal and published');
  // The route comes from the Story's stored artifacts, never from the packet. Resume and publication re-read stored history and pass none.
  const route = context.epicHash ? await readStoryRoute(canonical, context.epicHash, canonicalReviewStory(request.packet.storyId, context.epicHash)) : undefined;
- const prepared = await prepareReviewPacket(request.packet, sources, false, route);
+ const prepared = await preparePacket(request.packet, sources, false, route);
  requireReview(!context.epicHash || context.epicHash === prepared.epicHash, 'epicHash', 'Pinned Plan belongs to another review subject');
  if (saved && priorPrepared) requireReview(prepared.epicHash === priorPrepared.epicHash && canonicalReviewStory(prepared.packet.storyId, prepared.epicHash) === canonicalReviewStory(saved.storyId, prepared.epicHash) && prepared.packet.taskId === saved.taskId, 'scope', 'New attempt changes review subject');
  const entry: ReviewAttempt = { header: { attempt, reviewer, status: 'pending', createdAt: context.accepted?.admission.header.createdAt??new Date().toISOString(), selectedTaskIds: prepared.tasks.filter(task => !prepared.packet.taskId || task.id === prepared.packet.taskId).map(task => task.id), ...(prepared.derived ? { derived: prepared.derived } : {}) }, submitted: prepared.packet,

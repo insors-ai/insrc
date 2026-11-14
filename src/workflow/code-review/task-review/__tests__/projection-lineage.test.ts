@@ -6,6 +6,9 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync, renameSync } from 'node:
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { registerGitTools } from '../../../../daemon/tools/builtins/git/index.js';
+import { CodePreparation } from '../../../review/code-preparation.js';
+import { ReviewPreparationCapacity } from '../../../review/source-session.js';
+import { reviewPreparationLimits } from '../../../../config/review.js';
 import { RegistryReviewSources } from '../sources.js';
 import type { ReviewSources } from '../sources.js';
 import { projectReviewScope, ProjectionBudget, boundedProjectionSources } from '../projection.js';
@@ -38,7 +41,7 @@ async function selected(sources: ReviewSources, commit: string, parent: string, 
 
 /** Selected change to source.js, then a side branch and main commits that touch only
  * other files, an explicit merge, and a selected rename of source.js to moved.js. */
-async function identityFixture() {
+async function identityFixture(shared = false) {
  const r = deterministicRepo();
  r.put('source.js', 'a\nb\nc\n'); r.put('other.txt', 'o\n'); const base = r.commit('base');
  r.put('source.js', 'a\nB\nc\n'); const first = r.commit('selected change');
@@ -49,7 +52,11 @@ async function identityFixture() {
  const sources = new RegistryReviewSources({ repoPath: r.repo, sessionId: 'projection-lineage', requestId: 1, send: () => {} });
  const origins = [await selected(sources, first, base, 'source.js', 'source.js', [{ after: [2, 2] }]),
   await selected(sources, moved, r.git('rev-parse', `${moved}^`), 'moved.js', 'source.js', [{ after: [3, 3] }])];
- const projection = await projectReviewScope(origins, moved, sources);
+ const limits = reviewPreparationLimits(join(r.repo, 'missing-config.json'));
+ const preparation = shared ? await CodePreparation.create({ project: r.repo, family: 'code', reviewId: 'shared-lineage' }, sources, limits, new ReviewPreparationCapacity(limits.cacheMaxBytes)) : undefined;
+ let projection;
+ try { projection = await projectReviewScope(origins, moved, preparation?.sources ?? sources); }
+ finally { await preparation?.close(); }
  return { r, first, moved, projection };
 }
 
@@ -186,4 +193,14 @@ test('the read limit still refuses with projection_limit when the selected file 
   await assert.rejects(projectReviewScope(origins, pin, sources, new ProjectionBudget({ reads: 40 })), (error: unknown) => error instanceof TaskReviewInputError && error.field === 'projection_limit');
   assert.equal((await projectReviewScope(origins, pin, sources)).entries.length, 1, 'the same projection fits the production limits');
  } finally { r.cleanup(); }
+});
+
+
+test('shared code preparation preserves merge and selected rename lineage with every after span', async () => {
+ const direct = await identityFixture(), shared = await identityFixture(true);
+ try {
+  assert.deepEqual(structuredClone(shared.projection), structuredClone(direct.projection));
+  assert.equal(shared.projection.identity, PINNED_IDENTITY);
+  assert.equal(shared.projection.entries.length, 2);
+ } finally { direct.r.cleanup(); shared.r.cleanup(); }
 });

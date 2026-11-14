@@ -59,7 +59,7 @@ async function hydrateCodeExcerpts(
 	// Strategy 2: single-token subject -> name lookup.
 	const bare = subject.split(/[^A-Za-z0-9_]+/).find(t => t.length >= 2);
 	if (bare !== undefined) {
-		const byName = await findEntitiesByName(db, [bare], { repo: repoPath, limit: Number.POSITIVE_INFINITY });
+		const byName = await findEntitiesByName(db, [bare], { repo: repoPath });
 		for (const e of byName) {
 			if (e.artifact === true) continue;
 			if (e.repo !== repoPath) continue;

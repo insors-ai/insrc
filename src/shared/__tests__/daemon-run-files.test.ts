@@ -9,7 +9,7 @@ import { Worker } from 'node:worker_threads';
 import { once } from 'node:events';
 import { randomUUID } from 'node:crypto';
 import { acquireRunFileGuard, removeOwnedRunFile, runFileGuardConflict, runFileIdentity } from '../daemon-run-files.js';
-import type { RunFileGuard } from '../daemon-run-files.js';
+import type { ReclaimProbe, RunFileGuard } from '../daemon-run-files.js';
 import type { ProcessIdentity, ProcessIdentityReader } from '../daemon-process.js';
 import { PATHS } from '../paths.js';
 
@@ -111,7 +111,7 @@ test('killed guard owner is conclusively dead, so the next startup quarantines t
 
 // The reclaim contract: an optional identity reader injected for the verdict, so the decision table
 // can be driven without a real process. The cast is the LLD signature; it compiles before and after.
-const acquireReclaim = acquireRunFileGuard as (path: string, owner?: ProcessIdentity, read?: ProcessIdentityReader) => RunFileGuard;
+const acquireReclaim = acquireRunFileGuard as (path: string, owner?: ProcessIdentity, read?: ProcessIdentityReader, probe?: ReclaimProbe) => RunFileGuard;
 
 const RECORDED_PID = 424242;
 /** The acquiring startup's identity as a fixture, so no test path probes a real process. */
@@ -257,23 +257,27 @@ test('a paused reclaimer cannot quarantine or vacate the live replacement a star
 	// paused one resumes holding evidence about a record that no longer occupies the path.
 	const pausedReader: ProcessIdentityReader = () => {
 		winner ??= acquireReclaim(path, acquiringOwner, () => undefined);
-		if (!probed) {
-			probed = true;
-			// Another starter attempts the same path while the winner owns it: the live record refuses the
-			// acquisition during the pause window, so a vacated or concurrent ownership cannot hide behind
-			// final-state assertions run only after the paused reclaimer has failed.
-			assert.throws(() => acquireReclaim(path, acquiringOwner, () => acquiringOwner), /ownership conflict/);
-			assert.equal(quarantinedSiblings(path).length, 1); // the probe quarantined nothing
-			assert.equal(readdirSync(path).includes('owner.json'), true); // the winner's record is in place
-		}
 		return undefined; // the recorded owner is gone
+	};
+	// The after-verdict probe fires after the paused reader has returned, during the reclaimer's resumed
+	// operation and before anything could rename the live guard: another starter attempts the same path
+	// there and is refused, so a vacated or concurrent ownership cannot hide behind final-state
+	// assertions run only after the paused reclaimer has failed.
+	const afterVerdict = () => {
+		if (probed) return;
+		probed = true;
+		assert.throws(() => acquireReclaim(path, acquiringOwner, () => acquiringOwner), /ownership conflict/);
+		assert.equal(quarantinedSiblings(path).length, 1); // the probe quarantined nothing
+		assert.equal(readdirSync(path).includes('owner.json'), true); // the winner's record is in place
 	};
 	// The paused reclaimer re-reads the evidence before touching anything, finds the winner's fresh record
 	// in place of the verdicted one, and fails closed: the live replacement is never renamed, vacated or
 	// polluted, and the recomputed conflict names the replacement instead of replaying the stale verdict.
-	assert.throws(() => acquireReclaim(path, acquiringOwner, pausedReader), /ownership conflict/);
+	assert.throws(() => acquireReclaim(path, acquiringOwner, pausedReader, afterVerdict), /ownership conflict/);
 	const guard = winner!;
+	const before = runFileIdentity(path);
 	assert.doesNotThrow(() => guard.assertOwned()); // the live replacement keeps its guard, intact and in place
+	assert.deepEqual(runFileIdentity(path), before); // the resumed operation never moved the live guard directory
 	assert.deepEqual(readdirSync(path), ['owner.json']); // the failed reclaim left no claim or other residue
 	assert.equal(quarantinedSiblings(path).length, 1); // only the dead record was ever quarantined
 	assert.equal(readFileSync(PATHS.daemonLog, 'utf8').split('\n').filter((line) => line.includes('nonce-live')).length, 1); // exactly the winner's recovery line
@@ -287,17 +291,24 @@ test('a standing reclaim claim with a live or unreadable holder withholds; a con
 	// A live claim holder: the reader renders the holder's identity as the current occupant of its PID,
 	// so a later reclaimer honors the standing claim instead of renaming the guard out from under it.
 	const holder: ProcessIdentity = { pid: RECORDED_PID, startedAt: 'linux:current-boot:222', commandLine: 'claim-holder' };
-	writeFileSync(join(path, 'reclaim.claim'), JSON.stringify({ owner: holder, nonce: 'claim-live' }));
+	const liveClaim = join(path, 'reclaim.claim.live-holder');
+	writeFileSync(liveClaim, JSON.stringify({ owner: holder, nonce: 'claim-live' }));
 	assert.throws(() => acquireReclaim(path, acquiringOwner, () => holder), /not reclaimed automatically/);
 	assert.equal(quarantinedSiblings(path).length, 0); // nothing was renamed
-	assert.equal(existsSync(join(path, 'reclaim.claim')), true); // the live holder's claim is preserved
+	assert.equal(readFileSync(liveClaim, 'utf8'), JSON.stringify({ owner: holder, nonce: 'claim-live' })); // the live holder's claim is preserved
+	assert.deepEqual(readdirSync(path).sort(), ['owner.json', 'reclaim.claim.live-holder']); // the withholding reclaimer retired its own claim
 	// An unreadable claim also withholds: its holder cannot be verdicted, so it is never removed.
-	writeFileSync(join(path, 'reclaim.claim'), 'malformed');
+	unlinkSync(liveClaim);
+	writeFileSync(join(path, 'reclaim.claim.unreadable'), 'malformed');
 	assert.throws(() => acquireReclaim(path, acquiringOwner, () => undefined), /not reclaimed automatically/);
 	assert.equal(quarantinedSiblings(path).length, 0, 'unreadable claim');
-	// A conclusively dead holder is recovered: the claim is removed, re-claimed by this reclaimer, and
-	// the guard is quarantined; neither the evidence directory nor the fresh guard keeps the claim.
-	writeFileSync(join(path, 'reclaim.claim'), JSON.stringify({ owner: { pid: RECORDED_PID, startedAt: 'linux:stale-boot:111', commandLine: 'crashed-reclaimer' }, nonce: 'claim-dead' }));
+	assert.equal(existsSync(join(path, 'reclaim.claim.unreadable')), true, 'unreadable claim preserved');
+	assert.deepEqual(readdirSync(path).sort(), ['owner.json', 'reclaim.claim.unreadable'], 'unreadable claim'); // again no residue of the withholding reclaimer's own claim
+	// A conclusively dead holder is recovered: the dead claim is pruned by its own name, the reclaimer
+	// proceeds under its own claim, and the guard is quarantined; neither the evidence directory nor
+	// the fresh guard keeps any claim file.
+	unlinkSync(join(path, 'reclaim.claim.unreadable'));
+	writeFileSync(join(path, 'reclaim.claim.dead-holder'), JSON.stringify({ owner: { pid: RECORDED_PID, startedAt: 'linux:stale-boot:111', commandLine: 'crashed-reclaimer' }, nonce: 'claim-dead' }));
 	const guard = acquireReclaim(path, acquiringOwner, () => undefined);
 	assert.equal(guard.path, path);
 	const names = quarantinedSiblings(path);
@@ -307,48 +318,69 @@ test('a standing reclaim claim with a live or unreadable holder withholds; a con
 	guard.release();
 });
 
-test('a reclaimer paused over a dead claim never removes the live claim a competing reclaimer recovered', () => {
+test("a standing claim keeps mutual exclusion across its holder's pause: competitors are refused and concurrent pruning is absorbed", () => {
 	const path = join(dir, 'guard');
-	staleGuard(path, 'linux:stale-boot:111', 'nonce-takeover');
-	const claimPath = join(path, 'reclaim.claim');
-	// The crashed claim holder carries its own PID, so the injected reader can act exactly when the
-	// reclaimer renders the claim holder's verdict: after the standing claim was read, before the
-	// takeover moves it.
+	// The reviewer's demanded regression: A verdicts the guard dead, publishes its own uniquely-named
+	// claim, passes its final claim check and pauses just before the quarantine rename. Inside the
+	// pause a third starter attempts a full acquisition of the same dead guard — A's live claim stands,
+	// so the attempt is refused and the rename A resumes into still moves exactly the guard A examined.
+	staleGuard(path, 'linux:stale-boot:111', 'nonce-takeover-a');
+	let probed = false;
+	const beforeQuarantine: ReclaimProbe = (phase) => {
+		if (phase !== 'before-quarantine' || probed) return;
+		probed = true;
+		// C's reader honestly reports the current occupant of A's PID as live, so C's arbitration honors
+		// A's standing claim and withholds instead of quarantining the dead guard out from under A.
+		assert.throws(() => acquireReclaim(path, acquiringOwner, () => acquiringOwner), /not reclaimed automatically/);
+		assert.equal(readdirSync(path).filter((entry) => entry.startsWith('reclaim.claim')).length, 1); // only A's claim stands; C retired its own when it withheld
+		assert.equal(quarantinedSiblings(path).length, 0); // C never renamed the guard
+	};
+	const guardA = acquireReclaim(path, acquiringOwner, () => undefined, beforeQuarantine);
+	assert.equal(probed, true);
+	assert.deepEqual(readdirSync(path), ['owner.json']); // the fresh guard keeps exactly its own record
+	assert.deepEqual(readdirSync(join(dir, quarantinedSiblings(path)[0]!)), ['owner.json']); // the quarantined evidence keeps the stale record, no claim artifacts
+	guardA.release();
+	// A pauses while verdicting a dead claim's holder — after its own claim is already standing. A
+	// competitor's full recovery attempt inside the pause is refused by that standing claim, and A
+	// absorbs the concurrent pruning of the dead claim on resume: its own unlink's ENOENT only means
+	// another reclaimer pruned the same dead claim first, never that a live claim was displaced.
+	staleGuard(path, 'linux:stale-boot:111', 'nonce-takeover-b');
 	const crashedHolder: ProcessIdentity = { pid: 434343, startedAt: 'linux:stale-boot:333', commandLine: 'crashed-reclaimer' };
+	const deadClaimName = 'reclaim.claim.dead-crashed';
 	const deadClaim = JSON.stringify({ owner: crashedHolder, nonce: 'claim-dead' });
 	const pausedOverClaim = (during: () => void): ProcessIdentityReader => (pid) => {
 		if (pid === crashedHolder.pid) during();
 		return undefined; // the recorded owner and the claim holder are both gone
 	};
-	// A competing reclaimer recovered the dead claim while this one was paused: the takeover moves the
-	// live replacement aside, finds the moved bytes are not the examined dead claim, and links them back
-	// untouched — the paused reclaimer withholds without deleting the live claim or renaming the guard.
-	writeFileSync(claimPath, deadClaim);
-	const recovered = JSON.stringify({ owner: acquiringOwner, nonce: 'claim-recovered' });
-	assert.throws(() => acquireReclaim(path, acquiringOwner, pausedOverClaim(() => {
-		writeFileSync(claimPath, recovered); // the competitor's live claim replaced the dead one
-	})), /ownership conflict/);
-	assert.equal(readFileSync(claimPath, 'utf8'), recovered); // the live claim was put back, never removed
-	assert.equal(quarantinedSiblings(path).length, 0); // the guard was never renamed
-	assert.deepEqual(readdirSync(path), ['owner.json', 'reclaim.claim']); // no aside residue remains
-	// The dead claim vanished while this reclaimer was paused (its recoverer crashed between removal
-	// and its re-claim): the takeover moves nothing and withholds without renaming the guard.
-	writeFileSync(claimPath, deadClaim);
-	assert.throws(() => acquireReclaim(path, acquiringOwner, pausedOverClaim(() => {
-		unlinkSync(claimPath);
-	})), /ownership conflict/, 'vanished claim');
-	assert.equal(quarantinedSiblings(path).length, 0, 'vanished claim');
+	const myClaimStands = (): boolean => readdirSync(path)
+		.filter((entry) => entry.startsWith('reclaim.claim'))
+		.some((entry) => { try { return JSON.parse(readFileSync(join(path, entry), 'utf8')).owner.pid === process.pid; } catch { return false; } });
+	writeFileSync(join(path, deadClaimName), deadClaim);
+	const guardB = acquireReclaim(path, acquiringOwner, pausedOverClaim(() => {
+		assert.throws(() => acquireReclaim(path, acquiringOwner, () => acquiringOwner), /not reclaimed automatically/, 'competitor refused');
+		assert.equal(myClaimStands(), true); // A's claim survived the competitor's refused attempt
+		assert.equal(quarantinedSiblings(path).length, 1); // only A's earlier quarantine exists; the guard was never renamed inside the pause
+	}));
+	assert.equal(guardB.path, path);
 	assert.deepEqual(readdirSync(path), ['owner.json']);
-	// Nothing intervened: the takeover moves the examined dead claim aside, retires it and re-claims,
-	// and the reclaimer quarantines the guard under its own claim and acquires through the pause.
-	writeFileSync(claimPath, deadClaim);
-	const guard = acquireReclaim(path, acquiringOwner, pausedOverClaim(() => { /* nothing intervenes */ }));
-	assert.equal(guard.path, path);
-	const names = quarantinedSiblings(path);
-	assert.equal(names.length, 1);
-	assert.deepEqual(readdirSync(join(dir, names[0]!)), ['owner.json']); // the quarantined evidence keeps exactly the stale record
-	assert.deepEqual(readdirSync(path), ['owner.json']); // the fresh guard keeps exactly its own record
-	guard.release();
+	assert.deepEqual(readdirSync(join(dir, quarantinedSiblings(path).find((name) => name.includes('nonce-takeover-b'))!)), ['owner.json']);
+	guardB.release();
+	// The dead claim vanished while A was paused over its holder's verdict: the pruning race is absorbed
+	// rather than treated as a vacancy — A proceeds under its own claim and acquires.
+	staleGuard(path, 'linux:stale-boot:111', 'nonce-takeover-c');
+	writeFileSync(join(path, deadClaimName), deadClaim);
+	const guardC = acquireReclaim(path, acquiringOwner, pausedOverClaim(() => {
+		unlinkSync(join(path, deadClaimName)); // another reclaimer pruned the same dead claim first
+	}));
+	assert.equal(guardC.path, path);
+	guardC.release();
+	// Nothing intervenes: A verdicts the dead claim's holder, prunes it by its own unique name and
+	// acquires through the pause.
+	staleGuard(path, 'linux:stale-boot:111', 'nonce-takeover-d');
+	writeFileSync(join(path, deadClaimName), deadClaim);
+	const guardD = acquireReclaim(path, acquiringOwner, pausedOverClaim(() => { /* nothing intervenes */ }));
+	assert.equal(guardD.path, path);
+	guardD.release();
 });
 
 test('acquireRunFileGuard leaves a symlink guard as a conflict', () => {

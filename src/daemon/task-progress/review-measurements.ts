@@ -1,0 +1,138 @@
+/* Copyright (c) Procix Software India. Licensed under the MIT License. */
+import { Type } from '@sinclair/typebox';
+import type { Static } from '@sinclair/typebox';
+import { Value } from '@sinclair/typebox/value';
+import type { ReviewWorkerProgress } from '../threads/review-workers.js';
+import type { ReviewWorkerIdentity } from '../threads/review-worker-contract.js';
+import { MeasuredCountSchema, ProgressLabel, ProgressSequence, progressObject } from '../../shared/task-progress.js';
+import type { DelegateMeasurement, MeasuredCount, ProgressKind, TaskOwnerFence, TaskRef } from '../../shared/task-progress.js';
+
+const target = Type.String({ minLength: 1, maxLength: 2048, pattern: '^[^\\x00-\\x1f\\x7f]+$' });
+const nullableCount = Type.Union([MeasuredCountSchema, Type.Null()]);
+const nullableNumber = Type.Union([ProgressSequence, Type.Null()]);
+
+export const DesignReviewDetailsSchema = progressObject({
+  kind: Type.Literal('design-review'),
+  target,
+  checks: nullableCount,
+  freshChunks: nullableCount,
+  retainedChunks: nullableNumber,
+  retries: nullableNumber,
+});
+export const CodeReviewDetailsSchema = progressObject({
+  kind: Type.Literal('code-review'),
+  target,
+  initial: nullableCount,
+  followUp: nullableCount,
+  retries: nullableNumber,
+  publication: Type.Union([
+    Type.Literal('pending'), Type.Literal('complete'), Type.Literal('failed'), Type.Literal('unknown'),
+  ]),
+});
+export type DesignReviewDetails = Static<typeof DesignReviewDetailsSchema>;
+export type CodeReviewDetails = Static<typeof CodeReviewDetailsSchema>;
+export type ReviewDetails = DesignReviewDetails | CodeReviewDetails;
+
+export function validateReviewDetails(kind: ProgressKind, value: unknown): value is ReviewDetails {
+  if (kind === 'design-review') return Value.Check(DesignReviewDetailsSchema, value);
+  if (kind === 'code-review') return Value.Check(CodeReviewDetailsSchema, value);
+  return false;
+}
+
+type ReviewIdentity = ReviewWorkerIdentity & { readonly attempt: number };
+const sameIdentity = (expected: ReviewIdentity, actual: ReviewWorkerProgress): boolean =>
+  expected.incarnation === actual.incarnation && expected.attempt === actual.attempt &&
+  expected.key.project === actual.key.project && expected.key.family === actual.key.family &&
+  expected.key.reviewId === actual.key.reviewId;
+const label = (value: string | undefined): string | null =>
+  value !== undefined && Value.Check(ProgressLabel, value) ? value : null;
+/** Unverified admission may not claim reviewed work; reviewProgressPublication already rejects it. */
+const unverifiedReviewedWork = (admission: { validation: string } | undefined, reviewed: number): boolean =>
+  admission?.validation === 'unverified' && reviewed > 0;
+
+export function mapDesignReviewMeasurement(
+  identity: ReviewIdentity, progress: ReviewWorkerProgress, task: TaskRef, owner: TaskOwnerFence,
+): DelegateMeasurement<DesignReviewDetails> | null {
+  if (!sameIdentity(identity, progress)) return null;
+  const observation = progress.key.family === 'design' ? progress.observation as
+    | (Record<string, unknown> & { completedChunks?: unknown; totalChunks?: unknown; activeChunkId?: unknown;
+        coverageProgress?: unknown; report?: unknown; admission?: unknown; lastMeaningfulActivityAt?: unknown })
+    | undefined : undefined;
+  if (!observation || typeof observation !== 'object') return null;
+  const completed = observation.completedChunks, total = observation.totalChunks;
+  if (!Value.Check(ProgressSequence, completed) || !Value.Check(ProgressSequence, total) || completed > total) return null;
+  const coverage = observation.coverageProgress as
+    | { plannedChunks?: unknown; selectedChunks?: unknown; reviewedChunks?: unknown; retainedChunks?: unknown } | undefined;
+  if (coverage !== undefined) {
+    const { plannedChunks, selectedChunks, reviewedChunks, retainedChunks } = coverage;
+    if (!Value.Check(ProgressSequence, plannedChunks) || !Value.Check(ProgressSequence, selectedChunks) ||
+        !Value.Check(ProgressSequence, reviewedChunks) || !Value.Check(ProgressSequence, retainedChunks)) return null;
+    // Retained coverage complements the fresh selection; an inconsistent plan maps to null.
+    if (retainedChunks + selectedChunks !== plannedChunks) return null;
+    if (unverifiedReviewedWork(observation.admission as never, reviewedChunks)) return null;
+  }
+  if (unverifiedReviewedWork(observation.admission as never, completed)) return null;
+  const report = observation.report as { artifactId?: unknown } | undefined;
+  const targetValue = report?.artifactId ?? progress.key.reviewId;
+  if (!Value.Check(target, targetValue)) return null;
+  const checks: MeasuredCount = { unit: 'chunks', completed, total };
+  const freshChunks: MeasuredCount | null = coverage !== undefined && Value.Check(ProgressSequence, coverage.reviewedChunks) && Value.Check(ProgressSequence, coverage.selectedChunks)
+    ? { unit: 'chunks', completed: coverage.reviewedChunks, total: coverage.selectedChunks } : null;
+  const retainedChunks = coverage !== undefined && Value.Check(ProgressSequence, coverage.retainedChunks) ? coverage.retainedChunks : null;
+  const details: DesignReviewDetails = { kind: 'design-review', target: targetValue, checks, freshChunks, retainedChunks, retries: null };
+  return {
+    kind: 'design-review',
+    measuredAt: progress.updatedAt,
+    meaningfulRevision: progress.sequence,
+    lastMeaningfulAt: typeof observation.lastMeaningfulActivityAt === 'string' && Number.isFinite(Date.parse(observation.lastMeaningfulActivityAt))
+      ? observation.lastMeaningfulActivityAt : null,
+    phase: label(progress.display?.phase) ?? progress.phase,
+    activeUnit: label(typeof observation.activeChunkId === 'string' ? observation.activeChunkId : undefined),
+    counts: freshChunks !== null ? [freshChunks] : [],
+    milestones: [],
+    controls: [],
+    details,
+    task,
+    owner,
+  };
+}
+
+export function mapCodeReviewMeasurement(
+  identity: ReviewIdentity, progress: ReviewWorkerProgress, task: TaskRef, owner: TaskOwnerFence,
+): DelegateMeasurement<CodeReviewDetails> | null {
+  if (!sameIdentity(identity, progress)) return null;
+  const observation = progress.key.family === 'code' ? progress.observation as
+    | (Record<string, unknown> & { status?: unknown; crPublication?: unknown; completedTasks?: unknown; totalTasks?: unknown;
+        progress?: unknown; admission?: unknown }) | undefined : undefined;
+  if (!observation || typeof observation !== 'object') return null;
+  const completed = observation.completedTasks, total = observation.totalTasks;
+  if (!Value.Check(ProgressSequence, completed) || !Value.Check(ProgressSequence, total) || completed > total) return null;
+  if (unverifiedReviewedWork(observation.admission as never, completed)) return null;
+  const view = observation as { status?: string; crPublication?: string; progress?: { phase?: unknown; task?: { name?: unknown } | null; lastMeaningfulActivityAt?: unknown } | null };
+  const publication = view.status === 'failed' ? 'failed'
+    : view.crPublication === 'complete' ? 'complete'
+    : view.crPublication === 'pending' ? 'pending' : 'unknown';
+  const details: CodeReviewDetails = {
+    kind: 'code-review',
+    target: progress.key.reviewId,
+    initial: { unit: 'tasks', completed, total },
+    followUp: null,
+    retries: null,
+    publication,
+  };
+  return {
+    kind: 'code-review',
+    measuredAt: progress.updatedAt,
+    meaningfulRevision: progress.sequence,
+    lastMeaningfulAt: typeof view.progress?.lastMeaningfulActivityAt === 'string' && Number.isFinite(Date.parse(view.progress.lastMeaningfulActivityAt))
+      ? view.progress.lastMeaningfulActivityAt : null,
+    phase: label(progress.display?.phase) ?? (Value.Check(ProgressLabel, view.progress?.phase) ? view.progress.phase : progress.phase),
+    activeUnit: label(typeof view.progress?.task?.name === 'string' ? view.progress.task.name : undefined),
+    counts: [{ unit: 'tasks', completed, total }],
+    milestones: [],
+    controls: [],
+    details,
+    task,
+    owner,
+  };
+}

@@ -370,6 +370,14 @@ export class ReviewWorkers {
  }
 
  cachedProgress(key:ReviewKey):ReviewWorkerProgress|undefined{return this.entries.get(keyOf(key))?.progress;}
+ /** Read-only projection of the last accepted progress: a frozen clone, or
+  * undefined for an unknown, closing or not-yet-accepted entry. Writes
+  * nothing, advances no sequence, renews no grace, posts to no worker. */
+ progressOf(key:ReviewKey):ReviewWorkerProgress|undefined{
+  const e=this.entries.get(keyOf(key));
+  if(!e||e.closing||!e.progress)return undefined;
+  return Object.freeze(structuredClone(e.progress));
+ }
  /** Held by the artifact/story cleanup operation, including its filesystem work. */
  claimCleanup(scope:string):()=>void{
   if(this.cleanup.has(scope)||[...this.entries.values()].some(e=>e.scope.cleanupScope===scope)||[...this.resourceHolds.values()].some(h=>h.cleanupScope===scope))throw new Error('Review cleanup busy');

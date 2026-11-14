@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1794662517722-xautqe",
+    "runId": "wf-1794663683617-c2huez",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-14T13:22:15.725Z",
+    "createdAt": "2026-11-14T13:41:36.621Z",
     "epicCreatedAt": "2026-11-14T13:09:02.500Z",
     "attribution": {
       "outputs": [
@@ -15,14 +15,14 @@
         }
       ]
     },
-    "elapsedMs": 17701,
+    "elapsedMs": 12720,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "4adebe9eb17a3ef2",
     "epicSlug": "separate-daemon-development-release-build-lanes",
     "storyId": "s1",
-    "hldBaseRunId": "wf-1794662517722-xautqe",
-    "hldEffectiveHash": "a80d7d095d4f87c4b84d7467f0578c90a64017ef615ef673faaf48cf16a4acb8",
+    "hldBaseRunId": "wf-1794663683617-c2huez",
+    "hldEffectiveHash": "b1d6f6a0370aad5bf1e37380ad77e651d970a8b7dd4114715d65a5a377230992",
     "hldAmendmentsApplied": [],
     "storyTitle": "Separate daemon development and release build lanes",
     "standalone": true,
@@ -30,23 +30,38 @@
     "triageRationale": "One cohesive deployment contract across existing candidate, qualification and promotion jobs. Requires a reviewed branch/provenance contract and local positive/negative tests.",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
-        "number": 2,
-        "contentHash": "e37f73c25de439d45637b5d84a4007737b22c6b0e8e723b051739347e38dcae5",
-        "at": "2026-11-14T13:22:15.844Z",
+        "number": 4,
+        "contentHash": "b36517eb95b4f0d9386bf949118b539d6519d90d923bae30a9837095c6dfee53",
+        "at": "2026-11-14T13:41:36.757Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 4,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T14:07:18.298Z",
+        "override": {
+          "reason": "The independent reviewer exhausted retries and paused during coverage planning before reviewing the revised design. The original findings and subsequent self-review findings were addressed; final self-review found no remaining blockers. User explicitly approved the presented revision with this override."
+        }
+      }
     },
     "envelope": {
+      "description": "",
+      "references": [],
       "attachments": []
     },
-    "revision": 2
+    "revision": 4,
+    "rangeBase": "f330221cdfa2b56eb18852523b8184614f5ab29d"
   },
   "body": {
     "summary": {
@@ -85,10 +100,13 @@
           ],
           "preconditions": [
             "Derive lane from actual dispatch ref; admit only main and v2. Require GitHub branch protection on main. The v2 build job has read-only permissions and no signing or release environment.",
-            "For both lanes dispatch SHA must equal requested SHA; reject all other refs."
+            "For both lanes dispatch SHA must equal requested SHA; reject all other refs.",
+            "Release lane readiness is an explicit repository variable INSRC_DAEMON_MAIN_RELEASE_READY with the only enabling value 'true'. Missing or any other value blocks the main build job before macOS runner allocation and blocks both main signing workflows before a secret-bearing job can start. It does not affect read-only v2 development builds. Do not expose a dispatch input that can override readiness.",
+            "Use the repository variable as an early scheduling gate, not a durable authorization. For main-only privileged jobs, consult live repository readiness by its exact repository-variable API endpoint, rather than relying on the workflow vars snapshot or an organization variable of the same name."
           ],
           "postconditions": [
-            "Upload unpublished artifact with lane-distinct name and branch/lane in candidate metadata. Run no Actions tests."
+            "Upload unpublished artifact with lane-distinct name and branch/lane in candidate metadata. Run no Actions tests.",
+            "Build artifact name is daemon-candidate-<lane>-<commit>-<attempt> and candidate.json records lane, origin branch, commit, run ID, run attempt and the inner archive size and SHA-256. The immutable upload supplies the artifact ID; the run summary records the complete identity."
           ]
         },
         {
@@ -107,11 +125,16 @@
           ],
           "preconditions": [
             "Run the release qualification-signing workflow from protected main and accept only successful candidate runs originating at main. Verify branch and commit on run and artifact metadata, repository/workflow identity, lane and digest.",
-            "Use v2 candidates for local packaging and smoke checks only; never give a v2 job production or qualification signing credentials."
+            "Use v2 candidates for local packaging and smoke checks only; never give a v2 job production or qualification signing credentials.",
+            "Both GitHub signing environments (daemon-pilot-qualification and daemon-pilot-production) use selected deployment refs with exactly one branch rule main, zero tag rules, designated reviewers, prevention of self-approval, and no administrator bypass where supported. Configure and verify actual environment protection independently of workflow YAML; fail closed before signing if any policy is missing or cannot be verified. Store each signer only in its own environment secrets, never repository or organization secrets. A v2 or tag workflow requesting either environment directly must be denied by GitHub.",
+            "Resolve the exact successful GitHub run attempt, not the latest run conclusion. Require run ID, attempt number, main branch, repository/head repository, exact commit, dispatch event and trusted workflow identity to agree with GitHub's attempt record. Require the immutable artifact ID to belong to that run and match the expected lane/commit/attempt artifact name, with GitHub artifact repository, branch and SHA matching and no expiration. Check candidate.json identity and inner archive digest after download. A later successful rerun cannot authorize an artifact from a failed attempt.",
+            "After GitHub environment approval and immediately before each signing operation, fetch live readiness and recheck the relevant main protection and environment policy. A missing, non-true, unavailable or unverifiable setting aborts. Keep qualification credentials environment-scoped."
           ],
           "postconditions": [
             "Before testing, the isolated qualification signer fetches and verifies the exact main artifact and signs its manifest using only the qualification key. This signature authenticates a test input; it does not attest to passing tests or authorize publication.",
-            "The operator downloads the same archive and signed manifest; the disposable Apple Silicon installer verifies the qualification signature before execution. The operator then records the passing checks in the protected release-control record, binding repository, main commit, run ID, artifact ID, manifest SHA-256 and archive SHA-256."
+            "The operator downloads the same archive and signed manifest; the disposable Apple Silicon installer verifies the qualification signature before execution. The operator then records the passing checks in the protected release-control record, binding repository, main commit, run ID, artifact ID, manifest SHA-256 and archive SHA-256.",
+            "The reviewed local evidence names the run attempt in addition to run and artifact IDs. Reject old qualification records that omit it.",
+            "Place a required candidateOrigin object inside the signed manifest: repository (canonical GitHub repository ID), branch (main), lane (release), commit SHA, run ID, run attempt and artifact ID. The manifest's signed archive SHA-256 and size bind that origin to the archive. Populate candidateOrigin only after independently verifying GitHub's exact attempt and artifact, never from unsigned operator evidence alone. Require strict schema parsing; older manifests without candidateOrigin are ineligible for production promotion."
           ]
         },
         {
@@ -131,7 +154,10 @@
           "preconditions": [
             "Promotion executes only on protected main and behind the production environment approval. Independently require the exact candidate origin branch to be main even when run IDs and digests are valid; validate the approved evidence and qualification signature.",
             "Do not reuse a v2 archive after merging its source to main. A main candidate must be built and locally qualified separately.",
-            "Promotion happens after local qualification and review of that immutable release-control revision. Recheck the recorded evidence and its digests, the qualification signature, GitHub main run/artifact provenance, and exact manifest/archive bytes before granting the production signing step."
+            "Promotion happens after local qualification and review of that immutable release-control revision. Recheck the recorded evidence and its digests, the qualification signature, GitHub main run/artifact provenance, and exact manifest/archive bytes before granting the production signing step.",
+            "Independently repeat the same attempt-specific run/artifact checks and environment policy/readiness checks before production signing; do not rely on the qualification workflow's conclusions. The production approval reference includes the approved release-control commit and selected archive SHA-256.",
+            "Require exact equality of every signed candidateOrigin field and signed archive identity against both the approved qualification record and the independently fetched GitHub attempt/artifact. A different successful attempt or artifact is rejected even when the commit and archive SHA-256 match.",
+            "After GitHub environment approval and immediately before each signing operation, fetch live readiness and recheck the relevant main protection and environment policy. Before each externally visible publication mutation (tag creation, draft creation, asset upload, and draft publication), repeat the live checks. A missing, non-true, unavailable or unverifiable setting aborts; discard unpublished signatures on failure. Keep signing credentials environment-scoped; any read-only policy credential cannot sign or publish. An API check and a following GitHub write are not atomic; do not promise that toggling readiness alone cancels an already admitted write."
           ],
           "postconditions": [
             "Production signs the unchanged manifest bytes and publishes the unchanged locally qualified main archive. The qualification workflow never needs local evidence; only production promotion consumes the approved evidence."
@@ -144,7 +170,7 @@
       {
         "entity": "Candidate provenance",
         "change": "field-add",
-        "details": "Build metadata records origin branch and lane. GitHub's repository, workflow run and artifact metadata are authoritative for origin; archive metadata is cross-checked, never used alone to decide eligibility. Promotion and qualification signing are fixed to main rather than taking an expected branch from workflow inputs.",
+        "details": "Build metadata records origin branch and lane. GitHub's repository, workflow run and artifact metadata are authoritative for origin; archive metadata is cross-checked, never used alone to decide eligibility. Promotion and qualification signing are fixed to main rather than taking an expected branch from workflow inputs. The qualification record binds (repository, main, release lane, commit, run ID, run attempt, artifact ID, manifest SHA-256, archive SHA-256). Candidate metadata and artifact name carry the attempt, and the exact attempt endpoint must report success. The manifest signature binds candidateOrigin to signed archive bytes, independently of the evidence record; both the qualification and production signature cover the same manifest bytes.",
         "callSites": [
           "scripts/daemon-release-artifact.sh",
           ".github/workflows/daemon-candidate.yml",
@@ -172,6 +198,26 @@
         {
           "input": "Manual workflow missing on default branch",
           "expected": "Add the workflow definitions through a narrow reviewed main change; keep main candidate build disabled until packaging code is present in its selected main revision."
+        },
+        {
+          "input": "Artifact from failed attempt 1 and a successful attempt 2 of the same run",
+          "expected": "Reject attempt 1 even though the current run is green; reject a substituted artifact when the requested attempt and artifact name differ."
+        },
+        {
+          "input": "v2 workflow requests the production environment directly",
+          "expected": "GitHub rejects the deployment because only branch main is permitted and no tags are allowed."
+        },
+        {
+          "input": "Workflows are present on main but the readiness variable is missing or false",
+          "expected": "v2 can build; main cannot allocate a macOS runner or start qualification signing or production promotion."
+        },
+        {
+          "input": "A different successful main attempt produces byte-identical archive bytes",
+          "expected": "Reject if its run attempt or artifact ID differs from the signed manifest, even with identical commit and digest."
+        },
+        {
+          "input": "Readiness disabled during approval, after signing, or while a publication mutation is pending",
+          "expected": "A live recheck refuses the next mutation; explicitly cancel queued and running release signing/promotion and confirm terminal status. Inspect any tag/draft/assets left by a completed or in-flight operation before retrying; do not silently overwrite or publish them."
         }
       ],
       "invariantsToPreserve": []
@@ -185,7 +231,12 @@
             "New local workflow policy fixture: main protected builds a release candidate, main unprotected refuses, v2 creates an unsigned development artifact, and all other refs refuse",
             "New mocked GitHub API integration: main run plus matching artifact succeeds; v2 origin, mismatched run branch and artifact branch, wrong repository/workflow/commit/run ID or expired artifact all refuse before download or signing",
             "New workflow wiring check: both qualification-sign and promotion enforce main provenance independently, dev jobs have no signing environment, and no Actions test commands are added",
-            "New local sequence coverage: qualification signature precedes verified test install; failed or absent local record blocks production signing; valid approved evidence admits the identical manifest/archive"
+            "New local sequence coverage: qualification signature precedes verified test install; failed or absent local record blocks production signing; valid approved evidence admits the identical manifest/archive",
+            "New local GitHub policy fixtures: enforce exact main branch-only rules and reject a tag rule, extra branch rule, missing reviewers, self-approval, bypass, unavailable policy and v2 environment access",
+            "New mocked API test: failed attempt 1 plus successful attempt 2; reject attempt 1 and cross-attempt artifact substitution, accept only successful matching attempt",
+            "New local job-admission tests: missing or false readiness blocks main build before runner and both signing workflows, but v2 development still builds",
+            "New test: two successful main attempts with the same commit and archive bytes; substitute attempt or artifact ID and assert promotion rejects the valid signature for the wrong identity",
+            "New test: readiness is true at scheduling and false after approval, or becomes false after signing; deny signing or the next publish mutation, respectively. Missing/read-failed live settings also fail closed."
           ]
         }
       ],
@@ -207,6 +258,36 @@
           "provingTests": [
             "To add: signed qualification manifest is usable before evidence exists; promotion refuses missing/mismatched evidence and signs only the exact qualified input bytes after approval"
           ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "Verify both signing environments block v2 and tags, deny mismatched or unavailable policy, and restrict keys to separate environment secrets. Local tests mock policy responses; separately record real GitHub configuration verification before enabling readiness."
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "Check exact successful attempt binding, including failed earlier attempt despite successful rerun and cross-attempt artifact substitution."
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "With readiness missing, false or malformed, main allocates no macOS runner and no signing job starts; v2 continues building."
+          ]
+        },
+        {
+          "criterionId": "ac7",
+          "provingTests": [
+            "Reject a valid qualification signature replayed for a second successful main attempt with identical archive and commit; check every origin field against both evidence and GitHub."
+          ]
+        },
+        {
+          "criterionId": "ac8",
+          "provingTests": [
+            "Mock disable while approval is pending and after signing; verify no signing or next publication mutation, respectively. Verify read errors stop work and document operator cancellation/reconciliation."
+          ]
         }
       ],
       "testFramework": "Add new local executable coverage during implementation. Existing tests cover digest and evidence checks and no rebuild; they do not currently exercise two-lane routing or mocked GitHub branch provenance. Run Node tests locally only."
@@ -217,12 +298,12 @@
       "migrationSteps": [
         {
           "order": 1,
-          "action": "Land the manual workflow definitions on main via a narrow reviewed change so GitHub can dispatch v2, without merging the full v2 implementation.",
+          "action": "Land workflow definitions on main via a narrow reviewed change, leaving INSRC_DAEMON_MAIN_RELEASE_READY absent (disabled).",
           "rollbackable": true
         },
         {
           "order": 2,
-          "action": "Run unsigned v2 development builds. Enable main release builds only once main contains the installer and packaging code and required protections/environments.",
+          "action": "Use unsigned v2 builds. When main contains the packaging and installer code, configure and verify protected main, both main-only environments, readiness prerequisites and independent secrets; only then set INSRC_DAEMON_MAIN_RELEASE_READY to true. Disable release lane by removing the variable; do not relax environment protections. To stop releases, first remove readiness, then cancel all queued, approval-pending and running main release workflows, confirm they are terminal, and reconcile any partial GitHub tag/draft/assets before re-enabling. An operation already accepted by GitHub may finish.",
           "rollbackable": true
         },
         {
@@ -311,31 +392,31 @@
           "from": "build",
           "to": "sign",
           "label": "Pass exact main run and artifact identity",
-          "description": "Signer verifies workflow provenance and archive digest"
+          "description": "Signer independently verifies protected main, exact successful run attempt, artifact identity and archive digest."
         },
         {
           "from": "sign",
           "to": "local",
           "label": "Provide qualification signature",
-          "description": "Local installer authenticates the main archive before running it"
+          "description": "The signed manifest binds the exact GitHub attempt and immutable artifact ID to the archive digest before local tests."
         },
         {
           "from": "local",
           "to": "approval",
           "label": "Submit exact-archive qualification evidence",
-          "description": "Record commits, run ID, artifact ID, and both digests"
+          "description": "Reviewed evidence binds repository, branch, commit, build run and attempt, artifact ID, and both digests."
         },
         {
           "from": "approval",
           "to": "publish",
           "label": "Approve immutable evidence revision",
-          "description": "Production promotion verifies proof and signs unchanged bytes"
+          "description": "After approval, compare signed provenance with the evidence and GitHub and recheck live readiness and policy before production signing."
         },
         {
           "from": "publish",
           "to": "publish",
           "label": "Publish exact locally tested archive",
-          "description": "Production does not rebuild or accept v2 candidates"
+          "description": "Recheck live readiness and policy before each publication change; the archive and manifest bytes stay unchanged."
         }
       ]
     },

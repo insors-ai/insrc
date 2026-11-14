@@ -1,0 +1,820 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1794672418662-gm1x9s",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-14T16:17:36.451Z",
+    "epicCreatedAt": "2026-11-14T15:32:49.965Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 637457,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "01ac1e4b6a6c9c2f",
+    "epicSlug": "scratchpad-document-view-read-only-cannot",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1794672418662-gm1x9s",
+    "hldEffectiveHash": "e3f317296671046459538b1af52927bb87406ca27bacfb2a592158de3ea238c9",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Make the scratchpad document view editable in-plugin (ISSUE-01ac1e4b6a6c9c2f)",
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "b1fe390ed2d4f3d885d79cc4a326bcc7e2e78274fbea14fb631f4f1a126ca152",
+        "at": "2026-11-14T19:00:49.475Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 1,
+        "reviewer": {
+          "id": "agent:design-review-daemon",
+          "kind": "agent",
+          "properties": {
+            "party": "daemon"
+          }
+        },
+        "party": "daemon",
+        "verdict": "block",
+        "counts": {
+          "HIGH": 0,
+          "MED": 4,
+          "LOW": 0
+        },
+        "at": "2026-11-14T16:25:16.579Z",
+        "report": {
+          "entityId": "LLD-01ac1e4b6a6c9c2f-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "8ff0ef7be3662bcce6071945421731cd3d3f36c782ec14f3cc21334d46c4183b"
+        }
+      },
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T19:01:23.875Z",
+        "override": {
+          "reason": "Daemon design review unavailable (ISSUE-738d62b8: reviewId review-lld-01ac1e4b6a6c9c2f-s1-r5 exhausted native retries with invalid_output, zero findings). Controller self-review recorded at docs/standalone/scratchpad-document-view-read-only-cannot-E2026111401ac1e4b/S001/LLD-SELF-REVIEW.md — 6 findings, all fixed. Content change since revision 1 (escaping raw <pre>/<textarea> tags in the source JSON body so the rendered markdown no longer swallows the document in the review pane) was reconciled as revision 2 with a matching update log entry; the user approved this LLD in chat after insrc_present returned both names presented."
+        }
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "b456ee6886302e00dfd17948f1c510a3a74c2aae"
+  },
+  "body": {
+    "adherence": {
+      "dimensions": [
+        "ux",
+        "functional-coverage"
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Editable textarea in the existing scratchpad webview + no-clobber updateScratch",
+        "oneLineSummary": "Make the existing 'insrc.scratchpad' document view's &lt;pre> an editable &lt;textarea>, add document-channel scratch-save/scratch-saved messages and ScratchStore.updateScratch with exclusive temp-write + unlink/link no-clobber publish.",
+        "approach": "Keep the existing singleton 'insrc.scratchpad' document webview; in documentBodyHtml replace the &lt;pre id=\"insrc-scratchdoc\"> with a &lt;textarea id=\"insrc-scratchdoc\"> (same id, CSP-safe: value set via .value, never innerHTML). Content push 'scratch-content' sets textarea.value. Bootstrap (now parameterised by gen AND id) adds: input listener marking dirty + showing a save button (and panel title suffix), Ctrl/Cmd+S and the save button posting new document-channel 'scratch-save' {id, gen: docGeneration, text: textarea.value}; the document panel's onMessage forwards 'scratch-save' to the host through a NEW ScratchPanelsDeps.onScratchSave seam (wired in extension.ts to the scratch-host route, exactly like the existing onSendToChat forward — the chat-channel SCRATCH_INTENT_TYPES interception in extension.ts cannot see document-panel messages); the route replies host->webview 'scratch-saved' {id, gen, ok, error?} (routed via a new panels.replySaved) which clears dirty on ok / surfaces error. Both messages live in a NEW document-channel contract (ScratchDocWebviewToHost / ScratchDocHostToWebview unions + const arrays in scratch-panels.ts) — the chat-channel protocol.ts unions stay untouched, because scratch-content/scratch-ready already travel on the document panel's raw {v:1,payload} channel outside those unions. The host route calls new store.updateScratch(id, text) which validates id (inside root, regular file, no symlink), writes the temp file with exclusive no-follow creation (O_EXCL|O_CREAT|O_NOFOLLOW), publishes with the store's no-clobber unlink+link discipline over the destination. Selection-based send-to-chat is preserved by reading the textarea's own selection (selectionStart/selectionEnd over doc.value), not window.getSelection(). Minimal new surface: 2 document-channel message types, 1 store op, 2 panels ops (replySaved + onScratchSave seam), dirty flag in the controller.",
+        "pros": [
+          "Smallest change that fully meets the ISSUE fix intent; keeps the singleton panel, generation/epoch guards, ready-replay handshake and wrap() delivery logging untouched",
+          "Reuses the existing CSP shell, nonce, bootstrap pattern and send-to-chat selection path (re-pointed from window.getSelection() to the textarea's selectionStart/selectionEnd)",
+          "updateScratch mirrors createScratch's existing security shape (id validation, temp file, publish), so invariants are preserved by construction",
+          "Dirty state + save affordance are webview-local; the host only gains one intent route"
+        ],
+        "cons": [
+          "A textarea is plain-text editing, not markdown preview — but the current view is already plain text, so no regression",
+          "no-clobber link publication must handle the destination being recreated concurrently (EEXIST retry, covered in error paths)"
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "contentEditable div in the document view",
+        "oneLineSummary": "Same save round-trip as a1 but the editable element is a contentEditable div fed via textContent/innerText.",
+        "approach": "contentEditable div instead of textarea: documentBodyHtml emits <div id=\"insrc-scratchdoc\" contenteditable=\"true\">; 'scratch-content' sets textContent as today; save posts 'scratch-save' {id, text: div.innerText}; same protocol additions and store op as a1.",
+        "pros": [
+          "Keeps the textContent assignment path from the current bootstrap nearly unchanged",
+          "Selection APIs behave similarly"
+        ],
+        "cons": [
+          "contentEditable brings rich-text paste and DOM-mutation edge cases into a CSP-strict webview; innerText round-trips are less predictable than textarea.value",
+          "No advantage over textarea for a plain-markdown scratchpad",
+          "Harder to pin in source-scan tests (contenteditable attribute vs textarea value semantics)"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "contentEditable + innerText round-trips add rich-text paste and DOM-mutation edge cases into a CSP-strict webview; weaker testability in source-scan tests; same store-write need as a1 without its clean .value contract."
+      },
+      {
+        "id": "a3",
+        "name": "Open the .md file in a native VS Code editor instead of the webview",
+        "oneLineSummary": "Replace the custom document webview with VS Code's native text editor on the scratchpad file.",
+        "approach": "Do not edit in the webview at all: 'scratch-open' opens the underlying ~/.insrc/scratches/<id>.md file in a real VS Code text editor (workspace.openTextDocument + showTextDocument) instead of the custom webview; editing/saving is native. The webview document view is kept only for send-to-chat, or dropped.",
+        "pros": [
+          "Native editing, syntax highlighting, native save — zero custom editing code",
+          "The external file is the source of truth anyway"
+        ],
+        "cons": [
+          "Changes the UX fundamentally — the ISSUE asks for the scratchpad (the popup's opened view) to be editable; opening an external file editor changes the panel contract, tab identity, and the create-or-reveal singleton + generation/epoch machinery becomes dead code",
+          "Loses the floating send-to-chat button and the ISSUE-3183af2a popup behavior tied to the webview",
+          "Bigger blast radius: extension.ts wiring, viewType registration, tests all change; the plugin can no longer guarantee content flows through the store",
+          "Conflicts with the approved fix intent (editable surface + save through the store)"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Throws away the singleton panel machinery the earlier stories built and ISSUE-3183af2a hardened; cost M; changes UX away from the scratchpad view the ISSUE reports as read-only; contradicts the approved fix intent (editable surface + save through the store)."
+      },
+      {
+        "id": "a4",
+        "name": "Read-only webview + 'Edit' button opening the native editor",
+        "oneLineSummary": "Keep the webview as-is; add an 'Edit' icon button that opens the native editor on the file.",
+        "approach": "Keep the webview as-is; add an edit affordance that hands off to a native text editor on the .md file; the webview watches/re-reads on reveal. Save happens natively; browse refreshes on panel reveal.",
+        "pros": [
+          "Native editing without replacing the webview",
+          "Small webview change (one button + one intent)"
+        ],
+        "cons": [
+          "The scratchpad view itself remains read-only — does not satisfy 'the scratchpad is not editable' as reported",
+          "Stale-content sync issue between webview and file"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Fails the ISSUE-01ac1e4b6a6c9c2f fix intent — the scratchpad view itself remains read-only, which is exactly the reported complaint; this is the status quo ac5 already scoped out."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "contractDetails": {
+      "api": [
+        {
+          "errors": [
+            {
+              "condition": "id is not a *.md filename resolving strictly inside the store root, or lstat shows not-a-regular-file / symlink",
+              "type": "ScratchRefused"
+            },
+            {
+              "condition": "the scratchpad file no longer exists at save time",
+              "type": "ScratchNotFound"
+            },
+            {
+              "condition": "write/publish failure EACCES/ENOSPC/EROFS etc.",
+              "type": "ScratchStoreError"
+            }
+          ],
+          "name": "ScratchStore.updateScratch",
+          "parameters": [
+            {
+              "name": "id",
+              "optional": false,
+              "purpose": "scratchpad id = file basename, validated exactly like readScratch/deleteScratch (inside root, regular file, symlink refused)",
+              "type": "string"
+            },
+            {
+              "name": "text",
+              "optional": false,
+              "purpose": "full new markdown content to persist",
+              "type": "string"
+            }
+          ],
+          "postconditions": [
+            "the destination file's content equals text",
+            "mtime is bumped so listScratches/browse reflect the save",
+            "no temp file is left behind",
+            "a pre-existing destination is replaced via temp write + unlink/link publish; content is never partially written (a concurrent reader may briefly see ENOENT between unlink and link)"
+          ],
+          "preconditions": [
+            "store root exists (created lazily as today)",
+            "id passes the same validation as readScratch (resolve strictly inside root, basename *.md, lstat regular file, symlink refused)"
+          ],
+          "returns": {
+            "meaning": "resolves when the destination file's content has been replaced with text (no partial content is ever exposed); the ScratchEntry metadata (id/name/mtime/size) is unchanged in shape, mtime/size derived from the file",
+            "type": "Promise<void>"
+          },
+          "signature": "updateScratch(id: string, text: string): Promise<void>  // vscode-plugin/src/chat/scratch-store.ts — NEW"
+        },
+        {
+          "errors": [
+            {
+              "condition": "msg.id/msg.text not a string or msg.gen not a number",
+              "type": "dropped + log.warn (same as other malformed scratch intents)"
+            }
+          ],
+          "name": "scratch-save intent (document-channel WebviewToHost member)",
+          "parameters": [
+            {
+              "name": "id",
+              "optional": false,
+              "purpose": "which scratchpad to save (embedded in the bootstrap by the host as documentBootstrap(gen, id))",
+              "type": "string"
+            },
+            {
+              "name": "gen",
+              "optional": false,
+              "purpose": "the live docGeneration embedded in the bootstrap, echoed so the reply can be generation-guarded",
+              "type": "number"
+            },
+            {
+              "name": "text",
+              "optional": false,
+              "purpose": "full editable content from the textarea",
+              "type": "string"
+            }
+          ],
+          "postconditions": [
+            "host routes to store.updateScratch(id, text)",
+            "on success: host->webview 'scratch-saved' {id, gen, ok:true} + refreshBrowse() + chat scratch-list re-push so the menu's mtime updates",
+            "on failure: 'scratch-saved' {id, gen, ok:false, error} and the dirty state stays"
+          ],
+          "preconditions": [
+            "the document webview posted it on the document panel's own channel with its live docGeneration; the panels controller confirmed it against showingId before forwarding via the new deps.onScratchSave seam (generation/epoch guards apply)"
+          ],
+          "returns": {
+            "meaning": "void (async fire-and-forget from the webview, like the other scratch intents)",
+            "type": "void"
+          },
+          "signature": "{ type: 'scratch-save'; id: string; gen: number; text: string }  // NEW member of the document-channel union ScratchDocWebviewToHost + SCRATCH_DOC_WEBVIEW_TO_HOST_TYPES (defined in vscode-plugin/src/panels/scratch-panels.ts, NOT in the chat-channel protocol.ts unions); gen echoed so the reply can be generation-guarded"
+        },
+        {
+          "errors": [
+            {
+              "condition": "delivered=false or rejected post from the wrapped handle",
+              "type": "logged via the existing wrap() drop logging (ISSUE-3183af2a)"
+            }
+          ],
+          "name": "scratch-saved reply (document-channel HostToWebview member)",
+          "parameters": [
+            {
+              "name": "id",
+              "optional": false,
+              "purpose": "which save this answers",
+              "type": "string"
+            },
+            {
+              "name": "gen",
+              "optional": false,
+              "purpose": "the docGeneration the host captured from the scratch-save intent; echoed so the webview can drop stale replies",
+              "type": "number"
+            },
+            {
+              "name": "ok",
+              "optional": false,
+              "purpose": "success flag",
+              "type": "boolean"
+            },
+            {
+              "name": "error",
+              "optional": true,
+              "purpose": "failure message shown in the view when ok=false",
+              "type": "string"
+            }
+          ],
+          "postconditions": [
+            "webview 'scratch-saved' handler requires msg.gen === live docGeneration and matching id: ok=true clears dirty (hides save button, clears title suffix), ok=false surfaces the error text in the view and keeps dirty; a reply whose gen is older than the live generation is ignored (same rule as scratch-ready)"
+          ],
+          "preconditions": [
+            "the host captured gen from the triggering scratch-save and routes the reply through a new ScratchPanels.replySaved(gen, msg) operation that targets the currently displayed document generation (added alongside openDocument/refreshBrowse/closeDocumentIfShowing/invalidateId)"
+          ],
+          "returns": {
+            "meaning": "void",
+            "type": "void"
+          },
+          "signature": "{ type: 'scratch-saved'; id: string; gen: number; ok: boolean; error?: string }  // NEW member of the document-channel union ScratchDocHostToWebview + SCRATCH_DOC_HOST_TO_WEBVIEW_TYPES (defined in vscode-plugin/src/panels/scratch-panels.ts, NOT in the chat-channel protocol.ts unions)"
+        },
+        {
+          "errors": [
+            {
+              "condition": "setHtml throws or panel disposed",
+              "type": "logged via log.warn, openDocument returns the handle (existing pattern)"
+            }
+          ],
+          "name": "documentBodyHtml / documentBootstrap (reshaped)",
+          "parameters": [
+            {
+              "name": "gen",
+              "optional": false,
+              "purpose": "document generation tag embedded in the bootstrap, echoed in scratch-ready and scratch-saved",
+              "type": "number"
+            },
+            {
+              "name": "id",
+              "optional": false,
+              "purpose": "the showing scratchpad id embedded in the bootstrap so the webview can post it back in 'scratch-save' (the bootstrap previously received only gen; scratch-content carried no id)",
+              "type": "string"
+            }
+          ],
+          "postconditions": [
+            "the document body contains &lt;textarea id=\"insrc-scratchdoc\"> (editable, CSP-safe: content assigned via .value, never innerHTML) plus the existing floating send-to-chat button and a hidden save button",
+            "bootstrap wires: scratch-content → doc.value; input → dirty=true + show save button + set panel title suffix '•'; keydown Ctrl/Cmd+S and save-button click → post 'scratch-save' {id, gen: docGeneration, text: doc.value}; message 'scratch-saved' with gen === docGeneration and matching id → clear dirty or show error (stale-gen replies ignored); send-to-chat selection reads the textarea's own selection — doc.selectionStart/selectionEnd sliced out of doc.value on select/keyup/mouseup (textarea selections are NOT exposed via window.getSelection()) — and posts {type:'send-to-chat', text} capped by capUtf8 as today"
+          ],
+          "preconditions": [
+            "same CSP nonce shell (shellHtml) and ready handshake as today"
+          ],
+          "returns": {
+            "meaning": "static body HTML string (documentBodyHtml) / nonce'd bootstrap JS string (documentBootstrap)",
+            "type": "string"
+          },
+          "signature": "documentBodyHtml(): string; documentBootstrap(gen: number, id: string): string  // vscode-plugin/src/panels/scratch-panels.ts — RESHAPED (pre → textarea, + id param, + save wiring)"
+        },
+        {
+          "errors": [
+            {
+              "condition": "store update failed",
+              "type": "'scratch-saved' ok=false + log.warn + browse refresh still runs"
+            }
+          ],
+          "name": "scratch-host 'scratch-save' route (reached via the document panel's onScratchSave seam)",
+          "parameters": [
+            {
+              "name": "msg",
+              "optional": false,
+              "purpose": "the document-channel intent, forwarded from the panels controller's deps.onScratchSave (extension.ts wires it to this route, exactly like onSendToChat → scratchHost.onMessage; the chat-channel SCRATCH_INTENT_TYPES interception in extension.ts:790 only sees the CHAT panel's messages and cannot carry the document panel's scratch-save)",
+              "type": "ScratchDocWebviewToHost"
+            }
+          ],
+          "postconditions": [
+            "await store.updateScratch(id, text); panels.replySaved(gen, { type:'scratch-saved', id, gen, ok, error? }) targeting the live document generation; panels.refreshBrowse(); sendScratchList() so the chat menu mtime refreshes"
+          ],
+          "preconditions": [
+            "the panels controller validated string id/text + numeric gen, confirmed showingId === id and gen === live docGeneration, and forwarded the intent via deps.onScratchSave"
+          ],
+          "returns": {
+            "meaning": "void",
+            "type": "void"
+          },
+          "signature": "case 'scratch-save' in createScratchHost.onMessage  // vscode-plugin/src/chat/scratch-host.ts — NEW route, entered via the document-panel onScratchSave seam (NOT via the chat-channel SCRATCH_INTENT_TYPES interception)"
+        }
+      ],
+      "surfaceLevel": "internal"
+    },
+    "dataModelChanges": [
+      {
+        "callSites": [
+          "vscode-plugin/src/chat/protocol.ts",
+          "vscode-plugin/src/chat/scratch-host.ts",
+          "vscode-plugin/src/panels/scratch-panels.ts",
+          "vscode-plugin/src/chat/__tests__/protocol.test.ts",
+          "vscode-plugin/src/chat/__tests__/scratch-store.test.ts",
+          "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts"
+        ],
+        "change": "field-add",
+        "details": "A NEW document-channel contract lives in vscode-plugin/src/panels/scratch-panels.ts (alongside the existing raw {v:1,payload} document messages scratch-content/scratch-ready, which are NOT in protocol.ts): ScratchDocWebviewToHost gains { type: 'scratch-save'; id: string; gen: number; text: string } and ScratchDocHostToWebview gains { type: 'scratch-saved'; id: string; gen: number; ok: boolean; error?: string }, each with its own const array (SCRATCH_DOC_WEBVIEW_TO_HOST_TYPES / SCRATCH_DOC_HOST_TO_WEBVIEW_TYPES) plus direction-isolation assertions in the panel test. The chat-channel protocol.ts unions and arrays stay UNTOUCHED (adding document messages there would break the compile-time union/array equality assertion, since those unions describe only the chat panel's channel). gen is carried on BOTH messages so the reply is generation-guarded end to end (the webview only honors scratch-saved whose gen equals its live docGeneration). Payload field names are part of the contract; ids/texts must be strings and gen a number at runtime.",
+        "entity": "WebviewToHost / HostToWebview message unions"
+      },
+      {
+        "callSites": [
+          "vscode-plugin/src/chat/scratch-store.ts",
+          "vscode-plugin/src/chat/__tests__/scratch-store.test.ts",
+          "vscode-plugin/src/chat/__tests__/fake-scratch-fs.ts"
+        ],
+        "change": "field-add",
+        "details": "ScratchStore gains updateScratch(id, text): the temp file (pid+random suffix, never *.md) is created EXCLUSIVELY and no-follow — open with O_CREAT|O_EXCL|O_NOFOLLOW so a pre-existing temp-path symlink/regular file fails with EEXIST/ELOOP instead of being followed — then published over the destination with the store's existing no-clobber discipline: unlink(destination) + link(temp, destination) + unlink(temp), re-validating id (resolve strictly inside root, lstat regular file, symlink refused — O_NOFOLLOW discipline, and re-open the destination O_NOFOLLOW|fstat to confirm the same inode before unlinking so a symlink swapped in after lstat is never removed) after the destination is confirmed present; link() EEXIST on the destination (recreated concurrently) is handled by re-validating and retrying the unlink+link pair a bounded number of times, then ScratchStoreError. NEVER rename (rename would clobber a destination created after the existence probe). The ScratchFs adapter gains writeFileExclusive(path, data) (node: fs.open 'wx' + O_NOFOLLOW semantics; the test fake models EEXIST/ELOOP so symlink-occupied temp names are covered) plus the existing link/unlink/open ops. ScratchEntry shape unchanged.",
+        "entity": "ScratchStore interface"
+      },
+      {
+        "callSites": [
+          "vscode-plugin/src/panels/scratch-panels.ts",
+          "vscode-plugin/src/panels/__tests__/scratch-panel.test.ts"
+        ],
+        "change": "field-modify",
+        "details": "Document view DOM: &lt;pre class=\"scratch-doc\"> becomes &lt;textarea id=\"insrc-scratchdoc\" class=\"scratch-doc\">; content push sets .value; adds hidden save button, dirty tracking, Ctrl/Cmd+S, title suffix, 'scratch-saved' handling with gen guard (reply honored only when msg.gen === live docGeneration). documentBootstrap gains an id parameter (documentBootstrap(gen, id)) so the webview knows which scratchpad it shows and can post it in 'scratch-save'. Send-to-chat selection is re-pointed from window.getSelection() to the textarea's selectionStart/selectionEnd over doc.value (select/keyup/mouseup listeners) because textarea selections are not DOM Range selections. The document panel's onMessage now also forwards 'scratch-save' to the host via a NEW ScratchPanelsDeps.onScratchSave seam (checked against showingId + live docGeneration), because the chat-channel SCRATCH_INTENT_TYPES interception in extension.ts only sees the chat panel's channel. Generation/epoch/ready-replay machinery and wrap() delivery logging unchanged. ScratchPanels gains replySaved(gen, msg) so the host can target the live document generation with the scratch-saved reply.",
+        "entity": "insrc.scratchpad document view (documentBodyHtml/documentBootstrap)"
+      }
+    ],
+    "errorPaths": {
+      "edgeCases": [
+        {
+          "expected": "Stale-generation 'scratch-saved' replies are ignored by the webview handler (same rule as scratch-ready)",
+          "input": "'scratch-saved' arriving with a gen older than the live docGeneration"
+        },
+        {
+          "expected": "Dirty remains, error shown inline, log.warn recorded, browse/list still refresh",
+          "input": "store.updateScratch rejects during save (file deleted concurrently → ScratchNotFound; EACCES/ENOSPC → ScratchStoreError)"
+        },
+        {
+          "expected": "Logged via the existing wrap() drop logging (ISSUE-3183af2a); dirty remains until a reply arrives",
+          "input": "postMessage delivery fails or the wrapped handle rejects the 'scratch-saved' reply"
+        }
+      ],
+      "errorCases": [
+        {
+          "detection": "At save time the id fails validation: not a *.md basename resolving strictly inside the store root, lstat shows not-a-regular-file, or the path is a symlink (O_NOFOLLOW discipline)",
+          "recoverable": true,
+          "response": "Reject with ScratchRefused → host replies 'scratch-saved' {ok:false, error} + log.warn",
+          "scenario": "scratch-save arrives with a tampered/outside-root/symlink id",
+          "userImpact": "The save is refused and the dirty state stays; nothing is written outside the store root"
+        },
+        {
+          "detection": "ENOENT when the destination is re-validated at save time (deleted between open and save)",
+          "recoverable": true,
+          "response": "Reject with ScratchNotFound → 'scratch-saved' ok:false + log.warn",
+          "scenario": "The scratchpad file no longer exists at save time",
+          "userImpact": "Error surfaces inline in the document view; dirty remains"
+        },
+        {
+          "detection": "EACCES/ENOSPC/EROFS etc. from the temp write or the publish unlink/link; temp file unlinked, destination untouched on temp-write failure",
+          "recoverable": true,
+          "response": "Reject with ScratchStoreError → 'scratch-saved' ok:false + log.warn",
+          "scenario": "The no-clobber write/publish fails partway",
+          "userImpact": "No partial content is ever visible on disk; the user can retry"
+        },
+        {
+          "detection": "Non-string msg.id/msg.text or non-number msg.gen in the router's scratch-save case",
+          "recoverable": true,
+          "response": "Dropped with log.warn, no reply (same as other malformed scratch intents)",
+          "scenario": "Malformed scratch-save payload from the webview",
+          "userImpact": "Nothing happens; the drop is visible in the extension log"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "source": "c1",
+          "text": "CSP nonce shell (shellHtml) and the scratch-ready generation handshake stay exactly as today; content is assigned via .value, never innerHTML"
+        },
+        {
+          "source": "c1",
+          "text": "Singleton panel, docGeneration/epoch guards, pendingContent replay and wrap() postMessage drop logging (ISSUE-3183af2a) are untouched"
+        },
+        {
+          "source": "c2",
+          "text": "Store security invariants: id resolves strictly inside ~/.insrc/scratches root, lstat regular-file check, symlink refusal, O_NOFOLLOW fd reads, exclusive no-follow temp write + unlink/link no-clobber publish (never rename), no partial writes"
+        },
+        {
+          "source": "c3",
+          "text": "Selection-based send-to-chat still works on the editable surface: the selection is read from the textarea API (selectionStart/selectionEnd over doc.value — textarea selections are not exposed via window.getSelection()), latched on select/keyup/mouseup, capped at 65,536 UTF-8 bytes by capUtf8"
+        }
+      ]
+    },
+    "hldContextSlice": {
+      "adjacentBoundaries": [],
+      "boundary": {
+        "depends": [],
+        "internal": "Make the scratchpad document view editable in-plugin (ISSUE-01ac1e4b6a6c9c2f)",
+        "owns": [
+          "vscode-plugin/src/panels/scratch-panels.ts",
+          "vscode-plugin/src/chat/scratch-host.ts",
+          "vscode-plugin/src/chat/scratch-store.ts",
+          "vscode-plugin/src/chat/protocol.ts",
+          "vscode-plugin/src/extension.ts wiring",
+          "scratchpad tests"
+        ],
+        "storyId": "s1"
+      },
+      "consumedContracts": [],
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "nonFunctional": {},
+      "ownedContracts": [],
+      "rolloutPhase": "standalone"
+    },
+    "interactionWithShared": [],
+    "migration": {
+      "backwardCompat": "Both new messages are pure additions to their direction's union, so existing webviews/hosts that never send 'scratch-save' or never receive 'scratch-saved' are unaffected (old document pages never post scratch-save; unknown-type guards already drop unknown messages with a log.warn). The ScratchStore interface gains a method — the only implementors are the nodeScratchFs-backed store and the test fake, both updated in the same change. ScratchEntry shape, the ~/.insrc/scratches/*.md file layout, and all existing intents/replies are unchanged; existing scratchpad files need no rewrite and remain editable as plain files outside the plugin (the original LLD ac5 path stays valid).",
+      "dataRewriteRequired": false,
+      "migrationSteps": [
+        {
+          "action": "Add updateScratch(id, text) to the ScratchStore interface and nodeScratchFs implementation: re-validate id exactly as readScratch/deleteScratch (resolve strictly inside the store root, basename *.md, lstat regular file, symlink refused, O_NOFOLLOW discipline), write the new content to a temp file (pid+random suffix, never *.md) created with O_CREAT|O_EXCL|O_NOFOLLOW (new ScratchFs.writeFileExclusive; EEXIST/ELOOP on an occupied/symlinked temp name aborts the save), then publish with the store's existing no-clobber discipline — re-open the destination with O_NOFOLLOW + fstat to confirm the validated inode, unlink(destination), link(temp, destination), unlink(temp) — NEVER rename; a concurrent recreate surfacing as EEXIST on link is re-validated and retried (bounded), otherwise unlink the temp on any failure; reject with ScratchRefused / ScratchNotFound / ScratchStoreError. Extend fake-scratch-fs.ts with the same exclusive/no-follow temp-write and link/unlink/open-fstat semantics.",
+          "order": 1,
+          "rollbackable": true
+        },
+        {
+          "action": "Add a NEW document-channel protocol in scratch-panels.ts: ScratchDocWebviewToHost = { type: 'scratch-save'; id: string; gen: number; text: string } and ScratchDocHostToWebview = { type: 'scratch-saved'; id: string; gen: number; ok: boolean; error?: string }, each with its own const array (SCRATCH_DOC_WEBVIEW_TO_HOST_TYPES / SCRATCH_DOC_HOST_TO_WEBVIEW_TYPES) and direction-isolation assertions in scratch-panel.test.ts. Do NOT touch the chat-channel protocol.ts unions/arrays (they describe only the chat panel's channel and scratch-content/scratch-ready already live outside them); gen is carried on both messages so the reply is generation-guarded end to end.",
+          "order": 2,
+          "rollbackable": true
+        },
+        {
+          "action": "Reshape the document view in scratch-panels.ts: &lt;pre id=\"insrc-scratchdoc\"> becomes &lt;textarea id=\"insrc-scratchdoc\" class=\"scratch-doc\">; scratch-content sets doc.value (never innerHTML, CSP-safe); documentBootstrap(gen, id) gains the id parameter so the webview can post it back; add hidden icon save button (visible when dirty), input→dirty + panel title '•' suffix, keydown Ctrl/Cmd+S + button click → post 'scratch-save' {id, gen: docGeneration, text: doc.value} on the document channel, message 'scratch-saved' honored only when msg.gen === live docGeneration and id matches → clear dirty or show error; the panel's onMessage forwards 'scratch-save' via a NEW deps.onScratchSave seam (validated against showingId and live docGeneration) wired in extension.ts to the scratch-host route; send-to-chat selection re-pointed to the textarea API (selectionStart/selectionEnd over doc.value on select/keyup/mouseup, since window.getSelection() does not see textarea selections); ScratchPanels gains replySaved(gen, msg) targeting the live document generation; generation/epoch/ready-replay machinery and wrap() drop logging untouched.",
+          "order": 3,
+          "rollbackable": true
+        },
+        {
+          "action": "Add the 'scratch-save' case to createScratchHost.onMessage: validate string id/text + numeric gen (warn+drop otherwise), await store.updateScratch, then reply via panels.replySaved(gen, { type:'scratch-saved', id, gen, ok, error? }) targeting the live document generation, run refreshBrowse() + sendScratchList() so the menu mtime refreshes; on store failure reply ok:false with log.warn, still refresh. WIRE THE ROUTE: the document panel's onMessage (scratch-panels.ts openDocument) forwards 'scratch-save' through a new ScratchPanelsDeps.onScratchSave seam — extension.ts sets onScratchSave: (msg) => scratchHost.onMessage(msg as never) exactly like the existing onSendToChat forward — because the chat-channel SCRATCH_INTENT_TYPES interception at extension.ts:790 only sees the CHAT panel's messages.",
+          "order": 4,
+          "rollbackable": true
+        },
+        {
+          "action": "Tests: scratch-store.test.ts (fake-scratch-fs extended with writeFileExclusive EEXIST/ELOOP semantics) for updateScratch happy path/no-partial-write/refusals/temp cleanup/mtime; NEW vscode-plugin/src/chat/__tests__/scratch-host.test.ts for the scratch-save route (ok/ok=false/malformed/refresh calls) using the established fake-store/fake-panels pattern; scratch-panel.test.ts source+behavior pins (textarea, .value, save wiring, documentBootstrap(gen, id), gen-guarded scratch-saved, dirty, onScratchSave forwarding, document-channel direction isolation, textarea-selection send-to-chat); extension-chat-wiring.test.ts regex pins (onScratchSave wiring, replySaved). No data or state migration needed.",
+          "order": 5,
+          "rollbackable": true
+        }
+      ],
+      "stateAfter": "The scratchpad document view is editable in-plugin: a CSP-safe &lt;textarea> holds the content, a save button (shown only while dirty, plus a '•' title suffix) and Ctrl/Cmd+S post a new document-channel 'scratch-save' {id, gen, text} intent; the document panel forwards it via the new deps.onScratchSave seam to a new ScratchStore.updateScratch that rewrites the .md file under the store's existing strict validation (inside-root, regular-file, symlink-refused, O_NOFOLLOW) plus exclusive no-follow temp-file creation (O_CREAT|O_EXCL|O_NOFOLLOW) and unlink/link no-clobber publication (never rename), then replies 'scratch-saved' {id, gen, ok, error?} through a new panels.replySaved targeting the live document generation, which clears the dirty state or surfaces the error; browse table and chat menu refresh after every save; send-to-chat selection (read from the textarea's selectionStart/selectionEnd), singleton panel, generation/epoch guards and wrap() drop logging are preserved.",
+      "stateBefore": "Per the s1 analyze bundle: the document view (vscode-plugin/src/panels/scratch-panels.ts documentBodyHtml:146-151 / documentBootstrap:164-205) renders a read-only &lt;pre id=\"insrc-scratchdoc\"> filled via textContent only, with send-to-chat over selectionchange; the host router (scratch-host.ts, six intents in SCRATCH_INTENT_TYPES:19-26) has no save intent; ScratchStore (scratch-store.ts) exposes list/create/read/delete only — no update op; protocol.ts unions carry no save/saved messages. The original LLD ac5 explicitly scoped in-plugin editing OUT, which is why the view is read-only today (ISSUE-01ac1e4b6a6c9c2f, approved, sized).",
+      "zeroDowntime": true
+    },
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "id": "scratch-save-round-trip",
+      "messages": [
+        {
+          "description": "The document webview posts the textarea content whenever the user clicks Save or presses Ctrl/Cmd+S.",
+          "from": "doc-webview",
+          "kind": "call",
+          "label": "scratch-save {id, gen, text}",
+          "to": "scratch-host"
+        },
+        {
+          "description": "The host route validates the fields and calls the store's new update op.",
+          "from": "scratch-host",
+          "kind": "call",
+          "label": "updateScratch(id, text)",
+          "to": "scratch-store"
+        },
+        {
+          "description": "The store re-validates the id (inside root, regular file, symlink refused, destination re-confirmed via O_NOFOLLOW open+fstat), writes a temp file with exclusive no-follow creation, and publishes with the store's no-clobber discipline (unlink destination + link(temp, destination) + unlink(temp) — never rename), bumping mtime.",
+          "from": "scratch-store",
+          "kind": "return",
+          "label": "resolve / ScratchRefused|ScratchNotFound|ScratchStoreError",
+          "to": "scratch-host"
+        },
+        {
+          "description": "The host refreshes the browse table, re-pushes the chat scratch-list so the menu mtime updates, then answers the webview.",
+          "from": "scratch-host",
+          "kind": "call",
+          "label": "refreshBrowse() + sendScratchList(); replySaved → scratch-saved {id, gen, ok, error?}",
+          "to": "doc-webview"
+        },
+        {
+          "description": "The webview handler requires msg.gen === live docGeneration and matching id (stale-generation replies ignored, same rule as scratch-ready); ok=true clears dirty (hides the save button, clears the '•' title suffix), ok=false shows the error inline and keeps dirty. The host reaches it through ScratchPanels.replySaved(gen, msg), which targets that same live generation.",
+          "from": "doc-webview",
+          "kind": "return",
+          "label": "dirty cleared / error shown",
+          "note": "send-to-chat over the textarea selection (selectionStart/selectionEnd) runs in parallel",
+          "to": "doc-webview"
+        }
+      ],
+      "narrative": "The new save interaction across the three participants (document webview, host router, store): intent, validated no-clobber write, saved/error reply, and the gen-guarded dirty-state update — this is the changed call flow of the story.",
+      "participants": [
+        {
+          "description": "The singleton 'insrc.scratchpad' document webview now hosting the editable textarea, save button and Ctrl/Cmd+S.",
+          "id": "doc-webview",
+          "label": "Scratchpad document webview"
+        },
+        {
+          "description": "createScratchHost.onMessage in vscode-plugin/src/chat/scratch-host.ts; routes scratch-save to the store and replies to the panel.",
+          "id": "scratch-host",
+          "label": "Scratch host router"
+        },
+        {
+          "description": "ScratchStore over ~/.insrc/scratches/*.md; updateScratch performs the validated no-clobber replace: exclusive no-follow temp write + unlink/link publication (never rename).",
+          "id": "scratch-store",
+          "label": "Scratch store"
+        }
+      ]
+    },
+    "summary": {
+      "audience": "technical",
+      "prose": "This story makes the scratchpad document view editable in-plugin. The existing 'insrc.scratchpad' webview keeps its singleton panel, CSP shell and generation/epoch guards, but its &lt;pre> becomes a &lt;textarea>; a save button (and Ctrl/Cmd+S) posts a new document-channel 'scratch-save' {id, gen, text} intent (forwarded from the document panel via a new onScratchSave seam) that the host routes to a new ScratchStore.updateScratch, which rewrites the .md file with the store's existing validation plus exclusive no-follow temp-file creation and unlink/link no-clobber publication. A gen-guarded 'scratch-saved' reply (via panels.replySaved) drives a dirty indicator; the browse table and chat menu refresh after a save. Send-to-chat selection behavior is preserved via the textarea's own selection API."
+    },
+    "testStrategy": {
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "scratch-store.test.ts (fake-scratch-fs): updateScratch happy path writes full text and replaces content; id validation refusal (outside-root, symlink, non-.md) → ScratchRefused; missing file → ScratchNotFound; write failure leaves destination unchanged and unlinks temp; temp path occupied by a symlink or existing file → exclusive create fails (EEXIST/ELOOP) and nothing is written outside the root",
+            "scratch-store.test.ts: updateScratch bumps mtime so listScratches reflects the save"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "scratch-panel.test.ts: 'scratch-save' in SCRATCH_DOC_WEBVIEW_TO_HOST_TYPES and NOT in SCRATCH_DOC_HOST_TO_WEBVIEW_TYPES; 'scratch-saved' in SCRATCH_DOC_HOST_TO_WEBVIEW_TYPES and NOT in SCRATCH_DOC_WEBVIEW_TO_HOST_TYPES; both carry gen; the chat-channel protocol.ts unions/arrays are untouched (direction isolation per channel)",
+            "scratch-panel.test.ts: documentBodyHtml emits &lt;textarea id=\"insrc-scratchdoc\"> and the save button; documentBootstrap pins the scratch-save post with gen + keydown Ctrl/Cmd+S + scratch-saved handler honoring only gen === docGeneration + textarea selectionStart/selectionEnd send-to-chat"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "scratch-host routing test (fake store/panels): 'scratch-save' {id,gen,text} → store.updateScratch called with exact args → replySaved(gen, {type:'scratch-saved', id, gen, ok:true, ...}) posted to the document panel + refreshBrowse + scratch-list re-pushed; store failure → ok:false with error and log.warn; malformed (non-string id/text, non-number gen) dropped with warn"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "scratch-panel.test.ts behavioral: input event sets dirty (save button visible, title suffix via setTitle), 'scratch-saved' ok with matching gen clears dirty, ok=false keeps dirty and shows error, stale-gen reply ignored; scratch-content sets textarea .value (not textContent/innerHTML); send-to-chat reads selection from textarea selectionStart/selectionEnd over doc.value and posts capUtf8-capped text",
+            "extension-chat-wiring.test.ts regex pins: textarea element, save button, 'scratch-save'/'scratch-saved' strings, replySaved, selectionStart present in the built sources and panel wiring"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "scratch-panel.test.ts: send-to-chat post via textarea selection (selectionStart/selectionEnd) present in the new bootstrap; capUtf8 behavior untouched (existing tests)",
+            "existing ISSUE-3183af2a tests (wrap() drop logging, reveal(true), popup icons) still pass"
+          ]
+        }
+      ],
+      "testFramework": "node:test via tsx (`tsx --test 'src/**/__tests__/*.test.ts'` in vscode-plugin/, run with the default node), with vscode-free fakes: fake-scratch-fs.ts for the store, FakePanel for panels, injected deps for the host — the established pattern in scratch-store.test.ts / scratch-panel.test.ts / extension-chat-wiring.test.ts",
+      "testLevels": [
+        {
+          "fixturesNeeded": [
+            "fake-scratch-fs.ts (in-memory fs double with link/writeFile/open/lstat semantics incl. EEXIST, ELOOP, ENOENT, plus exclusive no-follow temp-write semantics for writeFileExclusive)"
+          ],
+          "level": "unit",
+          "purpose": "Prove ScratchStore.updateScratch semantics: no-partial-write content replacement (unlink+link publish), validation errors (ScratchRefused/ScratchNotFound/ScratchStoreError), temp-file cleanup, mtime bump; and the host's scratch-save routing incl. ok/error replies and malformed-payload drops",
+          "subjects": [
+            "vscode-plugin/src/chat/__tests__/scratch-store.test.ts",
+            "vscode-plugin/src/chat/__tests__/fake-scratch-fs.ts",
+            "vscode-plugin/src/chat/__tests__/scratch-host.test.ts (NEW in this change — the file did not exist before)"
+          ]
+        },
+        {
+          "fixturesNeeded": [],
+          "level": "contract",
+          "purpose": "Pin the protocol contract: both new message types exist in exactly one direction each, unions/const arrays stay exhaustive, runtime string validation",
+          "subjects": [
+            "vscode-plugin/src/chat/__tests__/protocol.test.ts (direction isolation + coverage assertions)"
+          ]
+        },
+        {
+          "fixturesNeeded": [
+            "FakePanel with delivery/reject postMessage modes (existing)"
+          ],
+          "level": "integration",
+          "purpose": "Pin the document view's HTML/bootstrap source (textarea not pre, save button, scratch-save/scratch-saved wiring with end-to-end gen guard via panels.replySaved, textarea-selection send-to-chat) and the extension.ts wiring of the panels factory + scratch host",
+          "subjects": [
+            "vscode-plugin/src/panels/__tests__/scratch-panel.test.ts",
+            "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts"
+          ]
+        }
+      ]
+    },
+    "uxDefinition": {
+      "body": [
+        {
+          "description": "Section header: the changed singleton scratchpad document pane (insrc.scratchpad) in its clean, dirty and save-error states.",
+          "size": "medium",
+          "text": "Scratchpad document pane (insrc.scratchpad) — editable, with save affordance",
+          "type": "TextBlock",
+          "weight": "bolder"
+        },
+        {
+          "description": "The document pane content is now an editable full-height &lt;textarea id=\"insrc-scratchdoc\"> (was a read-only &lt;pre> filled via textContent); content is pushed via .value only, never innerHTML, keeping the CSP nonce shell safe.",
+          "items": [
+            {
+              "columns": [
+                {
+                  "items": [
+                    {
+                      "description": "The editable scratchpad content as a multiline text input — the textarea replacing the read-only &lt;pre>; unsaved edits set the dirty state.",
+                      "id": "insrc-scratchdoc",
+                      "isMultiline": true,
+                      "placeholder": "scratchpad markdown…",
+                      "type": "Input.Text"
+                    }
+                  ],
+                  "type": "Column",
+                  "width": "stretch"
+                },
+                {
+                  "items": [
+                    {
+                      "color": "accent",
+                      "description": "Icon-only Save button (title=\"Save\"), visible only while dirty; click or Ctrl/Cmd+S posts {type:\"scratch-save\", id, gen: docGeneration, text: doc.value} to the host.",
+                      "text": "[💾 save]",
+                      "type": "TextBlock"
+                    },
+                    {
+                      "description": "While dirty, the panel title carries a '•' suffix so unsaved changes are visible from the tab bar.",
+                      "isSubtle": true,
+                      "text": "scratch.md •",
+                      "type": "TextBlock"
+                    }
+                  ],
+                  "type": "Column",
+                  "width": "auto"
+                }
+              ],
+              "description": "Clean/dirty chrome of the document pane: editable textarea, save button (shown only when dirty) and the dirty title suffix.",
+              "type": "ColumnSet"
+            }
+          ],
+          "type": "Container"
+        },
+        {
+          "description": "On save success the host replies 'scratch-saved' {id, gen, ok:true} through panels.replySaved targeting the live document generation (after refreshBrowse + chat scratch-list re-push so the menu mtime updates) and the webview — honoring only a matching gen — clears dirty: save button hides, '•' suffix clears. On failure it replies ok:false with error: an inline error line shows and dirty remains. A stale-generation reply (gen older than the live docGeneration) is ignored.",
+          "items": [
+            {
+              "color": "good",
+              "description": "Save confirmed: dirty cleared (save button hidden, title suffix removed); the browse table and chat menu show the new mtime.",
+              "text": "✓ saved",
+              "type": "TextBlock"
+            },
+            {
+              "color": "attention",
+              "description": "Save failed: ok=false reply → error text shown inline, dirty state kept, retry possible via the save button.",
+              "text": "⚠ save failed: <error>",
+              "type": "TextBlock"
+            }
+          ],
+          "type": "Container"
+        },
+        {
+          "description": "Unchanged behavior preserved on the editable surface: a non-empty text selection in the textarea reveals the floating icon-only Send-to-chat button anchored at the selection; the selection text is read from the textarea API (doc.selectionStart/selectionEnd sliced out of doc.value on select/keyup/mouseup — window.getSelection() does not see textarea selections); clicking posts {type:\"send-to-chat\", text} (capped at 65,536 UTF-8 bytes) — the host inserts into the chat input and focuses it, never auto-sends.",
+          "items": [
+            {
+              "columns": [
+                {
+                  "items": [
+                    {
+                      "description": "Editable content with the selected run «verify the canary metrics» highlighted.",
+                      "text": "…deploy the release, then «verify the canary metrics» and notify…",
+                      "type": "TextBlock",
+                      "wrap": true
+                    }
+                  ],
+                  "type": "Column",
+                  "width": "stretch"
+                },
+                {
+                  "items": [
+                    {
+                      "color": "accent",
+                      "description": "Floating icon-only Send-to-chat button at the selection (title=\"Send to chat\"); hidden on collapsed/empty selection.",
+                      "text": "[↗]",
+                      "type": "TextBlock"
+                    }
+                  ],
+                  "type": "Column",
+                  "width": "auto"
+                }
+              ],
+              "type": "ColumnSet"
+            }
+          ],
+          "type": "Container"
+        }
+      ],
+      "narrative": "The changed scratchpad document view: an editable textarea filling the pane (replacing the read-only &lt;pre>), an icon-only save button that appears only while there are unsaved edits (plus a '•' tab-title suffix), save-success and save-error states, and the preserved floating Send-to-chat button on text selection — so the editing UX and its states can be assessed.",
+      "type": "AdaptiveCard",
+      "version": "1.5"
+    },
+    "companions": [
+      {
+        "kind": "ux-mock",
+        "relPath": "docs/standalone/scratchpad-document-view-read-only-cannot-E2026111401ac1e4b/S001/ux-mock.html",
+        "title": "UX mock"
+      },
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/scratchpad-document-view-read-only-cannot-E2026111401ac1e4b/S001/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "quotedText": "documentBodyHtml renders &lt;pre id=\"insrc-scratchdoc\" class=\"scratch-doc\">&lt;/pre> — the read-only surface being replaced by the textarea",
+      "ref": "vscode-plugin/src/panels/scratch-panels.ts:146-151"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "quotedText": "ScratchStore exposes listScratches/createScratch/readScratch/deleteScratch only; updateScratch is added with the same id validation and temp-write + publish discipline",
+      "ref": "vscode-plugin/src/chat/scratch-store.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "quotedText": "SCRATCH_INTENT_TYPES lists the six scratch intents; the scratch-save case is added to onMessage",
+      "ref": "vscode-plugin/src/chat/scratch-host.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "quotedText": "ac5 scoped in-plugin editing OUT OF SCOPE (read-only document view) — the root cause of ISSUE-01ac1e4b6a6c9c2f",
+      "ref": "docs/standalone/vs-code-plugin-scratchpads-insrc-scratches-E202611134642d49a/S001/LLD.md"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "quotedText": "the chat-channel WEBVIEW_TO_HOST_TYPES / HOST_TO_WEBVIEW_TYPES const arrays stay untouched — document-channel messages get their own unions in scratch-panels.ts",
+      "ref": "vscode-plugin/src/chat/protocol.ts:442-444"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "quotedText": "ISSUE-01ac1e4b6a6c9c2f (approved, sized): fix intent = editable surface + scratch-save round-trip through a no-clobber store update op, dirty state, browse refresh, send-to-chat preserved",
+      "ref": "docs/standalone/scratchpad-document-view-read-only-cannot-E2026111401ac1e4b/ISSUE.md"
+    }
+  ]
+}

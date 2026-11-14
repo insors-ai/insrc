@@ -21,7 +21,7 @@ export const ReviewOperationStateSchema = enumeration(['cancelling', 'stopped', 
 export const ReviewCancellationInputSchema = object({ actionId: id, reason: Type.String({ minLength: 1, maxLength: 2048 }) });
 export const ReviewCancellationReceiptSchema = object({ key: ReviewKeySchema, attempt: positive, actionId: id, requestedAt: stamp, operationState: ReviewOperationStateSchema });
 export type ReviewCancellationReceipt = Static<typeof ReviewCancellationReceiptSchema>;
-export const ReviewCancellationRequestSchema = object({ phase: Type.Literal('cancel'), repo: ReviewKeySchema.properties.project, reviewId: ReviewKeySchema.properties.reviewId, attempt: positive, ...ReviewCancellationInputSchema.properties });
+export const ReviewCancellationRequestSchema = object({ phase: Type.Literal('cancel'), repo: ReviewKeySchema.properties.project, reviewId: ReviewKeySchema.properties.reviewId, attempt: positive, reason: ReviewCancellationInputSchema.properties.reason });
 export const ReviewPreparationProgressSchema = object({
  stage: enumeration(['validate_input', 'inspect_history', 'source_inventory', 'fetch_sources', 'qualify_scope', 'build_views', 'commit_context']),
  logicalCompleted: count, physicalCompleted: count, cacheHits: count, bytes: count,

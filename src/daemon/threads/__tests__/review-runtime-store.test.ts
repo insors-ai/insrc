@@ -172,3 +172,33 @@ test('durable cancellation allows exact closure and reports a resource fence unt
  assert.deepEqual(await readFile(f.path),history);assert.equal(stopped.progress.completedUnits,0);
  const writes=f.writes.length;f.store.snapshot(f.handle);f.store.snapshot(f.handle);assert.equal(f.writes.length,writes,'observation does not write or create activity');
 });
+
+test('cancellation while spawn authorization is pending prevents the model CLI from launching',async t=>{
+ const f=await setup(t);await f.store.activate(f.handle);let release!:()=>void,entered!:()=>void;
+ const gate=new Promise<void>(resolve=>{release=resolve;}),waiting=new Promise<void>(resolve=>{entered=resolve;});
+ const leases=new ReviewProcessLeases({daemonInstance:f.runtime.daemonEpoch,authorize:async()=>{entered();await gate;},verifyIntent:()=>{}}),owner=leases.register(f.key,f.runtime.workerIncarnation);
+ t.after(async()=>{release();await leases.close(owner);if(leases.recheck(owner))leases.release(owner);});
+ const reservation=leases.reserve(owner,1,{kind:'cli',command:process.execPath,args:['-e','setInterval(()=>{},1000)'],cwd:f.f.repo});
+ const receipt=await f.store.resource(f.handle,'open',reservation),run=leases.start(owner,1,receipt,async()=>{});await waiting;
+ await f.store.beginCancellation(f.handle,'cancel-spawn','Cancel while authorization is in flight');
+ const closing=leases.close(owner);release();await closing;
+ assert.equal((await run.started).spawned,false);const outcome=await run.result;assert.equal(outcome.disposal.state,'confirmed');assert.ok(outcome.disposal.state==='confirmed');
+ await f.store.resource(f.handle,'close',reservation,{reservation,disposal:outcome.disposal});
+ assert.equal((await f.store.finishCancellation(f.handle,true,true)).cancellation!.operationState,'stopped');
+ assert.equal(f.store.snapshot(f.handle).progress.completedUnits,0);
+});
+
+test('cancellation aborts an in-flight model CLI without replaying it or changing accepted history',async t=>{
+ const f=await setup(t);await f.store.activate(f.handle);const history=await readFile(f.path);let entered!:()=>void,spawns=0;
+ const waiting=new Promise<void>(resolve=>{entered=resolve;});
+ const leases=new ReviewProcessLeases({daemonInstance:f.runtime.daemonEpoch,authorize:()=>{spawns++;},verifyIntent:()=>{}}),owner=leases.register(f.key,f.runtime.workerIncarnation);
+ t.after(async()=>{await leases.close(owner);if(leases.recheck(owner))leases.release(owner);});
+ const reservation=leases.reserve(owner,1,{kind:'cli',command:process.execPath,args:['-e',"process.stdout.write('model request in flight');setInterval(()=>{},1000)"],cwd:f.f.repo});
+ const receipt=await f.store.resource(f.handle,'open',reservation),run=leases.start(owner,1,receipt,async output=>{if(Buffer.from(output.bytes).toString().includes('model request'))entered();});
+ assert.equal((await run.started).spawned,true);await waiting;
+ await f.store.beginCancellation(f.handle,'cancel-model','Cancel an in-flight model request');await leases.close(owner);
+ const outcome=await run.result;assert.equal(outcome.aborted,true);assert.equal(outcome.disposal.state,'confirmed');assert.ok(outcome.disposal.state==='confirmed');
+ await f.store.resource(f.handle,'close',reservation,{reservation,disposal:outcome.disposal});
+ assert.equal((await f.store.finishCancellation(f.handle,true,true)).cancellation!.operationState,'stopped');assert.equal(spawns,1);
+ assert.deepEqual(await readFile(f.path),history);
+});

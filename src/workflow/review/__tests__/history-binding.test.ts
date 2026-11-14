@@ -178,16 +178,24 @@ test('design plan and dependency-ordered chunk results get successor bindings wi
  assert.equal(JSON.parse(await readFile(reviewRuntimePath(key), 'utf8')).progress.completedUnits, 2);
 });
 
-test('cancellation after durable publication preserves committed feedback and publication proof without accepting a late runtime boundary',async t=>{
- const f=await code(t),history=await HistoryBindingSession.open(f.receipt,f.cp,{authorize:f.authorize,validate:f.validate,capacity:f.capacity,limits:f.limits,invalidateSource:f.invalidateSource});
+test('cancellation during publication bookkeeping preserves committed feedback and publication proof without accepting a late runtime boundary',async t=>{
+ const f=await code(t);let hold=false,entered!:()=>void,release!:()=>void;
+ const waiting=new Promise<void>(resolve=>{entered=resolve;}),gate=new Promise<void>(resolve=>{release=resolve;});t.after(()=>release());
+ const history=await HistoryBindingSession.open(f.receipt,f.cp,{authorize:f.authorize,validate:f.validate,capacity:f.capacity,limits:f.limits,invalidateSource:f.invalidateSource,
+  write:async(path,bytes,limit,io)=>{if(hold&&path===f.path){entered();await gate;}await writeReviewBytes(path,bytes,limit,io);}});
  await f.acceptRuntime(history.latest());let cp=await f.read();cp.attempts[0]['review-response'].tasks.push(f.result('t1'),f.result('t2'));cp.attempts[0].header.status='passed';cp.attempts[0].header.completedAt=time;
  await f.acceptRuntime(await history.accept(cp));cp=await f.read();
+ const permanentPath=join(f.f.repo,`.insrc/artifacts/CR-${hash}-s1.json`);
  f.f.put(`.insrc/artifacts/CR-${hash}-s1.json`,{meta:{workflow:'code-review',schemaVersion:3},body:{kind:'code-review',format:'task-based',storyId:'s1',status:'passed',reviews:[completedSummary(f.prepared,cp.attempts[0],f.key.reviewId)]}});
- cp.attempts[0]['review-response'].crPublication='complete';const publication=await history.accept(cp),physical=f.source.snapshot().physicalQueries,before=await readFile(f.path,'utf8');
- await f.store.beginCancellation(f.handle,'cancel-publication','Stop this review after committed feedback');
+ const permanent=await readFile(permanentPath,'utf8'),before=await f.read(),physical=f.source.snapshot().physicalQueries;
+ cp.attempts[0]['review-response'].crPublication='complete';hold=true;const publishing=history.accept(cp);await waiting;
+ assert.equal((await f.read()).attempts[0]['review-response'].crPublication,'pending','publication bookkeeping is in flight');
+ await f.store.beginCancellation(f.handle,'cancel-publication','Stop this review during publication bookkeeping');
+ release();const publication=await publishing;
  await assert.rejects(f.acceptRuntime(publication),/history admission closed/);
  assert.equal(f.store.snapshot(f.handle).progress.completedUnits,2);assert.equal(f.store.snapshot(f.handle).publicationBoundary,undefined);
- assert.equal(await readFile(f.path,'utf8'),before);assert.equal((await f.read()).attempts[0]['review-response'].crPublication,'complete');
+ const after=await f.read();assert.deepEqual(after.attempts[0].submitted,before.attempts[0].submitted);assert.deepEqual(after.attempts[0]['review-response'].tasks,before.attempts[0]['review-response'].tasks);
+ assert.equal(after.attempts[0]['review-response'].crPublication,'complete');assert.equal(await readFile(permanentPath,'utf8'),permanent);
  assert.equal(f.source.snapshot().physicalQueries,physical);
  assert.equal((await f.store.finishCancellation(f.handle,true,true)).cancellation!.operationState,'stopped');
 });

@@ -1,6 +1,6 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { Value } from '@sinclair/typebox/value';
-import { ReviewCancellationInputSchema, ReviewCancellationRequestSchema } from '../shared/review-preparation.js';
+import { ReviewCancellationRequestSchema } from '../shared/review-preparation.js';
 import { isMainThread } from 'node:worker_threads';
 import type { Worker } from 'node:worker_threads';
 import { realpath } from 'node:fs/promises';
@@ -141,9 +141,11 @@ export class ProductionReviews{
  }
  async codeCancel(raw:unknown,trusted?:TrustedRpcContext):Promise<unknown>{
   const {p,key,attempt}=await this.request(raw,'code');
-  const input={actionId:p['actionId'],reason:p['reason']};
-  if(!Value.Check(ReviewCancellationInputSchema,input))throw new Error('Invalid cancellation request');
-  return this.registry.cancel(key,attempt,input.actionId,input.reason,this.context(trusted));
+  const {epicHash:_epic,phase,...fields}=p;
+  if(phase!==undefined&&phase!=='cancel')throw new Error('Invalid cancellation phase');
+  const input={...fields,repo:key.project,phase:'cancel'};
+  if(!Value.Check(ReviewCancellationRequestSchema,input))throw new Error('Invalid cancellation request');
+  return this.registry.cancel(key,attempt,`cancel-${attempt}`,input.reason,this.context(trusted));
  }
  async codeProgress(raw:unknown,trusted?:TrustedRpcContext):Promise<unknown>{
   const {p,key,attempt}=await this.request(raw,'code');
@@ -170,7 +172,7 @@ export class ProductionReviews{
   const {p,key,attempt}=await this.request(raw,'design');
   if(p['phase']==='cancel'){
    const request={...p,repo:key.project};if(!Value.Check(ReviewCancellationRequestSchema,request))throw new Error('Invalid cancellation request');
-   return this.registry.cancel(key,attempt,request.actionId,request.reason,this.context(trusted));
+   return this.registry.cancel(key,attempt,`cancel-${attempt}`,request.reason,this.context(trusted));
   }
   const {resourceRecovery:_clear,...fields}=p,request=parseDesignRequest({...fields,repo:key.project});
   requireReview(p['resourceRecovery']===undefined||request.phase==='recover','resourceRecovery','Clear resources through explicit recover only');

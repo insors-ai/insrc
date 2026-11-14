@@ -10,7 +10,7 @@ export const CODE_REVIEW_PHASES = ['start','resume','progress','cancel','publish
 const activity=z.object({sessionId:z.string().min(1),sequence:z.number().int().positive(),kind:z.enum(['session_started','model_output','tool_started','tool_completed','feedback_submitted','heartbeat']),toolId:z.string().optional()}).strict();
 export const CODE_REVIEW_INPUT = {
  phase:z.enum(CODE_REVIEW_PHASES),repo:z.string().optional(),epicHash:z.string().regex(/^[a-f0-9]{16}$/),reviewId:z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/),attempt:z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
- actionId:structural(ReviewCancellationInputSchema.properties.actionId).optional(),reason:structural(ReviewCancellationInputSchema.properties.reason).optional(),
+ reason:structural(ReviewCancellationInputSchema.properties.reason).optional(),
  resourceRecovery:structural(ReviewResourceRecoveryInputSchema).optional().describe('Resume phase only: request exact local-broker resource clearance, without resuming work. A separate explicit resume/new-attempt is required afterward.'),
  storyId:z.string().regex(/^s\d+$/).optional().describe('Optional permanent code-history locator after checkpoint cleanup.'),
  packet:structural(PacketSchema).optional(),scope:z.union([structural(AttributionSchema),structural(ReassessmentSchema)]).optional(),result:structural(TaskResultSchema).optional(),

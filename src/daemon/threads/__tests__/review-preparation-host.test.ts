@@ -136,3 +136,21 @@ test('one private phase cannot mutate another phase allocation for the same revi
  finally{await next.close();next.port.close();}
  assert.equal(f.host.reservedBytes(f.f.repo),100);await one.client.release(token);
 });
+
+test('cancellation rejects a model candidate released after the private phase was fenced',async t=>{
+ const f=await setup(t),one=await f.connect('candidate-race');
+ const session=await ReviewSourceSession.create(one.key,f.f.deps.sources,f.limits,one.client),prepared=await prepareReviewPacket(f.f.packet,session,true);
+ const identity={key:one.key,attempt:1,inputDigest:preparationDigest(f.f.packet),validatorVersion:1,routeDigest:preparationDigest(f.f.packet.documents),sourceIdentity:preparationDigest(f.f.packet.reviewRevision),scopeDigest:prepared.projection!.identity,testDocumentDigest:preparationDigest(f.f.packet.tests)};
+ const receipt=await writePreparedContext(identity,{current:prepared},session,f.limits,one.client);await one.client.qualify(identity,receipt);const {access}=await one.client.borrow(identity);
+ const reader=await PreparedContextReader.open(receipt,f.limits,async()=>{await one.client.resolve(access);},async()=>{await one.client.invalidate(access);});await session.close();
+ const sources={commit:(oid:string)=>reader.query('commit',[oid]),file:(oid:string,path:string)=>reader.query('file',[oid,path]),isAncestor:(a:string,b:string)=>reader.query('isAncestor',[a,b]),changedRanges:(oid:string,parent:string|null,paths:readonly string[])=>reader.query('changedRanges',[oid,parent,paths]),pathChanges:(a:string,b:string,path:string)=>reader.query('pathChanges',[a,b,path])} as import('../../../workflow/code-review/task-review/sources.js').ReviewSources;
+ const history=await HistoryBindingSession.open(receipt,one.cp,{authorize:()=>one.client.resolve(access),validate:codeHistoryFeedback(new Map([[1,prepared]]),sources),capacity:one.client,limits:f.limits,invalidateSource:async()=>{await one.client.invalidate(access);}});
+ await one.client.acceptHistory(access,history.latest());const before=await readFile(one.path,'utf8'),reserved=f.host.reservedBytes(f.f.repo);
+ let entered!:()=>void,release!:()=>void,calls=0;const waiting=new Promise<void>(resolve=>{entered=resolve;}),gate=new Promise<void>(resolve=>{release=resolve;});t.after(()=>release());
+ const provider={runReviewSession:async()=>{calls++;entered();await gate;return structuredClone(f.f.result);}};
+ const candidate=(async()=>{const result=await provider.runReviewSession(),cp=JSON.parse(await readFile(one.path,'utf8'));cp.attempts[0]['review-response'].tasks.push(result);return history.accept(cp);})();
+ await waiting;await f.store.beginCancellation(one.handle,'cancel-candidate','Cancel before candidate acceptance');release();
+ await assert.rejects(candidate,/fenced|closed/i);
+ assert.equal(await readFile(one.path,'utf8'),before);assert.equal(f.store.snapshot(one.handle).progress.completedUnits,0);assert.equal(calls,1);assert.equal(f.host.reservedBytes(f.f.repo),reserved);
+ await f.store.finishCancellation(one.handle,true,true);
+});

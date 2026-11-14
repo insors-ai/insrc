@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-32f2cf7e-1f6b-4bc0-a784-aee48ab9bd5e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-13T06:21:32.378Z",
+    "epicCreatedAt": "2026-11-13T05:55:40.344Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "cda6558e4b0e4bea",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Full sweep with shutdown/supervisor regression confirmation",
+      "parent": {
+        "entityId": "STORY-cda6558e4b0e4bea-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-cda6558e4b0e4bea-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-cda6558e4b0e4bea-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "65188702bf0b651acb68501cc543b87f797d7c83aad813a18ff34e13b9f5dc24",
+        "at": "2026-11-13T06:21:32.381Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-13T06:21:32.382Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Full sweep with shutdown/supervisor regression confirmation",
+    "summary": "Run the full test sweep and confirm the untouched consumers keep their contracts: supervisor and shutdown suites pass unchanged (regression only, no edits to them).",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "npx tsx --test 'src/**/__tests__/*.test.ts' exits clean",
+      "Shutdown and supervisor suites pass with no test modifications"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "full sweep npx tsx --test 'src/**/__tests__/*.test.ts' exits clean with shutdown and supervisor suites unmodified"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

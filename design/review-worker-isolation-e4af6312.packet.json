@@ -1,15 +1,15 @@
 {
-  "reviewRevision": "262ef49221223eb568662db6d86b1cb8a07091a3",
+  "reviewRevision": "059411264eff73ca871a39ebe8406bead4389cf1",
   "storyId": "s1",
-  "functionalSummary": "Whole-story independent review for dedicated per-code/design-review workers (16 approved PLAN r6 tasks). Main-owned identity/leases, durable v2 unverified admission, source/subject qualification inside worker, async acknowledgments, immutable attempts, cached progress/status, controller authority, targeted recovery through the existing local broker, whole-history fencing, model-free publication and approved cleanup, unconditional production route cutover, compiled packaging and both supported clients. Changes in Task15 fixed early design assignment readiness and duplicate publication-only recovery bookkeeping. Task16 uses an object-shaped async executable-lookup API so the strict forbidden-spawn scanner does not mistake lookup for execution; no exemptions were added. Select ONLY the submitted after blocks/deletion anchors: all source origins are exact commits bearing this story trailer, never a generic HEAD diff. Other interleaved commits are context only. LLD r5 and PLAN r6 are the standalone route documents; there is no DEF/HLD for this route. All implementation tasks are built; final task validation precedes this mandatory whole-story review so it binds the final BUILD; no BUILD approval, push or deployment before independent review. Latest qualification: package build and native helpers pass; 391 backend/provider/MCP source checks pass, 51 Task15 daemon-gated isolation/recovery checks pass, compiled package 2 checks pass, native broker6 pass, affected VSCode32 and JetBrains13 pass; root/VSCode typechecks clean. Broader client failures/limits are fully disclosed in tests. TU1 64MiB source-projection failure remains separately scoped and is not fixed by worker isolation. Optional execution is at reviewer discretion; complete changed-module inspection and test coverage review remain mandatory. Scope qualification selects every surviving story-origin after-line from pinned Git blame intersected with exact original commit hunks, plus explicit story deletion anchors. Superseded original lines overwritten by later commits are not granted finding scope. No generic HEAD diff or unrelated change is added.",
+  "functionalSummary": "Whole-story independent review for dedicated per-code/design-review workers (16 approved PLAN r6 tasks). Main-owned identity/leases, durable v2 unverified admission, source/subject qualification inside worker, async acknowledgments, immutable attempts, cached progress/status, controller authority, targeted recovery through the existing local broker, whole-history fencing, model-free publication and approved cleanup, unconditional production route cutover, compiled packaging and both supported clients. Changes in Task15 fixed early design assignment readiness and duplicate publication-only recovery bookkeeping. Task16 uses an object-shaped async executable-lookup API so the strict forbidden-spawn scanner does not mistake lookup for execution; no exemptions were added. Select ONLY the submitted after blocks/deletion anchors: all source origins are exact commits bearing this story trailer, never a generic HEAD diff. Other interleaved commits are context only. LLD r5 and PLAN r6 are the standalone route documents; there is no DEF/HLD for this route. All implementation tasks are built; final task validation precedes this mandatory whole-story review so it binds the final BUILD; no BUILD approval, push or deployment before independent review. Latest qualification: package build and native helpers pass; 391 backend/provider/MCP source checks pass, 51 Task15 daemon-gated isolation/recovery checks pass, compiled package 2 checks pass, native broker6 pass, affected VSCode32 and JetBrains13 pass; root/VSCode typechecks clean. Broader client failures/limits are fully disclosed in tests. TU1 64MiB source-projection failure remains separately scoped and is not fixed by worker isolation. Optional execution is at reviewer discretion; complete changed-module inspection and test coverage review remain mandatory. Corrects attempt2 findings in commit cdb65e9fd02dc7b1d2ae93ae5e64fd76efd622e9: admission-aware capacity; unsupported-version preservation; Vibe production authorization; reliable async-context assertion; controller advance ownership; terminal reclamation and completed replay; cold publication without execution actions; rejected restart identity and reviewer refresh; permanent-history version checks; no-document cleanup locator. Prior qualified failures are evidence only; reassess corrected scopes. New targeted execution is detailed per test entry; broad earlier qualification predates these corrections. Task3 validation additionally identified a missing current-author independence guard; correction 8ebc81c96f18e0dbc16e87eacfbee44bb8f8bf2c compares the reviewing party with the current BUILD author and rejects unknown provenance. Completion/history tests5/5passed. Final correction f05b5d891ec873cb9517bfdc86ae57a0f332b76f retries lightweight terminal idleness checks after the final checkpoint, so delayed coordinator release cannot retain a worker indefinitely. A real-worker publication/drain regression passes without any further checkpoint mutation or model/native inference. The compiled-package test harness records startup thread identity because terminal workers are reclaimed before post-completion assertions. Attempt4 corrects attempt3 findings: preserve canonical story aliases in historical admission; resolve current tracked reviewer authority on live full restart; preserve version1 public publication repairs; require permanent CR version/capability consistency before checkpoint cleanup; accept Vibe at the production MCP start/resume boundary. The repeated reviewer-authority finding is one defect. Attempt3 Task6 failed because its submitted feedback invented a nonexistent commit reference for vibe-session.ts; the actual pinned source and all selected origin commits are available. Task6 requires fresh assessment using exact available committed references; no assessment result was accepted or silently corrected. Production-entrypoint regressions cover these transitions; no activation flags or unrelated changes added. Scope qualification selects every surviving story-origin after-line from pinned Git blame intersected with exact original commit hunks, plus explicit story deletion anchors. Superseded original lines overwritten by later commits are not granted finding scope. No generic HEAD diff or unrelated change is added.",
   "documents": {
     "lld": {
       "path": ".insrc/artifacts/LLD-e4af63128c7cbec2-s1.json",
-      "commit": "262ef49221223eb568662db6d86b1cb8a07091a3"
+      "commit": "059411264eff73ca871a39ebe8406bead4389cf1"
     },
     "plan": {
       "path": ".insrc/artifacts/PLAN-e4af63128c7cbec2-s1.json",
-      "commit": "262ef49221223eb568662db6d86b1cb8a07091a3"
+      "commit": "059411264eff73ca871a39ebe8406bead4389cf1"
     }
   },
   "reviewSet": [
@@ -62,6 +62,12 @@
             {
               "after": [
                 1,
+                15
+              ]
+            },
+            {
+              "after": [
+                17,
                 45
               ]
             },
@@ -650,6 +656,12 @@
             {
               "after": [
                 112,
+                123
+              ]
+            },
+            {
+              "after": [
+                125,
                 133
               ]
             }
@@ -672,7 +684,7 @@
             },
             {
               "after": [
-                40,
+                41,
                 44
               ]
             },
@@ -1535,6 +1547,30 @@
             {
               "after": [
                 1,
+                16
+              ]
+            },
+            {
+              "after": [
+                18,
+                19
+              ]
+            },
+            {
+              "after": [
+                21,
+                29
+              ]
+            },
+            {
+              "after": [
+                31,
+                41
+              ]
+            },
+            {
+              "after": [
+                43,
                 71
               ]
             }
@@ -1655,6 +1691,12 @@
             {
               "after": [
                 1,
+                20
+              ]
+            },
+            {
+              "after": [
+                22,
                 31
               ]
             }
@@ -1667,12 +1709,6 @@
               "after": [
                 5,
                 5
-              ]
-            },
-            {
-              "after": [
-                45,
-                45
               ]
             },
             {
@@ -1742,12 +1778,6 @@
               "after": [
                 33,
                 34
-              ]
-            },
-            {
-              "after": [
-                48,
-                48
               ]
             },
             {
@@ -1909,6 +1939,18 @@
             {
               "after": [
                 1,
+                11
+              ]
+            },
+            {
+              "after": [
+                13,
+                22
+              ]
+            },
+            {
+              "after": [
+                24,
                 62
               ]
             },
@@ -2235,6 +2277,12 @@
             {
               "after": [
                 99,
+                101
+              ]
+            },
+            {
+              "after": [
+                103,
                 104
               ]
             },
@@ -2305,6 +2353,12 @@
             {
               "after": [
                 71,
+                90
+              ]
+            },
+            {
+              "after": [
+                92,
                 94
               ]
             }
@@ -3768,7 +3822,7 @@
             {
               "after": [
                 31,
-                32
+                31
               ]
             },
             {
@@ -3926,6 +3980,12 @@
             {
               "after": [
                 41,
+                43
+              ]
+            },
+            {
+              "after": [
+                45,
                 46
               ]
             }
@@ -4352,6 +4412,18 @@
             {
               "after": [
                 56,
+                59
+              ]
+            },
+            {
+              "after": [
+                61,
+                82
+              ]
+            },
+            {
+              "after": [
+                84,
                 84
               ]
             },
@@ -5223,13 +5295,25 @@
             {
               "after": [
                 199,
+                200
+              ]
+            },
+            {
+              "after": [
+                202,
+                202
+              ]
+            },
+            {
+              "after": [
+                204,
                 207
               ]
             },
             {
               "after": [
                 212,
-                213
+                212
               ]
             }
           ]
@@ -5595,6 +5679,12 @@
             {
               "after": [
                 1,
+                3
+              ]
+            },
+            {
+              "after": [
+                5,
                 90
               ]
             }
@@ -5674,6 +5764,12 @@
             {
               "after": [
                 1,
+                20
+              ]
+            },
+            {
+              "after": [
+                22,
                 28
               ]
             },
@@ -5849,12 +5945,6 @@
             },
             {
               "after": [
-                152,
-                152
-              ]
-            },
-            {
-              "after": [
                 161,
                 161
               ]
@@ -5891,7 +5981,7 @@
             },
             {
               "after": [
-                309,
+                310,
                 319
               ]
             },
@@ -5983,7 +6073,13 @@
             {
               "after": [
                 5,
-                11
+                7
+              ]
+            },
+            {
+              "after": [
+                9,
+                10
               ]
             },
             {
@@ -6013,7 +6109,7 @@
             {
               "after": [
                 36,
-                38
+                36
               ]
             },
             {
@@ -6164,6 +6260,12 @@
             {
               "after": [
                 55,
+                58
+              ]
+            },
+            {
+              "after": [
+                60,
                 61
               ]
             }
@@ -6181,6 +6283,12 @@
             {
               "after": [
                 1,
+                43
+              ]
+            },
+            {
+              "after": [
+                45,
                 57
               ]
             }
@@ -6222,6 +6330,12 @@
             {
               "after": [
                 23,
+                25
+              ]
+            },
+            {
+              "after": [
+                27,
                 35
               ]
             },
@@ -6450,6 +6564,12 @@
             {
               "after": [
                 114,
+                126
+              ]
+            },
+            {
+              "after": [
+                128,
                 187
               ]
             }
@@ -6586,6 +6706,18 @@
             {
               "after": [
                 43,
+                44
+              ]
+            },
+            {
+              "after": [
+                47,
+                49
+              ]
+            },
+            {
+              "after": [
+                51,
                 55
               ]
             },
@@ -6684,12 +6816,6 @@
               "after": [
                 64,
                 65
-              ]
-            },
-            {
-              "after": [
-                77,
-                77
               ]
             },
             {
@@ -7138,6 +7264,12 @@
             {
               "after": [
                 40,
+                40
+              ]
+            },
+            {
+              "after": [
+                42,
                 44
               ]
             },
@@ -8130,7 +8262,7 @@
             {
               "after": [
                 85,
-                88
+                87
               ]
             }
           ]
@@ -8722,14 +8854,8 @@
             },
             {
               "after": [
-                20,
-                20
-              ]
-            },
-            {
-              "after": [
                 24,
-                27
+                26
               ]
             }
           ]
@@ -8812,6 +8938,692 @@
           ]
         }
       ]
+    },
+    {
+      "commit": "cdb65e9fd02dc7b1d2ae93ae5e64fd76efd622e9",
+      "parent": "3238ab0c9a44ebb69e1ad0ed09f577755bee8bba",
+      "files": [
+        {
+          "path": "src/agent/providers/__tests__/helpers/review-process-worker.mjs",
+          "segments": [
+            {
+              "after": [
+                24,
+                24
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/agent/providers/__tests__/review-worker-process.test.ts",
+          "segments": [
+            {
+              "after": [
+                10,
+                10
+              ]
+            },
+            {
+              "after": [
+                19,
+                19
+              ]
+            },
+            {
+              "after": [
+                22,
+                22
+              ]
+            },
+            {
+              "after": [
+                32,
+                32
+              ]
+            },
+            {
+              "after": [
+                46,
+                46
+              ]
+            },
+            {
+              "after": [
+                48,
+                49
+              ]
+            },
+            {
+              "after": [
+                115,
+                138
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/daemon/__tests__/review-native-policy.test.ts",
+          "segments": [
+            {
+              "after": [
+                44,
+                44
+              ]
+            },
+            {
+              "after": [
+                57,
+                63
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/daemon/__tests__/review-worker-routing.test.ts",
+          "segments": [
+            {
+              "after": [
+                166,
+                190
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/daemon/review-native-policy.ts",
+          "segments": [
+            {
+              "after": [
+                92,
+                95
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/daemon/threads/__tests__/review-worker-bootstrap.test.ts",
+          "segments": [
+            {
+              "after": [
+                129,
+                131
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/daemon/threads/__tests__/review-worker-cleanup.test.ts",
+          "segments": [
+            {
+              "after": [
+                4,
+                4
+              ]
+            },
+            {
+              "after": [
+                88,
+                96
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/daemon/threads/__tests__/review-worker-publication.test.ts",
+          "segments": [
+            {
+              "after": [
+                38,
+                49
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/daemon/threads/__tests__/review-workers.test.ts",
+          "segments": [
+            {
+              "after": [
+                113,
+                120
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/daemon/threads/review-cleanup-discovery.ts",
+          "segments": [
+            {
+              "after": [
+                21,
+                21
+              ]
+            },
+            {
+              "after": [
+                45,
+                46
+              ]
+            },
+            {
+              "after": [
+                50,
+                50
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/daemon/threads/review-worker-admission.ts",
+          "segments": [
+            {
+              "after": [
+                33,
+                33
+              ]
+            },
+            {
+              "after": [
+                46,
+                48
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/daemon/threads/review-worker-runtime.ts",
+          "segments": [
+            {
+              "after": [
+                82,
+                82
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/daemon/threads/review-workers.ts",
+          "segments": [
+            {
+              "after": [
+                78,
+                80
+              ]
+            },
+            {
+              "after": [
+                129,
+                133
+              ]
+            },
+            {
+              "after": [
+                138,
+                138
+              ]
+            },
+            {
+              "after": [
+                171,
+                171
+              ]
+            },
+            {
+              "after": [
+                231,
+                231
+              ]
+            },
+            {
+              "after": [
+                233,
+                240
+              ]
+            },
+            {
+              "after": [
+                255,
+                255
+              ]
+            },
+            {
+              "after": [
+                270,
+                272
+              ]
+            },
+            {
+              "after": [
+                274,
+                275
+              ]
+            },
+            {
+              "after": [
+                285,
+                291
+              ]
+            },
+            {
+              "after": [
+                358,
+                358
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/daemon/tools/review-shell-process.ts",
+          "segments": [
+            {
+              "after": [
+                14,
+                14
+              ]
+            },
+            {
+              "after": [
+                26,
+                26
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/shared/vibe-session.ts",
+          "segments": [
+            {
+              "after": [
+                102,
+                102
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/workflow/code-review/task-review/__tests__/admission-history.test.ts",
+          "segments": [
+            {
+              "after": [
+                75,
+                109
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/workflow/code-review/task-review/capacity.ts",
+          "segments": [
+            {
+              "after": [
+                14,
+                15
+              ]
+            },
+            {
+              "after": [
+                85,
+                85
+              ]
+            },
+            {
+              "after": [
+                89,
+                90
+              ]
+            },
+            {
+              "after": [
+                96,
+                96
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/workflow/code-review/task-review/publication.ts",
+          "segments": [
+            {
+              "after": [
+                126,
+                130
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/workflow/code-review/task-review/record.ts",
+          "segments": [
+            {
+              "after": [
+                42,
+                42
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/workflow/review/design-review/__tests__/worker-admission.test.ts",
+          "segments": [
+            {
+              "after": [
+                33,
+                33
+              ]
+            },
+            {
+              "after": [
+                49,
+                52
+              ]
+            },
+            {
+              "after": [
+                115,
+                143
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/workflow/review/design-review/worker-admission.ts",
+          "segments": [
+            {
+              "after": [
+                28,
+                28
+              ]
+            },
+            {
+              "after": [
+                76,
+                76
+              ]
+            },
+            {
+              "after": [
+                99,
+                99
+              ]
+            },
+            {
+              "after": [
+                131,
+                131
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "commit": "8ebc81c96f18e0dbc16e87eacfbee44bb8f8bf2c",
+      "parent": "cdb65e9fd02dc7b1d2ae93ae5e64fd76efd622e9",
+      "files": [
+        {
+          "path": "src/workflow/code-review/task-review/__tests__/admission-history.test.ts",
+          "segments": [
+            {
+              "after": [
+                60,
+                61
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/workflow/code-review/task-review/__tests__/derived-completion.test.ts",
+          "segments": [
+            {
+              "after": [
+                26,
+                26
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/workflow/code-review/task-review/completion.ts",
+          "segments": [
+            {
+              "after": [
+                4,
+                4
+              ]
+            },
+            {
+              "after": [
+                26,
+                27
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "commit": "f05b5d891ec873cb9517bfdc86ae57a0f332b76f",
+      "parent": "4a3a790d87b2cc432becb6d60c380c599205e6ff",
+      "files": [
+        {
+          "path": "src/daemon/threads/__tests__/helpers/review-terminal-drain.ts",
+          "segments": [
+            {
+              "after": [
+                1,
+                11
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/daemon/threads/__tests__/review-worker-publication.test.ts",
+          "segments": [
+            {
+              "after": [
+                50,
+                68
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/daemon/threads/review-workers.ts",
+          "segments": [
+            {
+              "after": [
+                292,
+                300
+              ]
+            },
+            {
+              "after": [
+                302,
+                302
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "commit": "ef85c2d168518ff9ec115611f9f119798fe69e70",
+      "parent": "f05b5d891ec873cb9517bfdc86ae57a0f332b76f",
+      "files": [
+        {
+          "path": "src/daemon/threads/__tests__/helpers/review-production-daemon.ts",
+          "segments": [
+            {
+              "after": [
+                20,
+                23
+              ]
+            },
+            {
+              "after": [
+                30,
+                30
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "commit": "059411264eff73ca871a39ebe8406bead4389cf1",
+      "parent": "d6fd951f2088b88d3663cb0e73bbed284d00a8fa",
+      "files": [
+        {
+          "path": "src/daemon/__tests__/review-worker-routing.test.ts",
+          "segments": [
+            {
+              "after": [
+                1,
+                1
+              ]
+            },
+            {
+              "after": [
+                36,
+                37
+              ]
+            },
+            {
+              "after": [
+                45,
+                45
+              ]
+            },
+            {
+              "after": [
+                193,
+                229
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/daemon/review-service.ts",
+          "segments": [
+            {
+              "after": [
+                133,
+                133
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/daemon/threads/__tests__/review-worker-cleanup.test.ts",
+          "segments": [
+            {
+              "after": [
+                80,
+                87
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/daemon/threads/review-worker-runtime.ts",
+          "segments": [
+            {
+              "after": [
+                77,
+                77
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/daemon/threads/review-workers.ts",
+          "segments": [
+            {
+              "after": [
+                232,
+                232
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/workflow/code-review/task-review/__tests__/admission-checkpoint.test.ts",
+          "segments": [
+            {
+              "after": [
+                1,
+                1
+              ]
+            },
+            {
+              "after": [
+                86,
+                103
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/workflow/code-review/task-review/admission-checkpoint.ts",
+          "segments": [
+            {
+              "after": [
+                3,
+                3
+              ]
+            },
+            {
+              "after": [
+                17,
+                18
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/workflow/code-review/task-review/cleanup.ts",
+          "segments": [
+            {
+              "after": [
+                8,
+                8
+              ]
+            },
+            {
+              "after": [
+                11,
+                11
+              ]
+            },
+            {
+              "after": [
+                13,
+                13
+              ]
+            },
+            {
+              "after": [
+                34,
+                34
+              ]
+            },
+            {
+              "deletionAt": 37
+            }
+          ]
+        },
+        {
+          "path": "src/workflow/review/design-review/worker-admission.ts",
+          "segments": [
+            {
+              "after": [
+                61,
+                61
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "tests": [
@@ -8830,14 +9642,17 @@
     {
       "file": "src/workflow/code-review/task-review/__tests__/admission-checkpoint.test.ts",
       "cases": [
-        "unverified admission and resource guards preserve pinned code history and refuse approval"
+        "unverified admission and resource guards preserve pinned code history and refuse approval",
+        "mixed legacy story spellings survive version-two admission without rewriting pinned packets"
       ],
       "command": "node --import tsx --test --test-force-exit --test-concurrency=1 src/workflow/code-review/task-review/__tests__/*.test.ts src/workflow/review/design-review/__tests__/*.test.ts src/daemon/__tests__/review-native-policy.test.ts src/mcp/__tests__/schema-registry.test.ts src/agent/providers/__tests__/cli-review-session.test.ts src/agent/providers/__tests__/review-worker-process.test.ts",
       "result": "pass",
-      "executionDetails": "Node 22.22.1; full grouped source sweep: 391/391 pass, 0 skipped, 359737ms. Source runtime is identical to source pin except later committing these exact blobs. Static case names below are witnessed in the passing TAP; nested/dynamic cases remain in that log. No live models. Log: /tmp/review-worker-t16-backend.log Command uses shell globs equivalent to the actual Python Path.glob-expanded argv, avoiding repeated per-file argv lists.",
+      "executionDetails": "Round4 final affected lifecycle batch22/22passed against production source matching 059411264; no hosted models. Includes alias preservation, actual public historical publication repair, live registered production reviewer refresh, pre-cleanup invalid-capability retention and Vibe MCP start/resume. Added public publication assessment-preservation digest assertion independently passed1/1. npm run build passed for this production source. Earlier broad suite evidence remains at its original provenance and is not claimed rerun after these corrections. Required task-gate validations are recorded separately in TESTS before attempt4 is submitted.",
       "evidenceReferences": [
-        "35188a6ffde3b4ae3ef237937f8c8d70e3ce70e5:src/workflow/code-review/task-review/__tests__/admission-checkpoint.test.ts",
-        "/tmp/review-worker-t16-backend.log"
+        "/tmp/worker-round4-final-focused.log",
+        "/tmp/worker-round4-public-preservation.log",
+        "/tmp/worker-round4-final-build.log",
+        ".insrc/artifacts/TESTS-e4af63128c7cbec2-s1.json"
       ]
     },
     {
@@ -8873,14 +9688,15 @@
     {
       "file": "src/workflow/code-review/task-review/__tests__/admission-history.test.ts",
       "cases": [
-        "failed admission survives successful next attempt publication and post-cleanup reads"
+        "failed admission survives successful next attempt publication and post-cleanup reads",
+        "published pass then technical admission failure still admits the next qualified attempt",
+        "technical admission publication refuses unsupported CR versions without changing permanent bytes"
       ],
-      "command": "node --import tsx --test --test-force-exit --test-concurrency=1 src/workflow/code-review/task-review/__tests__/*.test.ts src/workflow/review/design-review/__tests__/*.test.ts src/daemon/__tests__/review-native-policy.test.ts src/mcp/__tests__/schema-registry.test.ts src/agent/providers/__tests__/cli-review-session.test.ts src/agent/providers/__tests__/review-worker-process.test.ts",
+      "command": "/home/subho/.nvm/versions/node/v22.22.1/bin/node --import tsx --test src/workflow/code-review/task-review/__tests__/admission-history.test.ts",
       "result": "pass",
-      "executionDetails": "Node 22.22.1; full grouped source sweep: 391/391 pass, 0 skipped, 359737ms. Source runtime is identical to source pin except later committing these exact blobs. Static case names below are witnessed in the passing TAP; nested/dynamic cases remain in that log. No live models. Log: /tmp/review-worker-t16-backend.log Command uses shell globs equivalent to the actual Python Path.glob-expanded argv, avoiding repeated per-file argv lists.",
+      "executionDetails": "Completion/history regression batch5/5passed against source matching 8ebc81c96f18e0dbc16e87eacfbee44bb8f8bf2c. Includes current-author mutation and unknown-author withholding.",
       "evidenceReferences": [
-        "35188a6ffde3b4ae3ef237937f8c8d70e3ce70e5:src/workflow/code-review/task-review/__tests__/admission-history.test.ts",
-        "/tmp/review-worker-t16-backend.log"
+        "/tmp/worker-findings-independence2.log"
       ]
     },
     {
@@ -8926,14 +9742,17 @@
       "file": "src/agent/providers/__tests__/review-worker-process.test.ts",
       "cases": [
         "fake native review CLI streams and cancellation use host-owned leases",
-        "review binary lookup cannot spawn synchronously on the worker"
+        "review binary lookup cannot spawn synchronously on the worker",
+        "bound Vibe review worker starts through production native authorization and host leases"
       ],
-      "command": "node --import tsx --test --test-force-exit --test-concurrency=1 src/workflow/code-review/task-review/__tests__/*.test.ts src/workflow/review/design-review/__tests__/*.test.ts src/daemon/__tests__/review-native-policy.test.ts src/mcp/__tests__/schema-registry.test.ts src/agent/providers/__tests__/cli-review-session.test.ts src/agent/providers/__tests__/review-worker-process.test.ts",
+      "command": "/home/subho/.nvm/versions/node/v22.22.1/bin/node --import tsx --test src/agent/providers/__tests__/review-worker-process.test.ts",
       "result": "pass",
-      "executionDetails": "Node 22.22.1; full grouped source sweep: 391/391 pass, 0 skipped, 359737ms. Source runtime is identical to source pin except later committing these exact blobs. Static case names below are witnessed in the passing TAP; nested/dynamic cases remain in that log. No live models. Log: /tmp/review-worker-t16-backend.log Command uses shell globs equivalent to the actual Python Path.glob-expanded argv, avoiding repeated per-file argv lists.",
+      "executionDetails": "Targeted correction regressions run against source matching correction commit cdb65e9fd02dc7b1d2ae93ae5e64fd76efd622e9. Final focused lifecycle/history batch21/21passed; isolated bootstrap3/3passed; bound Vibe1/1passed; production no-document cleanup1/1passed. Earlier full backend/client qualification predates this correction and is not claimed rerun. Daemon planned-mapping validations passed for affected tasks t3,t5,t6,t7,t8,t10,t13,t14; final t8 includes delayed terminal-drain coverage. Latest t16 execution passed both compiled-package tests and backend/VS Code typechecks; its remaining gate requires this packet to be committed. See current TESTS ledger for exact execution commits/timestamps.",
       "evidenceReferences": [
-        "35188a6ffde3b4ae3ef237937f8c8d70e3ce70e5:src/agent/providers/__tests__/review-worker-process.test.ts",
-        "/tmp/review-worker-t16-backend.log"
+        "/tmp/worker-findings-final-focused.log",
+        "/tmp/worker-findings-bootstrap.log",
+        "/tmp/worker-findings-vibe3.log",
+        "/tmp/worker-findings-nodoc2.log"
       ]
     },
     {
@@ -8967,11 +9786,14 @@
         "never-ready and pre-save-hung workers fail within the parent bound and reject late acknowledgments",
         "native byte replies retain the originating review async context"
       ],
-      "command": "npx tsx --test src/daemon/threads/__tests__/review-worker-bootstrap.test.ts",
+      "command": "/home/subho/.nvm/versions/node/v22.22.1/bin/node --import tsx --test src/daemon/threads/__tests__/review-worker-bootstrap.test.ts",
       "result": "pass",
-      "executionDetails": "Daemon build gate for t7, commit 8e26d2c88, 2026-11-11T13:38:50.061Z; exit 0; 19609ms; no live cloud. See committed TESTS ledger.",
+      "executionDetails": "Targeted correction regressions run against source matching correction commit cdb65e9fd02dc7b1d2ae93ae5e64fd76efd622e9. Final focused lifecycle/history batch21/21passed; isolated bootstrap3/3passed; bound Vibe1/1passed; production no-document cleanup1/1passed. Earlier full backend/client qualification predates this correction and is not claimed rerun. Daemon planned-mapping validations passed for affected tasks t3,t5,t6,t7,t8,t10,t13,t14; final t8 includes delayed terminal-drain coverage. Latest t16 execution passed both compiled-package tests and backend/VS Code typechecks; its remaining gate requires this packet to be committed. See current TESTS ledger for exact execution commits/timestamps.",
       "evidenceReferences": [
-        "35188a6ffde3b4ae3ef237937f8c8d70e3ce70e5:.insrc/artifacts/TESTS-e4af63128c7cbec2-s1.json"
+        "/tmp/worker-findings-final-focused.log",
+        "/tmp/worker-findings-bootstrap.log",
+        "/tmp/worker-findings-vibe3.log",
+        "/tmp/worker-findings-nodoc2.log"
       ]
     },
     {
@@ -8979,13 +9801,17 @@
       "cases": [
         "canonical identities own one incarnation and preserve subject and cleanup exclusions",
         "stale owner messages and targeted disconnects cannot mutate another review",
-        "admission replay retains a native intent committed by the writer ahead of it"
+        "admission replay retains a native intent committed by the writer ahead of it",
+        "foreign controller cannot retire an owner through next-attempt admission"
       ],
-      "command": "npx tsx --test src/daemon/threads/__tests__/review-workers.test.ts",
+      "command": "/home/subho/.nvm/versions/node/v22.22.1/bin/node --import tsx --test src/daemon/threads/__tests__/review-workers.test.ts",
       "result": "pass",
-      "executionDetails": "Daemon build gate for t15, commit 8fe4b316c, 2026-11-12T05:28:27.176Z; exit 0; 4502ms; no live cloud. See committed TESTS ledger.",
+      "executionDetails": "Targeted correction regressions run against source matching correction commit cdb65e9fd02dc7b1d2ae93ae5e64fd76efd622e9. Final focused lifecycle/history batch21/21passed; isolated bootstrap3/3passed; bound Vibe1/1passed; production no-document cleanup1/1passed. Earlier full backend/client qualification predates this correction and is not claimed rerun. Daemon planned-mapping validations passed for affected tasks t3,t5,t6,t7,t8,t10,t13,t14; final t8 includes delayed terminal-drain coverage. Latest t16 execution passed both compiled-package tests and backend/VS Code typechecks; its remaining gate requires this packet to be committed. See current TESTS ledger for exact execution commits/timestamps.",
       "evidenceReferences": [
-        "35188a6ffde3b4ae3ef237937f8c8d70e3ce70e5:.insrc/artifacts/TESTS-e4af63128c7cbec2-s1.json"
+        "/tmp/worker-findings-final-focused.log",
+        "/tmp/worker-findings-bootstrap.log",
+        "/tmp/worker-findings-vibe3.log",
+        "/tmp/worker-findings-nodoc2.log"
       ]
     },
     {
@@ -9007,14 +9833,18 @@
       "cases": [
         "durable admission and current workflow ancestry run in the owner worker",
         "subject invalidation explicit recovery and impact-selected chunks preserve saved feedback",
-        "cold unverified design recovery retains its original submission and qualifies before provider dispatch"
+        "cold unverified design recovery retains its original submission and qualifies before provider dispatch",
+        "rejected full restart retains the source attempt for subsequent explicit resume",
+        "explicit restart refreshes independent reviewer authority after authorship changes"
       ],
-      "command": "node --import tsx --test --test-force-exit --test-concurrency=1 src/workflow/code-review/task-review/__tests__/*.test.ts src/workflow/review/design-review/__tests__/*.test.ts src/daemon/__tests__/review-native-policy.test.ts src/mcp/__tests__/schema-registry.test.ts src/agent/providers/__tests__/cli-review-session.test.ts src/agent/providers/__tests__/review-worker-process.test.ts",
+      "command": "/home/subho/.nvm/versions/node/v22.22.1/bin/node --import tsx --test src/workflow/review/design-review/__tests__/worker-admission.test.ts",
       "result": "pass",
-      "executionDetails": "Node 22.22.1; full grouped source sweep: 391/391 pass, 0 skipped, 359737ms. Source runtime is identical to source pin except later committing these exact blobs. Static case names below are witnessed in the passing TAP; nested/dynamic cases remain in that log. No live models. Log: /tmp/review-worker-t16-backend.log Command uses shell globs equivalent to the actual Python Path.glob-expanded argv, avoiding repeated per-file argv lists.",
+      "executionDetails": "Targeted correction regressions run against source matching correction commit cdb65e9fd02dc7b1d2ae93ae5e64fd76efd622e9. Final focused lifecycle/history batch21/21passed; isolated bootstrap3/3passed; bound Vibe1/1passed; production no-document cleanup1/1passed. Earlier full backend/client qualification predates this correction and is not claimed rerun. Daemon planned-mapping validations passed for affected tasks t3,t5,t6,t7,t8,t10,t13,t14; final t8 includes delayed terminal-drain coverage. Latest t16 execution passed both compiled-package tests and backend/VS Code typechecks; its remaining gate requires this packet to be committed. See current TESTS ledger for exact execution commits/timestamps.",
       "evidenceReferences": [
-        "35188a6ffde3b4ae3ef237937f8c8d70e3ce70e5:src/workflow/review/design-review/__tests__/worker-admission.test.ts",
-        "/tmp/review-worker-t16-backend.log"
+        "/tmp/worker-findings-final-focused.log",
+        "/tmp/worker-findings-bootstrap.log",
+        "/tmp/worker-findings-vibe3.log",
+        "/tmp/worker-findings-nodoc2.log"
       ]
     },
     {
@@ -9111,29 +9941,30 @@
     {
       "file": "src/daemon/threads/__tests__/review-worker-cleanup.test.ts",
       "cases": [
-        "code",
-        "design",
         "approval cleanup retains active targets and preserves both-family permanent history"
       ],
-      "command": "npx tsx --test src/daemon/threads/__tests__/review-worker-cleanup.test.ts",
+      "command": "/home/subho/.nvm/versions/node/v22.22.1/bin/node --import tsx --test src/daemon/threads/__tests__/review-worker-cleanup.test.ts",
       "result": "pass",
-      "executionDetails": "Daemon build gate for t15, commit 8fe4b316c, 2026-11-12T05:28:27.176Z; exit 0; 8895ms; no live cloud. See committed TESTS ledger.",
+      "executionDetails": "Round4 final affected lifecycle batch22/22passed against production source matching 059411264; no hosted models. Includes alias preservation, actual public historical publication repair, live registered production reviewer refresh, pre-cleanup invalid-capability retention and Vibe MCP start/resume. Added public publication assessment-preservation digest assertion independently passed1/1. npm run build passed for this production source. Earlier broad suite evidence remains at its original provenance and is not claimed rerun after these corrections. Required task-gate validations are recorded separately in TESTS before attempt4 is submitted.",
       "evidenceReferences": [
-        "35188a6ffde3b4ae3ef237937f8c8d70e3ce70e5:.insrc/artifacts/TESTS-e4af63128c7cbec2-s1.json"
+        "/tmp/worker-round4-final-focused.log",
+        "/tmp/worker-round4-public-preservation.log",
+        "/tmp/worker-round4-final-build.log",
+        ".insrc/artifacts/TESTS-e4af63128c7cbec2-s1.json"
       ]
     },
     {
       "file": "src/daemon/threads/__tests__/review-worker-publication.test.ts",
       "cases": [
-        "code",
-        "design",
-        "publication retry after worker exit or lost receipt performs zero provider calls"
+        "publication retry after worker exit or lost receipt performs zero provider calls",
+        "cold public design publication admission does not alter execution actions or preservation identity",
+        "terminal drain retries idleness without requiring another checkpoint update"
       ],
-      "command": "npx tsx --test src/daemon/threads/__tests__/review-worker-publication.test.ts",
+      "command": "/home/subho/.nvm/versions/node/v22.22.1/bin/node --import tsx --test src/daemon/threads/__tests__/review-worker-publication.test.ts",
       "result": "pass",
-      "executionDetails": "Daemon build gate for t15, commit 8fe4b316c, 2026-11-12T05:28:27.176Z; exit 0; 4038ms; no live cloud. See committed TESTS ledger.",
+      "executionDetails": "Publication/drain suite5/5passed on source matching f05b5d891ec873cb9517bfdc86ae57a0f332b76f. Includes cold publication action preservation and delayed coordinator release without another checkpoint update. No hosted model calls.",
       "evidenceReferences": [
-        "35188a6ffde3b4ae3ef237937f8c8d70e3ce70e5:.insrc/artifacts/TESTS-e4af63128c7cbec2-s1.json"
+        "/tmp/worker-findings-terminal-drain.log"
       ]
     },
     {
@@ -9142,13 +9973,19 @@
         "every supported review method delegates heavy work to its dedicated owner",
         "optional session threading disabled cannot enable main or session review fallback",
         "production resume preserves failed qualified and no-document attempts and requires an explicit new attempt",
-        "production design recovery preserves qualified failures and only an explicit next attempt starts work"
+        "production design recovery preserves qualified failures and only an explicit next attempt starts work",
+        "production cleanup preserves the explicit locator for a successful no-document review",
+        "production cold public publication retries preserve historical version-one evidence without models",
+        "production restart refreshes reviewer authority while an incumbent design worker is registered"
       ],
-      "command": "npx tsx --test src/daemon/__tests__/review-worker-routing.test.ts",
+      "command": "/home/subho/.nvm/versions/node/v22.22.1/bin/node --import tsx --test src/daemon/__tests__/review-worker-routing.test.ts",
       "result": "pass",
-      "executionDetails": "Daemon build gate for t15, commit 8fe4b316c, 2026-11-12T05:28:27.176Z; exit 0; 55138ms; no live cloud. See committed TESTS ledger.",
+      "executionDetails": "Round4 final affected lifecycle batch22/22passed against production source matching 059411264; no hosted models. Includes alias preservation, actual public historical publication repair, live registered production reviewer refresh, pre-cleanup invalid-capability retention and Vibe MCP start/resume. Added public publication assessment-preservation digest assertion independently passed1/1. npm run build passed for this production source. Earlier broad suite evidence remains at its original provenance and is not claimed rerun after these corrections. Required task-gate validations are recorded separately in TESTS before attempt4 is submitted.",
       "evidenceReferences": [
-        "35188a6ffde3b4ae3ef237937f8c8d70e3ce70e5:.insrc/artifacts/TESTS-e4af63128c7cbec2-s1.json"
+        "/tmp/worker-round4-final-focused.log",
+        "/tmp/worker-round4-public-preservation.log",
+        "/tmp/worker-round4-final-build.log",
+        ".insrc/artifacts/TESTS-e4af63128c7cbec2-s1.json"
       ]
     },
     {
@@ -9445,12 +10282,11 @@
         "src/workflow/code-review/task-review/__tests__/derived-completion.test.ts: a passing whole-story review of a derived unit lets inspectTaskCompletion pass",
         "src/workflow/code-review/task-review/__tests__/derived-completion.test.ts: a task-only, non-passing or stale-fingerprint derived-unit review is withheld"
       ],
-      "command": "node --import tsx --test --test-force-exit --test-concurrency=1 src/workflow/code-review/task-review/__tests__/*.test.ts src/workflow/review/design-review/__tests__/*.test.ts src/daemon/__tests__/review-native-policy.test.ts src/mcp/__tests__/schema-registry.test.ts src/agent/providers/__tests__/cli-review-session.test.ts src/agent/providers/__tests__/review-worker-process.test.ts",
+      "command": "/home/subho/.nvm/versions/node/v22.22.1/bin/node --import tsx --test src/workflow/code-review/task-review/__tests__/derived-completion.test.ts",
       "result": "pass",
-      "executionDetails": "Node 22.22.1; full grouped source sweep: 391/391 pass, 0 skipped, 359737ms. Source runtime is identical to source pin except later committing these exact blobs. Static case names below are witnessed in the passing TAP; nested/dynamic cases remain in that log. No live models. Log: /tmp/review-worker-t16-backend.log Command uses shell globs equivalent to the actual Python Path.glob-expanded argv, avoiding repeated per-file argv lists.",
+      "executionDetails": "Completion/history regression batch5/5passed against source matching 8ebc81c96f18e0dbc16e87eacfbee44bb8f8bf2c. Includes current-author mutation and unknown-author withholding.",
       "evidenceReferences": [
-        "35188a6ffde3b4ae3ef237937f8c8d70e3ce70e5:src/workflow/code-review/task-review/__tests__/derived-completion.test.ts",
-        "/tmp/review-worker-t16-backend.log"
+        "/tmp/worker-findings-independence2.log"
       ]
     },
     {
@@ -10411,12 +11247,14 @@
         "production Git authority accepts isolated pinned reads and preserves literal changed paths",
         "production CLI authority requires qualified independent review and readonly provider profiles"
       ],
-      "command": "node --import tsx --test --test-force-exit --test-concurrency=1 src/workflow/code-review/task-review/__tests__/*.test.ts src/workflow/review/design-review/__tests__/*.test.ts src/daemon/__tests__/review-native-policy.test.ts src/mcp/__tests__/schema-registry.test.ts src/agent/providers/__tests__/cli-review-session.test.ts src/agent/providers/__tests__/review-worker-process.test.ts",
+      "command": "/home/subho/.nvm/versions/node/v22.22.1/bin/node --import tsx --test src/daemon/__tests__/review-native-policy.test.ts",
       "result": "pass",
-      "executionDetails": "Node 22.22.1; full grouped source sweep: 391/391 pass, 0 skipped, 359737ms. Source runtime is identical to source pin except later committing these exact blobs. Static case names below are witnessed in the passing TAP; nested/dynamic cases remain in that log. No live models. Log: /tmp/review-worker-t16-backend.log Command uses shell globs equivalent to the actual Python Path.glob-expanded argv, avoiding repeated per-file argv lists.",
+      "executionDetails": "Targeted correction regressions run against source matching correction commit cdb65e9fd02dc7b1d2ae93ae5e64fd76efd622e9. Final focused lifecycle/history batch21/21passed; isolated bootstrap3/3passed; bound Vibe1/1passed; production no-document cleanup1/1passed. Earlier full backend/client qualification predates this correction and is not claimed rerun. Daemon planned-mapping validations passed for affected tasks t3,t5,t6,t7,t8,t10,t13,t14; final t8 includes delayed terminal-drain coverage. Latest t16 execution passed both compiled-package tests and backend/VS Code typechecks; its remaining gate requires this packet to be committed. See current TESTS ledger for exact execution commits/timestamps.",
       "evidenceReferences": [
-        "35188a6ffde3b4ae3ef237937f8c8d70e3ce70e5:src/daemon/__tests__/review-native-policy.test.ts",
-        "/tmp/review-worker-t16-backend.log"
+        "/tmp/worker-findings-final-focused.log",
+        "/tmp/worker-findings-bootstrap.log",
+        "/tmp/worker-findings-vibe3.log",
+        "/tmp/worker-findings-nodoc2.log"
       ]
     },
     {
@@ -10487,10 +11325,12 @@
       ],
       "command": "node --import tsx --test src/daemon/threads/__tests__/review-worker-package.test.ts",
       "result": "pass",
-      "executionDetails": "2/2 pass. Copied npm run build output to an isolated package with no src or TypeScript loader; separately compiled test harness; real entrypoints and both daemon/controller family protocols. npm run build passed under Node22; native broker/watchdog, assets, model definitions and forbidden-spawn scan succeeded. Build log /tmp/review-worker-t16-build3.log. Log: /tmp/review-worker-t16-package3.log",
+      "executionDetails": "Current corrected compiled-package regression 2/2 passed under Node22 in /tmp/worker-findings-package-reclaimed.log, and daemon rerun 2/2 passed at 2026-11-13T09:26:22.870Z against checkout908769cd2 (selected worker source identical to pin ef85c2d16; unrelated run-file guard correction excluded from this review). Backend and VS Code typechecks clean. Copied build output into isolated package with no src or TypeScript loader; both daemon/controller review family protocols exercised. Startup thread identity retained after automatic terminal reclamation. npm run build passed for current production source in /tmp/worker-findings-final-drain-build.log. Earlier broad qualification remains disclosed at its original provenance.",
       "evidenceReferences": [
-        "35188a6ffde3b4ae3ef237937f8c8d70e3ce70e5:src/daemon/threads/__tests__/review-worker-package.test.ts",
-        "/tmp/review-worker-t16-package3.log"
+        "/tmp/worker-findings-package-reclaimed.log",
+        "/tmp/worker-findings-final-drain-build.log",
+        "/tmp/insrc-validate-output/src_daemon_threads___tests___review-worker-package.test.ts.1794561980641.2563827.tap",
+        ".insrc/artifacts/TESTS-e4af63128c7cbec2-s1.json"
       ]
     },
     {

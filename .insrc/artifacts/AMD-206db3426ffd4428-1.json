@@ -1,0 +1,69 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "store-06a2f587-417a-4db8-bc52-5d6ee9162bf6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-13T05:16:46.672Z",
+    "epicCreatedAt": "2026-11-09T06:00:04.355Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "206db3426ffd4428",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "4c3e2ac380bc7803cc0be870fb67d4723ee28938d8858f10f7051409e357422a",
+        "at": "2026-11-13T05:16:46.673Z",
+        "by": {
+          "id": "insrc:define",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "id": "AMD-206db3426ffd4428-1",
+    "epicSlug": "show-long-running-task-progress-chat",
+    "hldBaseRunId": "wf-1794211533808-ghbhlu",
+    "amendment": {
+      "type": "storyBoundary.addStory",
+      "storyId": "s7",
+      "internal": "Private implementation of s7: Launch a long-running command as a daemon-owned task that outlives the chat turn"
+    },
+    "rationale": "Extends Epic `show-long-running-task-progress-chat` (EPIC-206db3426ffd4428, #146), building on its DEF/HLD and the daemon task-progress layer src/daemon/task-progress (ProgressCoordinator, store, executor relay).",
+    "proposedBy": {
+      "workflow": "define",
+      "runId": "wf-1794546955699-75zzv9",
+      "storyId": "s7",
+      "stepId": "scope.assess"
+    },
+    "proposedAt": "2026-11-13T05:16:46.669Z"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/DEF.md",
+      "quotedText": "General job scheduling, arbitrary process attachment or automatic task restart"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/task-progress/coordinator.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/session-lock.ts"
+    }
+  ]
+}

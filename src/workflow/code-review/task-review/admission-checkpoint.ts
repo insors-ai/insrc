@@ -1,5 +1,6 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { isDeepStrictEqual } from 'node:util';
+import { canonicalReviewStory } from './admission.js';
 import { validateReviewResourceGuard } from '../../../shared/review-resources.js';
 import { validateFailureDiagnostics } from './diagnostics.js';
 import { validateSavedAttribution } from './attribution-binding.js';
@@ -13,7 +14,8 @@ export function decodeStoredCheckpoint(input: unknown): StoredReviewCheckpoint {
  if (checkpoint.schemaVersion === 2) {
   for (const [index, attempt] of checkpoint.attempts.entries()) {
    requireReview(attempt.header.attempt === index + 1, 'attempt', 'Attempt history must be contiguous');
-   requireReview(attempt.submitted.storyId === checkpoint.storyId && attempt.submitted.taskId === checkpoint.taskId, 'scope', 'Foreign admission subject');
+   const hash = /^STORY-([a-f0-9]{16})-/.exec(checkpoint.storyId)?.[1] ?? /^STORY-([a-f0-9]{16})-/.exec(attempt.submitted.storyId)?.[1] ?? '';
+   requireReview(canonicalReviewStory(attempt.submitted.storyId, hash) === canonicalReviewStory(checkpoint.storyId, hash) && attempt.submitted.taskId === checkpoint.taskId, 'scope', 'Foreign admission subject');
    if (attempt.resourceGuard) validateReviewResourceGuard(attempt.resourceGuard, { project: checkpoint.project, family: 'code', reviewId: checkpoint.reviewId });
    if (isCodeAdmission(attempt)) {
     requireReview(Number.isFinite(Date.parse(attempt.acceptedAt)) && Number.isFinite(Date.parse(attempt.header.createdAt)), 'admission', 'Invalid admission timestamp');

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
-import { rm } from 'node:fs/promises';
+import { rm,readFile,writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fixture,hash } from '../../../workflow/code-review/task-review/__tests__/publication-fixture.js';
 import { impactFixture } from '../../../workflow/review/design-review/__tests__/impact-fixtures.js';
@@ -77,6 +77,14 @@ test('approval cleanup retains active targets and preserves both-family permanen
    const retained=code?await cleanupApprovedTaskReviews({repo,epicHash,storyId:'s1'}):await cleanupDesignArtifact(repo,design!.id);
    assert.equal(retained.deleted.length,0);assert.ok(retained.retained.length>0);
   }finally{release();await blocked;await publishing;}
+  if(code){
+   const permanent=join(repo,`.insrc/artifacts/${id}.json`),raw=await readFile(permanent,'utf8'),head=JSON.parse(raw),checkpointBytes=await readFile(path,'utf8');
+   await writeFile(permanent,JSON.stringify({...head,meta:{...head.meta,schemaVersion:2}}));
+   const refused=await cleanupApprovedTaskReviews({repo,epicHash,storyId:'s1'});
+   assert.equal(refused.deleted.length,0);assert.ok(refused.retained.includes(path));assert.match(refused.errors.join(' '),/capability mismatch/);
+   assert.equal(await readFile(path,'utf8'),checkpointBytes,'invalid permanent history cannot mutate or delete the checkpoint');
+   await writeFile(permanent,raw);
+  }
   const cleaned=code?await cleanupApprovedTaskReviews({repo,epicHash,storyId:'s1'}):await cleanupDesignArtifact(repo,design!.id);
   assert.ok(cleaned.deleted.includes(path),JSON.stringify(cleaned));assert.equal(existsSync(path),false);
   const history=await registry.storedProgress(key,2,code?{epicHash,storyId:'s1'}:{artifactPath:design!.json,includeResult:true}) as any;
@@ -85,6 +93,15 @@ test('approval cleanup retains active targets and preserves both-family permanen
   assert.equal(failed.admission.validation,'unverified');assert.equal(failed.status,'failed');
   const log=await lifecycle.store.history.log(id);
   assert.ok(log.some(e=>(e.outcome?.data as any)?.kind==='review-resource-audit'),'clearance receipts survive checkpoint deletion');
+  if(code){
+   const permanent=join(repo,`.insrc/artifacts/${id}.json`),raw=await readFile(permanent,'utf8'),head=JSON.parse(raw);
+   try{
+    await writeFile(permanent,JSON.stringify({...head,meta:{...head.meta,schemaVersion:99}}));
+    await assert.rejects(registry.storedProgress(key,2,{epicHash,storyId:'s1'}),/Unsupported permanent CR version/);
+    await writeFile(permanent,JSON.stringify({...head,meta:{...head.meta,schemaVersion:2}}));
+    await assert.rejects(registry.storedProgress(key,2,{epicHash,storyId:'s1'}),/capability mismatch/);
+   }finally{await writeFile(permanent,raw);}
+  }
   assert.equal(Atomics.load(calls,0),0);
  });
 });

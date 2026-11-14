@@ -126,7 +126,9 @@ test('native byte replies retain the originating review async context',async()=>
  });
  try{
   const transport=new ReviewWorkerNativeTransport(port2,review);
-  const result=await withReviewNativeTransport(transport,()=>transport.start(reservation,{checkpointPath:'/tmp/fixture.json',attempt:1,operationId:'op',workerIncarnation:review.incarnation,daemonInstance:'host'},async()=>{assert.equal(reviewNativeTransport(),transport);}));
+  let observed:ReturnType<typeof reviewNativeTransport>;
+  const result=await withReviewNativeTransport(transport,()=>transport.start(reservation,{checkpointPath:'/tmp/fixture.json',attempt:1,operationId:'op',workerIncarnation:review.incarnation,daemonInstance:'host'},async()=>{observed=reviewNativeTransport();}));
+  assert.equal(observed,transport);
   assert.equal(result.code,0);
  }finally{stop();port1.close();port2.close();}
 });

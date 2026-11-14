@@ -5,7 +5,6 @@
 ## Summary
 
 **Flavor:** enhancement
-**Tracker:** [insors-ai/insrc#146](https://github.com/insors-ai/insrc/issues/146)
 
 Follow long-running reviews, test sweeps, workflow operations and analysis from the conversation that launched them. See measured progress and the final result while work continues across turns, chat switches and supported reconnects. Native delivery needs no extra model calls, with optional one-minute polling where direct delivery is unavailable.
 
@@ -156,19 +155,21 @@ Claude Code, Codex and Vibe users get progress through capabilities verified for
 - **ac4:** Given A fallback host loses scheduling or connectivity, when observation cannot continue on schedule, then the client reports a degraded or suspended observer, resumes the fixed healthy cadence after recovery where supported, and never implies execution cancellation.. _(operationalizes `k5`, `k7`, `k8`)_
 - **ac5:** Given A native client can render progress during a request but cannot maintain native observation after the launching turn or session exit, when the request or session ends while execution remains owned, then the client surfaces the capability limit. Expired progress tokens are never reused, execution is not cancelled, and authorized reattachment can recover the saved task state and result.. _(operationalizes `k4`, `k7`, `k8`)_
 
+### 6.7 STORY-206db3426ffd4428-s7 — Launch a long-running command as a daemon-owned task that outlives the chat turn
+
+**User value:**
+
+A user or agent in a chat can start a long-running command or test run as a daemon-owned task, end the turn, and still see its progress and final result in the originating chat, without the chat's session lock being held by a pending background process.
+
+**Acceptance criteria:**
+
+- **ac1:** Given A chat launches an authorized long-running command (for example a 40-minute live test run or a test sweep) through the daemon, when The launching turn ends and the chat process exits, then The command keeps running under the daemon, the chat's session lock is released at the turn end, and the next message in the chat is not delayed by the running command..
+- **ac2:** Given A daemon-owned command task was launched from chat A, when The user starts another turn, switches chats or reconnects, then One existing message in chat A shows the task's latest measured state and its terminal result (exit status, a bounded output tail and the log location) without extra model calls, and no event reaches chat B..
+- **ac3:** Given A command is launched as a daemon task, when It is registered, then It runs only inside the registered repository with the caller's authorization, is limited to commands the daemon accepts under its approval policy, and is not an attachment to an arbitrary pre-existing process..
+- **ac4:** Given A daemon-owned command task is running, when The user cancels it or the daemon restarts, then Cancellation stays pending until the daemon verifies the process ended, and after a restart the task is reported as lost or finished rather than shown as still running..
+- **ac5:** Given The epic's non-goals exclude general job scheduling and arbitrary process attachment, when This story is added, then The non-goal is narrowed in the Define to state exactly what stays excluded (scheduling, recurring jobs, attaching to existing processes, automatic restart) while launching an authorized one-shot command as a task is in scope..
+
 ## 7. References
-
-- **[[c1]]** `prior-artifact` `docs/epics/stream-incremental-progress-from-daemon-calling-E202607196d6cfaf9/DEF.md`
-- **[[c2]]** `prior-artifact` `docs/epics/stream-incremental-progress-from-daemon-calling-E202607196d6cfaf9/HLD.md`
-- **[[c3]]** `prior-artifact` `docs/standalone/show-background-task-progress-chat-E2026110407024f1d/SPEC.md`
-- **[[c4]]** `code` `src/daemon/__tests__/workflow-progress-map.test.ts`
-- **[[c5]]** `code` `src/daemon/__tests__/analyze-progress.test.ts`
-- **[[c6]]** `code` `src/mcp/__tests__/progress-forward.test.ts`
-- **[[c7]]** `code` `src/workflow/code-review/task-review/progress.ts`
-- **[[c8]]** `convention` `AGENTS.md`
-- **[[c9]]** `prior-artifact` `https://github.com/insors-ai/insrc/issues/41`
-
-## Citations
 
 - **[[c1]]** `prior-artifact` `docs/epics/stream-incremental-progress-from-daemon-calling-E202607196d6cfaf9/DEF.md`
 - **[[c2]]** `prior-artifact` `docs/epics/stream-incremental-progress-from-daemon-calling-E202607196d6cfaf9/HLD.md`

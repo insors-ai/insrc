@@ -18,7 +18,37 @@
         "relation": "derived-from"
       },
       "references": [],
-      "attachments": []
+      "attachments": [
+        {
+          "target": {
+            "entityId": "LLD-b9d5c5c40df5a574-s4",
+            "type": "LLD",
+            "relation": "documents",
+            "fragment": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S004/LLD.md"
+          },
+          "revision": 1,
+          "at": "2026-11-14T11:17:00.908Z",
+          "externalId": "6876464969"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#162",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": [
+          {
+            "kind": "task-list",
+            "at": "2026-11-14T11:16:47.815Z"
+          },
+          {
+            "kind": "design",
+            "at": "2026-11-14T11:16:50.271Z"
+          }
+        ]
+      }
     },
     "lifecycle": {
       "status": "draft",

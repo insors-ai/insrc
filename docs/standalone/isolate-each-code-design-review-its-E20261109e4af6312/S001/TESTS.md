@@ -4,17 +4,18 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 64 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 68 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
-Run at 2026-11-09T07:52:13.312Z on commit `1191a5352`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-14T06:24:17.426Z on commit `ae7c1339b`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: src/workflow/code-review/task-review/__tests__/admission-checkpoint.test.ts: unverified admission and resource guards preserve pinned code history and refuse approval**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | unverified admission and resource guards preserve pinned code history and refuse approval | `src/workflow/code-review/task-review/__tests__/admission-checkpoint.test.ts` |
+| pass | mixed legacy story spellings survive version-two admission without rewriting pinned packets | `src/workflow/code-review/task-review/__tests__/admission-checkpoint.test.ts` |
 
 **unit: src/shared/__tests__/review-resources.test.ts: bounded exact review lease and clearance receipt contracts reject invalid input**
 
@@ -27,7 +28,7 @@ Run at 2026-11-09T07:52:13.312Z on commit `1191a5352`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/shared/__tests__/review-resources.test.ts` | 0 | 1 | 0.6 s |  |
-| `src/workflow/code-review/task-review/__tests__/admission-checkpoint.test.ts` | 0 | 1 | 1 s |  |
+| `src/workflow/code-review/task-review/__tests__/admission-checkpoint.test.ts` | 0 | 2 | 1.1 s |  |
 
 ## t2
 
@@ -54,7 +55,7 @@ Run at 2026-11-09T08:05:19.987Z on commit `81edc5d07`. Tests check: **passed**. 
 
 ## t3
 
-Run at 2026-11-09T09:08:06.224Z on commit `35c9f815f`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-13T08:44:35.855Z on commit `8ebc81c96`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/workflow/code-review/task-review/__tests__/admission-history.test.ts: failed admission survives successful next attempt publication and post-cleanup reads**
 
@@ -78,9 +79,9 @@ Run at 2026-11-09T09:08:06.224Z on commit `35c9f815f`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/code-review/task-review/__tests__/admission-history.test.ts` | 0 | 1 | 1.2 s |  |
-| `src/workflow/code-review/task-review/__tests__/resource-preservation.test.ts` | 0 | 1 | 1 s |  |
-| `src/workflow/review/design-review/__tests__/admission-history.test.ts` | 0 | 1 | 0.9 s |  |
+| `src/workflow/code-review/task-review/__tests__/admission-history.test.ts` | 0 | 3 | 1.4 s |  |
+| `src/workflow/code-review/task-review/__tests__/resource-preservation.test.ts` | 0 | 1 | 0.9 s |  |
+| `src/workflow/review/design-review/__tests__/admission-history.test.ts` | 0 | 1 | 0.8 s |  |
 
 ## t4
 
@@ -106,7 +107,7 @@ Run at 2026-11-09T10:00:23.617Z on commit `9f8c8c660`. Tests check: **passed**. 
 
 ## t5
 
-Run at 2026-11-11T12:23:50.106Z on commit `4fc8bee23`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-13T08:47:30.690Z on commit `8ebc81c96`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/agent/providers/__tests__/review-worker-process.test.ts: fake native review CLI streams and cancellation use host-owned leases**
 
@@ -124,11 +125,11 @@ Run at 2026-11-11T12:23:50.106Z on commit `4fc8bee23`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/agent/providers/__tests__/review-worker-process.test.ts` | 0 | 2 | 1.8 s |  |
+| `src/agent/providers/__tests__/review-worker-process.test.ts` | 0 | 3 | 2 s |  |
 
 ## t6
 
-Run at 2026-11-11T12:51:57.103Z on commit `43d69ad70`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-13T08:50:12.653Z on commit `8ebc81c96`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/daemon/tools/__tests__/review-worker-shell.test.ts: Git shell and raw-byte commands preserve output bounds and abort semantics through leases**
 
@@ -147,11 +148,11 @@ Run at 2026-11-11T12:51:57.103Z on commit `43d69ad70`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/threads/__tests__/review-spawn-inventory.test.ts` | 0 | 1 | 0.7 s |  |
-| `src/daemon/tools/__tests__/review-worker-shell.test.ts` | 0 | 1 | 5.9 s |  |
+| `src/daemon/tools/__tests__/review-worker-shell.test.ts` | 0 | 1 | 5.8 s |  |
 
 ## t7
 
-Run at 2026-11-11T13:38:50.061Z on commit `8e26d2c88`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-13T08:54:03.680Z on commit `8ebc81c96`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/daemon/threads/__tests__/review-worker-bootstrap.test.ts: real worker joins guards and starts from the registered entrypoint**
 
@@ -169,17 +170,18 @@ Run at 2026-11-11T13:38:50.061Z on commit `8e26d2c88`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/threads/__tests__/review-worker-bootstrap.test.ts` | 0 | 3 | 19.6 s |  |
+| `src/daemon/threads/__tests__/review-worker-bootstrap.test.ts` | 0 | 3 | 29.4 s |  |
 
 ## t8
 
-Run at 2026-11-11T15:06:26.825Z on commit `1635e86d6`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-14T06:27:54.945Z on commit `ae7c1339b`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: src/daemon/threads/__tests__/review-workers.test.ts: canonical identities own one incarnation and preserve subject and cleanup exclusions**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | canonical identities own one incarnation and preserve subject and cleanup exclusions | `src/daemon/threads/__tests__/review-workers.test.ts` |
+| pass | terminal drain retries idleness without requiring another checkpoint update | `src/daemon/threads/__tests__/review-worker-publication.test.ts` |
 
 **integration: src/daemon/threads/__tests__/review-workers.test.ts: stale owner messages and targeted disconnects cannot mutate another review**
 
@@ -191,7 +193,8 @@ Run at 2026-11-11T15:06:26.825Z on commit `1635e86d6`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/threads/__tests__/review-workers.test.ts` | 0 | 3 | 4.6 s |  |
+| `src/daemon/threads/__tests__/review-worker-publication.test.ts` | 0 | 5 | 6.2 s |  |
+| `src/daemon/threads/__tests__/review-workers.test.ts` | 0 | 4 | 5.2 s |  |
 
 ## t9
 
@@ -217,7 +220,7 @@ Run at 2026-11-11T15:27:53.328Z on commit `76e049edb`. Tests check: **passed**. 
 
 ## t10
 
-Run at 2026-11-11T16:04:20.516Z on commit `aa9aa072f`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-14T06:31:48.385Z on commit `ae7c1339b`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/workflow/review/design-review/__tests__/worker-admission.test.ts: durable admission and current workflow ancestry run in the owner worker**
 
@@ -235,7 +238,7 @@ Run at 2026-11-11T16:04:20.516Z on commit `aa9aa072f`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/review/design-review/__tests__/worker-admission.test.ts` | 0 | 3 | 7.9 s |  |
+| `src/workflow/review/design-review/__tests__/worker-admission.test.ts` | 0 | 5 | 14.3 s |  |
 
 ## t11
 
@@ -303,7 +306,7 @@ Run at 2026-11-12T01:23:20.233Z on commit `8cf777a4a`. Tests check: **passed**. 
 
 ## t13
 
-Run at 2026-11-12T02:12:05.399Z on commit `f8cda8670`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-14T06:36:32.394Z on commit `ae7c1339b`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/daemon/threads/__tests__/review-worker-publication.test.ts: publication retry after worker exit or lost receipt performs zero provider calls**
 
@@ -330,14 +333,14 @@ Run at 2026-11-12T02:12:05.399Z on commit `f8cda8670`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/threads/__tests__/artifact-write-authority.test.ts` | 0 | 1 | 1.6 s |  |
-| `src/daemon/threads/__tests__/review-worker-cleanup.test.ts` | 0 | 3 | 8.6 s |  |
-| `src/daemon/threads/__tests__/review-worker-publication.test.ts` | 0 | 3 | 4 s |  |
-| `src/daemon/threads/__tests__/review-worker-recovery.test.ts` | 0 | 3 | 6.7 s |  |
+| `src/daemon/threads/__tests__/artifact-write-authority.test.ts` | 0 | 1 | 1.7 s |  |
+| `src/daemon/threads/__tests__/review-worker-cleanup.test.ts` | 0 | 3 | 11.1 s |  |
+| `src/daemon/threads/__tests__/review-worker-publication.test.ts` | 0 | 5 | 5.8 s |  |
+| `src/daemon/threads/__tests__/review-worker-recovery.test.ts` | 0 | 5 | 50.2 s |  |
 
 ## t14
 
-Run at 2026-11-12T04:36:38.374Z on commit `c4a74c15e`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-14T06:42:17.726Z on commit `ae7c1339b`. Tests check: **passed**. 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/daemon/__tests__/review-worker-routing.test.ts: every supported review method delegates heavy work to its dedicated owner**
 
@@ -350,6 +353,8 @@ Run at 2026-11-12T04:36:38.374Z on commit `c4a74c15e`. Tests check: **passed**. 
 | pass | unexpected native port loss shares explicit close work and notifies its owner once | `src/daemon/threads/__tests__/review-native-host.test.ts` |
 | pass | legacy interrupted code history retains uncertainty on earlier attempts | `src/daemon/threads/__tests__/review-worker-recovery.test.ts` |
 | pass | pending-publication qualified failure survives new attempt publication approval cleanup and permanent reads | `src/workflow/code-review/task-review/__tests__/pending-failure-history.test.ts` |
+| pass | production cold public publication retries preserve historical version-one evidence without models | `src/daemon/__tests__/review-worker-routing.test.ts` |
+| pass | production restart refreshes reviewer authority while an incumbent design worker is registered | `src/daemon/__tests__/review-worker-routing.test.ts` |
 
 **integration: src/daemon/__tests__/review-worker-routing.test.ts: optional session threading disabled cannot enable main or session review fallback**
 
@@ -361,9 +366,9 @@ Run at 2026-11-12T04:36:38.374Z on commit `c4a74c15e`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/__tests__/review-worker-routing.test.ts` | 0 | 4 | 54.8 s |  |
-| `src/daemon/threads/__tests__/review-native-host.test.ts` | 0 | 2 | 0.6 s |  |
-| `src/daemon/threads/__tests__/review-worker-recovery.test.ts` | 0 | 4 | 6.7 s |  |
+| `src/daemon/__tests__/review-worker-routing.test.ts` | 0 | 7 | 68.2 s |  |
+| `src/daemon/threads/__tests__/review-native-host.test.ts` | 0 | 2 | 0.7 s |  |
+| `src/daemon/threads/__tests__/review-worker-recovery.test.ts` | 0 | 5 | 51.2 s |  |
 | `src/workflow/code-review/task-review/__tests__/pending-failure-history.test.ts` | 0 | 1 | 7.4 s |  |
 
 ## t15
@@ -423,7 +428,7 @@ Run at 2026-11-12T05:28:27.176Z on commit `8fe4b316c`. Tests check: **passed**. 
 
 ## t16
 
-Run at 2026-11-12T19:48:09.913Z on commit `75c00e950`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-14T06:47:38.203Z on commit `ae7c1339b`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/daemon/threads/__tests__/review-worker-package.test.ts: compiled worker entrypoints and both review families start from an isolated built package**
 
@@ -441,4 +446,4 @@ Run at 2026-11-12T19:48:09.913Z on commit `75c00e950`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/threads/__tests__/review-worker-package.test.ts` | 0 | 2 | 8 s |  |
+| `src/daemon/threads/__tests__/review-worker-package.test.ts` | 0 | 2 | 7.7 s |  |

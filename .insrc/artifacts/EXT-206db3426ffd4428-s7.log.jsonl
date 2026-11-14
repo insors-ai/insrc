@@ -1,0 +1,1 @@
+362	{"artifactId":"EXT-206db3426ffd4428-s7","entry":{"id":"e37b4ff5dfa14522af1d93c2f7695d97","actor":{"id":"insrc:approval","kind":"system","properties":{}},"timestamp":"2026-11-13T05:24:19.982Z","operation":"approve","revision":{"number":1,"contentHash":"b7408d866292ae0fa2fffea7c6a9d93d65f694bdac2621f7ee5461267cae6592"},"status":{"from":"draft","to":"approved"}}}

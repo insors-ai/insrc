@@ -1,0 +1,148 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1794646437398-34ryhc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T08:54:34.980Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 34815,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "epicSlug": "make-insrc-analysis-complete-used-right",
+    "storyId": "s10",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a5a972eb66fb507309803c865fcc8656725aae0f7e8ba329e07af781d5084cac",
+        "at": "2026-11-14T08:54:34.981Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T09:01:19.479Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    }
+  },
+  "body": {
+    "scope": "L",
+    "notify": "Extends Epic `make-insrc-analysis-complete-used-right` (EPIC-b9d5c5c40df5a574): split out of Story s4, building on DEF/HLD docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4 and the lookup code in src/analyze/explore (freeform-probe.ts, executor.ts).",
+    "addedStory": {
+      "id": "s10",
+      "title": "A running analysis can be cancelled, and the tool loop has no turn limit",
+      "userValue": "As someone running or relying on an analysis, I can stop one that is running and get what it found so far, and no analysis is cut short by a fixed number of turns, because a running analysis can always be stopped by its caller instead.",
+      "acceptanceCriteria": [
+        {
+          "id": "ac1",
+          "given": "an analysis or lookup that is running, on either path a request can take through the analyzer",
+          "when": "its caller cancels it",
+          "then": "it stops at its next safe point, makes no further model or tool call for that request, and is reported as cancelled, neither failed nor complete, with the findings gathered so far kept",
+          "operationalizes": []
+        },
+        {
+          "id": "ac2",
+          "given": "any way a request can reach a tool loop (the three context requests, the plan request and the classify request)",
+          "when": "its caller cancels it",
+          "then": "the loop for that request stops, and no other running request is affected",
+          "operationalizes": []
+        },
+        {
+          "id": "ac3",
+          "given": "a cancel request that names a run that does not exist or has already finished",
+          "when": "it is received",
+          "then": "it is refused with a reason that says so and changes nothing",
+          "operationalizes": []
+        },
+        {
+          "id": "ac4",
+          "given": "cancellation works on every path that reaches a tool loop",
+          "when": "the tool loop's turn limit is removed",
+          "then": "a loop ends only by finishing, by failing for a reason it reports, or by being cancelled, and reaching a number of turns is no longer a way for it to end or to fail",
+          "operationalizes": []
+        },
+        {
+          "id": "ac5",
+          "given": "a configuration that still holds the retired turn-limit setting",
+          "when": "it is loaded",
+          "then": "the setting is ignored and reported as retired in the way other retired settings are, the load does not fail, and no prompt, documentation page or client declaration still states a turn limit",
+          "operationalizes": []
+        }
+      ]
+    },
+    "amendmentId": "AMD-b9d5c5c40df5a574-3",
+    "evidence": [
+      {
+        "kind": "doc",
+        "ref": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/HLD.md",
+        "quote": "Building cancellation"
+      },
+      {
+        "kind": "doc",
+        "ref": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/DEF.md"
+      },
+      {
+        "kind": "code",
+        "ref": "src/analyze/explore/freeform-probe.ts"
+      },
+      {
+        "kind": "code",
+        "ref": "src/analyze/explore/executor.ts"
+      }
+    ],
+    "nextAction": {
+      "command": "insrc_workflow_step phase=start workflow=design.story params={\"epicHash\":\"b9d5c5c40df5a574\",\"storyId\":\"s10\"}",
+      "description": "Approve the HLD amendment (`AMD-b9d5c5c40df5a574-3`) and the updated Epic, then run `design.story` for the new Story `s10` to produce its LLD."
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/HLD.md",
+      "quotedText": "Building cancellation"
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/DEF.md"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/analyze/explore/freeform-probe.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/analyze/explore/executor.ts"
+    }
+  ]
+}

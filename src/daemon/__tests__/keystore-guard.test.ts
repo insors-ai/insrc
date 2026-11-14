@@ -12,14 +12,17 @@
 
 import { test, after, before } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { spawn, spawnSync } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { once } from 'node:events';
 
 import { childEnv, REPO_ROOT, rpc, startDaemon } from '../../mcp/__tests__/helpers/mcp-e2e.js';
 import { acquireRunFileGuard } from '../../shared/daemon-run-files.js';
+import { readProcessIdentity } from '../../shared/daemon-process.js';
 import { PATHS } from '../../shared/paths.js';
 import { connectionsPath, repoIdOf } from '../db/config.js';
 import { writeProtected } from '../db/management-files.js';
@@ -76,21 +79,50 @@ test('guard: maintenance refuses and releases the guard when the daemon socket e
 	} finally { rmSync(SOCKET, { force: true }); }
 });
 
-test('maintenance: the offline tool reads the vault once', async () => {
-	writeFileSync(LOG, '');
+/** The full maintenance-admission fixture: vault store, connections registry, a fresh stop proof. */
+async function seedMaintenanceFixture(): Promise<{ proof: string; refs: [string, string][] }> {
 	const refs = ['warehouse', 'orders', 'billing'].map(id => [id, makeSecretRef(repoIdOf(REPO), id)] as const);
 	writeFileSync(join(KEYTAR, 'store.json'), JSON.stringify({
 		'insrc-vault/secrets': JSON.stringify({ version: 1, secrets: Object.fromEntries(refs.map(([id, ref]) => [ref, `secret-${id}`])), retired: [] }),
 	}));
 	const registry = daemonPath(connectionsPath(REPO));
 	mkdirSync(dirname(registry), { recursive: true, mode: 0o700 });
+	rmSync(registry, { force: true }); // the tool leaves it write-protected
 	writeFileSync(registry, JSON.stringify({ connections: refs.map(([id, ref]) => ({ id, kind: 'postgres', url: `postgres://user:\${secret:${ref}}@host/db`, secretRef: ref })) }), { mode: 0o600 });
-	const proof = join(base, 'stop.json');
+	rmSync(join(dirname(registry), 'connection-management'), { recursive: true, force: true });
+	const proof = join(base, `stop-${randomUUID()}.json`);
 	await writeProtected(proof, JSON.stringify({ source: 'safe-stop-control', pid: 2147483647, processIdentity: 'b'.repeat(64), stoppedAt: new Date().toISOString() }), true);
+	return { proof, refs: refs.map(([id, ref]) => [id, ref] as [string, string]) };
+}
+
+test('maintenance: the offline tool reads the vault once', async () => {
+	writeFileSync(LOG, '');
+	const { proof, refs } = await seedMaintenanceFixture();
 	const run = maintenance(proof);
 	assert.equal(run.status, 0, run.stderr);
-	assert.ok(existsSync(join(dirname(registry), 'connection-management')), 'the tool did its work');
+	assert.ok(existsSync(join(dirname(daemonPath(connectionsPath(REPO))), 'connection-management')), 'the tool did its work');
 	assert.equal(calls().filter(c => c === VAULT_READ).length, 1, calls().join(', '));
 	assert.deepEqual(calls().filter(c => refs.some(([, ref]) => c === `get insrc ${ref}`)), [], 'the secrets came from the vault');
 	assert.equal(existsSync(GUARD), false);
+});
+
+test('vault guard reclaims a genuinely-exited-owner guard through the real readProcessIdentity verdict path', async () => {
+	writeFileSync(LOG, '');
+	// A real short-lived process, whose recorded identity is then genuinely dead: the offline tool's
+	// acquireVaultGuard goes through the shared acquireRunFileGuard with the real, uninjected reader.
+	const child = spawn(process.execPath, ['-e', 'process.on("message", () => process.exit(0))'], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
+	const identity = readProcessIdentity(child.pid);
+	assert.ok(identity !== undefined, 'the child identity was captured while it was alive');
+	const ended = once(child, 'exit'); child.send('exit'); await ended;
+	const record = JSON.stringify({ owner: identity, nonce: 'exited-owner' });
+	mkdirSync(dirname(GUARD), { recursive: true });
+	mkdirSync(GUARD);
+	writeFileSync(join(GUARD, 'owner.json'), record);
+	const { proof } = await seedMaintenanceFixture();
+	const run = maintenance(proof);
+	assert.equal(run.status, 0, run.stderr);
+	assert.equal(existsSync(GUARD), false, 'the tool released the reclaimed guard');
+	const quarantined = readdirSync(dirname(GUARD)).filter((name) => name.startsWith('vault.guard.quarantine-'));
+	assert.equal(quarantined.length, 1);
+	assert.equal(readFileSync(join(dirname(GUARD), quarantined[0]!, 'owner.json'), 'utf8'), record);
 });

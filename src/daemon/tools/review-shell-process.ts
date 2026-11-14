@@ -11,7 +11,7 @@ import type { ManagedExit, ManagedSpawnOptions } from './shell-helper.js';
 
 /** Only an event/stream facade, never a native handle or PID. Existing tool
  * consumers retain their decoding, truncation, input and result logic. */
-export function launchReviewShell(transport:ReviewNativeTransport,command:string,args:readonly string[],options:ManagedSpawnOptions){
+export function launchReviewShell(transport:ReviewNativeTransport,command:string,args:readonly string[],options:ManagedSpawnOptions,kind:'tool'|'cli'='tool'){
  if(['git','git.exe'].includes(basename(command))){const isolated=reviewGitCommand(args);args=isolated.args;options={...options,env:isolated.env};}
  const modes=options.stdio??['ignore','pipe','pipe'];
  if(!Array.isArray(modes)||modes.length!==3||modes.some(mode=>mode!=='pipe'&&mode!=='ignore'))throw new Error('Unsupported review managed stdio');
@@ -23,7 +23,7 @@ export function launchReviewShell(transport:ReviewNativeTransport,command:string
  let finishedRun=false;
  let internalTermination=false;
  const env=Object.fromEntries(Object.entries(options.env??process.env).filter((entry):entry is [string,string]=>entry[1]!==undefined));
- const reserved=Promise.resolve().then(()=>transport.reserve({kind:'tool',command,args,cwd:options.cwd??process.cwd(),env,keepStdinOpen:modes[0]==='pipe',...(options.timeoutMs!==undefined?{timeoutMs:options.timeoutMs}:{})}));
+ const reserved=Promise.resolve().then(()=>transport.reserve({kind,command,args,cwd:options.cwd??process.cwd(),env,keepStdinOpen:modes[0]==='pipe',...(options.timeoutMs!==undefined?{timeoutMs:options.timeoutMs}:{})}));
  const cancel=()=>{void reserved.then(r=>transport.cancel(r)).catch(()=>{});};
  signal.addEventListener('abort',cancel,{once:true});if(signal.aborted)cancel();
  const terminate=()=>{internalTermination=true;controller.abort();};

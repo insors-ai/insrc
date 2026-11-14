@@ -1,0 +1,873 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1794653538223-k2ok1z",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T11:00:28.525Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 482246,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "epicHash": "b9d5c5c40df5a574",
+    "epicSlug": "make-insrc-analysis-complete-used-right",
+    "storyId": "s4",
+    "hldBaseRunId": "wf-1791349476498-tih4l4",
+    "hldEffectiveHash": "faa0f59939cefa48308d1443da550f15eb59e172abea6bfec96bf918e3ceac2c",
+    "hldAmendmentsApplied": [
+      "AMD-b9d5c5c40df5a574-1"
+    ],
+    "storyTitle": "No lookup drops results",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8d97111c4da7ddeee22ef0ac23ef625b963bf2e27bf793bf88ed275629d369dd",
+        "at": "2026-11-14T11:00:31.742Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T11:16:39.021Z",
+        "override": {
+          "reason": "Design review broken; controller self-review done (6 partial audit items noted in the LLD open questions). User-approved override, 2026-11-14."
+        }
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "This Story removes every fixed limit on how many results an analyzer lookup or plan-task runtime returns and every fixed cut on how much of an item is read. It adds no new contract: each limit constant and parameter is deleted at its site, item content is read from its file through the existing item measurement (which already confirms the file still holds the item), and the shared text search gains a complete mode that only the analyzer asks for. A result that grows is handled by Story s3's method and described by Story s1's record; an item that cannot be confirmed is reported as not covered. Cancellation and the tool loop's turn limit are Story s10's."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Three records carry the design, and both paths into the analyzer use them: the lookup pipeline that serves the agent tools and builds every run context, and the plan tree above it that serves broad analyses. The plan tree does not run today for a request that asks no specific question, so two Stories first make such a request run and then make a broad analysis complete; the other Stories apply to both paths once it does. A completeness record on every lookup result and every plan-task result replaces today's mix of truncated flags, totals, free-text notes and log lines: it says whether the result is complete, how many items exist and were returned, why any are missing, what was skipped or only partly read, and what the result rests on (text on disk, the stored graph, the document index, a live data source). A lookup that cannot run is always the existing failed output with its reason, never an empty result, and a failure to write the answer is reported with what was found, not passed silently to another way of answering. An answer report heads every answer on both paths: one overall completeness statement derived from those records, the measured size, and how the request was handled.\n\nA request measure says what a request touches and maps it to the existing five sizes. It has two sources, because the size is needed at two different moments. A request that plans lookups up front is measured from what those lookups returned. A request that plans none up front (an unfocused request on the plan-tree path, where the size is needed before planning) is measured from the area it names: the files and entities the graph store holds under the path or repo it points at. No size is taken from the wording or assumed; a request that cannot be measured is treated as the largest size and says so.\n\nHandling is a stated table from size to method, on both paths. Up to the size a model can reason over together, the answer is written in one pass, as today. Above it, the results are divided into parts along file and directory boundaries, each part is reasoned over in turn, and a combine step joins the per-part results into one answer; a failed part is kept out and named in the report. A single item too large for one pass is read in consecutive sections under the same rule. Once that handling exists the limits are removed: no lookup, plan-task runtime, planning prompt or text search keeps a limit on how many results it returns or how much of an item it reads. Last, layouts are selected by question kind and source kind together; a new question kind, enumeration, is rendered directly from lookup results with no model in the path, and the layouts lose their limits and describe every lookup they may draw on.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Completeness record",
+          "purpose": "The one statement every lookup result and every plan-task result carries about whether it is complete; also the rule that a lookup which cannot run is the failed output, never an empty result. The existing failed output is kept for a lookup that could not run, and gains one optional field for what was found before it failed.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1"
+          ],
+          "interfaceSketch": "interface ReachedLimit {\n  readonly what: string;                 // what the limit counts\n  readonly limit: number;\n  readonly scope: 'overall' | 'per-group' | 'source'; // on the items returned; on each group of them; on what the result was built from (not counted in `returned`)\n  readonly reason: string;\n}\ninterface Completeness {\n  readonly complete: boolean;            // false whenever limited, skipped or partlyRead is non-empty, or completeness could not be established\n  readonly total: number | null;         // items that exist; null when it cannot be counted\n  readonly returned: number;\n  readonly limited?: readonly ReachedLimit[] | undefined; // every limit that was reached; a result can reach several\n  readonly skipped?: readonly { readonly what: string; readonly reason: string }[] | undefined;\n  readonly partlyRead?: readonly { readonly what: string; readonly readChars: number; readonly totalChars: number | null; readonly totalNote?: string | undefined }[] | undefined; // totalChars is null when the full length could not be established; totalNote says why\n  readonly basis: 'text' | 'graph' | 'doc-index' | 'data-source' | 'filesystem' | 'model-directed'; // 'model-directed': a model chose what to look at (the free-form lookup, an aggregate report); never established complete\n  readonly basisNote?: string | undefined; // what the basis excludes by rule, or that its own coverage is not established\n}\ninterface WithCompleteness { readonly completeness: Completeness }\n// every ExplorationOutput except 'failed' and 'unsupported', and every plan-task result, extends WithCompleteness\n// A record is built only by buildCompleteness, which computes `complete`. Its `notEstablished` input, for a result that cannot know whether it is complete, sets `complete` to false and adds no field to the record."
+        },
+        {
+          "id": "sc2",
+          "name": "Answer report",
+          "purpose": "The header every answer carries on both paths: overall completeness derived from the results, then the measured size and how the request was handled once those exist. Owned by the first Story so that sizing, handling and layout each fill and render their part.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [],
+          "interfaceSketch": "interface SourceNote { readonly sourceId: string; readonly sourceKind: 'lookup' | 'plan-task'; readonly reason: string }\ninterface AnswerReport {\n  readonly completeness: {\n    readonly complete: boolean; readonly incomplete: readonly SourceNote[]; readonly failed: readonly SourceNote[];\n    readonly basisNotes?: readonly string[] | undefined; // each distinct basisNote of the sources, once\n  };\n  readonly answerFailure?: string | undefined;        // the step that writes the answer failed\n  readonly measure?: RequestMeasure | undefined;      // filled by sizing\n  readonly handling?: HandlingReport | undefined;     // filled by handling\n}\n// A lookup is named '<lookup type> [<lookup id>]'; a plan task by its path ('t02.t01'); the sources of a plan-tree run's first step are prefixed 'run context / '."
+        },
+        {
+          "id": "sc3",
+          "name": "Request measure",
+          "purpose": "What a request actually touched, from its lookup results or from the area it names, and the size it maps to.",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4"
+          ],
+          "assumptions": [
+            "c2"
+          ],
+          "interfaceSketch": "interface RequestMeasure {\n  readonly source: 'lookup-results' | 'named-area' | 'data-source';\n  readonly items: number;                // lookup results, or entities under the named area\n  readonly files: number;\n  readonly characters: number | null;    // null for a named-area measure\n  readonly size: 'XS' | 'S' | 'M' | 'L' | 'XL';\n  readonly determined: boolean;          // false: could not be measured, size is 'XL'\n  readonly sizeHint?: 'XS' | 'S' | 'M' | 'L' | 'XL' | undefined; // what a caller asked for\n  readonly note?: string | undefined;\n}"
+        },
+        {
+          "id": "sc4",
+          "name": "Handling report",
+          "purpose": "How a request was handled: at once or in parts, how many parts, and which parts were not covered.",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s4"
+          ],
+          "assumptions": [
+            "c10"
+          ],
+          "interfaceSketch": "interface HandlingReport {\n  readonly method: 'single-pass' | 'partitioned';\n  readonly parts: number;\n  readonly partitionedBy?: 'directory' | 'file' | 'section' | undefined;\n  readonly notCovered: readonly { readonly part: string; readonly reason: string }[];\n}"
+        },
+        {
+          "id": "sc6",
+          "name": "Causes of not proceeding",
+          "purpose": "What a request that cannot proceed reports. Three codes are added, all declared by Story s6, to the plan tree's existing list (RunErrorCode) and to the daemon's error codes (AnalyzeRpcErrorCode); its failure type (RunFailure) and its stages (RunStage) are kept as they are, and 'shaper-llm-unavailable' is kept for a model call that failed. A kind of scope that does not go with a kind of source keeps the existing code 'scope-ref-kind-target-mismatch'.",
+          "ownedByStory": "s6",
+          "consumedByStories": [
+            "s1",
+            "s7",
+            "s2",
+            "s3",
+            "s4",
+            "s10"
+          ],
+          "assumptions": [
+            "c1"
+          ],
+          "interfaceSketch": "// added to RunErrorCode (src/analyze/orchestrator/types.ts) and to the daemon's context error codes\n| 'no-plan-for-request'   // the plan for this request has nothing in it\n| 'answer-step-failed'    // the answer-writing step failed; data carries the lookup results and the report (raised by Story s1)\n| 'run-abandoned'         // a record left in progress with no live run behind it (raised by Story s7)\n// 'aborted' exists in RunErrorCode; Story s10 adds it to AnalyzeRpcErrorCode with cancellation\n// RunFailure { code, message, data? } and RunStage are unchanged"
+        }
+      ],
+      "boundary": {
+        "storyId": "s4",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc6"
+        ],
+        "internal": "Removing every limit on how many results a lookup or plan-task runtime returns: the sixteen sites the Define lists and those found since, in the lookups (the maxSources parameter of the two document lookups, the result cut in document retrieval, the cuts inside capability reuse-check, table describe and the document family summary, the preview limits of doc.mention) and in the plan-task runtimes (the file-list and file caps of data and infrastructure discovery and their sample caps). Removing the fixed cuts on an item's content at nine sites: the eight found when the Epic was defined, including the three adherence checks, and the indexer's own cut of a stored body to 8,192 characters (src/indexer/parser/artifact.ts), which Story s1 reports with the item's real length. The index is a pointer: at each of the nine sites, where an item's content matters to the answer, the analyzer reads the item from its file at the place the index points to and does not rely on the body the index stores. What the index stores and how it is built are not changed. The complete mode of the text search for both backends: no limit on hits, no per-file match limit, no cut of a matching line, no skipping of a file for its size, no discarding of output (the search's output is read as a stream, not kept up to a fixed size), a stated rule for a search that runs out of time (reported as failed, never as complete), and the files each backend excludes by rule stated in the result. Removing the limit parameters, their examples and the fan-out bound from the planning prompt. What was reported as limited in Story s1 now does not occur; the larger results are handled by Story s3's method. Raising the lookup cache's version again, and dropping limit parameters before a lookup's cache key is taken. moving the table-listing lookup and the object-listing plan task to the complete mode of the data drivers' listings, and giving the tool loop the complete mode of its search tools. Cancellation, and the retirement of the tool loop's turn limit with its setting, its error and its code, are Story s10's, which is built after this Story."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2"
+          ],
+          "depends": [
+            "sc6"
+          ],
+          "internal": "With every limit still in place: returning the completeness record from each lookup and each plan-task runtime, saying when a limit was reached (limited), what was skipped and what was only partly read, and the basis each rests on. For the text search, reporting what it leaves out today: files over its size limit, files it could not read, lines it shortened, output it discarded, and the files each backend excludes by rule. Classifying every catch clause in the lookups and the plan-task runtimes: a clause that handles a named, expected condition stays and names what it skipped in the record; a clause that swallows an error is removed or rethrows, so that the lookup becomes the failed output. Deriving the answer report's overall completeness from those records and writing the completeness line at the head of every answer on both paths, in the layouts as they are today. Reporting a failure of the answer-writing step as a typed error that carries the lookup results and the report, in place of the 'model unavailable' error that discards them today, added as one more case to the raise site and the mapping that Story s6 owns, and passed through everything that reaches the context builder (six callers, the one-shot agent tool and the daemon's workflow runner, with the error's data carried through the daemon's error mapping). Keeping the report out of the schema given to a model at both places the schema reaches one (the answer-writing call and the tool loop's final answer), and rejecting a report an agent supplies. What the step tool attaches to a bundle the agent wrote. The declared report field on the bundle, its schema version, and how bundles and run records stored before the change are treated. The lookup cache's version. The lookup cache's stored shape changes with the outputs. The free-form fallback: an optional field for partial findings on the failed output, the loop's exit at the limit attaching what it gathered, reaching its turn limit becoming a failed output, and its answer gets a report that says it rests on a search directed by a model. Reading the data drivers' cut flag into the completeness record of the table-listing lookup and the object-listing plan task."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc6"
+          ],
+          "internal": "The two measuring sources and the mapping from counts to the five sizes. From lookup results, at all four places that assume a size today. From the named area, on the plan tree: the measuring pass after both classification branches, removal of the scope picker's model call, removal of the size from the classifier's output, what the decomposer and planner receive as size at each moment, the size's effect on plan depth as well as task count, and measuring a child plan from the area it names when it is spawned, with the planner model's figure and a size on the daemon request kept as hints. A size given by a caller or a slash command kept as a hint. The unmeasurable case. Filling the measure into the answer report and showing it in the answer. The source of the measure for each of the seven kinds of scope, including counting a data connection's tables or objects from the live source through the data driver, and the fallback to XL, recorded as not determined, when a count cannot be taken. Adding a complete mode to the data drivers' listings for the count (the five relational drivers, four of the six namespace drivers, the file listing; Redis and etcd are recorded as not determined, since their listing is a sample of keys), with the limited mode kept for other callers; a listing that reports it was cut is never a determined count."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc6"
+          ],
+          "internal": "The table from size to handling method and the size above which results are handled in parts. How outputs are divided along directory and file boundaries, and one large item into consecutive sections, so that a single item is read in full. In the lookup pipeline: writing a per-part result for each part serially and the new combine step (its input, its output, its own size rule, its failure case). On the plan tree: the same size rule on the aggregator's input, combining in stages. Keeping a failed part out of the combined answer. The step tool's part turn. Filling the handling report and showing it in the answer. The limits are still in place, so this is exercised by results that are large within them and by tests that lower the threshold. This Story closes the exception accepted on Story s7: a broad docs analysis whose aggregate input is larger than one model call accepts must complete once that input is handled in parts."
+        },
+        {
+          "storyId": "s5",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "Adding the enumeration question kind to the planner's choices and rendering it directly from lookup results, including returning it from the step tool's plan phase with no model turn. Choosing a layout by question kind and source kind at both places a layout is selected today. Removing the limits from the six layouts and the older per-source layouts and from the summariser's output schema. Making each layout describe every lookup it may draw on, with that reference at the end of the prompt. Laying out the answer report, which Stories s1 to s3 already write, in the form each layout uses."
+        },
+        {
+          "storyId": "s6",
+          "owns": [
+            "sc6"
+          ],
+          "depends": [],
+          "internal": "Giving a request that asks no specific question a run context: what the lookup pipeline plans for it (a broad survey of the area it names, from the lookups that exist) where today it returns at once; the same for a request started with a stated kind of source, which is always marked unfocused; serving, in the lookup pipeline, the four kinds of scope it returns for today (a file, a symbol, a manifest directory, a data connection), and how each resolves to what the lookups need. Replacing the single 'model unavailable' error with the cause of each way of not proceeding, as new codes in the existing list and new typed errors, and with the existing codes where one fits: every place the pipeline returns nothing, and the fall-through for a bundle that fails validation, is listed and given its cause. It owns the place the error is raised, the pipeline's rule for returning nothing, and the functions that map these errors to codes (the plan tree's and the daemon's, and the classify stage's mapping, through which an error from the classifier's context build is routed). The form of a symbol scope's value, its resolution to one stored entity, and the validator and classifier prompt brought in line. The one function that resolves a scope's value to a repo, a path or an entity, and moving the lookup pipeline's direct readers of the value to it (the planning prompt, the context builder's path resolution, the indexed check). Correcting the table of which kind of scope goes with which kind of source, with the classifier prompt's copy of it, the table's comment and the matrix test, and applying it on both classification branches: the plan tree's classify mapping surfaces the validator's inner code, and the branch with no classifier calls the validator's checks directly. Supplying the connection check from both callers of the classifier, and mapping a connection id to its repo. It declares all three new codes in both lists; Stories s1 and s7 raise one each."
+        },
+        {
+          "storyId": "s7",
+          "owns": [],
+          "depends": [
+            "sc6"
+          ],
+          "internal": "Widening the plan tasks of each family (code, docs, infra, data) to exactly the kinds of scope the corrected table gives it, with the scope check the docs tasks share with the code tasks taking the family's row as an argument, and every task that reads the scope's value directly (three docs tasks, the shared adherence task, the task that lists data connections) moved to the resolution function Story s6 defines, including a data connection for the data tasks, and refusing any other pairing with the existing code for it. Running a broad analysis through classification, the run context, planning, the plan walk with its nested plans, and the aggregator, to a final report; finding and correcting what stops it at each stage. A stop the run catches is already recorded; what is added is a handler for an error nothing catches, in the plan walk and in the daemon's request, that writes the run record, and the rule that a record still in progress with no live run behind it is abandoned: the process's in-memory count of the runs it is executing per id, and the two readers that apply it, the status request and the purge, each rewriting the record as failed with the code 'run-abandoned', which Story s6 declares and this Story raises; a new run replaces a record left in progress with its own first record. Making a task's refusal of a scope a typed error the plan walk recognises, with an optional code on the failed-task record. Its design begins by running one and recording how far it gets; if what is found is more than one Story, it is brought back to be split. Two stops the first runs of 2026-10-08 found are corrected here as well: the aggregate-report task runs on the inputs that exist when a task before it failed and is told which are absent, so that a run with a failed task returns a report that names what is missing; and the daemon's run request accepts an empty prompt when the caller states the kind of source. Two further stops are not this Story's: what the code tasks treat as a module is Story s8's, and an aggregate input larger than one model call accepts is Story s3's. For the second, a broad docs analysis not completing on a repository of that size is an exception the stakeholder accepted on 2026-10-08, to be closed by Story s3."
+        },
+        {
+          "storyId": "s10",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc6"
+          ],
+          "internal": "Building cancellation: a signal from each caller through the context builder to a check between turns; the run's signal into the plan walk and the classifier; the optional signal on the daemon's standard handlers; the signal parameter on the daemon's context-building functions; a signal on the step tool's plan and narrow phases, through stepPlan and the runner context; the new cancel request for the five requests received over the socket that reach a tool loop (the three context requests, the plan request and the classify request), with the daemon's table of run id to canceller; the cancelled case in the classify stage's mapping; 'aborted' in the daemon's error codes; and what a cancelled loop returns. Only then removing the turn limit and retiring its configuration setting (catalog row, retired list, the analyzer's configuration, the planning prompt, the VS Code extension's declaration with a release, the pages that document it, the reconcile fixture) for all three users of the loop (the free-form lookup and the classification and task modes). Removing the error and the code for reaching the turn limit from both lists and both mappings, with the tests that import the error and the test configuration that sets the limit. This Story is built after Story s4: the turn limit comes off only once a loop can be cancelled and the loop's search tools are complete."
+        },
+        {
+          "storyId": "s8",
+          "owns": [],
+          "depends": [],
+          "internal": "Private implementation of s8: The code tasks of a broad analysis work on a repository whose graph has no modules for its directories"
+        }
+      ],
+      "rolloutPhase": "Phase F — remove the limits",
+      "nonFunctional": {
+        "performance": "A request small enough for one pass makes the same model calls as today, and one fewer on the plan tree, where the model call that picked a size is replaced by a count from the graph store. A request handled in parts makes one call per part plus the combination, serially; that time is accepted because accuracy comes before cost. After the limits are removed, a complete text search over a large repository is the cost of a text lookup.",
+        "observability": "Every answer on both paths states its completeness, its measured size and counts, and its handling method and part count; each lookup and plan-task result states its own completeness. A failed lookup, part or answer-writing step carries its reason.",
+        "durability": "Cached lookup outputs written before this change lack the completeness record and are treated as absent, not as complete.",
+        "security": "No change: lookups stay inside the repository's dependency closure and the existing scope checks on paths remain."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "measureItem",
+          "signature": "function measureItem(entity: MeasuredEntity, opts: MeasureItemOptions): ItemMeasure",
+          "parameters": [
+            {
+              "name": "entity",
+              "type": "MeasuredEntity",
+              "purpose": "The stored item: kind, file, start and end line and the stored body.",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "MeasureItemOptions",
+              "purpose": "The file hash recorded when the item was indexed, and a test seam for reading the file.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ItemMeasure",
+            "meaning": "The item's full length and, now, the item's full content read from the file at the pointer when the file still holds the item; content is absent when the length could not be established."
+          },
+          "errors": [],
+          "preconditions": [
+            "entity.file and the line range are the pointer the index stored",
+            "opts.recordedFileHash is the hash recorded for the item's file, or undefined"
+          ],
+          "postconditions": [
+            "When the file is readable and its hash equals the recorded hash, totalChars and content are both set and content.length equals totalChars",
+            "When the file is missing, unreadable, changed since indexing, or has no recorded hash, totalChars is null, content is absent and reason says why",
+            "measureItem never throws"
+          ]
+        },
+        {
+          "name": "createItemMeasurer",
+          "signature": "function createItemMeasurer(db: DbClient, entities?: readonly Entity[]): ItemMeasurer",
+          "parameters": [
+            {
+              "name": "db",
+              "type": "DbClient",
+              "purpose": "Source of the recorded file hash for an item's file.",
+              "optional": false
+            },
+            {
+              "name": "entities",
+              "type": "readonly Entity[]",
+              "purpose": "Entities already loaded, to avoid a second read.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ItemMeasurer",
+            "meaning": "A measurer whose measure(entity) now returns the content with the length, and whose partlyRead reports an item as not covered when the content could not be confirmed."
+          },
+          "errors": [],
+          "preconditions": [
+            "the repo of each StoredItem is registered"
+          ],
+          "postconditions": [
+            "The nine content-cut sites read an item through measure(entity), never through a slice of entity.body",
+            "An item whose content could not be confirmed yields a skipped or partlyRead entry in the completeness record (Story s1's record) and is never presented as read"
+          ]
+        },
+        {
+          "name": "runGrepSearch",
+          "signature": "function runGrepSearch(opts: GrepSearchOptions): Promise<SearchGrepData>",
+          "parameters": [
+            {
+              "name": "opts",
+              "type": "GrepSearchOptions",
+              "purpose": "The pattern, root and options; gains a complete flag that only the analyzer sets.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "SearchGrepData",
+            "meaning": "In complete mode: every hit, whole lines, no file skipped for size, output read as a stream, the files excluded by rule stated in the result; truncated is false unless the search failed."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "an empty pattern, an invalid regex, a search root that cannot be read, or a search that runs out of time (reported as a failed lookup by the caller, never as complete)"
+            }
+          ],
+          "preconditions": [
+            "opts.root is inside the repository's dependency closure",
+            "opts.complete is set only by the analyzer's search lookup"
+          ],
+          "postconditions": [
+            "Without opts.complete, behaviour is unchanged: MAX_LIMIT, MAX_LINE_CHARS, MAX_FILE_BYTES and RG_MAX_OUTPUT_BYTES still apply for every other caller",
+            "With opts.complete, none of those four limits applies"
+          ]
+        },
+        {
+          "name": "runSearchText",
+          "signature": "function runSearchText(exp: Exploration, ctx: ExplorationRunnerContext): Promise<SearchTextOutput>",
+          "parameters": [
+            {
+              "name": "exp",
+              "type": "Exploration",
+              "purpose": "The planned lookup; any topK it carries is ignored.",
+              "optional": false
+            },
+            {
+              "name": "ctx",
+              "type": "ExplorationRunnerContext",
+              "purpose": "The repository path and the lookup context.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "SearchTextOutput",
+            "meaning": "Every hit with its whole line and a completeness record that lists what was excluded by rule; a search that ran out of time is the existing failed-lookup output."
+          },
+          "errors": [
+            {
+              "type": "LookupFailedError",
+              "condition": "the search could not run or ran out of time"
+            }
+          ],
+          "preconditions": [
+            "the pattern is non-empty and valid"
+          ],
+          "postconditions": [
+            "The result's completeness record has no limited entry for hits, lines or files",
+            "Every distinct by-rule exclusion appears once in basisNote"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ItemMeasure",
+        "change": "field-add",
+        "details": "Gains an optional content field: the item's full text read from its file at the stored pointer, set only when totalChars is established. cutByIndexer and storedChars keep their meaning so Story s1's partly-read reporting is unchanged.",
+        "schemaDiff": "readonly content?: string | undefined;",
+        "callSites": [
+          "src/analyze/item-length.ts",
+          "src/analyze/explore/item-measure.ts",
+          "src/analyze/explore/doc-constraint-enumerate.ts",
+          "src/analyze/explore/doc-decision-trace.ts",
+          "src/analyze/runtimes/code/adherence-check.ts",
+          "src/analyze/runtimes/data/adherence-check.ts",
+          "src/analyze/runtimes/infra/adherence-check.ts"
+        ]
+      },
+      {
+        "entity": "GrepSearchOptions",
+        "change": "field-add",
+        "details": "Gains an optional complete flag. When set, runGrepSearch lifts the hit limit, the per-line cut, the per-file size skip and the ripgrep output cap and reads ripgrep output as a stream; unset, every other caller behaves as today.",
+        "schemaDiff": "readonly complete?: boolean;",
+        "callSites": [
+          "src/daemon/tools/builtins/search/grep.ts",
+          "src/analyze/explore/search-text.ts",
+          "src/analyze/explore/config-trace.ts"
+        ]
+      },
+      {
+        "entity": "EXPLORATION_CACHE_VERSION",
+        "change": "field-modify",
+        "details": "Raised from 3 to 4 so no lookup output cut by a limit is served from the cache; limit parameters are dropped from a lookup's parameters before its cache key is taken.",
+        "schemaDiff": "export const EXPLORATION_CACHE_VERSION = 4;",
+        "callSites": [
+          "src/db/exploration-cache.ts",
+          "src/analyze/explore/exploration-cache-key.ts"
+        ]
+      },
+      {
+        "entity": "MAX_TOP_K",
+        "change": "field-remove",
+        "details": "The per-lookup result cap of test-locate, search-text, manifests-locate, config-trace, import-graph and usage-example is deleted along with the topK parameter.",
+        "callSites": [
+          "src/analyze/explore/search-text.ts",
+          "src/analyze/explore/data-model-trace.ts",
+          "src/analyze/explore/concept-resolve.ts"
+        ]
+      },
+      {
+        "entity": "DEFAULT_LIMIT",
+        "change": "field-remove",
+        "details": "The default and maximum limit of symbol-locate, doc-mention, db-tables-list and capability-reuse-check (with MAX_LIMIT and MAX_PREVIEW_CHARS) are deleted with the limit and previewChars parameters; data-model-trace's MAX_TARGETS, MAX_FIELDS and MAX_TOP_CALLERS and concept-resolve's MAX_HITS go with them.",
+        "callSites": [
+          "src/analyze/explore/doc-mention.ts",
+          "src/analyze/explore/db-tables-list.ts",
+          "src/analyze/explore/capability-reuse-check.ts",
+          "src/analyze/explore/db-table-describe.ts"
+        ]
+      },
+      {
+        "entity": "FILE_LIST_LIMIT",
+        "change": "field-remove",
+        "details": "The plan-task runtime caps (FILE_LIST_LIMIT, DEFAULT_FILE_CAP, SAMPLE_CAP_PER_FAMILY, PROJECT_CONTEXT_LIMIT, SUMMARY_CAP) are deleted; the data-driver listings are asked in their complete mode.",
+        "callSites": [
+          "src/analyze/runtimes/data/discovery-objects.ts",
+          "src/analyze/runtimes/infra/_shared.ts",
+          "src/analyze/runtimes/infra/discovery-families.ts",
+          "src/analyze/runtimes/shared/adherence.ts",
+          "src/analyze/runtimes/shared/aggregator.ts"
+        ]
+      },
+      {
+        "entity": "SECTION_BODY_CHARS",
+        "change": "field-remove",
+        "details": "The content cuts (the 1200-character body cut of the three adherence checks, SECTION_BODY_CHARS of the two document lookups, ENTRYPOINT_SCAN_CHARS, SUMMARISER_BODY_CHARS and the indexer's MAX_BODY) are no longer applied to what the analyzer reads; the indexer's stored body is unchanged and is reported by Story s1.",
+        "callSites": [
+          "src/analyze/explore/doc-constraint-enumerate.ts",
+          "src/analyze/explore/doc-decision-trace.ts",
+          "src/analyze/explore/module-profile.ts",
+          "src/analyze/summariser/driver.ts",
+          "src/indexer/parser/artifact.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "No limited entry is produced for a removed limit. An item whose content could not be confirmed is written as a skipped or partlyRead entry, a sampled source stays incomplete with its basisNote, and a search that runs out of time is the failed lookup output."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "The answer report is derived from the records as before; nothing here adds a field to it."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Results that grow are measured from what the lookups returned, so a request that was M may now measure larger."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "Larger results are divided and combined by Story s3's method and its handling report names any part not covered; this Story does not change how they are divided."
+      },
+      {
+        "contractId": "sc6",
+        "role": "consumes",
+        "howDetails": "A search that cannot run, runs out of time or cannot read its root is raised as the existing failed lookup error and mapped by Story s6's functions; no code is added by this Story."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "An item's file changed since it was indexed, so the pointer no longer holds the item",
+          "detection": "measureItem compares indexerFileHash of the file text with opts.recordedFileHash and finds them different, so totalChars is null and content is absent",
+          "response": "The lookup records the item as skipped or partly read in its completeness record with the reason 'the file changed since it was indexed' and does not use any text of it",
+          "userImpact": "The answer names the item as not covered instead of claiming to have read it",
+          "recoverable": true
+        },
+        {
+          "scenario": "An item's file is missing or unreadable",
+          "detection": "readFileSync in measureItem throws ENOENT or another error code",
+          "response": "Same as above, with the reason 'the file no longer exists' or 'the file could not be read (<code>)'; measureItem never throws",
+          "userImpact": "The item is reported as not covered; the rest of the lookup is unaffected",
+          "recoverable": true
+        },
+        {
+          "scenario": "The index recorded no hash for an item's file, so the pointer cannot be confirmed",
+          "detection": "measureItem sees opts.recordedFileHash undefined or empty",
+          "response": "The item is reported as not covered with the reason 'no hash was recorded for the file when it was indexed'; its stored body is not used as if it were the whole item",
+          "userImpact": "The answer says the item could not be confirmed",
+          "recoverable": true
+        },
+        {
+          "scenario": "A complete text search runs out of time or its ripgrep process fails",
+          "detection": "runGrepSearch's backend times out or exits with an error while complete is set",
+          "response": "runSearchText raises LookupFailedError, which is the existing failed lookup output carrying any hits gathered, never an empty or complete result",
+          "userImpact": "The lookup is reported as failed with its reason",
+          "recoverable": true
+        },
+        {
+          "scenario": "The search root cannot be read",
+          "detection": "the Node backend cannot read the root, or an empty pattern or an invalid regular expression is given",
+          "response": "runGrepSearch throws as it does today and runSearchText turns it into the failed lookup output",
+          "userImpact": "The lookup fails with its reason",
+          "recoverable": true
+        },
+        {
+          "scenario": "A single file below the root cannot be read during a complete search",
+          "detection": "the scan hits an unreadable file or directory below the root",
+          "response": "The file is listed in the result's omitted list with its reason and the search continues; the completeness record names it as skipped",
+          "userImpact": "The answer says which files could not be searched",
+          "recoverable": true
+        },
+        {
+          "scenario": "A limit parameter reaches a lookup from a plan written for the old catalog",
+          "detection": "the planner schema or the lookup's parameter parsing sees a topK, limit, maxSources or previewChars value",
+          "response": "The value is dropped before the lookup runs and before its cache key is taken, as the HLD states; the lookup runs unbounded",
+          "userImpact": "A request returns the complete result, which may be larger than that plan expected",
+          "recoverable": true
+        },
+        {
+          "scenario": "A lookup output cached under the old cache version is found",
+          "detection": "the stored version is 3 and EXPLORATION_CACHE_VERSION is 4",
+          "response": "The stored output is treated as absent and the lookup runs again",
+          "userImpact": "No output cut by a limit is served as complete",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A lookup whose true result count is exactly a former limit, one more than it, and zero",
+          "expected": "Every result is returned in each case, an empty result is reported as complete only when the lookup ran, and the completeness record has no limited entry"
+        },
+        {
+          "input": "A single item far larger than the old 1200-character, 8192-character or section cuts",
+          "expected": "The whole item is read from its file when the pointer is confirmed, and Story s3's section handling divides it if it is too large for one pass"
+        },
+        {
+          "input": "A document or file entity (a whole-file kind) versus a function or class entity (a line range)",
+          "expected": "A whole-file kind returns the file's full text and any other kind returns the lines from its start line to its end line, as measureItem already measures them"
+        },
+        {
+          "input": "A line of 100,000 characters, a file of 50 MiB, and a search with a million hits",
+          "expected": "The complete search returns every hit with its whole line and searches the large file; ripgrep output is read as a stream, not kept to a fixed size"
+        },
+        {
+          "input": "A caller outside the analyzer calls runGrepSearch without the complete flag",
+          "expected": "The four limits still apply exactly as today and the result's truncated flag still reports a cut"
+        },
+        {
+          "input": "A Redis or etcd connection asked for its tables or namespaces",
+          "expected": "The listing stays a sample reported as sampled and incomplete, and the analyzer does not scan every key of the live store"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A lookup that cannot run is the existing failed output with its reason, never an empty result.",
+          "source": "c1"
+        },
+        {
+          "text": "An item whose content could not be confirmed is reported as not covered and never claimed as read.",
+          "source": "c1"
+        },
+        {
+          "text": "The text search used by callers outside the analyzer keeps its limits (MAX_LIMIT, MAX_LINE_CHARS, MAX_FILE_BYTES, RG_MAX_OUTPUT_BYTES).",
+          "source": "c1"
+        },
+        {
+          "text": "What the index stores and how it is built are not changed; the indexer's stored body cut (MAX_BODY) stays and is only no longer relied on by the analyzer.",
+          "source": "c1"
+        },
+        {
+          "text": "Model calls stay serial: removing limits adds no parallel provider call.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with tsx (npx tsx --test 'src/**/__tests__/*.test.ts'), assert/strict, the existing test files for these modules",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove each removed limit at its site: a lookup returns every result for a fixture larger than its former limit, and the completeness record has no limited entry.",
+          "subjects": [
+            "src/analyze/explore/__tests__/completeness-all-lookups.test.ts (extended: former limit, one more, zero for each lookup in the inventory)",
+            "src/analyze/runtimes data, infra and shared runtime tests (file list, file cap, sample cap, project context and summary caps)",
+            "src/analyze/explore/__tests__ for doc-mention, db-tables-list, capability-reuse-check, data-model-trace and concept-resolve"
+          ],
+          "fixturesNeeded": [
+            "Stand-in database seeded with more items than each former limit",
+            "Stand-in data-driver pool that reports a complete listing and one that reports a sample"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove item content is read from the file at the pointer and that an unconfirmable item is reported as not covered.",
+          "subjects": [
+            "src/analyze/__tests__/item-length.test.ts (measureItem content: whole-file kind, line-range kind, shifted lines, missing file, unreadable file, no recorded hash)",
+            "src/analyze/explore/__tests__ for doc-constraint-enumerate and doc-decision-trace section bodies",
+            "the three adherence-check tests (body longer than 1200 characters)"
+          ],
+          "fixturesNeeded": [
+            "Temporary files with a recorded hash, a changed file and a removed file",
+            "An item larger than 8192 characters in a file whose stored body was cut by the indexer"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the complete text search for both backends and that outside callers keep their limits.",
+          "subjects": [
+            "src/daemon/tools/builtins/search/__tests__/grep-omitted.test.ts (complete flag: more hits than MAX_LIMIT, a line over MAX_LINE_CHARS, a file over MAX_FILE_BYTES, ripgrep output over RG_MAX_OUTPUT_BYTES, timeout reported as failed)",
+            "src/analyze/explore/__tests__/completeness-all-lookups.test.ts search.text and config.trace cases",
+            "runGrepSearch without the complete flag keeps today's limits"
+          ],
+          "fixturesNeeded": [
+            "A generated repository with a very large file and a very long line",
+            "A stub ripgrep command and the Node fallback path"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Prove the planner catalog and prompt no longer state or accept a fixed number of results, and the cache version rises.",
+          "subjects": [
+            "src/analyze tests that read src/prompts/analyze/decompose.system.md and the planner's catalog for limit, topK, maxSources and previewChars",
+            "src/db exploration-cache tests for EXPLORATION_CACHE_VERSION 4 and a stored version 3 output treated as absent",
+            "src/analyze/explore/__tests__/cache-area-isolation.test.ts"
+          ],
+          "fixturesNeeded": [
+            "A stored cache row with version 3"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove a result that became larger is handled by the method for its size and the answer reports sampled, failed or uncovered sources.",
+          "subjects": [
+            "src/analyze/context/__tests__ partition tests with a lookup result larger than the former limits",
+            "src/analyze/orchestrator/__tests__ docs and code runs with a failed and a sampled source"
+          ],
+          "fixturesNeeded": [
+            "A lookup stand-in that returns more results than the handling threshold"
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "Prove on the real repository that a text search returns every hit and that Redis or etcd stays a sample.",
+          "subjects": [
+            "a live run of search.text over this repository compared with an independent count of the same pattern",
+            "a live Redis listing reported as sampled"
+          ],
+          "fixturesNeeded": [
+            "A running daemon with this code, and a Redis connection (live tests run only with INSRC_LIVE_TESTS=1)"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "completeness-all-lookups.test.ts: every lookup returns all results at, one over and zero versus its former limit with no limited entry",
+            "discovery-objects.test.ts: the data and infra file lists and sample caps return every file",
+            "aggregator-handling.test.ts: the aggregator summary is not cut at SUMMARY_CAP"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "item-length.test.ts: measureItem returns the whole content of a whole-file and a line-range item and no content for a changed, missing, unreadable or unhashed file",
+            "doc-constraint-enumerate.test.ts: a section longer than the former cut is read whole and an unconfirmable section is reported as not covered",
+            "adherence-check.test.ts: a body over 1200 characters is read whole in the code, data and infra checks"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "grep-omitted.test.ts: with complete set, more hits than MAX_LIMIT, a line over MAX_LINE_CHARS, a file over MAX_FILE_BYTES and ripgrep output over RG_MAX_OUTPUT_BYTES are all returned in full, and a timeout is a failed lookup",
+            "grep-omitted.test.ts: without complete, the four limits still apply"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "decompose-prompt-limits.test.ts: the planning prompt and catalog contain no limit, topK, maxSources or previewChars and no fixed result count",
+            "params-schema.test.ts: a plan that passes a limit parameter has it ignored and dropped before the cache key"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "partition-combine.test.ts: a lookup result larger than the former limits is divided and combined with every result processed",
+            "run-report.test.ts: the answer names sampled, failed and uncovered sources and is not called complete otherwise"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "db-tables-list.test.ts: a Redis or etcd listing is a sample, reported incomplete, and no key scan is made",
+            "redis-etcd-live.test.ts: a live Redis listing is reported as sampled (live, INSRC_LIVE_TESTS=1)"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Today every lookup and plan-task runtime in the s1 inventory stops at a fixed constant, cuts an item's body at 1200, SECTION_BODY_CHARS, ENTRYPOINT_SCAN_CHARS or 8192 characters, and relies on the body the indexer stored (cut at MAX_BODY in src/indexer/parser/artifact.ts). The shared text search applies MAX_LIMIT 5000, MAX_LINE_CHARS 500, MAX_FILE_BYTES 2 MiB and RG_MAX_OUTPUT_BYTES 4 MiB for every caller. Lookup outputs are cached under EXPLORATION_CACHE_VERSION 3.",
+      "stateAfter": "No analyzer lookup or runtime stops at a fixed result count or cuts an item's content: item text is read from its file through measureItem after the file is confirmed to hold the item, an unconfirmable item is reported as not covered, and the analyzer's text search runs in a complete mode. The search tool keeps its four limits for every other caller. Limit parameters are gone from the planner catalog and prompt, and the exploration cache is at version 4.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the optional content field to ItemMeasure and have measureItem return the text it already reads when the file hash is confirmed.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the complete option to GrepSearchOptions and implement it in runGrepSearch for both backends, leaving the default path untouched.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Switch the analyzer's search lookups to the complete option and report a timeout as the failed lookup output.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 2"
+          ]
+        },
+        {
+          "order": 4,
+          "action": "Switch the nine content-cut sites to read items through measure(entity) and report an item that cannot be confirmed as not covered.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 1"
+          ]
+        },
+        {
+          "order": 5,
+          "action": "Remove the result-count constants and parameters from each lookup and plan-task runtime, and ask the data-driver listings in their complete mode.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Remove the limit parameters, their examples and the fan-out bound from the planner catalog and prompt, and drop any such parameter before the lookup runs and before its cache key is taken.",
+          "rollbackable": true
+        },
+        {
+          "order": 7,
+          "action": "Raise EXPLORATION_CACHE_VERSION from 3 to 4.",
+          "rollbackable": true
+        },
+        {
+          "order": 8,
+          "action": "Update the tests and the documents that state a limit, and run the full sweep.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Results get larger: a lookup that returned its first thirty hits returns all of them, and a request that measured as one size may measure larger. A plan that still passes a limit parameter has it ignored, not rejected. The search tool exposed to callers outside the analyzer keeps its four limits. The indexer's stored body is not changed. Cached lookup outputs from version 3 are not served. The tool loop's turn limit and cancellation are Story s10's and are not changed here.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Delete the limits in place, one item reader, one complete search mode",
+        "oneLineSummary": "Remove each limit parameter and constant at its site; read item content through one validated reader built on the existing item-length check; give the shared text search an analyzer-only complete mode.",
+        "approach": "Every lookup and plan-task runtime in the inventory (the result-count constants in explore and the runtimes, the three adherence-check body cuts at 1200 characters, the section-body cuts of the two document lookups, the entrypoint scan cut, the summariser body cut and the document-retrieval preview) loses its constant and its parameter: the lookup returns everything it found and its completeness record says so. A planner plan that still passes a limit parameter has it ignored, as the HLD says, and the parameter is removed from the planner's catalog and prompt. Item content is read through one function that takes the item's stored pointer (file, line range, content hash where the index has one), reads the file at that place, and confirms the file still holds the item by reusing the checks already in src/analyze/item-length.ts (changed, missing, unreadable, hash-unverified); the nine content-cut sites call it, so a changed or unreadable file becomes a 'not covered' note in the completeness record and never a claimed read. The shared text search gains an options flag, set only by the analyzer, that lifts MAX_LIMIT, the per-line cut, the per-file size skip and the ripgrep output cap, reads ripgrep output as a stream, states the by-rule exclusions in the result, and reports a search that runs out of time as a failed lookup; callers outside the analyzer keep today's limits. The lookup cache version is raised and limit parameters are dropped before the cache key is taken. The data-driver listings used by table listing and object listing are asked in their complete mode. Results that become large are handled by Story s3's method and described by Story s1's record; this Story adds no new contract.",
+        "pros": [
+          "Smallest change that fully meets the Define: no new shared contract, no new record, and each site is a local deletion that is simple to review and test.",
+          "Reuses the item-length validation that already distinguishes changed, missing and unreadable files, so ac2's 'not covered' behaviour needs no new mechanism.",
+          "Matches the HLD text exactly: limits removed, parameters ignored, analyzer-only complete search mode, other callers keep their limits."
+        ],
+        "cons": [
+          "Many sites (about forty) change in one Story, so the diff is wide even though each edit is small.",
+          "Unbounded results are held in memory until Story s3's handling divides them; a very large search could use a lot of memory before it is divided.",
+          "A plan written for the old catalog that relied on a limit to keep a lookup small now returns more than it expected."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": ""
+      },
+      {
+        "id": "a2",
+        "name": "Keep optional caller bounds, unbounded by default",
+        "oneLineSummary": "Keep the limit parameters in the lookup input types as optional bounds that default to none, and stop passing them from the planner.",
+        "approach": "Each lookup keeps its limit-style parameter in its input type but treats an absent value as no bound; the planner's catalog and prompt stop offering the parameters and the analyzer's own calls never pass one. Item content is read through the same validated reader as in a1. The text search keeps its limit option and its other limits for outside callers and gains the same analyzer-only complete mode. A caller that deliberately passes a bound (a test, a script, another tool) still gets a bounded result, and the completeness record reports the bound it reached.",
+        "pros": [
+          "Programmatic callers that rely on a bound keep working with no change.",
+          "The reached-limit code path stays alive for those callers, so Story s1's records and tests for it keep their meaning."
+        ],
+        "cons": [
+          "It leaves a way for a limit to apply inside the analyzer, which the Define's ac1 and the HLD ('a plan that still passes one has it ignored') say should not exist.",
+          "Keeps the limit parameters, constants and validation code, so the work of removal is not done and the dead path has to be maintained and tested.",
+          "A bounded result reported as limited is a documented incomplete answer, which is the behaviour this Story exists to remove."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Keeps a way for a bound to apply inside the analyzer and keeps the reached-limit path alive, which the Define and the HLD say should not exist; partial on ac1, ac3 and ac5."
+      },
+      {
+        "id": "a3",
+        "name": "Stream results into the handling method",
+        "oneLineSummary": "Add a paged retrieval layer so unbounded lookups produce results in pages that Story s3's handling consumes, instead of one large array.",
+        "approach": "In addition to the deletions in a1, each lookup that can return a large set (text search, import graph, symbol and test location, concept resolution, document lookups) exposes its results as an ordered stream of pages, and the context builder hands pages to the per-part step as they arrive, so no single array holds the whole result. The search's output is already read as a stream; this extends that to the lookups' results and to the answer path.",
+        "pros": [
+          "Bounds peak memory for very large results while still dropping nothing.",
+          "Lets the per-part answer start before a long lookup has finished."
+        ],
+        "cons": [
+          "Reaches into Story s3's boundary (how results are divided and combined) and the context builder's shape, which this Story is told to consume, not redesign.",
+          "A new retrieval contract with no acceptance criterion asking for it; it adds the flexibility nobody asked for.",
+          "Largest change and the hardest to review; it delays the removal of the limits that the epic needs."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Adds a paged retrieval contract that reaches into Story s3's boundary (violates sc4) and no criterion asks for it."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "Which of the constants found in the s1 inventory are the Define's sixteen result-count limits and nine content cuts is not established; the plan stage should reconcile the two lists before the tasks are written.",
+      "The HLD's Story s4 boundary text has a grammar slip from the split with Story s10 ('...cache key is taken. moving the table-listing lookup...'); it should be corrected the next time the HLD is edited.",
+      "Several proving tests named in the test strategy do not exist yet (discovery-objects, doc-constraint-enumerate, adherence-check, db-tables-list, decompose-prompt-limits and redis-etcd-live); the plan stage should create them or map the criteria to existing files.",
+      "Reading ripgrep output as a stream in complete mode and how a search that runs out of time reports hits already gathered are stated but not detailed; the plan stage should choose the time limit for the analyzer's search."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 analyze bundle",
+      "quotedText": "Result-count limits and content cuts found by text search of the production files (the analyzer pass over the lookup directory was cut at 30 hits)"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/analyze/item-length.ts",
+      "quotedText": "export function measureItem(entity: MeasuredEntity, opts: MeasureItemOptions): ItemMeasure {"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/tools/builtins/search/grep.ts",
+      "quotedText": "export async function runGrepSearch(opts: GrepSearchOptions): Promise<SearchGrepData> {"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/db/exploration-cache.ts",
+      "quotedText": "export const EXPLORATION_CACHE_VERSION = 3;"
+    },
+    {
+      "id": "c5",
+      "kind": "doc",
+      "ref": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/HLD.md",
+      "quotedText": "Cancellation, and the retirement of the tool loop's turn limit with its setting, its error and its code, are Story s10's"
+    }
+  ]
+}

@@ -35,3 +35,34 @@ test('publication retry after worker exit or lost receipt performs zero provider
   assert.equal((await history.log(id)).filter(e=>e.operation==='review'||e.operation==='update'||e.operation==='create').length,before,'retry must preserve one permanent publication');
  });
 });
+
+test('cold public design publication admission does not alter execution actions or preservation identity',async t=>{
+ const f=impactFixture(t);await saveDesignCheckpoint(f.repo,{...f.checkpoint,attempts:[f.baseline]});
+ const {loadStoredDesignCheckpoint}=await import('../../../workflow/review/design-review/checkpoint.js');
+ const {persistReviewWorkerAdmission}=await import('../review-worker-admission.js');
+ const {designPreservationDigest}=await import('../../../workflow/review/design-review/history.js');
+ const before=(await loadStoredDesignCheckpoint(f.repo,'review-1'))!,request={phase:'recover',repo:f.repo,reviewId:'review-1',attempt:1,actionId:'cold-publication',operation:'retry_publication'};
+ await persistReviewWorkerAdmission({key:{project:f.repo,family:'design',reviewId:'review-1'},incarnation:'cold-publication',attempt:1,reviewer:before.subject!.reviewer,actionId:request.actionId,subject:f.id,submitted:request});
+ const after=(await loadStoredDesignCheckpoint(f.repo,'review-1'))!;
+ assert.deepEqual(after.attempts[0]!.actions,before.attempts[0]!.actions);
+ assert.equal(designPreservationDigest(after),designPreservationDigest(before));
+});
+
+test('terminal drain retries idleness without requiring another checkpoint update',async t=>{
+ const f=await fixture(true);t.after(f.cleanup);
+ const cp=f.checkpoint('terminal-drain');cp.attempts[0]!.header.status='passed';cp.attempts[0]!['review-response'].crPublication='complete';
+ await saveCheckpoint(checkpointPath(f.repo,cp.reviewId),cp);
+ const busy=new Int32Array(new SharedArrayBuffer(8));Atomics.store(busy,0,1);
+ let current:Awaited<ReturnType<typeof startReviewWorkerBootstrap>>|undefined;
+ const registry=new ReviewWorkers({services:new ThreadServices(()=>({startedAt:0,modelState:{status:'ready'},installedCommit:'fixture'})),resolveScope:async()=>({reviewer:'daemon',subject:`BUILD-${hash}-s1`,cleanupScope:`${f.repo}:s1`,epicHash:hash}),authorizeNative:async()=>{throw Error('No native work allowed');},resolveBinary:async()=>{throw Error('No CLI allowed');},track:()=>{},start:async(svc,input,port,deps)=>{current=await startReviewWorkerBootstrap(svc,input,port,{...deps,start:(s,n,_script,extra,created)=>startWorker(s,n,'__tests__/helpers/review-terminal-drain',{workerData:{...extra!.workerData,fixtureBusy:busy.buffer},transferList:extra!.transferList},created)});return current;}});
+ t.after(async()=>{Atomics.store(busy,0,0);await registry.shutdown();});
+ const ctx={connectionIdentity:'terminal-drain',daemonEpoch:'epoch',connectionSignal:new AbortController().signal};
+ const ack=await registry.admit({key:{project:f.repo,family:'code',reviewId:cp.reviewId},attempt:1,actionId:'start',submitted:f.packet},ctx);
+ await registry.execute(ack,ctx);
+ const until=async(check:()=>boolean)=>{const end=Date.now()+10000;while(!check()){if(Date.now()>end)throw Error('Terminal drain condition timed out');await new Promise(r=>setTimeout(r,20));}};
+ await until(()=>Atomics.load(busy,1)>0);
+ const {readFile}=await import('node:fs/promises');const bytes=await readFile(checkpointPath(f.repo,cp.reviewId),'utf8');
+ Atomics.store(busy,0,0);
+ await until(()=>registry.identity(ack.key)===undefined);await current!.reclaimed;
+ assert.equal(await readFile(checkpointPath(f.repo,cp.reviewId),'utf8'),bytes,'drain does not need a new checkpoint or model call');
+});

@@ -11,7 +11,8 @@ import { failAttribution, unmappedTaskFailure } from './attribution-failure.js';
 import { taskFailure } from './assessment.js';
 import { completedSummary,failedAttemptSummary } from './summary.js';
 import type { CompletedReviewSummary } from './contracts.js';
-import { latestReviewStatus, mergeTaskSummary, validateTaskBody } from './record.js';
+import { bodyStatus, mergeTaskSummary, validateTaskBody } from './record.js';
+import type { TaskReviewBody } from './record.js';
 import { MAX_ATTEMPT_DIAGNOSTIC_BYTES, validateFailureDiagnostics } from './diagnostics.js';
 
 export interface CapacityBaseline { readonly head?: Record<string,unknown>; readonly path:string; readonly identity:string|null; }
@@ -81,18 +82,18 @@ export function terminalCapacity(review:AdmittedReview,baseline:CapacityBaseline
   attempt['review-response'].crPublication='complete';attempt['review-response'].crPath=baseline.path.replace(/\.json$/,'.md');
   const summary=completedSummary(review.prepared,attempt,checkpoint.reviewId);
   attempt.header.status=summary.status;attempt['review-response'].summary='All selected task assessments are terminal. CR publication complete.';
-  const prior=baseline.head?.['body'] as {reviews?:readonly CompletedReviewSummary[];status?:unknown}|undefined;
+  const prior=baseline.head?.['body'] as TaskReviewBody|undefined;
   const retained=checkpoint.attempts.slice(0,-1).filter(a=>a.header.status==='failed'&&a['review-response'].crPublication==='pending').map(a=>failedAttemptSummary(a,checkpoint.reviewId));
   const kept=[...(prior?.reviews?.filter(r=>r.reviewId!==checkpoint.reviewId||r.attempt!==attempt.header.attempt)??[])];
   for(const failure of retained)if(!kept.some(r=>r.reviewId===failure.reviewId&&r.attempt===failure.attempt))kept.push(failure);
-  const current=kept.length?{kind:'code-review',format:'task-based',storyId:summary.storyId,...prior,reviews:kept,status:latestReviewStatus(kept)}:undefined;
-  const body={kind:'code-review',format:'task-based',storyId:summary.storyId,status:latestReviewStatus([...(current?.reviews??[]),summary]),reviews:[...(current?.reviews??[]),summary]};
+  const current=kept.length||prior?.admissionFailures?.length?{...prior,kind:'code-review',format:'task-based',storyId:summary.storyId,reviews:kept,status:bodyStatus(kept,prior?.admissionFailures)}:undefined;
+  const body=mergeTaskSummary(current,summary);
   // Actual envelope/prefix are retained; only missing creation metadata uses reserve.
   const envelope={...(baseline.head??{meta:{workflow:'code-review',schemaVersion:2},citations:[]}),body};
   const serializedCheckpointBytes=Buffer.byteLength(pretty(checkpoint));
   const measure={checkpoint:serializedCheckpointBytes+TERMINAL_METADATA_RESERVE,checkpointCompact:size(checkpoint)+TERMINAL_METADATA_RESERVE,summary:size(summary)+TERMINAL_METADATA_RESERVE,body:size(body)+TERMINAL_METADATA_RESERVE,envelope:Buffer.byteLength(pretty(envelope))+TERMINAL_METADATA_RESERVE+CANONICAL_METADATA_RESERVE};
   requireReview(Object.values(measure).every(n=>n<=limit),'projection_limit','Complete terminal review envelopes exceed storage capacity; submit a smaller explicit review unit');
-  requireReview(checkpointBytes(checkpoint)===pretty(checkpoint),'projection_limit','Checkpoint serialization disagrees with capacity qualification');mergeTaskSummary(current,summary);
+  requireReview(checkpointBytes(checkpoint)===pretty(checkpoint),'projection_limit','Checkpoint serialization disagrees with capacity qualification');
   result.push(measure);
  }
  return result;

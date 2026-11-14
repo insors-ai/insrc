@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-538ece98-a370-426a-9a16-cff4bd85759d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-13T06:21:32.361Z",
+    "epicCreatedAt": "2026-11-13T05:55:40.344Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "cda6558e4b0e4bea",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Write the reclaim decision-table unit tests first (red)",
+      "parent": {
+        "entityId": "STORY-cda6558e4b0e4bea-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-cda6558e4b0e4bea-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1429e5b02659e191c7a15b1356e8c3c2436c397a304c194493af9c18ac151851",
+        "at": "2026-11-13T06:21:32.365Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-13T06:21:32.366Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Write the reclaim decision-table unit tests first (red)",
+    "summary": "Test-first: extend src/shared/__tests__/daemon-run-files.test.ts with the decision-table cases - gone -> quarantine+acquire, previous-boot replaced -> quarantine+acquire, same/same-boot-replaced/corrupt-or-missing owner.json/throwing reader -> withhold with nothing renamed, retry EEXIST -> recompute and throw, symlink -> conflict, quarantine-name collision -> suffixed name, daemonLog line by nonce, log-write failure swallowed. Uses mkdtemp guard fixtures and a fake ProcessIdentityReader injected via the new optional third parameter.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Suite fails red against the current fail-closed behavior for the reclaim cases",
+      "Withhold cases pass unchanged (same, same-boot replaced, corrupt owner.json, throwing reader)",
+      "Fake reader + mkdtemp fixtures in place, no real PID probing"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "acquireRunFileGuard quarantines and acquires when the verdict is 'gone' (fake reader, mkdtemp guard)"
+      },
+      {
+        "level": "unit",
+        "name": "acquireRunFileGuard quarantines and acquires on previous-boot 'replaced' (boot segments mismatch)"
+      },
+      {
+        "level": "unit",
+        "name": "acquireRunFileGuard withholds 'same', same-boot 'replaced', corrupt or missing owner.json and a throwing reader; nothing is renamed"
+      },
+      {
+        "level": "unit",
+        "name": "acquireRunFileGuard recomputes the conflict and throws when the retry mkdir hits EEXIST"
+      },
+      {
+        "level": "unit",
+        "name": "acquireRunFileGuard leaves a symlink guard as a conflict"
+      },
+      {
+        "level": "unit",
+        "name": "acquireRunFileGuard suffixes the quarantine name on collision; owner.json stays byte-identical and one daemonLog line is keyed by the recorded nonce; a log-write failure is swallowed"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

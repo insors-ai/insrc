@@ -18,7 +18,7 @@ const {DesignReviewCoordinator}=await import('../../workflow/review/design-revie
 const {RegistryReviewSources}=await import('../../workflow/code-review/task-review/sources.js');
 const {validateTaskBody}=await import('../../workflow/code-review/task-review/record.js');
 const {artifactJsonPath,codeReviewArtifactId}=await import('../../workflow/storage.js');
-const {readDesignFile}=await import('../../workflow/review/design-review/subject.js');
+const {readTaskReviewHistory}=await import('../../workflow/code-review/task-review/history.js');
 startDaemonWorker(workerData);
 serveRequests(parentPort!,directDispatch({
  'review.cleanup.describe':async()=>{
@@ -42,12 +42,12 @@ serveRequests(parentPort!,directDispatch({
   if(cp)return new TaskReviewCoordinator({sources:new RegistryReviewSources({repoPath:key.project,sessionId:'stored-read',requestId:0,send:()=>{}}),provider:()=>{throw new Error('Stored reads cannot invoke providers');}}).progress(key.project,key.reviewId,attempt);
   if(!options.epicHash||!/^[a-f0-9]{16}$/.test(options.epicHash)||options.storyId!==undefined&&!/^s\d+$/.test(options.storyId))throw new Error('Permanent code history requires its canonical epic locator');
   let body:ReturnType<typeof validateTaskBody>|undefined;
-  const read=(story:string)=>{const path=artifactJsonPath(key.project,codeReviewArtifactId(options.epicHash!,story));const value=validateTaskBody((JSON.parse(readDesignFile(key.project,path)) as {body:unknown}).body);if(value.storyId!==story)throw new Error('Permanent review belongs to another story');return value;};
-  if(options.storyId)body=read(options.storyId);
+  const read=(story:string)=>readTaskReviewHistory(key.project,options.epicHash!,story);
+  if(options.storyId)body=await read(options.storyId);
   else{
    const files=await readdir(join(key.project,'.insrc/artifacts'));if(files.length>10000)throw new Error('Permanent history lookup requires an explicit storyId at this repository size');
    for(const file of files){const match=new RegExp(`^CR-${options.epicHash}-(s[0-9]+)\\.json$`).exec(file);if(!match)continue;
-    let candidate:ReturnType<typeof validateTaskBody>;try{candidate=read(match[1]!);}catch{continue;}
+    let candidate:ReturnType<typeof validateTaskBody>;try{candidate=await read(match[1]!);}catch{continue;}
     if(!candidate.reviews.some(r=>r.reviewId===key.reviewId&&r.attempt===attempt)&&!candidate.admissionFailures?.some(r=>r.reviewId===key.reviewId&&r.attempt.header.attempt===attempt))continue;
     if(body)throw new Error('Permanent review locator is ambiguous; supply storyId');body=candidate;
    }

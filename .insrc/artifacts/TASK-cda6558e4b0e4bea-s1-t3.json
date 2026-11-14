@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4040edab-ce77-4c8d-9aca-87731e168553",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-13T06:21:32.373Z",
+    "epicCreatedAt": "2026-11-13T05:55:40.344Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "cda6558e4b0e4bea",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add consumer-path integration cases (lease, vault guard) with real-exited-owner fixtures",
+      "parent": {
+        "entityId": "STORY-cda6558e4b0e4bea-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-cda6558e4b0e4bea-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-cda6558e4b0e4bea-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "eabb293fb8175594ada15ee3eb79518e4c47cbf27895044240e0e467f4065b52",
+        "at": "2026-11-13T06:21:32.376Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-13T06:21:32.377Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add consumer-path integration cases (lease, vault guard) with real-exited-owner fixtures",
+    "summary": "Extend the integration suites with real-exited-owner fixtures (no fake reader - these paths call acquireRunFileGuard without injection): spawn a short-lived child process, wait for exit, write its recorded identity (current boot-id + the child's start ticks) into the guard's owner.json. src/daemon/__tests__/run-file-ownership.test.ts gains a startup-lease-over-dead-owner-guard case; src/daemon/__tests__/keystore-guard.test.ts gains a vault-guard reclaim case proving the offline maintenance path inherits the shared recovery through the real verdict.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Lease acquires over a guard whose owner.json records a genuinely exited child process",
+      "Vault guard (PATHS.vaultGuard) reclaims a genuinely-exited-owner guard through the real readProcessIdentity verdict path",
+      "Supervisor borrow/release suites pass unchanged"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "startup lease acquires over a guard whose owner.json records a genuinely exited child process (src/daemon/__tests__/run-file-ownership.test.ts)"
+      },
+      {
+        "level": "integration",
+        "name": "vault guard reclaims a genuinely-exited-owner guard through the real readProcessIdentity verdict path (src/daemon/__tests__/keystore-guard.test.ts)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

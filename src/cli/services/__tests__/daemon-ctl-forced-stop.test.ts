@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { spawn, spawnSync, execFileSync } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { once } from 'node:events';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { captureStopTarget } from '../../../shared/daemon-process-client.js';
@@ -56,14 +56,22 @@ test('Control script retains the original target across run-file removal', { tim
  const f = fixture(), child = await standIn(f, 'remove'); const r = ctl(f, 'stop');
  assert.equal(r.status, 0, r.output); assert.match(r.output, /; killed/); assert.equal((await ended(child))[1], 'SIGKILL');
 });
-test('Control script refuses reused identity, replacement files and orphan guards', { timeout: 15000 }, async () => {
+test('Control script refuses reused identity and replacement files, and reclaims an orphan guard whose owner died', { timeout: 15000 }, async () => {
  const other = fixture(), unrelated = await standIn(other, 'stubborn', false);
  const refused = ctl(other, 'restart'); assert.notEqual(refused.status, 0); assert.match(refused.output, /wrong-target/); assert.equal(unrelated.signalCode, null); assert.equal(readFileSync(other.pid, 'utf8'), String(unrelated.pid));
  const replacement = fixture(), old = await standIn(replacement, 'replace');
  const replaced = ctl(replacement, 'restart'); assert.notEqual(replaced.status, 0); assert.match(replaced.output, /ownership conflict/); assert.equal((await ended(old))[1], 'SIGKILL'); assert.equal(readFileSync(replacement.pid, 'utf8'), '123456789'); assert.equal(readFileSync(replacement.sock, 'utf8'), 'foreign');
  const orphan = fixture(), original = await standIn(orphan, 'stubborn');
  execFileSync(process.execPath, ['--input-type=module', '-e', `import { acquireRunFileGuard } from ${JSON.stringify(new URL('../../../../out/shared/daemon-run-files.js', import.meta.url).href)}; acquireRunFileGuard(${JSON.stringify(orphan.guard)});`], { env: { ...process.env, HOME: orphan.home } });
- const guarded = ctl(orphan, 'restart'); assert.notEqual(guarded.status, 0); assert.match(guarded.output, /state=gone/); assert.equal(original.signalCode, null); assert.equal(existsSync(orphan.guard), true);
+ // The guard's recorded owner process exited, so the restart's lifecycle helper quarantines the stale
+ // guard through the real verdict path and proceeds instead of refusing with state=gone.
+ const staleRecord = readFileSync(join(orphan.guard, 'owner.json'), 'utf8');
+ writeFileSync(join(orphan.root, 'out/daemon/index.js'), source(orphan, 'clean'));
+ const guarded = ctl(orphan, 'restart'); assert.equal(guarded.status, 0, guarded.output); assert.match(guarded.output, /daemon running/);
+ assert.equal((await ended(original))[1], 'SIGKILL');
+ const quarantined = readdirSync(join(orphan.home, '.insrc')).filter((name) => name.startsWith('daemon.run-files.guard.quarantine-'));
+ assert.equal(quarantined.length, 1);
+ assert.equal(readFileSync(join(orphan.home, '.insrc', quarantined[0]!, 'owner.json'), 'utf8'), staleRecord); // the dead owner's record survives as evidence
 });
 test('Disposable clean and forced script restart paths preserve commands', { timeout: 15000 }, async () => {
  for (const mode of ['clean', 'stubborn']) {

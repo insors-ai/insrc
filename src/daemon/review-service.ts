@@ -130,7 +130,7 @@ export class ProductionReviews{
   requireReview(!resume||saved,'checkpoint','Pinned resume checkpoint missing');
   const packet=resume?undefined:parsePacket(p['packet']);
   const story=canonicalReviewStory(packet?.storyId??saved!.storyId!,p['epicHash']);
-  const client=p['client'];requireReview(client===undefined||client==='claude'||client==='codex','client','Unsupported review client');
+  const client=p['client'];requireReview(client===undefined||client==='claude'||client==='codex'||client==='vibe','client','Unsupported review client');
   const scope=await this.scope(key,ctx,{key,attempt,actionId:'lookup',submitted:undefined,route:{epicHash:p['epicHash'],storyId:story}});
   if(scope.reviewer==='controller')requireReview(p['timingProtocol']==='activity-v1','timingProtocol','Controller must support activity-v1');
   const ack=await this.registry.admit({key,attempt,actionId:`${resume?'resume':'start'}-${attempt}`,operation:resume?'resume':'start',submitted:resume?p['packet']:packet,route:{epicHash:p['epicHash'],storyId:story,...(client?{client}:{})}},ctx);

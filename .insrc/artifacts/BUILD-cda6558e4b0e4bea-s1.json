@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 7,
+        "contentHash": "364f54d50e7c1848e8785acfe9345ee3a4ba3dc036e6fde38076f2ffacfae2e5",
+        "at": "2026-11-13T08:24:15.494Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-e856b46d-49a1-4e2c-8006-211e6fae08c0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-13T06:27:53.175Z",
+    "epicCreatedAt": "2026-11-13T05:55:40.344Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "cda6558e4b0e4bea",
+    "storyId": "s1",
+    "revision": 7,
+    "updatedAt": "2026-11-13T08:23:42.529Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "recover-run-file-guards-whose-recorded"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": false
+      }
+    ],
+    "summary": "Ran the full sweep in per-directory foreground chunks and hardened the suite against parallel-load flakiness. The retry-EEXIST test's child-process racer was structurally descheduled at its readiness pipe write (the write that wakes the competitor), losing the 50us retry window under load (measured 25% win rate, full budget exhaustion in 2/10 runs); it now uses four worker-thread racers that never block between reporting spinning and the window, verified 12/12 under the full-parallel src/shared suite that reproduced the flake, plus a self-healing daemonLog mode fixture for sweep runs killed mid-log-write-failure. The sweep surfaced exactly two assertions of the old fail-closed contract (dead owner -> refused restart): the control-script orphan-guard scenario and the shutdown-lifecycle-evidence guard-death scenario; both now assert the story's contract (quarantine with byte-identical record, restart proceeds like the healthy control). Every remaining sweep failure was re-run at the pre-story baseline (worktree at 24b73cdfe) with identical failure sets - zero story-caused failures. The sweep itself does not exit clean on this v2 baseline: ~130 pre-existing failures (workflow review stub PENDING REVIEW RE-IMPLEMENTATION, config catalog effort enum drift, project-memory evidence hash drift, store-child fixture trio, and others) that predate the story and need their own tracked issues; see commit 1a6d72e6e. The three failing shutdown-store-failure cases fail identically at the baseline; no shutdown or supervisor case was broken by the story, and the one shutdown-evidence scenario change is the story-mandated contract update (same class as t1's killed-owner rewrite).",
+    "testRecord": {
+      "md": "docs/standalone/recover-run-file-guards-whose-recorded-E20261113cda6558e/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/shared/__tests__/daemon-run-files.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-13T08:23:42.529Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/daemon-run-files.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-13T08:23:42.529Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/keystore-guard.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-13T08:23:42.529Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/run-file-ownership.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-13T08:23:42.529Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-13T08:23:42.529Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/shutdown-lifecycle-evidence.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-13T08:23:42.529Z"
+      }
+    ],
+    "commit": "1a6d72e6e"
+  },
+  "citations": []
+}

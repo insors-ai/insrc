@@ -25,6 +25,7 @@ export class DesignReviewWorker {
  private readonly recoveries=new Map<string,Promise<void>>();
  isActive():boolean{return this.preparing||this.coordinator.isActive(this.input.key.project,this.input.key.reviewId);}
  isPreparing():boolean{return this.preparing;}
+ currentAttempt():number{return this.targetAttempt;}
  constructor(private readonly input:ReviewBootstrapInput,deps:DesignCoordinatorDeps={}){
   requireDesign(input.key.family==='design','wrong_owner','Design worker required');
   this.targetAttempt=input.attempt;
@@ -57,7 +58,7 @@ export class DesignReviewWorker {
     const stored=await loadStoredDesignCheckpoint(project,cp.reviewId);
     // Historical publication repair has no native work and must preserve its
     // existing format/preservation identity, rather than minting admission.
-    if(input.maintenance&&stored?.schemaVersion===1)return saveDesignCheckpoint(project,cp);
+    if((input.maintenance||this.recoveryRequest?.operation==='retry_publication')&&stored?.schemaVersion===1)return saveDesignCheckpoint(project,cp);
     return saveWorkerDesignCheckpoint(project,cp);
    },
   });
@@ -72,7 +73,7 @@ export class DesignReviewWorker {
   // identity merely by replaying publication of the same accepted feedback.
   if(request.operation==='retry_publication')return this.coordinator.recover(request,owner?{owner}:{});
   const admitted=await admitDesignRecovery(this.input.key.project,this.input.key.reviewId,raw,()=>requireDesign(!this.preparing&&!this.coordinator.isActive(this.input.key.project,this.input.key.reviewId),'review_conflict','Review is still active'));
-  this.targetAttempt=Math.max(this.targetAttempt,admitted.resultAttempt);
+
   if(admitted.validation==='unverified'||this.recoveryRequest?.actionId===admitted.request.actionId)this.recoveryRequest=admitted.request;
   if(admitted.validation==='unverified'&&!this.recoveries.has(admitted.request.actionId)){
    const saved=await loadStoredDesignCheckpoint(this.input.key.project,this.input.key.reviewId);
@@ -95,7 +96,7 @@ export class DesignReviewWorker {
    }));
    this.recoveries.set(admitted.request.actionId,work);
   }
-  return{accepted:true,reviewId:this.input.key.reviewId,attempt:admitted.resultAttempt,checkpointPath:`${this.input.key.project}/.insrc/tmp/design-review/${this.input.key.reviewId}.json`,actionId:admitted.request.actionId};
+  return{accepted:true,reviewId:this.input.key.reviewId,attempt:this.targetAttempt,checkpointPath:`${this.input.key.project}/.insrc/tmp/design-review/${this.input.key.reviewId}.json`,actionId:admitted.request.actionId};
  }
  execute(owner?:DesignControllerOwner):void{
   requireDesign(this.input.subject,'wrong_owner','Registered design subject reservation required');
@@ -127,6 +128,7 @@ export class DesignReviewWorker {
  }
  async progress(){
   const cp=await loadStoredDesignCheckpoint(this.input.key.project,this.input.key.reviewId);
+  if(cp)this.targetAttempt=cp.attempts.at(-1)!.number;
   const request=this.recoveryRequest,action=request&&cp?.attempts.flatMap(a=>a.actions??[]).find(a=>a.actionId===request.actionId);
   if(cp&&action&&(action.validation==='unverified'||action.validation==='failed'))return{...observeStoredDesignCheckpoint(cp,{active:false}),status:action.validation==='failed'?'failed' as const:'pending' as const,phase:'admission' as const,admission:{validation:'unverified' as const},requiresUserInput:action.validation==='failed',failure:action.outcome,guidance:action.validation==='failed'?'Recovery qualification failed; wait for user direction.':'Preparing recovery; wait for the complete review.'};
   if(cp&&isDesignAdmission(cp.attempts.at(-1)!))return observeStoredDesignCheckpoint(cp,{active:this.preparing||!this.launch&&!this.recoveryRequest});

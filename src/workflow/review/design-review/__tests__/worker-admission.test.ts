@@ -30,7 +30,7 @@ function fixture(t:{after:(fn:()=>Promise<void>)=>void},route:'epic'|'standalone
  let contextMd:string|undefined;if(route==='epic'){put('DEF');contextMd=put('HLD').md;}if(route==='issue')put('ISSUE');const artifact=put('LLD');
  const barrier=new Int32Array(new SharedArrayBuffer(32)),owner=new AbortController();
  const context={connectionIdentity:'design-fixture',daemonEpoch:'epoch',connectionSignal:owner.signal};
- const registry=new ReviewWorkers({services,resolveScope:async()=>({reviewer:author==='controller'?'daemon':'controller',subject:artifact.id,cleanupScope:`${repo}:${artifact.id}`,epicHash:hash}),authorizeNative:async()=>{throw new Error('No native command is needed by this design fixture');},resolveBinary:async()=>{throw new Error('No CLI lookup expected');},track:()=>{},start:(svc,input,port,deps)=>startReviewWorkerBootstrap(svc,input,port,{...deps,start:(services,name,_script,extra,created)=>startWorker(services,name,'../../workflow/review/design-review/__tests__/helpers/worker-admission',{workerData:{...extra!.workerData,fixtureBarrier:barrier.buffer},transferList:extra!.transferList},created)})});
+ const registry=new ReviewWorkers({services,resolveScope:async()=>({reviewer:JSON.parse(readFileSync(artifact.json,'utf8')).meta.authoredBy==='controller'?'daemon':'controller',subject:artifact.id,cleanupScope:`${repo}:${artifact.id}`,epicHash:hash}),authorizeNative:async()=>{throw new Error('No native command is needed by this design fixture');},resolveBinary:async()=>{throw new Error('No CLI lookup expected');},track:()=>{},start:(svc,input,port,deps)=>startReviewWorkerBootstrap(svc,input,port,{...deps,start:(services,name,_script,extra,created)=>startWorker(services,name,'../../workflow/review/design-review/__tests__/helpers/worker-admission',{workerData:{...extra!.workerData,fixtureBarrier:barrier.buffer},transferList:extra!.transferList},created)})});
  t.after(async()=>{Atomics.store(barrier,1,1);Atomics.notify(barrier,1);Atomics.store(barrier,3,0);Atomics.notify(barrier,3);await registry.shutdown();rmSync(repo,{recursive:true,force:true});});
  const submit=(id='design-review')=>({key:{project:repo,family:'design' as const,reviewId:id},attempt:1,actionId:`action-${id}`,submitted:{phase:'start',repo,reviewId:id,attempt:1,artifactPath:artifact.json}});
  return{repo,artifact,registry,context,barrier,submit,contextMd};
@@ -46,6 +46,10 @@ test('durable admission and current workflow ancestry run in the owner worker',a
   await until(async()=>((await loadStoredDesignCheckpoint(f.repo,ack.key.reviewId))!.attempts.at(-1)!.status==='passed'));
   const qualified=await loadStoredDesignCheckpoint(f.repo,ack.key.reviewId);assert.ok(qualified!.subject);assert.equal(qualified!.subject.workflow.kind,route);assert.equal(qualified!.subject.reviewer,'daemon');assert.equal(Atomics.load(f.barrier,2),3);
   assert.deepEqual(qualified!.subject.workflow.requiredReferences.map(r=>r.role),route==='epic'?['definition','hld']:route==='issue'?['originating_issue']:[]);
+  await until(()=>f.registry.identity(ack.key)===undefined);
+  let fresh:typeof ack|undefined;
+  await until(async()=>{try{fresh=await f.registry.admit(f.submit('same-artifact-after-completion'),f.context);return true;}catch(error){if(!String(error).includes('subject or cleanup busy'))throw error;return false;}});
+  assert.notEqual(fresh!.incarnation,ack.incarnation,'terminal owner is reclaimed before a fresh review of the subject');
  }
 });
 test('subject invalidation explicit recovery and impact-selected chunks preserve saved feedback',async t=>{
@@ -107,4 +111,33 @@ test('cold unverified design recovery retains its original submission and qualif
  await f.registry.execute(resumed,f.context);Atomics.store(f.barrier,1,1);Atomics.notify(f.barrier,1);
  await until(async()=>((await loadStoredDesignCheckpoint(f.repo,ack.key.reviewId))!.attempts[0]!.status==='passed'));
  const saved=(await loadStoredDesignCheckpoint(f.repo,ack.key.reviewId))!;assert.equal(saved.attempts.length,1);assert.equal(saved.attempts[0]!.actions!.at(-1)!.validation,'qualified');assert.equal(Atomics.load(f.barrier,2),3);
+});
+
+test('rejected full restart retains the source attempt for subsequent explicit resume',async t=>{
+ const f=fixture(t,'standalone','daemon'),input=f.submit(),ack=await f.registry.admit(input,f.context);
+ Atomics.store(f.barrier,1,1);Atomics.notify(f.barrier,1);await f.registry.execute(ack,f.context);
+ await until(async()=>{try{return!!(await f.registry.control({...ack,attempt:1,phase:'assignment',actionId:'assignment',executionId:'pending',sequence:1,input:{}},f.context) as any).assignment;}catch{return false;}});
+ await f.registry.shutdown();
+ const bad:DesignRecoveryRequest={phase:'recover',repo:f.repo,reviewId:ack.key.reviewId,attempt:1,actionId:'restart-not-invalidated',operation:'restart_full',userDecision:{action:'restart_full',reason:'Fixture asks for restart',recordedAt:time}};
+ const restarted=await f.registry.admit({...input,submitted:bad,actionId:bad.actionId},f.context);
+ const receipt=await f.registry.execute(restarted,f.context) as {attempt:number};assert.equal(receipt.attempt,1);
+ await until(async()=>((await loadStoredDesignCheckpoint(f.repo,ack.key.reviewId))!.attempts[0]!.actions?.at(-1)?.validation==='failed'));
+ const cp=(await loadStoredDesignCheckpoint(f.repo,ack.key.reviewId))!;assert.equal(cp.attempts.length,1);
+ await f.registry.shutdown();
+ const resume:DesignRecoveryRequest={phase:'recover',repo:f.repo,reviewId:ack.key.reviewId,attempt:1,actionId:'resume-after-rejected-restart',operation:'resume'};
+ const resumed=await f.registry.admit({...input,submitted:resume,actionId:resume.actionId},f.context);await f.registry.execute(resumed,f.context);
+ await until(async()=>{try{const out=await f.registry.control({...resumed,attempt:1,phase:'assignment',actionId:'assignment',executionId:'pending',sequence:1,input:{}},f.context) as any;return out.assignment?.kind==='planning';}catch{return false;}});
+ assert.equal((await loadStoredDesignCheckpoint(f.repo,ack.key.reviewId))!.attempts.length,1);
+});
+
+test('explicit restart refreshes independent reviewer authority after authorship changes',async t=>{
+ const f=fixture(t,'standalone','daemon'),input=f.submit(),ack=await f.registry.admit(input,f.context);
+ Atomics.store(f.barrier,1,1);Atomics.notify(f.barrier,1);await f.registry.execute(ack,f.context);
+ await until(async()=>{try{return!!(await f.registry.control({...ack,attempt:1,phase:'assignment',actionId:'assignment',executionId:'pending',sequence:1,input:{}},f.context) as any).assignment;}catch{return false;}});
+ const head=JSON.parse(readFileSync(f.artifact.json,'utf8'));head.meta.authoredBy='controller';writeFileSync(f.artifact.json,JSON.stringify(head));
+ await until(async()=>((await loadStoredDesignCheckpoint(f.repo,ack.key.reviewId))!.attempts[0]!.status==='invalidated'));
+ const restart:DesignRecoveryRequest={phase:'recover',repo:f.repo,reviewId:ack.key.reviewId,attempt:1,actionId:'refresh-reviewer',operation:'restart_full',userDecision:{action:'restart_full',reason:'Fixture approves changed author restart',recordedAt:time}};
+ await until(async()=>{try{const identity=f.registry.identity(ack.key);if(identity)await f.registry.recover(identity,restart,f.context);else{const next=await f.registry.admit({...input,actionId:restart.actionId,submitted:restart},f.context);await f.registry.execute(next,f.context);}return true;}catch(error){if(!/closed|fenced|reclaimed|still active|subject or cleanup busy/i.test(String(error)))throw error;return false;}});
+ await until(async()=>{const cp=await loadStoredDesignCheckpoint(f.repo,ack.key.reviewId);return cp!.attempts.length===2&&cp!.attempts[1]!.status==='passed';});
+ const saved=(await loadStoredDesignCheckpoint(f.repo,ack.key.reviewId))!;assert.equal(saved.subject!.reviewer,'daemon');assert.equal(saved.attempts[1]!.number,2);
 });

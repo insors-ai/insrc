@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-59cb8286-dd02-4df5-ab78-509d4f95bb0c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-13T06:21:32.367Z",
+    "epicCreatedAt": "2026-11-13T05:55:40.344Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "cda6558e4b0e4bea",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement dead-owner reclaim inside shared acquireRunFileGuard",
+      "parent": {
+        "entityId": "STORY-cda6558e4b0e4bea-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-cda6558e4b0e4bea-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-cda6558e4b0e4bea-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5e647b12a85ed08fb0e498f7f9ce35b294bcc1dcdce6c3d83be526c4430aca4d",
+        "at": "2026-11-13T06:21:32.371Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-13T06:21:32.372Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement dead-owner reclaim inside shared acquireRunFileGuard",
+    "summary": "Implement the reclaim in the EEXIST branch of acquireRunFileGuard (src/shared/daemon-run-files.ts): add the optional ProcessIdentityReader third param, read ownerRecord, compute processIdentityState plus the boot-id comparison ('gone', or recorded boot segment differs from the current boot), rename the stale guard to '<path>.quarantine-<UTC-timestamp>-<recorded-nonce>' with incremented-suffix collision handling, append a best-effort recovery line to PATHS.daemonLog (failures swallowed), retry mkdirSync once and recompute the conflict on retry EEXIST. Add renameSync/appendFileSync to the fs import; narrow the comments at :51 and :73 to the unverifiable-owner case.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "acquireRunFileGuard signature matches the LLD contract with optional read param",
+      "Verdict + boot-segment comparison implemented and only 'gone' or previous-boot mismatch reclaims",
+      "Stale guard renamed whole with owner.json intact; one daemonLog line; single mkdir retry; retry EEXIST recomputes the conflict and throws",
+      "Comments at :51 and :73 narrowed; borrowRunFileGuard and removeOwnedRunFile untouched"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "the t1 decision-table suite turns green against the implementation (no new tests)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

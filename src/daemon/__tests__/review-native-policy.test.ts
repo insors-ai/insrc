@@ -41,7 +41,7 @@ test('production Git authority accepts isolated pinned reads and preserves liter
 test('production CLI authority requires qualified independent review and readonly provider profiles',async t=>{
  const repo=await realpath(await mkdtemp(join(tmpdir(),'review-cli-policy-'))),saved=process.env['PATH'];
  t.after(async()=>{if(saved===undefined)delete process.env['PATH'];else process.env['PATH']=saved;await rm(repo,{recursive:true,force:true});});
- for(const name of ['claude','codex']){await writeFile(join(repo,name),'#!/bin/sh\nexit 0\n');await chmod(join(repo,name),0o755);}
+ for(const name of ['claude','codex','vibe-app-server','git']){await writeFile(join(repo,name),'#!/bin/sh\nexit 0\n');await chmod(join(repo,name),0o755);}
  process.env['PATH']=repo;
  const key={project:repo,family:'code' as const,reviewId:'cli'},signal=new AbortController().signal;
  const receipt={sourceValidation:'qualified' as const,checkpointPath:join(repo,'checkpoint.json'),attempt:1,operationId:'op',workerIncarnation:'worker',daemonInstance:'daemon'};
@@ -54,4 +54,11 @@ test('production CLI authority requires qualified independent review and readonl
   await assert.rejects(authorizeReviewNative(key,{...command,args:[...args,'--full-auto']},'daemon',signal,receipt),/Unsupported/);
   if(kind==='claude')await assert.rejects(authorizeReviewNative({...key,family:'design'},command,'daemon',signal,receipt),/Readonly|Unsupported/);
  }
+ const vibe={kind:'cli',command:join(repo,'vibe-app-server'),args:[],cwd:repo,keepStdinOpen:true};
+ await authorizeReviewNative(key,vibe,'daemon',signal,receipt);
+ await assert.rejects(authorizeReviewNative(key,{...vibe,kind:'tool'},'daemon',signal,receipt),/Unsupported/);
+ await assert.rejects(authorizeReviewNative(key,vibe,'controller',signal,receipt),/independent/);
+ await assert.rejects(authorizeReviewNative(key,vibe,'daemon',signal,{...receipt,sourceValidation:'unverified'}),/Qualified/);
+ await assert.rejects(authorizeReviewNative(key,{...vibe,args:['--unsafe']},'daemon',signal,receipt),/Unsupported/);
+
 });

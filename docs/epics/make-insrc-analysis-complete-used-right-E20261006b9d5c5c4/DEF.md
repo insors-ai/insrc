@@ -27,7 +27,7 @@ The analyzer's findings are incomplete in a way neither the analyzer nor its rea
 
 - **E20261006b9d5c5c4:FR001** — Every analyzer result states whether it is complete, a lookup that failed is reported as failed and never as empty, and every answer states whether its findings are complete.
 - **E20261006b9d5c5c4:FR002** — The analyzer determines the size of a request from what the request actually touches, on both paths a request can take.
-- **E20261006b9d5c5c4:FR003** — For each size of request the analyzer follows a defined way of handling it, and a result set or a single item too large to treat at once is processed in full, in parts, and combined.
+- **E20261006b9d5c5c4:FR003** — For each size of request the analyzer follows a defined way of handling it, and a result set or a single item too large to treat at once is processed in full, in parts, and combined. The one exception is a run stopped by its execution budget (Story s9): it is reported as incomplete, lists the work not done, and is never counted as a completed analysis.
 - **E20261006b9d5c5c4:FR004** — No lookup or analysis step drops results because of a fixed limit, and no limit is removed before the analyzer can handle what it lets through. _(A fixed limit makes large questions silently wrong; removing one without handling makes them fail.)_
 - **E20261006b9d5c5c4:FR005** — The form of an analyzer's answer fits the kind of question asked, including a question that asks for every occurrence of something, for each kind of source the analyzer covers.
 - **E20261006b9d5c5c4:FR006** — No answer layout limits how many findings may be reported.
@@ -49,14 +49,14 @@ The analyzer's findings are incomplete in a way neither the analyzer nor its rea
 **s3:**
 
 - **E20261006b9d5c5c4:S003:FR001** — A handling method exists for every request size on both paths.
-- **E20261006b9d5c5c4:S003:FR002** — Large result sets are processed completely, in parts, and combined.
+- **E20261006b9d5c5c4:S003:FR002** — Large result sets are processed completely, in parts, and combined. The one exception is a run stopped by its execution budget (Story s9): it is reported as incomplete, lists the work not done, and is never counted as a completed analysis.
 - **E20261006b9d5c5c4:S003:FR003** — A single item too large to read at once is read in full, in sections.
 - **E20261006b9d5c5c4:S003:FR004** — The answer reports how the request was handled.
-- **E20261006b9d5c5c4:S003:FR005** — A broad analysis whose final combining step is handed more than one model call accepts is completed by handling that input in parts; this closes the exception accepted on Story s7 for the docs family.
+- **E20261006b9d5c5c4:S003:FR005** — A broad analysis whose final combining step is handed more than one model call accepts is completed by handling that input in parts, with its intended coverage finished; an incomplete report from a run stopped by its budget does not close this exception on Story s7 for the docs family.
 
 **s4:**
 
-- **E20261006b9d5c5c4:S004:FR001** — No lookup or analysis step drops results because of a fixed limit, in any kind of source the analyzer covers.
+- **E20261006b9d5c5c4:S004:FR001** — No lookup or analysis step drops results because of a fixed limit, in any kind of source the analyzer covers that has something to count; a source that can only be sampled is reported as sampled.
 - **E20261006b9d5c5c4:S004:FR002** — No fixed cut is applied to an item's content.
 - **E20261006b9d5c5c4:S004:FR003** — A text lookup discards no file, line or output for its size.
 - **E20261006b9d5c5c4:S004:FR004** — The planning instructions suggest no fixed number of results.
@@ -64,7 +64,7 @@ The analyzer's findings are incomplete in a way neither the analyzer nor its rea
 
 **s5:**
 
-- **E20261006b9d5c5c4:S005:FR001** — A question asking for every occurrence gets a complete enumeration as its answer.
+- **E20261006b9d5c5c4:S005:FR001** — A question asking for every occurrence gets an enumeration of every occurrence the analysis established, with where each is; any source that was sampled, failed or not covered is stated, and the answer claims complete coverage only where its evidence supports it.
 - **E20261006b9d5c5c4:S005:FR002** — The answer layouts of all analyzer kinds are free of limits on findings.
 - **E20261006b9d5c5c4:S005:FR003** — Each layout covers every lookup its analyzer can run.
 
@@ -75,7 +75,7 @@ The analyzer's findings are incomplete in a way neither the analyzer nor its rea
 
 **s7:**
 
-- **E20261006b9d5c5c4:S007:FR001** — A broad analysis runs through every stage to a final report.
+- **E20261006b9d5c5c4:S007:FR001** — A broad analysis runs through every stage to a final report. The one exception is a run stopped by its execution budget (Story s9): it is reported as incomplete, lists the work not done, and is never counted as a completed analysis.
 - **E20261006b9d5c5c4:S007:FR002** — A run that stops records where and why.
 - **E20261006b9d5c5c4:S007:FR003** — Accepted exception (stakeholder, 2026-10-08): for the docs family the first criterion is not met by this Story on a repository whose combining step is handed more than one model call accepts; Story s3 closes it. For the code family it is met in full only with Story s8.
 
@@ -123,7 +123,7 @@ As someone relying on an analysis, I am told plainly when a result was cut, when
 
 **Acceptance criteria:**
 
-- **ac1:** Given any lookup or analysis step the analyzer performs, on either path a request can take through the analyzer, when its result is produced, then the result states whether it is complete, and if it is not, how many results exist, how many were returned and why some are missing. _(operationalizes `k3`)_
+- **ac1:** Given any lookup or analysis step the analyzer performs, on either path a request can take through the analyzer, when its result is produced, then the result states whether it is complete, and if it is not, how many results were returned and why some are missing, and how many results exist when that can be established; when it cannot be (a source that cannot be read, a search that stopped before it finished, a source that can only be sampled), the result says that the total is unknown and why, and does not state a number. _(operationalizes `k3`)_
 - **ac2:** Given a lookup that cannot be carried out, when the analyzer reports on it, then it is reported as failed with the reason, and never as a lookup that found nothing. _(operationalizes `k3`, `k7`)_
 - **ac3:** Given a single item, such as a long document section, of which only part was read, when its result is produced, then the result names the item and says how much of it was read. _(operationalizes `k3`)_
 - **ac4:** Given files that a text lookup did not read, because of their size, their kind or an error, when its result is produced, then the result says which were left out and why, or by what rule. _(operationalizes `k3`)_
@@ -159,12 +159,12 @@ As someone asking a large question, the analyzer works through all of it by a kn
 **Acceptance criteria:**
 
 - **ac1:** Given each size a request can have, on either path a request can take through the analyzer, when the analyzer's handling of that size is examined, then there is a stated way of handling it that covers the whole of the request. _(operationalizes `k2`)_
-- **ac2:** Given a request whose results are too many to be reasoned over at once, when the analyzer handles it, then the results are divided into parts, every part is reasoned over, and the findings are combined into one answer with none lost. _(operationalizes `k2`, `k4`)_
+- **ac2:** Given a request whose results are too many to be reasoned over at once, when the analyzer handles it, then the results are divided into parts, every part is reasoned over, and the findings are combined into one answer with none lost, for every run that stays within its execution budget (a run stopped by its budget is the one exception and is reported as incomplete, Story s9). _(operationalizes `k2`, `k4`)_
 - **ac3:** Given a request handled in parts, when its answer is delivered, then the answer states how many parts there were and that all were processed, or names any part that was not and why. _(operationalizes `k3`)_
-- **ac4:** Given a small request, when the analyzer handles it, then its results are returned whole without being divided. _(operationalizes `k1`)_
+- **ac4:** Given a small request whose complete input fits within what one model call accepts, when the analyzer handles it, then its results are returned whole without being divided; a small request whose input does not fit is handled in parts by the method for the case, with complete coverage and with the handling reported. _(operationalizes `k1`)_
 - **ac5:** Given a part that fails while a large request is being handled, when the answer is assembled, then the findings of the other parts are kept and the failed part is reported as not covered. _(operationalizes `k3`, `k7`)_
 - **ac6:** Given a single item, such as a long document section, that is too large to be read at once, when the analyzer reads it, then its whole content is taken into account, not only its beginning. _(operationalizes `k2`)_
-- **ac7:** Given a broad analysis of documents whose final combining step is handed more than one model call accepts, as on this repository on 2026-10-08, where Story s7 was accepted with that analysis not completing, when it is run, then the input to the combining step is handled in parts and the analysis returns a final report. _(operationalizes `k1`, `k2`)_
+- **ac7:** Given a broad analysis of documents whose final combining step is handed more than one model call accepts, as on this repository on 2026-10-08, where Story s7 was accepted with that analysis not completing, when it is run, then the input to the combining step is handled in parts and the analysis returns a final report that finishes its intended coverage; an incomplete report from a run stopped by its budget (Story s9) does not meet this criterion. _(operationalizes `k1`, `k2`)_
 
 ### 6.4 STORY-b9d5c5c40df5a574-s4 — No lookup drops results
 
@@ -179,10 +179,10 @@ As someone relying on an analysis, I get every result a lookup found, whatever t
 **Acceptance criteria:**
 
 - **ac1:** Given a lookup or analysis step whose true number of results is larger than any limit the analyzer used to apply, on either path a request can take through the analyzer, in a source that has something to count, when the analyzer performs it, then every result is returned and none is dropped. _(operationalizes `k2`, `k3`)_
-- **ac2:** Given a single item larger than any fixed cut the analyzer used to apply to an item's content, or larger than the part of it the index stores, when the analyzer reads it, then no fixed cut is applied to it: the analyzer reads the item from its file at the place the index points to. _(operationalizes `k2`)_
+- **ac2:** Given a single item larger than any fixed cut the analyzer used to apply to an item's content, or larger than the part of it the index stores, when the analyzer reads it, then no fixed cut is applied to it: the analyzer reads the item from its file at the place the index points to, after checking that the file still holds the item there; when the file has changed so that the item cannot be confirmed, or is missing or unreadable, the item is reported as not covered and the answer does not claim to have read it. _(operationalizes `k2`)_
 - **ac3:** Given a text lookup over files of any size and lines of any length, when it runs, then no file is left out for its size, no matching line is shortened, and no part of the search's output is discarded. _(operationalizes `k2`, `k3`)_
 - **ac4:** Given the analyzer's own instructions and examples to the model that plans a lookup, when they are read, then none of them states or suggests a fixed number of results to ask for. _(operationalizes `k2`)_
-- **ac5:** Given a result set that became larger because a limit was removed, when the analyzer answers, then it is handled by the method for its size, and the answer is complete. _(operationalizes `k1`, `k2`)_
+- **ac5:** Given a result set that became larger because a limit was removed, when the analyzer answers, then it is handled by the method for its size and every result that can be obtained is processed; the answer says which sources were only sampled, failed or not covered, and it is called complete only where its evidence supports that; a run stopped by its execution budget (Story s9) is reported as incomplete, not as complete. _(operationalizes `k1`, `k2`)_
 - **ac6:** Given a data source with no tables or namespaces of its own, where the analyzer can only list what a sample of its keys suggests (Redis, etcd), when the analyzer lists it, then the result says it is a sample and is not presented as complete; the analyzer does not scan every key of a live store. _(operationalizes `k3`)_
 
 ### 6.5 STORY-b9d5c5c40df5a574-s5 — The form of an answer fits the question, for every kind of analyzer
@@ -191,13 +191,13 @@ As someone relying on an analysis, I get every result a lookup found, whatever t
 
 As someone reading an analysis, the answer is laid out for the question I asked, including when I asked for every occurrence of something, and no layout holds back findings.
 
-**Depends on:** `s1`
+**Depends on:** `s1`, `s2`, `s3`, `s4`
 
 **Extends:** [[c12]] [[c13]]
 
 **Acceptance criteria:**
 
-- **ac1:** Given a question that asks for every occurrence of something, when the analyzer answers it, then the answer is a complete list of the occurrences with where each is, and is not forced into an overview of a module. _(operationalizes `k2`, `k6`)_
+- **ac1:** Given a question that asks for every occurrence of something, when the analyzer answers it, then the answer lists every occurrence the analysis established with where each is, says which sources were sampled, failed or not covered, claims complete coverage only where its evidence supports it, and is not forced into an overview of a module. _(operationalizes `k2`, `k6`)_
 - **ac2:** Given each answer layout the analyzer has, for code, documents, rule adherence, capability discovery, data and infrastructure, and the older per-source layouts it falls back to, when its answer layout is examined, then the layout places no limit on how many findings may be reported. _(operationalizes `k2`, `k3`)_
 - **ac3:** Given an answer layout, when it describes the lookup results it may draw on, then every kind of lookup that analyzer can run is described. _(operationalizes `k7`)_
 - **ac4:** Given a question whose kind does not match the layout that would be used, when the analyzer answers, then it uses a layout for that kind of question and does not require parts of a layout the question has nothing to fill. _(operationalizes `k7`)_
@@ -233,10 +233,10 @@ As someone asking the analyzer a broad question, the whole analysis runs to a fi
 
 **Acceptance criteria:**
 
-- **ac1:** Given a broad request on a repository that is indexed, when the analysis is run, then it completes every stage and returns a final report, and what stopped it at any stage it did not pass today is found and corrected. _(operationalizes `k1`)_
-- **ac2:** Given an analysis whose plan includes steps that themselves plan further steps, when it is run, then those nested steps run and their results reach the final report. _(operationalizes `k7`)_
+- **ac1:** Given a broad request on a repository that is indexed, when the analysis is run, then it completes every stage and returns a final report, and what stopped it at any stage it did not pass today is found and corrected; a run stopped by its execution budget (Story s9) ends in an incomplete final report, which is the one case where a stage is reported as not run to the end, and it is never counted as a completed analysis. _(operationalizes `k1`)_
+- **ac2:** Given an analysis whose plan includes steps that themselves plan further steps, when it is run, then those nested steps run and their results reach the final report, unless the run is stopped by its execution budget (Story s9), in which case the steps not run are listed as not covered. _(operationalizes `k7`)_
 - **ac3:** Given an analysis that stops part of the way through, when it ends, then the record of the run says at which stage it stopped and why, and is not left reading as still in progress. _(operationalizes `k3`)_
-- **ac4:** Given a completed analysis, when it is asked for again by the same run, then the stored result is returned as before. _(operationalizes `k1`)_
+- **ac4:** Given a finished analysis, completed or stopped by its execution budget, when it is asked for again by the same run, then the stored result is returned as before, and a report from a run stopped by its budget is returned as that incomplete report and the run is not resumed. _(operationalizes `k1`)_
 
 ### 6.8 STORY-b9d5c5c40df5a574-s8 — The code tasks of a broad analysis work on a repository whose graph has no modules for its directories
 
@@ -260,13 +260,31 @@ As someone asking for a broad analysis of a codebase, I get its modules and what
 
 Someone asking a broad question about a large codebase gets a plan that is wide and shallow and that the analyzer can finish, while someone asking about a small area gets a plan that goes deep, so a broad analysis reaches its final report in a reasonable time instead of spending the run inside deeper and deeper child plans.
 
+**Depends on:** `s2`, `s3`, `s7`
+
 **Acceptance criteria:**
 
-- **ac1:** Given A request that measures XL or L, when the analyzer plans it, then the plan is breadth-first: many shallow, inexpensive tasks across the areas, and no area is explored by a child plan that is itself a large plan.
+- **ac1:** Given A request that measures XL or L, when the analyzer plans it, then the plan is breadth-first: many shallow, inexpensive tasks across the areas; a child plan is allowed where the policy for the size of the whole request provides one, but a child plan of an XL or L request does not plan further children, so no area is explored by a chain of deeper plans.
 - **ac2:** Given A request that measures M or S, when the analyzer plans it, then the plan is depth-first: fewer areas, each examined in detail, and child plans are allowed where they add depth.
-- **ac3:** Given A plan whose child plans, taken together, would exceed what the request's size allows, when the plan is validated, then it is refused with a reason that names the total and the limit, so that the planner can correct it, in the same way a wrong task count is refused today.
-- **ac4:** Given A plan accepted for a broad request, when the analyzer executes it, then the executor works within a budget set by the request's size and the run says when a budget was reached, instead of running on with no bound.
-- **ac5:** Given The broad docs request on this repository, which measured XL, when it is run end to end, then it reaches a final report within a stated time and says in its record how deep the plan went and how many tasks ran.
+- **ac3:** Given a plan whose total number of tasks, counted over the root plan and every child plan below it, would exceed the limit the size of the request sets (every size has one; for XS the existing policy is kept), when the plan is validated, then it is refused with a reason that names what was counted, the total and the limit, so that the planner can correct it, in the same way a wrong task count is refused today.
+- **ac4:** Given a plan accepted for a broad request, when the analyzer executes it and the budget set by the request's size is reached, then the run ends as explicitly incomplete: the findings produced so far are kept in the report, the work not done is listed as not covered, and the run is not reported as a complete analysis; a run that stays within its budget is not affected; its report is retrievable under the same run as for any finished run (Story s7).
+- **ac5:** Given the broad docs request on this repository, which measured XL, run on a stated revision, when it is run end to end with the time limit that the size policy sets for an XL request, fixed and recorded before the run starts, then it reaches a final report within that limit, measured from the request received to the final report, and its record says how deep the plan went and how many tasks ran, with no work left out because of the budget; a run stopped by its budget does not meet this criterion, and that outcome is tested separately under the previous criterion.
+
+### 6.10 STORY-b9d5c5c40df5a574-s10 — A running analysis can be cancelled, and the tool loop has no turn limit
+
+**User value:** `size: L`
+
+As someone running or relying on an analysis, I can stop one that is running and get what it found so far, and no analysis is cut short by a fixed number of turns, because a running analysis can always be stopped by its caller instead.
+
+**Depends on:** `s4`
+
+**Acceptance criteria:**
+
+- **ac1:** Given an analysis or lookup that is running, on either path a request can take through the analyzer, when its caller cancels it, then it stops at its next safe point, makes no further model or tool call for that request, and is reported as cancelled, neither failed nor complete, with the findings gathered so far kept.
+- **ac2:** Given any way a request can reach a tool loop (the three context requests, the plan request and the classify request), when its caller cancels it, then the loop for that request stops, and no other running request is affected.
+- **ac3:** Given a cancel request that names a run that does not exist or has already finished, when it is received, then it is refused with a reason that says so and changes nothing.
+- **ac4:** Given cancellation works on every path that reaches a tool loop, when the tool loop's turn limit is removed, then a loop ends only by finishing, by failing for a reason it reports, or by being cancelled, and reaching a number of turns is no longer a way for it to end or to fail.
+- **ac5:** Given a configuration that still holds the retired turn-limit setting, when it is loaded, then the setting is ignored and reported as retired in the way other retired settings are, the load does not fail, and no prompt, documentation page or client declaration still states a turn limit.
 
 ## 7. References
 
@@ -290,8 +308,37 @@ Someone asking a broad question about a large codebase gets a plan that is wide 
 - **[[c20]]** `stakeholder` `user, 2026-10-07: 'go with A' to reordering the work so that completeness reporting comes first, then sizing, then handling in parts, then removal of the limits, then layouts`
 - **[[c21]]** `step-output` `Live check of 2026-10-07 through the daemon: a request to build the run context for src/analyze/classifier with focused false fails at once with 'Local Ollama unavailable for shaper invocation: Run-mode exploration pipeline returned no bundle'; the same request with focused true and a focus sentence returns a bundle in 30 seconds. Cause in code: src/analyze/context/driver.ts:1102 returns for an unfocused intent and :276-282 then throws; src/analyze/orchestrator/driver.ts:219 marks every target-hinted request unfocused. Saved run records in ~/.insrc/analyze: 4,318 run directories, two plan-tree run records, both left at the classify stage as in progress. No client in this repository sends analyze.run.start.`
 - **[[c22]]** `prior-artifact` `insrc_triage of 2026-10-07: bugfix, sized; taken into this Epic as Stories s6 and s7 at the stakeholder's direction ('traige this and then decide one or more new stories')`
-- **[[c21]]** `stakeholder` `user, 2026-10-07: Redis and etcd stay a sample, said so in every result, and are sized XL; no full scan of a live store's keys` — "A"
+- **[[c23]]** `stakeholder` `user, 2026-10-07: Redis and etcd stay a sample, said so in every result, and are sized XL; no full scan of a live store's keys` — "A"
 
 ## 8. Open questions
 
 - Story s7 rests on a low-confidence assumption: no completed broad analysis is on record. Its design begins by running one and recording how far it gets; if what is found is larger than one Story, how should it be split?
+
+## Resolved questions
+
+- `qc698b1fc` — The per-turn reminder that tells agents to use the analyzer first is a hook script on the user's machine (~/.claude/hooks/insrc-steering-reminder.sh) and no source for it was found in this repository. Where is it maintained and installed from, so that Story s5 can change it?
+  - **resolved**: Retire the hook, use the steering block — The user confirmed on 2026-10-07 that the script is a legacy artifact on one machine and is absent from other machines where insrc is installed. It is registered only in that machine's ~/.claude/settings.json (UserPromptSubmit), dated 2026-07-24, and this repository never shipped it. Story s5 changes the steering block, which is the only guidance insrc installs; the per-turn reminder is not a product surface. _(2026-10-06T18:55:19.772Z)_
+
+## Citations
+
+- **[[c1]]** `analyze-bundle` `Lookups in src/analyze that return at most a fixed number of results (file:line of the constant, default / maximum): explore/search-text.ts:39-40 (30 / 200); explore/symbol-locate.ts:37-38 (50 / 200); explore/config-trace.ts:42-43 (40 / 200); explore/test-locate.ts:44-45 (20 / 100); explore/import-graph.ts:48-49 (15 / 60); explore/usage-example.ts:37-38 (12 / 40); explore/doc-mention.ts:37-38 (15 / 40); explore/concept-resolve.ts:64 (20); explore/capability-reuse-check.ts:58-59 (5 / 12); explore/db-tables-list.ts:36-37 (40 / 500); explore/manifests-locate.ts:51-52 (200 / 1,000); explore/data-model-trace.ts:47-49 (4 targets, 12 fields, 6 callers); explore/convention-detect.ts:54, :57 (5 subclasses, 8 idioms); runtimes/data/discovery-objects.ts:56 (200 files); runtimes/infra/_shared.ts:90 (5,000 files); runtimes/infra/discovery-families.ts:53 (8 samples). Cuts on the content of one item: explore/doc-constraint-enumerate.ts:227 and explore/doc-decision-trace.ts:242 (first 2,000 characters); runtimes/code/adherence-check.ts:92, runtimes/data/adherence-check.ts:100 and runtimes/infra/adherence-check.ts:89 (first 1,200); explore/module-profile.ts:222, :284 (first 4,096); summariser/driver.ts:317 (first 8,192). Not counted: text-length limits on plan fields (planner/schema.ts:42-44), which bound a model's own wording, not results. Found by an analyzer run of 2026-10-06 (two search.text explorations and a module.profile over src/analyze) and confirmed by reading each file. Found by the HLD's review and added: the maxSources parameter of the two document lookups (explore/executor.ts:315, :337); src/analyze/docs-retrieval.ts:290; explore/capability-reuse-check.ts:303, :348-350; explore/db-table-describe.ts:175, :181; runtimes/docs/family-summarise.ts:162; the preview limits explore/doc-mention.ts:39-40; and, in the shared grep primitive src/daemon/tools/builtins/search/grep.ts, the cut of a matching line at 500 characters (:107), the skip of files over 2 MB (:102), the silent skip of unreadable files (:111) and the per-file match limit (:178). Also in the shared grep primitive: the search's output is kept only up to 4 MB and the rest discarded without a signal (the ripgrep call at src/daemon/tools/builtins/search/grep.ts:181, through src/daemon/tools/shell-helper.ts:86-89), and the ripgrep path cuts a matching line at 500 characters too (:193); the two search backends leave out different files by rule (ripgrep honours .gitignore and skips hidden and binary files; the fallback skips dot-names and a fixed list of directories, :95). On the plan-tree path the same kinds of limit sit in the plan-task runtimes (runtimes/data/discovery-objects.ts:56, runtimes/infra/_shared.ts:90, runtimes/infra/discovery-families.ts:53, runtimes/docs/family-summarise.ts:162 and the three adherence checks).` — "const DEFAULT_TOP_K = 30;"
+- **[[c2]]** `code` `src/analyze/classifier/scope-picker.ts` — "readonly totalEntityCount: number;"
+- **[[c3]]** `doc` `CLAUDE.md` — "Accuracy is primary; cost is the least priority."
+- **[[c4]]** `doc` `design/analyze-context-builder.md` — "The shaper has **no token budget, no summarize-down, no truncation knobs**."
+- **[[c5]]** `stakeholder` `user, 2026-10-06` — "Analyzer's text search is capped, why? this will result in inconsistencies/incorrect analysis. REMOVE ANY CAPS from insrc analyzer."
+- **[[c6]]** `step-output` `Tool-call counts from Claude Code's session logs for this project (the .jsonl files under ~/.claude/projects/-Users-subhagho-work-projects-insors-insrc/, counted on 2026-10-06 by tallying tool_use entries by name): in the session of that day, 882 shell commands of which 670 were grep, find, sed -n or cat, against 2 insrc_analyze_step calls; across all 843 session files, 12,931 shell commands and 1,032 Grep calls against 228 insrc_analyze_step and 46 insrc_analyze calls. Measured from logs outside the repository; not reproducible from the source tree.`
+- **[[c7]]** `stakeholder` `user, 2026-10-06` — "the agent needs to be able to differentiate between and analysis request and a simple search, a question like "does this code use file IO", doesn't need analysis and a simple grep is good enough, but "
+- **[[c8]]** `stakeholder` `user, 2026-10-06` — "Analyzer should scope the size the of the request - Have plans for handling different sizes. - Check the analyzer output template, there are different types of analyzers that were developed."
+- **[[c9]]** `doc` `site/analyze.html` — "Every claim is grounded in a real exploration output"
+- **[[c10]]** `doc` `design/analyze-plan-builder.md` — "its terminal aggregator's output becomes the value materialized at"
+- **[[c11]]** `code` `src/mcp/analyze-step/phases/start.ts` — "const scope  = input.scope  ?? 'M';"
+- **[[c12]]** `code` `src/analyze/context/driver.ts` — "const synthesizeTarget: 'code' | 'docs' | 'adherence' | 'capability' | 'data' | 'infra' ="
+- **[[c13]]** `code` `src/prompts/analyze/synthesize.code.system.md` — "HARD CAP per scope: XS ≤10 exports, S ≤25, M ≤60, L ≤120, XL ≤250"
+- **[[c16]]** `stakeholder` `user, 2026-10-07` — "the agent should be given proper steering for when to use it's own tools and when to use analyze. this doesn't need to be coded, just steering should be eoungh"
+- **[[c17]]** `prior-artifact` `ISSUE-12f70133491114c9, filed 2026-10-07: the code graph loses cross-file import and call edges`
+- **[[c18]]** `stakeholder` `user, 2026-10-07: reading one large item in full moves from Story s1 to Story s3; Story s1 removes the fixed cut and reports a partly read item`
+- **[[c19]]** `stakeholder` `user, 2026-10-07` — "A. Both paths in this epic"
+- **[[c20]]** `stakeholder` `user, 2026-10-07: 'go with A' to reordering the work so that completeness reporting comes first, then sizing, then handling in parts, then removal of the limits, then layouts`
+- **[[c21]]** `step-output` `Live check of 2026-10-07 through the daemon: a request to build the run context for src/analyze/classifier with focused false fails at once with 'Local Ollama unavailable for shaper invocation: Run-mode exploration pipeline returned no bundle'; the same request with focused true and a focus sentence returns a bundle in 30 seconds. Cause in code: src/analyze/context/driver.ts:1102 returns for an unfocused intent and :276-282 then throws; src/analyze/orchestrator/driver.ts:219 marks every target-hinted request unfocused. Saved run records in ~/.insrc/analyze: 4,318 run directories, two plan-tree run records, both left at the classify stage as in progress. No client in this repository sends analyze.run.start.`
+- **[[c22]]** `prior-artifact` `insrc_triage of 2026-10-07: bugfix, sized; taken into this Epic as Stories s6 and s7 at the stakeholder's direction ('traige this and then decide one or more new stories')`
+- **[[c23]]** `stakeholder` `user, 2026-10-07: Redis and etcd stay a sample, said so in every result, and are sized XL; no full scan of a live store's keys` — "A"

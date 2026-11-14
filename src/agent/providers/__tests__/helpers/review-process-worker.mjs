@@ -21,7 +21,7 @@ const transport={
  waitStarted:r=>rpc('waitStarted',r),write:(r,bytes,end)=>rpc('write',{r,bytes,end}),
  start:async(r,receipt,consume)=>{consumers.set(r.operationId,consume);try{return await rpc('start',{r,receipt});}finally{consumers.delete(r.operationId);}},
 };
-const provider=new CliProvider({kind:'claude',binPath:'fixture-cli'});
+const provider=new CliProvider(workerData.kind==='vibe'?{kind:'vibe',vibeAppServerPath:'fixture-cli',model:'mistral-vibe-cli-latest',effort:'high'}:{kind:'claude',binPath:'fixture-cli'});
 const run=()=>provider.runReviewSession('test prompt',{type:'object',required:['ok'],properties:{ok:{type:'boolean'}},additionalProperties:false},{
  mode:'activity',cwd:workerData.repo,signal:new AbortController().signal,inactivityMs:1800000,internalRetry:false,
  onActivity:event=>{if(event.kind==='model_output')parentPort.postMessage({kind:'active',threadId});},

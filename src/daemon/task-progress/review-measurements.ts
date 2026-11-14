@@ -69,6 +69,7 @@ export function mapDesignReviewMeasurement(
         !Value.Check(ProgressSequence, reviewedChunks) || !Value.Check(ProgressSequence, retainedChunks)) return null;
     // Retained coverage complements the fresh selection; an inconsistent plan maps to null.
     if (retainedChunks + selectedChunks !== plannedChunks) return null;
+    if (reviewedChunks > selectedChunks) return null;
     if (unverifiedReviewedWork(observation.admission as never, reviewedChunks)) return null;
   }
   if (unverifiedReviewedWork(observation.admission as never, completed)) return null;

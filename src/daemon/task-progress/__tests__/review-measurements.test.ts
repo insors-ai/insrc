@@ -125,6 +125,9 @@ test('foreign identity, inconsistent counts and unverified admission map to null
   assert.equal(mapDesignReviewMeasurement(identity, designProgress({}, {
     coverageProgress: { plannedChunks: 8, selectedChunks: 5, reviewedChunks: 2, retainedChunks: 4 },
   }), task, owner), null, 'retained + selected must equal planned');
+  assert.equal(mapDesignReviewMeasurement(identity, designProgress({}, {
+    coverageProgress: { plannedChunks: 8, selectedChunks: 5, reviewedChunks: 6, retainedChunks: 3 },
+  }), task, owner), null, 'reviewed above selected maps to null');
   assert.equal(mapCodeReviewMeasurement(codeIdentity, codeProgress({}, { completedTasks: 11, totalTasks: 10 }), task, owner), null);
   assert.equal(mapDesignReviewMeasurement(identity, designProgress({}, { admission: { validation: 'unverified' }, completedChunks: 1, totalChunks: 5 }), task, owner), null,
     'unverified admission claiming reviewed work maps to null');

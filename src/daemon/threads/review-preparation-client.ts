@@ -5,6 +5,7 @@ import type { SourceCapacity } from '../../workflow/review/source-session.js';
 import type { PreparedSourceIdentity, ReadyContextReceipt } from '../../workflow/review/prepared-context.js';
 import type { PreparationAccess, ReviewRuntime } from '../../shared/review-preparation.js';
 import type { HistoryBoundaryReceipt } from '../../workflow/review/history-binding.js';
+import type { PublicationProof } from '../../workflow/review/publication-proof.js';
 
 /** The caller receives this port only in private worker bootstrap data. */
 export class ReviewPreparationClient implements SourceCapacity {
@@ -22,4 +23,5 @@ export class ReviewPreparationClient implements SourceCapacity {
  invalidate(access: PreparationAccess): Promise<void> { return this.hub.request('context.invalidate', { access }); }
  progress(value: Pick<ReviewRuntime, 'progress' | 'preparation'>): Promise<void> { return this.hub.request('runtime.progress', value); }
  acceptHistory(access: PreparationAccess, receipt: HistoryBoundaryReceipt): Promise<void> { return this.hub.request('runtime.history', { access, receipt }); }
+ publication(access: PreparationAccess, receipt: HistoryBoundaryReceipt): Promise<PublicationProof> { return this.hub.request('runtime.publication', { access, receipt }); }
 }

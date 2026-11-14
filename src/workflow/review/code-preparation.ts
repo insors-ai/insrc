@@ -75,6 +75,8 @@ export class CodePreparation {
  };
  /** Used by the durable-admission adapter without a second preparation path. */
  context(context: ReviewAdmissionContext = {}): ReviewAdmissionContext { return { ...context, preparePacket: this.packet }; }
+ /** Publication reads the same qualified historical views as recovery. */
+ readonly publicationPacket: typeof prepareReviewPacket = (...args) => this.packet(...args);
  async seal(review: AdmittedReview): Promise<ReadyContextReceipt> {
   await this.tail;
   if (this.failed || this.sealed || !this.session || review.checkpoint.project !== this.key.project || review.checkpoint.reviewId !== this.key.reviewId

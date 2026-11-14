@@ -125,8 +125,9 @@ export interface CompletedReviewSummary {
 }
 /** Publication is deliberately distinct from the legacy dimension-shaped version-1 CR. */
 export interface TaskBasedCodeReviewRecord {
- meta: { workflow: 'code-review'; schemaVersion: 2 | 3 };
- body: { kind: 'code-review'; format: 'task-based'; storyId: string; status: TaskReviewResult['status']; reviews: readonly CompletedReviewSummary[]; admissionFailures?: readonly { reviewId: string; attempt: CodeAdmissionAttempt }[] };
+ meta: { workflow: 'code-review'; schemaVersion: 2 | 3 | 4 };
+ body: { kind: 'code-review'; format: 'task-based'; storyId: string; status: TaskReviewResult['status']; reviews: readonly CompletedReviewSummary[]; admissionFailures?: readonly { reviewId: string; attempt: CodeAdmissionAttempt }[];
+ preparationHistories?: readonly { checkpoint: import('../../review/preparation-checkpoint.js').CodePreparationCheckpoint; proof: import('../../review/publication-proof.js').PublicationProof; earlierProofs?: readonly import('../../review/publication-proof.js').PublicationProof[] }[] };
 }
 
 export const CheckpointSchema = Type.Object({ schemaVersion:Type.Literal(1), reviewId:text, project:text, storyId:text, taskId:Type.Optional(text), attempts:Type.Array(Type.Object({

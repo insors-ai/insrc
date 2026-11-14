@@ -88,6 +88,13 @@ async function bounded(path: string): Promise<string> {
   if (offset !== st.size) throw new Error('History record changed while reading'); return bytes.subarray(0, offset).toString('utf8');
  } finally { await file.close(); }
 }
+/** Main private publication bridge reads the same bounded, no-follow history
+ * bytes that its durable receipt acknowledges. */
+export async function readBoundPreparationHistory(receipt: HistoryBoundaryReceipt, source: ReadyContextReceipt): Promise<PreparationHistory> {
+ const raw = await bounded(reviewWorkerCheckpoint(source.key));
+ if (digest(raw) !== receipt.checkpointDigest) throw new Error('Publication checkpoint changed');
+ return current(JSON.parse(raw), source);
+}
 export class HistoryBindingSaveError extends Error {
  constructor(cause: unknown, readonly bindingPath: string, readonly capacityToken: string | undefined) { super('History commit incomplete; explicit reconciliation required', { cause }); }
 }

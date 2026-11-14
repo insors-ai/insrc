@@ -11,7 +11,8 @@ import type { PreparationAccess, ReviewRuntime } from '../../shared/review-prepa
 import type { ReviewKey } from '../../shared/review-resources.js';
 import { ReviewPreparationCapacity } from '../../workflow/review/source-session.js';
 import type { PreparedSourceIdentity, ReadyContextReceipt } from '../../workflow/review/prepared-context.js';
-import { verifyHistoryBoundaryReceipt } from '../../workflow/review/history-binding.js';
+import { verifyHistoryBoundaryReceipt, readBoundPreparationHistory } from '../../workflow/review/history-binding.js';
+import { publicationProof } from '../../workflow/review/publication-proof.js';
 import type { HistoryBoundaryReceipt } from '../../workflow/review/history-binding.js';
 import { ReviewRuntimeStore } from './review-runtime-store.js';
 import type { ReviewRuntimeHandle } from './review-runtime-store.js';
@@ -43,7 +44,8 @@ export class ReviewPreparationHost {
   private readonly assertCurrent: (identity: ContextPhaseIdentity) => Promise<void>,
   assertDisposed: (identity: ContextPhaseIdentity) => Promise<void>,
   private readonly limits: (project: string) => ReviewPreparationLimits = () => reviewPreparationLimits(),
-  private readonly onProgress: (identity: ContextPhaseIdentity, progress: Pick<ReviewRuntime, 'progress' | 'preparation'>) => void = () => {}) {
+  private readonly onProgress: (identity: ContextPhaseIdentity, progress: Pick<ReviewRuntime, 'progress' | 'preparation'>) => void = () => {},
+  private readonly closeNativeForPublication?: (identity: ContextPhaseIdentity) => Promise<void>) {
   if (!isMainThread) throw new Error('Preparation host must live on main');
   this.contexts = new ReviewContextRegistry(epoch, assertCurrent, assertDisposed, async receipt => {
    const allocation = this.allocation(receipt.key, receipt.capacityToken);
@@ -76,10 +78,11 @@ export class ReviewPreparationHost {
   catch(error) { const count = this.phases.get(review)! - 1; if(count)this.phases.set(review,count);else this.phases.delete(review); throw error; }
   const { port1, port2 } = new MessageChannel(), capacity = this.capacity(identity.key.project);
   let closed = false, detached = false, tail: Promise<void> = Promise.resolve();
-  const active = async () => {
+  const active = async (method: string) => {
    if (closed) throw new Error('Preparation phase closed'); await this.assertCurrent(identity);
    const state = this.runtimes.snapshot(runtime);
-   if (closed || state.state !== 'active' || state.cancellation) throw new Error('Preparation owner fenced');
+   const closedPublication = state.state === 'terminal' && ['runtime.publication', 'runtime.history', 'context.resolve', 'context.release'].includes(method);
+   if (closed || state.state !== 'active' && !closedPublication || state.cancellation) throw new Error('Preparation owner fenced');
   };
   const expected = (value: PreparedSourceIdentity) => {
    if (!same(value.key, identity.key) || value.attempt !== identity.attempt || value.inputDigest !== this.runtimes.snapshot(runtime).checkpointBinding.inputDigest) throw new Error('Foreign prepared input');
@@ -121,9 +124,15 @@ export class ReviewPreparationHost {
     await this.runtimes.acceptHistory(runtime, receipt, () => verifyHistoryBoundaryReceipt(receipt, source));
     for (const allocation of this.allocations.values()) if (allocation.key === keyOf(identity.key) && allocation.owner === phaseId) allocation.retained = true;
    },
+   'runtime.publication': async raw => {
+    const p = fields(raw, ['access', 'receipt']), source = await this.contexts.resolve(owner, p['access'] as PreparationAccess), receipt = p['receipt'] as HistoryBoundaryReceipt;
+    if (!this.closeNativeForPublication) throw new Error('Main native publication closure unavailable');
+    const audit = await this.runtimes.sealPublication(runtime, receipt, () => verifyHistoryBoundaryReceipt(receipt, source), () => this.closeNativeForPublication!(identity));
+    return publicationProof(audit, receipt, source, await readBoundPreparationHistory(receipt, source));
+   },
   };
   const handlers: HubHandlers = Object.fromEntries(Object.entries(work).map(([name, handler]) => [name, (raw: unknown) => {
-   const result = tail.then(async () => { await active(); const value = await handler(raw); await active(); return value; });
+   const result = tail.then(async () => { await active(name); const value = await handler(raw); await active(name); return value; });
    tail = result.then(() => {}, () => {}); return result;
   }]));
   const stop = serveHub(port1, handlers);

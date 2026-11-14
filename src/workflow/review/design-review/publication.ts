@@ -16,6 +16,9 @@ import { requireDesign, DesignReviewError, isDesignAdmission } from './contracts
 import type { DesignReviewCheckpoint, DesignPublication, StoredDesignCheckpoint } from './contracts.js';
 import { persistReviewResourceAudit } from '../resource-audit.js';
 import { decodeArtifactHead } from '../../artifact-core/decode.js';
+import { decodePreparationCheckpoint } from '../preparation-checkpoint.js';
+import type { DesignPreparationCheckpoint } from '../preparation-checkpoint.js';
+import type { QualifiedPublication } from '../publication-proof.js';
 
 const sha=(raw:string)=>createHash('sha256').update(raw).digest('hex');
 /** Lifecycle writers retain the source head and may add its default envelope.
@@ -26,7 +29,9 @@ function sourceHeadDigest(id:string,raw:string):string{
  meta['envelope']??={description:artifact.description,...(artifact.parent?{parent:artifact.parent}:{}),references:artifact.references,...(artifact.binding?{binding:artifact.binding}:{}),attachments:artifact.attachments};
  return contentHash('design-source-head-v1',{body:{...head,meta},citations:[]});
 }
-export interface DesignPublicationDeps { readonly store?:ArtifactStore; readonly historyLimit?:(()=>number); }
+export interface DesignPublicationDeps { readonly store?:ArtifactStore; readonly historyLimit?:(()=>number);
+ readonly preparation?: QualifiedPublication | undefined;
+}
 /** Refuse a known impossible minimum before spending provider work. Growth is
  * checked again by the exact frame/journal writer and remains persistence-only.
  */
@@ -49,11 +54,16 @@ function historyCheckpoint(cp:DesignReviewCheckpoint):DesignReviewCheckpoint {
  }))};
 }
 /** Atomic journalled publication under the artifact store's existing queue; never calls a provider. */
-export async function publishDesignReview(input:StoredDesignCheckpoint,deps:DesignPublicationDeps={}):Promise<DesignPublication> {
+export async function publishDesignReview(submitted:StoredDesignCheckpoint | DesignPreparationCheckpoint,deps:DesignPublicationDeps={}):Promise<DesignPublication> {
+ const decoded = decodePreparationCheckpoint(submitted, { project: submitted.project, family: 'design', reviewId: submitted.reviewId });
+ const preparation = decoded.format === 'current' ? decoded.checkpoint as DesignPreparationCheckpoint : undefined;
+ requireDesign(!preparation || deps.preparation, 'publication_incomplete', 'Version-3 publication requires private preparation authority');
+ const input: StoredDesignCheckpoint = preparation ? (({ runtime: _r, context: _c, ...rest }) => ({ ...rest, schemaVersion: 2 as const }))(preparation) : submitted as StoredDesignCheckpoint;
  const cp=qualifiedDesignProjection(input);
  requireDesign(cp&&input.attempts.at(-1)?.number===cp.attempts.at(-1)?.number&&!isDesignAdmission(input.attempts.at(-1)!),'publication_incomplete','Unverified admission has no consolidated report');
  const store=deps.store??createRepoLifecycle(cp.project).store,attempt=cp.attempts.at(-1)!;
  requireDesign(attempt.report,'publication_incomplete','No consolidated report to publish');
+ const proof = preparation ? await deps.preparation!.authorize(preparation) : undefined;
  const preservation=designPreservationDigest(input),id=sha(`design-review-v1\0${cp.project}\0${cp.artifactId}\0${cp.reviewId}\0${attempt.number}\0${preservation}`);
  await persistReviewResourceAudit(store,cp.artifactId,{project:cp.project,family:'design',reviewId:cp.reviewId},input.attempts.flatMap(a=>'resourceGuard' in a&&a.resourceGuard?[{attempt:a.number,resourceGuard:a.resourceGuard}]:[]));
  const author=authorPartyOf(JSON.parse(attempt.baseline.reviewedContent.canonical).meta);
@@ -98,11 +108,14 @@ export async function publishDesignReview(input:StoredDesignCheckpoint,deps:Desi
    binding:{sourceRevision:{number:current.lifecycle.revision.number,contentHash:current.lifecycle.revision.contentHash||contentHash(current.description,current.payload)},
     reviewedContentIdentity:attempt.baseline.contentIdentity,documentDigest:attempt.baseline.subjectFingerprints.document,
     workflowDigest:designWorkflowDigest(cp.subject.workflow),author},preservationDigest:preservation};
-  const record:PermanentDesignReview=input.schemaVersion===1
+  const historicalRecord:PermanentDesignReview=input.schemaVersion===1
    ?{...common,schemaVersion:1,submitted:cp.submitted,attempts:normalized.attempts}
    :{...common,schemaVersion:2,...(input.submitted?{submitted:input.submitted}:{}),
      attempts:input.attempts.filter(a=>!isDesignAdmission(a)).map(a=>{const clean=normalized.attempts.find(n=>n.number===a.number)!;return{...a,...clean};}),
      admissionFailures:input.attempts.filter(isDesignAdmission).map(a=>({...a,progress:{...a.progress,freshness:'stored' as const,sequence:0}}))};
+  const record: PermanentDesignReview = preparation && proof
+   ? { ...historicalRecord, schemaVersion: 3, admissionFailures: input.attempts.filter(isDesignAdmission), preparation: { runtime: preparation.runtime, context: preparation.context!, proof } }
+   : historicalRecord;
   validatePermanentDesignReview(record,{project:cp.project,artifactId:cp.artifactId});
   const verdict=attempt.report!.status==='passed'?'pass':'block',at=attempt.finishedAt??attempt.startedAt;
   const lifecycle=nextLifecycle({id:current.id,lifecycle:current.lifecycle},'review',actor,at,

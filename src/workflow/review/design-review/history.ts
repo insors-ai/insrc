@@ -9,6 +9,8 @@ import { DesignCheckpointSchema, DesignStatusSchema, decodeDesign, requireDesign
 import type { StoredDesignCheckpoint, DesignReviewCheckpoint } from './contracts.js';
 import { withoutReviewResourceGuard } from '../resource-audit.js';
 import { decodeStoredDesignCheckpoint } from './admission-checkpoint.js';
+import { ReviewRuntimeReferenceSchema, PreparedContextReferenceSchema } from '../../../shared/review-preparation.js';
+import { PublicationProofSchema, validatePublicationProof } from '../publication-proof.js';
 export { DesignPublicationSchema } from './contracts.js';
 export type { DesignPublication } from './contracts.js';
 
@@ -36,7 +38,11 @@ const AdmissionPermanentDesignReviewSchema = Type.Object({
  attempts: Type.Array(ResourceDesignAttemptSchema, { minItems: 1, maxItems: DESIGN_LIMITS.attempts }),
  admissionFailures: Type.Array(DesignAdmissionAttemptSchema, { maxItems: DESIGN_LIMITS.attempts }),
 }, { additionalProperties: false });
-export const PermanentDesignReviewSchema = Type.Union([LegacyPermanentDesignReviewSchema, AdmissionPermanentDesignReviewSchema]);
+const PreparationPermanentDesignReviewSchema = Type.Object({
+ ...AdmissionPermanentDesignReviewSchema.properties, schemaVersion: Type.Literal(3),
+ preparation: Type.Object({ runtime: ReviewRuntimeReferenceSchema, context: PreparedContextReferenceSchema, proof: PublicationProofSchema }, { additionalProperties: false }),
+}, { additionalProperties: false });
+export const PermanentDesignReviewSchema = Type.Union([LegacyPermanentDesignReviewSchema, AdmissionPermanentDesignReviewSchema, PreparationPermanentDesignReviewSchema]);
 export type PermanentDesignReview = Static<typeof PermanentDesignReviewSchema>;
 export function storedDesignCheckpointFromRecord(record: PermanentDesignReview): StoredDesignCheckpoint {
  const common = { reviewId: record.reviewId, project: record.project, artifactId: record.artifactId, subject: record.subject };
@@ -104,5 +110,9 @@ export function validatePermanentDesignReview(input: unknown, expected: { projec
    'invalid_review_history', 'Permanent report differs from accepted feedback');
  }
  requireDesign(record.preservationDigest === designPreservationDigest(checkpoint), 'invalid_review_history', 'Permanent attempt preservation digest does not match');
+ if (record.schemaVersion === 3) {
+  validatePublicationProof(record.preparation.proof, { ...checkpoint, schemaVersion: 3, runtime: record.preparation.runtime, context: record.preparation.context },
+   { project: record.project, family: 'design', reviewId: record.reviewId });
+ }
  return record;
 }

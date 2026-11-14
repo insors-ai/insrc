@@ -3,7 +3,7 @@ import { open } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import { artifactJsonPath, codeReviewArtifactId } from '../../storage.js';
 import { reviewJsonLimit, requireReview } from './contracts.js';
-import { validateTaskBody,hasPreservedReviewFailures } from './record.js';
+import { validateTaskBody,taskBodyVersion } from './record.js';
 import type { TaskReviewBody } from './record.js';
 
 /** Permanent history only: safe after working checkpoint cleanup, with no
@@ -13,9 +13,9 @@ export async function readTaskReviewHistory(project: string, hash: string, story
  try {
   const stat = await file.stat(); requireReview(stat.isFile() && stat.size <= reviewJsonLimit(), 'CR', 'Expected bounded permanent CR');
   const raw = JSON.parse(await file.readFile('utf8')) as { meta?: { schemaVersion?: unknown }; body?: unknown };
-  requireReview(raw.meta?.schemaVersion === 2 || raw.meta?.schemaVersion === 3, 'CR', 'Unsupported permanent CR version');
+  requireReview([2,3,4].includes(raw.meta?.schemaVersion as number), 'CR', 'Unsupported permanent CR version');
   const body = validateTaskBody(raw.body);
-  requireReview(body.storyId === storyId && (raw.meta.schemaVersion === 3) === hasPreservedReviewFailures(body), 'CR', 'Permanent CR scope or capability mismatch');
+  requireReview(body.storyId === storyId && raw.meta?.schemaVersion === taskBodyVersion(body), 'CR', 'Permanent CR scope or capability mismatch');
   return body;
  } finally { await file.close(); }
 }

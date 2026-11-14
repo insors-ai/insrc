@@ -147,7 +147,7 @@ export class ReviewRuntimeStore {
     if (value.cancellation.actionId !== actionId || value.cancellation.reason !== reason) throw new RuntimeOperationRefused('Conflicting cancellation replay');
     return;
    }
-   if (!['active', 'initializing', 'interrupted'].includes(value.state)) throw new Error('Runtime is not cancellable');
+   if (!['active', 'initializing', 'interrupted', 'terminal'].includes(value.state)) throw new Error('Runtime is not cancellable');
    value.cancellation = { actionId, reason, requestedAt: new Date().toISOString(), operationState: 'cancelling' };
    value.state = 'interrupted';
   });
@@ -175,8 +175,8 @@ export class ReviewRuntimeStore {
  async acceptHistory(handle: ReviewRuntimeHandle, receipt: HistoryBoundaryReceipt, verify: () => Promise<void>): Promise<void> {
   const proof = structuredClone(receipt);
   await this.mutate(handle, async value => {
-   if (value.state !== 'active' || value.cancellation) throw new RuntimeOperationRefused('Runtime history admission closed');
-   if (!same(proof.key, handle.key) || proof.runtimeId !== value.runtimeId || proof.attempt !== value.attempt || proof.inputDigest !== value.checkpointBinding.inputDigest || value.state !== 'active') throw new Error('Foreign runtime history receipt');
+   if (value.state !== 'active' && !(value.state === 'terminal' && proof.publication) || value.cancellation) throw new RuntimeOperationRefused('Runtime history admission closed');
+   if (!same(proof.key, handle.key) || proof.runtimeId !== value.runtimeId || proof.attempt !== value.attempt || proof.inputDigest !== value.checkpointBinding.inputDigest) throw new Error('Foreign runtime history receipt');
    await verify();
    const next = proof.binding, old = value.checkpointBinding;
    if (next.semanticSequence === old.semanticSequence && old.historyBindingDigest === next.bindingDigest) {
@@ -185,11 +185,26 @@ export class ReviewRuntimeStore {
    const initial = old.historyBindingDigest === undefined && old.semanticSequence === 0 && next.semanticSequence === 0 && next.priorBindingDigest === null;
    if (!initial && (next.semanticSequence !== old.semanticSequence + 1 || next.priorBindingDigest !== old.historyBindingDigest)) throw new Error('Runtime history chain mismatch');
    if (proof.completedUnits < value.progress.completedUnits) throw new Error('Committed result count regressed');
+   if (value.state === 'terminal' && proof.completedUnits !== value.progress.completedUnits) throw new Error('Closed publication cannot accept new assessment results');
    const advanced = proof.completedUnits > value.progress.completedUnits;
    value.checkpointBinding = { ...old, semanticSequence: next.semanticSequence, historyBindingDigest: next.bindingDigest };
    value.progress.completedUnits = proof.completedUnits;
    if (advanced) value.committedResultBoundary = { semanticSequence: next.semanticSequence, historyBindingDigest: next.bindingDigest };
    if (proof.publication) value.publicationBoundary = { semanticSequence: next.semanticSequence, artifactId: proof.publication.artifactId, preservationDigest: proof.publication.preservationDigest };
+  });
+ }
+ /** Main-only semantic boundary: closes future native/result admission after
+  * actual native disposal, then verifies the exact acknowledged history. */
+ async sealPublication(handle: ReviewRuntimeHandle, receipt: HistoryBoundaryReceipt, verify: () => Promise<void>, closeNative: () => Promise<void>): Promise<ReviewRuntime> {
+  await closeNative();
+  await this.flushProgress(handle);
+  return this.mutate(handle, async value => {
+   if (!['active', 'terminal'].includes(value.state) || value.cancellation) throw new RuntimeOperationRefused('Publication owner is not active');
+   if (value.resourceGuard.openLeases.length) throw new Error('Publication has unresolved native resources');
+   if (!same(receipt.key, handle.key) || receipt.runtimeId !== value.runtimeId || receipt.attempt !== value.attempt
+    || receipt.inputDigest !== value.checkpointBinding.inputDigest || receipt.binding.bindingDigest !== value.checkpointBinding.historyBindingDigest
+    || receipt.binding.semanticSequence !== value.checkpointBinding.semanticSequence || receipt.completedUnits !== value.progress.completedUnits) throw new Error('Publication history is not acknowledged');
+   await verify(); value.state = 'terminal';
   });
  }
  /** Explicit owner teardown never removes persisted proof. */

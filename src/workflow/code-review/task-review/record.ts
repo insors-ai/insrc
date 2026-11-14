@@ -13,6 +13,8 @@ import { aggregateTaskStatus, validateTaskResult, validateResultOrigins } from '
 
 import { FinalScopeSnapshotSchema } from './final-scope-contracts.js';
 import { validateFinalScope } from './final-scope-history.js';
+import { CodePreparationCheckpointSchema } from '../../review/preparation-checkpoint.js';
+import { PublicationProofSchema, validatePublicationProof, publicationEvidenceDigest } from '../../review/publication-proof.js';
 
 const text = Type.String({ minLength: 1, maxLength: 65536 });
 const status = TaskResultSchema.properties.status;
@@ -25,6 +27,8 @@ export const CodeAdmissionHistorySchema = Type.Object({ reviewId: text, attempt:
 export const TaskBodySchema = Type.Object({ kind: Type.Literal('code-review'), format: Type.Literal('task-based'), storyId: text, status,
  reviews: Type.Array(SummarySchema, { maxItems: 10000 }),
  admissionFailures: Type.Optional(Type.Array(CodeAdmissionHistorySchema, { minItems: 1, maxItems: 10000 })),
+ preparationHistories: Type.Optional(Type.Array(Type.Object({ checkpoint: CodePreparationCheckpointSchema, proof: PublicationProofSchema,
+  earlierProofs: Type.Optional(Type.Array(PublicationProofSchema, { minItems: 1, maxItems: 10000 })) }, { additionalProperties: false }), { minItems: 1, maxItems: 10000 })),
 }, { additionalProperties: false });
 export type TaskReviewBody = TaskBasedCodeReviewRecord['body'];
 
@@ -44,6 +48,7 @@ export function bodyStatus(reviews: readonly CompletedReviewSummary[], failures:
  return latestReviewStatus(reviews);
 }
 export function hasPreservedReviewFailures(body:TaskReviewBody):boolean{return!!body.admissionFailures||body.reviews.some(r=>r.failedAttempt);}
+export function taskBodyVersion(body: TaskReviewBody): 2 | 3 | 4 { return body.preparationHistories ? 4 : hasPreservedReviewFailures(body) ? 3 : 2; }
 export function codeReviewPreservationDigest(body: TaskReviewBody): string {
  return contentHash('code-review-preservation-v1',{body:{...body,reviews:body.reviews.map(r=>r.failedAttempt?{...r,failedAttempt:withoutReviewResourceGuard(r.failedAttempt)}:r),...(body.admissionFailures?{admissionFailures:body.admissionFailures.map(f=>({...f,attempt:withoutReviewResourceGuard(f.attempt)}))}:{})},citations:[]});
 }
@@ -91,7 +96,46 @@ export function validateTaskBody(input: unknown): TaskReviewBody {
  }
 
  requireReview(body.status === bodyStatus(body.reviews, body.admissionFailures), 'status', 'CR status disagrees with latest attempt outcomes');
+ const histories = new Set<string>();
+ for (const archive of body.preparationHistories ?? []) {
+  const cp = archive.checkpoint, key = { project: cp.project, family: 'code' as const, reviewId: cp.reviewId };
+  requireReview(!histories.has(cp.reviewId), 'CR', 'Duplicate complete review history'); histories.add(cp.reviewId);
+  validatePublicationProof(archive.proof, cp, key);
+  const audits = new Set<number>([archive.proof.runtime.attempt]);
+  for (const proof of archive.earlierProofs ?? []) {
+   const attempt = proof.runtime.attempt;
+   requireReview(attempt < archive.proof.runtime.attempt && !audits.has(attempt), 'CR', 'Duplicate or future closed runtime audit'); audits.add(attempt);
+   validatePublicationProof(proof, { ...cp, attempts: cp.attempts.slice(0, attempt), runtime: { runtimeId: proof.runtime.runtimeId, inputDigest: proof.runtime.checkpointBinding.inputDigest },
+    context: { generationId: proof.binding.generationId, manifestDigest: proof.manifestDigest, historyBindingDigest: proof.binding.bindingDigest } }, key);
+  }
+  requireReview(cp.storyId.replace(/^STORY-[a-f0-9]{16}-/, '') === body.storyId, 'CR', 'Foreign complete review history');
+  for (const attempt of cp.attempts) {
+   if (!('review-response' in attempt)) {
+    requireReview(body.admissionFailures?.some(f => f.reviewId === cp.reviewId && isDeepStrictEqual(withoutReviewResourceGuard(f.attempt), attempt)), 'CR', 'Complete history admission was not preserved'); continue;
+   }
+   const summary = body.reviews.find(r => r.reviewId === cp.reviewId && r.attempt === attempt.header.attempt);
+   requireReview(summary && isDeepStrictEqual(summary.tasks, attempt['review-response'].tasks) && isDeepStrictEqual(summary.origins, attempt['review-response'].origins)
+    && summary.reviewer === attempt.header.reviewer && summary.completedAt === attempt.header.completedAt
+    && isDeepStrictEqual(summary.scope.reviewSet, attempt.submitted.reviewSet) && isDeepStrictEqual(summary.scope.documents, attempt.submitted.documents)
+    && summary.scope.storyId === attempt.submitted.storyId && summary.scope.taskId === attempt.submitted.taskId
+    && summary.finalScopeIdentity === attempt.header.finalScopeIdentity && summary.attributionIdentity === attempt.header.attributionIdentity
+    && isDeepStrictEqual(summary.taskScopeIdentities, attempt.header.taskScopeIdentities) && summary.buildFingerprint === attempt.header.buildFingerprint,
+    'CR', 'Complete input/feedback history disagrees with permanent assessment');
+  }
+ }
  return body;
+}
+export function mergePreparationHistory(body: TaskReviewBody, archive: NonNullable<TaskReviewBody['preparationHistories']>[number]): TaskReviewBody {
+ const previous = body.preparationHistories?.find(a => a.checkpoint.reviewId === archive.checkpoint.reviewId);
+ if (previous) {
+  const old = previous.checkpoint, next = archive.checkpoint;
+  requireReview(next.attempts.length >= old.attempts.length, 'CR', 'Complete history cannot regress');
+  const prefix = { ...next, attempts: next.attempts.slice(0, old.attempts.length) };
+  requireReview(publicationEvidenceDigest(old) === publicationEvidenceDigest(prefix), 'CR', 'Conflicting complete review history');
+  if (next.attempts.length === old.attempts.length) return body; // preserve original closed audit on lost acknowledgement
+ }
+ const complete = previous ? { ...archive, earlierProofs: [...(previous.earlierProofs ?? []), previous.proof] } : archive;
+ return validateTaskBody({ ...body, preparationHistories: [...(body.preparationHistories ?? []).filter(a => a !== previous), complete] });
 }
 export function mergeTaskSummary(current: unknown, summaryInput: CompletedReviewSummary): TaskReviewBody {
  const summary = decodeReview(SummarySchema, summaryInput);
@@ -107,7 +151,7 @@ export function mergeTaskSummary(current: unknown, summaryInput: CompletedReview
  const existing = reviews.find(review => review.reviewId === summary.reviewId && review.attempt === summary.attempt);
  if (existing) requireReview(isDeepStrictEqual(existing, summary), 'attempt', 'Conflicting publication for an already saved attempt');
  else reviews = [...reviews, summary];
- return validateTaskBody({ kind:'code-review', format:'task-based', storyId:summary.storyId, status:bodyStatus(reviews, admissionFailures), reviews, ...(admissionFailures ? { admissionFailures } : {}) });
+ return validateTaskBody({ kind:'code-review', format:'task-based', storyId:summary.storyId, status:bodyStatus(reviews, admissionFailures), reviews, ...(admissionFailures ? { admissionFailures } : {}), ...(current && typeof current === 'object' && 'preparationHistories' in current ? { preparationHistories: current.preparationHistories } : {}) });
 }
 /** Technical history is separate from task assessments and cannot pass a CR. */
 export function mergeCodeAdmissionFailure(current: unknown, reviewId: string, attempt: CodeAdmissionAttempt): TaskReviewBody {
@@ -120,11 +164,11 @@ export function mergeCodeAdmissionFailure(current: unknown, reviewId: string, at
  }
  else failures.push(entry);
  const reviews = prior?.reviews ?? [], storyId = attempt.submitted.storyId.replace(/^STORY-[a-f0-9]{16}-/, '');
- return validateTaskBody({ kind: 'code-review', format: 'task-based', storyId, reviews, admissionFailures: failures, status: bodyStatus(reviews, failures) });
+ return validateTaskBody({ kind: 'code-review', format: 'task-based', storyId, reviews, admissionFailures: failures, status: bodyStatus(reviews, failures), ...(prior?.preparationHistories ? { preparationHistories: prior.preparationHistories } : {}) });
 }
 export function renderTaskReview(bodyInput: unknown): string {
  const body = validateTaskBody(bodyInput);
- const lines = [`# Code review: ${body.storyId}`, '', `Status: **${body.status}** · task-based schema version ${hasPreservedReviewFailures(body) ? 3 : 2}`, ''];
+ const lines = [`# Code review: ${body.storyId}`, '', `Status: **${body.status}** · task-based schema version ${taskBodyVersion(body)}`, ''];
  for (const { reviewId, attempt } of body.admissionFailures ?? []) lines.push(`## ${reviewId} — attempt ${attempt.header.attempt}: admission ${attempt.header.status}`, '', `Technical admission only; scope was not verified and no task assessment was performed. ${attempt.error ? `${attempt.error.code} (${attempt.error.field}): ${attempt.error.summary}` : 'Admission interrupted.'}`, '');
  for (const review of body.reviews) {
   if(review.failedAttempt)lines.push('Qualified execution failed; its original input and feedback are retained without completed-assessment signoff.','');

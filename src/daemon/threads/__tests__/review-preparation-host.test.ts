@@ -18,10 +18,10 @@ import { ThreadServices } from '../main-services.js';
 import { startWorker } from '../workers.js';
 import { HubClient } from '../channel.js';
 
-async function setup(t: { after(fn: () => Promise<void>): void }, limit = 256 * 1024 * 1024) {
+async function setup(t: { after(fn: () => Promise<void>): void }, limit = 256 * 1024 * 1024, publicationClosure?: () => Promise<void>) {
  const f=await fixture(),limits={...reviewPreparationLimits(join(f.repo,'missing.json')),cacheMaxBytes:limit},store=new ReviewRuntimeStore();
  const disposed=new Set<string>(),closed=new Set<string>(),connections: {close():Promise<void>;port:{close():void}}[]=[],handles:Parameters<typeof store.release>[0][]=[];
- const host=new ReviewPreparationHost(store,'epoch',async identity=>{if(closed.has(identity.incarnation))throw Error('Worker no longer current');},async identity=>{if(!disposed.has(identity.incarnation))throw Error('Worker not disposed');},()=>limits);
+ const host=new ReviewPreparationHost(store,'epoch',async identity=>{if(closed.has(identity.incarnation))throw Error('Worker no longer current');},async identity=>{if(!disposed.has(identity.incarnation))throw Error('Worker not disposed');},()=>limits,undefined,publicationClosure);
  async function connect(id:string){
   const key={project:f.repo,family:'code' as const,reviewId:id},incarnation=`worker-${id}`,inputDigest=preparationDigest(f.packet);
   const runtime:ReviewRuntime={schemaVersion:1,key,attempt:1,runtimeId:`runtime-${id}`,daemonEpoch:'epoch',workerIncarnation:incarnation,sequence:0,checkpointBinding:{inputDigest,semanticSequence:0},state:'initializing',resourceGuard:{daemonInstance:'epoch',openLeases:[]},progress:{completedUnits:0,totalUnits:1,observedAt:'2026-11-14T00:00:00.000Z',lastMeaningfulActivityAt:null}};
@@ -50,6 +50,28 @@ test('private preparation ports share aggregate capacity and reject foreign allo
  assert.equal(f.host.reservedBytes(f.f.repo),400);
  await f.host.releaseCleaned(one.key,async()=>{});assert.equal(f.host.reservedBytes(f.f.repo),0);
  await assert.rejects(two.client.release(combined),/Foreign/);
+});
+
+test('private publication proof seals only acknowledged owned history and keeps cancellation available while publishing', async t => {
+ let nativeClosures = 0;
+ const f = await setup(t, undefined, async () => { nativeClosures++; }), one = await f.connect('publication-audit'), peer = await f.connect('peer');
+ const session = await ReviewSourceSession.create(one.key, f.f.deps.sources, f.limits, one.client), prepared = await prepareReviewPacket(f.f.packet, session, true);
+ const identity = { key: one.key, attempt: 1, inputDigest: preparationDigest(f.f.packet), validatorVersion: 1, routeDigest: preparationDigest(f.f.packet.documents), sourceIdentity: preparationDigest(f.f.packet.reviewRevision), scopeDigest: prepared.projection!.identity, testDocumentDigest: preparationDigest(f.f.packet.tests) };
+ const receipt = await writePreparedContext(identity, { current: prepared }, session, f.limits, one.client);
+ await one.client.qualify(identity, receipt); const { access } = await one.client.borrow(identity);
+ await session.close();
+ const history = await HistoryBindingSession.open(receipt, one.cp, { authorize: () => one.client.resolve(access), validate: codeHistoryFeedback(new Map([[1, prepared]]), f.f.deps.sources), limits: f.limits, capacity: one.client, invalidateSource: async e => { throw e; } });
+ await one.client.acceptHistory(access, history.latest());
+ const cp = JSON.parse(await readFile(one.path, 'utf8')); cp.attempts[0]['review-response'].tasks = [structuredClone(f.f.result)]; cp.attempts[0].header.status = 'passed'; cp.attempts[0].header.completedAt = new Date().toISOString();
+ const boundary = await history.accept(cp); await one.client.acceptHistory(access, boundary);
+ await assert.rejects(peer.client.publication(access, boundary), /access|Foreign|Unissued/i);
+ const proof = await one.client.publication(access, boundary); assert.equal(proof.runtime.state, 'terminal'); assert.equal(nativeClosures, 1);
+ assert.equal(f.store.snapshot(peer.handle).state, 'active');
+ await assert.rejects(one.client.reserve(1), /fenced/);
+ await assert.rejects(one.client.acceptHistory(access, boundary), /admission closed/);
+ await f.store.beginCancellation(one.handle, 'cancel-publication', 'User cancels during publication');
+ await assert.rejects(one.client.publication(access, boundary), /fenced/);
+ assert.equal(f.store.snapshot(one.handle).cancellation!.operationState, 'cancelling');
 });
 
 test('private bridge binds context and accepted history to current input and retains capacity until cleanup',async t=>{

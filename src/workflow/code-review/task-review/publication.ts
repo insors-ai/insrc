@@ -113,7 +113,8 @@ export async function publishTaskCheckpoint(project: string, epicHash:string, re
    requireReview(Buffer.byteLength(JSON.stringify(envelope,null,2)+'\n')<=reviewJsonLimit(),'projection_limit','Merged CR envelope exceeds storage capacity');
    if(isDeepStrictEqual(body,current.payload.body)) return undefined;
    const {changeLog:_log,...head}=current;
-   return {next:{...head,payload:{body:{...body},citations:[]}},options:{addresses:[],outcome:{result:summary.status,summary:`Task-based review ${reviewId}/${summary.attempt}: ${summary.status}`}}};
+   return {next:{...head,payload:{body:{...body},citations:[]}},options:{addresses:[],outcome:{result:summary.status,summary:`Task-based review ${reviewId}/${summary.attempt}: ${summary.status}`,
+    ...(archive ? { data: { kind: 'prepared-code-review', schemaVersion: 1, reviewId, attempt: summary.attempt, evidenceDigest: archive.proof.evidenceDigest } } : {}) }}};
   },{},()=>({id,description:'',references:[],attachments:[],lifecycle:emptyLifecycle(0),payload:{body:{},citations:[]}}));
   // Render under the SAME queue; concurrent publications cannot leave an older projection last.
   await store.exclusive(id,async()=>{

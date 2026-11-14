@@ -62,9 +62,10 @@ export const CleanupClaimSchema = object({
  schemaVersion: Type.Literal(1), key: ReviewKeySchema, attempt: positive, claimId: id,
  runtimeId: id, checkpointDigest: digest,
  checkpointFileIdentity: object({ dev: Type.String({ pattern: '^\\d+$' }), ino: Type.String({ pattern: '^\\d+$' }) }),
- closedAuditDigest: digest, context: Type.Optional(binding), approvalRevision: positive,
+ closedAuditDigest: digest, context: Type.Optional(binding), approvalRevision: count,
  permanent: object({ artifactId: id, historyEntryId: id, preservationDigest: digest }),
  deletions: Type.Array(object({ kind: enumeration(['context', 'runtime', 'checkpoint']),
+  relativePath: Type.String({ maxLength: 4096 }), nodeType: enumeration(['file', 'directory']),
   identity: digest, contentDigest: digest }), { minItems: 1, maxItems: 10000 }),
 });
 export type CleanupClaim = Static<typeof CleanupClaimSchema>;
@@ -123,5 +124,12 @@ export function decodeCleanupClaim(input: unknown, key: ReviewKey, maxBytes: num
  const v = decodePreparation(CleanupClaimSchema, input, key, maxBytes);
  const ids = v.deletions.map(d => `${d.kind}:${d.identity}`);
  if (new Set(ids).size !== ids.length || v.deletions.filter(d => d.kind === 'checkpoint').length !== 1 || v.deletions.filter(d => d.kind === 'runtime').length !== 1) throw new Error('Invalid cleanup deletion inventory');
+ const paths = new Set<string>();
+ for (const entry of v.deletions) {
+  const path = entry.relativePath;
+  if (path.includes('\\') || path.includes('\0') || path.startsWith('/') || path !== '' && path.split('/').some(p => !p || p === '.' || p === '..')
+   || entry.kind !== 'context' && (path !== '' || entry.nodeType !== 'file') || paths.has(`${entry.kind}:${path}`)) throw new Error('Invalid cleanup deletion path');
+  paths.add(`${entry.kind}:${path}`);
+ }
  return v;
 }

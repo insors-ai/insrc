@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile, writeFile, rm, mkdir } from 'node:fs/promises';
-import { join, dirname } from 'node:path';
+import { readFile, writeFile, rm } from 'node:fs/promises';
+import { join } from 'node:path';
 import { fixture, hash } from '../../code-review/task-review/__tests__/publication-fixture.js';
 import { impactFixture } from '../design-review/__tests__/impact-fixtures.js';
 import { CodePreparation } from '../code-preparation.js';
@@ -9,12 +9,10 @@ import { DesignPreparation } from '../design-preparation.js';
 import { ReviewPreparationCapacity } from '../source-session.js';
 import { reviewPreparationLimits } from '../../../config/review.js';
 import { preparationDigest, PreparedContextReader } from '../prepared-context.js';
-import type { ReadyContextReceipt } from '../prepared-context.js';
-import { HistoryBindingSession, verifyHistoryBoundaryReceipt } from '../history-binding.js';
-import type { PreparationHistory, HistoryBoundaryReceipt } from '../history-binding.js';
+import { HistoryBindingSession } from '../history-binding.js';
+import type { PreparationHistory } from '../history-binding.js';
 import { codeHistoryFeedback, designHistoryFeedback } from '../history-feedback.js';
-import { publicationProof, validatePublicationProof, publicationEvidenceDigest } from '../publication-proof.js';
-import { ReviewRuntimeStore } from '../../../daemon/threads/review-runtime-store.js';
+import { validatePublicationProof, publicationEvidenceDigest } from '../publication-proof.js';
 import { reviewWorkerCheckpoint } from '../../../daemon/threads/review-worker-contract.js';
 import { publishTaskCheckpoint } from '../../code-review/task-review/publication.js';
 import { publishDesignReview } from '../design-review/publication.js';
@@ -26,21 +24,8 @@ import { enforceCodeReviewGate } from '../../code-review/gate.js';
 import { attributionIdentity, bindTaskFinalIdentities } from '../../code-review/task-review/attribution-binding.js';
 import { completedSummary } from '../../code-review/task-review/summary.js';
 import { createRepoLifecycle } from '../../artifact-core/repo-lifecycle.js';
-import type { ReviewRuntime } from '../../../shared/review-preparation.js';
 
-async function runtime(source: ReadyContextReceipt, history: PreparationHistory) {
- const store = new ReviewRuntimeStore(), state: ReviewRuntime = { schemaVersion: 1, key: source.key, attempt: source.attempt,
-  runtimeId: history.runtime.runtimeId, daemonEpoch: 'epoch', workerIncarnation: 'worker', sequence: 0,
-  checkpointBinding: { inputDigest: source.inputDigest, semanticSequence: 0 }, state: 'initializing',
-  resourceGuard: { daemonInstance: 'epoch', openLeases: [] },
-  progress: { completedUnits: 0, totalUnits: null, observedAt: new Date().toISOString(), lastMeaningfulActivityAt: null } };
- const handle = await store.initialize(state); await mkdir(dirname(reviewWorkerCheckpoint(source.key)), { recursive: true });
- await writeFile(reviewWorkerCheckpoint(source.key), JSON.stringify(history)); await store.activate(handle);
- const accept = (receipt: HistoryBoundaryReceipt) => store.acceptHistory(handle, receipt, () => verifyHistoryBoundaryReceipt(receipt, source));
- const authorize = async (checkpoint: PreparationHistory, receipt: HistoryBoundaryReceipt) => publicationProof(
-  await store.sealPublication(handle, receipt, () => verifyHistoryBoundaryReceipt(receipt, source), async () => {}), receipt, source, checkpoint);
- return { store, handle, accept, authorize };
-}
+import { runtime } from './prepared-publication-fixture.js';
 
 test('prepared code publication preserves complete input and closed proof across failed render, warm retry and temp deletion', async t => {
  const f = await fixture(true), key = { project: f.repo, family: 'code' as const, reviewId: 'publication' };

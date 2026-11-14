@@ -27,7 +27,7 @@ test('source history and cleanup contracts bind exact identities without conferr
  const history = { schemaVersion: 1, key, attempt: 1, generationId: digest, priorBindingDigest: null, semanticSequence: 1, historyPrefixDigest: other, evidenceManifestDigest: other, bindingDigest: digest };
  assert.deepEqual(decodeHistoryBinding(history, key, limit), history);
  assert.throws(() => decodeHistoryBinding({ ...history, priorBindingDigest: digest }, key, limit), /Self/);
- const claim = { schemaVersion: 1, key, attempt: 1, claimId: 'claim-1', runtimeId: 'runtime-1', checkpointDigest: digest, checkpointFileIdentity: { dev: '1', ino: '2' }, closedAuditDigest: other, approvalRevision: 1, permanent: { artifactId: 'CR-fixture', historyEntryId: 'entry-1', preservationDigest: digest }, deletions: [{ kind: 'runtime', identity: digest, contentDigest: digest }, { kind: 'checkpoint', identity: other, contentDigest: digest }] };
+ const claim = { schemaVersion: 1, key, attempt: 1, claimId: 'claim-1', runtimeId: 'runtime-1', checkpointDigest: digest, checkpointFileIdentity: { dev: '1', ino: '2' }, closedAuditDigest: other, approvalRevision: 1, permanent: { artifactId: 'CR-fixture', historyEntryId: 'entry-1', preservationDigest: digest }, deletions: [{ kind: 'runtime', relativePath: '', nodeType: 'file', identity: digest, contentDigest: digest }, { kind: 'checkpoint', relativePath: '', nodeType: 'file', identity: other, contentDigest: digest }] };
  assert.deepEqual(decodeCleanupClaim(claim, key, limit), claim);
  assert.throws(() => decodeCleanupClaim({ ...claim, deletions: claim.deletions.slice(1) }, key, limit), /inventory/);
  assert.throws(() => decodeCleanupClaim({ ...claim, path: '/arbitrary' }, key, limit), /Invalid/);

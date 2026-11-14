@@ -421,15 +421,21 @@ test('symbol-locate, test-locate, import-graph, usage-example, concept-resolve, 
 	assert.equal(conNone.hits.length, 0);
 	noLimit(conNone.completeness, 'concept.resolve with 0');
 
-	// manifests.locate: former limit 200. Two manifests are in the fixture already.
-	const before = (await runManifestsLocate(exp('manifests.locate', { topK: 1 }), ctx)).hits.length;
-	assert.equal(before, 2, 'a topK is ignored');
+	// manifests.locate: former limit 200. Two manifests are in the fixture already, none of them terraform.
+	assert.equal((await runManifestsLocate(exp('manifests.locate', { topK: 1 }), ctx)).hits.length, 2, 'a topK is ignored');
+	let seededSoFar = 0;
 	for (const [n, word] of [[200, 'zzmania'], [201, 'zzmanb']] as const) {
-		await seed(Array.from({ length: n }, (_, i) => ent('document', `m${i}.yaml`, `k8s/${word}/m${i}.yaml`, { language: 'yaml', artifact: true, body: 'apiVersion: v1\nkind: ConfigMap\n' })));
-		const out = await runManifestsLocate(exp('manifests.locate', {}), ctx);
+		await seed(Array.from({ length: n }, (_, i) => ent('document', `m${i}.tf`, `infra/${word}/m${i}.tf`, { language: 'hcl', artifact: true, body: 'resource "x" "y" {}\n' })));
+		seededSoFar += n;
+		const out = await runManifestsLocate(exp('manifests.locate', { families: ['terraform'] }), ctx);
 		assert.equal(out.hits.filter(h => h.file.includes(`/${word}/`)).length, n, `manifests.locate with ${n}`);
+		assert.equal(out.hits.length, seededSoFar, 'every terraform manifest is returned');
 		noLimit(out.completeness, `manifests.locate with ${n}`);
+		assert.equal(out.completeness.total, seededSoFar);
 	}
+	const manNone = await runManifestsLocate(exp('manifests.locate', { families: ['helm'] }), ctx);
+	assert.equal(manNone.hits.length, 0);
+	noLimit(manNone.completeness, 'manifests.locate with 0');
 
 	// data-model.trace: former limits 4 targets, 12 fields and 6 callers for each target.
 	for (const [n, word] of [[4, 'ZzTargetsA'], [5, 'ZzTargetsB']] as const) {

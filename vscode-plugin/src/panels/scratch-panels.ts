@@ -274,7 +274,6 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
   };
 
   const deleteAndRefresh = async (id: string): Promise<void> => {
-    invalidateId(id);
     let deleteError: string | undefined;
     try {
       await deps.store.deleteScratch(id);
@@ -284,9 +283,14 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
       deleteError = `delete failed: ${String(err)}`;
       log.warn(`[scratches] delete failed for ${id}: ${String(err)}`);
     }
-    // Close the open document ONLY after a successful delete. On failure the
-    // scratchpad still exists, so its document must stay open.
-    if (deleteError === undefined) closeDocumentIfShowing(id);
+    // Invalidate the id's read epoch ONLY after a successful delete: a failed delete
+    // leaves the scratchpad file in place, so invalidating up front would drop an
+    // in-flight read of a still-existing document. Close the open document ONLY after
+    // a successful delete too — on failure the document must stay open.
+    if (deleteError === undefined) {
+      invalidateId(id);
+      closeDocumentIfShowing(id);
+    }
     if (browseHandle !== undefined) await renderBrowse(browseHandle, deleteError);
   };
 

@@ -2776,7 +2776,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // #insrc-prompt and never posts submit/cancel — the user decides when to send.
       (scratchOn ? `else if(m.type==='insert-into-input'){if(typeof m.text!=='string')return;var v=m.text;var s=typeof box.selectionStart==='number'?box.selectionStart:box.value.length,e=typeof box.selectionEnd==='number'?box.selectionEnd:s;` +
         `if(e>s){box.value=box.value.slice(0,s)+v+box.value.slice(e);box.selectionStart=box.selectionEnd=s+v.length;}` +
-        `else if(s>=box.value.length&&box.value!==''){var tailNl=box.value.charCodeAt(box.value.length-1)===10,headNl=v.charCodeAt(0)===10;if(tailNl&&headNl)v=v.slice(1);var sep=(tailNl||headNl)?'':'\\n';box.value=box.value+sep+v;box.selectionStart=box.selectionEnd=box.value.length;}` +
+        `else if(s>=box.value.length&&box.value!==''){while(box.value.charCodeAt(box.value.length-1)===10)box.value=box.value.slice(0,-1);while(v.charCodeAt(0)===10)v=v.slice(1);box.value=box.value+'\\n'+v;box.selectionStart=box.selectionEnd=box.value.length;}` +
         `else{box.value=box.value.slice(0,s)+v+box.value.slice(s);box.selectionStart=box.selectionEnd=s+v.length;}` +
         `box.focus();}` : '') +
       `});` +

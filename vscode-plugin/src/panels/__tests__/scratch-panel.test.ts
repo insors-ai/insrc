@@ -555,6 +555,46 @@ test('scratch-panel.test.ts: a FAILED delete keeps the open document open (the s
   assert.ok(doc.disposed, 'the open document is disposed after a successful delete');
 });
 
+test('scratch-panel.test.ts: a FAILED delete does NOT invalidate an IN-FLIGHT read of the still-existing scratchpad (epoch is bumped only after a successful delete — CR attempt-10 t5 MED)', async () => {
+  const h = harness();
+  await seed(h, 'keep.md', 'K', 1);
+  await h.controller.openBrowse();
+  const browse = h.panels[0]!;
+  // Block the read so the delete lands while it is in flight.
+  const origRead = h.store.readScratch.bind(h.store);
+  let releaseRead: () => void = () => undefined;
+  const readGate = new Promise<void>((r) => { releaseRead = r; });
+  h.store.readScratch = async (id: string) => {
+    const out = await origRead(id);
+    if (id === 'keep.md') await readGate;
+    return out;
+  };
+  const openP = h.controller.openDocument('keep.md');
+  await new Promise((r) => setTimeout(r, 5)); // let the read start and block
+  // Fail the delete at unlink (EPERM) while the read is in flight.
+  const origUnlink = h.fake.fs.unlink.bind(h.fake.fs);
+  h.fake.fs.unlink = async (p: string) => {
+    if (p.endsWith('keep.md')) { const e = new Error('EPERM: operation not permitted'); (e as NodeJS.ErrnoException).code = 'EPERM'; throw e; }
+    return origUnlink(p);
+  };
+  browse.injectMessage({ v: 1, payload: { type: 'scratch-delete', id: 'keep.md' } });
+  await new Promise((r) => setTimeout(r, 20));
+  assert.ok(h.fake.files.has(`${ROOT}/keep.md`), 'the file is still present after the failed delete');
+  // Release the in-flight read: the failed delete must NOT have bumped the epoch,
+  // so the read's content is delivered, not dropped as stale.
+  releaseRead();
+  const doc = (await openP) !== undefined ? h.panels.find((p) => p !== browse)! : undefined;
+  assert.ok(doc, 'the document panel opened');
+  const docContents = doc!.posted.filter((m) => (m as { payload?: { type?: string } }).payload?.type === 'scratch-content')
+    .map((m) => (m as { payload: { text: string } }).payload.text);
+  assert.ok(docContents.includes('K'), 'the in-flight read is NOT dropped after a failed delete (epoch unchanged)');
+  // A subsequent SUCCESSFUL delete does invalidate: a new open after it gets ENOENT.
+  h.fake.fs.unlink = origUnlink;
+  browse.injectMessage({ v: 1, payload: { type: 'scratch-delete', id: 'keep.md' } });
+  await new Promise((r) => setTimeout(r, 20));
+  assert.ok(!h.fake.files.has(`${ROOT}/keep.md`), 'the file is gone after the successful delete');
+});
+
 test('scratch-panel.test.ts: stale ENOENT, deleting a non-displayed document, delete invalidates pending opens of the deleted id, closing/reopening the document panel during an outstanding read (dispose invalidates the generation, late read dropped)', async () => {
   const h = harness();
   await seed(h, 'a.md', 'A', 1);

@@ -8675,6 +8675,16 @@ test('chat-panel.test.ts: insert-into-input append guarantees exactly ONE separa
   box = composer(v, '', 0, 0);
   v.msg({ type: 'insert-into-input', text: '\nfirst' });
   assert.equal(box.value, '\nfirst', 'empty draft appends verbatim (no double newline at the head)');
+  // MULTIPLE newlines on either side collapse to exactly one separator (CR attempt-10 t4 MED).
+  box = composer(v, 'draft\n\n\n', 8, 8);
+  v.msg({ type: 'insert-into-input', text: 'appended' });
+  assert.equal(box.value, 'draft\nappended', 'trailing multi-LF draft collapses to one separating newline');
+  box = composer(v, 'draft', 5, 5);
+  v.msg({ type: 'insert-into-input', text: '\n\n\nappended' });
+  assert.equal(box.value, 'draft\nappended', 'leading multi-LF text collapses to one separating newline');
+  box = composer(v, 'draft\n\n', 7, 7);
+  v.msg({ type: 'insert-into-input', text: '\n\nappended' });
+  assert.equal(box.value, 'draft\nappended', 'multi-LF on BOTH sides still yields exactly one');
   // Caret stays after the inserted text in every case.
   assert.equal(box.selectionStart, box.value.length, 'the caret lands at the end after the insert');
   assert.deepEqual(ofType(v, 'submit-turn').concat(ofType(v, 'cancel-turn')), [], 'no submit/cancel posted');

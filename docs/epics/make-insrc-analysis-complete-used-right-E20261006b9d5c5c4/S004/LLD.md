@@ -7,6 +7,7 @@
 **Epic:** `make-insrc-analysis-complete-used-right`
 **HLD base run:** `wf-1791349476498-tih4l4`
 **HLD effective hash:** `faa0f59939ce...`
+**Tracker:** [insors-ai/insrc#162](https://github.com/insors-ai/insrc/issues/162)
 
 This Story removes every fixed limit on how many results an analyzer lookup or plan-task runtime returns and every fixed cut on how much of an item is read. It adds no new contract: each limit constant and parameter is deleted at its site, item content is read from its file through the existing item measurement (which already confirms the file still holds the item), and the shared text search gains a complete mode that only the analyzer asks for. A result that grows is handled by Story s3's method and described by Story s1's record; an item that cannot be confirmed is reported as not covered. Cancellation and the tool loop's turn limit are Story s10's.
 
@@ -374,3 +375,11 @@ In addition to the deletions in a1, each lookup that can return a large set (tex
 - The HLD's Story s4 boundary text has a grammar slip from the split with Story s10 ('...cache key is taken. moving the table-listing lookup...'); it should be corrected the next time the HLD is edited.
 - Several proving tests named in the test strategy do not exist yet (discovery-objects, doc-constraint-enumerate, adherence-check, db-tables-list, decompose-prompt-limits and redis-etcd-live); the plan stage should create them or map the criteria to existing files.
 - Reading ripgrep output as a stream in complete mode and how a search that runs out of time reports hits already gathered are stated but not detailed; the plan stage should choose the time limit for the analyzer's search.
+
+## Citations
+
+- **[[c1]]** `analyze-bundle` `s1 analyze bundle` — "Result-count limits and content cuts found by text search of the production files (the analyzer pass over the lookup directory was cut at 30 hits)"
+- **[[c2]]** `code` `src/analyze/item-length.ts` — "export function measureItem(entity: MeasuredEntity, opts: MeasureItemOptions): ItemMeasure {"
+- **[[c3]]** `code` `src/daemon/tools/builtins/search/grep.ts` — "export async function runGrepSearch(opts: GrepSearchOptions): Promise<SearchGrepData> {"
+- **[[c4]]** `code` `src/db/exploration-cache.ts` — "export const EXPLORATION_CACHE_VERSION = 3;"
+- **[[c5]]** `doc` `docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/HLD.md` — "Cancellation, and the retirement of the tool loop's turn limit with its setting, its error and its code, are Story s10's"

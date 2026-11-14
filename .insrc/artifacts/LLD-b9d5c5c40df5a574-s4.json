@@ -29,7 +29,7 @@
     "storyTitle": "No lookup drops results",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 1,
         "contentHash": "8d97111c4da7ddeee22ef0ac23ef625b963bf2e27bf793bf88ed275629d369dd",
@@ -40,9 +40,26 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T11:16:39.021Z",
+        "override": {
+          "reason": "Design review broken; controller self-review done (6 partial audit items noted in the LLD open questions). User-approved override, 2026-11-14."
+        }
+      }
     },
-    "revision": 1
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    }
   },
   "body": {
     "summary": {

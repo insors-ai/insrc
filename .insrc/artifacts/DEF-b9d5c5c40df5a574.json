@@ -31,42 +31,63 @@
     },
     "epicCreatedAt": "2026-10-06T17:47:38.720Z",
     "envelope": {
+      "description": "",
       "references": [],
-      "attachments": [],
-      "description": ""
+      "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
-        "number": 1,
-        "contentHash": "4937fec2968bff4d603b342e2767cfcd8ea0852bc53a05da9c2ce2ddac2f6985",
-        "at": "2026-11-12T01:23:43.549Z",
+        "number": 2,
+        "contentHash": "727dbdb3d9ad6129b653eb99b3663a816af37f9859c5ae57c8436abcab2724c7",
+        "at": "2026-11-14T07:53:33.162Z",
         "by": {
-          "id": "insrc:system",
-          "kind": "system",
+          "id": "agent:controller",
+          "kind": "agent",
           "properties": {}
         }
       },
       "approval": {
-        "revision": 0,
+        "revision": 2,
         "by": {
-          "id": "legacy:unknown",
-          "kind": "person",
+          "id": "insrc:approval",
+          "kind": "system",
           "properties": {}
         },
-        "at": "2026-10-09T12:04:22.289Z",
-        "override": {
-          "reason": "User-approved override, 2026-10-09 (the user chose in chat: approve the Define by override, with no fresh daemon review). The Define's approval was cleared by an in-place edit of one sentence (commit 366c359c): criterion ac3 of Story s8 said 'a repository whose graph does hold module entities, as for a language whose parser emits them'; it now says that no parser stores a module entity for a repository's own directories today and that a graph written by other means may hold them. Nothing else in the Define changed. The edit records the stakeholder's decision of 2026-10-09 on Story s8's design. No fresh review by the daemon was run on the amended text."
-        }
+        "at": "2026-11-14T08:50:39.261Z"
       },
-      "signoffs": []
+      "signoffs": [],
+      "review": {
+        "revision": 2,
+        "reviewer": {
+          "id": "agent:design-review-daemon",
+          "kind": "agent",
+          "properties": {
+            "party": "daemon"
+          }
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "HIGH": 0,
+          "MED": 0,
+          "LOW": 0
+        },
+        "at": "2026-11-14T08:12:41.142Z",
+        "report": {
+          "entityId": "DEF-b9d5c5c40df5a574",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "92e6cb49c9ea546f495d8ebb9472640d6bffce7a097561c6f15ed99d118ccd45"
+        }
+      }
     },
-    "revision": 1,
+    "revision": 2,
     "tracker": {
       "adapter": "github",
       "epicStatus": "open",
       "storyStatus": {},
-      "lastSyncedAt": "2026-11-12T19:41:28.671Z"
+      "lastSyncedAt": "2026-11-13T06:21:54.734Z"
     }
   },
   "body": {
@@ -190,7 +211,7 @@
             "id": "ac1",
             "given": "any lookup or analysis step the analyzer performs, on either path a request can take through the analyzer",
             "when": "its result is produced",
-            "then": "the result states whether it is complete, and if it is not, how many results exist, how many were returned and why some are missing",
+            "then": "the result states whether it is complete, and if it is not, how many results were returned and why some are missing, and how many results exist when that can be established; when it cannot be (a source that cannot be read, a search that stopped before it finished, a source that can only be sampled), the result says that the total is unknown and why, and does not state a number",
             "operationalizes": [
               "k3"
             ]
@@ -359,7 +380,7 @@
             "id": "ac2",
             "given": "a request whose results are too many to be reasoned over at once",
             "when": "the analyzer handles it",
-            "then": "the results are divided into parts, every part is reasoned over, and the findings are combined into one answer with none lost",
+            "then": "the results are divided into parts, every part is reasoned over, and the findings are combined into one answer with none lost, for every run that stays within its execution budget (a run stopped by its budget is the one exception and is reported as incomplete, Story s9)",
             "operationalizes": [
               "k2",
               "k4"
@@ -376,9 +397,9 @@
           },
           {
             "id": "ac4",
-            "given": "a small request",
+            "given": "a small request whose complete input fits within what one model call accepts",
             "when": "the analyzer handles it",
-            "then": "its results are returned whole without being divided",
+            "then": "its results are returned whole without being divided; a small request whose input does not fit is handled in parts by the method for the case, with complete coverage and with the handling reported",
             "operationalizes": [
               "k1"
             ]
@@ -406,7 +427,7 @@
             "id": "ac7",
             "given": "a broad analysis of documents whose final combining step is handed more than one model call accepts, as on this repository on 2026-10-08, where Story s7 was accepted with that analysis not completing",
             "when": "it is run",
-            "then": "the input to the combining step is handled in parts and the analysis returns a final report",
+            "then": "the input to the combining step is handled in parts and the analysis returns a final report that finishes its intended coverage; an incomplete report from a run stopped by its budget (Story s9) does not meet this criterion",
             "operationalizes": [
               "k1",
               "k2"
@@ -459,7 +480,7 @@
             "id": "ac2",
             "given": "a single item larger than any fixed cut the analyzer used to apply to an item's content, or larger than the part of it the index stores",
             "when": "the analyzer reads it",
-            "then": "no fixed cut is applied to it: the analyzer reads the item from its file at the place the index points to",
+            "then": "no fixed cut is applied to it: the analyzer reads the item from its file at the place the index points to, after checking that the file still holds the item there; when the file has changed so that the item cannot be confirmed, or is missing or unreadable, the item is reported as not covered and the answer does not claim to have read it",
             "operationalizes": [
               "k2"
             ]
@@ -487,7 +508,7 @@
             "id": "ac5",
             "given": "a result set that became larger because a limit was removed",
             "when": "the analyzer answers",
-            "then": "it is handled by the method for its size, and the answer is complete",
+            "then": "it is handled by the method for its size and every result that can be obtained is processed; the answer says which sources were only sampled, failed or not covered, and it is called complete only where its evidence supports that; a run stopped by its execution budget (Story s9) is reported as incomplete, not as complete",
             "operationalizes": [
               "k1",
               "k2"
@@ -526,7 +547,10 @@
         "title": "The form of an answer fits the question, for every kind of analyzer",
         "sizeEstimate": "L",
         "dependsOn": [
-          "s1"
+          "s1",
+          "s2",
+          "s3",
+          "s4"
         ],
         "existingCapabilityRefs": [
           "c12",
@@ -538,7 +562,7 @@
             "id": "ac1",
             "given": "a question that asks for every occurrence of something",
             "when": "the analyzer answers it",
-            "then": "the answer is a complete list of the occurrences with where each is, and is not forced into an overview of a module",
+            "then": "the answer lists every occurrence the analysis established with where each is, says which sources were sampled, failed or not covered, claims complete coverage only where its evidence supports it, and is not forced into an overview of a module",
             "operationalizes": [
               "k2",
               "k6"
@@ -583,7 +607,7 @@
         ],
         "functionalRequirements": [
           {
-            "statement": "A question asking for every occurrence gets a complete enumeration as its answer."
+            "statement": "A question asking for every occurrence gets an enumeration of every occurrence the analysis established, with where each is; any source that was sampled, failed or not covered is stated, and the answer claims complete coverage only where its evidence supports it."
           },
           {
             "statement": "The answer layouts of all analyzer kinds are free of limits on findings."
@@ -665,7 +689,7 @@
             "id": "ac1",
             "given": "a broad request on a repository that is indexed",
             "when": "the analysis is run",
-            "then": "it completes every stage and returns a final report, and what stopped it at any stage it did not pass today is found and corrected",
+            "then": "it completes every stage and returns a final report, and what stopped it at any stage it did not pass today is found and corrected; a run stopped by its execution budget (Story s9) ends in an incomplete final report, which is the one case where a stage is reported as not run to the end, and it is never counted as a completed analysis",
             "operationalizes": [
               "k1"
             ]
@@ -674,7 +698,7 @@
             "id": "ac2",
             "given": "an analysis whose plan includes steps that themselves plan further steps",
             "when": "it is run",
-            "then": "those nested steps run and their results reach the final report",
+            "then": "those nested steps run and their results reach the final report, unless the run is stopped by its execution budget (Story s9), in which case the steps not run are listed as not covered",
             "operationalizes": [
               "k7"
             ]
@@ -690,9 +714,9 @@
           },
           {
             "id": "ac4",
-            "given": "a completed analysis",
+            "given": "a finished analysis, completed or stopped by its execution budget",
             "when": "it is asked for again by the same run",
-            "then": "the stored result is returned as before",
+            "then": "the stored result is returned as before, and a report from a run stopped by its budget is returned as that incomplete report and the run is not resumed",
             "operationalizes": [
               "k1"
             ]
@@ -765,7 +789,7 @@
             "id": "ac1",
             "given": "A request that measures XL or L",
             "when": "the analyzer plans it",
-            "then": "the plan is breadth-first: many shallow, inexpensive tasks across the areas, and no area is explored by a child plan that is itself a large plan",
+            "then": "the plan is breadth-first: many shallow, inexpensive tasks across the areas; a child plan is allowed where the policy for the size of the whole request provides one, but a child plan of an XL or L request does not plan further children, so no area is explored by a chain of deeper plans",
             "operationalizes": []
           },
           {
@@ -777,25 +801,30 @@
           },
           {
             "id": "ac3",
-            "given": "A plan whose child plans, taken together, would exceed what the request's size allows",
+            "given": "a plan whose total number of tasks, counted over the root plan and every child plan below it, would exceed the limit the size of the request sets (every size has one; for XS the existing policy is kept)",
             "when": "the plan is validated",
-            "then": "it is refused with a reason that names the total and the limit, so that the planner can correct it, in the same way a wrong task count is refused today",
+            "then": "it is refused with a reason that names what was counted, the total and the limit, so that the planner can correct it, in the same way a wrong task count is refused today",
             "operationalizes": []
           },
           {
             "id": "ac4",
-            "given": "A plan accepted for a broad request",
-            "when": "the analyzer executes it",
-            "then": "the executor works within a budget set by the request's size and the run says when a budget was reached, instead of running on with no bound",
+            "given": "a plan accepted for a broad request",
+            "when": "the analyzer executes it and the budget set by the request's size is reached",
+            "then": "the run ends as explicitly incomplete: the findings produced so far are kept in the report, the work not done is listed as not covered, and the run is not reported as a complete analysis; a run that stays within its budget is not affected; its report is retrievable under the same run as for any finished run (Story s7)",
             "operationalizes": []
           },
           {
             "id": "ac5",
-            "given": "The broad docs request on this repository, which measured XL",
-            "when": "it is run end to end",
-            "then": "it reaches a final report within a stated time and says in its record how deep the plan went and how many tasks ran",
+            "given": "the broad docs request on this repository, which measured XL, run on a stated revision",
+            "when": "it is run end to end with the time limit that the size policy sets for an XL request, fixed and recorded before the run starts",
+            "then": "it reaches a final report within that limit, measured from the request received to the final report, and its record says how deep the plan went and how many tasks ran, with no work left out because of the budget; a run stopped by its budget does not meet this criterion, and that outcome is tested separately under the previous criterion",
             "operationalizes": []
           }
+        ],
+        "dependsOn": [
+          "s2",
+          "s3",
+          "s7"
         ]
       }
     ],
@@ -816,7 +845,7 @@
         },
         {
           "id": "E20261006b9d5c5c4:FR003",
-          "statement": "For each size of request the analyzer follows a defined way of handling it, and a result set or a single item too large to treat at once is processed in full, in parts, and combined.",
+          "statement": "For each size of request the analyzer follows a defined way of handling it, and a result set or a single item too large to treat at once is processed in full, in parts, and combined. The one exception is a run stopped by its execution budget (Story s9): it is reported as incomplete, lists the work not done, and is never counted as a completed analysis.",
           "scope": "doc"
         },
         {
@@ -890,7 +919,7 @@
         },
         {
           "id": "E20261006b9d5c5c4:S003:FR002",
-          "statement": "Large result sets are processed completely, in parts, and combined.",
+          "statement": "Large result sets are processed completely, in parts, and combined. The one exception is a run stopped by its execution budget (Story s9): it is reported as incomplete, lists the work not done, and is never counted as a completed analysis.",
           "scope": "item",
           "itemRef": "s3"
         },
@@ -908,13 +937,13 @@
         },
         {
           "id": "E20261006b9d5c5c4:S003:FR005",
-          "statement": "A broad analysis whose final combining step is handed more than one model call accepts is completed by handling that input in parts; this closes the exception accepted on Story s7 for the docs family.",
+          "statement": "A broad analysis whose final combining step is handed more than one model call accepts is completed by handling that input in parts, with its intended coverage finished; an incomplete report from a run stopped by its budget does not close this exception on Story s7 for the docs family.",
           "scope": "item",
           "itemRef": "s3"
         },
         {
           "id": "E20261006b9d5c5c4:S004:FR001",
-          "statement": "No lookup or analysis step drops results because of a fixed limit, in any kind of source the analyzer covers.",
+          "statement": "No lookup or analysis step drops results because of a fixed limit, in any kind of source the analyzer covers that has something to count; a source that can only be sampled is reported as sampled.",
           "scope": "item",
           "itemRef": "s4"
         },
@@ -944,7 +973,7 @@
         },
         {
           "id": "E20261006b9d5c5c4:S005:FR001",
-          "statement": "A question asking for every occurrence gets a complete enumeration as its answer.",
+          "statement": "A question asking for every occurrence gets an enumeration of every occurrence the analysis established, with where each is; any source that was sampled, failed or not covered is stated, and the answer claims complete coverage only where its evidence supports it.",
           "scope": "item",
           "itemRef": "s5"
         },
@@ -974,7 +1003,7 @@
         },
         {
           "id": "E20261006b9d5c5c4:S007:FR001",
-          "statement": "A broad analysis runs through every stage to a final report.",
+          "statement": "A broad analysis runs through every stage to a final report. The one exception is a run stopped by its execution budget (Story s9): it is reported as incomplete, lists the work not done, and is never counted as a completed analysis.",
           "scope": "item",
           "itemRef": "s7"
         },
@@ -1109,7 +1138,7 @@
       "ref": "insrc_triage of 2026-10-07: bugfix, sized; taken into this Epic as Stories s6 and s7 at the stakeholder's direction ('traige this and then decide one or more new stories')"
     },
     {
-      "id": "c21",
+      "id": "c23",
       "kind": "stakeholder",
       "ref": "user, 2026-10-07: Redis and etcd stay a sample, said so in every result, and are sized XL; no full scan of a live store's keys",
       "quotedText": "A"

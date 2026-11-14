@@ -1,0 +1,64 @@
+name: Build daemon release candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: Full SHA of the selected protected v2 revision
+        required: true
+        type: string
+      version:
+        description: Pilot version (e.g. 0.2.1-pilot.1)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/v2' && github.ref_protected
+    runs-on: macos-15
+    timeout-minutes: 25
+    env:
+      CXXFLAGS: -std=c++17
+      MACOSX_DEPLOYMENT_TARGET: '15.0'
+    steps:
+      - name: Check dispatch inputs
+        env:
+          REQUESTED_COMMIT: ${{ inputs.commit }}
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          [[ "$REQUESTED_COMMIT" == "$GITHUB_SHA" ]]
+          [[ "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-pilot\.[1-9][0-9]*$ ]]
+          [[ "$(uname -m)" == arm64 ]]
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.22.1'
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - run: npm prune --omit=dev --no-audit --no-fund
+      - name: Package candidate
+        id: package
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: node scripts/package-daemon-candidate.mjs "$RELEASE_VERSION" "$GITHUB_SHA" "$RUNNER_TEMP/daemon-candidate"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        id: upload
+        with:
+          name: daemon-candidate-${{ github.sha }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/daemon-candidate/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+      - name: Record candidate identity
+        env:
+          ARCHIVE_SHA256: ${{ steps.package.outputs.archive_sha256 }}
+          ARTIFACT_ID: ${{ steps.upload.outputs.artifact-id }}
+        run: |
+          printf 'Candidate run: %s (attempt %s)\nArtifact ID: %s\nInner archive SHA-256: %s\n' \
+            "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$ARTIFACT_ID" "$ARCHIVE_SHA256" >> "$GITHUB_STEP_SUMMARY"

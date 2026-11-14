@@ -148,7 +148,7 @@ export interface ReviewProgressSource {
 abstract class ReviewDelegateBase<D extends ReviewDetails> implements TaskProgressDelegate<D> {
   private lastAccepted: { incarnation: string; sequence: number; measurement: DelegateMeasurement<D>; processAlive: boolean } | undefined;
   private probeSequence = 0;
-  protected constructor(
+  constructor(
     protected readonly source: ReviewProgressSource,
     protected readonly identity: ReviewIdentity,
   ) {}

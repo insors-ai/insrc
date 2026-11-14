@@ -65,6 +65,13 @@
         "choice": "Accept null for this Story",
         "rationale": "User approved planning with null retries/follow-up; whether to track a separate engine-counter Story is left to the user.",
         "resolvedAt": "2026-11-14T18:02:58.080Z"
+      },
+      "q70227ac1": {
+        "question": "Coordinator typing versus the HLD: the HLD says 'a shared daemon coordinator', but a1 as designed uses a second typed coordinator so s2's ExecutorDetails stays untouched. Should the plan widen the one coordinator's details union (a2, edits s2's executor-measurements.ts) or keep two coordinators and have s5/s6 read both?",
+        "status": "resolved",
+        "choice": "a1: Two typed coordinators",
+        "rationale": "User approved planning with a second typed coordinator; widening s2's union (a2) is the recorded fallback.",
+        "resolvedAt": "2026-11-14T18:04:05.007Z"
       }
     }
   },

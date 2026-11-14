@@ -378,6 +378,8 @@ Add retries and followUp counters to ReviewProgress (task-review/progress.ts) an
 
 - `q52d7a4a9` — Retries and follow-up work are not published by either review engine today, so ac1's 'retries and discovered follow-up work' is only partly met: both are reported as null. Accept null now, or add a separate Story that makes the engines publish those counters (a4 was rejected because it changes review execution, which the DEF's first non-goal excludes)?
   - **resolved**: Accept null for this Story — User approved planning with null retries/follow-up; whether to track a separate engine-counter Story is left to the user. _(2026-11-14T18:02:58.080Z)_
+- `q70227ac1` — Coordinator typing versus the HLD: the HLD says 'a shared daemon coordinator', but a1 as designed uses a second typed coordinator so s2's ExecutorDetails stays untouched. Should the plan widen the one coordinator's details union (a2, edits s2's executor-measurements.ts) or keep two coordinators and have s5/s6 read both?
+  - **resolved**: a1: Two typed coordinators — User approved planning with a second typed coordinator; widening s2's union (a2) is the recorded fallback. _(2026-11-14T18:04:05.007Z)_
 
 ## Citations
 

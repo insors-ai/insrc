@@ -386,6 +386,8 @@ Add retries and followUp counters to ReviewProgress (task-review/progress.ts) an
   - **resolved**: Accept the read-only accessor — User approved folding ReviewWorkers.progressOf into the first task. _(2026-11-14T18:05:50.891Z)_
 - `q146b4276` — Verify that the invariant citations c1 and c2 map to the task-progress contract bundle and the review progress bundle respectively (s8 ep3 ambiguous).
   - **resolved**: Explicit citation mapping — Verified: LLD c1 is the coordinator.ts task-progress bundle and c2 is the review-progress.ts bundle. _(2026-11-14T18:06:25.911Z)_
+- `qbf5b41bd` — Error 'type' values for the delegates are 'none thrown' and 'null result' (behaviours, not error classes); decide whether a named outcome type is wanted (s8 cd3 partial).
+  - **deferred**: deferred for review — Minor naming choice not decided by the user; defaults to behavioural descriptions. _(2026-11-14T18:06:42.470Z)_
 
 ## Citations
 

@@ -93,6 +93,12 @@
         "choice": "Explicit citation mapping",
         "rationale": "Verified: LLD c1 is the coordinator.ts task-progress bundle and c2 is the review-progress.ts bundle.",
         "resolvedAt": "2026-11-14T18:06:25.911Z"
+      },
+      "qbf5b41bd": {
+        "question": "Error 'type' values for the delegates are 'none thrown' and 'null result' (behaviours, not error classes); decide whether a named outcome type is wanted (s8 cd3 partial).",
+        "status": "deferred",
+        "rationale": "Minor naming choice not decided by the user; defaults to behavioural descriptions.",
+        "resolvedAt": "2026-11-14T18:06:42.470Z"
       }
     }
   },

@@ -47,7 +47,7 @@ The exploration types currently supported (Phases 1 + 2 + 3):
 
 - **`concept.resolve`** — Ranked entity/file/module matches for a query.
     ```json
-    params: { "query": "<text>", "limit": 20, "includeKinds": ["dir","file","entity"] }
+    params: { "query": "<text>", "includeKinds": ["dir","file","entity"] }
     ```
 - **`module.profile`** — Compact profile of a directory or file (subdirs, files, exports, entrypoints, entity count).
     ```json
@@ -59,23 +59,23 @@ The exploration types currently supported (Phases 1 + 2 + 3):
     ```
 - **`import.graph`** — Import in/out-degree summary for a module.
     ```json
-    params: { "path": "<absolute path>", "topK": 15 }
+    params: { "path": "<absolute path>" }
     ```
 - **`doc.mention`** — Hybrid retrieval (vector + keyword) over doc sections. Returns citations ready to paste into artefacts. No LLM.
     ```json
-    params: { "subject": "<text>", "limit": 15, "filenameHint": "design/", "previewChars": 300 }
+    params: { "subject": "<text>", "filenameHint": "design/" }
     ```
 - **`doc.decision.trace`** — Extract decisions verbatim from doc sections that mention a topic. Uses retrieval + narrow LLM extraction. Preserves wording -- do not use for paraphrased summaries.
     ```json
-    params: { "topic": "<text>", "maxSources": 15 }
+    params: { "topic": "<text>" }
     ```
 - **`doc.constraint.enumerate`** — Enumerate constraints (MUST / SHALL / HARD RULE) on a subject. Verbatim + typed by rule kind.
     ```json
-    params: { "subject": "<text>", "maxSources": 15 }
+    params: { "subject": "<text>" }
     ```
 - **`usage.example`** — Enumerate real callers of a symbol via the CALLS graph (1-hop predecessors). Deterministic; no LLM.
     ```json
-    params: { "symbolName": "<name>", "kinds": ["function","method","class"], "topK": 12 }
+    params: { "symbolName": "<name>", "kinds": ["function","method","class"] }
     // OR: pass `entityId` when the caller already knows the id (e.g. from symbol.locate).
     ```
 - **`class.hierarchy`** — Walk INHERITS + IMPLEMENTS edges in both directions for a class/interface. Deterministic.
@@ -85,11 +85,11 @@ The exploration types currently supported (Phases 1 + 2 + 3):
     ```
 - **`capability.reuse-check`** — Ask: does the codebase already deliver this capability? Hybrid: concept.resolve → module.profile per candidate → narrow LLM verdict (clear-match / partial-match / unrelated) with rationale. Use for capability-discovery answer types.
     ```json
-    params: { "capability": "<natural-language capability>", "limit": 5 }
+    params: { "capability": "<natural-language capability>" }
     ```
 - **`search.text`** — Regex grep over file contents. Uses ripgrep when installed (fast, .gitignore-aware) with a Node fallback. Returns `{ file, line, text }` hits ready to cite. Use when the rule / subject is a STRING LITERAL that will not surface as a symbol name — model ids (`claude-haiku-4-5`), config keys (`ENFORCE_2FA`), env-var names (`STRIPE_KEY`), URL fragments, forbidden import spellings. Do NOT use for identifier-shaped searches (a class or function name) — `symbol.locate` is faster + graph-aware.
     ```json
-    params: { "pattern": "<regex>", "glob": "*.py", "caseInsensitive": false, "topK": 30 }
+    params: { "pattern": "<regex>", "glob": "*.py", "caseInsensitive": false }
     // Optional "path": "<subpath under repo>" restricts the search subtree.
     ```
 - **`convention.detect`** — Naming schema (functions / classes / files) + base-class idioms + test-file convention for a directory. Deterministic entity-graph walk. Use in structural-map, adherence-check, capability-discovery, how-does-it-work recipes so the synthesizer's `## Conventions` sub-section can render.
@@ -98,12 +98,12 @@ The exploration types currently supported (Phases 1 + 2 + 3):
     ```
 - **`config.trace`** — Grep for a config key literal + classify each hit as `definition` / `usage` / `default` / `unknown` by file extension + line shape. Deterministic. Use for adherence-check / how-does-it-work when the rule or subject names a config key (env var, service-config field, tunable).
     ```json
-    params: { "key": "<literal>", "topK": 40 }
+    params: { "key": "<literal>" }
     // Optional "path": "<subpath under repo>" restricts the scan subtree.
     ```
 - **`test.locate`** — Given a subject (module name / class name / function name), enumerate matching test entities + test files. Deterministic, path-filtered by canonical test paths (`tests/`, `__tests__/`, `test_*`, `*_test`, `*.spec`, `*.test`). Use in adherence-check + how-does-it-work when the reader needs to see how the subject is tested.
     ```json
-    params: { "subject": "<name>", "topK": 20 }
+    params: { "subject": "<name>" }
     ```
 - **`data-model.trace`** — Given a domain entity name (e.g. `Invoice`, `GRN`, `PurchaseOrder`), enumerate the class definition, its supers + subs (INHERITS edges), its DEFINES-out fields, and the top callers (CALLS-in). Deterministic. Use in how-does-it-work when the subject is a data model.
     ```json
@@ -115,7 +115,7 @@ The exploration types currently supported (Phases 1 + 2 + 3):
     ```
 - **`db.tables.list`** — Given a `connectionId`, enumerate the connection's tables (rdbms) / namespaces (kv). Deterministic. Use after `db.connections.list` to walk each surfaced connection.
     ```json
-    params: { "connectionId": "<id>", "schema": "<optional>", "limit": 40 }
+    params: { "connectionId": "<id>", "schema": "<optional>" }
     ```
 - **`db.table.describe`** — Given a `connectionId` + `target` (table / namespace / file target), return columns + types. Deterministic. Use for the top-signal tables the reader will care about.
     ```json
@@ -123,7 +123,7 @@ The exploration types currently supported (Phases 1 + 2 + 3):
     ```
 - **`manifests.locate`** — Enumerate indexed infra manifests already in the repo: Kubernetes / Helm / Terraform / Docker / CI. Deterministic, graph-backed. Use FIRST for any `infra-inventory` recipe; no cluster access required.
     ```json
-    params: { "families": ["kubernetes","terraform"], "topK": 200 }
+    params: { "families": ["kubernetes","terraform"] }
     // both fields optional -- omit for the full inventory across every family.
     ```
 - **`freeform.probe`** — **Escape hatch.** Fires the target's legacy tool loop with the full read-only tool surface for `cfg.shaper.maxToolTurns` turns. Use ONLY when no deterministic recipe fits the intent -- it is slower + carries the same failure modes the recipes were designed to escape. When it's the sole exploration in a plan, the pipeline returns the tool loop's bundle verbatim (no synthesizer pass). The scope-boundary HARD RULE stays in force via the target's legacy prompt.
@@ -225,7 +225,7 @@ Keep it to 4-7 explorations. If the rule's focus does NOT yield a distinctive id
 
 For queries like "does the codebase already do X", "is there existing support for Y", "what module handles Z":
 
-1. `capability.reuse-check(capability="<intent.focus>", limit=5)` — the primary retrieval + verdict pass. Purpose: "Rank candidate modules by whether they already deliver the capability."
+1. `capability.reuse-check(capability="<intent.focus>")` — the primary retrieval + verdict pass. Purpose: "Rank candidate modules by whether they already deliver the capability."
 2. `concept.resolve(query="<intent.focus>")` — parallel-recall check so the synthesizer can show retrieval candidates that did NOT make it into the reuse-check verdicts. Purpose: "Reveal near-miss modules for transparency."
 3. (Optional, only when `$e1.candidates[0].verdict === 'clear-match'`) `module.profile(path=$e1.candidates[0].path)` — depends on `e1`. Purpose: "Profile the winning candidate for the synthesizer to cite."
 4. (Optional, only when a clear-match anchor exists) `convention.detect(path=$e1.candidates[0].path)` — depends on `e1`. Purpose: "Surface the winning module's naming schema so the reader integrates against its idioms."

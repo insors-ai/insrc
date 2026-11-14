@@ -25,27 +25,39 @@ import type { ExplorationType } from './types.js';
 export type ParamKind = 'string' | 'number' | 'boolean' | 'string[]';
 
 export const EXPLORATION_PARAMS: Readonly<Record<ExplorationType, Readonly<Record<string, ParamKind>>>> = {
-	'concept.resolve':          { query: 'string', limit: 'number', includeKinds: 'string[]' },
+	'concept.resolve':          { query: 'string', includeKinds: 'string[]' },
 	'module.profile':           { path: 'string' },
-	'symbol.locate':            { names: 'string[]', kinds: 'string[]', limit: 'number', matchMode: 'string' },
+	'symbol.locate':            { names: 'string[]', kinds: 'string[]', matchMode: 'string' },
 	'class.hierarchy':          { symbolName: 'string', entityId: 'string' },
-	'import.graph':             { path: 'string', topK: 'number' },
-	'test.locate':              { subject: 'string', topK: 'number' },
-	'usage.example':            { symbolName: 'string', entityId: 'string', kinds: 'string[]', topK: 'number' },
-	'capability.reuse-check':   { capability: 'string', limit: 'number' },
-	'search.text':              { pattern: 'string', glob: 'string', caseInsensitive: 'boolean', topK: 'number', path: 'string' },
+	'import.graph':             { path: 'string' },
+	'test.locate':              { subject: 'string' },
+	'usage.example':            { symbolName: 'string', entityId: 'string', kinds: 'string[]' },
+	'capability.reuse-check':   { capability: 'string' },
+	'search.text':              { pattern: 'string', glob: 'string', caseInsensitive: 'boolean', path: 'string' },
 	'convention.detect':        { path: 'string' },
-	'config.trace':             { key: 'string', path: 'string', topK: 'number' },
+	'config.trace':             { key: 'string', path: 'string' },
 	'data-model.trace':         { entityName: 'string' },
-	'doc.mention':              { subject: 'string', limit: 'number', filenameHint: 'string', kinds: 'string[]', previewChars: 'number', minScore: 'number' },
-	'doc.decision.trace':       { topic: 'string', maxSources: 'number' },
-	'doc.constraint.enumerate': { subject: 'string', maxSources: 'number' },
+	'doc.mention':              { subject: 'string', filenameHint: 'string', kinds: 'string[]', minScore: 'number' },
+	'doc.decision.trace':       { topic: 'string' },
+	'doc.constraint.enumerate': { subject: 'string' },
 	'db.connections.list':      {},
-	'db.tables.list':           { connectionId: 'string', schema: 'string', limit: 'number' },
+	'db.tables.list':           { connectionId: 'string', schema: 'string' },
 	'db.table.describe':        { connectionId: 'string', target: 'string' },
-	'manifests.locate':         { families: 'string[]', topK: 'number' },
+	'manifests.locate':         { families: 'string[]' },
 	'freeform.probe':           { purpose: 'string', shaperId: 'string' },
 };
+
+/**
+ * The params that used to bound how many results a lookup returns or how much of an item it read. No lookup takes
+ * them now; a plan that still carries one (an older plan, a model that remembers the old catalog) has it dropped
+ * before a lookup runs and before the lookup's cache key is taken, and is not refused for it.
+ */
+export const REMOVED_LIMIT_PARAMS: ReadonlySet<string> = new Set(['limit', 'topK', 'maxSources', 'previewChars']);
+
+/** The params of a plan's exploration with every removed limit parameter dropped. */
+export function withoutLimitParams(params: Readonly<Record<string, unknown>>): Record<string, unknown> {
+	return Object.fromEntries(Object.entries(params).filter(([key]) => !REMOVED_LIMIT_PARAMS.has(key)));
+}
 
 /** A param's value schema: its kind, a placeholder string, or null. */
 function valueSchema(kind: ParamKind): Record<string, unknown> {

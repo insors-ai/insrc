@@ -11,6 +11,7 @@
  */
 
 import { scopeAreaKey, type ResolvedScope } from '../context/scope.js';
+import { withoutLimitParams } from './params-schema.js';
 import type { Exploration } from './types.js';
 
 /** The lookups whose output depends on the area. */
@@ -23,11 +24,12 @@ export const AREA_AWARE_TYPES: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * The exploration to key the cache on: the exploration itself, or, for an
- * area-aware lookup, the exploration with the request's area in its params.
- * No scope, or a repository or workspace scope, is the whole repository.
+ * The exploration to key the cache on: the exploration with the limit parameters no lookup takes any more
+ * dropped (a plan that passes one shares its entry with one that does not) and, for an area-aware lookup, with
+ * the request's area in its params. No scope, or a repository or workspace scope, is the whole repository.
  */
 export function cacheExplorationFor(exp: Exploration, scope: ResolvedScope | undefined): Exploration {
-	if (!AREA_AWARE_TYPES.has(exp.type)) return exp;
-	return { ...exp, params: { ...exp.params, __area: scope === undefined ? 'repo' : scopeAreaKey(scope) } };
+	const params = withoutLimitParams(exp.params ?? {});
+	if (!AREA_AWARE_TYPES.has(exp.type)) return { ...exp, params };
+	return { ...exp, params: { ...params, __area: scope === undefined ? 'repo' : scopeAreaKey(scope) } };
 }

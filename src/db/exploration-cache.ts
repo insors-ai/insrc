@@ -56,8 +56,10 @@ const unpackr = new Unpackr({ useRecords: false });
  *   3 -- the candidate search returns an anchor, and the lookups that depend
  *        on the area a request named are keyed on it (LLD-65b643840a294422-s1).
  *        A row from version 2 has no anchor and was keyed on no area.
+ *   4 -- no lookup stops at a count or cuts an item (LLD-b9d5c5c40df5a574-s4):
+ *        a row from version 3 may hold a result cut at a former limit.
  */
-export const EXPLORATION_CACHE_VERSION = 3;
+export const EXPLORATION_CACHE_VERSION = 4;
 
 interface CacheRow {
 	readonly exploration: Exploration;

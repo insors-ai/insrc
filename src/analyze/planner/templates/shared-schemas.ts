@@ -57,12 +57,6 @@ export const ADHERENCE_CONSTRAINT_PARAMS = {
 		minLength:   1,
 		description: 'The subject of the rules this check judges against, in words a reader of the documents would use (for example "build and test rules for CI workflows"), NOT a file path. The check looks the constraints on it up itself, in the repository\'s documents. This is the usual way to give a check its constraints. Checks of one plan that share a topic judge against the same list.',
 	},
-	maxConstraintSources: {
-		type:        'integer',
-		minimum:     1,
-		maximum:     30,
-		description: 'How many document sections the lookup of `constraintTopic` reads. Leave it out for the default.',
-	},
 	constraints: {
 		type:  'array',
 		items: {

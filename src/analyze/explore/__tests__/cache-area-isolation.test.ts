@@ -196,3 +196,22 @@ test('a version-2 row, written exactly as the previous code wrote it, is not rea
 	assert.ok([...store.explorationCache.getKeys()].length >= 2, 'the version-2 rows are in the store beside what the executors wrote');
 	assert.equal(await getCachedExploration(repo, LAST, text), null, 'the version-2 row of a lookup with no area is not read');
 });
+
+test('a stored version 3 output is treated as absent at version 4', async () => {
+	const e = exp('e1', 'search.text', { pattern: 'needle' });
+	// A row written exactly as version 3 did: the same store and key layout, with the version-3 hash.
+	const { createHash } = await import('node:crypto');
+	const v3Key = createHash('sha256').update(JSON.stringify({ v: 3, type: e.type, params: { pattern: 'needle' } }), 'utf8').digest('hex').slice(0, 16);
+	const { getGraphStore, withWriteTxn } = await import('../../../db/graph/store.js');
+	const { lookupRepoIdInTxn } = await import('../../../db/repos.js');
+	const { Packr } = await import('msgpackr');
+	await withWriteTxn(s => {
+		const key = Buffer.alloc(20);
+		key.writeUInt32BE(lookupRepoIdInTxn(s, repo)!, 0);
+		key.writeBigUInt64BE(LAST, 4);
+		Buffer.from(v3Key, 'hex').copy(key, 12, 0, 8);
+		s.explorationCache.put(key, new Packr({ useRecords: false }).pack({ exploration: e, output: { type: 'search.text', pattern: 'needle', hits: [], backend: 'node', root: repo }, cachedAt: 1 }));
+	});
+	assert.equal([...(await getGraphStore()).explorationCache.getKeys()].length, 1, 'the version-3 row is in the store');
+	assert.equal(await getCachedExploration(repo, LAST, cacheExplorationFor(e, undefined)), null, 'it is not served');
+});

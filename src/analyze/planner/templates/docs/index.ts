@@ -99,14 +99,13 @@ export const docsDecisionTrace: AnalyzeTaskTemplate = {
 	family:      'decision',
 	kind:        'leaf',
 	revision:    'r1',
-	description: 'Given a topic, trace the decisions recorded across relevant docs. Retrieves the top-K matching doc sections, extracts decision statements, cites each back to its source. Verbatim -- do NOT paraphrase.',
+	description: 'Given a topic, trace the decisions recorded across relevant docs. Retrieves every matching doc section, extracts decision statements, cites each back to its source. Verbatim -- do NOT paraphrase.',
 	inputSchema: {
 		type:                 'object',
 		additionalProperties: false,
 		required:             ['topic'],
 		properties: {
 			topic:      { type: 'string', minLength: 1 },
-			maxSources: { type: 'integer', minimum: 1, maximum: 30 },
 		},
 	},
 	produces:    ['decision-trace'],
@@ -125,7 +124,6 @@ export const docsConstraintEnumerate: AnalyzeTaskTemplate = {
 		required:             ['subject'],
 		properties: {
 			subject:    { type: 'string', minLength: 1 },
-			maxSources: { type: 'integer', minimum: 1, maximum: 30 },
 		},
 	},
 	produces:    ['constraints'],

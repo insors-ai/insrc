@@ -459,7 +459,7 @@ test('an adherence task with a topic, with an inline list, or with stored-docume
 		const subject = { [subjectKey]: 'payments' };
 		const passes: ReadonlyArray<Record<string, unknown>> = [
 			{ constraintTopic: 'refund rules' },
-			{ constraintTopic: 'refund rules', maxConstraintSources: 5 },
+			{ constraintTopic: 'refund rules' },
 			{ constraints: inline },
 			{ constraintIds: ['doc-1'] },
 			// A usable source with an empty list beside it, as a task may be written today.
@@ -514,7 +514,8 @@ test('the catalog shown to the planner for each adherence template names constra
 	for (const [template, , subjectKey] of ADHERENCE) {
 		const tmpl = getTemplate(template)!;
 		const shown = renderCatalog([tmpl]);
-		for (const name of ['constraintTopic', 'maxConstraintSources', 'constraints', 'constraintIds']) assert.ok(shown.includes(`"${name}"`), `${template}: ${name}`);
+		for (const name of ['constraintTopic', 'constraints', 'constraintIds']) assert.ok(shown.includes(`"${name}"`), `${template}: ${name}`);
+		assert.equal(shown.includes('maxConstraintSources'), false, `${template}: no limit of sections is offered`);
 		assert.ok(!shown.includes('constraintsSource'), template);
 		assert.ok(!shown.includes('docs.constraint.enumerate'), template);
 		assert.ok(!shown.includes('upstream'), template);

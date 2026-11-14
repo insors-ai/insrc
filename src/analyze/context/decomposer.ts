@@ -35,7 +35,7 @@ import { isModelCallFailure, modelCallFailureDetail } from './model-failure.js';
 import { resolveRoleProvider } from './shaper-provider.js';
 import { loadAnalyzeConfig } from '../../config/analyze.js';
 import { validateAgainstSchema } from '../../agent/providers/structured-output.js';
-import { EXPLORATION_PARAMS, explorationParamsSchema } from '../explore/params-schema.js';
+import { EXPLORATION_PARAMS, explorationParamsSchema, REMOVED_LIMIT_PARAMS } from '../explore/params-schema.js';
 import { getLogger } from '../../shared/logger.js';
 import type {
 	LLMMessage,
@@ -292,7 +292,7 @@ export function finalizeDecompose(raw: unknown, execution?: ConnectionExecutionC
 
 /**
  * The params step both plan entry points run before topology validation
- * (ISSUE-8d39ef09): a null param means absent and is removed, and a key its
+ * (ISSUE-8d39ef09): a null param means absent and is removed, a removed limit parameter is dropped, and a key its
  * exploration's type does not declare is refused, since the schema's params
  * anyOf is not tied to the sibling type. A missing required param is left for
  * the runner, which fails only that exploration, as before.
@@ -303,6 +303,8 @@ function normalizeExplorationParams(explorations: readonly Exploration[], execut
 		const params: Record<string, unknown> = {};
 		for (const [key, value] of Object.entries(exp.params ?? {})) {
 			if (value === null) continue;
+			// A limit parameter the catalog no longer offers is dropped, not refused: no lookup takes one.
+			if (REMOVED_LIMIT_PARAMS.has(key)) continue;
 			if (declared === undefined || !(key in declared)) {
 				throw new DecomposerSchemaUnrecoverable([
 					execution?.mode === 'session-memory' ? 'Temporary analysis plan has an unsupported parameter.' : `exploration '${exp.id}' (${exp.type}) has param '${key}', which ${exp.type} does not take`,

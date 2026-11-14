@@ -28,6 +28,13 @@ Initial managed sample on Node 22.22.1, Linux, Ryzen 9 8940HX:
 These timings are observations, not portable test thresholds. The test emits
 fresh host/load/timing/count diagnostics on every run.
 
+A separate production-worker readiness case installs the existing deterministic
+reviewer fixture, blocks real source preparation, and measures zero provider
+invocations. It then releases preparation, holds the first actual provider call,
+and verifies that qualification was durably saved before that call. This uses
+an isolated registered project/socket and no hosted model. Publication is outside
+this readiness test; the fixture's durable result is observed directly.
+
 Run with the supported Node runtime:
 
 ```sh

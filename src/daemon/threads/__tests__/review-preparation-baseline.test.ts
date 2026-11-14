@@ -18,6 +18,8 @@ import { withReviewNativeTransport } from '../../../shared/review-process-bridge
 import { RegistryReviewSources } from '../../../workflow/code-review/task-review/sources.js';
 import { registerGitTools } from '../../tools/builtins/git/index.js';
 import { decodeStoredCheckpoint } from '../../../workflow/code-review/task-review/admission-checkpoint.js';
+import { productionFixture } from './helpers/review-production-fixture.js';
+import { until, workerRpc } from './helpers/review-clearance-fixture.js';
 
 const root = new URL('./fixtures/review-preparation/', import.meta.url);
 async function retained() {
@@ -104,9 +106,38 @@ test('retained workload managed Git baseline records durable native writes witho
   fixtureDigest: manifest.checkpointSha256, elapsedMs: performance.now() - began,
   node: process.version, platform: process.platform, cpu: cpus()[0]?.model, load: loadavg(),
   commands, fullHistoryWrites: writes, serializedBytes: writtenBytes, logicalQueries: 3, distinctQueries: 2,
-  providerCalls: 0 };
+  providerMode: 'source-only-sample' };
  assert.equal(commands, 3); assert.equal(writes, 6);
  assert.ok(writtenBytes > manifest.checkpointBytes * 5);
  assert.equal((await readFile(path, 'utf8')).includes('retained-baseline'), true);
  t.diagnostic(JSON.stringify(report));
+});
+
+test('production preparation blocks deterministic provider calls until qualified readiness', async t => {
+ const f = await productionFixture(t, undefined, { holdProvider: true });
+ const peer = await f.peer(), request = f.codeRequest('baseline-readiness');
+ const ack = await peer.call('taskReview.start', request);
+ const owner = f.started.get(request.reviewId)!;
+ await until(async () => (await workerRpc(owner, 'fixture.stats')).entered);
+ const blocked = await workerRpc(owner, 'fixture.stats');
+ assert.equal(blocked.calls, 0, 'real source barrier blocks all deterministic model calls');
+ const before = JSON.parse(await readFile(ack.checkpointPath, 'utf8'));
+ assert.equal(before.attempts.at(-1).phase, 'admission');
+ await f.release(request.reviewId);
+ await until(async () => (await workerRpc(owner, 'fixture.stats')).calls > 0);
+ const ready = await workerRpc(owner, 'fixture.stats');
+ assert.equal(ready.calls, 1, 'first deterministic provider is held at its actual invocation');
+ assert.equal(ready.qualifiedBeforeProvider, true);
+ const after = JSON.parse(await readFile(ack.checkpointPath, 'utf8'));
+ assert.notEqual(after.attempts.at(-1).phase, 'admission');
+ await workerRpc(owner, 'fixture.releaseProvider');
+ await until(async () => {
+  // The fixture intentionally has no publisher. Inspect its durable result;
+  // a public progress read can trigger unrelated publication recovery.
+  const cp = JSON.parse(await readFile(ack.checkpointPath, 'utf8'));
+  const status = cp.attempts.at(-1).header.status;
+  assert.notEqual(status, 'failed', JSON.stringify(cp));
+  return status === 'passed';
+ });
+ t.diagnostic(JSON.stringify({ providerCallsBeforeReady: blocked.calls, providerCallsAtReady: ready.calls, qualifiedBeforeProvider: ready.qualifiedBeforeProvider }));
 });

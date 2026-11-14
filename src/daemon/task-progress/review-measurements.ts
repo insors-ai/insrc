@@ -3,9 +3,10 @@ import { Type } from '@sinclair/typebox';
 import type { Static } from '@sinclair/typebox';
 import { Value } from '@sinclair/typebox/value';
 import type { ReviewWorkerProgress } from '../threads/review-workers.js';
+import type { ReviewKey } from '../../shared/review-resources.js';
 import type { ReviewWorkerIdentity } from '../threads/review-worker-contract.js';
 import { MeasuredCountSchema, ProgressLabel, ProgressSequence, progressObject } from '../../shared/task-progress.js';
-import type { DelegateMeasurement, MeasuredCount, ProgressKind, TaskOwnerFence, TaskRef } from '../../shared/task-progress.js';
+import type { DelegateMeasurement, MeasuredCount, ProgressKind, TaskOwnerFence, TaskProgressDelegate, TaskRef } from '../../shared/task-progress.js';
 
 const target = Type.String({ minLength: 1, maxLength: 2048, pattern: '^[^\\x00-\\x1f\\x7f]+$' });
 const nullableCount = Type.Union([MeasuredCountSchema, Type.Null()]);
@@ -136,4 +137,63 @@ export function mapCodeReviewMeasurement(
     task,
     owner,
   };
+}
+
+/** Read-only source the delegates share: progressOf plus the live identity. */
+export interface ReviewProgressSource {
+  progressOf(key: ReviewKey): ReviewWorkerProgress | undefined;
+  identity(key: ReviewKey): ReviewWorkerIdentity | undefined;
+}
+
+abstract class ReviewDelegateBase<D extends ReviewDetails> implements TaskProgressDelegate<D> {
+  private lastAccepted: { incarnation: string; sequence: number; measurement: DelegateMeasurement<D> } | undefined;
+  protected constructor(
+    protected readonly source: ReviewProgressSource,
+    protected readonly identity: ReviewIdentity,
+  ) {}
+  protected abstract map(progress: ReviewWorkerProgress, task: TaskRef, owner: TaskOwnerFence): DelegateMeasurement<D> | null;
+  /** A sample from an earlier incarnation or a lower sequence never replaces the newer measurement. */
+  private isNewer(progress: ReviewWorkerProgress): boolean {
+    const last = this.lastAccepted;
+    if (!last) return true;
+    if (progress.incarnation === last.incarnation) return progress.sequence > last.sequence;
+    // A new incarnation supersedes the old one only once it is the live one.
+    return progress.incarnation === this.source.identity(this.identity.key)?.incarnation;
+  }
+  async progress(task: TaskRef): Promise<DelegateMeasurement<D> | null> {
+    try {
+      const progress = this.source.progressOf(this.identity.key);
+      if (!progress || !this.isNewer(progress)) return this.lastAccepted?.measurement ?? null;
+      const owner: TaskOwnerFence = { ownerId: 'main', ownerEpoch: progress.incarnation, ownerSequence: progress.sequence };
+      const mapped = this.map(progress, task, owner);
+      // A rejected sample keeps the last accepted measurement; nothing is thrown.
+      if (mapped) this.lastAccepted = { incarnation: progress.incarnation, sequence: progress.sequence, measurement: mapped };
+      return mapped ?? this.lastAccepted?.measurement ?? null;
+    } catch {
+      return this.lastAccepted?.measurement ?? null;
+    }
+  }
+  /** Liveness only: the last accepted sequence while the live incarnation matches. Never renews activity by reading. */
+  async ownerActivity(_task: TaskRef): Promise<number | null> {
+    try {
+      const live = this.source.identity(this.identity.key);
+      if (!live || !this.lastAccepted || live.incarnation !== this.lastAccepted.incarnation) return null;
+      return this.lastAccepted.sequence;
+    } catch {
+      return null;
+    }
+  }
+}
+
+export class DesignReviewDelegate extends ReviewDelegateBase<DesignReviewDetails> {
+  protected map(progress: ReviewWorkerProgress, task: TaskRef, owner: TaskOwnerFence): DelegateMeasurement<DesignReviewDetails> | null {
+    // Validate key and attempt against the bound identity; accept the sample's
+    // incarnation because a newer live incarnation supersedes the bound one.
+    return mapDesignReviewMeasurement({ ...this.identity, incarnation: progress.incarnation, attempt: progress.attempt }, progress, task, owner);
+  }
+}
+export class CodeReviewDelegate extends ReviewDelegateBase<CodeReviewDetails> {
+  protected map(progress: ReviewWorkerProgress, task: TaskRef, owner: TaskOwnerFence): DelegateMeasurement<CodeReviewDetails> | null {
+    return mapCodeReviewMeasurement({ ...this.identity, incarnation: progress.incarnation, attempt: progress.attempt }, progress, task, owner);
+  }
 }

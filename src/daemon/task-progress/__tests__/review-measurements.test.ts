@@ -2,10 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Value } from '@sinclair/typebox/value';
 import {
-  CodeReviewDetailsSchema, DesignReviewDetailsSchema, mapCodeReviewMeasurement, mapDesignReviewMeasurement,
-  validateReviewDetails,
+  CodeReviewDelegate, CodeReviewDetailsSchema, DesignReviewDelegate, DesignReviewDetailsSchema,
+  mapCodeReviewMeasurement, mapDesignReviewMeasurement, validateReviewDetails,
 } from '../review-measurements.js';
+import type { ReviewProgressSource } from '../review-measurements.js';
 import type { ReviewWorkerProgress } from '../../threads/review-workers.js';
+import type { ReviewKey } from '../../../shared/review-resources.js';
 import { MAX_PROGRESS_SNAPSHOT_BYTES } from '../../../shared/task-progress.js';
 
 const identity = { key: { project: '/repo', family: 'design' as const, reviewId: 'rev-1' }, incarnation: 'inc-1', attempt: 1 };
@@ -144,4 +146,95 @@ test('a mapped measurement fits the 8 KiB snapshot bound', () => {
       measurement: m, lastOwnerActivityAt: null, workerHealth: 'alive', cancellation: 'none' };
     assert.ok(Buffer.byteLength(JSON.stringify(snapshot)) <= MAX_PROGRESS_SNAPSHOT_BYTES);
   }
+});
+
+/** In-memory ReviewProgressSource double over an entry map. */
+function fakeSource(entries: Map<string, { progress?: ReviewWorkerProgress; closing?: boolean; live?: string }>): ReviewProgressSource {
+  const keyOf = (key: ReviewKey) => JSON.stringify([key.project, key.family, key.reviewId]);
+  return {
+    progressOf: key => { const e = entries.get(keyOf(key)); return !e || e.closing ? undefined : e.progress; },
+    identity: key => { const e = entries.get(keyOf(key)); const live = e?.live; return live ? { key, incarnation: live } : undefined; },
+  };
+}
+const srcKey = (family: 'design' | 'code', reviewId: string): ReviewKey => ({ project: '/repo', family, reviewId });
+
+test('a delayed publication from an earlier incarnation does not replace the newer measurement', async () => {
+  const key = srcKey('design', 'rev-1');
+  const entries = new Map<string, { progress?: ReviewWorkerProgress; live?: string }>([
+    [JSON.stringify([key.project, key.family, key.reviewId]), { live: 'inc-2' }],
+  ]);
+  const source = fakeSource(entries);
+  const delegate = new DesignReviewDelegate(source, { ...identity });
+  const newer = designProgress({ incarnation: 'inc-2', sequence: 5 });
+  entries.get(JSON.stringify([key.project, key.family, key.reviewId]))!.progress = newer;
+  const first = await delegate.progress(task);
+  assert.equal(first!.meaningfulRevision, 5);
+  // A stale sample from the old incarnation arrives late.
+  entries.get(JSON.stringify([key.project, key.family, key.reviewId]))!.progress = designProgress({ incarnation: 'inc-1', sequence: 99 });
+  const second = await delegate.progress(task);
+  assert.equal(second!.meaningfulRevision, 5, 'stale incarnation does not replace the newer measurement');
+  // A lower sequence in the same incarnation is also stale.
+  entries.get(JSON.stringify([key.project, key.family, key.reviewId]))!.progress = designProgress({ incarnation: 'inc-2', sequence: 3 });
+  const third = await delegate.progress(task);
+  assert.equal(third!.meaningfulRevision, 5, 'lower sequence does not replace the newer measurement');
+});
+
+test('heartbeat-only samples keep counts and meaningful revision unchanged', async () => {
+  const key = srcKey('code', 'rev-c1');
+  const entries = new Map([[JSON.stringify([key.project, key.family, key.reviewId]), { live: 'inc-1' }]]) as Map<string, { progress?: ReviewWorkerProgress; live?: string }>;
+  entries.get(JSON.stringify([key.project, key.family, key.reviewId]))!.progress = codeProgress();
+  const delegate = new CodeReviewDelegate(fakeSource(entries), { ...codeIdentity });
+  const first = await delegate.progress(task);
+  assert.deepEqual(first!.counts, [{ unit: 'tasks', completed: 3, total: 10 }]);
+  // Heartbeat: same counts, only sequence/updatedAt advance.
+  entries.get(JSON.stringify([key.project, key.family, key.reviewId]))!.progress = codeProgress({ sequence: 10, updatedAt: '2026-11-15T10:02:00.000Z' });
+  const second = await delegate.progress(task);
+  assert.deepEqual(second!.counts, [{ unit: 'tasks', completed: 3, total: 10 }], 'counts unchanged by heartbeat');
+  assert.equal(second!.meaningfulRevision, 10, 'sequence is the revision channel; the delegate tracks it');
+  assert.equal(delegate['lastAccepted' as never], second ? delegate['lastAccepted' as never] : undefined);
+});
+
+test('an interrupted review reads as interrupted until the new incarnation is verified', async () => {
+  const key = srcKey('code', 'rev-c1');
+  const slot = JSON.stringify([key.project, key.family, key.reviewId]);
+  const entries = new Map([[slot, { live: 'inc-1' }]]) as Map<string, { progress?: ReviewWorkerProgress; live?: string }>;
+  entries.get(slot)!.progress = codeProgress({}, { status: 'interrupted' });
+  const delegate = new CodeReviewDelegate(fakeSource(entries), { ...codeIdentity });
+  const interrupted = await delegate.progress(task);
+  assert.equal(interrupted!.details.publication, 'pending', 'publication follows crPublication unless status is failed');
+  assert.equal(interrupted!.phase, 'task_review', 'phase comes from the display projection');
+  assert.equal(interrupted!.details.initial.completed, 3, 'interrupted review keeps its last accepted counts');
+  // New incarnation admitted but not yet verified (no progress accepted): keep the interrupted view.
+  entries.get(slot)!.live = 'inc-2';
+  const held = await delegate.progress(task);
+  assert.equal(held!.meaningfulRevision, interrupted!.meaningfulRevision, 'unverified new incarnation does not replace the interrupted measurement');
+  // Once the new incarnation publishes, its measurement wins.
+  entries.get(slot)!.progress = codeProgress({ incarnation: 'inc-2', sequence: 1, updatedAt: '2026-11-15T10:03:00.000Z' }, { status: 'running' });
+  const recovered = await delegate.progress(task);
+  assert.equal(recovered!.meaningfulRevision, 1);
+});
+
+test('a missing or closing entry returns null without throwing', async () => {
+  const key = srcKey('design', 'gone');
+  const delegate = new DesignReviewDelegate(fakeSource(new Map()), { ...identity, key });
+  assert.equal(await delegate.progress(task), null);
+  assert.equal(await delegate.ownerActivity(task), null);
+  const closing = srcKey('design', 'closing');
+  const slot = JSON.stringify([closing.project, closing.family, closing.reviewId]);
+  const entries = new Map([[slot, { closing: true, progress: designProgress() }]]) as Map<string, { progress?: ReviewWorkerProgress; closing?: boolean }>;
+  const closingDelegate = new DesignReviewDelegate(fakeSource(entries), { ...identity, key: closing });
+  assert.equal(await closingDelegate.progress(task), null, 'closing entry yields null');
+});
+
+test('observing progress leaves review results, publication and approval unchanged', async () => {
+  const key = srcKey('design', 'rev-1');
+  const slot = JSON.stringify([key.project, key.family, key.reviewId]);
+  const entries = new Map([[slot, { live: 'inc-1', progress: designProgress() }]]) as Map<string, { progress?: ReviewWorkerProgress; live?: string }>;
+  const source = fakeSource(entries);
+  const delegate = new DesignReviewDelegate(source, { ...identity });
+  const before = structuredClone(entries.get(slot)!.progress);
+  for (let i = 0; i < 3; i++) await delegate.progress(task);
+  await delegate.ownerActivity(task);
+  assert.deepEqual(entries.get(slot)!.progress, before, 'the stored publication is untouched by reads');
+  assert.equal(typeof delegate.cancel, 'undefined', 'delegates expose no cancel, so controls stay empty');
 });

@@ -376,6 +376,11 @@ In addition to the deletions in a1, each lookup that can return a large set (tex
 - Several proving tests named in the test strategy do not exist yet (discovery-objects, doc-constraint-enumerate, adherence-check, db-tables-list, decompose-prompt-limits and redis-etcd-live); the plan stage should create them or map the criteria to existing files.
 - Reading ripgrep output as a stream in complete mode and how a search that runs out of time reports hits already gathered are stated but not detailed; the plan stage should choose the time limit for the analyzer's search.
 
+## Resolved questions
+
+- `q9c8db0c8` — Which of the constants found in the s1 inventory are the Define's sixteen result-count limits and nine content cuts is not established; the plan stage should reconcile the two lists before the tasks are written.
+  - **resolved**: Map constants to Define requirements — User approved the recommendation 2026-11-14: reconcile the s1 inventory with the Define's sixteen limits and nine cuts, record the mapping before tasks; revise upstream only on a contradiction. _(2026-11-14T12:52:24.497Z)_
+
 ## Citations
 
 - **[[c1]]** `analyze-bundle` `s1 analyze bundle` — "Result-count limits and content cuts found by text search of the production files (the analyzer pass over the lookup directory was cut at 30 hits)"

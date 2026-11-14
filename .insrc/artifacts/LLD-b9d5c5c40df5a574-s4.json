@@ -59,6 +59,15 @@
       "description": "",
       "references": [],
       "attachments": []
+    },
+    "questionResolutions": {
+      "q9c8db0c8": {
+        "question": "Which of the constants found in the s1 inventory are the Define's sixteen result-count limits and nine content cuts is not established; the plan stage should reconcile the two lists before the tasks are written.",
+        "status": "resolved",
+        "choice": "Map constants to Define requirements",
+        "rationale": "User approved the recommendation 2026-11-14: reconcile the s1 inventory with the Define's sixteen limits and nine cuts, record the mapping before tasks; revise upstream only on a contradiction.",
+        "resolvedAt": "2026-11-14T12:52:24.497Z"
+      }
     }
   },
   "body": {

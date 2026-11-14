@@ -524,6 +524,37 @@ test('scratch-panel.test.ts: a FAILED row-initiated delete re-renders the browse
   assert.ok(panel.html.includes('keep.md'), 'the scratch is still listed');
 });
 
+test('scratch-panel.test.ts: a FAILED delete keeps the open document open (the scratchpad still exists, so its document is not closed)', async () => {
+  const h = harness();
+  await seed(h, 'keep.md', 'K', 1);
+  await h.controller.openBrowse();
+  const browse = h.panels[0]!;
+  // Open the document panel for keep.md.
+  await h.controller.openDocument('keep.md');
+  const doc = h.panels.find((p) => p !== browse)!;
+  const docContents = (): string[] =>
+    doc.posted.filter((m) => (m as { payload?: { type?: string } }).payload?.type === 'scratch-content')
+      .map((m) => (m as { payload: { text: string } }).payload.text);
+  assert.ok(docContents().includes('K'), 'document is showing keep.md');
+  // Fail the delete at unlink (EPERM).
+  const origUnlink = h.fake.fs.unlink.bind(h.fake.fs);
+  h.fake.fs.unlink = async (p: string) => {
+    if (p.endsWith('keep.md')) { const e = new Error('EPERM: operation not permitted'); (e as NodeJS.ErrnoException).code = 'EPERM'; throw e; }
+    return origUnlink(p);
+  };
+  browse.injectMessage({ v: 1, payload: { type: 'scratch-delete', id: 'keep.md' } });
+  await new Promise((r) => setTimeout(r, 20));
+  assert.ok(h.fake.files.has(`${ROOT}/keep.md`), 'the file is still present');
+  assert.ok(!doc.disposed, 'the open document is NOT disposed after a failed delete');
+  assert.ok(docContents().includes('K'), 'the document still shows the scratchpad');
+  // A successful delete DOES close the document.
+  h.fake.fs.unlink = origUnlink;
+  browse.injectMessage({ v: 1, payload: { type: 'scratch-delete', id: 'keep.md' } });
+  await new Promise((r) => setTimeout(r, 20));
+  assert.ok(!h.fake.files.has(`${ROOT}/keep.md`), 'the file is gone after the successful delete');
+  assert.ok(doc.disposed, 'the open document is disposed after a successful delete');
+});
+
 test('scratch-panel.test.ts: stale ENOENT, deleting a non-displayed document, delete invalidates pending opens of the deleted id, closing/reopening the document panel during an outstanding read (dispose invalidates the generation, late read dropped)', async () => {
   const h = harness();
   await seed(h, 'a.md', 'A', 1);

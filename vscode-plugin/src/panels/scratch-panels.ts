@@ -284,7 +284,9 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
       deleteError = `delete failed: ${String(err)}`;
       log.warn(`[scratches] delete failed for ${id}: ${String(err)}`);
     }
-    closeDocumentIfShowing(id);
+    // Close the open document ONLY after a successful delete. On failure the
+    // scratchpad still exists, so its document must stay open.
+    if (deleteError === undefined) closeDocumentIfShowing(id);
     if (browseHandle !== undefined) await renderBrowse(browseHandle, deleteError);
   };
 

@@ -19,7 +19,8 @@ function put(repo: string, id: string, head: object): void {
 	mkdirSync(dirname(path), { recursive: true });
 	writeFileSync(path, JSON.stringify(head));
 }
-const buildRecord = (meta: object = {}) => ({ meta: { workflow: 'build', epicHash: H, storyId: 's1', createdAt: '2026-11-03T00:00:00.000Z', ...meta }, body: { commit: 'abc1234', focus: 'Change it', summary: 'Changed', tasks: [{ id: 's1', passed: true }], changeLog: [{ target: { file: 'src/a.ts' } }] } });
+/** Authored by the controller, so the daemon review in `review()` is independent of it (8ebc81c96 requires a known, different author). */
+const buildRecord = (meta: object = {}) => ({ meta: { workflow: 'build', epicHash: H, storyId: 's1', createdAt: '2026-11-03T00:00:00.000Z', authoredBy: 'controller', ...meta }, body: { commit: 'abc1234', focus: 'Change it', summary: 'Changed', tasks: [{ id: 's1', passed: true }], changeLog: [{ target: { file: 'src/a.ts' } }] } });
 /** A task-based code review of `build`, passing unless its BUILD binding is `fingerprint`. */
 function review(build: unknown, story: string, meta: object = {}, fingerprint: string = reviewedBuildFingerprint(build)): object {
 	const commit = 'a'.repeat(40);

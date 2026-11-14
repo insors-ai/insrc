@@ -222,7 +222,7 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
 
   const wrap = (panel: PanelHandle): ScratchPanelHandle => ({
     setHtml: (h) => panel.setHtml(h),
-    reveal: () => panel.reveal(),
+    reveal: (preserveFocus?: boolean | undefined) => panel.reveal(preserveFocus),
     onDidDispose: (l) => panel.onDidDispose(l),
     onMessage: (l) => panel.onMessage(l),
     postMessage: (m) => panel.postMessage(m),
@@ -249,7 +249,10 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
       const panel = wrap(deps.panels({ viewType, title }));
       panel.onDidDispose(onDispose);
       onCreate(panel);
-      panel.reveal();
+      // Reveal with focus preserved: the singleton is created for a user action
+      // (e.g. scratch-new from the chat popup), and stealing focus to the new tab
+      // makes the action look like a no-op in the panel the user is interacting with.
+      panel.reveal(true);
       setCurrent(panel);
       return panel;
     } catch (err) {

@@ -976,7 +976,7 @@ export function activate(context: vscode.ExtensionContext): void {
         setHtml: (html) => {
           panel.webview.html = html;
         },
-        reveal: () => panel.reveal(),
+        reveal: (preserveFocus) => (preserveFocus === true ? panel.reveal(undefined, true) : panel.reveal()),
         onDidDispose: (listener) => {
           panel.onDidDispose(listener);
         },

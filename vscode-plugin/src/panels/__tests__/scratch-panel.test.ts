@@ -35,6 +35,8 @@ const ROOT = '/root/scratches';
 class FakePanel implements PanelHandle {
   html = '';
   reveals = 0;
+  /** The preserveFocus argument of each reveal call (undefined = default reveal). */
+  readonly revealFlags: Array<boolean | undefined> = [];
   disposed = false;
   title: string;
   readonly posted: unknown[] = [];
@@ -44,7 +46,7 @@ class FakePanel implements PanelHandle {
     this.title = title;
   }
   setHtml(html: string): void { this.html = html; }
-  reveal(): void { this.reveals += 1; }
+  reveal(preserveFocus?: boolean | undefined): void { this.reveals += 1; this.revealFlags.push(preserveFocus); }
   onDidDispose(listener: () => void): void { this.disposeListeners.push(listener); }
   onMessage(listener: (message: unknown) => void): void { this.messageListeners.push(listener); }
   postMessage(message: unknown): void { this.posted.push(message); }
@@ -188,6 +190,10 @@ test('scratch-panel.test.ts: empty list renders a hint row; create-or-reveal reu
   assert.equal(h.panels.length, 1, 'create-or-reveal reuses the single instance');
   assert.equal(again, first);
   assert.ok(h.panels[0]!.reveals >= 2, 'the second open revealed the cached panel');
+  // ISSUE-3183af2a defect 1: a FRESH create reveals with focus PRESERVED (the user stays in
+  // the chat they clicked from); the re-reveal of an existing panel uses the default reveal.
+  assert.deepEqual(h.panels[0]!.revealFlags[0], true, 'the first (create) reveal preserves focus');
+  assert.deepEqual(h.panels[0]!.revealFlags[1], undefined, 'the cached re-reveal is the default reveal');
   // Error row when the store fails.
   h.fake.failOn = (c) => (c.op === 'readdir' ? Object.assign(new Error('EACCES'), { code: 'EACCES' }) : undefined);
   await h.controller.refreshBrowse();
@@ -220,6 +226,7 @@ test('scratch-panel.test.ts: document viewType insrc.scratchpad renders content 
   assert.ok(handle !== undefined);
   const panel = h.panels[0]!;
   assert.equal(panel.viewType, SCRATCHPAD_VIEW_TYPE);
+  assert.deepEqual(panel.revealFlags, [true], 'ISSUE-3183af2a: the fresh document reveal preserves focus (no focus steal from the chat popup)');
   // The static body holds an empty <pre>; content arrives as a push.
   assert.ok(panel.html.includes('<pre id="insrc-scratchdoc" class="scratch-doc"></pre>'), 'the doc element starts empty');
   assert.ok(!panel.html.includes('not markup</b>'), 'content is NOT baked into the HTML');

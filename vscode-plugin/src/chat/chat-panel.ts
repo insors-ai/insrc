@@ -2302,7 +2302,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // and sits directly under the button; it opens UPWARD from the status bar (the .popup
       // default already opens upward; left:0 keeps it under the button at the bar's left edge).
       (scratchOn
-        ? `#insrc-scratchmenu{bottom:calc(100% + 8px);top:auto;right:auto;left:0;}`
+        ? `#insrc-scratchmenu{bottom:calc(100% + 8px);top:auto;right:auto;left:0;}` +
+          // ISSUE-3183af2a: the New/Browse actions are icon-only rows grouped top-right in the
+          // popup (.scratchacts); .iconrow hides the text lbl so only the SVG glyph shows.
+          `.scratchacts{display:flex;gap:2px;justify-content:flex-end;margin:-1px;} ` +
+          `.popup .item.iconrow{width:26px;justify-content:center;padding:5px 0;} ` +
+          `.popup .item.iconrow .lbl[hidden]{display:none;} `
         : '') +
       `.runbtn,.gaugebtn{display:inline-flex;align-items:center;gap:6px;height:24px;background:var(--dropdown-bg);border:1px solid var(--dropdown-border);border-radius:6px;padding:0 8px;cursor:pointer;color:var(--fg);font-family:var(--font);font-size:12px;font-weight:500;}` +
       `.runbtn:hover,.gaugebtn:hover{color:var(--accent);}` +
@@ -2520,16 +2525,24 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         `reg.onAttachmentOpen(function(id){vs.postMessage({v:1,payload:{type:'open-attachment',attachmentId:id}});});`;
     // Story E202611134642d49a:S001 t4: the scratchpad menu. The button posts scratch-open-menu;
     // the host answers with a 'scratch-list' push (recent entries, or an error). Rows post
-    // scratch-open {id} / scratch-new / scratch-browse. Empty and error states render as hint
-    // rows, so the menu is never blank. Rendering reuses mitem/chatMenuKey/closePops.
+    // scratch-open {id} / scratch-new / scratch-browse. The New/Browse actions render FIRST as
+    // icon-only rows (SVG glyph, label on title/aria-label — same visual language as the
+    // icon-only #insrc-scratch status-bar button); entries follow as text rows. Empty and error
+    // states render as hint rows, so the menu is never blank. Rendering reuses
+    // mitem/chatMenuKey/closePops.
     const scratchScript = !scratchOn
       ? ''
       : `var scratchBtn=document.getElementById('insrc-scratch'),scratchMenu=document.getElementById('insrc-scratchmenu'),scratchList=null;` +
+        `var SCRATCH_NEW_ICON='<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M8 3v10M3 8h10"/></svg>';` +
+        `var SCRATCH_BROWSE_ICON='<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M2 4h12M2 8h12M2 12h8"/></svg>';` +
+        `function actionRow(label,icon,type){var row=mitem(false,label,undefined,undefined,undefined,false,icon);row.setAttribute('aria-label',label);row.setAttribute('title',label);row.className=row.className+' iconrow';row.querySelector('.lbl').setAttribute('hidden','');row.onclick=function(){vs.postMessage({v:1,payload:{type:type}});};return row;}` +
         `function renderScratchMenu(m){scratchMenu.innerHTML='';var err=typeof m.error==='string'?m.error:'';if(err){scratchMenu.appendChild(mitem(false,err.indexOf('scratchpads unavailable:')===0?err:'scratchpads unavailable: '+err,undefined,undefined,undefined,true,''));return;}var es=Array.isArray(m.entries)?m.entries:[];` +
-        `if(es.length===0){scratchMenu.appendChild(mitem(false,'no scratchpads yet — use “New scratchpad” below',undefined,undefined,undefined,true,''));}` +
-        `es.forEach(function(e){if(e&&typeof e.id==='string'){var row=mitem(false,String(e.name!==undefined?e.name:e.id),undefined,undefined,undefined,false,'');row.setAttribute('data-id',e.id);row.onclick=function(){vs.postMessage({v:1,payload:{type:'scratch-open',id:e.id}});};scratchMenu.appendChild(row);}});` +
-        `var newRow=mitem(false,'New scratchpad',undefined,undefined,undefined,false,'');newRow.onclick=function(){vs.postMessage({v:1,payload:{type:'scratch-new'}});};scratchMenu.appendChild(newRow);` +
-        `var brRow=mitem(false,'Browse all',undefined,undefined,undefined,false,'');brRow.onclick=function(){vs.postMessage({v:1,payload:{type:'scratch-browse'}});};scratchMenu.appendChild(brRow);}` +
+        `var acts=document.createElement('div');acts.className='scratchacts';` +
+        `acts.appendChild(actionRow('New scratchpad',SCRATCH_NEW_ICON,'scratch-new'));` +
+        `acts.appendChild(actionRow('Browse all',SCRATCH_BROWSE_ICON,'scratch-browse'));` +
+        `scratchMenu.appendChild(acts);` +
+        `if(es.length===0){scratchMenu.appendChild(mitem(false,'no scratchpads yet — use the + above',undefined,undefined,undefined,true,''));}` +
+        `es.forEach(function(e){if(e&&typeof e.id==='string'){var row=mitem(false,String(e.name!==undefined?e.name:e.id),undefined,undefined,undefined,false,'');row.setAttribute('data-id',e.id);row.onclick=function(){vs.postMessage({v:1,payload:{type:'scratch-open',id:e.id}});};scratchMenu.appendChild(row);}});}` +
         `if(scratchBtn)scratchBtn.addEventListener('click',function(e){if(e&&e.stopPropagation)e.stopPropagation();vs.postMessage({v:1,payload:{type:'scratch-open-menu'}});toggleChatMenu(scratchBtn,scratchMenu,function(){renderScratchMenu(scratchList||{entries:[]});});});` +
         `if(scratchBtn)scratchBtn.addEventListener('keydown',function(e){triggerKey(scratchBtn,scratchMenu,function(){renderScratchMenu(scratchList||{entries:[]});},e);});` +
         `if(scratchMenu)scratchMenu.addEventListener('click',function(e){if(e&&e.stopPropagation)e.stopPropagation();});` +
@@ -2629,7 +2642,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `function renderActiveMenu(){actMenu.innerHTML='';if(actEntries.length===0){actMenu.appendChild(mitem(false,'no active work',undefined,undefined,undefined,true,''));return;}for(var i=0;i<actEntries.length;i++)actMenu.appendChild(activeRow(actEntries[i]));}` +
       // Story e0821209d94791d0/s1: the menu lists persisted chats only — new-chat moved to the #insrc-newchat chrome button.
       `function renderHistoryMenu(){histMenu.innerHTML='';for(var i=0;i<histEntries.length;i++)histMenu.appendChild(historyRow(histEntries[i]));}` +
-      `function chatRows(menu){var out=[];for(var i=0;i<menu.children.length;i++){var c=menu.children[i];if(c.getAttribute&&c.getAttribute('role')==='menuitem'&&c.getAttribute('aria-disabled')!=='true')out.push(c);}return out;}` +
+      `function chatRows(menu){var out=[];for(var i=0;i<menu.children.length;i++){var c=menu.children[i];if(c.className&&(' '+c.className+' ').indexOf(' scratchacts ')<0){if(c.getAttribute&&c.getAttribute('role')==='menuitem'&&c.getAttribute('aria-disabled')!=='true')out.push(c);}else{for(var j=0;j<c.children.length;j++){var r=c.children[j];if(r.getAttribute&&r.getAttribute('role')==='menuitem'&&r.getAttribute('aria-disabled')!=='true')out.push(r);}}}return out;}` +
       `function focusRow(rows,row,keep){for(var i=0;i<rows.length;i++)rows[i].setAttribute('tabindex',rows[i]===row?'0':'-1');chatFocused=row;if(row&&row.focus){if(keep)row.focus({preventScroll:true});else row.focus();}}` +
       // ISSUE-0d3939248a956860: opening a menu shows its top (the most recent chats) and focuses its
       // selected row WITHOUT scrolling to it. Focusing the selected row of a fresh chat used

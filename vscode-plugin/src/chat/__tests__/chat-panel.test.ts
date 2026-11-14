@@ -8562,7 +8562,7 @@ test('chat-panel.test.ts: #insrc-scratch sibling button with class attachbtn + i
   assert.doesNotMatch(fc2.html(), /insrc-scratch/, 'without the seam there is no scratch button');
 });
 
-test('chat-panel.test.ts: #insrc-scratchmenu .popup.chatmenu renders recent items + New scratchpad + Browse all from a scratch-list push, incl. empty-state hint and error row (ac2)', () => {
+test('chat-panel.test.ts: #insrc-scratchmenu .popup.chatmenu renders the icon-only New/Browse action strip on top (top-right) then recent items from a scratch-list push, incl. empty-state hint and error row (ac2)', () => {
   const v = runShell({ hostDeps: { scratchpads: { enabled: true } } });
   const menu = v.el('insrc-scratchmenu');
   // A scratch-list push caches the list; the menu re-renders when open.
@@ -8577,32 +8577,51 @@ test('chat-panel.test.ts: #insrc-scratchmenu .popup.chatmenu renders recent item
     const lbl = c.querySelector('.lbl') as BodyStub | null;
     return lbl?.textContent ?? '';
   };
-  const labels = (): string[] => menu.children.map(lblOf);
-  assert.deepEqual(labels(), ['20260113-083000-pad', '20260113-082000-other', 'New scratchpad', 'Browse all'], 'recent entries then the two action rows');
+  // ISSUE-3183af2a: the two actions live in a .scratchacts strip that is the menu's FIRST
+  // child (rendered top-right via CSS); the entries follow as their own row children.
+  const acts = menu.children[0]!;
+  assert.match(acts.className, /scratchacts/, 'the first child is the action strip');
+  const actRows = acts.children;
+  assert.equal(actRows.length, 2, 'exactly the New and Browse actions');
+  assert.match(actRows[0]!.className, /iconrow/, 'New is an icon-only row');
+  assert.match(actRows[1]!.className, /iconrow/, 'Browse is an icon-only row');
+  assert.equal(actRows[0]!.attrs['aria-label'], 'New scratchpad', 'the icon row keeps its label on aria-label/title');
+  assert.equal(actRows[0]!.attrs['title'], 'New scratchpad');
+  assert.equal(actRows[1]!.attrs['aria-label'], 'Browse all');
+  // The harness's querySelector only sees #id (class selectors hit the dress() stub), so the
+  // icon slot is asserted through the recorded innerHTML write, which carries the pico+SVG.
+  const iconHtml = (r: BodyStub): string => r.writes.filter((w) => w.prop === 'innerHTML').map((w) => String(w.value)).join('');
+  assert.match(iconHtml(actRows[0]!), /class="pico"><svg /, 'New row renders its plus SVG in the pico slot');
+  assert.match(iconHtml(actRows[1]!), /class="pico"><svg /, 'Browse row renders its list SVG in the pico slot');
+  const lblRow = actRows[0]!.querySelector('.lbl') as BodyStub | null;
+  assert.ok(lblRow !== null && Object.prototype.hasOwnProperty.call(lblRow.attrs, 'hidden'), 'the icon row hides its text label');
+  const labels = (): string[] => menu.children.slice(1).map(lblOf);
+  assert.deepEqual(labels(), ['20260113-083000-pad', '20260113-082000-other'], 'recent entries follow the action strip');
   // Row clicks post the right intents (fire the row's own onclick, as chatMenuKey does).
   const clickRow = (c: BodyStub): void => { const fn = (c as unknown as { onclick?: (e?: unknown) => void }).onclick; assert.equal(typeof fn, 'function', 'the row has a click handler'); fn!(); };
-  const rows = menu.children.filter((c) => c.attrs['aria-disabled'] !== 'true');
-  clickRow(rows[0]!);
+  clickRow(menu.children[1]!);
   assert.deepEqual(ofType(v, 'scratch-open'), [{ type: 'scratch-open', id: '20260113-083000-pad.md' }]);
-  clickRow(rows[2]!);
+  clickRow(actRows[0]!);
   assert.deepEqual(ofType(v, 'scratch-new'), [{ type: 'scratch-new' }], 'New scratchpad posts the titleless intent');
-  clickRow(rows[3]!);
+  clickRow(actRows[1]!);
   assert.deepEqual(ofType(v, 'scratch-browse'), [{ type: 'scratch-browse' }]);
-  // Empty list: the hint row, then the two actions.
+  // Empty list: the action strip stays, one hint row follows it.
   v.msg({ type: 'scratch-list', entries: [] });
-  assert.equal(labels().length, 3);
+  assert.equal(menu.children.length, 2, 'strip + hint row');
   assert.match(labels()[0]!, /no scratchpads yet/i, 'empty-state hint row');
-  // Error list: one disabled row naming the failure.
+  // Error list: one disabled row naming the failure (no action strip on error).
   v.msg({ type: 'scratch-list', entries: [], error: 'scratchpads unavailable: EACCES' });
-  assert.deepEqual(labels(), ['scratchpads unavailable: EACCES'], 'error row replaces the entries');
+  assert.equal(menu.children.length, 1, 'the error row is the menu\'s only child');
+  assert.deepEqual([lblOf(menu.children[0]!)], ['scratchpads unavailable: EACCES'], 'error row replaces the entries');
   assert.equal(menu.children[0]!.attrs['aria-disabled'], 'true', 'the error row is disabled');
   // Second click closed the menu (toggle); a later push while closed only caches the list.
   fire(v.el('insrc-scratch'), 'click');
   assert.ok(!(menu.children.length === 0), 'rows stay while closed');
   v.msg({ type: 'scratch-list', entries: [{ id: '20260113-090000-late.md', name: '20260113-090000-late', mtime: 400, size: 1 }] });
-  assert.deepEqual(labels(), ['scratchpads unavailable: EACCES'], 'a push while closed does not re-render');
+  assert.equal(lblOf(menu.children[0]!), 'scratchpads unavailable: EACCES', 'a push while closed does not re-render');
   fire(v.el('insrc-scratch'), 'click');
-  assert.deepEqual(labels(), ['20260113-090000-late', 'New scratchpad', 'Browse all'], 'the reopened menu renders the cached list');
+  assert.match(menu.children[0]!.className, /scratchacts/, 'reopened menu shows the action strip first');
+  assert.deepEqual(labels(), ['20260113-090000-late'], 'the reopened menu renders the cached list after the strip');
 });
 
 test("chat-panel.test.ts: bootstrap click on #insrc-scratch posts {type:'scratch-open-menu'} (ac2)", () => {

@@ -135,8 +135,8 @@ export class GatewayReadError extends Error {
 export interface PanelHandle extends DisposableLike {
   /** Set the panel's HTML body (the rendered tab shell). */
   setHtml(html: string): void;
-  /** Bring the panel to the foreground. */
-  reveal(): void;
+  /** Bring the panel to the foreground; `preserveFocus` keeps focus in the current editor. */
+  reveal(preserveFocus?: boolean | undefined): void;
   /** Fire `listener` when the user closes the panel (clears the host's cached ref). */
   onDidDispose(listener: () => void): void;
   /**

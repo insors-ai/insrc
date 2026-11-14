@@ -1,0 +1,45 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "47db60d53b6d8884d1079c8c42896569fba0d386e2b5c49741bac4b253ad358a",
+        "at": "2026-11-14T12:24:44.027Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-9171f081-3914-4bac-8f28-8e60ab5015fa",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-14T12:24:44.000Z",
+    "epicCreatedAt": "2026-11-14T12:19:47.632Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3183af2a005db14f",
+    "storyId": "s1",
+    "revision": 1,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "bugfix small: both defects localized inside the shipped scratchpads feature (epic 4642d49ab0593787); 3-4 files in vscode-plugin/src/chat+panels, all reuse of existing paths; no new contract.",
+    "epicSlug": "scratchpad-popup-new-scratchpad-does-not"
+  },
+  "body": {
+    "focus": "Fix two defects in the shipped VS Code scratchpads popup (ISSUE-3183af2a005db14f): (1) clicking \"New scratchpad\" in the chat status-bar popup must open the created scratchpad document — audit the scratch-new chain (vscode-plugin/src/chat/chat-panel.ts:2531 webview post → vscode-plugin/src/extension.ts:792 SCRATCH_INTENT_TYPES intercept → vscode-plugin/src/chat/scratch-host.ts case 'scratch-new' (promptTitle → createScratch → refreshBrowse → openDocument) → vscode-plugin/src/panels/scratch-panels.ts openDocument/openSingleton) so the insrc.scratchpad panel is reliably created/revealed after createScratch succeeds, and content delivery is not lost to the webview ready-handshake race (extension.ts postMessage swallow at :987-989, scratch-ready generation binding in scratch-panels.ts); (2) render the popup's \"New scratchpad\" and \"Browse all\" entries as icon-only rows (SVG icon + title/aria-label, consistent with the icon-only #insrc-scratch button at chat-panel.ts:2865-2867) at the top of the popup instead of text mitem rows at the bottom (chat-panel.ts:2528-2532). Update the chat-panel tests that pin the current text rows.",
+    "producesLld": false,
+    "commit": "a482110d4"
+  },
+  "citations": []
+}

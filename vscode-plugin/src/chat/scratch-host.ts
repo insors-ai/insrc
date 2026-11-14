@@ -115,8 +115,16 @@ export function createScratchHost(deps: ScratchHostDeps): ScratchHost {
           }
           try {
             const entry = await deps.store.createScratch(title.trim());
-            await deps.panels.refreshBrowse();
-            await deps.panels.openDocument(entry.id);
+            // Opening the new document is the POINT of this intent: a browse-tab
+            // refresh failure must not skip it, and a failed open must be visible
+            // in the log instead of silently looking like nothing happened.
+            try {
+              await deps.panels.refreshBrowse();
+            } catch (err) {
+              log.warn(`[scratches] browse refresh failed after create: ${String(err)}`);
+            }
+            const opened = await deps.panels.openDocument(entry.id);
+            if (opened === undefined) log.warn(`[scratches] created ${entry.id} but its document panel did not open`);
             void sendScratchList();
           } catch (err) {
             // The create failed: re-send the list WITH the error so the menu surfaces

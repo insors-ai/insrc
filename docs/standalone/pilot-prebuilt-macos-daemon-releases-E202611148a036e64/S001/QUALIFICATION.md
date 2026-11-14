@@ -33,3 +33,29 @@ by the build run and artifact ID. Do not test against a production install.
    Submit it for review on the protected release-control branch. The script
    records operator assertions and evidence digests; it does not run or
    certify the tests itself.
+
+## Release setup
+
+Protect `v2`, and create a `daemon-release-control` branch requiring a release
+CODEOWNER review, stale review dismissal, and no direct writes or bypasses.
+Store each promotion's approved record under `qualification/`. Configure
+`daemon-pilot-qualification` and `daemon-pilot-production` with designated
+reviewers and disallow self-approval. The production policy check requires a
+read-only repository administration token `INSRC_RELEASE_POLICY_READ_TOKEN`.
+
+Generate two distinct project-owned Ed25519 pairs. Set
+`INSRC_QUALIFICATION_KEY` only on the qualification environment and
+`INSRC_PRODUCTION_KEY` only on the production environment. Set the production
+environment variable `INSRC_QUALIFICATION_PUBLIC_KEY` to the qualification
+SPKI PEM. Keep encrypted offline backups under project control; verify access
+and signer fingerprints before use. To rotate a key, build a new bootstrap
+with the correct public keys and announce its checksum through an authenticated
+project channel before relying on the new key. Keep prior bootstrap keys for
+existing signatures and never reset channel sequences during key rotation.
+
+Build with `daemon-candidate.yml`, sign the candidate manifest with
+`daemon-qualification-sign.yml`, and run the above checks locally. Dispatch
+`daemon-promotion.yml` from protected `v2` with the approved control commit
+and the same archive SHA-256. Verify both inputs in the environment review
+before approving. An interrupted publish may leave a tag or draft; inspect
+it before any manual repair. A rerun never silently replaces a tag or asset.

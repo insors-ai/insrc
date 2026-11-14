@@ -167,16 +167,16 @@ test("a docs task with a module scope whose sections are not among the repositor
 		[docsDecisionTraceRuntime, 'topic', 'decision-trace'],
 	] as const) {
 		prompts = [];
-		const result = await runTask(runtime, module_, { [key]: 'quarterly settlement', maxSources: 5 });
+		const result = await runTask(runtime, module_, { [key]: 'quarterly settlement' });
 		assert.equal(prompts.length, 1, `${runtime.templateId}: sections were found, so the model was asked`);
 		assert.deepEqual(areaShown(prompts[0]!), AREA_MARKERS, runtime.templateId);
 		assert.equal(outsideShown(prompts[0]!), 0, runtime.templateId);
 		assert.equal((result.outputs.get(output) as { retrievedSectionCount: number }).retrievedSectionCount, 3, runtime.templateId);
 
-		// A repo scope: the five nearest of the repo, as before, none of them the area's.
+		// A repo scope: every section found, the area's three among them.
 		prompts = [];
-		await runTask(runtime, { kind: 'repo', value: REPO }, { [key]: 'quarterly settlement', maxSources: 5 });
-		assert.deepEqual([areaShown(prompts[0]!), outsideShown(prompts[0]!)], [[], 5], runtime.templateId);
+		await runTask(runtime, { kind: 'repo', value: REPO }, { [key]: 'quarterly settlement' });
+		assert.deepEqual([areaShown(prompts[0]!), outsideShown(prompts[0]!)], [AREA_MARKERS, 60], runtime.templateId);
 	}
 
 	// --- an area with no document: no candidates, and no vector query at all ---

@@ -116,7 +116,7 @@ export interface DocsRetrievalArgs {
 	/** Repo closure -- V1 is always a single-element array (current
 	 *  repo only). Later versions may widen to a `DEPENDS_ON` closure. */
 	readonly closureRepos:   readonly string[];
-	/** Cap on returned results. Default 20. */
+	/** Cap on returned results. Absent, every section found is returned; the analyzer passes none. */
 	readonly maxResults?:    number;
 	/** Score floor -- results with `score < minScore` are dropped
 	 *  before ranking. Default 0 (no floor). */
@@ -124,7 +124,7 @@ export interface DocsRetrievalArgs {
 	/** Path substring bias (e.g. 'design/', 'plans/'). Sections
 	 *  whose file matches the hint receive a small score boost. */
 	readonly filenameHint?:  string;
-	/** Preview cap (chars). Default 500. Set 0 to skip previews. */
+	/** Preview cap (chars). Default 500. Set 0 to skip previews; `Infinity` gives the whole stored body. */
 	readonly previewChars?:  number;
 	/**
 	 * Optional kind allowlist. Defaults to `['document', 'section',
@@ -173,7 +173,7 @@ export async function retrieveDocSections(
 	if (args.query.trim().length === 0) return [];
 	if (args.closureRepos.length === 0) return [];
 
-	const maxResults    = args.maxResults    ?? 20;
+	const maxResults    = args.maxResults;
 	const minScore      = args.minScore      ?? 0;
 	const previewChars  = args.previewChars  ?? 500;
 	const kinds         = args.kinds         ?? DEFAULT_KINDS;
@@ -223,7 +223,8 @@ export async function retrieveDocSections(
 			const hits = await vectorPass.searchEntityVecs(
 				queryVec,
 				args.closureRepos,
-				maxResults * VECTOR_DEPTH_MULT,
+				// A capped caller asks for a deeper pool than it keeps; with no cap the pool is every candidate.
+				maxResults === undefined ? candidateById.size : maxResults * VECTOR_DEPTH_MULT,
 				args.area === undefined
 					? { kinds: kinds as readonly string[] }
 					: { kinds: kinds as readonly string[], ids: [...candidateById.keys()] },
@@ -337,10 +338,9 @@ export async function retrieveDocSections(
 		if (r.kind === prev.kind && r.score > prev.score)    { byKey.set(k, r); continue; }
 	}
 
-	// (6) Sort by score desc, cap to maxResults.
-	return Array.from(byKey.values())
-		.sort((a, b) => b.score - a.score)
-		.slice(0, maxResults);
+	// (6) Sort by score desc; cap to maxResults when the caller gave one.
+	const ranked = Array.from(byKey.values()).sort((a, b) => b.score - a.score);
+	return maxResults === undefined ? ranked : ranked.slice(0, maxResults);
 }
 
 /**

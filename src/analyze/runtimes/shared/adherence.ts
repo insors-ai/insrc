@@ -454,13 +454,6 @@ async function constraintsFromDocuments(
 ): Promise<ResolvedConstraints> {
 	assertNoSessionEmbedding(args.connectionExecution);
 	const templateId = args.task.template;
-	// Plan validation holds the value to a whole number from 1 to 30; a task
-	// built outside the planner may not be, so anything else is left out.
-	const given = params['maxConstraintSources'];
-	const maxSources = typeof given === 'number' && Number.isInteger(given)
-		? Math.max(1, Math.min(30, given))
-		: undefined;
-
 	let found: Awaited<ReturnType<typeof constraintsForTopic>>;
 	try {
 		found = await constraintsForTopic({
@@ -470,7 +463,6 @@ async function constraintsFromDocuments(
 			repoPath,
 			topic,
 			db:     await getDb(),
-			...(maxSources !== undefined ? { maxSources } : {}),
 		});
 	} catch (err) {
 		const code = connectionExecutionErrorCode(err); if (code) throw new ConnectionExecutionError(code);

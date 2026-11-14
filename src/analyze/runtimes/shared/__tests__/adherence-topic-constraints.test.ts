@@ -76,11 +76,10 @@ function uniqueRun(label: string): string {
 	return runId;
 }
 
-async function ask(runId: string, topic: string, over: { taskId?: string; maxSources?: number; repoPath?: string } = {}): Promise<ConstraintsForTopicResult> {
+async function ask(runId: string, topic: string, over: { taskId?: string; repoPath?: string } = {}): Promise<ConstraintsForTopicResult> {
 	const db = await getDb();
 	return runWithRoutingContext(routing, () => constraintsForTopic({
 		runId, taskId: over.taskId ?? 't01', repoPath: over.repoPath ?? REPO, topic, db,
-		...(over.maxSources !== undefined ? { maxSources: over.maxSources } : {}),
 	}));
 }
 
@@ -109,7 +108,7 @@ test.afterEach(async () => {
 	rmSync(dir, { recursive: true, force: true });
 });
 
-test('one enumeration per run, repository and topic is made, recorded under the run\'s directory with its whole output, and read back; a topic that differs only in case or spacing reuses it; a different maxSources, topic or run does not; a failed enumeration is not recorded and one with no constraint is', async () => {
+test('one enumeration per run, repository and topic is made, recorded under the run\'s directory with its whole output, and read back; a topic that differs only in case or spacing reuses it; a different topic or run does not; a failed enumeration is not recorded and one with no constraint is', async () => {
 	const runId = uniqueRun('reuse');
 
 	// --- the first call enumerates and records ---
@@ -126,7 +125,7 @@ test('one enumeration per run, repository and topic is made, recorded under the 
 	const record = readRecord(path);
 	assert.deepEqual(
 		{ ...record, enumeratedAt: typeof record.enumeratedAt },
-		{ schemaVersion: 1, repoPath: REPO, topic: 'CI workflow rules', maxSources: null, enumeratedAt: 'string', enumeratedByTask: 't07', output: JSON.parse(JSON.stringify(first.output)) },
+		{ schemaVersion: 2, repoPath: REPO, topic: 'CI workflow rules', enumeratedAt: 'string', enumeratedByTask: 't07', output: JSON.parse(JSON.stringify(first.output)) },
 	);
 	assert.ok(record.output.completeness !== undefined, 'the enumeration\'s completeness is in the record');
 
@@ -142,14 +141,11 @@ test('one enumeration per run, repository and topic is made, recorded under the 
 	// The record still names the task that made it and the topic as first written.
 	assert.deepEqual([readRecord(path).enumeratedByTask, readRecord(path).topic], ['t07', 'CI workflow rules']);
 
-	// --- another limit of sections, another topic, another run: each its own enumeration and record ---
-	const limited = await ask(runId, 'CI workflow rules', { maxSources: 1 });
+	// --- another topic, another run: each its own enumeration and record ---
 	const otherTopic = await ask(runId, 'release rules');
 	const otherRun = await ask(uniqueRun('reuse-other'), 'CI workflow rules');
-	assert.equal(modelCalls, 4);
-	assert.equal(new Set([path, limited.record, otherTopic.record, otherRun.record]).size, 4);
-	assert.equal(limited.output.retrievedSectionCount, 1);
-	assert.equal(readRecord(limited.record!).maxSources, 1);
+	assert.equal(modelCalls, 3);
+	assert.equal(new Set([path, otherTopic.record, otherRun.record]).size, 3);
 
 	// --- a failed enumeration is not recorded, and the next call tries again ---
 	const failRun = uniqueRun('fail');
@@ -159,19 +155,19 @@ test('one enumeration per run, repository and topic is made, recorded under the 
 	modelMode = 'rules';
 	const recovered = await ask(failRun, 'CI workflow rules');
 	assert.deepEqual([recovered.reused, recovered.output.constraints.length], [false, 2]);
-	assert.equal(modelCalls, 6);
+	assert.equal(modelCalls, 5);
 
 	// --- an enumeration that finds no constraint is recorded and reused ---
 	const emptyRun = uniqueRun('empty');
 	modelMode = 'none';
 	const none = await ask(emptyRun, 'CI workflow rules');
 	const noneAgain = await ask(emptyRun, 'CI workflow rules');
-	assert.equal(modelCalls, 7, 'the empty enumeration was not made twice');
+	assert.equal(modelCalls, 6, 'the empty enumeration was not made twice');
 	assert.deepEqual([none.output.constraints.length, noneAgain.reused, noneAgain.output.notFoundNote], [0, true, 'nothing stated']);
 
 	// --- purging a run removes its records ---
 	purgeConstraintRecords(runId);
-	for (const p of [path, limited.record!, otherTopic.record!]) assert.equal(existsSync(p), false, p);
+	for (const p of [path, otherTopic.record!]) assert.equal(existsSync(p), false, p);
 	assert.equal(existsSync(otherRun.record!), true, 'another run\'s record stays');
 });
 
@@ -184,11 +180,10 @@ test('a record that is unreadable, of another version or of another topic is enu
 
 	const bad: ReadonlyArray<readonly [string, string]> = [
 		['cut short', JSON.stringify(goodRecord).slice(0, 40)],
-		['another schema version', JSON.stringify({ ...goodRecord, schemaVersion: 2 })],
+		['another schema version', JSON.stringify({ ...goodRecord, schemaVersion: 1 })],
 		['another topic under the same key', JSON.stringify({ ...goodRecord, topic: 'release rules' })],
 		['another repository under the same key', JSON.stringify({ ...goodRecord, repoPath: '/r/elsewhere' })],
 		['no enumeration inside', JSON.stringify({ ...goodRecord, output: null })],
-		['made with another limit of sections', JSON.stringify({ ...goodRecord, maxSources: 3 })],
 		// A record whose enumeration is not whole: a check would fail on the missing part.
 		['an enumeration with no completeness record', JSON.stringify({ ...goodRecord, output: { ...goodRecord.output, completeness: undefined } })],
 		['an enumeration with no count of sections', JSON.stringify({ ...goodRecord, output: { ...goodRecord.output, retrievedSectionCount: undefined } })],
@@ -203,7 +198,7 @@ test('a record that is unreadable, of another version or of another topic is enu
 		assert.equal(again.reused, false, what);
 		assert.deepEqual(again.output.constraints, good.output.constraints, what);
 		// ... and the file is a good record again.
-		assert.deepEqual([readRecord(path).schemaVersion, readRecord(path).topic, readRecord(path).repoPath], [1, 'CI workflow rules', REPO], what);
+		assert.deepEqual([readRecord(path).schemaVersion, readRecord(path).topic, readRecord(path).repoPath], [2, 'CI workflow rules', REPO], what);
 	}
 	// A good record is read, not made again.
 	assert.equal((await ask(runId, 'CI workflow rules')).reused, true);
@@ -236,14 +231,14 @@ test('a record that is unreadable, of another version or of another topic is enu
 	}
 });
 
-test('the seam replaces the enumeration, and is handed the topic, the repository, the limit and no area', async () => {
+test('the seam replaces the enumeration, and is handed the topic, the repository and no area', async () => {
 	const seen: unknown[] = [];
 	_setConstraintEnumerateForTest(async (args) => {
-		seen.push({ subject: args.subject, repoPath: args.repoPath, maxSources: args.maxSources, area: args.area, runId: args.runId });
+		seen.push({ subject: args.subject, repoPath: args.repoPath, area: args.area, runId: args.runId });
 		return { type: 'doc.constraint.enumerate', completeness: { complete: true, returned: 0, basis: 'doc-index' }, subject: args.subject, constraints: [], notFoundNote: 'x', retrievedSectionCount: 0 } as never;
 	});
 	const runId = uniqueRun('seam');
-	await ask(runId, 'CI workflow rules', { maxSources: 5 });
-	assert.deepEqual(seen, [{ subject: 'CI workflow rules', repoPath: REPO, maxSources: 5, area: undefined, runId }]);
+	await ask(runId, 'CI workflow rules');
+	assert.deepEqual(seen, [{ subject: 'CI workflow rules', repoPath: REPO, area: undefined, runId }]);
 	assert.equal(modelCalls, 0);
 });

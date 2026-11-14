@@ -363,7 +363,6 @@ const NARROW_RUNNERS: Partial<Record<ExplorationType, NarrowRunnerEntry>> = {
 				repoPath:  ctx.repoPath,
 				db:        await getDb(),
 				...(area !== undefined ? { area } : {}),
-				...(typeof params['maxSources'] === 'number' ? { maxSources: params['maxSources'] as number } : {}),
 				...(ctx.runId !== undefined ? { runId: ctx.runId } : {}),
 				logContext: 'exploration',
 			});
@@ -388,7 +387,6 @@ const NARROW_RUNNERS: Partial<Record<ExplorationType, NarrowRunnerEntry>> = {
 				repoPath:  ctx.repoPath,
 				db:        await getDb(),
 				...(area !== undefined ? { area } : {}),
-				...(typeof params['maxSources'] === 'number' ? { maxSources: params['maxSources'] as number } : {}),
 				...(ctx.runId !== undefined ? { runId: ctx.runId } : {}),
 				logContext: 'exploration',
 			});

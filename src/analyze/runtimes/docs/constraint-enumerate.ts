@@ -39,9 +39,7 @@ export const docsConstraintEnumerateRuntime: TemplateRuntime = {
 		if (typeof subject !== 'string' || subject.trim().length === 0) {
 			throw new Error(`${TEMPLATE_ID}: params.subject is required (non-empty string)`);
 		}
-		const maxSources = typeof params['maxSources'] === 'number'
-			? params['maxSources'] as number
-			: undefined;
+
 
 		// The one scope function: the kinds a docs task accepts, the repo whose
 		// documents it reads, and the area of that repo retrieval keeps to.
@@ -56,7 +54,6 @@ export const docsConstraintEnumerateRuntime: TemplateRuntime = {
 			repoPath,
 			db,
 			...(area !== undefined ? { area } : {}),
-			...(maxSources !== undefined ? { maxSources } : {}),
 			runId:      args.runId,
 			logContext: `template:${args.task.taskId}`,
 		});

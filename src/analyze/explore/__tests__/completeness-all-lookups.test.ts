@@ -195,8 +195,8 @@ test.afterEach(async () => {
 // The lookups that need a stand-in
 // ---------------------------------------------------------------------------
 
-async function docConstraints(maxSources?: number): Promise<ExplorationOutput> {
-	const prep = await prepareDocConstraintEnumerate({ subject: 'refund', repoPath: REPO, db: await getDb(), ...(maxSources !== undefined ? { maxSources } : {}) });
+async function docConstraints(): Promise<ExplorationOutput> {
+	const prep = await prepareDocConstraintEnumerate({ subject: 'refund', repoPath: REPO, db: await getDb() });
 	assert.equal(prep.kind, 'narrow-llm');
 	if (prep.kind !== 'narrow-llm') throw new Error('unreachable');
 	const src = prep.prepared.validEntityIds[0]!;
@@ -206,8 +206,8 @@ async function docConstraints(maxSources?: number): Promise<ExplorationOutput> {
 	});
 }
 
-async function docDecisions(maxSources?: number): Promise<ExplorationOutput> {
-	const prep = await prepareDocDecisionTrace({ topic: 'refund', repoPath: REPO, db: await getDb(), ...(maxSources !== undefined ? { maxSources } : {}) });
+async function docDecisions(): Promise<ExplorationOutput> {
+	const prep = await prepareDocDecisionTrace({ topic: 'refund', repoPath: REPO, db: await getDb() });
 	assert.equal(prep.kind, 'narrow-llm');
 	if (prep.kind !== 'narrow-llm') throw new Error('unreachable');
 	const src = prep.prepared.validEntityIds[0]!;
@@ -310,23 +310,7 @@ test('the fixture gives every lookup something to return, so the table is not a 
 // Count limits, each with its scope
 // ---------------------------------------------------------------------------
 
-test('each document and capability lookup that stops at a count reports the limit with its scope', async () => {
-	// doc.mention: the retrieval returns a full page and cannot say how many more match.
-	const men = await runDocMention(exp('doc.mention', { subject: 'refund', limit: 1 }), ctx);
-	assert.equal(men.hits.length, 1);
-	assert.equal(limitOf(men.completeness, 'document sections').scope, 'overall');
-	assert.equal(men.completeness.total, null, 'how many sections exist is not known');
-
-	// The document lookups read at most maxSources sections: a limit on what was READ.
-	// Three constraints come back from one section, and that is not a contradiction.
-	const cons = await docConstraints(1) as { completeness: Completeness; constraints: unknown[] };
-	assert.equal(cons.constraints.length, 3);
-	assert.deepEqual([limitOf(cons.completeness, 'document sections').limit, limitOf(cons.completeness, 'document sections').scope], [1, 'source']);
-	const decs = await docDecisions(1) as { completeness: Completeness };
-	assert.equal(limitOf(decs.completeness, 'document sections').scope, 'source');
-	// With room for every section, neither reports a limit.
-	assert.equal(((await docConstraints()) as { completeness: Completeness }).completeness.limited, undefined);
-
+test('the capability lookup that stops at a count reports the limit with its scope', async () => {
 	// capability.reuse-check: more distinct candidates match than the one checked.
 	const cap = await capability(1) as { completeness: Completeness; candidates: unknown[] };
 	assert.equal(cap.candidates.length, 1);
@@ -489,6 +473,37 @@ test('symbol-locate, test-locate, import-graph, usage-example, concept-resolve, 
 	const convNone = await runConventionDetect(exp('convention.detect', { path: join(REPO, 'src/zznothing') }), ctx);
 	assert.equal(convNone.baseClassIdioms.length, 0);
 	noLimit(convNone.completeness, 'convention.detect with 0');
+});
+
+test('doc-mention, doc.decision.trace and doc.constraint.enumerate return every section at, one over and zero versus the former limits with no limited entry', async () => {
+	// The former limit of all three was 15 sections (doc.mention's default page, and maxSources). Sections that
+	// name a word of their own; no embedding backend runs in a test, so the keyword pass finds them.
+	for (const [n, word] of [[15, 'zzdoca'], [16, 'qqdocb']] as const) {
+		await seed(Array.from({ length: n }, (_, i) => ent('section', `${word}${i}`, `docs/${word}/s${i}.md`, {
+			language: 'markdown', artifact: true, body: `## ${word}${i}\n\nThe ${word} rule MUST hold. We decided on ${word}.\n`.repeat(1) + 'detail. '.repeat(400),
+		})));
+		const men = await runDocMention(exp('doc.mention', { subject: word, limit: 2, previewChars: 10 }), ctx);
+		assert.equal(men.hits.length, n, `doc.mention with ${n}`);
+		noLimit(men.completeness, `doc.mention with ${n}`);
+		assert.ok(men.hits.every(h => (h.preview ?? '').length > 10), 'a previewChars is ignored: each hit carries its whole stored body');
+
+		const cprep = await prepareDocConstraintEnumerate({ subject: word, repoPath: REPO, db: await getDb(), maxSources: 2 } as Parameters<typeof prepareDocConstraintEnumerate>[0]);
+		if (cprep.kind !== 'narrow-llm') throw new Error('sections match');
+		assert.equal(cprep.prepared.retrievedSectionCount, n, `doc.constraint.enumerate with ${n}`);
+		assert.equal(cprep.prepared.validEntityIds.length, n);
+		noLimit(finalizeDocConstraintEnumerate(cprep.prepared, { subject: word, notFoundNote: '', constraints: [] }).completeness, `doc.constraint.enumerate with ${n}`);
+
+		const dprep = await prepareDocDecisionTrace({ topic: word, repoPath: REPO, db: await getDb(), maxSources: 2 } as Parameters<typeof prepareDocDecisionTrace>[0]);
+		if (dprep.kind !== 'narrow-llm') throw new Error('sections match');
+		assert.equal(dprep.prepared.retrievedSectionCount, n, `doc.decision.trace with ${n}`);
+		noLimit(finalizeDocDecisionTrace(dprep.prepared, { topic: word, notFoundNote: '', decisions: [] } as Parameters<typeof finalizeDocDecisionTrace>[1]).completeness, `doc.decision.trace with ${n}`);
+	}
+	const none = 'zznosuchdocword';
+	const menNone = await runDocMention(exp('doc.mention', { subject: none }), ctx);
+	assert.equal(menNone.hits.length, 0);
+	noLimit(menNone.completeness, 'doc.mention with 0');
+	assert.equal((await prepareDocConstraintEnumerate({ subject: none, repoPath: REPO, db: await getDb() })).kind, 'short-circuit');
+	assert.equal((await prepareDocDecisionTrace({ topic: none, repoPath: REPO, db: await getDb() })).kind, 'short-circuit');
 });
 
 // ---------------------------------------------------------------------------

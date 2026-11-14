@@ -34,7 +34,7 @@ import { getEntity } from '../../db/entities.js';
 import { buildCompleteness } from '../completeness.js';
 import type { PartlyReadItem } from '../completeness.js';
 import { partlyReadEntry } from '../item-length.js';
-import { DOC_INDEX_RULE, reachedLimit, vectorPassSkipped } from './completeness-facts.js';
+import { DOC_INDEX_RULE, vectorPassSkipped } from './completeness-facts.js';
 import { createItemMeasurer } from './item-measure.js';
 
 const log = getLogger('analyze:explore:doc-mention');
@@ -43,21 +43,14 @@ const log = getLogger('analyze:explore:doc-mention');
 // Configuration
 // ---------------------------------------------------------------------------
 
-const DEFAULT_LIMIT = 15;
-const MAX_LIMIT     = 40;
-const DEFAULT_PREVIEW_CHARS = 300;
-const MAX_PREVIEW_CHARS     = 1_500;
-
 // ---------------------------------------------------------------------------
 // Params
 // ---------------------------------------------------------------------------
 
 interface DocMentionParams {
 	readonly subject:      string;
-	readonly limit?:       number;
 	readonly filenameHint?: string;
 	readonly kinds?:       readonly ('document' | 'section' | 'config')[];
-	readonly previewChars?: number;
 	readonly minScore?:    number;
 }
 
@@ -67,12 +60,6 @@ function parseParams(exp: Exploration): DocMentionParams {
 	if (subject.length === 0) {
 		throw new Error(`doc.mention: params.subject is required (non-empty string)`);
 	}
-	const limit = typeof p['limit'] === 'number' && p['limit']! > 0
-		? Math.min(MAX_LIMIT, Math.floor(p['limit'] as number))
-		: DEFAULT_LIMIT;
-	const previewChars = typeof p['previewChars'] === 'number' && p['previewChars']! >= 0
-		? Math.min(MAX_PREVIEW_CHARS, Math.floor(p['previewChars'] as number))
-		: DEFAULT_PREVIEW_CHARS;
 	const minScore = typeof p['minScore'] === 'number' && p['minScore']! >= 0
 		? p['minScore'] as number
 		: 0;
@@ -85,8 +72,6 @@ function parseParams(exp: Exploration): DocMentionParams {
 		: undefined;
 	return {
 		subject,
-		limit,
-		previewChars,
 		minScore,
 		...(filenameHint !== undefined ? { filenameHint } : {}),
 		...(kinds !== undefined && kinds.length > 0 ? { kinds } : {}),
@@ -104,7 +89,6 @@ export async function runDocMention(
 	const params = parseParams(exp);
 	const db = await getDb();
 
-	const limit = params.limit ?? DEFAULT_LIMIT;
 	const area = ctx.scope !== undefined ? docsAreaOf(ctx.scope) : undefined;
 	const report: DocsRetrievalReport = {};
 	const results = await retrieveDocSections({
@@ -114,9 +98,9 @@ export async function runDocMention(
 		closureRepos: [ctx.repoPath],
 		// The area the request named, applied before ranking; none for a repository or workspace scope.
 		...(area !== undefined ? { area } : {}),
-		maxResults:   limit,
 		minScore:     params.minScore ?? 0,
-		previewChars: params.previewChars ?? DEFAULT_PREVIEW_CHARS,
+		// Every section found, each with its whole stored body.
+		previewChars: Number.POSITIVE_INFINITY,
 		...(params.filenameHint !== undefined ? { filenameHint: params.filenameHint } : {}),
 		...(params.kinds !== undefined ? { kinds: params.kinds } : {}),
 	});
@@ -149,11 +133,8 @@ export async function runDocMention(
 
 	return {
 		type:    'doc.mention',
-		// The retrieval returns at most `limit` sections and does not say how many
-		// matched, so a full page means more may exist.
 		completeness: buildCompleteness({
 			returned: hits.length,
-			limited:  hits.length >= limit ? [reachedLimit('document sections', limit, 'overall', null)] : [],
 			partlyRead,
 			skipped:  vectorPassSkipped(report.vectorPassSkipped),
 			basis:    'doc-index',

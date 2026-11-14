@@ -111,37 +111,31 @@ test('a docs constraint task and a docs decision task with a module scope retrie
 
 	for (const [runtime, output, key] of TASKS) {
 		const id = runtime.templateId;
-		const ask = async (scopeRef: AnalyzeScopeRef, maxSources?: number) => {
+		const ask = async (scopeRef: AnalyzeScopeRef) => {
 			prompts = [];
-			const result = await runTask(runtime, scopeRef, { [key]: 'refund shipping', ...(maxSources !== undefined ? { maxSources } : {}) });
+			const result = await runTask(runtime, scopeRef, { [key]: 'refund shipping' });
 			const out = result.outputs.get(output) as { retrievedSectionCount: number };
 			return { shown: prompts.length === 1 ? shown(prompts[0]!) : [], count: out.retrievedSectionCount, completeness: result.completeness };
 		};
 
-		// --- a repo scope: the whole repo, as before ---
+		// --- a repo scope: the whole repo ---
 		const whole = await ask(repo);
 		assert.deepEqual(whole.shown, [...MARKERS], `${id}: a repo scope reads every section`);
 		assert.equal(whole.count, 6, id);
-		// With a limit of two, the two best of the whole repo: the shipping sections.
-		const wholeCut = await ask(repo, 2);
-		assert.deepEqual(wholeCut.shown, ['SHIP-A', 'SHIP-B'], id);
-		assert.deepEqual(limits(wholeCut.completeness), [['document sections', 2]], id);
+		assert.deepEqual(limits(whole.completeness), [], id);
+		// A maxSources a plan still passes is ignored: every section is read.
+		prompts = [];
+		const ignored = await runTask(runtime, repo, { [key]: 'refund shipping', maxSources: 2 });
+		assert.equal((ignored.outputs.get(output) as { retrievedSectionCount: number }).retrievedSectionCount, 6, `${id}: a maxSources is ignored`);
 
 		// --- a module scope: only sections under docs/pay, through runner, prepare and retrieval ---
 		const area = await ask(module_);
 		assert.deepEqual(area.shown, ['PAY-REFUNDS', 'PAY-LEDGER', 'PAY-DISPUTES'], `${id}: not docs/pay-old, not docs/ship`);
 		assert.equal(area.count, 3, `${id}: the count is the area's`);
-		assert.deepEqual(limits(area.completeness), [], `${id}: three sections of the area, under the limit`);
-		// The limit applies WITHIN the area: two of the area's three, although none
-		// of them is among the two best of the repo. Narrowing after the cut would give none.
-		const areaCut = await ask(module_, 2);
-		assert.equal(areaCut.shown.length, 2, id);
-		assert.ok(areaCut.shown.every(m => m.startsWith('PAY-')), `${id}: got ${areaCut.shown.join(', ')}`);
-		assert.equal(areaCut.count, 2, id);
-		assert.deepEqual(limits(areaCut.completeness), [['document sections', 2]], `${id}: the limit was reached within the area`);
+		assert.deepEqual(limits(area.completeness), [], `${id}: no limit is reached`);
 
-		// --- a file scope: that file's section alone; a limit of two is not reached ---
-		const one = await ask(file, 2);
+		// --- a file scope: that file's section alone ---
+		const one = await ask(file);
 		assert.deepEqual(one.shown, ['PAY-LEDGER'], id);
 		assert.deepEqual([one.count, limits(one.completeness)], [1, []], id);
 	}
@@ -149,10 +143,10 @@ test('a docs constraint task and a docs decision task with a module scope retrie
 	// --- without an area: the two runners return what they did ---
 	const db = await getDb();
 	prompts = [];
-	const c = await runSharedDocConstraintEnumerate({ subject: 'refund shipping', repoPath: REPO, db, maxSources: 2, provider: model });
-	const d = await runSharedDocDecisionTrace({ topic: 'refund shipping', repoPath: REPO, db, maxSources: 2, provider: model });
-	assert.deepEqual(prompts.map(shown), [['SHIP-A', 'SHIP-B'], ['SHIP-A', 'SHIP-B']]);
-	assert.deepEqual([c.retrievedSectionCount, d.retrievedSectionCount], [2, 2]);
+	const c = await runSharedDocConstraintEnumerate({ subject: 'refund shipping', repoPath: REPO, db, provider: model });
+	const d = await runSharedDocDecisionTrace({ topic: 'refund shipping', repoPath: REPO, db, provider: model });
+	assert.deepEqual(prompts.map(shown), [[...MARKERS], [...MARKERS]]);
+	assert.deepEqual([c.retrievedSectionCount, d.retrievedSectionCount], [6, 6]);
 	// ... and with one, the runner hands it on to prepare.
 	prompts = [];
 	const area = { directory: join(REPO, 'docs/pay') };

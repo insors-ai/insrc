@@ -40,9 +40,7 @@ export const docsDecisionTraceRuntime: TemplateRuntime = {
 		if (typeof topic !== 'string' || topic.trim().length === 0) {
 			throw new Error(`${TEMPLATE_ID}: params.topic is required (non-empty string)`);
 		}
-		const maxSources = typeof params['maxSources'] === 'number'
-			? params['maxSources'] as number
-			: undefined;
+
 
 		// The one scope function: the kinds a docs task accepts, the repo whose
 		// documents it reads, and the area of that repo retrieval keeps to.
@@ -57,7 +55,6 @@ export const docsDecisionTraceRuntime: TemplateRuntime = {
 			repoPath,
 			db,
 			...(area !== undefined ? { area } : {}),
-			...(maxSources !== undefined ? { maxSources } : {}),
 			runId:      args.runId,
 			logContext: `template:${args.task.taskId}`,
 		});

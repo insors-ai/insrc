@@ -6,7 +6,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync, renameSync } from 'node:
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { registerGitTools } from '../../../../daemon/tools/builtins/git/index.js';
-import { RegistryReviewSources } from '../sources.js';
+import { RegistryReviewSources, requireListedShas } from '../sources.js';
 import type { ReviewSources } from '../sources.js';
 import { projectReviewScope, ProjectionBudget, boundedProjectionSources } from '../projection.js';
 import { TaskReviewInputError } from '../contracts.js';
@@ -76,6 +76,10 @@ test('pathChanges lists the commits that changed the path and refuses a failed o
   const source = (error: unknown) => error instanceof TaskReviewInputError && error.field === 'source';
   await assert.rejects(sources.pathChanges('f'.repeat(40), moved, 'source.js'), source, 'a listing git cannot produce is a source error');
   await assert.rejects(sources.pathChanges(base.slice(0, 12), moved, 'source.js'), source, 'a listed sha whose length differs from the range OIDs is refused');
+  const oid = 'a'.repeat(40);
+  assert.throws(() => requireListedShas(['g'.repeat(40)], oid, oid), source, 'a listed sha of the right length that is not hexadecimal is refused');
+  assert.throws(() => requireListedShas(['A'.repeat(40)], oid, oid), source, 'an uppercase listed sha is refused');
+  assert.deepEqual(requireListedShas([oid], oid, oid), [oid], 'a full lowercase-hex sha is accepted');
  } finally { r.cleanup(); }
 });
 
@@ -153,14 +157,14 @@ test('a side-branch deletion merged back with the file kept still interrupts lin
  const f = await sideBranchLineage(r => { r.git('rm', '-q', 'source.js'); r.commit('side deletes source.js'); }, ['-s', 'ours']);
  try {
   assert.equal(f.r.git('rev-parse', `${f.pin}:source.js`).length, 40, 'the merge kept source.js');
-  await assert.rejects(projectReviewScope(f.origins, f.pin, f.sources), /Unselected path disappearance or recreation interrupts lineage/);
+  await assert.rejects(projectReviewScope(f.origins, f.pin, f.sources), (error: unknown) => error instanceof TaskReviewInputError && error.field === 'scope_conflict' && /Unselected path disappearance or recreation interrupts lineage/.test(error.message));
  } finally { f.r.cleanup(); }
 });
 
 test('a side-branch deletion and recreation merged back still interrupts lineage', async () => {
  const f = await sideBranchLineage(r => { r.git('rm', '-q', 'source.js'); r.commit('side deletes source.js'); r.put('source.js', 'a\nB\nc\n'); r.commit('side recreates source.js'); }, []);
  try {
-  await assert.rejects(projectReviewScope(f.origins, f.pin, f.sources), /Unselected path disappearance or recreation interrupts lineage/);
+  await assert.rejects(projectReviewScope(f.origins, f.pin, f.sources), (error: unknown) => error instanceof TaskReviewInputError && error.field === 'scope_conflict' && /Unselected path disappearance or recreation interrupts lineage/.test(error.message));
  } finally { f.r.cleanup(); }
 });
 

@@ -411,7 +411,7 @@ test('symbol-locate, test-locate, import-graph, usage-example, concept-resolve, 
 	noLimit(impNone.completeness, 'import.graph with 0');
 
 	// concept.resolve: former limit 20. Every match is returned, and the record says how many.
-	for (const [n, word] of [[20, 'zzconcepta'], [21, 'zzconceptb']] as const) {
+	for (const [n, word] of [[20, 'zzalphacon'], [21, 'qqbravocon']] as const) {
 		await seed(Array.from({ length: n }, (_, i) => ent('function', `${word}${i}`, `src/${word}/f${i}.ts`)));
 		const out = await runConceptResolve(exp('concept.resolve', { query: word, limit: 3 }), ctx);
 		assert.equal(out.hits.length, n, `concept.resolve with ${n}`);

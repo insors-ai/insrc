@@ -66,9 +66,9 @@ the administrator bypass flag, verify it in the environment settings UI.
 
 Set a read-only `INSRC_RELEASE_POLICY_READ_TOKEN` in both signing environments.
 It needs repository Variables and Actions read access, plus the read access
-needed to inspect branch protection. The promotion preparation job also uses
-a read-only policy credential to verify the release-control branch; it must
-have no signing or release permissions.
+needed to inspect branch protection. The unprivileged preparation job only
+displays the inputs for approval. The production job verifies release-control
+branch protection and commit ancestry after environment approval.
 
 Generate two distinct project-owned Ed25519 pairs. Set
 `INSRC_QUALIFICATION_KEY` only on the qualification environment and

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { generateKeyPairSync, sign } from 'node:crypto';
 import { mkdir, mkdtemp, rm, writeFile, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -7,7 +8,7 @@ import test from 'node:test';
 import { load } from 'js-yaml';
 
 const { checkPromotion } = await import(new URL('../promote-daemon-candidate.mjs', import.meta.url).href);
-const { sha256, manifestSigningBytes, QUALIFICATION_TESTS } = await import(new URL('../daemon-bundle-metadata.mjs', import.meta.url).href);
+const { sha256, manifestSigningBytes, verifyBundleManifest, QUALIFICATION_TESTS } = await import(new URL('../daemon-bundle-metadata.mjs', import.meta.url).href);
 
 test('promotion admits only the approved manifest, archive and local evidence', async () => {
 	const dir = await mkdtemp(join(tmpdir(), 'insrc-promote-test-'));
@@ -30,6 +31,13 @@ test('promotion admits only the approved manifest, archive and local evidence', 
 		const key = generateKeyPairSync('ed25519');
 		const qualificationKey = key.publicKey.export({ format: 'pem', type: 'spki' });
 		const log = Buffer.from('local fixture passed');
+		await writeFile(join(recordDir, 'manifest.json'), manifest);
+		const qualificationSignature = sign(null, manifestSigningBytes(manifest, 'qualification'), key.privateKey);
+		await writeFile(join(recordDir, 'manifest.qualification.sig'), qualificationSignature);
+		assert.deepEqual(verifyBundleManifest(manifest, qualificationSignature, 'qualification', qualificationKey).candidateOrigin,
+			candidateOrigin);
+		const args = { recordDir, artifactDir, repository, archiveSha256, qualificationKey };
+		await assert.rejects(checkPromotion(args), { code: 'ENOENT' });
 		await writeFile(join(recordDir, 'qualification.v1.json'), JSON.stringify({
 			schemaVersion: 1, qualifiedAt: '2026-11-14T07:00:00Z', host: { macOSVersion: '15.0', arch: 'arm64', nodeVersion: build.nodeVersion },
 			candidate: { repository, commit: build.commit, version: build.version, target: build.target, runId: '123', artifactId: '456',
@@ -37,13 +45,10 @@ test('promotion admits only the approved manifest, archive and local evidence', 
 			tests: QUALIFICATION_TESTS.map((id: string) => ({ id, result: 'pass', evidenceSha256: sha256(log) })),
 		}));
 		for (const id of QUALIFICATION_TESTS) await writeFile(join(recordDir, `${id}.log`), log);
-		await writeFile(join(recordDir, 'manifest.json'), manifest);
-		await writeFile(join(recordDir, 'manifest.qualification.sig'), sign(null, manifestSigningBytes(manifest, 'qualification'), key.privateKey));
 		await writeFile(join(artifactDir, 'candidate.json'), JSON.stringify({ ...build, branch: 'main', lane: 'release', runId: '123', runAttempt: '1' }));
 		const originFile = join(artifactDir, 'verified-origin.json');
 		await writeFile(originFile, JSON.stringify(candidateOrigin));
 		await writeFile(join(artifactDir, build.archiveName), archive);
-		const args = { recordDir, artifactDir, repository, archiveSha256, qualificationKey };
 		assert.deepEqual((await checkPromotion(args)).bytes, manifest);
 		await writeFile(originFile, JSON.stringify({ ...candidateOrigin, runAttempt: '2', artifactId: '789' }));
 		await assert.rejects(checkPromotion(args), /signed candidate origin differs/);
@@ -54,6 +59,16 @@ test('promotion admits only the approved manifest, archive and local evidence', 
 		await writeFile(join(artifactDir, build.archiveName), archive);
 		await writeFile(join(recordDir, 'rollback.log'), 'changed result');
 		await assert.rejects(checkPromotion(args), /evidence checksum mismatch/);
+		await writeFile(join(recordDir, 'rollback.log'), log);
+		const production = generateKeyPairSync('ed25519');
+		execFileSync(process.execPath, [new URL('../promote-daemon-candidate.mjs', import.meta.url).pathname,
+			recordDir, artifactDir, repository, archiveSha256], { env: { ...process.env, GITHUB_ACTIONS: 'false',
+			INSRC_QUALIFICATION_PUBLIC_KEY: qualificationKey.toString(), INSRC_PRODUCTION_KEY: production.privateKey.export({ format: 'pem', type: 'pkcs8' }).toString() } });
+		const output = await readFile(join(artifactDir, 'manifest.json'));
+		assert.deepEqual(output, manifest);
+		assert.deepEqual(await readFile(join(artifactDir, build.archiveName)), archive);
+		verifyBundleManifest(output, await readFile(join(artifactDir, 'manifest.production.sig')), 'production',
+			production.publicKey.export({ format: 'pem', type: 'spki' }));
 	} finally {
 		await rm(dir, { recursive: true, force: true });
 	}
@@ -61,9 +76,10 @@ test('promotion admits only the approved manifest, archive and local evidence', 
 
 test('promotion requires protected approval and never rebuilds the candidate', async () => {
 	const yaml = await readFile(new URL('../../.github/workflows/daemon-promotion.yml', import.meta.url), 'utf8');
-	const workflow = load(yaml) as { jobs: { publish: { environment: string; needs: string } } };
+	const workflow = load(yaml) as { jobs: { prepare: object; publish: { environment: string; needs: string } } };
 	assert.equal(workflow.jobs.publish.needs, 'prepare');
 	assert.equal(workflow.jobs.publish.environment, 'daemon-pilot-production');
+	assert.doesNotMatch(JSON.stringify(workflow.jobs.prepare), /secrets\.|INSRC_RELEASE_POLICY_READ_TOKEN/);
 	assert.match(yaml, /require_code_owner_reviews/);
 	assert.match(yaml, /daemon-release-artifact\.sh/);
 	assert.doesNotMatch(yaml, /npm (?:ci|install|run|test)|--clobber/);

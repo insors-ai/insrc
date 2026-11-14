@@ -69,6 +69,23 @@ test('candidate workflow accepts only the protected dispatch revision and has no
 	assert.match(build.if, /github\.ref_protected/);
 	assert.match(build.if, /refs\/heads\/v2.*refs\/heads\/main.*INSRC_DAEMON_MAIN_RELEASE_READY == 'true'/);
 	assert.ok(!('environment' in build));
+	// Translate the fixed identifiers in this small admission expression,
+	// then evaluate the actual checked-in condition against the lane matrix.
+	const condition = build.if.replaceAll('vars.INSRC_DAEMON_MAIN_RELEASE_READY', 'ready')
+		.replaceAll('github.ref_protected', 'protectedRef').replaceAll('github.ref', 'ref')
+		.replaceAll('github.sha', 'sha').replaceAll('inputs.commit', 'requested').replaceAll(' == ', ' === ');
+	assert.match(condition, /^[a-zA-Z0-9_ '=()/&|]+$/);
+	const admits = new Function('ref', 'protectedRef', 'ready', 'sha', 'requested', `return (${condition})`);
+	for (const [ref, protection, ready, requested, expected] of [
+		['refs/heads/main', true, 'true', sha, true],
+		['refs/heads/main', false, 'true', sha, false],
+		['refs/heads/main', true, 'false', sha, false],
+		['refs/heads/main', true, '', sha, false],
+		['refs/heads/v2', false, '', sha, true],
+		['refs/heads/other', true, 'true', sha, false],
+		['refs/heads/v2', false, '', 'b'.repeat(40), false],
+	]) assert.equal(admits(ref, protection, ready, sha, requested), expected);
+	assert.doesNotMatch(JSON.stringify(build), /secrets\.|contents:\s*write|daemon-pilot-production|daemon-pilot-qualification/);
 	const env = { GITHUB_REF: 'refs/heads/v2', GITHUB_SHA: sha, GITHUB_RUN_ID: '123', GITHUB_RUN_ATTEMPT: '2' };
 	assert.deepEqual(dispatchOrigin(env, sha), { branch: 'v2', lane: 'development', runId: '123', runAttempt: '2' });
 	assert.equal(dispatchOrigin({ ...env, GITHUB_REF: 'refs/heads/main' }, sha).lane, 'release');

@@ -47,12 +47,20 @@ esac
 		assert.equal(JSON.parse(readFileSync(join(success.destination, 'verified-origin.json'), 'utf8')).runAttempt, '2');
 		for (const [record, item] of [
 			[{ ...details, conclusion: 'failure' }, artifact],
+			[{ ...details, run_attempt: 1 }, artifact],
+			[{ ...details, id: 999 }, artifact],
+			[{ ...details, repository: { id: 43 } }, artifact],
 			[{ ...details, head_branch: 'v2' }, artifact],
 			[{ ...details, head_sha: 'b'.repeat(40) }, artifact],
 			[{ ...details, head_repository: { id: 43 } }, artifact],
 			[{ ...details, workflow_id: 45 }, artifact],
 			[details, { ...artifact, expires_at: '2000-01-01T00:00:00Z' }],
 			[details, { ...artifact, name: `daemon-candidate-release-${sha}-1` }],
+			[details, { ...artifact, id: 102 }],
+			[details, { ...artifact, workflow_run: { ...artifact.workflow_run, id: 999 } }],
+			[details, { ...artifact, workflow_run: { ...artifact.workflow_run, repository_id: 43 } }],
+			[details, { ...artifact, workflow_run: { ...artifact.workflow_run, head_repository_id: 43 } }],
+			[details, { ...artifact, workflow_run: { ...artifact.workflow_run, head_sha: 'b'.repeat(40) } }],
 			[details, { ...artifact, workflow_run: { ...artifact.workflow_run, head_branch: 'v2' } }],
 		] as const) {
 			assert.notEqual(run(record, item).status, 0);

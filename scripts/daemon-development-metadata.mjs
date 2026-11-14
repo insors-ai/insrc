@@ -112,18 +112,26 @@ function requireSignature(signed, signature, key, description) {
 }
 
 export async function verifyAndStageDevelopmentBundle({ bytes, signature, publicKey, policyBytes, policySignature, host, archive, releaseParent }) {
-	const key = createPublicKey(publicKey);
-	requireSignature(developmentPolicySigningBytes(policyBytes), policySignature, key, 'branch policy signature');
-	requireSignature(developmentManifestSigningBytes(bytes), signature, key, 'development signature');
-	const manifest = JSON.parse(new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes));
-	requireField(encodeDevelopmentManifest(manifest).equals(bytes), 'canonical manifest bytes');
-	const trusted = readDevelopmentPolicy(JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(policyBytes)));
-	requireField(manifest.keyId === sha256(key.export({ type: 'spki', format: 'der' })), 'pinned key identity');
+	const trusted = verifyDevelopmentPolicy(policyBytes, policySignature, publicKey);
+	const { manifest, manifestSha256 } = verifyDevelopmentManifest(bytes, signature, publicKey);
 	requireField(trusted.repository === manifest.repository && trusted.developmentRefs.includes(manifest.sourceRef), 'branch policy');
 	requireField(host.nodeVersion === DEVELOPMENT_NODE_VERSION, 'bootstrap Node version');
 	requireBundleTarget(manifest, host);
-	const manifestSha256 = sha256(bytes);
 	requireField(Boolean(archive) === Boolean(releaseParent), 'archive staging inputs');
 	const staged = archive === undefined ? undefined : await stageVerifiedBundle(archive, manifest, releaseParent, manifestSha256);
 	return { manifest, manifestSha256, staged };
+}
+
+export function verifyDevelopmentPolicy(bytes, signature, publicKey) {
+	requireSignature(developmentPolicySigningBytes(bytes), signature, createPublicKey(publicKey), 'branch policy signature');
+	return readDevelopmentPolicy(JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)));
+}
+
+export function verifyDevelopmentManifest(bytes, signature, publicKey) {
+	const key = createPublicKey(publicKey);
+	requireSignature(developmentManifestSigningBytes(bytes), signature, key, 'development signature');
+	const manifest = JSON.parse(new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes));
+	requireField(encodeDevelopmentManifest(manifest).equals(bytes), 'canonical manifest bytes');
+	requireField(manifest.keyId === sha256(key.export({ type: 'spki', format: 'der' })), 'pinned key identity');
+	return { manifest, manifestSha256: sha256(bytes) };
 }

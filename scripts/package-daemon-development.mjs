@@ -2,7 +2,7 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
-import { mkdir, mkdtemp, readFile, readdir, realpath, rm, stat, writeFile } from 'node:fs/promises';
+import { chmod, lstat, mkdir, mkdtemp, readFile, readdir, realpath, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -57,6 +57,19 @@ export async function measureDevelopmentCandidate(stage, archive) {
 	return { archiveBytes, archiveSha256: hash.digest('hex'), runtimeFingerprint: await measureBundleRuntime(stage) };
 }
 
+// The verified extractor uses private directories and owner-only file modes.
+async function normalizeRuntimeModes(directory) {
+	for (const entry of await readdir(directory, { withFileTypes: true })) {
+		const path = join(directory, entry.name);
+		if (entry.isDirectory()) {
+			await chmod(path, 0o700);
+			await normalizeRuntimeModes(path);
+		} else if (entry.isFile()) {
+			await chmod(path, (await lstat(path)).mode & 0o700);
+		}
+	}
+}
+
 async function main([policyPath, ref, commit, version, outputPath, ...extra]) {
 	if (!policyPath || !ref || !commit || !outputPath || extra.length ||
 		!/^(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})-dev\.[1-9][0-9]{0,8}$/.test(version ?? '') ||
@@ -83,6 +96,7 @@ export async function packageDevelopmentCandidate({ policy, ref, commit, version
 		await mkdir(stage);
 		await buildRuntime(checkout, stage);
 		requireCleanDevelopmentCheckout(checkout, commit);
+		await normalizeRuntimeModes(stage);
 		await mkdir(output, { mode: 0o700 });
 		ownsOutput = true;
 		const archiveName = `insrc-daemon-${version}-darwin-arm64.tar.gz`;

@@ -51,7 +51,7 @@ import { runDbTablesList } from '../db-tables-list.js';
 import { finalizeDocConstraintEnumerate, prepareDocConstraintEnumerate } from '../doc-constraint-enumerate.js';
 import { finalizeDocDecisionTrace, prepareDocDecisionTrace } from '../doc-decision-trace.js';
 import { runDocMention } from '../doc-mention.js';
-import { _getRunnersForTest, _overrideNarrowRunnerForTest, _overrideRunnerForTest,  } from '../executor.js';
+import { _getRunnersForTest, _overrideNarrowRunnerForTest, _overrideRunnerForTest, failedOutput } from '../executor.js';
 import { runFreeformProbe } from '../freeform-probe.js';
 import { runImportGraph } from '../import-graph.js';
 import { runManifestsLocate } from '../manifests-locate.js';
@@ -438,6 +438,7 @@ test('search.text and config.trace return every hit with its whole line and no l
 
 	const cfg = await runConfigTrace(exp('config.trace', { key: 'pay.key', topK: 1 }), ctx);
 	assert.equal(cfg.hits.length, 2);
+	assert.deepEqual(cfg.hits.map(h => h.text).sort(), ['const PAY_KEY = "pay.key";', 'pay.key again'], 'each line is whole');
 	assert.equal(cfg.completeness.limited, undefined);
 	assert.equal(cfg.completeness.complete, true);
 	assert.equal(cfg.completeness.basis, 'text');
@@ -448,12 +449,15 @@ test('search.text and config.trace return every hit with its whole line and no l
 		const rg = join(bin, 'rg');
 		writeFileSync(rg, `#!/bin/sh\necho "${REPO}/src/pay/refund.ts:1:needle in refund"\nsleep 30\n`);
 		chmodSync(rg, 0o755);
-		await assert.rejects(
-			runCompleteSearch('search.text', { pattern: 'needle', root: REPO, _backend: { rgCommand: rg, rgTimeoutMs: 300 } }),
-			(err: unknown) => err instanceof LookupFailedError
-				&& /did not finish/.test(err.message)
-				&& err.partial.length === 1 && err.partial[0]!.content === 'needle in refund',
-		);
+		let caught: unknown;
+		await runCompleteSearch('search.text', { pattern: 'needle', root: REPO, _backend: { rgCommand: rg, rgTimeoutMs: 300 } }).catch(e => { caught = e; });
+		assert.ok(caught instanceof LookupFailedError, 'the search is the failed lookup');
+		// The executor turns it into the failed output: not an empty or a complete result.
+		const failed = failedOutput(exp('search.text', { pattern: 'needle' }), caught);
+		assert.equal(failed.type, 'failed');
+		assert.equal(failed.requested, 'search.text');
+		assert.match(failed.message, /did not finish/);
+		assert.deepEqual(failed.partial, [{ source: "src/pay/refund.ts:1", content: 'needle in refund' }]);
 	} finally {
 		rmSync(bin, { recursive: true, force: true });
 	}

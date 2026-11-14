@@ -29,7 +29,12 @@ export async function stageRuntime(source, stage, runtime) {
 	}
 	const copy = (from, to) => cp(from, to, { recursive: true, verbatimSymlinks: true, errorOnExist: true, force: false });
 	for (const name of ['out', 'node_modules', 'package.json', 'package-lock.json', 'LICENSE', 'THIRD_PARTY_NOTICES.md']) {
-		await copy(join(source, name), join(stage, name));
+		if (name === 'out') {
+			await cp(join(source, name), join(stage, name), {
+				recursive: true, verbatimSymlinks: true, errorOnExist: true, force: false,
+				filter: path => path !== join(source, 'out/node_modules'),
+			});
+		} else await copy(join(source, name), join(stage, name));
 	}
 	await mkdir(join(stage, 'scripts'));
 	for (const name of ['daemon-ctl.sh', 'insrc', 'insrc-daemon-install.sh', 'stage-daemon-bundle.mjs',

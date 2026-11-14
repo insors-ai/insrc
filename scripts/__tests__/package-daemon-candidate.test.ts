@@ -30,6 +30,7 @@ test('candidate layout survives moving the runtime and rejects external links', 
 		}
 		await mkdir(join(source, 'node_modules/@insrc'));
 		await symlink('../../packages/project-memory', join(source, 'node_modules/@insrc/project-memory'));
+		await symlink('../node_modules', join(source, 'out/node_modules'));
 		await symlink('index.js', join(source, 'node_modules/example/alias.js'));
 		await mkdir(staging);
 		await stageRuntime(source, staging, runtime);
@@ -38,6 +39,7 @@ test('candidate layout survives moving the runtime and rejects external links', 
 		assert.equal(await readFile(join(staging, 'node_modules/example/alias.js'), 'utf8'), 'runtime marker');
 		assert.equal(await readFile(join(staging, 'tools/node'), 'utf8'), 'fixture');
 		await assert.rejects(readFile(join(staging, 'node_modules/.bin/fixture')), { code: 'ENOENT' });
+		await assert.rejects(readFile(join(staging, 'out/node_modules/example/index.js')), { code: 'ENOENT' });
 		await mkdir(join(source, 'packages'));
 		await symlink(join(staging, 'packages/project-memory'), join(source, 'packages/project-memory'));
 		await symlink(runtime, join(source, 'node_modules/example/outside'));

@@ -39,6 +39,35 @@ function fixture(): { root: string; gate: InstallationMutationGate } {
 	return { root, gate: new InstallationMutationGate(root, helper) };
 }
 
+test('bundle activation retains its proof, rejects source updates and preserves the prior on rollback', options, async () => {
+	const { gate, root } = fixture();
+	const release = 'a'.repeat(40);
+	const installation = { version: 1 as const, stateRoot: root, releaseRoot: join(root, 'release-1'), releaseId: release,
+		runtime: join(root, 'release-1/tools/node'), pathEnv: '/usr/bin:/bin', enabled: true };
+	const proof = { version: 1 as const, floor: { domain: 'production' as const, channel: 'macos-arm64-pilot' as const, sequence: 1,
+		manifestSha256: 'a'.repeat(64), archiveSha256: 'b'.repeat(64) }, fingerprint: 'c'.repeat(64),
+		manifestBase64: 'e30=', signatureBase64: Buffer.alloc(64).toString('base64') };
+	const start = await gate.reserve({ kind: 'start', owner, activation: { installation, startChild: true,
+		fingerprint: proof.fingerprint, bundleProof: proof } }, proof.floor);
+	await gate.recordIntent(start, 'activation-state', release);
+	await gate.recordReceipt(start, 'activation-state', 'running');
+	await gate.release(start);
+	assert.deepEqual((await gate.read()).installedBundle, { releaseRoot: installation.releaseRoot, proof });
+	await rejects('ownership-conflict', gate.reserve({ kind: 'update', owner, predecessor }));
+	const candidate = { ...installation, releaseRoot: join(root, 'release-2'), runtime: join(root, 'release-2/tools/node'),
+		releaseId: 'd'.repeat(40) };
+	const next = { ...proof, floor: { ...proof.floor, sequence: 2, manifestSha256: 'd'.repeat(64) } };
+	const update = await gate.reserve({ kind: 'update', owner, predecessor: {
+		priorRelease: release, priorCommit: release, candidateRelease: candidate.releaseId, wasRunning: true,
+		pins: { prior: installation, candidate }, bundleProof: { priorBundle: proof, candidate: next },
+	} }, next.floor);
+	await gate.publishOutcome(update, 'rolled-back', 'kept pinned predecessor');
+	await gate.release(update);
+	const state = await gate.read();
+	assert.deepEqual(state.installedBundle, { releaseRoot: installation.releaseRoot, proof });
+	assert.deepEqual(state.daemonBundleFloors, [next.floor]);
+});
+
 async function rejects(code: SupervisorErrorCode, result: Promise<unknown>): Promise<void> {
 	await assert.rejects(result, error => error instanceof SupervisorLifecycleError && error.code === code);
 }

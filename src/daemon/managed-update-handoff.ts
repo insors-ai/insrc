@@ -33,8 +33,9 @@ export interface ManagedUpdatePins {
 /** Recheck signed raw pins at the live mutation boundary. The prior may have been archived. */
 export async function verifyManagedUpdateInventory(pins: ManagedUpdatePins, priorRoot = pins.prior.releaseRoot): Promise<void> {
 	if (pins.bundleProof !== undefined) {
-		await verifyStagedReleasePin({ root: priorRoot, runtime: pins.prior.runtime, commit: pins.prior.releaseId,
-			fingerprint: pins.bundleProof.priorSourceFingerprint });
+		if (pins.bundleProof.priorBundle !== undefined) await verifyManagedBundleProof(pins.prior, pins.bundleProof.priorBundle);
+		else await verifyStagedReleasePin({ root: priorRoot, runtime: pins.prior.runtime, commit: pins.prior.releaseId,
+			fingerprint: pins.bundleProof.priorSourceFingerprint! });
 		await verifyManagedBundleProof(pins.candidate, pins.bundleProof.candidate);
 		return;
 	}

@@ -21,7 +21,7 @@ import { readManagedBundleProof } from '../daemon/managed-bundle-proof.js';
 import type { ManagedBundleProof } from '../daemon/managed-bundle-proof.js';
 
 const HELPER = fileURLToPath(new URL('../../out/bin/insrc-darwin-lifecycle', import.meta.url));
-const MAX_BYTES = 256 * 1024;
+const MAX_BYTES = 384 * 1024;
 const MAX_STEPS = 128;
 const LOCK_BUSY_EXIT = 75;
 
@@ -36,7 +36,8 @@ export interface UpdatePredecessor {
 	readonly selectorAbsent?: true;
 	readonly preparing?: true;
 	readonly bundleProof?: {
-		readonly priorSourceFingerprint: string;
+		readonly priorSourceFingerprint?: string;
+		readonly priorBundle?: ManagedBundleProof;
 		readonly candidate: ManagedBundleProof;
 	};
 	readonly legacy?: {
@@ -100,6 +101,7 @@ export interface InstallationJournal {
 	readonly releaseTrust?: ReleaseTrustFloor;
 	readonly sourceReleases?: readonly VerifiedSourceRelease[];
 	readonly daemonBundleFloors?: readonly DaemonBundleReleaseFloor[];
+	readonly installedBundle?: { readonly releaseRoot: string; readonly proof: ManagedBundleProof };
 }
 
 export const RELEASE_TRUST_STEP = 'release-trust';
@@ -224,7 +226,9 @@ function validPredecessor(value: unknown): value is UpdatePredecessor {
 		|| (value.generation !== undefined && value.generation !== null && !text(value.generation))) return false;
 	if (value.selectorAbsent !== undefined && (value.selectorAbsent !== true || value.launch === undefined)) return false;
 	if (value.bundleProof !== undefined && (!object(value.bundleProof) || value.pins === undefined
-		|| typeof value.bundleProof.priorSourceFingerprint !== 'string' || !/^[a-f0-9]{64}$/.test(value.bundleProof.priorSourceFingerprint)
+		|| (value.bundleProof.priorBundle === undefined
+			? typeof value.bundleProof.priorSourceFingerprint !== 'string' || !/^[a-f0-9]{64}$/.test(value.bundleProof.priorSourceFingerprint)
+			: value.bundleProof.priorSourceFingerprint !== undefined || readManagedBundleProof(value.bundleProof.priorBundle).version !== 1)
 		|| readManagedBundleProof(value.bundleProof.candidate).version !== 1)) return false;
 	if (value.preparing !== undefined && (value.preparing !== true || value.candidateRelease !== 'unqualified'
 		|| value.pins !== undefined || value.launch !== undefined || value.legacy !== undefined)) return false;
@@ -305,6 +309,11 @@ function readJournal(bytes: string, root: string, uid: number): InstallationJour
 		|| !text(outcome.detail) || (outcome.finishedAt !== undefined
 			&& (typeof outcome.finishedAt !== 'string' || !Number.isFinite(Date.parse(outcome.finishedAt)))))) conflict('invalid installation outcome');
 	const journal = parsed as unknown as InstallationJournal;
+	if (journal.installedBundle !== undefined) {
+		if (!object(journal.installedBundle) || typeof journal.installedBundle.releaseRoot !== 'string' ||
+			!isAbsolute(journal.installedBundle.releaseRoot)) conflict('invalid installed bundle record');
+		readManagedBundleProof(journal.installedBundle.proof);
+	}
 	if (journal.releaseTrust !== undefined) readReleaseTrustFloor(journal.releaseTrust);
 	if (journal.daemonBundleFloors !== undefined) {
 		if (!Array.isArray(journal.daemonBundleFloors) || journal.daemonBundleFloors.length > 2) conflict('invalid daemon bundle floors');
@@ -437,6 +446,9 @@ export class InstallationMutationGate {
 		await assertLiveOwner(request.owner, this.helper);
 		return this.arbitrate(async (state, uid) => {
 			if (state.active !== null) busy();
+			if (request.kind === 'update' && state.installedBundle !== undefined && request.predecessor.bundleProof === undefined) {
+				conflict('installed daemon requires a signed bundle update');
+			}
 			if (!validRequest(request) || request.owner.uid !== uid) conflict('invalid installation owner');
 			if (request.kind === 'start' && request.activation !== undefined
 				&& request.activation.installation.stateRoot !== this.root) conflict('fresh activation names another installation root');
@@ -590,7 +602,17 @@ export class InstallationMutationGate {
 				&& (state.outcome?.id !== active.id || (state.outcome.decision === 'operator-recovery' && !active.recovery)))) {
 				conflict('installation reservation has unresolved work');
 			}
-			await this.write({ ...state, active: null });
+			let installedBundle = state.installedBundle;
+			if (active.kind === 'start' && active.activation?.bundleProof !== undefined &&
+				active.entries.some(entry => entry.step === 'activation-state' && entry.receipt !== undefined) &&
+				!active.entries.some(entry => entry.step === 'activation-rollback')) {
+				installedBundle = { releaseRoot: active.activation.installation.releaseRoot, proof: active.activation.bundleProof };
+			} else if (active.kind === 'update' && state.outcome?.decision === 'committed') {
+				installedBundle = active.predecessor.bundleProof === undefined || active.predecessor.pins === undefined ? undefined
+					: { releaseRoot: active.predecessor.pins.candidate.releaseRoot, proof: active.predecessor.bundleProof.candidate };
+			}
+			const { installedBundle: _old, ...rest } = state;
+			await this.write({ ...rest, active: null, ...(installedBundle === undefined ? {} : { installedBundle }) });
 		});
 	}
 

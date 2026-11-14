@@ -25,6 +25,12 @@ by the build run and artifact ID. Do not test against a production install.
    test fixture external to the release). Confirm the journal identifies the
    transaction, recovery restores the exact predecessor offline, and an older
    manifest remains inadmissible afterward.
+   For a bundle-to-bundle update, use a newer signed manifest naming the
+   installed bundle's exact commit and manifest digest as a managed
+   predecessor. Run the same installer without legacy checkout arguments.
+   After an interruption, rerun the installer to reconcile the recorded
+   transaction before attempting a different release. The installer uses
+   the bootstrap key retained under the installation's private state directory.
 6. Only after all checks pass, put `manifest.json`,
    `manifest.qualification.sig` and five logs in the release-control record:
    `source-tests.log`, `fresh-install.log`, `legacy-migration.log`,

@@ -239,8 +239,10 @@ class Rollback {
 		const source = recordedSourceRelease(initial);
 		const verifyPrior = async () => {
 			if (initial.predecessor.bundleProof !== undefined) {
-				await verifyStagedReleasePin({ root: prior.releaseRoot, runtime: prior.runtime, commit: prior.releaseId,
-					fingerprint: initial.predecessor.bundleProof.priorSourceFingerprint });
+				const proof = initial.predecessor.bundleProof;
+				if (proof.priorBundle !== undefined) await verifyManagedBundleProof(prior, proof.priorBundle);
+				else await verifyStagedReleasePin({ root: prior.releaseRoot, runtime: prior.runtime, commit: prior.releaseId,
+					fingerprint: proof.priorSourceFingerprint! });
 			}
 			if (source !== undefined) await verifyStagedReleasePin({ root: prior.releaseRoot, runtime: prior.runtime,
 				commit: prior.releaseId, fingerprint: source.priorFingerprint });
@@ -439,7 +441,9 @@ export async function recoverInstalledManagedUpdate(
 		async verifyCommitted(update) {
 			// The selection is already final. A later runtime failure is ordinary
 			// daemon health and cannot undo the recorded commit.
-			await operations.verifySelector(pinsOf(update).candidate);
+			const { candidate } = pinsOf(update);
+			if (update.predecessor.bundleProof !== undefined) await verifyManagedBundleProof(candidate, update.predecessor.bundleProof.candidate);
+			await operations.verifySelector(candidate);
 		},
 		async verifyRolledBack(update) {
 			if (!update.predecessor.preparing) await verifyRollbackSelector(update, operations);

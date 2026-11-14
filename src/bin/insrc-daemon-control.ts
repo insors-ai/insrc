@@ -19,7 +19,7 @@ import { PATHS } from '../shared/paths.js';
 import { requestLegacyDrain, restoredLegacyDrainPath } from '../daemon/legacy-private-drain.js';
 import { stopRestoredLegacyProcess } from '../daemon/legacy-public-stop.js';
 import { readManagedBundleProof } from '../daemon/managed-bundle-proof.js';
-import { prepareBundleLegacyUpgrade } from '../daemon/managed-update-preparation.js';
+import { prepareBundleLegacyUpgrade, prepareInstalledBundleUpgrade } from '../daemon/managed-update-preparation.js';
 
 const NOT_MANAGED = 10;
 
@@ -84,8 +84,15 @@ async function main(command: string): Promise<void> {
 			process.stdout.write(`${result.decision}: ${result.detail}\n`);
 			if (result.decision !== 'committed') process.exitCode = 4;
 		} else {
-			const active = (await new InstallationMutationGate(stateRoot).read()).active;
-			if (active === null && (await readdir(stateRoot)).some(name => join(stateRoot, name) !== installationPaths(stateRoot).directory)) {
+			const { active, installedBundle } = await new InstallationMutationGate(stateRoot).read();
+			if (installedBundle !== undefined && active === null) {
+				const result = await prepareInstalledBundleUpgrade(installation, proof);
+				process.stdout.write(`${result.decision}: ${result.detail}\n`);
+				if (result.decision !== 'committed') process.exitCode = 4;
+				return;
+			}
+			if (active === null && (await readdir(stateRoot)).some(name =>
+				!['bundle-trust', 'managed-lifecycle'].includes(name))) {
 				throw new Error('fresh bundle activation requires a pristine state root');
 			}
 			await activateFreshManagedDaemon({ installation, startChild: true, fingerprint: proof.fingerprint, bundleProof: proof });
@@ -226,6 +233,9 @@ async function main(command: string): Promise<void> {
 		return;
 	}
 	if (command === 'update' || command === 'update-local') {
+		if ((await new InstallationMutationGate(installation.stateRoot).read()).installedBundle !== undefined) {
+			throw new Error('this daemon uses signed bundles; run install-daemon-bundle.mjs with the next qualified release');
+		}
 		const preparation = await admitManagedPreparation(installation.stateRoot);
 		if (command === 'update' && preparation.state === 'running') {
 			process.stdout.write(JSON.stringify(await rpc('daemon.update', {}, undefined, { timeoutMs: 20_000 })) + '\n');

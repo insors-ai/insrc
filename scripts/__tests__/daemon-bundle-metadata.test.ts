@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { generateKeyPairSync, sign } from 'node:crypto';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
+import { readManagedBundleProof, verifyManagedBundleManifest } from '../../src/daemon/managed-bundle-proof.js';
 
 const { manifestSigningBytes, verifyBundleManifest, requireBundleTarget, readQualification, sha256, QUALIFICATION_TESTS } =
 	await import(new URL('../daemon-bundle-metadata.mjs', import.meta.url).href);
@@ -17,6 +18,45 @@ const manifest = {
 };
 const encode = (value: object) => Buffer.from(JSON.stringify(value));
 const { verifyAndStageBundle } = await import(new URL('../verify-daemon-bundle.mjs', import.meta.url).href);
+const { pinnedRecovery } = await import(new URL('../install-daemon-bundle.mjs', import.meta.url).href);
+const { measureBundleRuntime } = await import(new URL('../stage-daemon-bundle.mjs', import.meta.url).href);
+
+test('installed trust rejects a self-signed proof and recovery selects only the pinned runtime', async () => {
+	const dir = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-bundle-trust-')));
+	try {
+		const trusted = generateKeyPairSync('ed25519');
+		const other = generateKeyPairSync('ed25519');
+		const key = trusted.publicKey.export({ type: 'spki', format: 'pem' });
+		const stateRoot = join(dir, 'state');
+		const trustRoot = join(stateRoot, 'bundle-trust');
+		mkdirSync(trustRoot, { recursive: true, mode: 0o700 });
+		writeFileSync(join(trustRoot, 'production.pem'), key, { mode: 0o600 });
+		const root = join(dir, 'releases');
+		const releaseRoot = join(root, 'pinned');
+		const runtime = join(releaseRoot, 'tools/node');
+		mkdirSync(join(releaseRoot, 'tools'), { recursive: true });
+		writeFileSync(runtime, 'runtime fixture');
+		const bytes = encode(manifest);
+		const signed = (privateKey: typeof trusted.privateKey) =>
+			sign(null, manifestSigningBytes(bytes, 'production'), privateKey).toString('base64');
+		const proof = readManagedBundleProof({
+			version: 1, floor: { domain: 'production', channel: manifest.channel, sequence: 1,
+				manifestSha256: sha256(bytes), archiveSha256: manifest.archiveSha256 },
+			fingerprint: await measureBundleRuntime(releaseRoot), manifestBase64: bytes.toString('base64'),
+			signatureBase64: signed(trusted.privateKey),
+		});
+		await verifyManagedBundleManifest(proof, manifest.commit, stateRoot);
+		await assert.rejects(verifyManagedBundleManifest({ ...proof, signatureBase64: signed(other.privateKey) }, manifest.commit, stateRoot), /manifest changed/);
+		assert.throws(() => readManagedBundleProof({ ...proof, publicKey: other.publicKey }), /invalid bundle proof/);
+		const journal = { version: 1, root: stateRoot, active: { kind: 'start', activation: {
+			installation: { stateRoot, releaseRoot, releaseId: manifest.commit, runtime }, bundleProof: proof,
+		} } };
+		const context = { stateRoot, root, domain: 'production', key };
+		assert.equal((await pinnedRecovery(journal, context)).runtime, runtime);
+		writeFileSync(runtime, 'modified runtime');
+		await assert.rejects(pinnedRecovery(journal, context), /does not match/);
+	} finally { rmSync(dir, { recursive: true, force: true }); }
+});
 
 test('bootstrap rejects invalid manifest and target before opening any archive', async () => {
 	const key = generateKeyPairSync('ed25519');

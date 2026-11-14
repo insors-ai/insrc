@@ -384,6 +384,8 @@ Add retries and followUp counters to ReviewProgress (task-review/progress.ts) an
   - **resolved**: Keep s3 consume-only — User approved: s1 owns binding and authorization; plan checks early whether s1 exposes a hook. _(2026-11-14T18:05:03.405Z)_
 - `q26e40d27` — Source of review progress: the status board carries only the display projection, so the delegates read ReviewWorkers.progressOf, a new read-only accessor in src/daemon/threads/review-workers.ts. That is the daemon's review-worker hosting class, not a review engine; confirm it is acceptable under the DEF non-goal on changes to review execution.
   - **resolved**: Accept the read-only accessor — User approved folding ReviewWorkers.progressOf into the first task. _(2026-11-14T18:05:50.891Z)_
+- `q146b4276` — Verify that the invariant citations c1 and c2 map to the task-progress contract bundle and the review progress bundle respectively (s8 ep3 ambiguous).
+  - **resolved**: Explicit citation mapping — Verified: LLD c1 is the coordinator.ts task-progress bundle and c2 is the review-progress.ts bundle. _(2026-11-14T18:06:25.911Z)_
 
 ## Citations
 

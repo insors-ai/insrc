@@ -86,6 +86,13 @@
         "choice": "Accept the read-only accessor",
         "rationale": "User approved folding ReviewWorkers.progressOf into the first task.",
         "resolvedAt": "2026-11-14T18:05:50.891Z"
+      },
+      "q146b4276": {
+        "question": "Verify that the invariant citations c1 and c2 map to the task-progress contract bundle and the review progress bundle respectively (s8 ep3 ambiguous).",
+        "status": "resolved",
+        "choice": "Explicit citation mapping",
+        "rationale": "Verified: LLD c1 is the coordinator.ts task-progress bundle and c2 is the review-progress.ts bundle.",
+        "resolvedAt": "2026-11-14T18:06:25.911Z"
       }
     }
   },

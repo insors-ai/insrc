@@ -158,12 +158,16 @@ export async function runGrepSearch(opts: GrepSearchOptions): Promise<SearchGrep
 	const regex = new RegExp(opts.pattern, flags);
 	const hits: GrepHit[] = [];
 	let truncated = false;
+	const complete = opts.complete === true;
+	// Complete mode: no hit limit, and the same deadline as the ripgrep backend, checked after each file.
+	const deadlineMs = opts._backend?.rgTimeoutMs ?? RG_TIMEOUT_MS;
+	const deadline = Date.now() + deadlineMs;
 	const globRe = opts.glob !== undefined ? globToFileRegex(opts.glob) : null;
 	const skippedFiles: { path: string; reason: 'too-large' | 'unreadable' }[] = [];
 	const shortenedLines: { path: string; line: number; totalChars: number }[] = [];
 
 	async function walk(dir: string): Promise<void> {
-		if (hits.length >= limit) { truncated = true; return; }
+		if (!complete && hits.length >= limit) { truncated = true; return; }
 		let entries;
 		try { entries = await fs.readdir(dir, { withFileTypes: true }); } catch (err) {
 			// The root itself: the search could not run. Anything below it: one skipped directory.
@@ -172,7 +176,7 @@ export async function runGrepSearch(opts: GrepSearchOptions): Promise<SearchGrep
 			return;
 		}
 		for (const entry of entries) {
-			if (hits.length >= limit) { truncated = true; return; }
+			if (!complete && hits.length >= limit) { truncated = true; return; }
 			const name = entry.name;
 			if (name.startsWith('.') || IGNORE_DIRS.has(name)) { continue; }
 			const full = join(dir, name);
@@ -185,7 +189,7 @@ export async function runGrepSearch(opts: GrepSearchOptions): Promise<SearchGrep
 			let contents: string;
 			try {
 				const stat = statSync(full);
-				if (stat.size > MAX_FILE_BYTES) { skippedFiles.push({ path, reason: 'too-large' }); continue; }
+				if (!complete && stat.size > MAX_FILE_BYTES) { skippedFiles.push({ path, reason: 'too-large' }); continue; }
 				contents = await fs.readFile(full, 'utf8');
 			} catch {
 				skippedFiles.push({ path, reason: 'unreadable' });
@@ -195,10 +199,13 @@ export async function runGrepSearch(opts: GrepSearchOptions): Promise<SearchGrep
 			for (let i = 0; i < lines.length; i++) {
 				const text = lines[i] ?? '';
 				if (regex.test(text)) {
-					hits.push({ path, line: i + 1, text: text.slice(0, MAX_LINE_CHARS) });
-					if (text.length > MAX_LINE_CHARS) shortenedLines.push({ path, line: i + 1, totalChars: text.length });
-					if (hits.length >= limit) { truncated = true; return; }
+					hits.push({ path, line: i + 1, text: complete ? text : text.slice(0, MAX_LINE_CHARS) });
+					if (!complete && text.length > MAX_LINE_CHARS) shortenedLines.push({ path, line: i + 1, totalChars: text.length });
+					if (!complete && hits.length >= limit) { truncated = true; return; }
 				}
+			}
+			if (complete && Date.now() >= deadline) {
+				throw new GrepIncompleteError(`the search was stopped after ${deadlineMs} ms with ${hits.length} hits gathered`, 'timeout', hits);
 			}
 		}
 	}

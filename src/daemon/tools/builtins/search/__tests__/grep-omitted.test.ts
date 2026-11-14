@@ -360,3 +360,52 @@ test('without complete the ripgrep backend still applies MAX_LIMIT, MAX_LINE_CHA
 		cleanup(bin);
 	}
 });
+
+// --- complete mode: Node fallback ------------------------------------------------
+
+test('through the Node fallback with complete set, every hit with its whole line is returned, a file over MAX_FILE_BYTES is searched, the deadline fails with gathered hits and an unreadable file is listed as skipped', { skip: isRoot ? 'permission checks do not apply to root' : false }, async () => {
+	const root = tmp();
+	const lockedFile = join(root, 'secret.txt');
+	try {
+		writeFileSync(join(root, 'many.txt'), Array.from({ length: 5200 }, (_, i) => `needle ${i}`).join('\n') + '\n');
+		const long = 'needle ' + 'x'.repeat(100_000);
+		writeFileSync(join(root, 'long.txt'), `first\n${long}\n`);
+		writeFileSync(join(root, 'huge.txt'), 'needle at the top\n' + 'y'.repeat(2 * 1024 * 1024 + 10));
+		writeFileSync(lockedFile, 'needle in a file nobody may read\n');
+		chmodSync(lockedFile, 0o000);
+
+		const r = await runGrepSearch({ pattern: 'needle', root, complete: true, _backend: NO_RIPGREP });
+		assert.equal(r.usedRipgrep, false);
+		assert.equal(r.hits.length, 5200 + 1 + 1, 'past MAX_LIMIT, with the oversized file searched');
+		assert.equal(r.truncated, false);
+		assert.equal(r.hits.find(h => h.path === 'long.txt')!.text, long, 'the line is whole');
+		assert.ok(r.hits.some(h => h.path === 'huge.txt' && h.text === 'needle at the top'), 'a file over MAX_FILE_BYTES is searched');
+		assert.deepEqual(r.omitted.shortenedLines, []);
+		assert.deepEqual(r.omitted.skippedFiles, [{ path: 'secret.txt', reason: 'unreadable' }], 'the scan went on past the unreadable file');
+		assert.equal(r.omitted.excludedByRule, NODE_EXCLUDED_BY_RULE);
+
+		// Past the deadline (here none is left once the first file is read) the call fails with what it gathered.
+		await assert.rejects(
+			runGrepSearch({ pattern: 'needle', root, complete: true, _backend: { ...NO_RIPGREP, rgTimeoutMs: 0 } }),
+			(err: unknown) => err instanceof GrepIncompleteError && err.reason === 'timeout' && err.hits.length >= 1,
+		);
+	} finally {
+		cleanup(root, [lockedFile]);
+	}
+});
+
+test('without complete the Node fallback behaves exactly as today', async () => {
+	const root = tmp();
+	try {
+		writeFileSync(join(root, 'many.txt'), Array.from({ length: 6000 }, (_, i) => `needle ${i}`).join('\n') + '\n');
+		writeFileSync(join(root, 'long.txt'), `needle ${'x'.repeat(1_800)}\n`);
+		writeFileSync(join(root, 'huge.txt'), 'needle\n' + 'y'.repeat(2 * 1024 * 1024 + 10));
+
+		const r = await runGrepSearch({ pattern: 'needle', root, limit: 99_999, _backend: { ...NO_RIPGREP, rgTimeoutMs: 0 } });
+		assert.ok(r.hits.length <= 5000, 'MAX_LIMIT; and a deadline of 0 does not apply');
+		assert.ok(r.hits.every(h => h.text.length <= 500), 'MAX_LINE_CHARS');
+		assert.ok(r.omitted.skippedFiles.some(f => f.path === 'huge.txt' && f.reason === 'too-large'), 'MAX_FILE_BYTES');
+	} finally {
+		cleanup(root);
+	}
+});

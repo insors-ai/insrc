@@ -366,7 +366,10 @@ test('symbol-locate, test-locate, import-graph, usage-example, concept-resolve, 
 	for (const [n, word] of [[20, 'zzalpha'], [21, 'zzbravo']] as const) {
 		await seed(Array.from({ length: n }, (_, i) => ent('function', `test${word}${i}`, `src/bulk/__tests__/t${word}${i}.test.ts`)));
 		const out = await runTestLocate(exp('test.locate', { subject: word, topK: 2 }), ctx);
-		assert.equal(out.hits.filter(h => h.kind !== 'file').length, n, `test.locate with ${n}`);
+		// Each test function names the subject, and so does its file: n entity hits and n file hits, every one returned.
+		assert.equal(out.hits.filter(h => h.kind !== 'file').length, n, `test.locate entities with ${n}`);
+		assert.equal(out.hits.filter(h => h.kind === 'file').length, n, `test.locate files with ${n}`);
+		assert.equal(out.completeness.total, 2 * n);
 		noLimit(out.completeness, `test.locate with ${n}`);
 	}
 	const tstNone = await runTestLocate(exp('test.locate', { subject: 'zznothingmatches' }), ctx);
@@ -421,18 +424,19 @@ test('symbol-locate, test-locate, import-graph, usage-example, concept-resolve, 
 	assert.equal(conNone.hits.length, 0);
 	noLimit(conNone.completeness, 'concept.resolve with 0');
 
-	// manifests.locate: former limit 200. Two manifests are in the fixture already, none of them terraform.
+	// manifests.locate: former limit 200. Two manifests are in the fixture already, a Deployment and a Dockerfile; each
+	// size below is its own family (terraform, then CI), so the filter makes the count exactly 200 and exactly 201.
 	assert.equal((await runManifestsLocate(exp('manifests.locate', { topK: 1 }), ctx)).hits.length, 2, 'a topK is ignored');
-	let seededSoFar = 0;
-	for (const [n, word] of [[200, 'zzmania'], [201, 'zzmanb']] as const) {
-		await seed(Array.from({ length: n }, (_, i) => ent('document', `m${i}.tf`, `infra/${word}/m${i}.tf`, { language: 'hcl', artifact: true, body: 'resource "x" "y" {}\n' })));
-		seededSoFar += n;
-		const out = await runManifestsLocate(exp('manifests.locate', { families: ['terraform'] }), ctx);
-		assert.equal(out.hits.filter(h => h.file.includes(`/${word}/`)).length, n, `manifests.locate with ${n}`);
-		assert.equal(out.hits.length, seededSoFar, 'every terraform manifest is returned');
-		noLimit(out.completeness, `manifests.locate with ${n}`);
-		assert.equal(out.completeness.total, seededSoFar);
-	}
+	await seed(Array.from({ length: 200 }, (_, i) => ent('document', `m${i}.tf`, `infra/zzmania/m${i}.tf`, { language: 'hcl', artifact: true, body: 'resource "x" "y" {}\n' })));
+	const man200 = await runManifestsLocate(exp('manifests.locate', { families: ['terraform'] }), ctx);
+	assert.equal(man200.hits.length, 200, 'manifests.locate with 200');
+	noLimit(man200.completeness, 'manifests.locate with 200');
+	assert.equal(man200.completeness.total, 200);
+	await seed(Array.from({ length: 201 }, (_, i) => ent('document', `w${i}.yml`, `.github/workflows/w${i}.yml`, { language: 'yaml', artifact: true, body: 'on: push\n' })));
+	const man201 = await runManifestsLocate(exp('manifests.locate', { families: ['ci'] }), ctx);
+	assert.equal(man201.hits.length, 201, 'manifests.locate with 201');
+	noLimit(man201.completeness, 'manifests.locate with 201');
+	assert.equal(man201.completeness.total, 201);
 	const manNone = await runManifestsLocate(exp('manifests.locate', { families: ['helm'] }), ctx);
 	assert.equal(manNone.hits.length, 0);
 	noLimit(manNone.completeness, 'manifests.locate with 0');

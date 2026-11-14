@@ -20,4 +20,11 @@ The admission check from src/workflow/code-review/task-review/admission.ts:47-48
 {"attempt":3,"pinned":true,"stored":"c7247958553fe84792e4b1996086ca91f465cec50f4db52b716a115a3bdad358","reprepared":"c7247958553fe84792e4b1996086ca91f465cec50f4db52b716a115a3bdad358","match":true}
 ```
 
-The installed daemon still runs the pre-change code, so the real start of attempt 4 (which repeats this check) happens after the daemon is updated.
+The installed daemon still ran the pre-change code on 2026-11-11, so the real start was left for after the daemon update (section 3).
+
+## 3. Real start on the updated daemon (2026-11-14)
+
+The installed daemon was updated to d3372e83b, which contains this Story. The same packet (pin 92491bba9, 28 commits) was started for real as review board-common-model-s1:
+
+- Attempt 4 (2026-11-14T15:36:21Z) passed projection and was then refused by the separate storage-capacity check (`Complete terminal review envelopes exceed storage capacity`, src/workflow/code-review/task-review/capacity.ts:95). The Story's CR record already held three rounds (1.83 MB pretty-printed), so a fourth round plus the fixed reserve exceeded the 4 MiB `review.maxJsonBytes`. That is a separate limit, not the projection limit this Story fixes. `review.maxJsonBytes` was raised to 8 MiB, the documented recovery.
+- Attempt 5 (2026-11-14T15:44:46Z) was admitted and started reviewing all ten Tasks (t1-t10). Its stored finalScopeIdentity is `56504efb652d4e33d6ed005ed02c10d48e0341c537c8b8eebaecd8eb94d06700`, the identity section 1 computed offline.

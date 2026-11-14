@@ -104,9 +104,11 @@ export async function publishTaskCheckpoint(project: string, epicHash:string, re
    } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
    if(deps.baseline)await requireCapacityBaseline(deps.baseline);
    let history: unknown = priorExists ? current.payload.body : undefined;
+   const existingArchives = archive && history ? validateTaskBody(history).preparationHistories : undefined;
+   if (existingArchives) { const { preparationHistories: _archives, ...working } = validateTaskBody(history); history = working; }
    for (const failure of failures) history = mergeCodeAdmissionFailure(history, reviewId, failure);
    for(const earlier of stored.attempts.slice(0,-1))if(!isCodeAdmission(earlier)&&earlier.header.status==='failed'&&earlier['review-response'].crPublication==='pending')history=mergeTaskSummary(history,failedAttemptSummary(earlier,reviewId));
-   const merged=mergeTaskSummary(history,summary),body=archive?mergePreparationHistory(merged,archive):merged;
+   const merged=mergeTaskSummary(history,summary),body=archive?mergePreparationHistory({ ...merged, ...(existingArchives ? { preparationHistories: existingArchives } : {}) },archive):merged;
    const envelope={...(priorHead??{meta:{workflow:'code-review',schemaVersion:2}}),body,citations:[]};
    requireReview(Buffer.byteLength(JSON.stringify(envelope,null,2)+'\n')<=reviewJsonLimit(),'projection_limit','Merged CR envelope exceeds storage capacity');
    if(isDeepStrictEqual(body,current.payload.body)) return undefined;

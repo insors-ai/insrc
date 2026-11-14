@@ -23,7 +23,7 @@ import { validateTaskBody, codeReviewPreservationDigest, mergePreparationHistory
 import { validatePermanentDesignReview } from '../design-review/history.js';
 import { recordDesignAdmission, requireCurrentDesignApproval } from '../design-review/approval.js';
 import { enforceCodeReviewGate } from '../../code-review/gate.js';
-import { attributionIdentity } from '../../code-review/task-review/attribution-binding.js';
+import { attributionIdentity, bindTaskFinalIdentities } from '../../code-review/task-review/attribution-binding.js';
 import { completedSummary } from '../../code-review/task-review/summary.js';
 import { createRepoLifecycle } from '../../artifact-core/repo-lifecycle.js';
 import type { ReviewRuntime } from '../../../shared/review-preparation.js';
@@ -85,7 +85,9 @@ test('prepared code publication preserves complete input and closed proof across
  next.proof.runtime.committedResultBoundary = { semanticSequence: next.proof.binding.semanticSequence, historyBindingDigest: next.proof.binding.bindingDigest };
  next.checkpoint.context = { generationId: next.proof.binding.generationId, manifestDigest: next.proof.manifestDigest, historyBindingDigest: next.proof.binding.bindingDigest };
  next.proof.evidenceDigest = publicationEvidenceDigest(next.checkpoint);
- const merged = mergePreparationHistory(mergeTaskSummary(record.body, completedSummary(admitted.prepared, second, key.reviewId)), next);
+ const { preparationHistories, ...working } = record.body;
+ assert.throws(() => mergeTaskSummary(record.body, completedSummary(admitted.prepared, second, key.reviewId)), /latest permanent attempt/, 'an old publisher cannot add uncovered attempts to a new capability');
+ const merged = mergePreparationHistory({ ...mergeTaskSummary(working, completedSummary(admitted.prepared, second, key.reviewId)), preparationHistories: preparationHistories! }, next);
  assert.deepEqual(merged.preparationHistories![0]!.earlierProofs, [archive.proof]);
  const rewritten = structuredClone(merged); rewritten.preparationHistories![0]!.checkpoint.attempts[0]!.submitted.functionalSummary = 'rewritten old input';
  rewritten.preparationHistories![0]!.proof.evidenceDigest = publicationEvidenceDigest(rewritten.preparationHistories![0]!.checkpoint);
@@ -142,6 +144,41 @@ test('prepared design publication emits capability three and retries one permane
  await assert.rejects(requireCurrentDesignApproval(f.repo, await lifecycle.store.read(f.id), await lifecycle.history.log(f.id)), /independent|review|author/i);
 });
 
-test('permanent preparation proof refuses unknown capability, open resources and changed input', () => {
+test('permanent preparation proof refuses unknown capability', () => {
  assert.throws(() => validatePublicationProof({ schemaVersion: 99 }, {} as PreparationHistory, { project: '/repo', family: 'code', reviewId: 'x' }), /Unsupported/);
+});
+
+test('prepared code publication preserves an earlier qualified failure without promoting its retained scope headers to signoff', async t => {
+ const f = await fixture(true), key = { project: f.repo, family: 'code' as const, reviewId: 'publication' };
+ const failed = f.checkpoint(), first = failed.attempts[0]!;
+ first.header.status = 'failed'; first['review-response'].tasks = []; first['review-response'].error = 'Original provider failure';
+ await writeFile(reviewWorkerCheckpoint(key), JSON.stringify(failed));
+ const limits = reviewPreparationLimits(join(f.repo, 'missing.json')), capacity = new ReviewPreparationCapacity(limits.cacheMaxBytes);
+ const cold = await CodePreparation.create(key, f.deps.sources, limits, capacity);
+ t.after(async () => { await cold.close(); f.cleanup(); });
+ const admitted = await cold.prepare(f.repo, key.reviewId, 2, f.packet, 'daemon', cold.sources, { operation: 'start', epicHash: hash });
+ await bindTaskFinalIdentities(admitted, [{ taskId: 't1', changeIndexes: [0], testIndexes: [0], decision: { action: 'reassess', reason: 'Prior attempt failed' } }]);
+ const source = await cold.seal(admitted), reader = await PreparedContextReader.open(source, limits, async () => {}, async e => { throw e; });
+ const warm = await CodePreparation.reuse(key, reader, cold.sources, limits, capacity);
+ const prior = await cold.publicationPacket(first.submitted, cold.sources, true, undefined, first.header.derived);
+ const initial = { ...admitted.checkpoint, schemaVersion: 3 as const, runtime: { runtimeId: 'recovered-runtime', inputDigest: source.inputDigest } };
+ const host = await runtime(source, initial); t.after(() => host.store.release(host.handle));
+ const validate = codeHistoryFeedback(new Map([[1, prior], [2, admitted.prepared]]), cold.sources, async () => ({ publication: { artifactId: `CR-${hash}-s1`, preservationDigest: codeReviewPreservationDigest(await readTaskReviewHistory(f.repo, hash, 's1')) } }));
+ const history = await HistoryBindingSession.open(source, initial, { authorize: async () => source, validate, limits, capacity, invalidateSource: async e => { throw e; } });
+ await host.accept(history.latest());
+ const complete = structuredClone(initial), last = complete.attempts.at(-1)!;
+ last.header.status = 'passed'; last.header.completedAt = new Date().toISOString(); last['review-response'].tasks = [structuredClone(f.result)];
+ await host.accept(await history.accept(complete)); const physical = cold.sourceMetrics()!.physicalQueries;
+ const deps = { ...f.deps, sources: cold.sources, preparation: { preparePacket: warm.publicationPacket,
+  authorize: (cp: PreparationHistory) => host.authorize(cp, history.latest()),
+  save: async (cp: PreparationHistory) => { await host.accept(await history.accept(cp)); } } };
+ const published = await publishTaskCheckpoint(f.repo, hash, key.reviewId, deps); await publishTaskCheckpoint(f.repo, hash, key.reviewId, deps);
+ const body = await readTaskReviewHistory(f.repo, hash, 's1'); assert.equal(body.status, 'passed');
+ assert.equal(f.readRecord(published.jsonPath).meta.schemaVersion, 4); assert.equal(cold.sourceMetrics()!.physicalQueries, physical);
+ const summary = body.reviews.find(r => r.attempt === 1)!;
+ assert.deepEqual(summary.failedAttempt, first); assert.equal(summary.finalScopeIdentity, undefined); assert.equal(summary.buildFingerprint, undefined);
+ assert.ok(summary.failedAttempt!.header.finalScopeIdentity); assert.ok(summary.failedAttempt!.header.buildFingerprint);
+ assert.deepEqual(body.preparationHistories![0]!.checkpoint.attempts[0], first);
+ const tampered = structuredClone(body); delete tampered.reviews.find(r => r.attempt === 1)!.failedAttempt!.header.buildFingerprint;
+ assert.throws(() => validateTaskBody(tampered), /history disagrees/);
 });

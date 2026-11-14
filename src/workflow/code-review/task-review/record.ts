@@ -101,6 +101,9 @@ export function validateTaskBody(input: unknown): TaskReviewBody {
   const cp = archive.checkpoint, key = { project: cp.project, family: 'code' as const, reviewId: cp.reviewId };
   requireReview(!histories.has(cp.reviewId), 'CR', 'Duplicate complete review history'); histories.add(cp.reviewId);
   validatePublicationProof(archive.proof, cp, key);
+  const latest = Math.max(...body.reviews.filter(r => r.reviewId === cp.reviewId).map(r => r.attempt),
+   ...(body.admissionFailures ?? []).filter(f => f.reviewId === cp.reviewId).map(f => f.attempt.header.attempt));
+  requireReview(cp.attempts.at(-1)!.header.attempt === latest, 'CR', 'Complete history omits the latest permanent attempt');
   const audits = new Set<number>([archive.proof.runtime.attempt]);
   for (const proof of archive.earlierProofs ?? []) {
    const attempt = proof.runtime.attempt;
@@ -118,8 +121,9 @@ export function validateTaskBody(input: unknown): TaskReviewBody {
     && summary.reviewer === attempt.header.reviewer && summary.completedAt === attempt.header.completedAt
     && isDeepStrictEqual(summary.scope.reviewSet, attempt.submitted.reviewSet) && isDeepStrictEqual(summary.scope.documents, attempt.submitted.documents)
     && summary.scope.storyId === attempt.submitted.storyId && summary.scope.taskId === attempt.submitted.taskId
-    && summary.finalScopeIdentity === attempt.header.finalScopeIdentity && summary.attributionIdentity === attempt.header.attributionIdentity
-    && isDeepStrictEqual(summary.taskScopeIdentities, attempt.header.taskScopeIdentities) && summary.buildFingerprint === attempt.header.buildFingerprint,
+    && (summary.failedAttempt ? isDeepStrictEqual(withoutReviewResourceGuard(summary.failedAttempt), attempt)
+     : summary.finalScopeIdentity === attempt.header.finalScopeIdentity && summary.attributionIdentity === attempt.header.attributionIdentity
+      && isDeepStrictEqual(summary.taskScopeIdentities, attempt.header.taskScopeIdentities) && summary.buildFingerprint === attempt.header.buildFingerprint),
     'CR', 'Complete input/feedback history disagrees with permanent assessment');
   }
  }
@@ -132,7 +136,7 @@ export function mergePreparationHistory(body: TaskReviewBody, archive: NonNullab
   requireReview(next.attempts.length >= old.attempts.length, 'CR', 'Complete history cannot regress');
   const prefix = { ...next, attempts: next.attempts.slice(0, old.attempts.length) };
   requireReview(publicationEvidenceDigest(old) === publicationEvidenceDigest(prefix), 'CR', 'Conflicting complete review history');
-  if (next.attempts.length === old.attempts.length) return body; // preserve original closed audit on lost acknowledgement
+  if (next.attempts.length === old.attempts.length) return validateTaskBody(body); // preserve original closed audit on lost acknowledgement
  }
  const complete = previous ? { ...archive, earlierProofs: [...(previous.earlierProofs ?? []), previous.proof] } : archive;
  return validateTaskBody({ ...body, preparationHistories: [...(body.preparationHistories ?? []).filter(a => a !== previous), complete] });

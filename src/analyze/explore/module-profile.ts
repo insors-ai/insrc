@@ -258,8 +258,8 @@ async function profileDir(
 				break;
 			}
 		}
-		// A file that could not be confirmed was not scanned in full.
-		if (!found && notCovered !== undefined) partlyRead.push(notCovered);
+		// A file that could not be confirmed is never presented as read, whatever its stored body held.
+		if (notCovered !== undefined) partlyRead.push(notCovered);
 	}
 
 	// entityCount + totalBytes across the WHOLE subtree, not just
@@ -328,7 +328,7 @@ async function profileFile(
 		for (const rx of ENTRYPOINT_MARKERS) {
 			if (rx.test(body)) { entrypoints.push(file); break; }
 		}
-		if (entrypoints.length === 0 && notCovered !== undefined) partlyRead.push(notCovered);
+		if (notCovered !== undefined) partlyRead.push(notCovered);
 	}
 	return {
 		path:        file,

@@ -72,12 +72,17 @@ test('an entry point beyond the former first 4,096 characters is recognised and 
 	await write('svc/short.py', 'x = 1\n', 'x = 1\n');                 // no marker, fully read
 	// The file changed after it was indexed: it cannot be confirmed, and the stored body holds no marker.
 	await write('svc/changed.py', 'x = 2\n', 'x = 2\n', long);
+	// Changed after it was indexed, and the stored body holds a marker: the entry point is still found, and the file still not covered.
+	const marked = 'if __name__ == "__main__":\n    run()\n';
+	await write('svc/changed_marked.py', marked, marked, 'x = 3\n');
 
 	const out = await runModuleProfile(exp('module.profile', { path: join(REPO, 'svc') }), ctx);
-	assert.deepEqual([...out.profile.entrypoints].sort(), [join(REPO, 'svc/late_main.py'), join(REPO, 'svc/unstored.py')]);
-	assert.deepEqual(out.completeness.partlyRead, [{
-		what: join(REPO, 'svc/changed.py'), readChars: 'x = 2\n'.length, totalChars: null, totalNote: 'the file changed since it was indexed',
-	}]);
+	assert.deepEqual([...out.profile.entrypoints].sort(), [join(REPO, 'svc/changed_marked.py'), join(REPO, 'svc/late_main.py'), join(REPO, 'svc/unstored.py')]);
+	const note = 'the file changed since it was indexed';
+	assert.deepEqual([...(out.completeness.partlyRead ?? [])].sort((a, b) => (a.what < b.what ? -1 : 1)), [
+		{ what: join(REPO, 'svc/changed.py'), readChars: 'x = 2\n'.length, totalChars: null, totalNote: note },
+		{ what: join(REPO, 'svc/changed_marked.py'), readChars: marked.length, totalChars: null, totalNote: note },
+	]);
 	assert.equal(out.completeness.complete, false);
 	assert.equal(out.completeness.basis, 'filesystem');
 	assert.match(out.completeness.basisNote ?? '', /a marker anywhere in a file/);

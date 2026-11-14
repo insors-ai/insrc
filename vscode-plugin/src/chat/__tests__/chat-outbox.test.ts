@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { projectOutbox, projectSessionOutbox } from '../chat-outbox.js';
-import { sessionQueueWait, type QueuedMessage, type SessionQueueSnapshot } from '../chat-queue-store.js';
+import { REPO_TURN_CAPACITY, sessionQueueWait, type QueuedMessage, type SessionQueueSnapshot } from '../chat-queue-store.js';
 
 let next = 0;
 const row = (sessionId: string, state: QueuedMessage['state'], text: string, extra: Partial<QueuedMessage> = {}): QueuedMessage => {
@@ -18,7 +18,6 @@ test('wait reason uses shared eligibility for FIFO, retries, origin and capacity
   const retryB = row('B', 'retrying', 'retry B', { nextAttemptAt: 300, windowKey: 'unavailable' });
   const missingC = row('C', 'queued', 'closed origin', { windowKey: 'unavailable' });
   const freeD = row('D', 'queued', 'eligible');
-  const activeE = row('E', 'processing', 'second active');
   const lease = (message: QueuedMessage) => ({ sessionId: message.sessionId, seq: message.seq, epoch: message.key,
     pid: 1, windowKey: message.windowKey, heartbeatAt: 200 });
   const snapshot: SessionQueueSnapshot = {
@@ -32,9 +31,13 @@ test('wait reason uses shared eligibility for FIFO, retries, origin and capacity
     assert.equal(projected(snapshot, message), reason);
   }
   assert.equal(projected(snapshot, activeA), 'approval');
-  const full = { ...snapshot, rows: [...snapshot.rows, activeE], leases: [lease(activeA), lease(activeE)] };
+  // One slot short of the limit still runs D; the last free slot taken makes D wait for capacity.
+  const others = Array.from({ length: REPO_TURN_CAPACITY - 1 }, (_, i) => row(`E${i}`, 'processing', `active ${i}`));
+  const oneShort = { ...snapshot, rows: [...snapshot.rows, ...others.slice(1)], leases: [lease(activeA), ...others.slice(1).map(lease)] };
+  assert.equal(projected(oneShort, freeD), undefined);
+  const full = { ...snapshot, rows: [...snapshot.rows, ...others], leases: [lease(activeA), ...others.map(lease)] };
   assert.equal(projected(full, freeD), 'capacity');
-  assert.deepEqual(projectSessionOutbox(full, 'D', { titleOf }).capacity, { occupied: 2, total: 2 });
+  assert.deepEqual(projectSessionOutbox(full, 'D', { titleOf }).capacity, { occupied: REPO_TURN_CAPACITY, total: REPO_TURN_CAPACITY });
   assert.deepEqual(projectSessionOutbox(full, 'idle-draft', { titleOf }).rows, []);
 });
 

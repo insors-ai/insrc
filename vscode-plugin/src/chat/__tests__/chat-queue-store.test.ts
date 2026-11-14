@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { fileURLToPath } from 'node:url';
-import {
+import { REPO_TURN_CAPACITY,
   createChatQueueStore, FULL_NOTE, LEASE_TAKEOVER_MS, QUEUE_RECORD_BOUND, SCHEMA_VERSION, StoreUnavailable,
   type NewMessage, type SqliteDatabase,
 } from '../chat-queue-store.js';
@@ -22,7 +22,7 @@ const msg = (session: string, turn: string, text = `${session}/${turn}`, windowK
 const A = { windowKey: 'w-A', pid: 101 };
 const B = { windowKey: 'w-B', pid: 202 };
 
-test('two connections enforce session FIFO, two slots and immutable lease fencing', () => {
+test('two connections enforce session FIFO, the per-repository slot limit and immutable lease fencing', () => {
   const t = temp();
   const deps = { path: t.path, openDatabase: open, now: () => 100, pluginVersion: 'test', mode: 'session-leases' } as const;
   const a = createChatQueueStore(deps);
@@ -33,8 +33,10 @@ test('two connections enforce session FIFO, two slots and immutable lease fencin
     const a1 = a.enqueue(msg('A', 'first'));
     const a2 = b.enqueue(msg('A', 'second', 'second', B.windowKey));
     const b1 = b.enqueue(msg('B', 'first', 'B', B.windowKey));
+    // Sessions that take the remaining slots, queued before C, so C finds the repository full.
+    const fillers = Array.from({ length: REPO_TURN_CAPACITY - 2 }, (_, i) => b.enqueue(msg(`F${i}`, 'first', `F${i}`, B.windowKey)));
     const c1 = b.enqueue(msg('C', 'first', 'C', B.windowKey));
-    assert.ok(a1.ok && a2.ok && b1.ok && c1.ok);
+    assert.ok(a1.ok && a2.ok && b1.ok && c1.ok && fillers.every((f) => f.ok));
     assert.equal(b.acknowledge(a1.message.seq, B), undefined);
     const original = a.acknowledge(a1.message.seq, A);
     assert.ok(original);
@@ -42,8 +44,9 @@ test('two connections enforce session FIFO, two slots and immutable lease fencin
     assert.equal(b.head(B.windowKey, 100)?.seq, b1.message.seq, 'an older message in A does not block B');
     const second = b.acknowledge(b1.message.seq, B);
     assert.ok(second);
-    assert.equal(b.acknowledge(c1.message.seq, B), undefined);
-    assert.equal(a.leases().length, 2);
+    for (const f of fillers) assert.ok(f.ok && b.acknowledge(f.message.seq, B), 'a free slot runs the next session');
+    assert.equal(b.acknowledge(c1.message.seq, B), undefined, 'no slot is left for C');
+    assert.equal(a.leases().length, REPO_TURN_CAPACITY);
     assert.equal(a.attachCli(original, { pid: 888, startedAt: 3 }), true);
 
     const newA = { ...A, pid: 303 };

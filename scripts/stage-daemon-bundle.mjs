@@ -148,7 +148,8 @@ async function extractArchive(archive, root) {
 }
 
 // The caller supplies a manifest already authenticated by its bootstrap.
-export async function stageVerifiedBundle(archive, manifest, releaseParent) {
+export async function stageVerifiedBundle(archive, manifest, releaseParent, manifestSha256) {
+	if (!/^[a-f0-9]{64}$/.test(manifestSha256)) throw new Error('missing verified manifest digest');
 	const parent = resolve(releaseParent);
 	const info = await lstat(parent);
 	if (await realpath(parent) !== parent || !info.isDirectory() || info.uid !== process.getuid() || (info.mode & 0o077) !== 0) {
@@ -168,7 +169,8 @@ export async function stageVerifiedBundle(archive, manifest, releaseParent) {
 		const final = `${work}.staged`;
 		const fingerprint = await measureBundleRuntime(root);
 		await rename(root, final);
-		return { root: final, runtime: join(final, 'tools/node'), commit: manifest.commit, fingerprint };
+		return { root: final, runtime: join(final, 'tools/node'), commit: manifest.commit, fingerprint,
+			manifestSha256, archiveSha256: manifest.archiveSha256 };
 	} finally {
 		await rm(work, { recursive: true, force: true });
 	}

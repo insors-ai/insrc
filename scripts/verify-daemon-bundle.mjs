@@ -30,7 +30,7 @@ export async function verifyAndStageBundle({ bytes, signature, domain, key, host
 	const manifest = verifyBundleManifest(bytes, signature, domain, key);
 	requireBundleTarget(manifest, host);
 	const manifestSha256 = sha256(bytes);
-	const staged = archive === undefined ? undefined : await stageVerifiedBundle(archive, manifest, releaseParent);
+	const staged = archive === undefined ? undefined : await stageVerifiedBundle(archive, manifest, releaseParent, manifestSha256);
 	return { manifest, manifestSha256, domain, staged };
 }
 

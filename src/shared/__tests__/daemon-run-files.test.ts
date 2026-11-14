@@ -10,6 +10,7 @@ import { once } from 'node:events';
 import { randomUUID } from 'node:crypto';
 import { acquireRunFileGuard, removeOwnedRunFile, runFileGuardConflict, runFileIdentity } from '../daemon-run-files.js';
 import type { ReclaimProbe, RunFileGuard } from '../daemon-run-files.js';
+import { readProcessIdentity, requireProcessIdentity } from '../daemon-process.js';
 import type { ProcessIdentity, ProcessIdentityReader } from '../daemon-process.js';
 import { PATHS } from '../paths.js';
 
@@ -393,6 +394,73 @@ test("a standing claim keeps mutual exclusion across its holder's pause: competi
 	const guardD = acquireReclaim(path, acquiringOwner, pausedOverClaim(() => { /* nothing intervenes */ }));
 	assert.equal(guardD.path, path);
 	guardD.release();
+});
+
+/** A publisher whose claim write fails after the exclusive create: RLIMIT_FSIZE=0 makes the write fail
+ * with EFBIG once the file already exists, exactly the partial-publication window the cleanup covers.
+ * The SIGXFSZ handler keeps the size-limit signal from killing the child so the write surfaces as an
+ * error instead. */
+function writeLimitedPublisher(path: string): { child: ChildProcess; result: Promise<string> } {
+	const module = new URL('../daemon-run-files.ts', import.meta.url).href;
+	const source = `process.on('SIGXFSZ', () => {}); // the size-limit signal must not kill the publisher; the write fails with an error instead
+import { acquireRunFileGuard } from ${JSON.stringify(module)};
+try { const guard = acquireRunFileGuard(process.argv[1]); process.stdout.write('acquired\\n'); process.on('message', () => { guard.release(); process.exit(0); }); }
+catch { process.stdout.write('conflict\\n'); process.on('message', () => process.exit(0)); }`;
+	const child = spawn('bash', ['-c', 'ulimit -f 0; exec "$@"', '--', process.execPath, '--import', 'tsx', '--input-type=module', '-e', source, path], { stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
+	children.push(child); child.stdout!.setEncoding('utf8');
+	const result = new Promise<string>((resolve, reject) => {
+		let output = '';
+		child.stdout!.on('data', (chunk: string) => { output += chunk; if (output.includes('\n')) resolve(output.trim()); });
+		child.on('error', reject);
+		child.on('exit', () => { if (output === '') reject(new Error('publisher exited without a result')); });
+	});
+	return { child, result };
+}
+
+test('a claim publication that fails after creation leaves no claim holding the guard', { skip: process.platform === 'win32', timeout: 10000 }, async () => {
+	const path = join(dir, 'guard');
+	staleGuard(path, 'linux:stale-boot:111', 'nonce-partial');
+	const publisher = writeLimitedPublisher(path);
+	assert.equal(await publisher.result, 'conflict'); // the write-limited publisher withholds
+	assert.deepEqual(readdirSync(path).sort(), ['owner.json']); // its partial claim was cleaned up, leaving exactly the stale record
+	assert.equal(quarantinedSiblings(path).length, 0); // nothing was renamed
+	// The failed publisher is still alive: an honest reader would honor its claim forever if the partial
+	// publication had been abandoned, so the recovery succeeding here proves the cleanup.
+	const guard = acquireRunFileGuard(path);
+	assert.equal(guard.path, path);
+	const names = quarantinedSiblings(path);
+	assert.equal(names.length, 1);
+	assert.deepEqual(readdirSync(join(dir, names[0]!)), ['owner.json']); // the quarantined evidence keeps exactly the stale record
+	guard.release();
+	publisher.child.send('exit');
+	await once(publisher.child, 'exit');
+});
+
+test('a quarantine rename failure retires the caller\'s claim and a live retry recovers', () => {
+	const path = join(dir, 'guard');
+	staleGuard(path, 'linux:stale-boot:111', 'nonce-renamefail');
+	// Fail the quarantine rename outright: the parent directory becomes unwritable inside the
+	// before-quarantine probe, after the claim is published and verified, before the rename loop.
+	const beforeQuarantine: ReclaimProbe = (phase) => {
+		if (phase !== 'before-quarantine') return;
+		chmodSync(dir, 0o500);
+	};
+	let failed: unknown;
+	try {
+		try { acquireRunFileGuard(path, requireProcessIdentity(process.pid), readProcessIdentity, beforeQuarantine); }
+		catch (error) { failed = error; }
+	} finally {
+		chmodSync(dir, 0o700); // always restore, so the per-test fixture can be cleaned up either way
+	}
+	assert.ok(failed instanceof Error && (failed as NodeJS.ErrnoException).code === 'EACCES', `the rename failure surfaced: ${String(failed)}`);
+	assert.equal(readdirSync(path).filter((entry) => entry.startsWith('reclaim.claim')).length, 0); // the caller's claim was retired, not abandoned
+	assert.equal(quarantinedSiblings(path).length, 0); // the guard was never moved
+	// The same caller is still alive and retries with an honest reader: no standing claim of its own
+	// holds the guard hostage, so the recovery proceeds.
+	const guard = acquireRunFileGuard(path);
+	assert.equal(guard.path, path);
+	assert.equal(quarantinedSiblings(path).length, 1);
+	guard.release();
 });
 
 test('acquireRunFileGuard leaves a symlink guard as a conflict', () => {

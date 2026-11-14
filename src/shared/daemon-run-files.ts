@@ -211,7 +211,14 @@ function claimGuardForReclaim(path: string, owner: ProcessIdentity, read: Proces
 	const nonce = randomUUID(), evidence = JSON.stringify({ owner, nonce });
 	const mineName = `${RECLAIM_CLAIM}.${nonce}`;
 	try { writeFileSync(join(path, mineName), evidence, { flag: 'wx', mode: 0o600 }); }
-	catch { return undefined; } // a claim that cannot be created leaves the guard untouched and withholds
+	catch {
+		// The write may have failed after the exclusive create already made the file (ENOSPC), leaving
+		// this caller's own partial claim standing unparseable — a claim every later reclaimer must honor
+		// and none can read. The name is uniquely this caller's, so removing the partial file can never
+		// touch another reclaimer's claim; an unlink of a file that was never created is a no-op.
+		try { unlinkSync(join(path, mineName)); } catch { /* best effort */ }
+		return undefined; // a claim that cannot be published leaves the guard untouched and withholds
+	}
 	const withhold = (): undefined => { retireOwnClaim(path, nonce); return undefined; };
 	let standing: string[];
 	try { standing = readdirSync(path).filter((entry) => entry.startsWith(RECLAIM_CLAIM) && entry !== mineName); }
@@ -305,6 +312,10 @@ function quarantineDeadGuard(path: string, owner: ProcessIdentity, read: Process
 			if (code === 'ENOTEMPTY' || code === 'EEXIST') continue;
 			// A competing starter quarantined it first; the path may already be free.
 			if (code === 'ENOENT') break;
+			// The rename failed outright and the guard was not moved: retire this caller's own claim so its
+			// live process cannot hold the guard hostage after the failure, then surface the error with
+			// the guard untouched exactly as the LLD requires.
+			retireOwnClaim(path, claim.nonce);
 			throw error;
 		}
 	}

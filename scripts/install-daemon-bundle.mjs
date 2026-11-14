@@ -1,12 +1,37 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { execFileSync } from 'node:child_process';
-import { chmod, lstat, mkdir, open, realpath } from 'node:fs/promises';
+import { chmod, link, lstat, mkdir, mkdtemp, open, realpath, rm } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readBoundedRegular } from './verify-daemon-bundle.mjs';
 import { sha256, verifyBundleManifest } from './daemon-bundle-metadata.mjs';
 import { measureBundleRuntime } from './stage-daemon-bundle.mjs';
+
+export async function retainBundleTrustAnchor(trustRoot, domain, key, beforePublish) {
+	if (!['production', 'qualification'].includes(domain)) throw new Error('invalid bundle trust domain');
+	const anchor = join(trustRoot, domain + '.pem');
+	const staging = await mkdtemp(join(trustRoot, '.anchor-'));
+	try {
+		const temporary = join(staging, 'key.pem');
+		const file = await open(temporary, 'wx', 0o600);
+		try {
+			await file.writeFile(key);
+			await file.chmod(0o400);
+			await file.sync();
+		} finally { await file.close(); }
+		await beforePublish?.();
+		// A same-volume hard link publishes the complete inode atomically
+		// and cannot replace a key another installer has already published.
+		try { await link(temporary, anchor); }
+		catch (error) { if (error.code !== 'EEXIST') throw error; }
+		const dir = await open(trustRoot, 'r');
+		try { await dir.sync(); } finally { await dir.close(); }
+		const parent = await open(dirname(trustRoot), 'r');
+		try { await parent.sync(); } finally { await parent.close(); }
+		if (!(await readBoundedRegular(anchor, 1024)).equals(key)) throw new Error('bootstrap key differs from the installed trust anchor');
+	} finally { await rm(staging, { recursive: true, force: true }); }
+}
 
 export async function pinnedRecovery(journal, { stateRoot, root, domain, key }) {
 	if (journal.version !== 1 || journal.root !== stateRoot) throw new Error('invalid bundle recovery journal identity');
@@ -55,14 +80,7 @@ async function main() {
 	const trustInfo = await lstat(trustRoot);
 	if (!trustInfo.isDirectory() || trustInfo.uid !== process.getuid() || (trustInfo.mode & 0o077)) throw new Error('unsafe bundle trust directory');
 	const key = await readBoundedRegular(new URL(`./trust/${domain}.pem`, import.meta.url), 1024);
-	const anchor = join(trustRoot, domain + '.pem');
-	try {
-		const file = await open(anchor, 'wx', 0o600);
-		try { await file.writeFile(key); await file.sync(); } finally { await file.close(); }
-		const dir = await open(trustRoot, 'r');
-		try { await dir.sync(); } finally { await dir.close(); }
-	} catch (error) { if (error.code !== 'EEXIST') throw error; }
-	if (!(await readBoundedRegular(anchor, 1024)).equals(key)) throw new Error('bootstrap key differs from the installed trust anchor');
+	await retainBundleTrustAnchor(trustRoot, domain, key);
 
 	const journal = await readBoundedRegular(join(stateRoot, 'managed-lifecycle/journal.json'), 384 * 1024)
 		.catch(error => { if (error.code !== 'ENOENT') throw error; });

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { generateKeyPairSync, sign } from 'node:crypto';
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, linkSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -19,8 +19,28 @@ const manifest = {
 };
 const encode = (value: object) => Buffer.from(JSON.stringify(value));
 const { verifyAndStageBundle } = await import(new URL('../verify-daemon-bundle.mjs', import.meta.url).href);
-const { pinnedRecovery } = await import(new URL('../install-daemon-bundle.mjs', import.meta.url).href);
+const installer = new URL('../install-daemon-bundle.mjs', import.meta.url);
+const { pinnedRecovery, retainBundleTrustAnchor } = await import(installer.href);
 const { measureBundleRuntime } = await import(new URL('../stage-daemon-bundle.mjs', import.meta.url).href);
+
+test('an interrupted anchor publication can be retried without replacing an existing key', async () => {
+	const root = mkdtempSync(join(tmpdir(), 'insrc-anchor-publish-'));
+	try {
+		const key = Buffer.from('bootstrap key');
+		const destination = join(root, 'production.pem');
+		const interrupted = spawnSync(process.execPath, ['--input-type=module', '-e', `
+			import { retainBundleTrustAnchor } from ${JSON.stringify(installer.href)};
+			await retainBundleTrustAnchor(process.argv[1], 'production', Buffer.from('bootstrap key'),
+				() => process.kill(process.pid, 'SIGKILL'));
+		`, root], { timeout: 5000 });
+		assert.equal(interrupted.signal, 'SIGKILL');
+		assert.ok(!existsSync(destination));
+		await retainBundleTrustAnchor(root, 'production', key);
+		assert.deepEqual(readFileSync(destination), key);
+		await assert.rejects(retainBundleTrustAnchor(root, 'production', Buffer.from('replacement')), /differs/);
+		assert.deepEqual(readFileSync(destination), key);
+	} finally { rmSync(root, { recursive: true, force: true }); }
+});
 
 test('installed trust rejects a self-signed proof and recovery selects only the pinned runtime', async () => {
 	const dir = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-bundle-trust-')));
@@ -47,6 +67,11 @@ test('installed trust rejects a self-signed proof and recovery selects only the 
 			fingerprint, manifestBase64: bytes.toString('base64'),
 			signatureBase64: signed(trusted.privateKey),
 		});
+		await verifyManagedBundleManifest(proof, manifest.commit, stateRoot);
+		// A process that stops immediately after atomic publication can
+		// leave the private temporary name linked to the published key.
+		const staging = mkdtempSync(join(trustRoot, '.anchor-'));
+		linkSync(join(trustRoot, 'production.pem'), join(staging, 'key.pem'));
 		await verifyManagedBundleManifest(proof, manifest.commit, stateRoot);
 		await assert.rejects(verifyManagedBundleManifest({ ...proof, signatureBase64: signed(other.privateKey) }, manifest.commit, stateRoot), /manifest changed/);
 		assert.throws(() => readManagedBundleProof({ ...proof, publicKey: other.publicKey }), /invalid bundle proof/);

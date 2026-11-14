@@ -36,7 +36,9 @@ export async function verifyManagedBundleManifest(proof: ManagedBundleProof, rel
 	let pem: Buffer;
 	try {
 		const info = await anchor.stat();
-		if (!info.isFile() || info.uid !== process.getuid?.() || info.nlink !== 1 || (info.mode & 0o077) !== 0 ||
+		// A publisher interrupted after linking can leave a second name
+		// for this complete inode in its private staging directory.
+		if (!info.isFile() || info.uid !== process.getuid?.() || (info.mode & 0o077) !== 0 ||
 			info.size < 1 || info.size > 1024) throw new Error('unsafe bundle trust anchor');
 		const buffer = Buffer.alloc(1025);
 		const { bytesRead } = await anchor.read(buffer);

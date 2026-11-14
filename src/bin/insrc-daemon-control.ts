@@ -1,6 +1,6 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 
-import { access, lstat, mkdir, readFile, readdir, realpath, rm } from 'node:fs/promises';
+import { access, lstat, mkdir, readdir, realpath, rm } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import { basename, join } from 'node:path';
 import { stopDaemon } from '../cli/services/daemon.js';
@@ -64,7 +64,15 @@ async function main(command: string): Promise<void> {
 			|| !/^[a-f0-9]{40}$/.test(releaseId) || Boolean(legacyRoot) !== Boolean(legacyRuntime)) {
 			throw new Error('activate-bundle requires a staged bundle and optionally a legacy checkout and runtime');
 		}
-		const proof = readManagedBundleProof(JSON.parse(await readFile('/dev/stdin', 'utf8')));
+		const proofChunks: Buffer[] = [];
+		let proofBytes = 0;
+		for await (const chunk of process.stdin) {
+			const bytes = Buffer.from(chunk);
+			proofBytes += bytes.length;
+			if (proofBytes > 96 * 1024) throw new Error('bundle activation proof exceeds its size limit');
+			proofChunks.push(bytes);
+		}
+		const proof = readManagedBundleProof(JSON.parse(Buffer.concat(proofChunks).toString('utf8')));
 		await mkdir(PATHS.insrc, { mode: 0o700, recursive: true });
 		const stateRoot = await realpath(PATHS.insrc);
 		const rootInfo = await lstat(stateRoot);

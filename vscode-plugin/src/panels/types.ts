@@ -145,8 +145,14 @@ export interface PanelHandle extends DisposableLike {
    * host can re-render on-demand. Wraps webview.onDidReceiveMessage.
    */
   onMessage(listener: (message: unknown) => void): void;
-  /** Post a host->webview message (S005 sc9 amendment). Wraps webview.postMessage. */
-  postMessage(message: unknown): void;
+  /**
+   * Post a host->webview message (S005 sc9 amendment). Wraps webview.postMessage.
+   * ISSUE-3183af2a: delivery outcome is part of the contract — resolves `true` when
+   * delivered, `false` when the webview cannot take the message (not ready / disposed),
+   * and may reject on a disposed panel. A dropped post must be logged by the production
+   * adapter, never swallowed. Returns the delivery promise.
+   */
+  postMessage(message: unknown): PromiseLike<boolean>;
 }
 
 /** The `window.createWebviewPanel` slice the host uses (one factory per panel kind). */

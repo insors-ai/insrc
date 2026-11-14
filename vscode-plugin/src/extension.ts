@@ -472,9 +472,7 @@ export function activate(context: vscode.ExtensionContext): void {
         postMessage: (message) => {
           // A webview post failure is non-fatal; swallow the rejection (never an
           // unhandled rejection). The host does not depend on the delivery result.
-          panel.webview.postMessage(message).then(undefined, () => {
-            /* ignore */
-          });
+          return panel.webview.postMessage(message).then(undefined, () => false);
         },
         dispose: () => panel.dispose(),
       };
@@ -987,13 +985,16 @@ export function activate(context: vscode.ExtensionContext): void {
           // ISSUE-3183af2a: a dropped post must be VISIBLE, not silent. VS Code resolves
           // false when the webview cannot take the message (disposed / hidden beyond
           // retry) and rejects on a disposed panel — both mean the message was dropped,
-          // so log each case instead of swallowing it.
-          panel.webview.postMessage(message).then(
+          // so log each case instead of swallowing it. The delivery promise is returned
+          // so the panels controller's wrap() can log a drop at its own boundary too.
+          return panel.webview.postMessage(message).then(
             (delivered) => {
               if (delivered === false) panelLog.warn('insrc: a scratchpad webview postMessage was not delivered (webview not ready or disposed) — the message was dropped');
+              return delivered;
             },
             () => {
               panelLog.warn('insrc: a scratchpad webview postMessage rejected (panel disposed) — the message was dropped');
+              return false;
             },
           );
         },

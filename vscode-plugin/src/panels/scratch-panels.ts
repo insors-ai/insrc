@@ -225,7 +225,27 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
     reveal: (preserveFocus?: boolean | undefined) => panel.reveal(preserveFocus),
     onDidDispose: (l) => panel.onDidDispose(l),
     onMessage: (l) => panel.onMessage(l),
-    postMessage: (m) => panel.postMessage(m),
+    // ISSUE-3183af2a: surface a dropped post instead of swallowing it. The factory
+    // adapter already logs false/rejection via panelLog; the controller logs through its
+    // own injected logger so the drop is visible whichever boundary drops it. Best-effort:
+    // a logging failure must never break the caller's post.
+    postMessage: (m) => {
+      try {
+        return Promise.resolve(panel.postMessage(m)).then(
+          (delivered) => {
+            if (delivered === false) log.warn('insrc: a scratchpad webview postMessage was not delivered (webview not ready or disposed) — the message was dropped');
+            return delivered;
+          },
+          () => {
+            log.warn('insrc: a scratchpad webview postMessage rejected (panel disposed) — the message was dropped');
+            return false;
+          },
+        );
+      } catch (err) {
+        log.warn(`insrc: a scratchpad webview postMessage threw synchronously — the message was dropped — ${String(err)}`);
+        return Promise.resolve(false);
+      }
+    },
     dispose: () => panel.dispose(),
     setTitle: (title) => (deps.setPanelTitle ?? (() => {}))(panel, title),
   });

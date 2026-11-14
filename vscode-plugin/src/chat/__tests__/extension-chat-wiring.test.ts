@@ -491,10 +491,18 @@ test('extension-chat-wiring.test.ts: extension.ts constructs createScratchStore 
   const host = read(join(HERE, '..', 'scratch-host.ts'));
   assert.doesNotMatch(host, /from ['"]vscode['"]/, 'scratch-host.ts imports nothing from vscode');
   // ISSUE-3183af2a: the scratch panel factory's postMessage adapter no longer swallows a
-  // dropped post — a false delivery result or a rejection is logged via panelLog.
-  assert.match(b, /panel\.webview\.postMessage\(message\)\.then\(\s*\(delivered\)/, 'the scratch factory checks the postMessage delivery result');
+  // dropped post — a false delivery result or a rejection is logged via panelLog, and the
+  // delivery promise is RETURNED so the panels controller's wrap() can log at its boundary too.
+  assert.match(b, /return panel\.webview\.postMessage\(message\)\.then\(\s*\(delivered\)/, 'the scratch factory checks the postMessage delivery result and returns the promise');
   assert.match(b, /delivered === false\)\s*panelLog\.warn\(/, 'an undelivered post (webview not ready / disposed) is logged, not silent');
-  assert.match(b, /\(\)\s*=>\s*\{\s*\n?\s*panelLog\.warn\(/, 'a rejected post (disposed panel) is logged, not silent');
+  assert.match(b, /\(\)\s*=>\s*\{\s*\n?\s*panelLog\.warn\([\s\S]*?return false;/, 'a rejected post (disposed panel) is logged and resolves false, not silent');
+  // The controller's own wrap() logs drops through the injected logger (behavioral test in
+  // scratch-panel.test.ts); here we pin the source wiring so a regression is caught.
+  const sp = read(join(HERE, '..', '..', 'panels', 'scratch-panels.ts'));
+  assert.match(sp, /return Promise\.resolve\(panel\.postMessage\(m\)\)\.then\(/, 'wrap() consumes the delivery promise');
+  assert.match(sp, /delivered === false\)\s*log\.warn\(/, 'wrap() logs a false delivery via the injected logger');
+  assert.match(sp, /\(\)\s*=>\s*\{\s*\n?\s*log\.warn\(/, 'wrap() logs a rejection via the injected logger');
+  assert.match(sp, /catch \(err\) \{\s*\n?\s*log\.warn\([\s\S]*?threw synchronously/, 'wrap() contains and logs a synchronous throw');
 });
 
 test('extension-chat-wiring.test.ts: scratch-new title acquisition end-to-end — prompt cancelled -> no create + unchanged list; prompt answered -> create + list refresh + document open', async () => {

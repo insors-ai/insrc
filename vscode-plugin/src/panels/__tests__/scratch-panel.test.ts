@@ -49,7 +49,13 @@ class FakePanel implements PanelHandle {
   reveal(preserveFocus?: boolean | undefined): void { this.reveals += 1; this.revealFlags.push(preserveFocus); }
   onDidDispose(listener: () => void): void { this.disposeListeners.push(listener); }
   onMessage(listener: (message: unknown) => void): void { this.messageListeners.push(listener); }
-  postMessage(message: unknown): void { this.posted.push(message); }
+  /** Delivery behavior is controllable: `delivery` is the resolved value, or 'reject' to simulate a disposed panel. */
+  delivery: boolean | 'reject' = true;
+  postMessage(message: unknown): Promise<boolean> {
+    this.posted.push(message);
+    if (this.delivery === 'reject') return Promise.reject(new Error('disposed'));
+    return Promise.resolve(this.delivery);
+  }
   dispose(): void { this.disposed = true; for (const l of [...this.disposeListeners]) l(); }
   userClose(): void { for (const l of [...this.disposeListeners]) l(); }
   injectMessage(message: unknown): void { for (const l of [...this.messageListeners]) l(message); }
@@ -529,6 +535,45 @@ test('scratch-panel.test.ts: ISSUE-3183af2a — a FRESH scratch-new open (no cac
   panel.injectMessage({ v: 1, payload: { type: 'scratch-ready', gen: 1 } });
   await new Promise((r) => setTimeout(r, 10));
   assert.deepEqual(contentsOf(panel).length, 2, 'a duplicate ready re-posts nothing');
+});
+
+test('scratch-panel.test.ts: ISSUE-3183af2a CR-MED — wrap() behaviorally logs a dropped post for BOTH delivery outcomes: false (not ready / disposed) and a rejection (disposed panel); a delivered post logs nothing', async () => {
+  const h = harness();
+  await seed(h, 'drop.md', 'D', 1);
+  const wrapped = await h.controller.openDocument('drop.md');
+  assert.ok(wrapped !== undefined, 'the open returned the wrapped handle');
+  const panel = h.panels.at(-1)!;
+  h.warns.length = 0;
+  // Delivered post: no warning.
+  panel.delivery = true;
+  wrapped!.postMessage({ v: 1, payload: { type: 'scratch-content', text: 'x' } });
+  await new Promise((r) => setTimeout(r, 10));
+  assert.deepEqual(h.warns, [], 'a delivered post logs nothing');
+  // False delivery: warned once, and the post still went out (recorded by the fake).
+  h.warns.length = 0;
+  panel.delivery = false;
+  const postedBefore = panel.posted.length;
+  wrapped!.postMessage({ v: 1, payload: { type: 'scratch-content', text: 'y' } });
+  await new Promise((r) => setTimeout(r, 10));
+  assert.equal(panel.posted.length, postedBefore + 1, 'the post itself still went out');
+  assert.equal(h.warns.length, 1, 'a false delivery logs exactly one warning');
+  assert.match(h.warns[0]!, /not delivered \(webview not ready or disposed\)/, 'the false-delivery warning names the dropped message');
+  // Rejected post (disposed panel): warned with the rejection wording.
+  h.warns.length = 0;
+  panel.delivery = 'reject';
+  wrapped!.postMessage({ v: 1, payload: { type: 'scratch-content', text: 'z' } });
+  await new Promise((r) => setTimeout(r, 10));
+  assert.equal(h.warns.length, 1, 'a rejected post logs exactly one warning');
+  assert.match(h.warns[0]!, /rejected \(panel disposed\)/, 'the rejection warning names the dropped message');
+  // A synchronous throw is logged too, and never propagates to the caller.
+  h.warns.length = 0;
+  panel.delivery = true;
+  const orig = panel.postMessage.bind(panel);
+  panel.postMessage = (m: unknown): Promise<boolean> => { orig(m); throw new Error('sync boom'); };
+  assert.doesNotThrow(() => wrapped!.postMessage({ v: 1, payload: { type: 'scratch-content', text: 'w' } }), 'a synchronous throw is contained');
+  await new Promise((r) => setTimeout(r, 10));
+  assert.equal(h.warns.length, 1, 'a synchronous throw logs one warning');
+  assert.match(h.warns[0]!, /threw synchronously/, 'the sync-throw warning is distinct');
 });
 
 test('scratch-panel.test.ts: a FAILED row-initiated delete re-renders the browse table WITH the delete error row (the undeleted scratch stays visible but the failure is surfaced, not logged away)', async () => {

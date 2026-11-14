@@ -23,6 +23,15 @@ export function candidateIdentity(version, commit) {
 		archiveName: `insrc-daemon-${version}-darwin-arm64.tar.gz` };
 }
 
+export function dispatchOrigin(env, commit) {
+	const { GITHUB_REF: ref, GITHUB_SHA: sha, GITHUB_RUN_ID: runId, GITHUB_RUN_ATTEMPT: runAttempt } = env;
+	const lane = ref === 'refs/heads/main' ? 'release' : ref === 'refs/heads/v2' ? 'development' : undefined;
+	if (!lane || sha !== commit || !/^[1-9][0-9]{0,19}$/.test(runId ?? '') || !/^[1-9][0-9]{0,2}$/.test(runAttempt ?? '')) {
+		throw new Error('invalid Actions candidate origin');
+	}
+	return { branch: ref.slice('refs/heads/'.length), lane, runId, runAttempt };
+}
+
 export async function stageRuntime(source, stage, runtime) {
 	for (const name of required) {
 		if (!(await lstat(join(source, name))).isFile()) throw new Error(`missing regular runtime file: ${name}`);
@@ -96,9 +105,11 @@ async function main([version, commit, directory]) {
 		const hash = createHash('sha256');
 		for await (const chunk of createReadStream(archive)) hash.update(chunk);
 		const archiveSha256 = hash.digest('hex');
-		const metadata = { schemaVersion: 1, ...identity, archiveSha256, archiveBytes: (await stat(archive)).size };
+		const origin = process.env.GITHUB_ACTIONS === 'true' ? dispatchOrigin(process.env, commit) : undefined;
+		const metadata = { schemaVersion: 1, ...identity, ...origin, archiveSha256, archiveBytes: (await stat(archive)).size };
 		await writeFile(join(output, 'candidate.json'), JSON.stringify(metadata, null, 2) + '\n', { flag: 'wx' });
-		if (process.env.GITHUB_OUTPUT) await appendFile(process.env.GITHUB_OUTPUT, `archive_sha256=${archiveSha256}\n`);
+		if (process.env.GITHUB_OUTPUT && origin) await appendFile(process.env.GITHUB_OUTPUT,
+			`archive_sha256=${archiveSha256}\nartifact_name=daemon-candidate-${origin.lane}-${commit}-${origin.runAttempt}\n`);
 		process.stdout.write(`${archiveSha256}  ${archive}\n`);
 	} finally {
 		await rm(stage, { recursive: true, force: true });

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       commit:
-        description: Full SHA of the selected protected v2 revision
+        description: Full SHA of the selected main or v2 revision
         required: true
         type: string
       version:
@@ -17,7 +17,11 @@ permissions:
 
 jobs:
   build:
-    if: github.ref == 'refs/heads/v2' && github.ref_protected
+    if: >-
+      inputs.commit == github.sha &&
+      (github.ref == 'refs/heads/v2' ||
+      (github.ref == 'refs/heads/main' && github.ref_protected &&
+      vars.INSRC_DAEMON_MAIN_RELEASE_READY == 'true'))
     runs-on: macos-15
     timeout-minutes: 25
     env:
@@ -50,7 +54,7 @@ jobs:
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         id: upload
         with:
-          name: daemon-candidate-${{ github.sha }}-${{ github.run_attempt }}
+          name: ${{ steps.package.outputs.artifact_name }}
           path: ${{ runner.temp }}/daemon-candidate/
           if-no-files-found: error
           compression-level: 0

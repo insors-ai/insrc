@@ -7,7 +7,7 @@ import { load } from 'js-yaml';
 
 // The release packager is a plain Node script, independent of the TypeScript build.
 const script = new URL('../package-daemon-candidate.mjs', import.meta.url);
-const { candidateIdentity, stageRuntime } = await import(script.href);
+const { candidateIdentity, dispatchOrigin, stageRuntime } = await import(script.href);
 
 test('candidate layout survives moving the runtime and rejects external links', async () => {
 	const fixture = await mkdtemp(join(tmpdir(), 'insrc-candidate-test-'));
@@ -67,6 +67,13 @@ test('candidate workflow accepts only the protected dispatch revision and has no
 	const build = yaml.jobs['build'];
 	assert.ok(build);
 	assert.match(build.if, /github\.ref_protected/);
+	assert.match(build.if, /refs\/heads\/v2.*refs\/heads\/main.*INSRC_DAEMON_MAIN_RELEASE_READY == 'true'/);
+	assert.ok(!('environment' in build));
+	const env = { GITHUB_REF: 'refs/heads/v2', GITHUB_SHA: sha, GITHUB_RUN_ID: '123', GITHUB_RUN_ATTEMPT: '2' };
+	assert.deepEqual(dispatchOrigin(env, sha), { branch: 'v2', lane: 'development', runId: '123', runAttempt: '2' });
+	assert.equal(dispatchOrigin({ ...env, GITHUB_REF: 'refs/heads/main' }, sha).lane, 'release');
+	assert.throws(() => dispatchOrigin({ ...env, GITHUB_REF: 'refs/tags/main' }, sha), /origin/);
+	assert.throws(() => dispatchOrigin(env, 'b'.repeat(40)), /origin/);
 	const commands = build.steps.map(step => step.run).filter(Boolean).join('\n');
 	assert.match(commands, /REQUESTED_COMMIT.*GITHUB_SHA/);
 	assert.doesNotMatch(commands, /npm (?:run )?test|--test|gh release/);

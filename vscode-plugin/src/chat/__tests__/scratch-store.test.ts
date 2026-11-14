@@ -160,9 +160,12 @@ test('scratch-store.test.ts: ENOENT mapping — readdir ENOENT -> []; absence be
   await fake.fs.mkdir(ROOT);
   // Absence before open -> ScratchNotFound.
   await assert.rejects(store.readScratch('20260101-000000-gone.md'), (e: unknown) => e instanceof ScratchNotFound);
-  // Idempotent delete of a missing file: success, and only lstat+unlink attempted.
+  // Idempotent delete of a missing file: success with ZERO mutations — the lstat
+  // ENOENT short-circuits before any unlink is attempted on the missing id.
+  const mark2 = fake.calls.length;
   await store.deleteScratch('20260101-000000-gone.md');
-  assert.ok(fake.ops('unlink').some((c) => c.path.endsWith('gone.md')) || true);
+  assert.deepEqual(fake.mutationsSince(mark2), [], 'a missing-file delete records no mutation at all');
+  assert.equal(fake.ops('unlink').filter((c) => c.path.endsWith('gone.md')).length, 0, 'no unlink was attempted on the missing id');
 
   // Disappearance between open and read: the fake's fd read throws ENOENT -> ScratchNotFound.
   seed(fake, '20260101-000000-race.md', 'data', 10);

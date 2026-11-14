@@ -38,19 +38,19 @@ class FakePanel implements PanelHandle {
   disposed = false;
   title: string;
   readonly posted: unknown[] = [];
-  private disposeListener: (() => void) | undefined;
-  private messageListener: ((message: unknown) => void) | undefined;
+  private readonly disposeListeners: Array<() => void> = [];
+  private readonly messageListeners: Array<(message: unknown) => void> = [];
   constructor(readonly viewType: string, title: string) {
     this.title = title;
   }
   setHtml(html: string): void { this.html = html; }
   reveal(): void { this.reveals += 1; }
-  onDidDispose(listener: () => void): void { this.disposeListener = listener; }
-  onMessage(listener: (message: unknown) => void): void { this.messageListener = listener; }
+  onDidDispose(listener: () => void): void { this.disposeListeners.push(listener); }
+  onMessage(listener: (message: unknown) => void): void { this.messageListeners.push(listener); }
   postMessage(message: unknown): void { this.posted.push(message); }
-  dispose(): void { this.disposed = true; this.disposeListener?.(); }
-  userClose(): void { this.disposeListener?.(); }
-  injectMessage(message: unknown): void { this.messageListener?.(message); }
+  dispose(): void { this.disposed = true; for (const l of [...this.disposeListeners]) l(); }
+  userClose(): void { for (const l of [...this.disposeListeners]) l(); }
+  injectMessage(message: unknown): void { for (const l of [...this.messageListeners]) l(message); }
 }
 
 interface Harness {
@@ -418,6 +418,62 @@ test('scratch-panel.test.ts: scratch-ready vs read-completion ordering — ready
     // the OLD generation's copy was retired at the generation bump and is NOT replayed.
     assert.deepEqual(contentsOf(panel2), ['content B', 'content B', 'content C', 'content C'], 'the new generation replays only its own content — the old generation was retired, never re-posted');
   }
+
+  // Order 3: the read completes BEFORE ready (a replay copy is retained), then the user
+  // CLOSES the panel before any ready arrives. The dispose must release the retained
+  // content: a reopen + ready must deliver ONLY the new document's content, never the
+  // closed generation's.
+  {
+    const h = harness();
+    await seed(h, 'a.md', 'content A', 1);
+    await seed(h, 'b.md', 'content B', 2);
+    const c = createScratchPanels({ panels: h.factory, store: h.store, genNonce: () => 'N', setPanelTitle: () => {}, onSendToChat: () => {} });
+    await c.openDocument('a.md'); // read resolves immediately, pre-ready: retained
+    await new Promise((r) => setTimeout(r, 10));
+    const panelA = h.panels.at(-1)!;
+    assert.deepEqual(contentsOf(panelA), ['content A'], 'the pre-ready read posted once');
+    panelA.userClose(); // close BEFORE scratch-ready: the retained copy must be released
+    await new Promise((r) => setTimeout(r, 10));
+    // A late ready from the disposed webview must not re-post the closed generation.
+    panelA.injectMessage({ v: 1, payload: { type: 'scratch-ready' } });
+    await new Promise((r) => setTimeout(r, 10));
+    assert.deepEqual(contentsOf(panelA), ['content A'], 'no replay after close — the retained copy was released by the dispose');
+    // Reopen b.md: the fresh panel gets only its own content, never the closed A again.
+    await c.openDocument('b.md');
+    await new Promise((r) => setTimeout(r, 10));
+    const panelB = h.panels.at(-1)!;
+    assert.notEqual(panelB, panelA, 'reopening after close creates a fresh panel');
+    panelB.injectMessage({ v: 1, payload: { type: 'scratch-ready' } });
+    await new Promise((r) => setTimeout(r, 10));
+    assert.deepEqual(contentsOf(panelB), ['content B', 'content B'], 'the reopened panel replays only its own content — the closed generation left nothing behind');
+    assert.ok(!contentsOf(panelB).includes('content A'), 'the closed generation was never replayed');
+  }
+});
+
+test('scratch-panel.test.ts: a FAILED row-initiated delete re-renders the browse table WITH the delete error row (the undeleted scratch stays visible but the failure is surfaced, not logged away)', async () => {
+  const h = harness();
+  await seed(h, 'keep.md', 'K', 1);
+  await h.controller.openBrowse();
+  const panel = h.panels[0]!;
+  assert.ok(!panel.html.includes('delete failed'), 'no error row before the delete');
+  assert.ok(/<tr class="scratch-error-row">/.test(panel.html) === false, 'no error row markup before the delete');
+  // Make the delete fail at unlink (EPERM) — the row's scratch-delete message drives the
+  // controller's deleteAndRefresh path.
+  const origUnlink = h.fake.fs.unlink.bind(h.fake.fs);
+  h.fake.fs.unlink = async (p: string) => {
+    if (p.endsWith('keep.md')) { const e = new Error('EPERM: operation not permitted'); (e as NodeJS.ErrnoException).code = 'EPERM'; throw e; }
+    return origUnlink(p);
+  };
+  panel.injectMessage({ v: 1, payload: { type: 'scratch-delete', id: 'keep.md' } });
+  await new Promise((r) => setTimeout(r, 20));
+  assert.ok(panel.html.includes('delete failed:') && panel.html.includes('EPERM'), 'the browse table re-rendered with the delete error row carrying the failure');
+  assert.ok(/<tr class="scratch-error-row">/.test(panel.html), 'the error is a table row inside the browse table');
+  assert.ok(h.fake.files.has(`${ROOT}/keep.md`), 'the file is still present after the failed delete');
+  // A subsequent successful refresh clears the error row.
+  h.fake.fs.unlink = origUnlink;
+  await h.controller.refreshBrowse();
+  assert.ok(!panel.html.includes('delete failed'), 'a healthy refresh clears the error row');
+  assert.ok(panel.html.includes('keep.md'), 'the scratch is still listed');
 });
 
 test('scratch-panel.test.ts: stale ENOENT, deleting a non-displayed document, delete invalidates pending opens of the deleted id, closing/reopening the document panel during an outstanding read (dispose invalidates the generation, late read dropped)', async () => {

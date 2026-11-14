@@ -400,13 +400,14 @@ interface FakeScratchStore extends ScratchStore {
   readonly calls: string[];
   failList: boolean;
   failCreate: boolean;
+  failDelete: boolean;
   entries: ScratchEntry[];
   created: string[];
   deleted: string[];
 }
 const fakeStore = (): FakeScratchStore => {
   const s: FakeScratchStore = {
-    calls: [], failList: false, failCreate: false, created: [], deleted: [],
+    calls: [], failList: false, failCreate: false, failDelete: false, created: [], deleted: [],
     entries: [{ id: '20260113-090000-late.md', name: '20260113-090000-late', mtime: 400, size: 1 }],
     listScratches: async (limit?: number) => {
       s.calls.push(`list:${limit ?? 'all'}`);
@@ -422,7 +423,11 @@ const fakeStore = (): FakeScratchStore => {
       return e;
     },
     readScratch: async (id: string) => ({ entry: s.entries.find((e) => e.id === id) ?? { id, name: id, mtime: 0, size: 0 }, content: 'body' }),
-    deleteScratch: async (id: string) => { s.calls.push(`delete:${id}`); s.deleted.push(id); s.entries = s.entries.filter((e) => e.id !== id); },
+    deleteScratch: async (id: string) => {
+      s.calls.push(`delete:${id}`);
+      if (s.failDelete) throw new Error('EPERM: operation not permitted');
+      s.deleted.push(id); s.entries = s.entries.filter((e) => e.id !== id);
+    },
   };
   return s;
 };
@@ -551,6 +556,32 @@ test('extension-chat-wiring.test.ts: scratch-new with a FAILING create still re-
   const recovered = chat.posted.filter((m) => m.type === 'scratch-list');
   assert.equal(recovered.length, 1, 'the recovered create re-sends the list');
   assert.ok(!('error' in (recovered[0] as object)), 'the recovered list carries no error field');
+});
+
+test('extension-chat-wiring.test.ts: scratch-delete with a FAILING delete still re-sends the list but WITH the delete error field; the panels are still closed/refreshed; a later successful delete clears it (t7 delete-failure surfacing)', async () => {
+  const store = fakeStore();
+  const panels = fakePanels();
+  const chat = fakeChat();
+  const host = createScratchHost({ store, panels, chat, promptTitle: async () => undefined, logger: { warn: () => {} } });
+  store.failDelete = true; // deleteScratch rejects; the subsequent listScratches succeeds
+  host.onMessage({ type: 'scratch-delete', id: '20260113-090000-late.md' });
+  await flush();
+  assert.deepEqual(store.deleted, [], 'nothing was actually deleted');
+  assert.deepEqual(panels.calls, ['invalidateId:20260113-090000-late.md', 'closeDocumentIfShowing:20260113-090000-late.md', 'refreshBrowse'], 'the delete still invalidates, closes and refreshes the panels');
+  const lists = chat.posted.filter((m) => m.type === 'scratch-list');
+  assert.equal(lists.length, 1, 'the list is still re-sent after a failed delete');
+  const list = lists[0] as { entries: ScratchEntry[]; error?: string };
+  assert.equal(list.entries.length, 1, 'the entries are the (unchanged, successful) list — the scratch is still there');
+  assert.match(list.error ?? '', /^delete failed: Error: EPERM: operation not permitted$/, 'the re-sent list carries the delete error, not a silent success');
+  // A later successful delete recovers: the next list has NO error field.
+  chat.posted.length = 0;
+  store.failDelete = false;
+  host.onMessage({ type: 'scratch-delete', id: '20260113-090000-late.md' });
+  await flush();
+  const recovered = chat.posted.filter((m) => m.type === 'scratch-list');
+  assert.equal(recovered.length, 1, 'the recovered delete re-sends the list');
+  assert.ok(!('error' in (recovered[0] as object)), 'the recovered list carries no error field');
+  assert.deepEqual(store.deleted, ['20260113-090000-late.md'], 'the retry actually deleted the scratch');
 });
 
 test('extension-chat-wiring.test.ts: scratch-list error field renders the unavailable row and a later success recovers; host switch cases for all six webview->host messages and both host->webview pushes', async () => {

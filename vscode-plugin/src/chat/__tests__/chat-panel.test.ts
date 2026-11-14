@@ -8652,6 +8652,34 @@ test('chat-panel.test.ts: host insert-into-input handler inserts into #insrc-inp
   assert.deepEqual(ofType(v, 'submit-turn').concat(ofType(v, 'cancel-turn')), [], 'still no submit/cancel');
 });
 
+test('chat-panel.test.ts: insert-into-input append guarantees exactly ONE separating newline at the draft/text boundary — draft ending in \\n, text starting with \\n, or both (t4 multi-newline MED)', () => {
+  const v: Shell = runShell({ hostDeps: { scratchpads: { enabled: true } } });
+  let box: Composer;
+  // Draft ends with a newline, text does not start with one: no extra separator.
+  box = composer(v, 'draft\n', 6, 6);
+  v.msg({ type: 'insert-into-input', text: 'appended' });
+  assert.equal(box.value, 'draft\nappended', 'one newline total when the draft already ends with one');
+  // Draft does not end with a newline, text starts with one: no extra separator.
+  box = composer(v, 'draft', 5, 5);
+  v.msg({ type: 'insert-into-input', text: '\nappended' });
+  assert.equal(box.value, 'draft\nappended', 'one newline total when the text already starts with one');
+  // BOTH sides have a newline: the text\'s leading newline is stripped, exactly one remains.
+  box = composer(v, 'draft\n', 6, 6);
+  v.msg({ type: 'insert-into-input', text: '\nappended' });
+  assert.equal(box.value, 'draft\nappended', 'one newline total when both sides carry one — never two');
+  // Multi-line inserted text keeps its internal newlines; only the boundary is normalized.
+  box = composer(v, 'draft', 5, 5);
+  v.msg({ type: 'insert-into-input', text: 'line1\nline2' });
+  assert.equal(box.value, 'draft\nline1\nline2', 'internal newlines preserved, boundary gets exactly one');
+  // Empty draft with a leading-newline text: no separator at all.
+  box = composer(v, '', 0, 0);
+  v.msg({ type: 'insert-into-input', text: '\nfirst' });
+  assert.equal(box.value, '\nfirst', 'empty draft appends verbatim (no double newline at the head)');
+  // Caret stays after the inserted text in every case.
+  assert.equal(box.selectionStart, box.value.length, 'the caret lands at the end after the insert');
+  assert.deepEqual(ofType(v, 'submit-turn').concat(ofType(v, 'cancel-turn')), [], 'no submit/cancel posted');
+});
+
 test('chat-panel.test.ts + scratch-panel.test.ts: every button in the new UI is icon-only with a title attribute — no visible text content on buttons (ac5)', async () => {
   const fc = fakeChannel();
   const host = createChatPanelHost({

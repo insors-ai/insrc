@@ -134,13 +134,18 @@ export function createScratchHost(deps: ScratchHostDeps): ScratchHost {
         if (typeof msg.id !== 'string') { log.warn('[scratches] dropped malformed scratch-delete: non-string id'); return; }
         void (async (): Promise<void> => {
           deps.panels.invalidateId(msg.id);
+          let deleteError: string | undefined;
           try {
             await deps.store.deleteScratch(msg.id);
           } catch (err) {
+            // A failed delete must not look like success: carry the error into the
+            // re-sent list so the menu says what happened.
+            deleteError = `delete failed: ${String(err)}`;
             log.warn(`[scratches] delete failed for ${msg.id}: ${String(err)}`);
           }
           deps.panels.closeDocumentIfShowing(msg.id);
           await deps.panels.refreshBrowse();
+          void sendScratchList(deleteError);
         })();
         return;
       case 'scratch-browse':

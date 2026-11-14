@@ -253,9 +253,9 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
     }
   };
 
-  const renderBrowse = async (handle: ScratchPanelHandle): Promise<void> => {
+  const renderBrowse = async (handle: ScratchPanelHandle, forceError?: string | undefined): Promise<void> => {
     let entries: readonly ScratchEntry[] = [];
-    let error: string | undefined;
+    let error: string | undefined = forceError;
     try {
       entries = await deps.store.listScratches(); // UNBOUNDED — browse-all never uses the capped menu list
     } catch (err) {
@@ -270,17 +270,29 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
 
   const deleteAndRefresh = async (id: string): Promise<void> => {
     invalidateId(id);
+    let deleteError: string | undefined;
     try {
       await deps.store.deleteScratch(id);
     } catch (err) {
+      // A failed delete must surface in the re-rendered table, not just the log —
+      // otherwise the row stays visible with no indication the deletion failed.
+      deleteError = `delete failed: ${String(err)}`;
       log.warn(`[scratches] delete failed for ${id}: ${String(err)}`);
     }
     closeDocumentIfShowing(id);
-    if (browseHandle !== undefined) await renderBrowse(browseHandle);
+    if (browseHandle !== undefined) await renderBrowse(browseHandle, deleteError);
   };
 
   const invalidateId = (id: string): void => {
     epochs.set(id, (epochs.get(id) ?? 0) + 1);
+  };
+
+  /** Retire every retained generation: after a dispose/close no replay can ever be
+   * consumed (the webview is gone), so neither map may keep content for the controller's
+   * lifetime. Called on every docGeneration++ outside openDocument. */
+  const retireAllGenerations = (): void => {
+    readyGenerations.clear();
+    pendingContent.clear();
   };
 
   const closeDocumentIfShowing = (id: string): void => {
@@ -289,6 +301,7 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
       docHandle = undefined;
       showingId = undefined;
       docGeneration++;
+      retireAllGenerations();
     }
   };
 
@@ -328,8 +341,9 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
     const handle = openSingleton(
       SCRATCHPAD_VIEW_TYPE,
       id,
-      () => { docHandle = undefined; showingId = undefined; docGeneration++; },
+      () => { docHandle = undefined; showingId = undefined; docGeneration++; retireAllGenerations(); },
       (panel) => {
+        panel.onDidDispose(() => retireAllGenerations());
         panel.onMessage((m) => {
           const env = m as { v?: unknown; payload?: unknown } | null;
           if (env === null || env.v !== 1 || typeof env.payload !== 'object' || env.payload === null) return;
@@ -408,6 +422,6 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
     closeDocumentIfShowing,
     invalidateId,
     get showingId() { return showingId; },
-    dispose: () => { disposed = true; docGeneration++; },
+    dispose: () => { disposed = true; docGeneration++; retireAllGenerations(); },
   };
 }

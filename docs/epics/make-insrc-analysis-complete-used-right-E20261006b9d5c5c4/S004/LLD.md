@@ -384,6 +384,8 @@ In addition to the deletions in a1, each lookup that can return a large set (tex
   - **resolved**: Targeted sentence repair — User approved 2026-11-14: correct the grammar slip at the next HLD edit, not now (an edit clears the HLD's approval); smallest change, boundary preserved. _(2026-11-14T12:53:19.185Z)_
 - `q0d8408f6` — Several proving tests named in the test strategy do not exist yet (discovery-objects, doc-constraint-enumerate, adherence-check, db-tables-list, decompose-prompt-limits and redis-etcd-live); the plan stage should create them or map the criteria to existing files.
   - **resolved**: Map existing coverage, create gaps — User approved 2026-11-14: map each criterion to existing tests where coverage is adequate and plan new tests only for uncovered criteria. _(2026-11-14T12:53:56.544Z)_
+- `qea574444` — Reading ripgrep output as a stream in complete mode and how a search that runs out of time reports hits already gathered are stated but not detailed; the plan stage should choose the time limit for the analyzer's search.
+  - **resolved**: Fixed 30-second limit — User approved a fixed 30-second deadline 2026-11-14: stream and parse complete ripgrep records, stop at 30 seconds, return the hits gathered marked incomplete and report the search as failed, never complete. _(2026-11-14T12:54:21.326Z)_
 
 ## Citations
 

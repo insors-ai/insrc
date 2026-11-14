@@ -81,6 +81,13 @@
         "choice": "Map existing coverage, create gaps",
         "rationale": "User approved 2026-11-14: map each criterion to existing tests where coverage is adequate and plan new tests only for uncovered criteria.",
         "resolvedAt": "2026-11-14T12:53:56.544Z"
+      },
+      "qea574444": {
+        "question": "Reading ripgrep output as a stream in complete mode and how a search that runs out of time reports hits already gathered are stated but not detailed; the plan stage should choose the time limit for the analyzer's search.",
+        "status": "resolved",
+        "choice": "Fixed 30-second limit",
+        "rationale": "User approved a fixed 30-second deadline 2026-11-14: stream and parse complete ripgrep records, stop at 30 seconds, return the hits gathered marked incomplete and report the search as failed, never complete.",
+        "resolvedAt": "2026-11-14T12:54:21.326Z"
       }
     }
   },

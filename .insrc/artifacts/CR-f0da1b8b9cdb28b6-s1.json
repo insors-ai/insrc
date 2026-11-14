@@ -1,0 +1,468 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "store-b4e5a431-8039-413d-a0b8-a306fa31c4a2",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-14T14:47:58.520Z",
+    "epicCreatedAt": "2026-11-14T13:43:12.148Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 2,
+    "epicHash": "f0da1b8b9cdb28b6",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicSlug": "stop-review-guidance-from-prompting-sleep",
+    "standalone": true,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "904d07f6ed70549921eb9379a209121b3f59be9d4673acff9ada19ba64b47af6",
+        "at": "2026-11-14T14:47:58.521Z",
+        "by": {
+          "id": "insrc:code-review",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "kind": "code-review",
+    "format": "task-based",
+    "storyId": "s1",
+    "status": "passed",
+    "reviews": [
+      {
+        "reviewId": "cr-f0da1b8b-s1",
+        "attempt": 1,
+        "storyId": "s1",
+        "reviewer": "daemon",
+        "status": "passed",
+        "finalScopeIdentity": "01a1df232842747d9a55800a1a48183797912262ade24359eef69de1bf1b7c6f",
+        "attributionIdentity": "20b652e11de64c4a55d9e3c53abe590ea55184c70665be7c449111ebc175d0bb",
+        "taskScopeIdentities": [
+          {
+            "taskId": "s1",
+            "identity": "186ed2ad7a04f6012727d7c82f437185f7b1edde924643b07d54e7b04aedb196"
+          }
+        ],
+        "scope": {
+          "reviewRevision": "3f1f77d3c85c6c69813dc2b9cd6be5ce960cf44a",
+          "finalScope": {
+            "revision": "3f1f77d3c85c6c69813dc2b9cd6be5ce960cf44a",
+            "identity": "01a1df232842747d9a55800a1a48183797912262ade24359eef69de1bf1b7c6f",
+            "entries": [
+              {
+                "originChangeIndex": 0,
+                "path": "docs/design-review-execution.md",
+                "blobOid": "c37632b29e0a28b2682f8e969435c98e7416656a",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      24,
+                      24
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 1,
+                "path": "src/mcp/__tests__/review-rule-text.test.ts",
+                "blobOid": "4d00bfa1ae61a416b3afec76885ae1ea7ea4ddd5",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      122,
+                      146
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 2,
+                "path": "src/prompts/steering-block.md",
+                "blobOid": "df6884181b83bd6d21c8711e03eef72984e20419",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      390,
+                      393
+                    ]
+                  },
+                  {
+                    "after": [
+                      480,
+                      483
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 3,
+                "path": "src/prompts/steering-block.md",
+                "blobOid": "df6884181b83bd6d21c8711e03eef72984e20419",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      394,
+                      394
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 4,
+                "path": "src/prompts/steering-block.md",
+                "blobOid": "df6884181b83bd6d21c8711e03eef72984e20419",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      395,
+                      396
+                    ]
+                  }
+                ]
+              }
+            ],
+            "dispositions": [
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    24,
+                    24
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      24,
+                      24
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    122,
+                    146
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      122,
+                      146
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    390,
+                    393
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      390,
+                      393
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    394,
+                    394
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 3,
+                    "segmentIndex": 0
+                  },
+                  {
+                    "changeIndex": 4,
+                    "segmentIndex": 0
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    479,
+                    482
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      480,
+                      483
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    394,
+                    394
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      394,
+                      394
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    395,
+                    395
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 4,
+                    "segmentIndex": 0
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    395,
+                    396
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      395,
+                      396
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              }
+            ],
+            "selectedTaskIds": [
+              "s1"
+            ],
+            "testCount": 1,
+            "attributionIdentity": "20b652e11de64c4a55d9e3c53abe590ea55184c70665be7c449111ebc175d0bb",
+            "attributionState": "accepted",
+            "tasks": [
+              {
+                "taskId": "s1",
+                "changeIndexes": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4
+                ],
+                "testIndexes": [
+                  0
+                ],
+                "decision": {
+                  "action": "initial"
+                },
+                "identity": "186ed2ad7a04f6012727d7c82f437185f7b1edde924643b07d54e7b04aedb196"
+              }
+            ]
+          },
+          "storyId": "s1",
+          "documents": {
+            "issue": {
+              "path": "docs/standalone/stop-review-guidance-from-prompting-sleep-E20261114f0da1b8b/ISSUE.md",
+              "commit": "3f1f77d3c85c6c69813dc2b9cd6be5ce960cf44a"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "a46f12d957c13c7388126669af41d45de3289c21",
+              "parent": "817d1db45cf18fdee9044d1dc8697d67a24a9535",
+              "files": [
+                {
+                  "path": "docs/design-review-execution.md",
+                  "segments": [
+                    {
+                      "after": [
+                        24,
+                        24
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/mcp/__tests__/review-rule-text.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        122,
+                        146
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/prompts/steering-block.md",
+                  "segments": [
+                    {
+                      "after": [
+                        390,
+                        394
+                      ]
+                    },
+                    {
+                      "after": [
+                        479,
+                        482
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "a2ab6bafae6b5cd0a52e0d78a3a39d033a11bec2",
+              "parent": "a46f12d957c13c7388126669af41d45de3289c21",
+              "files": [
+                {
+                  "path": "src/prompts/steering-block.md",
+                  "segments": [
+                    {
+                      "after": [
+                        394,
+                        395
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "5db106b9c5fb748948c4ddd1a3d071615365ba97",
+              "parent": "a2ab6bafae6b5cd0a52e0d78a3a39d033a11bec2",
+              "files": [
+                {
+                  "path": "src/prompts/steering-block.md",
+                  "segments": [
+                    {
+                      "after": [
+                        395,
+                        396
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "s1",
+            "status": "passed",
+            "summary": "The submitted guidance changes meet the acceptance checks. The design-review section, code-review section, and execution document describe both supported wait methods, prohibit placeholder waits, and require stopping an armed wait before asking the user a question. The added tests check those rules in all three sources and check removal of the prior polling interval.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Inspected the submitted test body and assertions against every acceptance check. The three new cases use readWorkflowGuide for both steering sections and read the execution document directly; each checks all four required phrases and absence of the previous interval. No demonstrated coverage defect found.",
+              "evidenceReferences": [
+                "3f1f77d3c85c6c69813dc2b9cd6be5ce960cf44a:src/mcp/__tests__/review-rule-text.test.ts",
+                "3f1f77d3c85c6c69813dc2b9cd6be5ce960cf44a:src/prompts/steering-block.md",
+                "3f1f77d3c85c6c69813dc2b9cd6be5ce960cf44a:docs/design-review-execution.md"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: I did not run the test command. The builder-reported Node 22 result was 15 passing tests, but I did not independently execute it."
+            ],
+            "inspectedReferences": [
+              "3f1f77d3c85c6c69813dc2b9cd6be5ce960cf44a:docs/standalone/stop-review-guidance-from-prompting-sleep-E20261114f0da1b8b/ISSUE.md",
+              "3f1f77d3c85c6c69813dc2b9cd6be5ce960cf44a:docs/design-review-execution.md",
+              "3f1f77d3c85c6c69813dc2b9cd6be5ce960cf44a:src/prompts/steering-block.md",
+              "3f1f77d3c85c6c69813dc2b9cd6be5ce960cf44a:src/mcp/__tests__/review-rule-text.test.ts"
+            ],
+            "executedTests": []
+          }
+        ],
+        "summary": "1 selected task assessment(s): passed.",
+        "completedAt": "2026-11-14T14:47:57.454Z",
+        "buildFingerprint": "938948f98bac58aa2793e4dd9d6f9b26301063e5ee3ac889015f909df61d83ca"
+      }
+    ]
+  },
+  "citations": []
+}

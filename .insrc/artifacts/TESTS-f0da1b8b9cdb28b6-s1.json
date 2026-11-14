@@ -1,0 +1,124 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "9df403e8ae6cfdb604a5ce695a46edf6177d91d77ccfb6d9dfc0042699f1732d",
+        "at": "2026-11-14T14:45:50.266Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "f0da1b8b9cdb28b6",
+    "storyId": "s1",
+    "createdAt": "2026-11-14T14:45:50.259Z",
+    "updatedAt": "2026-11-14T14:45:50.259Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-14T13:43:12.148Z",
+    "epicSlug": "stop-review-guidance-from-prompting-sleep",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "a46f12d95",
+        "ranAt": "2026-11-14T14:45:50.259Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/mcp/__tests__/review-rule-text.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/mcp/__tests__/review-rule-text.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/mcp/__tests__/review-rule-text.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 746,
+            "titles": [
+              {
+                "title": "T13 the steering source no longer states the old rule",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the insrc_review_step description no longer states the old rule",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the insrc_code_review_step description no longer states the old rule",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the insrc_workflow_approve description no longer states the old rule",
+                "result": "pass"
+              },
+              {
+                "title": "T13 design-review guidance describes durable review without retired fallback",
+                "result": "pass"
+              },
+              {
+                "title": "T13 current code-review guidance preserves both parties and explicit task protocol",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the steering build guide says completion requires a code review whatever the enforcement setting",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the steering tool table describes both review tools by the other-party rule",
+                "result": "pass"
+              },
+              {
+                "title": "T13 design-review tool routes the other party with live paths",
+                "result": "pass"
+              },
+              {
+                "title": "T13 current code-review description routes both parties without retired protocol",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the insrc_workflow_approve description says what approval requires",
+                "result": "pass"
+              },
+              {
+                "title": "T13 canonical guide sections are independently addressable",
+                "result": "pass"
+              },
+              {
+                "title": "the review guide says how to wait for progress without sleeping",
+                "result": "pass"
+              },
+              {
+                "title": "the code-review guide says how to wait for progress without sleeping",
+                "result": "pass"
+              },
+              {
+                "title": "docs/design-review-execution.md says how to wait for progress without sleeping",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

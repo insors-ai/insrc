@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 2,
+        "contentHash": "11b4132348272692c8f3d327dbba00fd732c4b03f24aa3ebd6de53588d2333d3",
+        "at": "2026-11-14T14:46:19.119Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T15:04:07.341Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-4440c620-9645-4d9c-aa16-1b7610d15c62",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-14T14:44:33.468Z",
+    "epicCreatedAt": "2026-11-14T13:43:12.148Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f0da1b8b9cdb28b6",
+    "storyId": "s1",
+    "revision": 2,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "Small bugfix routed to build: wording-only change in the steering block and one doc; no code or contract change.",
+    "epicSlug": "stop-review-guidance-from-prompting-sleep",
+    "updatedAt": "2026-11-14T14:45:50.259Z"
+  },
+  "body": {
+    "focus": "ISSUE-f0da1b8b9cdb28b6: change the polling wording in the design-review and code-review guidance so it no longer implies sleeping between polls. In src/prompts/steering-block.md (review section, about line 390, and code-review step 2, about line 475) and docs/design-review-execution.md (about line 24), replace 'poll progress about every 10–30 seconds' with: call progress again directly without sleeping, or wait with one background command that exits when the checkpoint reaches a terminal status; never arm placeholder or no-op waits; stop any armed wait before ending a turn that asks the user a question.",
+    "producesLld": false,
+    "commit": "a46f12d95",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": false
+      }
+    ],
+    "summary": "Rewrote the progress-wait guidance in the review and code-review sections of src/prompts/steering-block.md and in docs/design-review-execution.md (no timed poll interval, no placeholder waits, stop armed waits before asking the user), and pinned the new rule in src/mcp/__tests__/review-rule-text.test.ts. Commit a46f12d95.",
+    "testRecord": {
+      "md": "docs/standalone/stop-review-guidance-from-prompting-sleep-E20261114f0da1b8b/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "docs/design-review-execution.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T14:45:50.259Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/review-rule-text.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T14:45:50.259Z"
+      },
+      {
+        "target": {
+          "file": "src/prompts/steering-block.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T14:45:50.259Z"
+      }
+    ]
+  },
+  "citations": []
+}

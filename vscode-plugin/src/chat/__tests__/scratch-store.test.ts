@@ -319,6 +319,39 @@ test('scratch-store.test.ts: a failed create before link() leaves no visible *.m
   void warnings;
 });
 
+test('scratch-store.test.ts: a post-publication lstat failure does NOT fail createScratch — the scratch file exists, so the create succeeds with degraded metadata and a warning (CR attempt-6 t1 MED)', async () => {
+  const { fake, store, warnings } = setup();
+  await fake.fs.mkdir(ROOT);
+  // Fail the lstat of the FINAL file only AFTER link() published it: let every
+  // lstat through until the link, then poison final-path lstats.
+  let linked = false;
+  const seen: string[] = [];
+  fake.failOn = (c) => {
+    if (c.op === 'link') { linked = true; return undefined; }
+    if (linked && c.op === 'lstat' && c.path.endsWith('.md') && !c.path.includes('.tmp-')) {
+      seen.push(c.path);
+      return Object.assign(new Error('EIO'), { code: 'EIO' });
+    }
+    return undefined;
+  };
+  const entry = await store.createScratch('Published But Unstatable', 'body');
+  // The create RESOLVED (did not reject) even though the post-publish lstat failed.
+  assert.match(entry.id, /-published-but-unstatable\.md$/);
+  assert.equal(seen.length, 1, 'exactly the post-publication lstat was poisoned');
+  // The file really exists with the body (publication happened before the stat failed).
+  assert.equal(Buffer.from(fake.files.get(`${ROOT}/${entry.id}`) ?? []).toString('utf8'), 'body');
+  // Degraded metadata: size from the written content, mtime from now(), warning logged.
+  assert.equal(entry.size, Buffer.byteLength('body', 'utf8'));
+  assert.ok(entry.mtime > 0);
+  assert.ok(warnings.some((w) => w.includes('could not stat')), 'a warning carries the stat failure');
+  fake.failOn = undefined;
+  // A later list re-reads the real stat and the entry shows up with true metadata.
+  const list = await store.listScratches();
+  assert.equal(list.length, 1);
+  assert.equal(list[0]!.id, entry.id);
+  assert.equal(list[0]!.size, Buffer.byteLength('body', 'utf8'));
+});
+
 test('scratch-store.test.ts: listScratches skips entries whose lstat fails between readdir and lstat', async () => {
   const { fake, store } = setup();
   await fake.fs.mkdir(ROOT);

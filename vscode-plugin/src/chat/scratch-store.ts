@@ -259,11 +259,16 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
       } catch (rmErr) {
         log.warn(`[scratches] could not remove temp ${temp}: ${String(rmErr)}`);
       }
+      // Post-publication metadata lookup. This must NOT fail the create: the file
+      // already exists (link() succeeded atomically), so throwing here would report
+      // failure for a successfully published scratchpad. Degraded metadata is fine —
+      // size 0 / mtime 0 is corrected by the next list/refresh.
       let st;
       try {
         st = await fs.lstat(final);
       } catch (e) {
-        throw storeError(e);
+        log.warn(`[scratches] published ${id} but could not stat it: ${String(e)}`);
+        st = { size: content.length, mtimeMs: now().getTime() };
       }
       return entryOf(id, st);
     }

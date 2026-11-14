@@ -38,7 +38,7 @@ export class ReviewPreparationHost {
  private readonly phases = new Map<string, number>();
  private readonly cleaning = new Set<string>();
  private readonly allocations = new Map<string, Allocation>();
- readonly contexts: ReviewContextRegistry;
+ private readonly contexts: ReviewContextRegistry;
  constructor(readonly runtimes: ReviewRuntimeStore, epoch: string,
   private readonly assertCurrent: (identity: ContextPhaseIdentity) => Promise<void>,
   assertDisposed: (identity: ContextPhaseIdentity) => Promise<void>,
@@ -58,7 +58,7 @@ export class ReviewPreparationHost {
  }
  private allocation(key: ReviewKey, token: unknown, mutable = false, owner?: string): Allocation {
   const value = typeof token === 'string' && this.allocations.get(token);
-  if (!value || value.key !== keyOf(key) || mutable && (value.retained || value.owner !== owner)) throw new Error('Foreign, unknown or retained preparation allocation');
+  if (!value || value.key !== keyOf(key) || owner !== undefined && value.owner !== owner || mutable && value.retained) throw new Error('Foreign, unknown or retained preparation allocation');
   return value;
  }
  async connect(identity: ContextPhaseIdentity, runtime: ReviewRuntimeHandle): Promise<PreparationConnection> {
@@ -102,7 +102,8 @@ export class ReviewPreparationHost {
    },
    'context.qualify': async raw => {
     const p = fields(raw, ['identity', 'receipt']), source = p['identity'] as PreparedSourceIdentity, receipt = p['receipt'] as ReadyContextReceipt; expected(source);
-    await this.contexts.qualify(owner, source, receipt); this.allocation(identity.key, receipt.capacityToken).retained = true;
+    this.allocation(identity.key, receipt.capacityToken, false, phaseId);
+    await this.contexts.qualify(owner, source, receipt); this.allocation(identity.key, receipt.capacityToken, false, phaseId).retained = true;
     const generations = this.generations.get(review) ?? new Set<string>(); generations.add(receipt.generationId); this.generations.set(review, generations);
    },
    'context.borrow': async raw => { const p = fields(raw, ['identity']), source = p['identity'] as PreparedSourceIdentity; expected(source); return this.contexts.borrow(owner, source); },

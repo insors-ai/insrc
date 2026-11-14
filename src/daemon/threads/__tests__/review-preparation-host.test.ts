@@ -59,6 +59,16 @@ test('private bridge binds context and accepted history to current input and ret
  const identity={key:one.key,attempt:1,inputDigest,validatorVersion:1,routeDigest:preparationDigest(f.f.packet.documents),sourceIdentity:preparationDigest(f.f.packet.reviewRevision),scopeDigest:prepared.projection!.identity,testDocumentDigest:preparationDigest(f.f.packet.tests)};
  const receipt=await writePreparedContext(identity,{current:prepared},session,f.limits,one.client);
  await assert.rejects(two.client.qualify(identity,receipt),/Foreign prepared input/);
+ const publication=await f.host.connect({...one.identity,phase:'publication'},one.handle),publisher=new ReviewPreparationClient(publication.port);
+ try{
+  await assert.rejects(publisher.qualify(identity,receipt),/Foreign/);
+  // A rejected qualification cannot pin or mutate the source owner's token.
+  await one.client.commit(receipt.capacityToken,receipt.storedBytes);
+  await one.client.qualify(identity,receipt);
+  await assert.rejects(publisher.qualify(identity,receipt),/Foreign/);
+  // Qualified immutable data is reusable via a new phase's own borrow only.
+  const warm=await publisher.borrow(identity);assert.deepEqual(await publisher.resolve(warm.access),receipt);await publisher.releaseBorrow(warm.access);
+ }finally{await publication.close();publication.port.close();}
  await one.client.qualify(identity,receipt);const borrowed=await one.client.borrow(identity);
  await assert.rejects(two.client.resolve(borrowed.access),/Unissued|Foreign|access/i);
  await assert.rejects(one.client.release(receipt.capacityToken),/retained/);

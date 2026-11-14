@@ -60,4 +60,6 @@ test('promotion requires protected approval and never rebuilds the candidate', a
 	assert.match(yaml, /require_code_owner_reviews/);
 	assert.match(yaml, /daemon-release-artifact\.sh/);
 	assert.doesNotMatch(yaml, /npm (?:ci|install|run|test)|--clobber/);
+	const downloader = await readFile(new URL('../daemon-release-artifact.sh', import.meta.url), 'utf8');
+	assert.match(downloader, /\.expired == false.*\.expires_at.*> now/);
 });

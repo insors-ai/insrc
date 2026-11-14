@@ -10,7 +10,7 @@ run=$1 artifact=$2 commit=$3 destination=$4
 gh api "repos/$GH_REPO/actions/runs/$run" --jq \
 	".head_sha == \"$commit\" and .head_branch == \"v2\" and .event == \"workflow_dispatch\" and .conclusion == \"success\" and .path == \".github/workflows/daemon-candidate.yml\"" | /usr/bin/grep -qx true
 gh api "repos/$GH_REPO/actions/artifacts/$artifact" --jq \
-	".expired == false and .workflow_run.id == $run and .workflow_run.head_sha == \"$commit\"" | /usr/bin/grep -qx true
+	".expired == false and ((.expires_at | fromdateiso8601) > now) and .workflow_run.id == $run and .workflow_run.head_sha == \"$commit\"" | /usr/bin/grep -qx true
 mkdir -m 700 "$destination"
 gh api "repos/$GH_REPO/actions/artifacts/$artifact/zip" > "$destination/artifact.zip"
 # Extract by expected member name, never by archive-supplied filesystem paths.

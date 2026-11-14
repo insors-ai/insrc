@@ -320,6 +320,20 @@ test('through the ripgrep backend with complete set, more hits than MAX_LIMIT, a
 			(err: unknown) => err instanceof GrepIncompleteError && err.reason === 'timeout' && err.hits.map(h => h.text).join() === 'needle one,needle two',
 		);
 
+		// A record cut short by the stop is not among the gathered hits.
+		const cut = standIn(bin, 'rg-cut', `echo "${root}/a.txt:1:needle one"\nprintf '${root}/a.txt:2:needle tw'\nsleep 30`);
+		await assert.rejects(
+			runGrepSearch({ pattern: 'needle', root, complete: true, _backend: { rgCommand: cut, rgTimeoutMs: 300 } }),
+			(err: unknown) => err instanceof GrepIncompleteError && err.hits.map(h => h.text).join() === 'needle one',
+		);
+
+		// A single file as the root: the search asks for file names, so ripgrep prints one and the hit is kept.
+		const file = join(root, 'one.txt');
+		writeFileSync(file, 'x\n');
+		const named = standIn(bin, 'rg-needs-filename', `case " $* " in *" --with-filename "*) echo "${file}:3:needle here";; *) echo "3:needle here";; esac`);
+		const single = await runGrepSearch({ pattern: 'needle', root: file, complete: true, _backend: { rgCommand: named } });
+		assert.deepEqual(single.hits.map(h => [h.path, h.line, h.text]), [[file, 3, 'needle here']]);
+
 		// A ripgrep that started and failed is the same failure, not a fallback to a partial result.
 		const exit2 = standIn(bin, 'rg-exit2', `echo "${root}/a.txt:1:needle one"\necho "rg: boom" >&2\nexit 2`);
 		await assert.rejects(

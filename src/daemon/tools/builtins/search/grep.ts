@@ -361,7 +361,8 @@ async function tryRipgrepComplete(
 	root: string,
 	opts: { glob?: string | undefined; caseInsensitive: boolean; context: number; rgCommand?: string | undefined; rgTimeoutMs?: number | undefined },
 ): Promise<RipgrepAttempt> {
-	const argv = [opts.rgCommand ?? 'rg', '--no-heading', '--line-number', '--color=never'];
+	// --with-filename: given a single file as the root, ripgrep prints no path, and every line would fail to parse.
+	const argv = [opts.rgCommand ?? 'rg', '--no-heading', '--with-filename', '--line-number', '--color=never'];
 	if (opts.caseInsensitive) { argv.push('-i'); }
 	if (opts.glob) { argv.push('-g', opts.glob); }
 	if (opts.context > 0) { argv.push('-C', String(opts.context)); }
@@ -394,7 +395,7 @@ async function tryRipgrepComplete(
 
 	const exit = await proc.settled;
 	if (spawnFailed) { return { data: null }; }
-	if (pending !== '') { take(pending); }
+	// A record cut short by the stop is not a hit: only whole records are gathered.
 	if (exit.timedOut) {
 		throw new GrepIncompleteError(`ripgrep was stopped after ${timeoutMs} ms with ${hits.length} hits gathered`, 'timeout', hits);
 	}
@@ -402,6 +403,7 @@ async function tryRipgrepComplete(
 		const first = stderr.trim().split('\n')[0] ?? '';
 		throw new GrepIncompleteError(`ripgrep exited with ${exit.code ?? `signal ${exit.signal ?? 'unknown'}`}${first ? `: ${first}` : ''}`, 'exit-code', hits);
 	}
+	if (pending !== '') { take(pending); }
 	return {
 		data: {
 			pattern, root,

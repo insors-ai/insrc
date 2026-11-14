@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { fetchDevelopmentCheckout, measureDevelopmentCandidate, requireCleanDevelopmentCheckout } from '../package-daemon-development.mjs';
+import { fetchDevelopmentCheckout, measureDevelopmentCandidate, packageDevelopmentCandidate, requireCleanDevelopmentCheckout } from '../package-daemon-development.mjs';
 import { sha256 } from '../daemon-bundle-metadata.mjs';
 
 test('local development packaging pins a configured ref and measures candidate bytes', async () => {
@@ -50,6 +50,24 @@ test('local development packaging pins a configured ref and measures candidate b
 		assert.equal(identity.archiveSha256, sha256(Buffer.from('archive bytes')));
 		await writeFile(join(stage, 'runtime'), 'changed runtime');
 		assert.notEqual((await measureDevelopmentCandidate(stage, archive)).runtimeFingerprint, identity.runtimeFingerprint);
+
+		const outputPath = join(root, 'output');
+		await packageDevelopmentCandidate({ policy, ref, commit, outputPath, version: '1.0.0-dev.1' }, {
+			async buildRuntime(checkout: string, staging: string) {
+				assert.equal(await readFile(join(checkout, 'source'), 'utf8'), 'first');
+				await writeFile(join(staging, 'runtime'), 'candidate runtime');
+			},
+		});
+		const handoff = JSON.parse(await readFile(join(outputPath, 'candidate.json'), 'utf8'));
+		assert.equal(handoff.repository, upstream);
+		assert.equal(handoff.sourceRef, ref);
+		assert.equal(handoff.commit, commit);
+		assert.equal(handoff.fetchedTip, tip);
+		assert.equal(handoff.channel, 'development');
+		assert.equal(handoff.runId, undefined);
+		const packaged = await readFile(join(outputPath, handoff.archiveName));
+		assert.equal(handoff.archiveSha256, sha256(packaged));
+		assert.equal(handoff.archiveBytes, packaged.length);
 	} finally {
 		await rm(root, { recursive: true, force: true });
 	}

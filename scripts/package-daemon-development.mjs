@@ -68,21 +68,21 @@ async function main([policyPath, ref, commit, version, outputPath, ...extra]) {
 		platform: process.platform, architecture: process.arch, macOSVersion, requestedVersion: version,
 	});
 	const policy = readDevelopmentPolicy(JSON.parse(await readFile(policyPath, 'utf8')));
+	await packageDevelopmentCandidate({ policy, ref, commit, version, outputPath });
+}
+
+export async function packageDevelopmentCandidate({ policy, ref, commit, version, outputPath }, {
+	buildRuntime = buildDevelopmentRuntime,
+} = {}) {
 	const workspace = await realpath(await mkdtemp(join(tmpdir(), 'insrc-daemon-development-')));
 	const output = resolve(outputPath);
 	let ownsOutput = false;
 	try {
 		const { checkout, ...source } = await fetchDevelopmentCheckout(policy, ref, commit, workspace);
-		const env = { ...process.env, CXXFLAGS: '-std=c++17', MACOSX_DEPLOYMENT_TARGET: DEVELOPMENT_MINIMUM_MACOS };
-		for (const args of [
-			['ci', '--no-fund', '--no-audit'], ['run', 'build'], ['prune', '--omit=dev', '--no-fund', '--no-audit'],
-		]) {
-			execFileSync('npm', args, { cwd: checkout, env, stdio: 'inherit' });
-		}
-		requireCleanDevelopmentCheckout(checkout, commit);
 		const stage = join(workspace, 'stage');
 		await mkdir(stage);
-		await stageRuntime(checkout, stage, await realpath(process.execPath));
+		await buildRuntime(checkout, stage);
+		requireCleanDevelopmentCheckout(checkout, commit);
 		await mkdir(output, { mode: 0o700 });
 		ownsOutput = true;
 		const archiveName = `insrc-daemon-${version}-darwin-arm64.tar.gz`;
@@ -100,6 +100,16 @@ async function main([policyPath, ref, commit, version, outputPath, ...extra]) {
 	} finally {
 		await rm(workspace, { recursive: true, force: true });
 	}
+}
+
+async function buildDevelopmentRuntime(checkout, stage) {
+	const env = { ...process.env, CXXFLAGS: '-std=c++17', MACOSX_DEPLOYMENT_TARGET: DEVELOPMENT_MINIMUM_MACOS };
+	for (const args of [
+		['ci', '--no-fund', '--no-audit'], ['run', 'build'], ['prune', '--omit=dev', '--no-fund', '--no-audit'],
+	]) {
+		execFileSync('npm', args, { cwd: checkout, env, stdio: 'inherit' });
+	}
+	await stageRuntime(checkout, stage, await realpath(process.execPath));
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main(process.argv.slice(2));

@@ -984,9 +984,18 @@ export function activate(context: vscode.ExtensionContext): void {
           panel.webview.onDidReceiveMessage(listener);
         },
         postMessage: (message) => {
-          panel.webview.postMessage(message).then(undefined, () => {
-            /* ignore — a disposed panel's post is non-fatal */
-          });
+          // ISSUE-3183af2a: a dropped post must be VISIBLE, not silent. VS Code resolves
+          // false when the webview cannot take the message (disposed / hidden beyond
+          // retry) and rejects on a disposed panel — both mean the message was dropped,
+          // so log each case instead of swallowing it.
+          panel.webview.postMessage(message).then(
+            (delivered) => {
+              if (delivered === false) panelLog.warn('insrc: a scratchpad webview postMessage was not delivered (webview not ready or disposed) — the message was dropped');
+            },
+            () => {
+              panelLog.warn('insrc: a scratchpad webview postMessage rejected (panel disposed) — the message was dropped');
+            },
+          );
         },
         dispose: () => panel.dispose(),
       };

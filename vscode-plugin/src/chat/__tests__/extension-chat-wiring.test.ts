@@ -490,6 +490,11 @@ test('extension-chat-wiring.test.ts: extension.ts constructs createScratchStore 
   // The scratch-host module itself is vscode-free.
   const host = read(join(HERE, '..', 'scratch-host.ts'));
   assert.doesNotMatch(host, /from ['"]vscode['"]/, 'scratch-host.ts imports nothing from vscode');
+  // ISSUE-3183af2a: the scratch panel factory's postMessage adapter no longer swallows a
+  // dropped post — a false delivery result or a rejection is logged via panelLog.
+  assert.match(b, /panel\.webview\.postMessage\(message\)\.then\(\s*\(delivered\)/, 'the scratch factory checks the postMessage delivery result');
+  assert.match(b, /delivered === false\)\s*panelLog\.warn\(/, 'an undelivered post (webview not ready / disposed) is logged, not silent');
+  assert.match(b, /\(\)\s*=>\s*\{\s*\n?\s*panelLog\.warn\(/, 'a rejected post (disposed panel) is logged, not silent');
 });
 
 test('extension-chat-wiring.test.ts: scratch-new title acquisition end-to-end — prompt cancelled -> no create + unchanged list; prompt answered -> create + list refresh + document open', async () => {

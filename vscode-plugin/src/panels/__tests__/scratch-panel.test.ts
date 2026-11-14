@@ -505,6 +505,32 @@ test('scratch-panel.test.ts: a STALE scratch-ready (generation tag from a supers
   assert.ok(!contentsOf(panel).includes('content A'), 'the late A read was dropped');
 });
 
+test('scratch-panel.test.ts: ISSUE-3183af2a — a FRESH scratch-new open (no cached panel) posts content for its generation AND retains a replay copy until its own scratch-ready, so content arriving before the webview listener installs is delivered by the ready replay exactly once end-to-end', async () => {
+  const contentsOf = (panel: FakePanel): string[] =>
+    panel.posted.filter((m) => (m as { payload?: { type?: string } }).payload?.type === 'scratch-content')
+      .map((m) => (m as { payload: { text: string } }).payload.text);
+  const h = harness();
+  await seed(h, 'fresh.md', 'fresh content', 1);
+  // Gate the read so the panel exists and content posting happens AFTER setHtml, i.e. the
+  // realistic scratch-new sequence: create -> openDocument (panel created + revealed) -> read.
+  const c = h.controller;
+  const handle = await c.openDocument('fresh.md');
+  assert.ok(handle !== undefined, 'the fresh open created the document panel');
+  const panel = h.panels.at(-1)!;
+  // The read resolved pre-ready: content posted once, replay copy retained.
+  await new Promise((r) => setTimeout(r, 10));
+  assert.deepEqual(contentsOf(panel), ['fresh content'], 'the pre-ready content posted once');
+  // The webview's own ready (generation 1) replays the retained copy exactly once...
+  panel.injectMessage({ v: 1, payload: { type: 'scratch-ready', gen: 1 } });
+  await new Promise((r) => setTimeout(r, 10));
+  assert.deepEqual(contentsOf(panel), ['fresh content', 'fresh content'], 'the ready replays the retained copy (the webview was not listening yet)');
+  // ...and the replay copy is consumed: a duplicate ready re-posts nothing, and a LATER read
+  // (content re-read after ready) posts directly without being retained.
+  panel.injectMessage({ v: 1, payload: { type: 'scratch-ready', gen: 1 } });
+  await new Promise((r) => setTimeout(r, 10));
+  assert.deepEqual(contentsOf(panel).length, 2, 'a duplicate ready re-posts nothing');
+});
+
 test('scratch-panel.test.ts: a FAILED row-initiated delete re-renders the browse table WITH the delete error row (the undeleted scratch stays visible but the failure is surfaced, not logged away)', async () => {
   const h = harness();
   await seed(h, 'keep.md', 'K', 1);

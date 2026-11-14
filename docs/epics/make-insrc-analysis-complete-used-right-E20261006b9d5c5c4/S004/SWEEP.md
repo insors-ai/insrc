@@ -9,8 +9,9 @@ no docker. Every test file under `src/` was run in one of five groups.
 | `src/db`, `indexer`, `mcp`, `agent`, `config`, `docgen`, `understanding`, `design` | 1900 | 1835 | 20 | 45 |
 | `src/workflow/**` | 2368 | 2212 | 1 | 155 |
 | `src/daemon/**`, `src/shared/**`, `src/cli/**` | 3100 | 2822 | 83 | 193 |
+| `src/artifact-theme`, `src/bin`, `src/__tests__` | 31 | 30 | 1 | 0 |
 
-(`src/artifact-theme` and `src/bin` ran only in an earlier partial chunk.)
+Every directory of `src/` with tests is in the table.
 
 ## Which failures are this Story's
 

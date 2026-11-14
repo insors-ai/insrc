@@ -205,4 +205,14 @@ export class PreparedContextReader {
    return value;
   } catch (error) { await this.invalidate(error); throw error; }
  }
+ async evidenceInventory(): Promise<readonly PreparedContextManifest['objects'][number][]> {
+  await this.authorize();
+  try { await this.checkFiles(); return this.manifest.objects.map(o => ({ ...o })); }
+  catch (error) { await this.invalidate(error); throw error; }
+ }
+ async evidenceObject(contentDigest: string): Promise<Buffer> {
+  await this.authorize();
+  try { await this.checkFiles(); return this.payload(contentDigest); }
+  catch (error) { await this.invalidate(error); throw error; }
+ }
 }

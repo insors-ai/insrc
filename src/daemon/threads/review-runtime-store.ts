@@ -16,6 +16,7 @@ import { decodePreparationCheckpoint } from '../../workflow/review/preparation-c
 import { reviewJsonLimit } from '../../config/review.js';
 import { reviewWorkerCheckpoint } from './review-worker-contract.js';
 import { getLogger } from '../../shared/logger.js';
+import type { HistoryBoundaryReceipt } from '../../workflow/review/history-binding.js';
 
 export interface ReviewRuntimeHandle { readonly key: Readonly<ReviewKey>; readonly runtimeId: string; }
 interface Owner { handle: ReviewRuntimeHandle; current: ReviewRuntime; stamp: string; fenced: boolean; }
@@ -141,6 +142,27 @@ export class ReviewRuntimeStore {
    if (value.state !== 'active' || progress.progress.completedUnits !== value.progress.completedUnits) throw new Error('Progress cannot authorize completed work');
    value.progress = progress.progress;
    if (progress.preparation) value.preparation = progress.preparation;
+  });
+ }
+ /** Called only for the authenticated phase worker's durable history receipt.
+  * verify reads the exact current checkpoint digest under that owner's fence. */
+ async acceptHistory(handle: ReviewRuntimeHandle, receipt: HistoryBoundaryReceipt, verify: () => Promise<void>): Promise<void> {
+  const proof = structuredClone(receipt);
+  await this.mutate(handle, async value => {
+   if (!same(proof.key, handle.key) || proof.runtimeId !== value.runtimeId || proof.attempt !== value.attempt || proof.inputDigest !== value.checkpointBinding.inputDigest || value.state !== 'active') throw new Error('Foreign runtime history receipt');
+   await verify();
+   const next = proof.binding, old = value.checkpointBinding;
+   if (next.semanticSequence === old.semanticSequence && old.historyBindingDigest === next.bindingDigest) {
+    if (proof.completedUnits !== value.progress.completedUnits) throw new Error('Conflicting result replay'); return;
+   }
+   const initial = old.historyBindingDigest === undefined && old.semanticSequence === 0 && next.semanticSequence === 0 && next.priorBindingDigest === null;
+   if (!initial && (next.semanticSequence !== old.semanticSequence + 1 || next.priorBindingDigest !== old.historyBindingDigest)) throw new Error('Runtime history chain mismatch');
+   if (proof.completedUnits < value.progress.completedUnits) throw new Error('Committed result count regressed');
+   const advanced = proof.completedUnits > value.progress.completedUnits;
+   value.checkpointBinding = { ...old, semanticSequence: next.semanticSequence, historyBindingDigest: next.bindingDigest };
+   value.progress.completedUnits = proof.completedUnits;
+   if (advanced) value.committedResultBoundary = { semanticSequence: next.semanticSequence, historyBindingDigest: next.bindingDigest };
+   if (proof.publication) value.publicationBoundary = { semanticSequence: next.semanticSequence, artifactId: proof.publication.artifactId, preservationDigest: proof.publication.preservationDigest };
   });
  }
  /** Explicit owner teardown never removes persisted proof. */

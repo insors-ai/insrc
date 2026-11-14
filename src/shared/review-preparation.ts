@@ -82,7 +82,7 @@ export function decodeReviewRuntime(input: unknown, key: ReviewKey): ReviewRunti
  const times = [value.progress.observedAt, value.progress.lastMeaningfulActivityAt, value.cancellation?.requestedAt];
  if (times.some(t => t !== null && t !== undefined && !Number.isFinite(Date.parse(t)))) throw new Error('Invalid runtime timestamp');
  if (value.preparation?.total !== null && value.preparation?.total !== undefined && value.preparation.logicalCompleted > value.preparation.total) throw new Error('Impossible preparation count');
- if (value.committedResultBoundary && (value.committedResultBoundary.semanticSequence > value.checkpointBinding.semanticSequence || value.committedResultBoundary.historyBindingDigest !== value.checkpointBinding.historyBindingDigest)) throw new Error('Unbound result boundary');
+ if (value.committedResultBoundary && (value.committedResultBoundary.semanticSequence > value.checkpointBinding.semanticSequence || value.committedResultBoundary.semanticSequence === value.checkpointBinding.semanticSequence && value.committedResultBoundary.historyBindingDigest !== value.checkpointBinding.historyBindingDigest)) throw new Error('Unbound result boundary');
  if (value.publicationBoundary && value.publicationBoundary.semanticSequence > value.checkpointBinding.semanticSequence) throw new Error('Unbound publication boundary');
  if (value.state === 'initializing' && (value.resourceGuard.openLeases.length || value.progress.completedUnits || value.committedResultBoundary || value.publicationBoundary)) throw new Error('Initializing runtime cannot execute or complete work');
  if (value.cancellation?.operationState === 'stopped' && value.resourceGuard.openLeases.length) throw new Error('Stopped runtime has unresolved resources');

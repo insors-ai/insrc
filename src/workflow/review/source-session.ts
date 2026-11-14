@@ -74,6 +74,8 @@ function decode(method: Method, bytes: Buffer): unknown {
  if (method === 'file' && value !== null) { const blob = value as { oid: string; base64: string }; return { oid: blob.oid, bytes: Buffer.from(blob.base64, 'base64') }; }
  return value;
 }
+export { encode as encodeReviewSourceResult, decode as decodeReviewSourceResult };
+export const reviewSourceQueryDigest = (method: Method, args: readonly unknown[]) => sha(JSON.stringify([method, ...args]));
 
 /** Exact session cache, not a persisted qualification credential. Errors fence
  * the session; a missing/corrupt staged result is never silently fetched again.

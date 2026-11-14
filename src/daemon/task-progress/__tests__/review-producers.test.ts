@@ -84,7 +84,7 @@ async function fixture(t: { after(fn: () => Promise<void>): void }) {
   return { path, store, authority, coordinator, producers, mint };
 }
 
-test('src/daemon/task-progress/__tests__/review-producers.test.ts: register both delegates through registerProducer and ProducerPort.register with a minted authorization', async t => {
+test('register both delegates through registerProducer and ProducerPort.register with a minted authorization', async t => {
   const f = await fixture(t);
   const designSource = fakeSource(designKey, designIdentity.incarnation);
   const codeSource = fakeSource(codeKey, codeIdentity.incarnation);
@@ -107,7 +107,7 @@ test('src/daemon/task-progress/__tests__/review-producers.test.ts: register both
   assert.deepEqual(refused, { kind: 'refused', reason: 'invalid-origin' });
 });
 
-test('src/daemon/task-progress/__tests__/review-producers.test.ts: a review measurement is committed and read back through the one store and an unknown kind is rejected', async t => {
+test('a review measurement is committed and read back through the one store and an unknown kind is rejected', async t => {
   const f = await fixture(t);
   const source = fakeSource(designKey, designIdentity.incarnation);
   source.set(designProgress(3));
@@ -146,7 +146,7 @@ test('src/daemon/task-progress/__tests__/review-producers.test.ts: a review meas
   assert.ok(!reopened.acceptsMeasurement(unknown));
 });
 
-test('src/daemon/task-progress/__tests__/review-producers.test.ts: second registration of the same kind is refused', async t => {
+test('second registration of the same kind is refused', async t => {
   const f = await fixture(t);
   assert.throws(() => f.coordinator.registerProducer('design-review', (d: DesignReviewDetails) => d),
     /progress producer already registered/);
@@ -156,7 +156,7 @@ test('src/daemon/task-progress/__tests__/review-producers.test.ts: second regist
     /progress producer already registered/);
 });
 
-test('src/daemon/task-progress/__tests__/review-producers.test.ts: committed workflow and analysis record fixtures decode with the composed validator', async t => {
+test('committed workflow and analysis record fixtures decode with the composed validator', async t => {
   const root = await mkdtemp(join(tmpdir(), 'insrc-review-producers-fixtures-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   const path = join(root, 'state');
@@ -196,7 +196,7 @@ test('src/daemon/task-progress/__tests__/review-producers.test.ts: committed wor
   assert.ok(analysis?.measurement !== null && validateAllDetails(analysis.measurement.kind, analysis.measurement.details));
 });
 
-test('src/daemon/task-progress/__tests__/review-producers.test.ts: DesignReviewDetails and CodeReviewDetails pass the bounded measurement schema and stay under 8 KiB', () => {
+test('DesignReviewDetails and CodeReviewDetails pass the bounded measurement schema and stay under 8 KiB', () => {
   const design = mapDesignReviewMeasurement(designIdentity, designProgress(7), task, owner);
   const code = mapCodeReviewMeasurement(codeIdentity, codeProgress(9), task, owner);
   assert.ok(design && code);

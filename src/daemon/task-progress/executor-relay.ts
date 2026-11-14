@@ -12,6 +12,7 @@ import type { ForwardRequest } from '../server.js';
 import type { OwnerEvidence, ProducerPort } from './coordinator.js';
 import { validateExecutorDetails } from './executor-measurements.js';
 import type { AnalysisDetails, ExecutorDetails, WorkflowDetails, registerExecutorProducers } from './executor-measurements.js';
+import type { AllTaskDetails } from './review-measurements.js';
 import type { ProgressRuntime } from './rpc.js';
 
 export type ExecutorProgressKind = ExecutorDetails['kind'];
@@ -39,7 +40,9 @@ export function analysisProgressPath(scope: unknown): string | undefined {
   }
   return isAbsolute(path) ? resolve(path) : undefined;
 }
-type ExecutorRuntime = ProgressRuntime<ExecutorDetails> & { producers: ReturnType<typeof registerExecutorProducers> };
+// The one progress runtime is typed over every detail kind; the relay itself only ever
+// receives the executor kinds from its ports, so ExecutorDetails sites stay unchanged.
+type ExecutorRuntime = ProgressRuntime<AllTaskDetails> & { producers: ReturnType<typeof registerExecutorProducers> };
 const TERMINAL = Type.Union([Type.Literal('completed'), Type.Literal('failed'), Type.Literal('cancelled')]);
 type Terminal = Static<typeof TERMINAL>;
 const EventSchema = Type.Union([

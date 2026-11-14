@@ -29,7 +29,7 @@ import { gateHandlers, gateRepoCall } from './repo-call-gate.js';
 /** The methods gated inside their own handlers (the approval family): the table-wide wrapper leaves them alone. */
 const APPROVAL_FAMILY: ReadonlySet<string> = new Set(['workflow.approve', 'workflow.approvePipeline']);
 import { listRepos, addRepo, removeRepo, repoContainingCwd, InvalidRepoPathError, validateRepoPath } from '../db/repos.js';
-import type { ExecutorDetails } from './task-progress/executor-measurements.js';
+import type { AllTaskDetails } from './task-progress/review-measurements.js';
 import { createProgressRoutes } from './task-progress/rpc.js';
 import type { ProgressRuntime } from './task-progress/rpc.js';
 import { deleteEntitiesForRepo, findEntitiesByFile, getEntity } from '../db/entities.js';
@@ -144,7 +144,7 @@ export interface RuntimeIndexer {
 
 export interface HandlerRuntimeDeps {
  readonly reviewThreads?:(()=>NonNullable<DaemonStatus['threads']>)|undefined;
-  readonly progressRuntime?: (() => Promise<ProgressRuntime<ExecutorDetails>>) | undefined;
+  readonly progressRuntime?: (() => Promise<ProgressRuntime<AllTaskDetails>>) | undefined;
  readonly stepCallHandler?: StreamHandler | undefined;
 	/** Test seam: the registered repositories' paths (default: the registry in `db`). */
 	readonly registeredRepos?: (() => Promise<ReadonlySet<string>>) | undefined;

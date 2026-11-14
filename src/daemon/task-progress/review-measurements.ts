@@ -7,6 +7,9 @@ import type { ReviewKey } from '../../shared/review-resources.js';
 import type { ReviewWorkerIdentity } from '../threads/review-worker-contract.js';
 import { MeasuredCountSchema, ProgressLabel, ProgressSequence, progressObject } from '../../shared/task-progress.js';
 import type { DelegateMeasurement, MeasuredCount, ProgressKind, TaskOwnerFence, TaskProgressDelegate, TaskRef } from '../../shared/task-progress.js';
+import { validateExecutorDetails } from './executor-measurements.js';
+import type { ExecutorDetails } from './executor-measurements.js';
+import type { ProgressCoordinator } from './coordinator.js';
 
 const target = Type.String({ minLength: 1, maxLength: 2048, pattern: '^[^\\x00-\\x1f\\x7f]+$' });
 const nullableCount = Type.Union([MeasuredCountSchema, Type.Null()]);
@@ -38,6 +41,20 @@ export function validateReviewDetails(kind: ProgressKind, value: unknown): value
   if (kind === 'design-review') return Value.Check(DesignReviewDetailsSchema, value);
   if (kind === 'code-review') return Value.Check(CodeReviewDetailsSchema, value);
   return false;
+}
+
+/** One runtime, one store: executor kinds and review kinds share the composed validator. */
+export type AllTaskDetails = ExecutorDetails | ReviewDetails;
+export function validateAllDetails(kind: ProgressKind, value: unknown): value is AllTaskDetails {
+  return validateExecutorDetails(kind, value) || validateReviewDetails(kind, value);
+}
+
+/** Register the review producers next to the workflow and analysis ones on the one coordinator. */
+export function registerReviewProducers(coordinator: ProgressCoordinator<AllTaskDetails>) {
+  return {
+    designReview: coordinator.registerProducer<DesignReviewDetails>('design-review', detail => detail),
+    codeReview: coordinator.registerProducer<CodeReviewDetails>('code-review', detail => detail),
+  };
 }
 
 type ReviewIdentity = ReviewWorkerIdentity & { readonly attempt: number };

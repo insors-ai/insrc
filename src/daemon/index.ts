@@ -21,7 +21,10 @@ import { fileURLToPath } from 'node:url';
 import { runBootSteeringRefresh } from './steering-inject.js';
 import { PATHS } from '../shared/paths.js';
 import { openProgressRuntime } from './task-progress/runtime.js';
-import { registerExecutorProducers, validateExecutorDetails } from './task-progress/executor-measurements.js';
+import { registerExecutorProducers } from './task-progress/executor-measurements.js';
+import type { ExecutorDetails } from './task-progress/executor-measurements.js';
+import type { ProgressCoordinator } from './task-progress/coordinator.js';
+import { registerReviewProducers, validateAllDetails } from './task-progress/review-measurements.js';
 import { ExecutorProgressRelay } from './task-progress/executor-relay.js';
 import { setLogMode, getLogger } from '../shared/logger.js';
 
@@ -497,9 +500,17 @@ async function main(): Promise<void> {
 	// Built at boot without daemon threads; with them, only when the first request that must stay
 	// on this thread arrives (s4), so a daemon that never sees one never builds the handler tables here.
 	let understandingRoutes: HandlerRuntime['understandingRoutes'] | undefined;
+	// One progress runtime serves the executor kinds and the review kinds: a single
+	// store with the composed validator, one coordinator, one set of progress.* routes.
+	// The coordinator's producers are registered through its widened type; the
+	// executor registry only ever touches the executor kinds.
 	const openExecutorProgress = async () => {
-		const runtime = await openProgressRuntime(PATHS.insrc, workspaceRepoIds, validateExecutorDetails);
-		return { ...runtime, producers: registerExecutorProducers(runtime.coordinator) };
+		const runtime = await openProgressRuntime(PATHS.insrc, workspaceRepoIds, validateAllDetails);
+		const coordinator = runtime.coordinator as ProgressCoordinator<ExecutorDetails>;
+		return {
+			...runtime,
+			producers: { ...registerExecutorProducers(coordinator), ...registerReviewProducers(runtime.coordinator) },
+		};
 	};
 	let progressRuntime: ReturnType<typeof openExecutorProgress> | undefined;
 	const getProgressRuntime = () => {

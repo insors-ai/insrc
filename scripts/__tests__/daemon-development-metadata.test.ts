@@ -48,11 +48,21 @@ test('development verification rejects invalid branch policy, signatures and hos
 		...input, policy: { ...policy, developmentRefs: ['refs/heads/other'] },
 	}), /branch policy/);
 	await assert.rejects(verifyAndStageDevelopmentBundle({ ...input, signature: Buffer.alloc(64) }), /development signature/);
-	await assert.rejects(verifyAndStageDevelopmentBundle({
-		...input, signature: sign(null, manifestSigningBytes(bytes, 'production'), privateKey),
-	}), /development signature/);
 	for (const domain of ['production', 'qualification']) {
+		await assert.rejects(verifyAndStageDevelopmentBundle({
+			...input, signature: sign(null, manifestSigningBytes(bytes, domain), privateKey),
+		}), /development signature/);
 		assert.throws(() => verifyBundleManifest(bytes, signature, domain, pem), /manifest signature/);
+	}
+	for (const [field, value, expected] of [
+		['sourceRef', 'refs/tags/preview', /full branch ref/],
+		['target', 'linux-arm64', /target or runtime/],
+	] as const) {
+		const altered = Buffer.from(JSON.stringify({ ...JSON.parse(bytes.toString()), [field]: value }));
+		await assert.rejects(verifyAndStageDevelopmentBundle({
+			...input, bytes: altered, signature: sign(null, developmentManifestSigningBytes(altered), privateKey),
+			archive: '/nonexistent/archive', releaseParent: '/nonexistent/releases',
+		}), expected);
 	}
 	await assert.rejects(verifyAndStageDevelopmentBundle({ ...input, host: { ...host, macOSVersion: '14.9' } }), /below bundle minimum/);
 	await assert.rejects(verifyAndStageDevelopmentBundle({ ...input, host: { ...host, nodeVersion: '24.0.0' } }), /Node version/);

@@ -380,6 +380,8 @@ Add retries and followUp counters to ReviewProgress (task-review/progress.ts) an
   - **resolved**: Accept null for this Story — User approved planning with null retries/follow-up; whether to track a separate engine-counter Story is left to the user. _(2026-11-14T18:02:58.080Z)_
 - `q70227ac1` — Coordinator typing versus the HLD: the HLD says 'a shared daemon coordinator', but a1 as designed uses a second typed coordinator so s2's ExecutorDetails stays untouched. Should the plan widen the one coordinator's details union (a2, edits s2's executor-measurements.ts) or keep two coordinators and have s5/s6 read both?
   - **resolved**: a1: Two typed coordinators — User approved planning with a second typed coordinator; widening s2's union (a2) is the recorded fallback. _(2026-11-14T18:04:05.007Z)_
+- `q9cc2552d` — Who binds a review identity (project, family, reviewId, attempt) to a TaskRef and mints the ProducerAuthorization at review start? sc1 and the HLD put owner binding and registration in s1; s3 should only supply the review identity and delegates. Confirm this stays consume-only, or raise an HLD back-flow, before the plan.
+  - **resolved**: Keep s3 consume-only — User approved: s1 owns binding and authorization; plan checks early whether s1 exposes a hook. _(2026-11-14T18:05:03.405Z)_
 
 ## Citations
 

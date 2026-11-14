@@ -30,6 +30,10 @@ test('the planning prompt and catalog contain no limit, topK, maxSources or prev
 	assert.equal(/fan-out to|first (two|three|four|five|\d+) /i.test(prompt), false, 'a bound on a fan-out or a first-N');
 	assert.equal(/[≤<=]\s?\d+ (connections|candidates|exports|modules|files)/.test(prompt), false, 'a bound on how many to take');
 
+	// The data recipe fans out across connections with no bound on how many explorations it may emit.
+	const dataRecipe = prompt.slice(prompt.indexOf('db.connections.list'));
+	assert.equal(/At most \d+ explorations\. When `db\.connections\.list`/.test(dataRecipe), false, 'a bound on the connection fan-out');
+
 	// The params every lookup takes.
 	for (const [type, params] of Object.entries(EXPLORATION_PARAMS)) {
 		for (const name of REMOVED) assert.equal(name in params, false, `${type} takes ${name}`);

@@ -442,6 +442,8 @@ Pagination contains fresh results only; inspect report provenance by checkpoint 
 Approval-history publication remains the later S4 story;
 a checkpoint result alone is not an approval record.
 
+Use `phase:'cancel'` with the exact review id/attempt, a stable `actionId` and pointed `reason` to stop only this review. Observe `operationState`: `cancelling`, `stopped` or `resource_fenced`. Cancellation is not an assessment verdict, never approves work and never retriggers it; resource clearance and any explicit recovery remain separate. Preparation progress reports genuine completed operations; its total can be null.
+
 <!-- insrc:guide:review:end -->
 
 <!-- insrc:guide:code-review:start -->
@@ -505,6 +507,8 @@ every new attempt requalifies history, and raising the setting can admit a fitti
 All phases require repo (or resolved project), epicHash, reviewId, attempt.
 The schemas advertise reused bounded packet/results; host validates semantic scope,
 phase, ownership and replay. Old dimension/chunk review inputs remain rejected.
+Use `phase:'cancel'` with the exact review id/attempt, a stable `actionId` and pointed `reason` to stop only this review. Observe `operationState`: `cancelling`, `stopped` or `resource_fenced`. Cancellation preserves committed feedback, is not an assessment verdict, and does not resume or approve work. Resource clearance and explicit recovery/new attempts are separate. Preparation progress counts verified completed queries; totals remain null until known.
+
 <!-- insrc:guide:code-review:end -->
 
 <!-- insrc:guide:tracker:start -->

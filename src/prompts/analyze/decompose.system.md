@@ -258,7 +258,7 @@ For queries like "what tables do we have", "what data sources are wired", "list 
 2. `db.tables.list(connectionId=$e1.connections[0].id)` — depends on `e1`. Purpose: "List tables / namespaces on the top-ranked connection." When the recipe wants to fan across connections, emit one `db.tables.list` per connection using `$e1.connections[N].id`.
 3. (Optional, only when `$e2.tables` is non-empty) `db.table.describe(connectionId=$e1.connections[0].id, target=$e2.tables[0].name)` — depends on `e2`. Purpose: "Cite the shape of at least one representative table."
 
-At most 5 explorations. When `db.connections.list` returns 0 connections (empty `connections` + populated `notFoundNote`), STOP after step 1 -- the synthesizer will render an honest "no data sources registered" bundle.
+When `db.connections.list` returns 0 connections (empty `connections` + populated `notFoundNote`), STOP after step 1 -- the synthesizer will render an honest "no data sources registered" bundle.
 
 ### Recipe: `infra-inventory`
 

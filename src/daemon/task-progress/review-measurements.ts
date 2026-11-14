@@ -176,25 +176,27 @@ abstract class ReviewDelegateBase<D extends ReviewDetails> implements TaskProgre
     return JSON.stringify(strip(mapped)) === JSON.stringify(strip(last));
   }
   async progress(task: TaskRef): Promise<DelegateMeasurement<D> | null> {
-    let progress: ReviewWorkerProgress | undefined;
     try {
-      progress = this.source.progressOf(this.identity.key);
+      const progress = this.source.progressOf(this.identity.key);
+      if (!progress) return null; // missing or closing entry
+      if (!this.isNewer(progress)) return this.lastAccepted?.measurement ?? null;
+      // An unverified admission in a new incarnation is not verified yet: the
+      // previous (e.g. interrupted) measurement stands until verification.
+      const admission = (progress.observation as { admission?: { validation?: unknown } } | undefined)?.admission;
+      if (admission?.validation === 'unverified' && progress.incarnation !== this.lastAccepted?.incarnation) {
+        return this.lastAccepted?.measurement ?? null;
+      }
+      const owner: TaskOwnerFence = { ownerId: 'main', ownerEpoch: progress.incarnation, ownerSequence: progress.sequence };
+      const mapped = this.map(progress, task, owner);
+      if (!mapped) return this.lastAccepted?.measurement ?? null; // a rejected sample keeps the last accepted measurement
+      const measurement = this.isHeartbeat(mapped) && this.lastAccepted
+        ? { ...mapped, meaningfulRevision: this.lastAccepted.measurement.meaningfulRevision }
+        : mapped;
+      this.lastAccepted = { incarnation: progress.incarnation, sequence: progress.sequence, measurement, processAlive: this.processAlive(progress) };
+      return measurement;
     } catch {
-      return null; // a failed read returns null, never throws
+      return null; // never throws
     }
-    if (!progress) return null; // missing or closing entry
-    if (!this.isNewer(progress)) return this.lastAccepted?.measurement ?? null;
-    const owner: TaskOwnerFence = { ownerId: 'main', ownerEpoch: progress.incarnation, ownerSequence: progress.sequence };
-    let mapped: DelegateMeasurement<D> | null;
-    try {
-      mapped = this.map(progress, task, owner);
-    } catch {
-      return this.lastAccepted?.measurement ?? null; // a rejected sample keeps the last accepted measurement
-    }
-    if (!mapped) return this.lastAccepted?.measurement ?? null;
-    if (this.isHeartbeat(mapped) && this.lastAccepted) mapped = { ...mapped, meaningfulRevision: this.lastAccepted.measurement.meaningfulRevision };
-    this.lastAccepted = { incarnation: progress.incarnation, sequence: progress.sequence, measurement: mapped, processAlive: this.processAlive(progress) };
-    return mapped;
   }
   /** Liveness only: the last accepted sequence while the live incarnation matches (and the process is alive for code). Never renews activity by reading. */
   async ownerActivity(_task: TaskRef): Promise<number | null> {

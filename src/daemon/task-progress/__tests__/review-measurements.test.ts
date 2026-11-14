@@ -203,14 +203,18 @@ test('an interrupted review reads as interrupted until the new incarnation is ve
   assert.equal(interrupted!.details.publication, 'pending', 'publication follows crPublication unless status is failed');
   assert.equal(interrupted!.phase, 'interrupted', 'an interrupted review reads as interrupted');
   assert.equal(interrupted!.details.initial.completed, 3, 'interrupted review keeps its last accepted counts');
-  // New incarnation admitted but not yet verified (no progress accepted): keep the interrupted view.
+  // New incarnation admitted but still unverified: the interrupted view stands.
   entries.get(slot)!.live = 'inc-2';
+  entries.get(slot)!.progress = codeProgress({ incarnation: 'inc-2', sequence: 1, updatedAt: '2026-11-15T10:03:00.000Z' },
+    { status: 'pending', completedTasks: 0, totalTasks: 0, admission: { validation: 'unverified' } });
   const held = await delegate.progress(task);
-  assert.equal(held!.meaningfulRevision, interrupted!.meaningfulRevision, 'unverified new incarnation does not replace the interrupted measurement');
-  // Once the new incarnation publishes, its measurement wins.
-  entries.get(slot)!.progress = codeProgress({ incarnation: 'inc-2', sequence: 1, updatedAt: '2026-11-15T10:03:00.000Z' }, { status: 'running' });
+  assert.equal(held!.phase, 'interrupted', 'unverified new incarnation does not replace the interrupted measurement');
+  assert.equal(held!.meaningfulRevision, interrupted!.meaningfulRevision);
+  // Once the new incarnation is verified and running, its measurement wins.
+  entries.get(slot)!.progress = codeProgress({ incarnation: 'inc-2', sequence: 2, updatedAt: '2026-11-15T10:04:00.000Z' }, { status: 'running' });
   const recovered = await delegate.progress(task);
-  assert.equal(recovered!.meaningfulRevision, 1);
+  assert.equal(recovered!.phase, 'task_review');
+  assert.equal(recovered!.meaningfulRevision, 2);
 });
 
 test('a missing or closing entry returns null without throwing', async () => {
@@ -237,6 +241,13 @@ test('a missing or closing entry returns null without throwing', async () => {
   const throwing: ReviewProgressSource = { progressOf: () => { throw new Error('boom'); }, identity: () => undefined };
   const throwingDelegate = new DesignReviewDelegate(throwing, { ...identity });
   assert.equal(await throwingDelegate.progress(task), null, 'a throwing read returns null without throwing');
+  // A throwing identity lookup during an incarnation change must not reject either.
+  const flakyState = { incarnation: 'inc-1' };
+  const flaky: ReviewProgressSource = { progressOf: () => designProgress({ incarnation: flakyState.incarnation }), identity: () => { throw new Error('identity boom'); } };
+  const flakyDelegate = new DesignReviewDelegate(flaky, { ...identity });
+  assert.ok(await flakyDelegate.progress(task), 'first read accepts');
+  flakyState.incarnation = 'inc-9';
+  assert.equal(await flakyDelegate.progress(task), null, 'a throwing identity lookup during an incarnation change returns null without rejecting');
 });
 
 test('observing progress leaves review results, publication and approval unchanged', async () => {

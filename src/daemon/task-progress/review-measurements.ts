@@ -146,12 +146,17 @@ export interface ReviewProgressSource {
 }
 
 abstract class ReviewDelegateBase<D extends ReviewDetails> implements TaskProgressDelegate<D> {
-  private lastAccepted: { incarnation: string; sequence: number; measurement: DelegateMeasurement<D> } | undefined;
+  private lastAccepted: { incarnation: string; sequence: number; measurement: DelegateMeasurement<D>; processAlive: boolean } | undefined;
   protected constructor(
     protected readonly source: ReviewProgressSource,
     protected readonly identity: ReviewIdentity,
   ) {}
   protected abstract map(progress: ReviewWorkerProgress, task: TaskRef, owner: TaskOwnerFence): DelegateMeasurement<D> | null;
+  /** True when the mapping must also observe executor process liveness (code review). */
+  protected abstract readonly requiresAliveProcess: boolean;
+  protected processAlive(progress: ReviewWorkerProgress): boolean {
+    return (progress.observation as { progress?: { processState?: unknown } } | undefined)?.progress?.processState === 'alive';
+  }
   /** A sample from an earlier incarnation or a lower sequence never replaces the newer measurement. */
   private isNewer(progress: ReviewWorkerProgress): boolean {
     const last = this.lastAccepted;
@@ -160,24 +165,43 @@ abstract class ReviewDelegateBase<D extends ReviewDetails> implements TaskProgre
     // A new incarnation supersedes the old one only once it is the live one.
     return progress.incarnation === this.source.identity(this.identity.key)?.incarnation;
   }
-  async progress(task: TaskRef): Promise<DelegateMeasurement<D> | null> {
-    try {
-      const progress = this.source.progressOf(this.identity.key);
-      if (!progress || !this.isNewer(progress)) return this.lastAccepted?.measurement ?? null;
-      const owner: TaskOwnerFence = { ownerId: 'main', ownerEpoch: progress.incarnation, ownerSequence: progress.sequence };
-      const mapped = this.map(progress, task, owner);
-      // A rejected sample keeps the last accepted measurement; nothing is thrown.
-      if (mapped) this.lastAccepted = { incarnation: progress.incarnation, sequence: progress.sequence, measurement: mapped };
-      return mapped ?? this.lastAccepted?.measurement ?? null;
-    } catch {
-      return this.lastAccepted?.measurement ?? null;
-    }
+  /** True when only the sequence/timestamp advanced: a heartbeat keeps the prior revision. */
+  private isHeartbeat(mapped: DelegateMeasurement<D>): boolean {
+    const last = this.lastAccepted?.measurement;
+    if (!last) return false;
+    const strip = (m: DelegateMeasurement<D>) => ({
+      ...m, meaningfulRevision: 0, measuredAt: '',
+      owner: { ...m.owner, ownerSequence: 0 },
+    });
+    return JSON.stringify(strip(mapped)) === JSON.stringify(strip(last));
   }
-  /** Liveness only: the last accepted sequence while the live incarnation matches. Never renews activity by reading. */
+  async progress(task: TaskRef): Promise<DelegateMeasurement<D> | null> {
+    let progress: ReviewWorkerProgress | undefined;
+    try {
+      progress = this.source.progressOf(this.identity.key);
+    } catch {
+      return null; // a failed read returns null, never throws
+    }
+    if (!progress) return null; // missing or closing entry
+    if (!this.isNewer(progress)) return this.lastAccepted?.measurement ?? null;
+    const owner: TaskOwnerFence = { ownerId: 'main', ownerEpoch: progress.incarnation, ownerSequence: progress.sequence };
+    let mapped: DelegateMeasurement<D> | null;
+    try {
+      mapped = this.map(progress, task, owner);
+    } catch {
+      return this.lastAccepted?.measurement ?? null; // a rejected sample keeps the last accepted measurement
+    }
+    if (!mapped) return this.lastAccepted?.measurement ?? null;
+    if (this.isHeartbeat(mapped) && this.lastAccepted) mapped = { ...mapped, meaningfulRevision: this.lastAccepted.measurement.meaningfulRevision };
+    this.lastAccepted = { incarnation: progress.incarnation, sequence: progress.sequence, measurement: mapped, processAlive: this.processAlive(progress) };
+    return mapped;
+  }
+  /** Liveness only: the last accepted sequence while the live incarnation matches (and the process is alive for code). Never renews activity by reading. */
   async ownerActivity(_task: TaskRef): Promise<number | null> {
     try {
       const live = this.source.identity(this.identity.key);
       if (!live || !this.lastAccepted || live.incarnation !== this.lastAccepted.incarnation) return null;
+      if (this.requiresAliveProcess && !this.lastAccepted.processAlive) return null;
       return this.lastAccepted.sequence;
     } catch {
       return null;
@@ -186,6 +210,7 @@ abstract class ReviewDelegateBase<D extends ReviewDetails> implements TaskProgre
 }
 
 export class DesignReviewDelegate extends ReviewDelegateBase<DesignReviewDetails> {
+  protected readonly requiresAliveProcess = false;
   protected map(progress: ReviewWorkerProgress, task: TaskRef, owner: TaskOwnerFence): DelegateMeasurement<DesignReviewDetails> | null {
     // Validate key and attempt against the bound identity; accept the sample's
     // incarnation because a newer live incarnation supersedes the bound one.
@@ -193,7 +218,13 @@ export class DesignReviewDelegate extends ReviewDelegateBase<DesignReviewDetails
   }
 }
 export class CodeReviewDelegate extends ReviewDelegateBase<CodeReviewDetails> {
+  protected readonly requiresAliveProcess = true;
   protected map(progress: ReviewWorkerProgress, task: TaskRef, owner: TaskOwnerFence): DelegateMeasurement<CodeReviewDetails> | null {
-    return mapCodeReviewMeasurement({ ...this.identity, incarnation: progress.incarnation, attempt: progress.attempt }, progress, task, owner);
+    // An interrupted review surfaces as phase 'interrupted', not the last execution phase.
+    const status = (progress.observation as { status?: unknown } | undefined)?.status;
+    const interrupted = status === 'interrupted';
+    const mapped = mapCodeReviewMeasurement({ ...this.identity, incarnation: progress.incarnation, attempt: progress.attempt }, progress, task, owner);
+    if (!mapped) return null;
+    return interrupted ? { ...mapped, phase: 'interrupted' } : mapped;
   }
 }

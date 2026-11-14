@@ -190,8 +190,7 @@ test('heartbeat-only samples keep counts and meaningful revision unchanged', asy
   entries.get(JSON.stringify([key.project, key.family, key.reviewId]))!.progress = codeProgress({ sequence: 10, updatedAt: '2026-11-15T10:02:00.000Z' });
   const second = await delegate.progress(task);
   assert.deepEqual(second!.counts, [{ unit: 'tasks', completed: 3, total: 10 }], 'counts unchanged by heartbeat');
-  assert.equal(second!.meaningfulRevision, 10, 'sequence is the revision channel; the delegate tracks it');
-  assert.equal(delegate['lastAccepted' as never], second ? delegate['lastAccepted' as never] : undefined);
+  assert.equal(second!.meaningfulRevision, first!.meaningfulRevision, 'a heartbeat-only sample leaves meaningfulRevision unchanged');
 });
 
 test('an interrupted review reads as interrupted until the new incarnation is verified', async () => {
@@ -202,7 +201,7 @@ test('an interrupted review reads as interrupted until the new incarnation is ve
   const delegate = new CodeReviewDelegate(fakeSource(entries), { ...codeIdentity });
   const interrupted = await delegate.progress(task);
   assert.equal(interrupted!.details.publication, 'pending', 'publication follows crPublication unless status is failed');
-  assert.equal(interrupted!.phase, 'task_review', 'phase comes from the display projection');
+  assert.equal(interrupted!.phase, 'interrupted', 'an interrupted review reads as interrupted');
   assert.equal(interrupted!.details.initial.completed, 3, 'interrupted review keeps its last accepted counts');
   // New incarnation admitted but not yet verified (no progress accepted): keep the interrupted view.
   entries.get(slot)!.live = 'inc-2';
@@ -224,6 +223,20 @@ test('a missing or closing entry returns null without throwing', async () => {
   const entries = new Map([[slot, { closing: true, progress: designProgress() }]]) as Map<string, { progress?: ReviewWorkerProgress; closing?: boolean }>;
   const closingDelegate = new DesignReviewDelegate(fakeSource(entries), { ...identity, key: closing });
   assert.equal(await closingDelegate.progress(task), null, 'closing entry yields null');
+  // After an accepted measurement, a missing/closing entry or a throwing read
+  // returns null rather than serving the cache.
+  const liveKey = srcKey('design', 'rev-1');
+  const liveSlot = JSON.stringify([liveKey.project, liveKey.family, liveKey.reviewId]);
+  const liveEntries = new Map([[liveSlot, { live: 'inc-1', progress: designProgress() }]]) as Map<string, { progress?: ReviewWorkerProgress; live?: string; closing?: boolean }>;
+  const liveDelegate = new DesignReviewDelegate(fakeSource(liveEntries), { ...identity });
+  assert.ok(await liveDelegate.progress(task), 'first read accepts');
+  liveEntries.get(liveSlot)!.closing = true;
+  assert.equal(await liveDelegate.progress(task), null, 'closing after an accepted measurement yields null');
+  liveEntries.delete(liveSlot);
+  assert.equal(await liveDelegate.progress(task), null, 'missing entry after an accepted measurement yields null');
+  const throwing: ReviewProgressSource = { progressOf: () => { throw new Error('boom'); }, identity: () => undefined };
+  const throwingDelegate = new DesignReviewDelegate(throwing, { ...identity });
+  assert.equal(await throwingDelegate.progress(task), null, 'a throwing read returns null without throwing');
 });
 
 test('observing progress leaves review results, publication and approval unchanged', async () => {
@@ -237,4 +250,20 @@ test('observing progress leaves review results, publication and approval unchang
   await delegate.ownerActivity(task);
   assert.deepEqual(entries.get(slot)!.progress, before, 'the stored publication is untouched by reads');
   assert.equal(typeof delegate.cancel, 'undefined', 'delegates expose no cancel, so controls stay empty');
+});
+
+test('code review ownerActivity requires a live incarnation and an alive process', async () => {
+  const key = srcKey('code', 'rev-c1');
+  const slot = JSON.stringify([key.project, key.family, key.reviewId]);
+  const aliveObs = { ...codeProgress().observation as Record<string, unknown>, progress: { phase: 'task_review', task: null, processState: 'alive', lastMeaningfulActivityAt: '2026-11-15T10:00:30.000Z' } };
+  const entries = new Map([[slot, { live: 'inc-1', progress: codeProgress({}, aliveObs) }]]) as Map<string, { progress?: ReviewWorkerProgress; live?: string }>;
+  const delegate = new CodeReviewDelegate(fakeSource(entries), { ...codeIdentity });
+  await delegate.progress(task);
+  assert.equal(await delegate.ownerActivity(task), 9, 'alive process reports the last accepted sequence');
+  const deadObs = { ...codeProgress().observation as Record<string, unknown>, progress: { phase: 'task_review', task: null, processState: 'exited', lastMeaningfulActivityAt: '2026-11-15T10:00:30.000Z' } };
+  entries.get(slot)!.progress = codeProgress({ sequence: 11 }, deadObs);
+  await delegate.progress(task);
+  assert.equal(await delegate.ownerActivity(task), null, 'exited process yields null');
+  entries.get(slot)!.live = 'inc-2';
+  assert.equal(await delegate.ownerActivity(task), null, 'a foreign live incarnation yields null');
 });

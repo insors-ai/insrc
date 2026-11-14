@@ -390,6 +390,25 @@ test('through the Node fallback with complete set, every hit with its whole line
 			runGrepSearch({ pattern: 'needle', root, complete: true, _backend: { ...NO_RIPGREP, rgTimeoutMs: 0 } }),
 			(err: unknown) => err instanceof GrepIncompleteError && err.reason === 'timeout' && Array.isArray(err.hits),
 		);
+		// Hits gathered before the deadline are attached. A clock that moves 10 ms a reading, with 35 ms allowed: three of
+		// four files are read, then the fourth entry is past the deadline. With 15 ms allowed, the one file is read and
+		// the check made after the scan still fails it.
+		const timed = tmp();
+		try {
+			for (const n of ['a', 'b', 'c', 'd']) writeFileSync(join(timed, `${n}.txt`), 'needle\n');
+			const clock = (): (() => number) => { let t = -10; return () => (t += 10); };
+			await assert.rejects(
+				runGrepSearch({ pattern: 'needle', root: timed, complete: true, _backend: { ...NO_RIPGREP, rgTimeoutMs: 35, now: clock() } }),
+				(err: unknown) => err instanceof GrepIncompleteError && err.reason === 'timeout' && err.hits.length === 3,
+			);
+			rmSync(join(timed, 'b.txt')); rmSync(join(timed, 'c.txt')); rmSync(join(timed, 'd.txt'));
+			await assert.rejects(
+				runGrepSearch({ pattern: 'needle', root: timed, complete: true, _backend: { ...NO_RIPGREP, rgTimeoutMs: 15, now: clock() } }),
+				(err: unknown) => err instanceof GrepIncompleteError && err.reason === 'timeout' && err.hits.length === 1,
+			);
+		} finally {
+			cleanup(timed);
+		}
 		const bare = tmp();
 		try {
 			mkdirSync(join(bare, 'a'));

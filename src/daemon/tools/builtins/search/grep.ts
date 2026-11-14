@@ -108,8 +108,8 @@ export interface GrepSearchOptions {
 	 * limit applies as it always did.
 	 */
 	readonly complete?:       boolean;
-	/** Test seam: the ripgrep binary and its time limit. Production passes neither. */
-	readonly _backend?: { readonly rgCommand?: string; readonly rgTimeoutMs?: number } | undefined;
+	/** Test seam: the ripgrep binary, its time limit and the complete Node scan's clock. Production passes none. */
+	readonly _backend?: { readonly rgCommand?: string; readonly rgTimeoutMs?: number; readonly now?: () => number } | undefined;
 }
 
 /**
@@ -161,9 +161,10 @@ export async function runGrepSearch(opts: GrepSearchOptions): Promise<SearchGrep
 	const complete = opts.complete === true;
 	// Complete mode: no hit limit, and the same deadline as the ripgrep backend, checked after each file.
 	const deadlineMs = opts._backend?.rgTimeoutMs ?? RG_TIMEOUT_MS;
-	const deadline = Date.now() + deadlineMs;
+	const now = opts._backend?.now ?? Date.now;
+	const deadline = now() + deadlineMs;
 	const checkDeadline = (): void => {
-		if (complete && Date.now() >= deadline) {
+		if (complete && now() >= deadline) {
 			throw new GrepIncompleteError(`the search was stopped after ${deadlineMs} ms with ${hits.length} hits gathered`, 'timeout', hits);
 		}
 	};
@@ -214,6 +215,8 @@ export async function runGrepSearch(opts: GrepSearchOptions): Promise<SearchGrep
 	}
 
 	await walk(root);
+	// The last file may have crossed the deadline: an overdue scan is never a success.
+	checkDeadline();
 	return {
 		pattern: opts.pattern, root, usedRipgrep: false, hits, truncated,
 		omitted: {

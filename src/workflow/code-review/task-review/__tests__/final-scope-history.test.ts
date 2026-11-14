@@ -10,10 +10,17 @@ import { checkpointPath, saveCheckpoint } from '../checkpoint.js';
 import { publishTaskCheckpoint } from '../publication.js';
 import { renderTaskReview, validateTaskBody } from '../record.js';
 import { failAttribution, unmappedTaskFailure } from '../attribution-failure.js';
+import { CodePreparation } from '../../../review/code-preparation.js';
+import { ReviewPreparationCapacity } from '../../../review/source-session.js';
+import { reviewPreparationLimits } from '../../../../config/review.js';
 import { projectionIdentity } from '../projection.js';
 
 test('final history: source-verified shifted renamed per-task scope roundtrips offline and idempotently',async()=>{
- const f=await fixture();try{
+ const f=await fixture();
+ const limits=reviewPreparationLimits(join(f.repo,'missing-config.json'));
+ const preparation=await CodePreparation.create({project:f.repo,family:'code',reviewId:'publication'},f.deps.sources,limits,new ReviewPreparationCapacity(limits.cacheMaxBytes));
+ const deps={...f.deps,sources:preparation.sources};
+ try{
   renameSync(join(f.repo,'source.js'),join(f.repo,'renamed.js'));
   f.put('renamed.js','// inserted\nexport const total = 2;\n');f.git('add','.');f.git('commit','-qm','rename and shift');
   const revision=f.git('rev-parse','HEAD');f.packet.reviewSet.push({commit:revision,parent:f.packet.reviewRevision!,files:[{path:'renamed.js',previousPath:'source.js',segments:[{after:[1,1]}]}]});f.packet.reviewRevision=revision;await f.refreshBinding();
@@ -21,12 +28,12 @@ test('final history: source-verified shifted renamed per-task scope roundtrips o
   result.status='changes_requested';result.inspectedReferences=[`${revision}:renamed.js`];
   result.findings=[{severity:'MED',location:'renamed.js:2',message:'Required behavior missing',rationale:'Requirement mismatch',evidenceReferences:result.inspectedReferences}];
   await saveCheckpoint(checkpointPath(f.repo,'publication'),cp);
-  const published=await publishTaskCheckpoint(f.repo,hash,'publication',f.deps),body=f.readRecord(published.jsonPath).body;
+  const published=await publishTaskCheckpoint(f.repo,hash,'publication',deps),body=f.readRecord(published.jsonPath).body;
   assert.equal(body.reviews[0]!.scope.finalScope!.entries[0]!.path,'renamed.js');
-  const bytes=readFileSync(published.jsonPath,'utf8');await publishTaskCheckpoint(f.repo,hash,'publication',f.deps);assert.equal(readFileSync(published.jsonPath,'utf8'),bytes);
-  f.cleanup();assert.deepEqual(validateTaskBody(body),body);assert.match(renderTaskReview(body),/renamed.js:2/);
+  const bytes=readFileSync(published.jsonPath,'utf8');await publishTaskCheckpoint(f.repo,hash,'publication',deps);assert.equal(readFileSync(published.jsonPath,'utf8'),bytes);
+  await preparation.close();f.cleanup();assert.deepEqual(validateTaskBody(body),body);assert.match(renderTaskReview(body),/renamed.js:2/);
   const bad=structuredClone(body);bad.reviews[0]!.tasks[0]!.findings[0]!.location='source.js:1';assert.throws(()=>validateTaskBody(bad),/outside/);
- }finally{f.cleanup();}
+ }finally{await preparation.close();f.cleanup();}
 });
 
 test('final history: missing bindings partitions witnesses task subsets and foreign locations reject offline',async()=>{

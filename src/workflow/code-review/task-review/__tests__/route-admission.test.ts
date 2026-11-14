@@ -134,6 +134,8 @@ test('shared preparation retains route-qualified views for pinned recovery witho
   const recovered = await CodePreparation.reuse(key, reader, cachedSources, limits, capacity);
   const resumed = await recovered.prepare(f.repo, key.reviewId, 1, undefined, 'daemon', sources, { operation: 'resume', epicHash: ISSUE_ONLY });
   assert.deepEqual(resumed.prepared, structuredClone(expected));
+  const workerResumed = await recovered.workerPrepare(f.repo, key.reviewId, 1, undefined, 'daemon', sources, { operation: 'resume', epicHash: ISSUE_ONLY });
+  assert.deepEqual(workerResumed.prepared, resumed.prepared);
   assert.equal(nativeCalls, 0);
   const changed = structuredClone(packet); changed.functionalSummary = 'changed pinned input';
   await assert.rejects(recovered.prepare(f.repo, key.reviewId, 1, changed, 'daemon', sources, { operation: 'resume', epicHash: ISSUE_ONLY }), /pinned/);
@@ -142,17 +144,26 @@ test('shared preparation retains route-qualified views for pinned recovery witho
 });
 
 
-test('shared preparation preserves task selection and canonical story aliases across planned routes', async () => {
+test('shared preparation preserves task selection and canonical story aliases across every route', async () => {
  const f = fixture();
  try {
-  for (const hash of [PLAN_STORY, DEF_STORY]) {
-   const documents = { ...(hash === DEF_STORY ? { story: f.at(`DEF-${hash}`) } : {}), lld: f.at(`LLD-${hash}-s1`), plan: f.at(`PLAN-${hash}-s1`) };
-   const packet = { ...f.packetWith(documents), storyId: `STORY-${hash}-s1`, taskId: 't1' };
-   const admitted = await f.admit(packet, hash, `task-${hash}`);
-   assert.deepEqual(admitted.attempt.header.selectedTaskIds, ['t1']);
-   assert.equal(admitted.prepared.packet.storyId, packet.storyId);
+  const routes = [
+   { hash: ISSUE_ONLY, documents: { issue: f.at(`ISSUE-${ISSUE_ONLY}`) }, unit: 's1' },
+   { hash: LLD_ONLY, documents: { lld: f.at(`LLD-${LLD_ONLY}-s1`) }, unit: 's1' },
+   { hash: BUILD_ONLY, documents: {}, unit: 's1' },
+   { hash: PLAN_STORY, documents: { lld: f.at(`LLD-${PLAN_STORY}-s1`), plan: f.at(`PLAN-${PLAN_STORY}-s1`) }, unit: 't1' },
+   { hash: DEF_STORY, documents: { story: f.at(`DEF-${DEF_STORY}`), lld: f.at(`LLD-${DEF_STORY}-s1`), plan: f.at(`PLAN-${DEF_STORY}-s1`) }, unit: 't1' },
+  ];
+  let id = 0;
+  for (const route of routes) for (const storyId of ['s1', `STORY-${route.hash}-s1`]) for (const taskId of [undefined, route.unit]) {
+   const packet = { ...f.packetWith(route.documents), storyId, ...(taskId ? { taskId } : {}) };
+   const admitted = await f.admit(packet, route.hash, `route-${id++}`);
+   assert.deepEqual(admitted.attempt.header.selectedTaskIds, [route.unit]);
+   assert.equal(admitted.prepared.packet.storyId, storyId);
+   assert.equal(admitted.prepared.packet.taskId, taskId);
    assert.deepEqual(admitted.prepared.packet.reviewSet, packet.reviewSet);
    assert.deepEqual(admitted.prepared.projection!.entries[0]!.segments, [{ after: [1, 1] }]);
+   assert.equal(admitted.prepared.projection!.entries.length, 1);
   }
  } finally { f.cleanup(); }
 });

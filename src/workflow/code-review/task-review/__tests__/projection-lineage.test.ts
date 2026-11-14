@@ -158,17 +158,21 @@ async function sideBranchLineage(side: (r: ReturnType<typeof deterministicRepo>)
 
 test('a side-branch deletion merged back with the file kept still interrupts lineage', async () => {
  const f = await sideBranchLineage(r => { r.git('rm', '-q', 'source.js'); r.commit('side deletes source.js'); }, ['-s', 'ours']);
+ const limits = reviewPreparationLimits(join(f.r.repo, 'missing-config.json'));
+ const preparation = await CodePreparation.create({ project: f.r.repo, family: 'code', reviewId: 'shared-deletion' }, f.sources, limits, new ReviewPreparationCapacity(limits.cacheMaxBytes));
  try {
   assert.equal(f.r.git('rev-parse', `${f.pin}:source.js`).length, 40, 'the merge kept source.js');
-  await assert.rejects(projectReviewScope(f.origins, f.pin, f.sources), /Unselected path disappearance or recreation interrupts lineage/);
- } finally { f.r.cleanup(); }
+  await assert.rejects(projectReviewScope(f.origins, f.pin, preparation.sources), /Unselected path disappearance or recreation interrupts lineage/);
+ } finally { await preparation.close(); f.r.cleanup(); }
 });
 
 test('a side-branch deletion and recreation merged back still interrupts lineage', async () => {
  const f = await sideBranchLineage(r => { r.git('rm', '-q', 'source.js'); r.commit('side deletes source.js'); r.put('source.js', 'a\nB\nc\n'); r.commit('side recreates source.js'); }, []);
+ const limits = reviewPreparationLimits(join(f.r.repo, 'missing-config.json'));
+ const preparation = await CodePreparation.create({ project: f.r.repo, family: 'code', reviewId: 'shared-deletion' }, f.sources, limits, new ReviewPreparationCapacity(limits.cacheMaxBytes));
  try {
-  await assert.rejects(projectReviewScope(f.origins, f.pin, f.sources), /Unselected path disappearance or recreation interrupts lineage/);
- } finally { f.r.cleanup(); }
+  await assert.rejects(projectReviewScope(f.origins, f.pin, preparation.sources), /Unselected path disappearance or recreation interrupts lineage/);
+ } finally { await preparation.close(); f.r.cleanup(); }
 });
 
 test('a path history failure is a source error, not a projection limit or lineage conflict', async () => {

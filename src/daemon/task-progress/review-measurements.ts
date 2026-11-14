@@ -183,12 +183,14 @@ abstract class ReviewDelegateBase<D extends ReviewDetails> implements TaskProgre
       // An unverified admission in a new incarnation is not verified yet: the
       // previous (e.g. interrupted) measurement stands until verification.
       const admission = (progress.observation as { admission?: { validation?: unknown } } | undefined)?.admission;
-      if (admission?.validation === 'unverified' && progress.incarnation !== this.lastAccepted?.incarnation) {
-        return this.lastAccepted?.measurement ?? null;
+      if (this.lastAccepted && admission?.validation === 'unverified' && progress.incarnation !== this.lastAccepted.incarnation) {
+        return this.lastAccepted.measurement;
       }
       const owner: TaskOwnerFence = { ownerId: 'main', ownerEpoch: progress.incarnation, ownerSequence: progress.sequence };
-      const mapped = this.map(progress, task, owner);
+      let mapped = this.map(progress, task, owner);
       if (!mapped) return this.lastAccepted?.measurement ?? null; // a rejected sample keeps the last accepted measurement
+      // An interrupted review surfaces as phase 'interrupted' for both families.
+      if ((progress.observation as { status?: unknown } | undefined)?.status === 'interrupted') mapped = { ...mapped, phase: 'interrupted' };
       const measurement = this.isHeartbeat(mapped) && this.lastAccepted
         ? { ...mapped, meaningfulRevision: this.lastAccepted.measurement.meaningfulRevision }
         : mapped;
@@ -222,11 +224,6 @@ export class DesignReviewDelegate extends ReviewDelegateBase<DesignReviewDetails
 export class CodeReviewDelegate extends ReviewDelegateBase<CodeReviewDetails> {
   protected readonly requiresAliveProcess = true;
   protected map(progress: ReviewWorkerProgress, task: TaskRef, owner: TaskOwnerFence): DelegateMeasurement<CodeReviewDetails> | null {
-    // An interrupted review surfaces as phase 'interrupted', not the last execution phase.
-    const status = (progress.observation as { status?: unknown } | undefined)?.status;
-    const interrupted = status === 'interrupted';
-    const mapped = mapCodeReviewMeasurement({ ...this.identity, incarnation: progress.incarnation, attempt: progress.attempt }, progress, task, owner);
-    if (!mapped) return null;
-    return interrupted ? { ...mapped, phase: 'interrupted' } : mapped;
+    return mapCodeReviewMeasurement({ ...this.identity, incarnation: progress.incarnation, attempt: progress.attempt }, progress, task, owner);
   }
 }

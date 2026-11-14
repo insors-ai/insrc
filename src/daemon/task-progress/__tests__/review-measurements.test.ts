@@ -1,6 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Value } from '@sinclair/typebox/value';
+import { mkdtemp, mkdir, writeFile, chmod, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import type { Worker } from 'node:worker_threads';
+import { ThreadServices } from '../../threads/main-services.js';
+import { ReviewWorkers } from '../../threads/review-workers.js';
+import { startReviewWorkerBootstrap } from '../../threads/review-worker-bootstrap.js';
+import type { StartedReviewWorker } from '../../threads/review-worker-bootstrap.js';
+import { reviewWorkerCheckpoint } from '../../threads/review-worker-contract.js';
+import type { TrustedRpcContext } from '../../request-context.js';
 import {
   CodeReviewDelegate, CodeReviewDetailsSchema, DesignReviewDelegate, DesignReviewDetailsSchema,
   mapCodeReviewMeasurement, mapDesignReviewMeasurement, validateReviewDetails,
@@ -193,6 +203,15 @@ test('heartbeat-only samples keep counts and meaningful revision unchanged', asy
   assert.equal(second!.meaningfulRevision, first!.meaningfulRevision, 'a heartbeat-only sample leaves meaningfulRevision unchanged');
 });
 
+test('a design review reads as interrupted too', async () => {
+  const key = srcKey('design', 'rev-1');
+  const slot = JSON.stringify([key.project, key.family, key.reviewId]);
+  const entries = new Map([[slot, { live: 'inc-1', progress: designProgress({}, { status: 'interrupted' }) }]]) as Map<string, { progress?: ReviewWorkerProgress; live?: string }>;
+  const delegate = new DesignReviewDelegate(fakeSource(entries), { ...identity });
+  const m = await delegate.progress(task);
+  assert.equal(m!.phase, 'interrupted', 'design interruption surfaces as phase interrupted');
+});
+
 test('an interrupted review reads as interrupted until the new incarnation is verified', async () => {
   const key = srcKey('code', 'rev-c1');
   const slot = JSON.stringify([key.project, key.family, key.reviewId]);
@@ -250,17 +269,48 @@ test('a missing or closing entry returns null without throwing', async () => {
   assert.equal(await flakyDelegate.progress(task), null, 'a throwing identity lookup during an incarnation change returns null without rejecting');
 });
 
-test('observing progress leaves review results, publication and approval unchanged', async () => {
-  const key = srcKey('design', 'rev-1');
-  const slot = JSON.stringify([key.project, key.family, key.reviewId]);
-  const entries = new Map([[slot, { live: 'inc-1', progress: designProgress() }]]) as Map<string, { progress?: ReviewWorkerProgress; live?: string }>;
-  const source = fakeSource(entries);
-  const delegate = new DesignReviewDelegate(source, { ...identity });
-  const before = structuredClone(entries.get(slot)!.progress);
-  for (let i = 0; i < 3; i++) await delegate.progress(task);
-  await delegate.ownerActivity(task);
-  assert.deepEqual(entries.get(slot)!.progress, before, 'the stored publication is untouched by reads');
+test('observing progress leaves review results, publication and approval unchanged', async t => {
+  // Real ReviewWorkers: reads must not touch the durable checkpoint, the board
+  // summary, or the worker message stream.
+  const old = process.env['INSRC_TEST_HOOKS']; process.env['INSRC_TEST_HOOKS'] = '1';
+  const root = await mkdtemp(join(tmpdir(), 'review-delegate-noninterference-'));
+  const repo = join(root, 'repo'); await mkdir(repo);
+  const binary = join(root, 'review-cli');
+  await writeFile(binary, '#!/usr/bin/env node\nprocess.stdin.resume();process.stdin.on("end",()=>process.stdout.write(JSON.stringify({type:"assistant",message:{content:[{type:"tool_use",id:"out",name:"StructuredOutput",input:{ok:true}}]}})+"\\n"));');
+  await chmod(binary, 0o755);
+  const services = new ThreadServices(() => ({ startedAt: 0, modelState: { status: 'ready' as const }, installedCommit: 'fixture' }));
+  const started = new Map<string, StartedReviewWorker>();
+  const registry = new ReviewWorkers({ services,
+    resolveScope: async key => ({ reviewer: 'controller' as const, subject: 'subject', cleanupScope: `${key.project}:s1` }),
+    authorizeNative: async () => {}, resolveBinary: async () => binary,
+    track: (_w: Worker) => {},
+    start: async (...args: Parameters<typeof startReviewWorkerBootstrap>) => { const s = await startReviewWorkerBootstrap(...args); started.set(s.admission.key.reviewId, s); return s; },
+  });
+  t.after(async () => { await registry.shutdown(); await rm(root, { recursive: true, force: true }); if (old === undefined) delete process.env['INSRC_TEST_HOOKS']; else process.env['INSRC_TEST_HOOKS'] = old; });
+  const abort = new AbortController();
+  const ctx: TrustedRpcContext = { connectionIdentity: 'observer', daemonEpoch: 'epoch', connectionSignal: abort.signal };
+  const submit = { key: { project: repo, family: 'code' as const, reviewId: 'ni-1' }, attempt: 1, actionId: 'ni', submitted: { reviewRevision: 'a'.repeat(40), storyId: 's1', functionalSummary: 'Fixture', documents: {}, reviewSet: [{ commit: 'a'.repeat(40), parent: null, files: [{ path: 'a.ts', segments: [{ after: [1, 1] }] }] }], tests: [] } };
+  const ack = await registry.admit(submit, ctx);
+  const worker = started.get('ni-1')!;
+  const localKey = { ...codeIdentity, key: ack.key };
+  const delegate = new CodeReviewDelegate(registry, localKey);
+  // Drive one accepted progress so the delegate has state to read.
+  registry.acceptProgress(worker.worker, ack, { ...ack, attempt: 1, sequence: (registry.cachedProgress(ack.key)?.sequence ?? 0) + 1, phase: 'execution', completed: 0, total: 4, updatedAt: new Date().toISOString() });
+  const checkpointPath = reviewWorkerCheckpoint(ack.key);
+  const beforeCheckpoint = await readFile(checkpointPath, 'utf8');
+  const beforeBoard = JSON.stringify(services.board.snapshot());
+  const posted: unknown[] = [];
+  const original = worker.worker.postMessage.bind(worker.worker);
+  (worker.worker as { postMessage: (m: unknown) => void }).postMessage = (m: unknown) => { posted.push(m); original(m); };
+  try {
+    for (let i = 0; i < 3; i++) assert.ok(await delegate.progress(task));
+    await delegate.ownerActivity(task);
+  } finally { (worker.worker as { postMessage: typeof original }).postMessage = original; }
+  assert.equal(await readFile(checkpointPath, 'utf8'), beforeCheckpoint, 'durable review checkpoint unchanged by reads');
+  assert.equal(JSON.stringify(services.board.snapshot()), beforeBoard, 'status board unchanged by reads');
+  assert.deepEqual(posted, [], 'no messages posted to the review worker');
   assert.equal(typeof delegate.cancel, 'undefined', 'delegates expose no cancel, so controls stay empty');
+  assert.ok(registry.progressOf(ack.key), 'the live entry still has its accepted progress');
 });
 
 test('code review ownerActivity requires a live incarnation and an alive process', async () => {

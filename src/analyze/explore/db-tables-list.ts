@@ -30,16 +30,8 @@ import type {
 	ExplorationRunnerContext,
 } from './types.js';
 import { buildCompleteness } from '../completeness.js';
-import { reachedLimit } from './completeness-facts.js';
 
 const log = getLogger('analyze:explore:db-tables-list');
-
-// ---------------------------------------------------------------------------
-// Configuration
-// ---------------------------------------------------------------------------
-
-const DEFAULT_LIMIT = 40;
-const MAX_LIMIT     = 500;
 
 // ---------------------------------------------------------------------------
 // Params
@@ -48,7 +40,6 @@ const MAX_LIMIT     = 500;
 interface DbTablesListParams {
 	readonly connectionId: string;
 	readonly schema?:      string;
-	readonly limit?:       number;
 }
 
 function parseParams(exp: Exploration): DbTablesListParams {
@@ -60,13 +51,9 @@ function parseParams(exp: Exploration): DbTablesListParams {
 	const schema = typeof p['schema'] === 'string' && (p['schema'] as string).length > 0
 		? (p['schema'] as string)
 		: undefined;
-	const limit = typeof p['limit'] === 'number' && p['limit']! > 0
-		? Math.min(MAX_LIMIT, Math.floor(p['limit'] as number))
-		: DEFAULT_LIMIT;
 	return {
 		connectionId,
 		...(schema !== undefined ? { schema } : {}),
-		limit,
 	};
 }
 
@@ -82,7 +69,6 @@ export async function runDbTablesList(
 ): Promise<DbTablesListOutput> {
 	assertAnalysisConnectionExecution(ctx.connectionExecution);
 	const params = parseParams(exp);
-	const limit = params.limit ?? DEFAULT_LIMIT;
 
 	// The registry cannot be read, the connection cannot be opened, or the
 	// listing call fails: the lookup could not run. Each throws, and the
@@ -93,6 +79,7 @@ export async function runDbTablesList(
 		const family = driver.family;
 		let tables: DbTableSummary[] = [];
 		let truncated = false;
+		let sampled = false;
 		let notFoundNote = '';
 		// A driver that cannot list is an expected condition: the result is
 		// returned and its record names the listing as skipped.
@@ -104,8 +91,9 @@ export async function runDbTablesList(
 				notFoundNote = `Driver kind '${driver.kind}' does not implement listTables.`;
 				unsupported = notFoundNote;
 			} else {
-				const opts: { readonly schema?: string; readonly limit?: number } =
-					params.schema !== undefined ? { schema: params.schema, limit } : { limit };
+				// The driver's complete listing: every table, with no limit.
+				const opts: { readonly schema?: string; readonly complete: true } =
+					params.schema !== undefined ? { schema: params.schema, complete: true } : { complete: true };
 				const listing = await rdbms.listTables(opts);
 				tables = listing.tables.map(t => ({
 					name:   t.name,
@@ -121,13 +109,15 @@ export async function runDbTablesList(
 				notFoundNote = `Driver kind '${driver.kind}' does not implement listNamespaces.`;
 				unsupported = notFoundNote;
 			} else {
-				const listing = await kv.listNamespaces({ limit });
+				// Every namespace where the store has them to list; a store that derives them from a sample of keys stays a sample.
+				const listing = await kv.listNamespaces({ complete: true });
 				tables = listing.namespaces.map(n => ({
 					name: n.name,
 					kind: n.kind ?? 'namespace',
 					...(n.approxCount !== undefined ? { rowEstimate: n.approxCount } : {}),
 				}));
 				truncated = listing.truncated;
+				sampled = listing.sampled === true;
 				if (!listing.supported) {
 					notFoundNote = `Driver kind '${driver.kind}' reports listNamespaces not supported on this instance.`;
 					unsupported = notFoundNote;
@@ -150,13 +140,17 @@ export async function runDbTablesList(
 				truncated,
 		}, 'db.tables.list: complete']);
 
+		// A store that derives its namespaces from a sample of its keys gives a sample, and a driver that stopped
+		// early says so: either way the listing is not complete, and it is reported as sampled, never as a limit.
+		const sampleNote = 'The namespaces are derived from a sample of the store\'s keys, which are not scanned in full, so others may exist.';
 		const completeness = buildCompleteness({
 			returned: tables.length,
-			// The driver's own cut flag: it stopped at the limit it was given.
-			limited:  truncated ? [reachedLimit(family === 'kv' ? 'namespaces' : 'tables', limit, 'overall', null)] : [],
-			skipped:  unsupported !== undefined ? [{ what: 'the listing', reason: unsupported }] : [],
+			skipped:  [
+				...(unsupported !== undefined ? [{ what: 'the listing', reason: unsupported }] : []),
+				...(sampled || truncated ? [{ what: 'namespaces outside the sample', reason: sampled ? 'the store has no namespaces; they are derived from a sample of its keys' : 'the driver stopped before the end of the listing' }] : []),
+			],
 			basis:    'data-source',
-			...(family === 'file' ? { basisNote: notFoundNote } : {}),
+			...(family === 'file' ? { basisNote: notFoundNote } : sampled ? { basisNote: sampleNote } : {}),
 		});
 
 		return {

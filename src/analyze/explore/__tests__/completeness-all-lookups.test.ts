@@ -217,8 +217,8 @@ async function docDecisions(): Promise<ExplorationOutput> {
 	} as Parameters<typeof finalizeDocDecisionTrace>[1]);
 }
 
-async function capability(limit?: number): Promise<ExplorationOutput> {
-	const prep = await prepareCapabilityReuseCheck(exp('capability.reuse-check', { capability: 'pay charge', ...(limit !== undefined ? { limit } : {}) }), ctx);
+async function capability(): Promise<ExplorationOutput> {
+	const prep = await prepareCapabilityReuseCheck(exp('capability.reuse-check', { capability: 'pay charge' }), ctx);
 	assert.equal(prep.kind, 'narrow-llm');
 	if (prep.kind !== 'narrow-llm') throw new Error('unreachable');
 	return finalizeCapabilityReuseCheck(prep.prepared, {
@@ -309,13 +309,6 @@ test('the fixture gives every lookup something to return, so the table is not a 
 // ---------------------------------------------------------------------------
 // Count limits, each with its scope
 // ---------------------------------------------------------------------------
-
-test('the capability lookup that stops at a count reports the limit with its scope', async () => {
-	// capability.reuse-check: more distinct candidates match than the one checked.
-	const cap = await capability(1) as { completeness: Completeness; candidates: unknown[] };
-	assert.equal(cap.candidates.length, 1);
-	assert.equal(limitOf(cap.completeness, 'candidate modules').limit, 1);
-});
 
 // ---------------------------------------------------------------------------
 // The graph and symbol lookups return every result
@@ -555,17 +548,16 @@ test('search.text and config.trace return every hit with its whole line and no l
 // The data lookups
 // ---------------------------------------------------------------------------
 
-test("the table-listing lookup reads the data driver's cut flag into a limit", async () => {
+test("the table-listing lookup reports a driver that stopped early as skipped and a complete one as complete", async () => {
 	const tables = [{ name: 'a', kind: 'table' }, { name: 'b', kind: 'table' }];
 
+	// A driver that stopped before the end of its listing: not complete, and never reported as a limit.
 	const cut = await runDbTablesList(exp('db.tables.list', { connectionId: 'app', limit: 2 }), ctx, standInPool({ tables, truncated: true }));
-	assert.deepEqual(limitOf(cut.completeness, 'tables'), {
-		what: 'tables', limit: 2, scope: 'overall', reason: 'the lookup stops at 2 tables; how many exist is not known',
-	});
-	assert.equal(cut.completeness.total, null);
+	assert.equal(cut.completeness.limited, undefined);
+	assert.deepEqual(cut.completeness.skipped, [{ what: 'namespaces outside the sample', reason: 'the driver stopped before the end of the listing' }]);
 	assert.equal(cut.completeness.complete, false);
 
-	const whole = await runDbTablesList(exp('db.tables.list', { connectionId: 'app', limit: 2 }), ctx, standInPool({ tables, truncated: false }));
+	const whole = await runDbTablesList(exp('db.tables.list', { connectionId: 'app' }), ctx, standInPool({ tables, truncated: false }));
 	assert.equal(whole.completeness.limited, undefined);
 	assert.equal(whole.completeness.complete, true);
 	assert.equal(whole.completeness.total, 2);
@@ -589,6 +581,75 @@ test("the table-listing lookup reads the data driver's cut flag into a limit", a
 	const single = await runDbTablesList(exp('db.tables.list', { connectionId: 'app' }), ctx, fileConn);
 	assert.equal(single.completeness.complete, true);
 	assert.match(single.notFoundNote, /single target/);
+});
+
+/** A connection pool holding one connection served by the given driver. */
+function poolOf(driver: object, family: 'rdbms' | 'kv', kind: string): Parameters<typeof runDbTablesList>[2] {
+	return async root => leasedDataPool(root, [{ id: 'app', kind, family, label: 'app' }], connectionId => {
+		if (connectionId !== 'app') throw new Error(`unknown connection '${connectionId}'`);
+		return driver;
+	});
+}
+
+test("capability-reuse-check, db-tables-list and db-table-describe return every result and a complete driver's table listing has no limited entry", async () => {
+	// capability.reuse-check: former limit 5 (12 at most). Fourteen files match the capability;
+	// every distinct candidate is checked and put to the model, and no cut is stated.
+	await seed(Array.from({ length: 14 }, (_, i) => ent('file', `zzcap${i}.ts`, `src/zzcap/zzcap${i}.ts`)));
+	const prep = await prepareCapabilityReuseCheck(exp('capability.reuse-check', { capability: 'zzcap', limit: 2 }), ctx);
+	assert.equal(prep.kind, 'narrow-llm');
+	if (prep.kind !== 'narrow-llm') throw new Error('unreachable');
+	assert.equal(prep.prepared.profiles.length, 14, 'the fourteen matching files, more than the former 5 and the former 12');
+	assert.equal([...prep.userTurn.matchAll(/path: (\S+)/g)].length, prep.prepared.profiles.length, 'every candidate is put to the model');
+	const cap = finalizeCapabilityReuseCheck(prep.prepared, {
+		verdicts: prep.prepared.profiles.map(p => ({ path: p.path, verdict: 'partial-match' as const, rationale: 'r' })),
+	} as Parameters<typeof finalizeCapabilityReuseCheck>[1], undefined);
+	assert.equal(cap.candidates.length, prep.prepared.profiles.length);
+	noLimit(cap.completeness, 'capability.reuse-check');
+
+	// db.tables.list: a complete driver is asked for its complete listing, with no limit, and 41 tables (one over the
+	// former 40) come back with no limited entry.
+	const asked: unknown[] = [];
+	const rdbms = {
+		family: 'rdbms', kind: 'sqlite',
+		listTables: async (opts?: unknown) => { asked.push(opts); return { target: 'app', tables: Array.from({ length: 41 }, (_, i) => ({ name: `t${i}`, kind: 'table' as const })), truncated: false }; },
+	};
+	const list = await runDbTablesList(exp('db.tables.list', { connectionId: 'app', limit: 5 }), ctx, poolOf(rdbms, 'rdbms', 'sqlite'));
+	assert.equal(list.tables.length, 41);
+	assert.deepEqual(asked, [{ complete: true }], 'the complete mode, and no limit');
+	noLimit(list.completeness, 'db.tables.list');
+	assert.equal(list.completeness.complete, true);
+	const zero = await runDbTablesList(exp('db.tables.list', { connectionId: 'app' }), ctx, poolOf({ ...rdbms, listTables: async () => ({ target: 'app', tables: [], truncated: false }) }, 'rdbms', 'sqlite'));
+	assert.equal(zero.tables.length, 0);
+	noLimit(zero.completeness, 'db.tables.list with 0');
+
+	// A key-value store whose namespaces come from a sample of its keys stays a sample: reported incomplete, not as a limit.
+	const redisLike = {
+		family: 'kv', kind: 'redis',
+		listNamespaces: async (opts?: unknown) => { asked.push(opts); return { namespaces: [{ name: 'svc', kind: 'prefix' as const }], truncated: true, supported: true, sampled: true }; },
+	};
+	asked.length = 0;
+	const sample = await runDbTablesList(exp('db.tables.list', { connectionId: 'app' }), ctx, poolOf(redisLike, 'kv', 'redis'));
+	assert.deepEqual(asked, [{ complete: true }]);
+	assert.equal(sample.completeness.limited, undefined);
+	assert.equal(sample.completeness.complete, false);
+	assert.match(sample.completeness.basisNote ?? '', /sample of the store's keys/);
+	assert.equal(sample.completeness.skipped?.[0]?.what, 'namespaces outside the sample');
+
+	// db.table.describe: a key-value namespace with 20 fields and 12 sample keys (the former cuts were 8 and 5) is
+	// summarised whole.
+	const kv = {
+		family: 'kv', kind: 'mongodb',
+		describeNamespace: async () => ({
+			name: 'orders', kind: 'collection' as const, approxCount: 100, supported: true,
+			sampleKeys: Array.from({ length: 12 }, (_, i) => `key${i}`),
+			fields: Array.from({ length: 20 }, (_, i) => ({ path: `field${i}`, types: ['string'], nullable: false, frequency: 1 })),
+		}),
+	};
+	const desc = await runDbTableDescribe(exp('db.table.describe', { connectionId: 'app', target: 'orders' }), ctx, poolOf(kv, 'kv', 'mongodb'));
+	for (let i = 0; i < 20; i++) assert.ok(desc.shapeSummary.includes(`field${i}:`), `field${i} is in the summary`);
+	for (let i = 0; i < 12; i++) assert.ok(desc.shapeSummary.includes(`key${i}`), `key${i} is in the summary`);
+	noLimit(desc.completeness, 'db.table.describe');
+	assert.equal(desc.completeness.returned, 20);
 });
 
 // ---------------------------------------------------------------------------

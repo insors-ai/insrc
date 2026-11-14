@@ -212,7 +212,7 @@ test("the table listing of sqlite, pg and mysql applies no clamp in the complete
 
 		// ---- redis and etcd ignore the mode: their listing is a sample of keys ----
 		const keys = Array.from({ length: 7000 }, (_, i) => `/svc${i % 300}/k${i}`);
-		const etcd = standIn(EtcdDriver.prototype, { client: { getAll: () => ({ prefix: () => ({ keys: async () => keys }) }) } });
+		const etcd = standIn(EtcdDriver.prototype, { client: { getAll: () => ({ prefix: () => ({ limit: (n: number) => ({ keys: async () => keys.slice(0, n) }) }) }) } });
 		const etcdDefault = await etcd.listNamespaces();
 		assert.deepEqual(await etcd.listNamespaces({ complete: true }), etcdDefault, 'etcd: the same sample with the mode');
 		assert.deepEqual([etcdDefault.namespaces.length, etcdDefault.truncated], [200, true], 'etcd: 200 prefixes of a sample that was cut');

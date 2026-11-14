@@ -525,6 +525,9 @@ export interface KvNamespaceList {
 	readonly namespaces: readonly KvNamespace[];
 	readonly truncated: boolean;
 	readonly supported: boolean;
+	/** True when the namespaces were derived from a sample of the store's keys (Redis, etcd): the list is a
+	 *  sample whatever `complete` was asked, and the store's keys are not scanned in full. */
+	readonly sampled?: boolean | undefined;
 }
 
 export interface KvNamespaceDescription {

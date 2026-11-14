@@ -121,7 +121,8 @@ export class EtcdDriver implements KvDriver {
 		// etcd path convention).
 		const limit = Math.min(Math.max(1, Math.floor(opts?.limit ?? 200)), 1000);
 		const samplePool = Math.min(limit * 50, 5000);
-		const keys = await this.client.getAll().prefix('').keys();
+		// A bounded read: one key past the sample says the store holds more, and no more is fetched.
+		const keys = await this.client.getAll().prefix('').limit(samplePool + 1).keys();
 		const prefixes = new Map<string, number>();
 		for (let i = 0; i < Math.min(keys.length, samplePool); i++) {
 			const k = keys[i]!;
@@ -136,7 +137,7 @@ export class EtcdDriver implements KvDriver {
 		const namespaces: KvNamespace[] = sorted.map(([name, approxCount]) => ({
 			name, kind: 'prefix', approxCount,
 		}));
-		return { namespaces, truncated: keys.length > samplePool, supported: true };
+		return { namespaces, truncated: keys.length > samplePool, supported: true, sampled: true };
 	}
 
 	async describeNamespace(name: string, opts?: { readonly sampleSize?: number }): Promise<KvNamespaceDescription> {

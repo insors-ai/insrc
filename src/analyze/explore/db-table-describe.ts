@@ -26,8 +26,6 @@ import type {
 	ExplorationRunnerContext,
 } from './types.js';
 import { buildCompleteness } from '../completeness.js';
-import type { ReachedLimit } from '../completeness.js';
-import { reachedLimit } from './completeness-facts.js';
 
 const log = getLogger('analyze:explore:db-table-describe');
 
@@ -78,7 +76,6 @@ export async function runDbTableDescribe(
 		// fields or keys than exist.
 		let unsupported: string | undefined;
 		let returned = 0;
-		const limited: ReachedLimit[] = [];
 
 		if (family === 'rdbms') {
 			const schema = await (driver as RdbmsDriver).describe(params.target);
@@ -100,13 +97,7 @@ export async function runDbTableDescribe(
 			} else {
 				const desc = await kv.describeNamespace(params.target);
 				shapeSummary = summariseKvDescription(desc);
-				returned = Math.min(desc.fields.length, KV_SUMMARY_FIELDS);
-				if (desc.fields.length > KV_SUMMARY_FIELDS) {
-					limited.push(reachedLimit('fields', KV_SUMMARY_FIELDS, 'overall', desc.fields.length));
-				}
-				if (desc.sampleKeys.length > KV_SUMMARY_KEYS) {
-					limited.push(reachedLimit('sample keys', KV_SUMMARY_KEYS, 'source', desc.sampleKeys.length));
-				}
+				returned = desc.fields.length;
 			}
 		} else if (family === 'file') {
 			const fd = driver as FileDriver;
@@ -134,7 +125,6 @@ export async function runDbTableDescribe(
 		if (family !== 'kv') returned = columns.length;
 		const completeness = buildCompleteness({
 			returned,
-			limited,
 			skipped: unsupported !== undefined ? [{ what: 'the description', reason: unsupported }] : [],
 			basis:   'data-source',
 			...(family === 'kv' ? { basisNote: 'a key-value namespace is described from a sample of its keys, not from every key' } : {}),
@@ -155,8 +145,6 @@ export async function runDbTableDescribe(
 }
 
 /** How many fields and sample keys a key-value namespace's summary names. */
-const KV_SUMMARY_FIELDS = 8;
-const KV_SUMMARY_KEYS   = 5;
 
 function summariseKvDescription(desc: {
 	name:        string;
@@ -173,13 +161,12 @@ function summariseKvDescription(desc: {
 	if (desc.fields.length > 0) {
 		parts.push(
 			`fields: ${desc.fields
-				.slice(0, KV_SUMMARY_FIELDS)
 				.map(f => `${f.path}:${f.types.join('|')}`)
 				.join(', ')}`,
 		);
 	}
 	if (desc.sampleKeys.length > 0) {
-		parts.push(`sampleKeys: ${desc.sampleKeys.slice(0, KV_SUMMARY_KEYS).join(', ')}`);
+		parts.push(`sampleKeys: ${desc.sampleKeys.join(', ')}`);
 	}
 	if (!desc.supported) parts.push('(unsupported)');
 	return parts.join(' | ');

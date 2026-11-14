@@ -25,6 +25,11 @@ test('the planning prompt and catalog contain no limit, topK, maxSources or prev
 	assert.equal(/\b(top|first)[- ]?\d+\b/i.test(prompt), false, 'a top-N or first-N count');
 	assert.equal(/\b([2-9]|\d{2,}) (hits|results|matches|symbols|callers|tables|sections|candidates)\b/.test(prompt), false, 'a count of results');
 
+	// No bound on a list a later lookup takes (an export slice such as [0..2]) and no bound on a fan-out.
+	assert.equal(/\[\d+\.\.\d+\]/.test(prompt), false, 'a slice of a result list');
+	assert.equal(/fan-out to|first (two|three|four|five|\d+) /i.test(prompt), false, 'a bound on a fan-out or a first-N');
+	assert.equal(/[≤<=]\s?\d+ (connections|candidates|exports|modules|files)/.test(prompt), false, 'a bound on how many to take');
+
 	// The params every lookup takes.
 	for (const [type, params] of Object.entries(EXPLORATION_PARAMS)) {
 		for (const name of REMOVED) assert.equal(name in params, false, `${type} takes ${name}`);

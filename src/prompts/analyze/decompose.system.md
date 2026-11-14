@@ -160,7 +160,7 @@ For explorations that depend on prior outputs, use the placeholder syntax `$eN.<
 
 Example placeholder patterns:
 - `"path": "$e1.anchor.path"` — what e1's concept.resolve centres on: the area the request named, else its top-ranked hit
-- `"names": "$e2.profile.exports[0..2]"` — first three exports from e2's module.profile
+- `"names": "$e2.profile.exports"` — every export from e2's module.profile
 - `"subject": "$e1.decisions[0].decision"` — the first decision text from a decision trace
 
 ### The anchor of `concept.resolve`
@@ -181,7 +181,7 @@ For queries like "map the X module", "how is Y organized", "what's the layout of
 2. `module.profile(path=$e1.anchor.path)` — depends on `e1`. Purpose: "Profile the resolved module: exports, subdirs, entrypoints."
 3. `import.graph(path=$e1.anchor.path)` — depends on `e1`. Purpose: "Summarise how the module is used + what it depends on."
 4. `convention.detect(path=$e1.anchor.path)` — depends on `e1`. Purpose: "Detect the module's naming schema + base-class idioms + test-file convention so the synthesizer can render `## Conventions`."
-5. (Optional, only when `$e2.profile.exports` is non-empty) `symbol.locate(names=$e2.profile.exports[0..2], kinds=["class","function"])` — depends on `e2`. Purpose: "Anchor the top-level classes/functions the module exposes."
+5. (Optional, only when `$e2.profile.exports` is non-empty) `symbol.locate(names=$e2.profile.exports, kinds=["class","function"])` — depends on `e2`. Purpose: "Anchor the top-level classes/functions the module exposes."
 
 ### Recipe: `decision-trace`
 
@@ -229,7 +229,7 @@ For queries like "does the codebase already do X", "is there existing support fo
 2. `concept.resolve(query="<intent.focus>")` — parallel-recall check so the synthesizer can show retrieval candidates that did NOT make it into the reuse-check verdicts. Purpose: "Reveal near-miss modules for transparency."
 3. (Optional, only when `$e1.candidates[0].verdict === 'clear-match'`) `module.profile(path=$e1.candidates[0].path)` — depends on `e1`. Purpose: "Profile the winning candidate for the synthesizer to cite."
 4. (Optional, only when a clear-match anchor exists) `convention.detect(path=$e1.candidates[0].path)` — depends on `e1`. Purpose: "Surface the winning module's naming schema so the reader integrates against its idioms."
-5. (Optional, only when a clear-match anchor exists) `symbol.locate(names=$e3.profile.exports[0..3])` — depends on `e3`. Purpose: "Name representative entities inside the winning candidate."
+5. (Optional, only when a clear-match anchor exists) `symbol.locate(names=$e3.profile.exports)` — depends on `e3`. Purpose: "Name representative entities inside the winning candidate."
 
 At most 5 explorations. When `capability.reuse-check` returns zero candidates (empty `candidates` + populated `notFoundNote`), STOP after step 1.
 
@@ -243,7 +243,7 @@ Compose a structural + behavioural view. The reader wants to understand: what th
 2. `module.profile(path=$e1.anchor.path)` — depends on `e1`. Purpose: "Give the reader the structural view: subdirs, files, entrypoints."
 3. `convention.detect(path=$e1.anchor.path)` — depends on `e1`. Purpose: "Surface the module's naming schema + base-class idioms so `how-it-works` reads in the module's own vocabulary."
 4. `test.locate(subject="<intent.focus>")` — Purpose: "Show the reader how the subject is exercised in tests -- the fastest read of behaviour."
-5. (Optional, when `$e2.profile.exports` is non-empty) `symbol.locate(names=$e2.profile.exports[0..2], kinds=["class","function"])` — depends on `e2`. Purpose: "Name the top-level classes/functions the module exposes."
+5. (Optional, when `$e2.profile.exports` is non-empty) `symbol.locate(names=$e2.profile.exports, kinds=["class","function"])` — depends on `e2`. Purpose: "Name the top-level classes/functions the module exposes."
 6. (Optional, when `$e5.hits[0].kind === 'class'`) `class.hierarchy(entityId=$e5.hits[0].entityId)` — depends on `e5`. Purpose: "Show the inheritance chain."
 7. (Optional, when the subject reads as a domain entity) `data-model.trace(entityName="<intent.focus>")` — Purpose: "Trace the model's supers, subs, fields, and callers."
 8. (Optional, when the subject reads as a class or method) `usage.example(symbolName="<subject>")` — Purpose: "Cite representative real callsites so the reader sees the module in use."
@@ -255,7 +255,7 @@ Emit 4-6 explorations from this list. Skip optional steps whose prerequisite is 
 For queries like "what tables do we have", "what data sources are wired", "list every database connection registered here":
 
 1. `db.connections.list` — Purpose: "Enumerate registered data-driver connections."
-2. `db.tables.list(connectionId=$e1.connections[0].id)` — depends on `e1`. Purpose: "List tables / namespaces on the top-ranked connection." When the recipe wants to fan across connections, emit one `db.tables.list` per connection using `$e1.connections[N].id` (bound the fan-out to ≤5 connections so the bundle stays terse).
+2. `db.tables.list(connectionId=$e1.connections[0].id)` — depends on `e1`. Purpose: "List tables / namespaces on the top-ranked connection." When the recipe wants to fan across connections, emit one `db.tables.list` per connection using `$e1.connections[N].id`.
 3. (Optional, only when `$e2.tables` is non-empty) `db.table.describe(connectionId=$e1.connections[0].id, target=$e2.tables[0].name)` — depends on `e2`. Purpose: "Cite the shape of at least one representative table."
 
 At most 5 explorations. When `db.connections.list` returns 0 connections (empty `connections` + populated `notFoundNote`), STOP after step 1 -- the synthesizer will render an honest "no data sources registered" bundle.

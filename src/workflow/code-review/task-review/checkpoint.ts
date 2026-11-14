@@ -45,7 +45,9 @@ export async function saveStoredCheckpoint(path: string, checkpoint: StoredRevie
 export function updateStoredCodeCheckpoint(path:string,mutate:(current:StoredReviewCheckpoint|undefined)=>StoredReviewCheckpoint|Promise<StoredReviewCheckpoint>):Promise<StoredReviewCheckpoint>{
  return serializeCodeWrite(path,async()=>{const next=decodeStoredCheckpoint(await mutate(await loadStoredCheckpoint(path)));await writeCheckpoint(path,JSON.stringify(next,null,2)+'\n',defaultIO);return next;});
 }
-async function writeCheckpoint(path: string, serialized: string, io: CheckpointIO): Promise<void> {
+/** Shared durable byte writer. Callers own their format/size validation and
+ * serialization lane; this preserves the existing exact save outcomes. */
+export async function writeCheckpoint(path: string, serialized: string, io: CheckpointIO = defaultIO): Promise<void> {
  requireReview(Buffer.byteLength(serialized) <= reviewJsonLimit(), 'checkpoint', 'JSON exceeds limit');
  const temporary = `${path}.${randomUUID()}.tmp`;
  let created = false, renameStarted = false, replaced = false, failure: { cause: unknown } | undefined;

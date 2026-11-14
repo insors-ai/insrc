@@ -67,6 +67,11 @@ function prefix(previous: PreparationHistory, next: PreparationHistory): void {
   for (const key of ['acceptedAttribution', 'taskScopeIdentities', 'attributionIdentity', 'taskIdentityFormat']) if (a['attributionState'] === 'accepted' && !same(a[key], b[key])) throw new Error('Accepted attribution changed');
   const oldResults = (old['review-response'] as { tasks: unknown[] }).tasks, newResults = (now['review-response'] as { tasks: unknown[] }).tasks;
   if (!same(oldResults, newResults.slice(0, oldResults.length))) throw new Error('Accepted task feedback changed');
+  const acceptedTasks = new Set(oldResults.map(result => (result as { taskId: string }).taskId));
+  const oldOrigins = (old['review-response'] as { origins?: { taskId: string }[] }).origins ?? [];
+  const newOrigins = (now['review-response'] as { origins?: { taskId: string }[] }).origins ?? [];
+  if (!same(oldOrigins, newOrigins.filter(origin => acceptedTasks.has(origin.taskId)))) throw new Error('Accepted task origins changed');
+
  } else {
   for (const key of ['number', 'reviewer', 'baseline', 'inventory', 'startedAt', 'submitted']) if (!same(old[key], now[key])) throw new Error('Pinned design attempt changed');
   for (const key of ['plan', 'impact', 'report']) if (old[key] !== undefined && !same(old[key], now[key])) throw new Error('Accepted design plan/report changed');

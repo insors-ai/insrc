@@ -119,6 +119,19 @@ test('lost checkpoint acknowledgment reconciles a durable result and lagging run
  assert.equal(JSON.parse(await readFile(reviewRuntimePath(f.key), 'utf8')).progress.completedUnits, 1);
 });
 
+test('accepted task origins cannot be removed or rewritten by a successor', async t => {
+ const f = await code(t);
+ // Isolate prefix immutability: origin validity is independently exercised by
+ // the concrete family validator below; this fixture models its accepted output.
+ const cp = await f.read(); cp.attempts[0]['review-response'].tasks.push(f.result('t1'));
+ cp.attempts[0]['review-response'].origins = [{ taskId: 't1', sourceAttempt: 1, reason: 'accepted provenance fixture' }];
+ await writeReviewBytes(f.path, JSON.stringify(cp), 8 * 1024 * 1024);
+ const history = await HistoryBindingSession.open(f.receipt, cp, { authorize: f.authorize, validate: async () => ({}), capacity: f.capacity, limits: f.limits, invalidateSource: f.invalidateSource });
+ const next = await f.read(); delete next.attempts[0]['review-response'].origins;
+ await assert.rejects(history.accept(next), /Accepted task origins changed/);
+ assert.throws(() => history.latest(), /fenced/);
+});
+
 test('new feedback cannot reuse an absent or current-attempt origin', async t => {
  const f = await code(t), history = await HistoryBindingSession.open(f.receipt, f.cp, { authorize: f.authorize, validate: f.validate, capacity: f.capacity, limits: f.limits, invalidateSource: f.invalidateSource });
  const cp = await f.read(); cp.attempts[0]['review-response'].tasks.push(f.result('t1')); cp.attempts[0]['review-response'].origins = [{ taskId: 't1', sourceAttempt: 1, reason: 'invalid reuse fixture' }];

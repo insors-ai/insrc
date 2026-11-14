@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1794660168696-um4zur",
+    "runId": "wf-1794667538961-mlfrug",
     "repoPath": "/home/subho/work/dev/insors/insrc",
-    "createdAt": "2026-11-14T12:44:35.936Z",
+    "createdAt": "2026-11-14T14:48:03.773Z",
     "epicCreatedAt": "2026-11-14T08:55:28.320Z",
     "standalone": true,
     "attribution": {
@@ -16,7 +16,7 @@
         }
       ]
     },
-    "elapsedMs": 104783,
+    "elapsedMs": 140464,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "470a1f61b26b12c6",
@@ -28,9 +28,9 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 2,
-        "contentHash": "53f3b91700ed7c99b5fd601463d3d90f30d71524bdb3e389cb4c533fe402a17c",
-        "at": "2026-11-14T12:44:36.788Z",
+        "number": 3,
+        "contentHash": "5ab469d8078e4fdca9356bb2a77685ea2cb8e40612cbe81429b175aa7e2a2f5f",
+        "at": "2026-11-14T14:48:05.330Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -39,13 +39,13 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 2,
+        "revision": 3,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-14T12:52:01.467Z"
+        "at": "2026-11-14T14:53:02.389Z"
       }
     },
     "envelope": {
@@ -53,13 +53,13 @@
       "references": [],
       "attachments": []
     },
-    "revision": 2,
-    "rangeBase": "bf3a7f53f0fc0f27c137469bc34e52cf0c7a56c0"
+    "revision": 3,
+    "rangeBase": "9a19f99c654b2175b7a15634374dbfd4b76d670c"
   },
   "body": {
     "summary": {
       "audience": "technical",
-      "prose": "Fourteen dependency-ordered tasks implement the approved holistic preparation correction for both review families. Focused validation accompanies each task; full production-route fault, scope and performance qualification follows integration. Existing judges, source scope and human approval remain; the stopped prior review is not resumed and daemon deployment stays after BUILD approval. Foundation adapters are validated before production wiring; t12/t13 explicitly verify the coordinated production cutover."
+      "prose": "Fourteen dependency-ordered tasks implement the approved holistic preparation correction for both review families. Focused validation accompanies each task; full production-route fault, scope and performance qualification follows integration. Existing judges, source scope and human approval remain; the stopped prior review is not resumed and daemon deployment stays after BUILD approval. Foundation adapters are validated before production wiring; t12/t13 explicitly verify the coordinated production cutover. Build staging: t7/t8 deliver complete family adapters and focused integration fixtures; t9 supplies the private host ownership/capacity/runtime/context bridge. Production activation of every reader/writer remains one mandatory t12 cutover, with actual public-route qualification in t13. Intermediate adapter completion is not activation or final signoff."
     },
     "tasks": [
       {
@@ -211,10 +211,11 @@
         "dependsOn": [
           "t6"
         ],
-        "summary": "Route admission, packet projection, task/story execution and explicit recovery through shared preparation, preserving all selected spans and pinned history.",
+        "summary": "Route admission, packet projection, task/story execution and explicit recovery through shared preparation, preserving all selected spans and pinned history. Deliver private adapters consumed by existing coordinator/worker dependency seams and exercise them in focused integration fixtures. Production runtime selection is activated only in the coordinated t12 cutover after host and lifecycle dependencies exist.",
         "acceptanceChecks": [
-          "Epic/standalone/ISSUE/LLD-only/no-document routes and aliases preserve exact scope; no generic HEAD diff or skipped modules; immutable attempts remain pinned.",
-          "Run and record this task's focused validation before advancing; cross-cutting qualification does not replace these checks."
+          "Through the shared family adapter, Epic/standalone/ISSUE/LLD-only/no-document routes and aliases preserve exact scope; no generic HEAD diff or skipped modules; immutable attempts remain pinned.",
+          "Run and record this task's focused validation before advancing; cross-cutting qualification does not replace these checks.",
+          "This task gates the complete family adapter and its focused tests, not default production selection. It must expose execution/recovery seams for t9/t12; full production activation is mandatory in t12 and independently qualified in t13. No feature flag, parallel review engine or incomplete production cutover."
         ],
         "derivedFrom": [
           "c5"
@@ -234,10 +235,11 @@
         "dependsOn": [
           "t6"
         ],
-        "summary": "Route subject capture, planning/impact/chunks and explicit recovery through same lifecycle with design-specific latest target/ancestry checks.",
+        "summary": "Route subject capture, planning/impact/chunks and explicit recovery through same lifecycle with design-specific latest target/ancestry checks. Deliver private adapters consumed by existing coordinator/worker dependency seams and exercise them in focused integration fixtures. Production runtime selection is activated only in the coordinated t12 cutover after host and lifecycle dependencies exist.",
         "acceptanceChecks": [
-          "DEF/HLD/LLD route matrix passes; relevant target changes invalidate and await human restart; unrelated edits ignored; prompts use paths, not artifact bodies.",
-          "Run and record this task's focused validation before advancing; cross-cutting qualification does not replace these checks."
+          "Through the shared family adapter, DEF/HLD/LLD route matrix passes; relevant target changes invalidate and await human restart; unrelated edits ignored; prompts use paths, not artifact bodies.",
+          "Run and record this task's focused validation before advancing; cross-cutting qualification does not replace these checks.",
+          "This task gates the complete family adapter and its focused tests, not default production selection. It must expose execution/recovery seams for t9/t12; full production activation is mandatory in t12 and independently qualified in t13. No feature flag, parallel review engine or incomplete production cutover."
         ],
         "derivedFrom": [
           "c5"
@@ -258,11 +260,12 @@
           "t7",
           "t8"
         ],
-        "summary": "Extend worker control and both public MCP/daemon surfaces plus supported IPC DTOs for cancellation and bounded genuine preparation counters.",
+        "summary": "Extend worker control and both public MCP/daemon surfaces plus supported IPC DTOs for cancellation and bounded genuine preparation counters. Implement the private host-to-worker bridge for the main-owned per-project capacity allocator, runtime store and context registry; retain exact per-review allocation ownership across worker reclamation and release only after proven file cleanup.",
         "acceptanceChecks": [
           "Exact owner-only cancel prevents new work, stops only selected worker, reports honest resource fences; polling creates no activity; both clients agree with enums.",
           "Cancel/spawn/candidate/publication races preserve exact ownership and already committed results; progress counters reflect genuine completed operations only.",
-          "Run and record this task's focused validation before advancing; cross-cutting qualification does not replace these checks."
+          "Run and record this task's focused validation before advancing; cross-cutting qualification does not replace these checks.",
+          "Private worker ports bind capacity/runtime/context requests to the exact current review owner and phase; workers cannot instantiate separate project allocators or mint context/runtime authority. Test the bridge before t12 activation."
         ],
         "derivedFrom": [
           "c6"
@@ -271,6 +274,10 @@
           {
             "level": "integration",
             "name": "Extend worker isolation/progress/recovery and MCP wire fixtures: cancel exact review during preparation/tool/model/publication races, owner rejection, resource fence and nullable genuine counters."
+          },
+          {
+            "level": "integration",
+            "name": "Private preparation bridge tests: exact worker/review ownership, aggregate project capacity, split/combine allocation retention, context/runtime receipts, worker reclamation and cleanup-only release."
           }
         ]
       },
@@ -334,7 +341,8 @@
         "acceptanceChecks": [
           "Interrupted migration never loses proof; old-only rollback rejected after new formats; no automatic scans/resume, no partial daemon deployment or stopped-attempt restart.",
           "Run and record this task's focused validation before advancing; cross-cutting qualification does not replace these checks.",
-          "Wire the real production review ownership, both-family checkpoint/native resource, progress, publication, approval and cleanup paths to compact runtime; no test-only adapter or legacy active-writer fallback remains for new execution."
+          "Wire the real production review ownership, both-family checkpoint/native resource, progress, publication, approval and cleanup paths to compact runtime; no test-only adapter or legacy active-writer fallback remains for new execution.",
+          "Activate the t7/t8 shared family preparation adapters and t9 host bridge through every production task/story admission, execution, explicit recovery and publication path; remove old active-writer selections in this same cutover. Test-only adapters do not satisfy this task."
         ],
         "derivedFrom": [
           "c8"
@@ -358,7 +366,8 @@
         "acceptanceChecks": [
           "Two independent review sessions remain isolated; full-history writes/native command=0; all mandatory source/test coverage preserved; no user socket/DB or hosted quota used.",
           "Run and record this task's focused validation before advancing; cross-cutting qualification does not replace these checks.",
-          "Through actual registered production review routes, prove native resource and progress writes perform zero full-history mutations for both code and design reviews."
+          "Through actual registered production review routes, prove native resource and progress writes perform zero full-history mutations for both code and design reviews.",
+          "Repeat all t7/t8 route, alias, merge/rename/delete witness, exact-selected-span and latest-subject invariants through actual production defaults for both families."
         ],
         "derivedFrom": [
           "c1",

@@ -18,7 +18,7 @@ import { admitManagedPreparation, prepareLegacyUpgrade, retainManagedReleaseVeri
 import { PATHS } from '../shared/paths.js';
 import { requestLegacyDrain, restoredLegacyDrainPath } from '../daemon/legacy-private-drain.js';
 import { stopRestoredLegacyProcess } from '../daemon/legacy-public-stop.js';
-import { readManagedBundleProof, verifyManagedBundleProof } from '../daemon/managed-bundle-proof.js';
+import { readManagedBundleProof } from '../daemon/managed-bundle-proof.js';
 import { prepareBundleLegacyUpgrade, prepareInstalledBundleUpgrade } from '../daemon/managed-update-preparation.js';
 
 const NOT_MANAGED = 10;
@@ -220,7 +220,7 @@ async function main(command: string): Promise<void> {
 	}
 	const control = new ManagedDaemonControl(installation);
 	const gate = new InstallationMutationGate(installation.stateRoot);
-	const { active, installedBundle } = await gate.read();
+	const { active } = await gate.read();
 	if (!installation.enabled && active?.kind !== 'update') { process.exitCode = NOT_MANAGED; return; }
 	if (!installation.enabled && command !== 'recover' && command !== 'status') throw new Error('legacy cutover owns the installation');
 	if (command === 'status') {
@@ -250,10 +250,6 @@ async function main(command: string): Promise<void> {
 		return;
 	}
 	if (command !== 'start' && command !== 'stop' && command !== 'restart') throw new Error('invalid lifecycle command');
-	if (command !== 'stop' && installedBundle?.proof.floor.domain === 'development') {
-		if (installedBundle.releaseRoot !== installation.releaseRoot) throw new Error('development installation selector differs from installed proof');
-		await verifyManagedBundleProof(installation, installedBundle.proof);
-	}
 	const milliseconds = stopWait(process.argv[3] ?? '30');
 	try {
 		const result = await control.run(command, milliseconds === 0 ? 1 : milliseconds);

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { generateKeyPairSync, sign } from 'node:crypto';
-import { mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -9,6 +9,8 @@ import { sha256 } from '../../../scripts/daemon-bundle-metadata.mjs';
 import { measureBundleRuntime } from '../../../scripts/stage-daemon-bundle.mjs';
 import { verifyManagedBundleProof } from '../managed-bundle-proof.js';
 import { advanceDaemonBundleReleaseFloor, readDaemonBundleReleaseFloor } from '../../shared/daemon-bundle-release-floor.js';
+import { ManagedDaemonControl } from '../../cli/services/managed-daemon-control.js';
+import type { InstallationMutationGate, MutationReservation } from '../../shared/installation-mutation-gate.js';
 
 test('development admission floor survives rollback and only permits exact equal-sequence retry', () => {
 	const prior = { domain: 'development' as const, channel: 'development' as const, sequence: 1,
@@ -59,6 +61,26 @@ test('managed development proof revalidates signed identity and pinned runtime',
 		}), /identity changed/);
 		await writeFile(runtime, 'tampered bytes');
 		await assert.rejects(verifyManagedBundleProof(install, proof), /runtime changed/);
+
+		const production = { domain: 'production' as const, channel: 'macos-arm64-pilot' as const, sequence: 7,
+			manifestSha256: 'd'.repeat(64), archiveSha256: 'e'.repeat(64) };
+		const journalPath = join(stateRoot, 'journal-fixture.json');
+		const journal = JSON.stringify({ daemonBundleFloors: [production, proof.floor], installedBundle: { releaseRoot, proof } });
+		await writeFile(journalPath, journal);
+		const owner = { pid: process.pid, uid: process.getuid!(), startedAt: '0:0', executable: process.execPath };
+		let active: MutationReservation | null = null;
+		const gate = {
+			async reserve() { return active = { kind: 'restart', id: 'test', owner, entries: [] }; },
+			async read() { return { ...JSON.parse(await readFile(journalPath, 'utf8')), active }; },
+			async release() { active = null; },
+		} as unknown as InstallationMutationGate;
+		const control = new ManagedDaemonControl(install, {
+			gate, owner: async () => owner,
+			ensure: async () => assert.fail('tampered runtime must be rejected before service mutation'),
+		});
+		await assert.rejects(control.run('restart'), /runtime changed/);
+		assert.equal(active, null);
+		assert.equal(await readFile(journalPath, 'utf8'), journal);
 	} finally {
 		await rm(stateRoot, { recursive: true, force: true });
 	}

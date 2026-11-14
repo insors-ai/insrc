@@ -16,6 +16,7 @@ import { classifyMutationRecovery, InstallationMutationGate } from '../../shared
 import type { MutationReservation } from '../../shared/installation-mutation-gate.js';
 import { ensureManagedJob, inspectManagedJob, installationPaths, requireQuiescentInstallation, supervisorJob } from '../../shared/managed-daemon-installation.js';
 import type { ManagedInstallation } from '../../shared/managed-daemon-installation.js';
+import { verifyManagedBundleProof } from '../../daemon/managed-bundle-proof.js';
 
 type Request = Pick<SupervisorRequest, 'op' | 'generation' | 'deadlineMs' | 'updateId'>;
 type Reply = Extract<SupervisorReply, { ok: true }>;
@@ -160,6 +161,13 @@ export class ManagedDaemonControl {
 		let link: ManagedSupervisorLink | undefined;
 		try {
 			if (kind !== 'stop') {
+				const { installedBundle } = await this.gate.read();
+				if (installedBundle?.proof.floor.domain === 'development') {
+					if (installedBundle.releaseRoot !== this.installation.releaseRoot) {
+						throw new Error('development installation selector differs from installed proof');
+					}
+					await verifyManagedBundleProof(this.installation, installedBundle.proof);
+				}
 				const check = async () => { await this.gate.admit(reservation); };
 				if (this.deps.ensure !== undefined) await this.deps.ensure(check);
 				else await ensureManagedJob(this.installation, check, {

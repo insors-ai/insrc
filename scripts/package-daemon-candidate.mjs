@@ -31,6 +31,11 @@ export async function stageRuntime(source, stage, runtime) {
 	for (const name of ['out', 'node_modules', 'package.json', 'package-lock.json', 'LICENSE', 'THIRD_PARTY_NOTICES.md']) {
 		await copy(join(source, name), join(stage, name));
 	}
+	await mkdir(join(stage, 'scripts'));
+	for (const name of ['daemon-ctl.sh', 'insrc', 'insrc-daemon-install.sh', 'stage-daemon-bundle.mjs',
+		'daemon-bundle-metadata.mjs', 'verify-daemon-bundle.mjs']) {
+		await copy(join(source, 'scripts', name), join(stage, 'scripts', name));
+	}
 	await mkdir(join(stage, 'tools'));
 	await copy(runtime, join(stage, 'tools', 'node'));
 	await copy(resolve(dirname(runtime), '..', 'LICENSE'), join(stage, 'tools', 'LICENSE.node'));

@@ -18,11 +18,13 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 USER_CWD="$PWD"
 
-command -v node >/dev/null 2>&1 || { echo "insrc: node not found on PATH (need Node.js >= 20)" >&2; exit 2; }
+NODE=node
+if [ -x "$ROOT/tools/node" ]; then NODE="$ROOT/tools/node"; fi
+command -v "$NODE" >/dev/null 2>&1 || { echo "insrc: node not found on PATH (need Node.js >= 20)" >&2; exit 2; }
 
 cd "$ROOT"
 if [ -f out/cli/index.js ]; then
-	exec env INSRC_CWD="$USER_CWD" node out/cli/index.js "$@"
+	exec env INSRC_CWD="$USER_CWD" "$NODE" out/cli/index.js "$@"
 else
-	exec env INSRC_CWD="$USER_CWD" node --import tsx/esm src/cli/index.tsx "$@"
+	exec env INSRC_CWD="$USER_CWD" "$NODE" --import tsx/esm src/cli/index.tsx "$@"
 fi

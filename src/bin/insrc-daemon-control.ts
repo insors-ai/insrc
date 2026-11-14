@@ -1,6 +1,6 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 
-import { access, lstat, realpath, rm } from 'node:fs/promises';
+import { access, lstat, mkdir, readFile, readdir, realpath, rm } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import { basename, join } from 'node:path';
 import { stopDaemon } from '../cli/services/daemon.js';
@@ -18,6 +18,8 @@ import { admitManagedPreparation, prepareLegacyUpgrade, retainManagedReleaseVeri
 import { PATHS } from '../shared/paths.js';
 import { requestLegacyDrain, restoredLegacyDrainPath } from '../daemon/legacy-private-drain.js';
 import { stopRestoredLegacyProcess } from '../daemon/legacy-public-stop.js';
+import { readManagedBundleProof } from '../daemon/managed-bundle-proof.js';
+import { prepareBundleLegacyUpgrade } from '../daemon/managed-update-preparation.js';
 
 const NOT_MANAGED = 10;
 
@@ -56,6 +58,32 @@ async function stage(release: string | undefined, releaseId: string | undefined,
 }
 
 async function main(command: string): Promise<void> {
+	if (command === 'activate-bundle') {
+		const [release, releaseId, legacyRoot, legacyRuntime] = process.argv.slice(3);
+		if (process.platform !== 'darwin' || release === undefined || releaseId === undefined
+			|| !/^[a-f0-9]{40}$/.test(releaseId) || Boolean(legacyRoot) !== Boolean(legacyRuntime)) {
+			throw new Error('activate-bundle requires a staged bundle and optionally a legacy checkout and runtime');
+		}
+		const proof = readManagedBundleProof(JSON.parse(await readFile('/dev/stdin', 'utf8')));
+		await mkdir(PATHS.insrc, { mode: 0o700, recursive: true });
+		const stateRoot = await realpath(PATHS.insrc);
+		const rootInfo = await lstat(stateRoot);
+		if (rootInfo.uid !== process.getuid?.() || (rootInfo.mode & 0o022) !== 0) throw new Error('unsafe installation root');
+		const installation = { version: 1 as const, stateRoot, releaseRoot: await realpath(release), releaseId,
+			runtime: await realpath(process.execPath), pathEnv: process.env['PATH'] ?? '/usr/bin:/bin', enabled: true };
+		if (legacyRoot !== undefined && legacyRuntime !== undefined) {
+			const result = await prepareBundleLegacyUpgrade(installation, proof, legacyRoot, legacyRuntime);
+			process.stdout.write(`${result.decision}: ${result.detail}\n`);
+			if (result.decision !== 'committed') process.exitCode = 4;
+		} else {
+			const active = (await new InstallationMutationGate(stateRoot).read()).active;
+			if (active === null && (await readdir(stateRoot)).some(name => join(stateRoot, name) !== installationPaths(stateRoot).directory)) {
+				throw new Error('fresh bundle activation requires a pristine state root');
+			}
+			await activateFreshManagedDaemon({ installation, startChild: true, fingerprint: proof.fingerprint, bundleProof: proof });
+		}
+		return;
+	}
 	if (command === 'stop-restored-legacy') {
 		const [pid] = process.argv.slice(3);
 		if (pid === undefined || !/^\d+$/.test(pid)) throw new Error('invalid restored legacy PID');

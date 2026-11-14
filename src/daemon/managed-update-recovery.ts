@@ -10,6 +10,7 @@ import type { RunFileGuard } from '../shared/daemon-run-files.js';
 import { measureManagedReleaseInventory } from './managed-release-inventory.js';
 import { recordedReleaseQualification, recordedSourceRelease } from '../shared/installation-mutation-gate.js';
 import { verifyStagedReleasePin } from './managed-release-staging.js';
+import { verifyManagedBundleProof } from './managed-bundle-proof.js';
 import type { InstallationMutationGate, MutationReservation } from '../shared/installation-mutation-gate.js';
 import {
 	inspectManagedJob, publishManagedSelector, registerManagedJob, removeManagedJob,
@@ -237,6 +238,10 @@ class Rollback {
 		const releaseProof = recordedReleaseQualification(initial);
 		const source = recordedSourceRelease(initial);
 		const verifyPrior = async () => {
+			if (initial.predecessor.bundleProof !== undefined) {
+				await verifyStagedReleasePin({ root: prior.releaseRoot, runtime: prior.runtime, commit: prior.releaseId,
+					fingerprint: initial.predecessor.bundleProof.priorSourceFingerprint });
+			}
 			if (source !== undefined) await verifyStagedReleasePin({ root: prior.releaseRoot, runtime: prior.runtime,
 				commit: prior.releaseId, fingerprint: source.priorFingerprint });
 			if (releaseProof !== undefined
@@ -365,7 +370,7 @@ export async function completeLegacyMigration(
 			await verifyRollbackSelector(update, operations);
 			await verifyOriginalLegacyRoute(update, legacyOperations);
 			await verifyManagedUpdateInventory(pins);
-			const signed = pins.sourceRelease !== undefined;
+			const signed = pins.sourceRelease !== undefined || pins.bundleProof !== undefined;
 			if (signed) await recordManagedUpdatePins(gate, update, pins);
 			if (launch !== undefined) {
 				const archive = await fenceLegacyLauncher(gate, update, legacyOperations.helper);
@@ -407,6 +412,7 @@ export async function completeLegacyMigration(
 }
 
 async function verifyCandidate(candidate: ManagedInstallation, update: Update, receipt: HandoffReceipt, operations: RecoveryHost): Promise<void> {
+	if (update.predecessor.bundleProof !== undefined) await verifyManagedBundleProof(candidate, update.predecessor.bundleProof.candidate);
 	const job = await requireJob(operations, candidate, receipt.job);
 	if (job?.pid == null) throw new Error('candidate job stopped before outcome publication');
 	await requireReady(operations, candidate, update.predecessor.wasRunning, receipt.generation);

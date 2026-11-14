@@ -21,6 +21,8 @@ test('candidate layout survives moving the runtime and rejects external links', 
 			'packages/project-memory/dist/index.js', 'packages/project-memory/package.json', 'packages/project-memory/LICENSE',
 			'package.json', 'package-lock.json', 'LICENSE', 'THIRD_PARTY_NOTICES.md',
 			'node_modules/.bin/fixture', 'node_modules/example/index.js',
+			'scripts/daemon-ctl.sh', 'scripts/insrc', 'scripts/insrc-daemon-install.sh',
+			'scripts/stage-daemon-bundle.mjs', 'scripts/daemon-bundle-metadata.mjs', 'scripts/verify-daemon-bundle.mjs',
 		];
 		for (const path of [...paths.map(name => join(source, name)), runtime, join(fixture, 'node-dist/LICENSE')]) {
 			await mkdir(dirname(path), { recursive: true });

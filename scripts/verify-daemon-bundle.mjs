@@ -49,7 +49,13 @@ async function main([domain, requestedVersion, manifestPath, signaturePath, arch
 		macOSVersion: execFileSync('/usr/bin/sw_vers', ['-productVersion'], { encoding: 'utf8', timeout: 5000 }).trim(),
 	};
 	const result = await verifyAndStageBundle({ bytes, signature, domain, key, host, archive, releaseParent });
-	process.stdout.write(JSON.stringify(result) + '\n');
+	const proof = result.staged === undefined ? undefined : {
+		version: 1, floor: { domain, channel: result.manifest.channel, sequence: result.manifest.sequence,
+			manifestSha256: result.manifestSha256, archiveSha256: result.manifest.archiveSha256 },
+		fingerprint: result.staged.fingerprint, manifestBase64: bytes.toString('base64'),
+		signatureBase64: signature.toString('base64'), publicKey: key.toString('utf8'),
+	};
+	process.stdout.write(JSON.stringify({ ...result, proof }) + '\n');
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main(process.argv.slice(2));

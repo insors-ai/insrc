@@ -15,11 +15,14 @@ import type { ManagedInstallation } from '../shared/managed-daemon-installation.
 import { checkUpdateSource, readUpdateSource } from '../shared/update-source.js';
 import type { UpdateSource } from '../shared/update-source.js';
 import { discoverLegacyLaunch } from './legacy-cutover-admission.js';
-import { managedReleaseGit as git, stageManagedRelease, verifyStagedReleasePin } from './managed-release-staging.js';
+import { captureManagedReleasePin, managedReleaseGit as git, stageManagedRelease, verifyStagedReleasePin } from './managed-release-staging.js';
 import { readVerifiedSourceRelease } from '../shared/managed-source-release.js';
 import type { VerifiedSourceRelease } from '../shared/managed-source-release.js';
 import { completeLegacyMigration, completeManagedUpdate } from './managed-update-recovery.js';
 import { readTaggedReleaseCompatibility } from './release-compatibility.js';
+import { readReleaseCompatibility, requireQualifiedReleasePair } from './release-compatibility.js';
+import { verifyManagedBundleManifest, verifyManagedBundleProof } from './managed-bundle-proof.js';
+import type { ManagedBundleProof } from './managed-bundle-proof.js';
 
 type Update = Extract<MutationReservation, { kind: 'update' }>;
 type Source = { readonly repoUrl: string; readonly branch: string };
@@ -200,4 +203,39 @@ export async function prepareLegacyUpgrade(root: string, checkout: string, overr
 	if (reservation.kind !== 'update') throw new Error('expected legacy upgrade reservation');
 	return completeLegacyMigration(gate, reservation, { prior, candidate: prepared.candidate, compatibility: prepared.compatibility,
 		sourceRelease: { ...prepared.sourceRelease, launchProfile: profile } });
+}
+
+/** The independently authenticated bootstrap has already staged this exact candidate. */
+export async function prepareBundleLegacyUpgrade(candidate: ManagedInstallation, proof: ManagedBundleProof, checkout: string, priorRuntime: string) {
+	const root = candidate.stateRoot;
+	if (await readInstallationSelector(root) !== undefined) throw new Error('pilot clone migration requires a legacy installation without a selector');
+	await verifyManagedBundleProof(candidate, proof);
+	const manifest = verifyManagedBundleManifest(proof, candidate.releaseId);
+	const source = await captureManagedReleasePin(await realpath(checkout), priorRuntime);
+	const predecessors = manifest.predecessors as Array<{ kind: string; commit: string; compatibility: object;
+		launchProfiles: string[]; crashConsistentReopening: boolean }>;
+	const exact = predecessors.find(item => item.kind === 'source' && item.commit === source.commit && item.crashConsistentReopening);
+	if (exact === undefined) throw new Error('bundle does not qualify this clone predecessor');
+	const priorProfile = readReleaseCompatibility({ ...exact.compatibility, version: 1, startup: 'rollback-compatible', releaseId: source.commit });
+	const declared = await readFile(join(source.root, 'out/release-compatibility.json'), 'utf8')
+		.catch(error => { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; });
+	if (declared !== undefined && !isDeepStrictEqual(readReleaseCompatibility(JSON.parse(declared)), priorProfile)) {
+		throw new Error('installed compatibility differs from the signed predecessor declaration');
+	}
+	const candidateProfile = readReleaseCompatibility({ ...(manifest.compatibility as object), version: 1,
+		startup: 'rollback-compatible', releaseId: candidate.releaseId });
+	const compatibility = requireQualifiedReleasePair(priorProfile, candidateProfile, [{ prior: priorProfile, candidate: candidateProfile }]);
+	const prior: ManagedInstallation = { ...candidate, releaseRoot: source.root, releaseId: source.commit, runtime: source.runtime, enabled: false };
+	const route = await discoverLegacyLaunch(prior, { ...candidate, enabled: false });
+	const profile = route.legacy === undefined ? (route.wasRunning ? 'legacy-direct' : 'legacy-stopped')
+		: route.legacy.job.program === '/bin/bash' ? 'legacy-shell-job' : 'legacy-node-job';
+	if (!exact.launchProfiles.includes(profile)) throw new Error('bundle does not qualify the incumbent launch profile');
+	const gate = new InstallationMutationGate(root);
+	const bundleProof = { priorSourceFingerprint: source.fingerprint, candidate: proof };
+	const reservation = await gate.reserve({ kind: 'update', owner: await readDarwinIncarnation(process.pid), predecessor: {
+		...route, priorRelease: prior.releaseId, candidateRelease: candidate.releaseId, priorCommit: source.commit,
+		generation: null, pins: { prior, candidate }, selectorAbsent: true, bundleProof,
+	} }, proof.floor);
+	if (reservation.kind !== 'update') throw new Error('expected bundle migration reservation');
+	return completeLegacyMigration(gate, reservation, { prior, candidate, compatibility, bundleProof });
 }

@@ -7,6 +7,8 @@ import type { SupervisorReply } from '../shared/daemon-supervisor-protocol.js';
 import type { AdmittedSourceRelease, MutationReservation, InstallationMutationGate } from '../shared/installation-mutation-gate.js';
 import type { RunFileGuard } from '../shared/daemon-run-files.js';
 import { verifyStagedReleasePin } from './managed-release-staging.js';
+import { verifyManagedBundleProof } from './managed-bundle-proof.js';
+import type { UpdatePredecessor } from '../shared/installation-mutation-gate.js';
 import {
 	installFreshSelectorMember, publishManagedSelector, registerManagedJob, removeManagedJob, requireQuiescentInstallation,
 } from '../shared/managed-daemon-installation.js';
@@ -25,10 +27,17 @@ export interface ManagedUpdatePins {
 	readonly candidate: ManagedInstallation;
 	readonly compatibility: QualifiedReleasePair;
 	readonly sourceRelease?: AdmittedSourceRelease;
+	readonly bundleProof?: NonNullable<UpdatePredecessor['bundleProof']>;
 }
 
 /** Recheck signed raw pins at the live mutation boundary. The prior may have been archived. */
 export async function verifyManagedUpdateInventory(pins: ManagedUpdatePins, priorRoot = pins.prior.releaseRoot): Promise<void> {
+	if (pins.bundleProof !== undefined) {
+		await verifyStagedReleasePin({ root: priorRoot, runtime: pins.prior.runtime, commit: pins.prior.releaseId,
+			fingerprint: pins.bundleProof.priorSourceFingerprint });
+		await verifyManagedBundleProof(pins.candidate, pins.bundleProof.candidate);
+		return;
+	}
 	if (pins.sourceRelease !== undefined) {
 		await verifyStagedReleasePin({ root: priorRoot, runtime: pins.prior.runtime, commit: pins.prior.releaseId,
 			fingerprint: pins.sourceRelease.priorFingerprint });
@@ -113,6 +122,7 @@ export async function recordManagedUpdatePins(
 	const { prior, candidate, compatibility } = pins;
 	const { predecessor } = update;
 	if (predecessor.priorRelease !== prior.releaseId || predecessor.candidateRelease !== candidate.releaseId
+		|| JSON.stringify(predecessor.bundleProof) !== JSON.stringify(pins.bundleProof)
 		|| (predecessor.pins !== undefined && JSON.stringify(predecessor.pins) !== JSON.stringify({ prior, candidate }))) {
 		throw new Error('update reservation does not match pinned releases');
 	}

@@ -8,7 +8,8 @@
 
 import { promises as fs, statSync } from 'node:fs';
 import { join, resolve, relative } from 'node:path';
-import { runShell } from '../../shell-helper.js';
+import { onUtf8Data } from '../../../../shared/utf8-stream.js';
+import { runShell, spawnManaged } from '../../shell-helper.js';
 import type { Tool, ToolInput, ToolResult } from '../../types.js';
 import { refuseLiveStoreFile, searchAccess } from '../file/helpers.js';
 import { isLiveStoreFile } from '../../../../db/graph/store.js';
@@ -37,6 +38,22 @@ export interface GrepOmitted {
   readonly backendFallback?: { readonly reason: 'timeout' | 'exit-code'; readonly detail: string } | undefined;
   /** What this backend never reads, in words. */
   readonly excludedByRule: string;
+}
+
+/**
+ * A complete-mode search that could not finish: it ran past the deadline or
+ * ripgrep failed. `hits` holds what was gathered, whole lines, and is never a
+ * complete answer; the caller reports the search as failed.
+ */
+export class GrepIncompleteError extends Error {
+	constructor(
+		message: string,
+		readonly reason: 'timeout' | 'exit-code',
+		readonly hits: readonly GrepHit[],
+	) {
+		super(message);
+		this.name = 'GrepIncompleteError';
+	}
 }
 
 export interface SearchGrepData {
@@ -83,6 +100,14 @@ export interface GrepSearchOptions {
 	readonly multiline?:      boolean;
 	readonly limit?:          number;
 	readonly context?:        number;
+	/**
+	 * Analyzer-only complete mode: no hit limit, no per-line cut, no per-file
+	 * size skip and no output cap, and ripgrep output is read as a stream. A
+	 * search that runs past its 30-second deadline, or whose ripgrep fails,
+	 * throws `GrepIncompleteError` carrying the hits gathered. Unset, every
+	 * limit applies as it always did.
+	 */
+	readonly complete?:       boolean;
 	/** Test seam: the ripgrep binary and its time limit. Production passes neither. */
 	readonly _backend?: { readonly rgCommand?: string; readonly rgTimeoutMs?: number } | undefined;
 }
@@ -106,7 +131,15 @@ export async function runGrepSearch(opts: GrepSearchOptions): Promise<SearchGrep
 	refuseLiveStoreFile(root);
 	const limit = Math.min(Math.max(1, opts.limit ?? DEFAULT_LIMIT), MAX_LIMIT);
 	const context = typeof opts.context === 'number' ? Math.floor(opts.context) : 0;
-	const rg = await tryRipgrepRaw(opts.pattern, root, {
+	const rg = opts.complete === true
+		? await tryRipgrepComplete(opts.pattern, root, {
+			...(opts.glob !== undefined ? { glob: opts.glob } : {}),
+			caseInsensitive: opts.caseInsensitive === true,
+			context,
+			...(opts._backend?.rgCommand   !== undefined ? { rgCommand: opts._backend.rgCommand }     : {}),
+			...(opts._backend?.rgTimeoutMs !== undefined ? { rgTimeoutMs: opts._backend.rgTimeoutMs } : {}),
+		})
+		: await tryRipgrepRaw(opts.pattern, root, {
 		...(opts.glob !== undefined ? { glob: opts.glob } : {}),
 		caseInsensitive: opts.caseInsensitive === true,
 		limit,
@@ -314,6 +347,70 @@ async function tryRipgrepRaw(
       },
     },
   };
+}
+
+/**
+ * Complete-mode ripgrep: no `-m`, no line cut and no output cap. Output is read
+ * as it arrives and parsed in whole lines, so a line split across two chunks is
+ * one hit. Past the deadline the process is stopped and the call throws with the
+ * hits gathered; a ripgrep that started and failed does the same. A binary that
+ * cannot be started returns no data, as in the default mode.
+ */
+async function tryRipgrepComplete(
+	pattern: string,
+	root: string,
+	opts: { glob?: string | undefined; caseInsensitive: boolean; context: number; rgCommand?: string | undefined; rgTimeoutMs?: number | undefined },
+): Promise<RipgrepAttempt> {
+	const argv = [opts.rgCommand ?? 'rg', '--no-heading', '--line-number', '--color=never'];
+	if (opts.caseInsensitive) { argv.push('-i'); }
+	if (opts.glob) { argv.push('-g', opts.glob); }
+	if (opts.context > 0) { argv.push('-C', String(opts.context)); }
+	argv.push('-e', pattern, root);
+
+	const timeoutMs = opts.rgTimeoutMs ?? RG_TIMEOUT_MS;
+	const proc = spawnManaged(argv[0]!, argv.slice(1), { timeoutMs });
+	if (!proc.spawned) { return { data: null }; }
+
+	const hits: GrepHit[] = [];
+	let pending = '';
+	let stderr = '';
+	let spawnFailed = false;
+	const take = (line: string): void => {
+		const match = line.match(/^(.+?):(\d+):(.*)$/);
+		if (!match) { return; }
+		hits.push({ path: relative(root, match[1] ?? '') || (match[1] ?? ''), line: Number(match[2] ?? '0'), text: match[3] ?? '' });
+	};
+	onUtf8Data(proc.child.stdout, text => {
+		pending += text;
+		let nl = pending.indexOf('\n');
+		while (nl !== -1) {
+			take(pending.slice(0, nl));
+			pending = pending.slice(nl + 1);
+			nl = pending.indexOf('\n');
+		}
+	});
+	onUtf8Data(proc.child.stderr, text => { if (stderr.length < 4096) stderr += text; });
+	proc.child.on('error', () => { spawnFailed = true; });
+
+	const exit = await proc.settled;
+	if (spawnFailed) { return { data: null }; }
+	if (pending !== '') { take(pending); }
+	if (exit.timedOut) {
+		throw new GrepIncompleteError(`ripgrep was stopped after ${timeoutMs} ms with ${hits.length} hits gathered`, 'timeout', hits);
+	}
+	if (exit.code !== 0 && exit.code !== 1) {
+		const first = stderr.trim().split('\n')[0] ?? '';
+		throw new GrepIncompleteError(`ripgrep exited with ${exit.code ?? `signal ${exit.signal ?? 'unknown'}`}${first ? `: ${first}` : ''}`, 'exit-code', hits);
+	}
+	return {
+		data: {
+			pattern, root,
+			usedRipgrep: true,
+			hits,
+			truncated: false,
+			omitted: { skippedFiles: [], shortenedLines: [], perFileLimitReached: false, outputDiscarded: false, excludedByRule: RIPGREP_EXCLUDED_BY_RULE },
+		},
+	};
 }
 
 function renderReport(d: SearchGrepData): string {

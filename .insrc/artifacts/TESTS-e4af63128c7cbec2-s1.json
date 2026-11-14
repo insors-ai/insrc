@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 52,
-        "contentHash": "f65db5adb3c9cd51abb459d3782868032e3148842d2fc9f424d540d4a7e96aaa",
-        "at": "2026-11-13T09:30:51.039Z",
+        "number": 58,
+        "contentHash": "fa79f6d1b7f9f94fa50b7b893a19f5d90b1a5a16538c1e017d0016f9cef153c2",
+        "at": "2026-11-14T06:47:38.587Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,18 +23,18 @@
     "epicHash": "e4af63128c7cbec2",
     "storyId": "s1",
     "createdAt": "2026-11-09T07:52:13.312Z",
-    "updatedAt": "2026-11-13T09:30:50.519Z",
+    "updatedAt": "2026-11-14T06:47:38.203Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-09T04:29:20.389Z",
     "epicSlug": "isolate-each-code-design-review-its",
-    "revision": 52
+    "revision": 58
   },
   "body": {
     "tasks": [
       {
         "taskId": "t1",
-        "commit": "1191a5352",
-        "ranAt": "2026-11-09T07:52:13.312Z",
+        "commit": "ae7c1339b",
+        "ranAt": "2026-11-14T06:24:17.426Z",
         "testsPassed": true,
         "tests": [
           {
@@ -45,6 +45,11 @@
               {
                 "file": "src/workflow/code-review/task-review/__tests__/admission-checkpoint.test.ts",
                 "title": "unverified admission and resource guards preserve pinned code history and refuse approval",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/admission-checkpoint.test.ts",
+                "title": "mixed legacy story spellings survive version-two admission without rewriting pinned packets",
                 "result": "pass"
               }
             ],
@@ -69,7 +74,7 @@
             "file": "src/shared/__tests__/review-resources.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 561,
+            "durationMs": 592,
             "titles": [
               {
                 "title": "bounded exact review lease and clearance receipt contracts reject invalid input",
@@ -82,10 +87,14 @@
             "file": "src/workflow/code-review/task-review/__tests__/admission-checkpoint.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 992,
+            "durationMs": 1100,
             "titles": [
               {
                 "title": "unverified admission and resource guards preserve pinned code history and refuse approval",
+                "result": "pass"
+              },
+              {
+                "title": "mixed legacy story spellings survive version-two admission without rewriting pinned packets",
                 "result": "pass"
               }
             ],
@@ -498,8 +507,8 @@
       },
       {
         "taskId": "t8",
-        "commit": "f05b5d891",
-        "ranAt": "2026-11-13T09:16:06.455Z",
+        "commit": "ae7c1339b",
+        "ranAt": "2026-11-14T06:27:54.945Z",
         "testsPassed": true,
         "tests": [
           {
@@ -539,7 +548,7 @@
             "file": "src/daemon/threads/__tests__/review-worker-publication.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 5788,
+            "durationMs": 6206,
             "titles": [
               {
                 "title": "code",
@@ -568,7 +577,7 @@
             "file": "src/daemon/threads/__tests__/review-workers.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 5163,
+            "durationMs": 5237,
             "titles": [
               {
                 "title": "canonical identities own one incarnation and preserve subject and cleanup exclusions",
@@ -646,8 +655,8 @@
       },
       {
         "taskId": "t10",
-        "commit": "4a3a790d8",
-        "ranAt": "2026-11-13T09:01:01.884Z",
+        "commit": "ae7c1339b",
+        "ranAt": "2026-11-14T06:31:48.385Z",
         "testsPassed": true,
         "tests": [
           {
@@ -682,7 +691,7 @@
             "file": "src/workflow/review/design-review/__tests__/worker-admission.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 15324,
+            "durationMs": 14337,
             "titles": [
               {
                 "title": "durable admission and current workflow ancestry run in the owner worker",
@@ -971,8 +980,8 @@
       },
       {
         "taskId": "t13",
-        "commit": "4a3a790d8",
-        "ranAt": "2026-11-13T09:05:19.154Z",
+        "commit": "ae7c1339b",
+        "ranAt": "2026-11-14T06:36:32.394Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1035,7 +1044,7 @@
             "file": "src/daemon/threads/__tests__/artifact-write-authority.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1693,
+            "durationMs": 1690,
             "titles": [
               {
                 "title": "artifact writes share the main queue and release only after worker reclamation",
@@ -1048,7 +1057,7 @@
             "file": "src/daemon/threads/__tests__/review-worker-cleanup.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 10332,
+            "durationMs": 11094,
             "titles": [
               {
                 "title": "code",
@@ -1069,7 +1078,7 @@
             "file": "src/daemon/threads/__tests__/review-worker-publication.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 6196,
+            "durationMs": 5800,
             "titles": [
               {
                 "title": "code",
@@ -1098,7 +1107,7 @@
             "file": "src/daemon/threads/__tests__/review-worker-recovery.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 53625,
+            "durationMs": 50172,
             "titles": [
               {
                 "title": "crash-boundary owner-loss and cleanup races retain targeted lifecycle guarantees",
@@ -1127,8 +1136,8 @@
       },
       {
         "taskId": "t14",
-        "commit": "f05b5d891",
-        "ranAt": "2026-11-13T09:10:50.351Z",
+        "commit": "ae7c1339b",
+        "ranAt": "2026-11-14T06:42:17.726Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1170,6 +1179,16 @@
                 "file": "src/workflow/code-review/task-review/__tests__/pending-failure-history.test.ts",
                 "title": "pending-publication qualified failure survives new attempt publication approval cleanup and permanent reads",
                 "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-worker-routing.test.ts",
+                "title": "production cold public publication retries preserve historical version-one evidence without models",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-worker-routing.test.ts",
+                "title": "production restart refreshes reviewer authority while an incumbent design worker is registered",
+                "result": "pass"
               }
             ],
             "files": []
@@ -1193,7 +1212,7 @@
             "file": "src/daemon/__tests__/review-worker-routing.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 62688,
+            "durationMs": 68240,
             "titles": [
               {
                 "title": "every supported review method delegates heavy work to its dedicated owner",
@@ -1214,6 +1233,14 @@
               {
                 "title": "production cleanup preserves the explicit locator for a successful no-document review",
                 "result": "pass"
+              },
+              {
+                "title": "production cold public publication retries preserve historical version-one evidence without models",
+                "result": "pass"
+              },
+              {
+                "title": "production restart refreshes reviewer authority while an incumbent design worker is registered",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -1222,7 +1249,7 @@
             "file": "src/daemon/threads/__tests__/review-native-host.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 660,
+            "durationMs": 742,
             "titles": [
               {
                 "title": "orderly native host disposal ignores late port closure and cannot close a replacement owner",
@@ -1239,7 +1266,7 @@
             "file": "src/daemon/threads/__tests__/review-worker-recovery.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 51198,
+            "durationMs": 51210,
             "titles": [
               {
                 "title": "crash-boundary owner-loss and cleanup races retain targeted lifecycle guarantees",
@@ -1268,7 +1295,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/pending-failure-history.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 7099,
+            "durationMs": 7377,
             "titles": [
               {
                 "title": "pending-publication qualified failure survives new attempt publication approval cleanup and permanent reads",
@@ -1730,8 +1757,8 @@
       },
       {
         "taskId": "t16",
-        "commit": "69e74f592",
-        "ranAt": "2026-11-13T09:30:50.519Z",
+        "commit": "ae7c1339b",
+        "ranAt": "2026-11-14T06:47:38.203Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1766,7 +1793,7 @@
             "file": "src/daemon/threads/__tests__/review-worker-package.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 8130,
+            "durationMs": 7743,
             "titles": [
               {
                 "title": "compiled worker entrypoints and both review families start from an isolated built package",

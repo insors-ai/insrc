@@ -30,7 +30,7 @@ const matches = (pattern, value) => typeof value === 'string' && pattern.test(va
 const positive = (value, max = Number.MAX_SAFE_INTEGER) => Number.isSafeInteger(value) && value > 0 && value <= max;
 export const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 
-function compatibility(value) {
+export function requireBundleCompatibility(value) {
 	keys(value, ['graphSchema', 'formats'], 'compatibility declaration');
 	keys(value.formats, formats, 'writable formats');
 	requireField(positive(value.graphSchema) && formats.every(key => matches(/^[a-zA-Z0-9._-]{1,128}$/, value.formats[key])),
@@ -57,7 +57,7 @@ export function readBundleManifest(bytes) {
 	requireField(m.target === 'darwin-arm64' && matches(macOS, m.minimumMacOS) && m.nodeVersion === '22.22.1', 'target or node runtime');
 	requireField(m.archiveName === `insrc-daemon-${m.version}-darwin-arm64.tar.gz` && matches(sha, m.archiveSha256) &&
 		positive(m.archiveBytes, 2 ** 32) && matches(sha, m.runtimeFingerprint), 'archive or runtime identity');
-	compatibility(m.compatibility);
+	requireBundleCompatibility(m.compatibility);
 	requireField(Array.isArray(m.predecessors) && m.predecessors.length <= 64, 'predecessors');
 	const seen = new Set();
 	for (const p of m.predecessors) {
@@ -67,7 +67,7 @@ export function readBundleManifest(bytes) {
 		const id = `${p.kind}:${p.commit}:${p.manifestSha256}`;
 		requireField(!seen.has(id), 'duplicate predecessor');
 		seen.add(id);
-		compatibility(p.compatibility);
+		requireBundleCompatibility(p.compatibility);
 		requireField(p.crashConsistentReopening === true && Array.isArray(p.launchProfiles) && p.launchProfiles.length > 0 &&
 			new Set(p.launchProfiles).size === p.launchProfiles.length &&
 			p.launchProfiles.every(x => ['managed', 'legacy-direct', 'legacy-stopped', 'legacy-shell-job', 'legacy-node-job'].includes(x)) &&

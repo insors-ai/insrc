@@ -10,6 +10,8 @@ import { sha256 } from '../daemon-bundle-metadata.mjs';
 import { developmentPolicySigningBytes, verifyDevelopmentManifest } from '../daemon-development-metadata.mjs';
 import { measureBundleRuntime } from '../stage-daemon-bundle.mjs';
 import { developmentHandoffSigningBytes, signDevelopmentCandidate } from '../sign-daemon-development.mjs';
+import { closeGraphStore, getGraphStore, SCHEMA_VERSION, setGraphStorePath } from '../../src/db/graph/store.js';
+import { verifyQuiescedReleaseStores } from '../../src/daemon/release-compatibility.js';
 
 test('development signer binds the authenticated archive, sequence and exact qualified predecessor', async () => {
 	const root = await realpath(await mkdtemp(join(tmpdir(), 'insrc-development-signer-')));
@@ -22,7 +24,7 @@ test('development signer binds the authenticated archive, sequence and exact qua
 		const policyBytes = Buffer.from(JSON.stringify({ repository, releaseRef: 'refs/heads/main', developmentRefs: [sourceRef] }));
 		const ledgerDirectory = join(root, 'ledger');
 		await mkdir(ledgerDirectory);
-		const compatibility = { graphSchema: 1, formats: { lance: '1', repoAndIndexQueue: '1', config: '1', workflowAndSession: '1' } };
+		const compatibility = { graphSchema: SCHEMA_VERSION, formats: { lance: '1', repoAndIndexQueue: '1', config: '1', workflowAndSession: '1' } };
 		const payload = join(root, 'payload');
 		await mkdir(join(payload, 'tools'), { recursive: true, mode: 0o700 });
 		await mkdir(join(payload, 'out'), { mode: 0o700 });
@@ -53,20 +55,17 @@ test('development signer binds the authenticated archive, sequence and exact qua
 		assert.deepEqual(await signDevelopmentCandidate({ ...common, directory: first.directory, sequence: 1 }), prior);
 		await assert.rejects(signDevelopmentCandidate({ ...common, directory: next.directory, sequence: 1 }), /conflicting.*record/);
 		await assert.rejects(signDevelopmentCandidate({ ...common, builderKey: pem, directory: next.directory, sequence: 2 }), /handoff signature/);
-		// Exercise the write/interruption/reopen sequence with a deterministic
-		// file-backed fixture. The full daemon qualification runs in the VM task.
-		const statePath = join(root, 'store.json');
-		await writeFile(statePath, JSON.stringify({ format: 1, rows: ['prior'] }));
-		const child = spawn(process.execPath, ['-e', `
-			const fs = require('node:fs');
-			const path = process.argv[1];
-			const state = JSON.parse(fs.readFileSync(path, 'utf8'));
-			if (state.format !== 1) process.exit(1);
-			state.rows.push('candidate');
-			const fd = fs.openSync(path, 'w');
-			fs.writeFileSync(fd, JSON.stringify(state));
-			fs.fsyncSync(fd);
-			fs.closeSync(fd);
+		const statePath = join(root, 'graph.lmdb');
+		await mkdir(join(root, 'lance'));
+		setGraphStorePath(statePath);
+		await (await getGraphStore()).meta.put('development-test-prior', 'prior');
+		await closeGraphStore();
+		const store = new URL('../../src/db/graph/store.ts', import.meta.url).href;
+		const child = spawn(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', `
+			import { getGraphStore, setGraphStorePath } from ${JSON.stringify(store)};
+			setGraphStorePath(process.argv[1]);
+			const graph = await getGraphStore();
+			await graph.meta.put('development-test-candidate', 'candidate');
 			process.stdout.write('write persisted');
 			setInterval(() => {}, 1000);
 		`, statePath], { stdio: ['ignore', 'pipe', 'inherit'] });
@@ -79,17 +78,21 @@ test('development signer binds the authenticated archive, sequence and exact qua
 			child.kill('SIGKILL');
 		}
 		const [, exitSignal] = await exited;
-		const reopened = execFileSync(process.execPath, ['-e', `
-			const state = JSON.parse(require('node:fs').readFileSync(process.argv[1], 'utf8'));
-			if (state.format !== 1) process.exit(1);
-			process.stdout.write(JSON.stringify(state.rows));
-		`, statePath], { encoding: 'utf8' });
-		assert.equal(reopened, '["prior","candidate"]');
+		const pair = {
+			prior: { version: 1 as const, releaseId: first.candidate.commit, startup: 'rollback-compatible' as const, ...compatibility },
+			candidate: { version: 1 as const, releaseId: next.candidate.commit, startup: 'rollback-compatible' as const, ...compatibility },
+		};
+		await verifyQuiescedReleaseStores(root, pair);
+		const graph = await getGraphStore();
+		const predecessorReopened = graph.meta.get('development-test-prior') === 'prior' &&
+			graph.meta.get('development-test-candidate') === 'candidate';
+		assert.equal(predecessorReopened, true);
+		await closeGraphStore();
 		const record = { schemaVersion: 1, predecessorManifestSha256: sha256(prior.bytes),
 			predecessorRuntimeFingerprint: first.candidate.runtimeFingerprint, candidateCommit: next.candidate.commit,
 			candidateArchiveSha256: next.candidate.archiveSha256, candidateRuntimeFingerprint: next.candidate.runtimeFingerprint,
-			launchProfile: 'managed', candidateWriteObserved, candidateInterrupted: exitSignal === 'SIGKILL',
-			predecessorReopened: reopened === '["prior","candidate"]' };
+			predecessorCompatibility: compatibility, candidateCompatibility: compatibility,
+			launchProfile: 'managed', candidateWriteObserved, candidateInterrupted: exitSignal === 'SIGKILL', predecessorReopened };
 		const upgrade = { ...common, directory: next.directory, sequence: 2, prior };
 		await assert.rejects(signDevelopmentCandidate({ ...upgrade, evidence: Buffer.from(JSON.stringify({ ...record, predecessorReopened: false })) }), /crash-reopen/);
 		const evidence = Buffer.from(JSON.stringify(record));
@@ -99,6 +102,7 @@ test('development signer binds the authenticated archive, sequence and exact qua
 		assert.equal(manifest.predecessor?.manifestSha256, sha256(prior.bytes));
 		assert.equal(manifest.predecessor?.qualificationEvidenceSha256, sha256(evidence));
 	} finally {
+		await closeGraphStore();
 		await rm(root, { recursive: true, force: true });
 	}
 });

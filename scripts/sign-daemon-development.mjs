@@ -60,6 +60,7 @@ async function qualifyPredecessor({ prior, evidence, staged, candidateFingerprin
 	const expected = {
 		schemaVersion: 1, predecessorManifestSha256: manifestSha256, predecessorRuntimeFingerprint: manifest.runtimeFingerprint,
 		candidateCommit: staged.commit, candidateArchiveSha256: staged.archiveSha256, candidateRuntimeFingerprint: candidateFingerprint,
+		predecessorCompatibility: manifest.compatibility, candidateCompatibility: compatibility,
 		launchProfile: 'managed', candidateWriteObserved: true, candidateInterrupted: true, predecessorReopened: true,
 	};
 	if (!isDeepStrictEqual(record, expected)) throw new Error('crash-reopen evidence does not qualify these exact releases');

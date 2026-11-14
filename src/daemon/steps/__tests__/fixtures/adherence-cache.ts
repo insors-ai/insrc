@@ -40,7 +40,7 @@ try {
 	const poison = new Proxy({ connectionExecution: execution }, { get(t, key) { if (key === 'connectionExecution') return t.connectionExecution; getters++; throw Error('CM_PRIVATE_PAYLOAD'); } });
 	const denied = (error: unknown) => connectionExecutionErrorCode(error) === 'unsupported-temporary';
 	await assert.rejects(constraintsForTopic(poison as never), denied);
-	assert.throws(() => constraintRecordPathFor('warm', directory, 'topic', undefined, execution), denied);
+	assert.throws(() => constraintRecordPathFor('warm', directory, 'topic', execution), denied);
 	assert.throws(() => purgeConstraintRecords('warm', execution), denied);
 	await assert.rejects(runWithConnectionExecution(execution, () => constraintsForTopic(savedArgs)), error => connectionExecutionErrorCode(error) === 'session-expired');
 	await assert.rejects(_resolveConstraintsForTest(executeArgs, {}, directory), denied);

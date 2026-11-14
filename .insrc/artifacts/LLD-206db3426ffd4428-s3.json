@@ -57,6 +57,15 @@
       "description": "",
       "references": [],
       "attachments": []
+    },
+    "questionResolutions": {
+      "q52d7a4a9": {
+        "question": "Retries and follow-up work are not published by either review engine today, so ac1's 'retries and discovered follow-up work' is only partly met: both are reported as null. Accept null now, or add a separate Story that makes the engines publish those counters (a4 was rejected because it changes review execution, which the DEF's first non-goal excludes)?",
+        "status": "resolved",
+        "choice": "Accept null for this Story",
+        "rationale": "User approved planning with null retries/follow-up; whether to track a separate engine-counter Story is left to the user.",
+        "resolvedAt": "2026-11-14T18:02:58.080Z"
+      }
     }
   },
   "body": {

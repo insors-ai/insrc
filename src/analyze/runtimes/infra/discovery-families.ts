@@ -55,8 +55,6 @@ import type { SkippedItem } from '../../completeness.js';
 const TEMPLATE_ID = 'infra.discovery.families';
 const log = getLogger('analyze:runtimes:infra:discovery-families');
 
-const SAMPLE_CAP_PER_FAMILY = 8;
-
 interface FamilyRecord {
 	readonly name:        string;
 	readonly fileCount:   number;
@@ -71,11 +69,8 @@ export const infraDiscoveryFamiliesRuntime: TemplateRuntime = {
 		// The one scope function: the kinds an infra task accepts, and the directory it walks.
 		const repoPath = (await resolveTaskScope(scopeRef as AnalyzeScopeRef, 'infra', TEMPLATE_ID)).lookupPath;
 
-		const { files, truncated, unreadable } = await walkFiles(repoPath);
+		const { files, unreadable } = await walkFiles(repoPath);
 		const skipped: SkippedItem[] = [...unreadable];
-		if (truncated) {
-			captureAnalysisDiagnostics(log, args.connectionExecution).emit('warn', () => [{ runId: args.runId, taskId: args.task.taskId, repoPath }, 'discovery.families: file walk truncated -- inventory may be partial']);
-		}
 
 		const buckets = new Map<string, string[]>();
 		const push = (family: string, relPath: string): void => {
@@ -90,13 +85,12 @@ export const infraDiscoveryFamiliesRuntime: TemplateRuntime = {
 			}
 		}
 
-		let mostFilesInAFamily = 0;
-		for (const paths of buckets.values()) mostFilesInAFamily = Math.max(mostFilesInAFamily, paths.length);
 		const families: FamilyRecord[] = Array.from(buckets.entries())
 			.map(([name, paths]): FamilyRecord => ({
 				name,
 				fileCount: paths.length,
-				sampleFiles: paths.slice(0, SAMPLE_CAP_PER_FAMILY),
+				// Every file of the family, so the list is whole; fileCount is its length.
+				sampleFiles: paths,
 			}))
 			.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
 
@@ -111,16 +105,7 @@ export const infraDiscoveryFamiliesRuntime: TemplateRuntime = {
 
 		return {
 			outputs: new Map<string, unknown>([['families', families]]),
-			completeness: fileWalkCompleteness(families.length, truncated, {
-				skipped,
-				// Each family names a sample of its files; fileCount holds the full number.
-				limited: mostFilesInAFamily > SAMPLE_CAP_PER_FAMILY
-					? [{
-						what: 'sample files per family', limit: SAMPLE_CAP_PER_FAMILY, scope: 'per-group',
-						reason: `a family has ${mostFilesInAFamily} files and ${SAMPLE_CAP_PER_FAMILY} are named for each; fileCount holds the full number`,
-					}]
-					: [],
-			}),
+			completeness: fileWalkCompleteness(families.length, { skipped }),
 		};
 	},
 };

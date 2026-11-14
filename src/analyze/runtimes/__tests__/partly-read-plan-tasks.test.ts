@@ -37,6 +37,11 @@ import { dataAdherenceCheckRuntime } from '../data/adherence-check.js';
 import { docsDiscoveryInventoryRuntime } from '../docs/discovery-inventory.js';
 import { countedSkip, docsFamilySummariseRuntime } from '../docs/family-summarise.js';
 import { infraAdherenceCheckRuntime } from '../infra/adherence-check.js';
+import { infraDiscoveryFamiliesRuntime } from '../infra/discovery-families.js';
+import { walkFiles } from '../infra/_shared.js';
+import { dataDiscoveryObjectsRuntime } from '../data/discovery-objects.js';
+import { _setDataPoolSourceForTest } from '../data/_shared.js';
+import { AGGREGATE_COMBINE_SCHEMA } from '../shared/aggregator.js';
 
 const NOW = '2026-10-08T10:00:00.000Z';
 
@@ -202,6 +207,52 @@ test("the docs plan tasks report a document they could not confirm under partlyR
 	// The entry that names several documents: none when there are none, and every file in it.
 	assert.deepEqual(countedSkip([], 'x'), []);
 	assert.deepEqual(countedSkip(['b.md', 'a.md'], 'why'), [{ what: '2 documents: a.md, b.md', reason: 'why' }]);
+});
+
+test('the data and infra file lists, family samples, subject lists and the aggregator summary return every item', async () => {
+	// data: a file connection of 201 files (the former limit was 200) is listed whole, with no limit in the record.
+	for (let i = 0; i < 201; i++) { mkdirSync(join(REPO, 'data'), { recursive: true }); writeFileSync(join(REPO, 'data', `f${String(i).padStart(3, '0')}.csv`), 'a,b\n1,2\n'); }
+	const filePool = {
+		reload: async () => undefined,
+		safeList: () => [{ key: { repoRoot: REPO, scope: 'saved', id: 'files' }, revision: 'fixture', kind: 'csv', family: 'file', effectiveFamily: 'file', label: 'files', publicConfig: { path: 'data', recursive: false }, credentialPresence: {} }],
+		withConnection: async (_id: string, use: (value: object) => Promise<unknown>) => use({ family: 'file', kind: 'csv' }),
+	};
+	_setDataPoolSourceForTest((async () => filePool) as unknown as Parameters<typeof _setDataPoolSourceForTest>[0]);
+	try {
+		const objects = await run(dataDiscoveryObjectsRuntime, args('data.discovery.objects', { connectionId: 'files' }));
+		assert.equal((objects.outputs.get('objects') as unknown[]).length, 201, 'every file is listed');
+		assert.equal(objects.completeness.limited, undefined);
+		assert.equal(objects.completeness.complete, true);
+	} finally {
+		_setDataPoolSourceForTest(undefined);
+	}
+
+	// infra: a walk of 5,005 files (the former cap was 5,000) reaches the end, and a family names every one of its files.
+	for (let i = 0; i < 5_005; i++) { mkdirSync(join(REPO, 'wide'), { recursive: true }); writeFileSync(join(REPO, 'wide', `f${i}.txt`), ''); }
+	const walked = await walkFiles(join(REPO, 'wide'));
+	assert.deepEqual([walked.files.length, walked.truncated], [5_005, false]);
+	for (let i = 0; i < 12; i++) { mkdirSync(join(REPO, '.github/workflows'), { recursive: true }); writeFileSync(join(REPO, '.github/workflows', `w${i}.yml`), 'name: w\non: [push]\njobs: {}\n'); }
+	const fams = await run(infraDiscoveryFamiliesRuntime, args('infra.discovery.families', { scopeRef: { kind: 'repo', value: REPO } }));
+	const list = fams.outputs.get('families') as { fileCount: number; sampleFiles: string[] }[];
+	assert.ok(list.every(f => f.sampleFiles.length === f.fileCount), 'every family names all its files');
+	assert.ok(list.some(f => f.fileCount >= 12));
+	assert.equal(fams.completeness.limited, undefined);
+
+	// docs: 21 subjects (the former roll-up named 20) are all in the roll-up.
+	const db = await getDb();
+	for (let i = 0; i < 21; i++) {
+		const e = (await index(`docs/s${i}.md`, `# Doc ${i}\n\nSubject ${i}.\n`)).find(x => x.kind === 'section' || x.kind === 'document')!;
+		await writeDocSummary(db, e.id, REPO, summary(`Doc ${i}`, { subjects: [`subject-${i}`] }));
+	}
+	const fam = await run(docsFamilySummariseRuntime, args('docs.family.summarise', { family: 'docs' }));
+	const rollup = fam.outputs.get('family-summary') as { topSubjects: unknown[] };
+	assert.equal(rollup.topSubjects.length, 21);
+	assert.equal(fam.completeness.limited, undefined);
+
+	// aggregator: a summary has no length cap in its schemas.
+	assert.equal(JSON.stringify(AGGREGATE_COMBINE_SCHEMA).includes('maxLength'), false);
+	const source = (await import('node:fs')).readFileSync(new URL('../shared/aggregator.ts', import.meta.url), 'utf8');
+	assert.equal(/SUMMARY_CAP|maxLength|slice\(0, SUMMARY/.test(source), false, 'the aggregator keeps no cap on a summary');
 });
 
 // ---------------------------------------------------------------------------

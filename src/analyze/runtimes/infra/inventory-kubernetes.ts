@@ -142,7 +142,7 @@ export const infraInventoryKubernetesRuntime: TemplateRuntime = {
 
 		return {
 			outputs: new Map<string, unknown>([['k8s-inventory', inventory]]),
-			completeness: fileWalkCompleteness(resources.length, truncated, { skipped }),
+			completeness: fileWalkCompleteness(resources.length, { skipped }),
 		};
 	},
 };

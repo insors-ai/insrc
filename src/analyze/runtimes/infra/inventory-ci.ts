@@ -156,7 +156,7 @@ export const infraInventoryCiRuntime: TemplateRuntime = {
 		captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{ runId: args.runId, taskId: args.task.taskId, repoPath, githubWorkflows: githubWorkflows.length, gitlabCi: gitlabCi.length, truncated }, 'infra.inventory.ci: enumerated']);
 		return {
 			outputs: new Map<string, unknown>([['ci-inventory', inventory]]),
-			completeness: fileWalkCompleteness(githubWorkflows.length + gitlabCi.length, truncated, { skipped }),
+			completeness: fileWalkCompleteness(githubWorkflows.length + gitlabCi.length, { skipped }),
 		};
 	},
 };

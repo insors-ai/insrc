@@ -147,7 +147,7 @@ export const infraInventoryHelmRuntime: TemplateRuntime = {
 		captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{ runId: args.runId, taskId: args.task.taskId, repoPath, chartCount: charts.length, truncated }, 'infra.inventory.helm: enumerated']);
 		return {
 			outputs: new Map<string, unknown>([['helm-inventory', inventory]]),
-			completeness: fileWalkCompleteness(charts.length, truncated, { skipped }),
+			completeness: fileWalkCompleteness(charts.length, { skipped }),
 		};
 	},
 };

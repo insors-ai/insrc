@@ -33,6 +33,8 @@ import { runExecutor } from '../../executor/walker.js';
 import { codeAdherenceCheckRuntime } from '../code/adherence-check.js';
 import { walkFiles } from '../infra/_shared.js';
 import { infraDiscoveryFamiliesRuntime } from '../infra/discovery-families.js';
+import { dataDiscoveryObjectsRuntime } from '../data/discovery-objects.js';
+import { _setDataPoolSourceForTest } from '../data/_shared.js';
 import { infraInventoryCiRuntime } from '../infra/inventory-ci.js';
 import { infraInventoryDockerRuntime } from '../infra/inventory-docker.js';
 import { infraInventoryHelmRuntime } from '../infra/inventory-helm.js';
@@ -311,5 +313,34 @@ test('an adherence check whose model call fails is recorded by the walk as a fai
 		assert.deepEqual(result.root.tasksFailed.map(f => f.taskId), ['t01']);
 	} finally {
 		purgeAllTaskOutputs(runId);
+	}
+});
+
+test('a runtime over a sampled driver reports the sample and not a complete answer', async () => {
+	// A key-value store whose namespaces are derived from a sample of its keys (Redis, etcd): it lists what the sample
+	// held, and the task's record says so. The listing asked for its complete mode and was still a sample.
+	const asked: unknown[] = [];
+	const driver = {
+		family: 'kv', kind: 'redis',
+		listNamespaces: async (opts?: unknown) => { asked.push(opts); return { namespaces: [{ name: 'svc', kind: 'prefix' }, { name: 'cache', kind: 'prefix' }], truncated: true, supported: true, sampled: true }; },
+	};
+	const pool = {
+		reload: async () => undefined,
+		safeList: () => [{ key: { repoRoot: REPO, scope: 'saved', id: 'cache' }, revision: 'fixture', kind: 'redis', family: 'kv', effectiveFamily: 'kv', label: 'cache', publicConfig: {}, credentialPresence: {} }],
+		withConnection: async (_id: string, use: (value: typeof driver) => Promise<unknown>) => use(driver),
+	};
+	_setDataPoolSourceForTest((async () => pool) as unknown as Parameters<typeof _setDataPoolSourceForTest>[0]);
+	try {
+		const result = await dataDiscoveryObjectsRuntime.execute(args('data.discovery.objects', { connectionId: 'cache' }));
+		assert.deepEqual(asked, [{ complete: true }]);
+		assert.equal((result.outputs.get('objects') as unknown[]).length, 2, 'what the sample held is listed');
+		assert.equal(result.completeness.complete, false);
+		assert.equal(result.completeness.limited, undefined, 'a sample is not a limit');
+		assert.deepEqual(result.completeness.skipped, [{
+			what: 'namespaces outside the listing',
+			reason: 'the store has no namespaces; they are derived from a sample of its keys, which are not scanned in full',
+		}]);
+	} finally {
+		_setDataPoolSourceForTest(undefined);
 	}
 });

@@ -36,7 +36,7 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 4,
         "contentHash": "5412282c9454b1f8cef6ae45976cb3a952bcba0d1b0856074ea074d91cafedd0",
@@ -48,13 +48,16 @@
         }
       },
       "approval": {
-        "revision": 2,
+        "revision": 4,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-14T08:50:39.261Z"
+        "at": "2026-11-14T10:52:11.476Z",
+        "override": {
+          "reason": "Design review broken; controller self-review done (s10 dependsOn and size fixed, HLD narrative re-attributed). User-approved override, 2026-11-14."
+        }
       },
       "signoffs": [],
       "review": {

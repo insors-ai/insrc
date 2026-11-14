@@ -102,18 +102,25 @@ async function main([version, commit, directory]) {
 		const archive = join(output, identity.archiveName);
 		const entries = (await readdir(stage)).sort();
 		execFileSync('/usr/bin/tar', ['--no-mac-metadata', '--no-xattrs', '--format', 'ustar', '-czf', archive, '-C', stage, ...entries]);
-		const hash = createHash('sha256');
-		for await (const chunk of createReadStream(archive)) hash.update(chunk);
-		const archiveSha256 = hash.digest('hex');
-		const origin = process.env.GITHUB_ACTIONS === 'true' ? dispatchOrigin(process.env, commit) : undefined;
-		const metadata = { schemaVersion: 1, ...identity, ...origin, archiveSha256, archiveBytes: (await stat(archive)).size };
-		await writeFile(join(output, 'candidate.json'), JSON.stringify(metadata, null, 2) + '\n', { flag: 'wx' });
-		if (process.env.GITHUB_OUTPUT && origin) await appendFile(process.env.GITHUB_OUTPUT,
-			`archive_sha256=${archiveSha256}\nartifact_name=daemon-candidate-${origin.lane}-${commit}-${origin.runAttempt}\n`);
+		const { archiveSha256 } = await writeCandidateMetadata(output, identity, process.env);
 		process.stdout.write(`${archiveSha256}  ${archive}\n`);
 	} finally {
 		await rm(stage, { recursive: true, force: true });
 	}
+}
+
+export async function writeCandidateMetadata(output, identity, env) {
+	const { commit, archiveName } = identity;
+	const archive = join(output, archiveName);
+	const hash = createHash('sha256');
+	for await (const chunk of createReadStream(archive)) hash.update(chunk);
+	const archiveSha256 = hash.digest('hex');
+	const origin = env.GITHUB_ACTIONS === 'true' ? dispatchOrigin(env, commit) : undefined;
+	const metadata = { schemaVersion: 1, ...identity, ...origin, archiveSha256, archiveBytes: (await stat(archive)).size };
+	await writeFile(join(output, 'candidate.json'), JSON.stringify(metadata, null, 2) + '\n', { flag: 'wx' });
+	if (env.GITHUB_OUTPUT && origin) await appendFile(env.GITHUB_OUTPUT,
+		`archive_sha256=${archiveSha256}\nartifact_name=daemon-candidate-${origin.lane}-${commit}-${origin.runAttempt}\n`);
+	return metadata;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main(process.argv.slice(2));

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -7,7 +8,28 @@ import { load } from 'js-yaml';
 
 // The release packager is a plain Node script, independent of the TypeScript build.
 const script = new URL('../package-daemon-candidate.mjs', import.meta.url);
-const { candidateIdentity, dispatchOrigin, stageRuntime } = await import(script.href);
+const { candidateIdentity, dispatchOrigin, stageRuntime, writeCandidateMetadata } = await import(script.href);
+
+test('packager emits candidate metadata and the upload name for each lane', async () => {
+	const root = await mkdtemp(join(tmpdir(), 'insrc-candidate-metadata-'));
+	try {
+		const commit = 'a'.repeat(40);
+		const identity = candidateIdentity('0.2.1-pilot.1', commit);
+		const payload = Buffer.from('archive fixture');
+		const digest = createHash('sha256').update(payload).digest('hex');
+		for (const [branch, lane] of [['main', 'release'], ['v2', 'development']]) {
+			const output = join(root, branch);
+			await mkdir(output);
+			await writeFile(join(output, identity.archiveName), payload);
+			const outputs = join(root, branch + '.outputs');
+			await writeCandidateMetadata(output, identity, { GITHUB_ACTIONS: 'true', GITHUB_REF: `refs/heads/${branch}`,
+				GITHUB_SHA: commit, GITHUB_RUN_ID: '1234', GITHUB_RUN_ATTEMPT: '2', GITHUB_OUTPUT: outputs });
+			assert.deepEqual(JSON.parse(await readFile(join(output, 'candidate.json'), 'utf8')),
+				{ schemaVersion: 1, ...identity, branch, lane, runId: '1234', runAttempt: '2', archiveSha256: digest, archiveBytes: payload.length });
+			assert.equal(await readFile(outputs, 'utf8'), `archive_sha256=${digest}\nartifact_name=daemon-candidate-${lane}-${commit}-2\n`);
+		}
+	} finally { await rm(root, { recursive: true, force: true }); }
+});
 
 test('candidate layout survives moving the runtime and rejects external links', async () => {
 	const fixture = await mkdtemp(join(tmpdir(), 'insrc-candidate-test-'));

@@ -7,7 +7,7 @@ import { test } from 'node:test';
 import { developmentManifestSigningBytes, encodeDevelopmentManifest } from '../../../scripts/daemon-development-metadata.mjs';
 import { sha256 } from '../../../scripts/daemon-bundle-metadata.mjs';
 import { measureBundleRuntime } from '../../../scripts/stage-daemon-bundle.mjs';
-import { verifyManagedBundleProof } from '../managed-bundle-proof.js';
+import { verifyManagedBundleProof, verifyManagedDevelopmentLaunch } from '../managed-bundle-proof.js';
 import { advanceDaemonBundleReleaseFloor, readDaemonBundleReleaseFloor } from '../../shared/daemon-bundle-release-floor.js';
 import { ManagedDaemonControl } from '../../cli/services/managed-daemon-control.js';
 import type { InstallationMutationGate, MutationReservation } from '../../shared/installation-mutation-gate.js';
@@ -68,6 +68,8 @@ test('managed development proof revalidates signed identity and pinned runtime',
 		const journal = JSON.stringify({ daemonBundleFloors: [production, proof.floor], installedBundle: { releaseRoot, proof } });
 		await writeFile(journalPath, journal);
 		const owner = { pid: process.pid, uid: process.getuid!(), startedAt: '0:0', executable: process.execPath };
+		const launch = { id: 'launch', kind: 'restart' as const, owner, entries: [] };
+		await assert.rejects(verifyManagedDevelopmentLaunch(install, launch, { releaseRoot, proof }), /runtime changed/);
 		let active: MutationReservation | null = null;
 		const gate = {
 			async reserve() { return active = { kind: 'restart', id: 'test', owner, entries: [] }; },
@@ -93,6 +95,7 @@ test('managed development proof revalidates signed identity and pinned runtime',
 		await assert.rejects(control.run('restart'), /runtime changed/);
 		assert.deepEqual(operations, []);
 		await writeFile(runtime, 'runtime fixture');
+		await verifyManagedDevelopmentLaunch(install, launch, { releaseRoot, proof });
 		assert.deepEqual(await control.run('restart'), { alreadyRunning: false, forced: false });
 		assert.deepEqual(operations, ['ensure', 'status', 'start']);
 		assert.equal(active, null);

@@ -33,6 +33,18 @@ test('local development packaging pins a configured ref and measures candidate b
 		assert.equal(candidate.fetchedTip, tip);
 		assert.equal(candidate.sourceRef, ref);
 		assert.equal(candidate.commit, commit);
+		const fakeHome = join(root, 'git-home');
+		await mkdir(fakeHome);
+		await writeFile(join(fakeHome, '.gitconfig'), `[url "${upstream}"]\n\tinsteadOf = ${join(root, 'absent')}\n`);
+		const savedHome = process.env.HOME;
+		try {
+			process.env.HOME = fakeHome;
+			await assert.rejects(fetchDevelopmentCheckout({ ...policy, repository: join(root, 'absent') },
+				ref, commit, await fresh()), /git.*fetch/s);
+		} finally {
+			if (savedHome === undefined) delete process.env.HOME;
+			else process.env.HOME = savedHome;
+		}
 		assert.throws(() => requireCleanDevelopmentCheckout(candidate.checkout, tip), /different commit/);
 		await writeFile(join(candidate.checkout, 'source'), 'dirty');
 		assert.throws(() => requireCleanDevelopmentCheckout(candidate.checkout, commit), /dirty/);

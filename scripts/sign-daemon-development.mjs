@@ -1,8 +1,8 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { createPrivateKey, createPublicKey, sign, verify } from 'node:crypto';
-import { link, mkdtemp, open, realpath, rm } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
-import { tmpdir } from 'node:os';
+import { link, lstat, mkdtemp, open, realpath, rm } from 'node:fs/promises';
+import { basename, dirname, join, resolve } from 'node:path';
+import { homedir, tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
 import { sha256 } from './daemon-bundle-metadata.mjs';
@@ -14,6 +14,8 @@ import { readBoundedRegular } from './verify-daemon-bundle.mjs';
 const metadataLimit = 64 * 1024;
 const handoffPrefix = Buffer.from('insrc-daemon-development-handoff-v1\0');
 export const developmentHandoffSigningBytes = bytes => Buffer.concat([handoffPrefix, bytes]);
+export const developmentQualificationSigningBytes = bytes =>
+	Buffer.concat([Buffer.from('insrc-daemon-development-qualification-v1\0'), bytes]);
 
 async function syncDirectory(directory) {
 	const handle = await open(directory, 'r');
@@ -49,9 +51,14 @@ function requireHandoff(bytes, signature, builderKey) {
 	return JSON.parse(bytes.toString('utf8'));
 }
 
-async function qualifyPredecessor({ prior, evidence, staged, candidateFingerprint, publicKey, compatibility }) {
+function qualifyPredecessor({ prior, evidence, evidenceSignature, qualificationKey, staged, candidateFingerprint, publicKey, compatibility }) {
 	if (!prior && !evidence) return null;
 	if (!prior || !evidence) throw new Error('upgrade requires the prior proof and local qualification evidence');
+	const key = createPublicKey(qualificationKey);
+	if (key.asymmetricKeyType !== 'ed25519' || evidenceSignature?.length !== 64 ||
+		!verify(null, developmentQualificationSigningBytes(evidence), key, evidenceSignature)) {
+		throw new Error('development qualification signature failed');
+	}
 	const { manifest, manifestSha256 } = verifyDevelopmentManifest(prior.bytes, prior.signature, publicKey);
 	if (manifest.repository !== staged.repository || !isDeepStrictEqual(manifest.compatibility, compatibility)) {
 		throw new Error('development predecessor writable formats differ');
@@ -74,6 +81,7 @@ async function qualifyPredecessor({ prior, evidence, staged, candidateFingerprin
 // The operator supplies the builder's public trust anchor and independently observed local qualification.
 export async function signDevelopmentCandidate({
 	directory, ledgerDirectory, sequence, key, builderKey, policyBytes, policySignature, compatibility, prior, evidence,
+	evidenceSignature, qualificationKey,
 }) {
 	const privateKey = createPrivateKey(key);
 	if (privateKey.asymmetricKeyType !== 'ed25519') throw new Error('development signer must be Ed25519');
@@ -93,26 +101,42 @@ export async function signDevelopmentCandidate({
 	const staging = await realpath(await mkdtemp(join(tmpdir(), 'insrc-development-signing-')));
 	let fingerprint;
 	try {
-		({ fingerprint } = await stageVerifiedBundle(join(directory, draft.archiveName), draft, staging, sha256(draftBytes)));
+		const extracted = await stageVerifiedBundle(join(directory, draft.archiveName), draft, staging, sha256(draftBytes));
+		fingerprint = extracted.fingerprint;
+		const declaration = JSON.parse(await readBoundedRegular(join(extracted.root, 'out/release-compatibility.json'), metadataLimit));
+		if (!isDeepStrictEqual(declaration, { version: 1, releaseId: draft.commit, startup: 'rollback-compatible', ...compatibility })) {
+			throw new Error('measured candidate writable formats differ from the supplied declaration');
+		}
 	} finally { await rm(staging, { recursive: true, force: true }); }
-	const predecessor = await qualifyPredecessor({ prior, evidence, staged: draft, candidateFingerprint: fingerprint,
-		publicKey: publicPem, compatibility });
+	const predecessor = qualifyPredecessor({ prior, evidence, evidenceSignature, qualificationKey,
+		staged: draft, candidateFingerprint: fingerprint, publicKey: publicPem, compatibility });
 	const bytes = encodeDevelopmentManifest({ ...draft, predecessor });
 	const signature = sign(null, developmentManifestSigningBytes(bytes), privateKey);
 	// Publish the sequence binding before releasing any signed bundle files.
-	const ledgerName = `${sha256(Buffer.from(policy.repository))}-development-${sequence}`;
-	await publish(ledgerDirectory, ledgerName, Buffer.from(sha256(bytes) + '\n'));
+	const ledger = await realpath(ledgerDirectory);
+	const ledgerInfo = await lstat(ledger);
+	if (!ledgerInfo.isDirectory() || ledgerInfo.uid !== process.getuid() || (ledgerInfo.mode & 0o077)) {
+		throw new Error('signing ledger must be a private operator-owned directory');
+	}
+	const ledgerPrefix = `${sha256(Buffer.from(policy.repository))}-development-`;
+	if (sequence > 1) {
+		const previous = await readBoundedRegular(join(ledger, ledgerPrefix + (sequence - 1)), 65);
+		if (!/^[a-f0-9]{64}\n$/.test(previous.toString('utf8'))) throw new Error('invalid previous signing sequence binding');
+	}
+	await publish(ledger, ledgerPrefix + sequence, Buffer.from(sha256(bytes) + '\n'));
 	await publish(directory, 'manifest.json', bytes);
 	await publish(directory, 'manifest.development.sig', signature);
 	return { bytes, signature };
 }
 
-async function main([directory, ledgerDirectory, sequence, keyPath, builderKeyPath, policyPath, compatibilityPath,
-	priorDirectory, evidencePath, ...extra]) {
-	if (!directory || !ledgerDirectory || !/^[1-9][0-9]*$/.test(sequence ?? '') || !keyPath || !builderKeyPath ||
-		!policyPath || !compatibilityPath || Boolean(priorDirectory) !== Boolean(evidencePath) || extra.length) {
-		throw new Error('usage: sign-daemon-development.mjs DIR LEDGER SEQUENCE KEY BUILDER_PUB POLICY COMPATIBILITY [PRIOR_DIR EVIDENCE]');
+async function main([directory, sequence, keyPath, builderKeyPath, policyPath, compatibilityPath,
+	priorDirectory, evidencePath, qualificationKeyPath, ...extra]) {
+	if (!directory || !/^[1-9][0-9]*$/.test(sequence ?? '') || !keyPath || !builderKeyPath ||
+		!policyPath || !compatibilityPath || Boolean(priorDirectory) !== Boolean(evidencePath) ||
+		Boolean(priorDirectory) !== Boolean(qualificationKeyPath) || extra.length) {
+		throw new Error('usage: sign-daemon-development.mjs DIR SEQUENCE KEY BUILDER_PUB POLICY COMPATIBILITY [PRIOR_DIR EVIDENCE QUALIFIER_PUB]');
 	}
+	const ledgerDirectory = join(homedir(), '.insrc-development-signing', 'ledger');
 	await signDevelopmentCandidate({
 		directory, ledgerDirectory, sequence: Number(sequence), key: await readBoundedRegular(keyPath, 4096),
 		builderKey: await readBoundedRegular(builderKeyPath, 4096), policyBytes: await readBoundedRegular(policyPath, metadataLimit),
@@ -123,6 +147,8 @@ async function main([directory, ledgerDirectory, sequence, keyPath, builderKeyPa
 			signature: await readBoundedRegular(join(priorDirectory, 'manifest.development.sig'), 64),
 		},
 		evidence: evidencePath === undefined ? undefined : await readBoundedRegular(evidencePath, metadataLimit),
+		evidenceSignature: evidencePath === undefined ? undefined : await readBoundedRegular(evidencePath + '.sig', 64),
+		qualificationKey: qualificationKeyPath === undefined ? undefined : await readBoundedRegular(qualificationKeyPath, 4096),
 	});
 }
 
@@ -134,8 +160,18 @@ async function attestHandoff([directory, keyPath, ...extra]) {
 	await publish(directory, 'candidate.sig', sign(null, developmentHandoffSigningBytes(bytes), key));
 }
 
+async function attestQualification([path, keyPath, ...extra]) {
+	if (!path || !keyPath || extra.length) throw new Error('usage: sign-daemon-development.mjs attest-qualification EVIDENCE QUALIFIER_KEY');
+	const key = createPrivateKey(await readBoundedRegular(keyPath, 4096));
+	if (key.asymmetricKeyType !== 'ed25519') throw new Error('development qualifier must be Ed25519');
+	const bytes = await readBoundedRegular(path, metadataLimit);
+	const destination = resolve(path + '.sig');
+	await publish(dirname(destination), basename(destination), sign(null, developmentQualificationSigningBytes(bytes), key));
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
 	const args = process.argv.slice(2);
 	if (args[0] === 'attest-handoff') await attestHandoff(args.slice(1));
+	else if (args[0] === 'attest-qualification') await attestQualification(args.slice(1));
 	else await main(args);
 }

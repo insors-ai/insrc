@@ -9,13 +9,15 @@ import { fileURLToPath } from 'node:url';
 import {
 	DEVELOPMENT_MINIMUM_MACOS, DEVELOPMENT_NODE_VERSION, readDevelopmentPolicy, requireDevelopmentRef,
 } from './daemon-development-metadata.mjs';
-import { requireBundleTarget } from './daemon-bundle-metadata.mjs';
+import { requireBundleCompatibility, requireBundleTarget } from './daemon-bundle-metadata.mjs';
 import { stageRuntime } from './package-daemon-candidate.mjs';
 import { measureBundleRuntime } from './stage-daemon-bundle.mjs';
 
 function git(cwd, args) {
 	const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
-	return execFileSync('/usr/bin/git', args, { cwd, env, encoding: 'utf8' }).trim();
+	env.GIT_CONFIG_NOSYSTEM = '1';
+	env.GIT_CONFIG_GLOBAL = '/dev/null';
+	return execFileSync('/usr/bin/git', ['-c', 'init.templateDir=', ...args], { cwd, env, encoding: 'utf8' }).trim();
 }
 
 export function requireCleanDevelopmentCheckout(checkout, commit) {
@@ -30,9 +32,10 @@ export async function fetchDevelopmentCheckout(policy, ref, commit, workspace) {
 	requireDevelopmentRef(ref);
 	if (!policy.developmentRefs.includes(ref) || ref === policy.releaseRef) throw new Error('development branch is not approved');
 	if (!/^[a-f0-9]{40}$/.test(commit)) throw new Error('expected exact lowercase commit SHA');
-	git(workspace, ['init', '--bare', '.']);
+	git(workspace, ['init', '--bare', '--initial-branch=development-build', '.']);
 	// Fetch this ref into the fresh repository. No local tracking refs are reused.
-	git(workspace, ['-c', 'protocol.ext.allow=never', 'fetch', '--no-tags', '--', policy.repository, ref]);
+	git(workspace, ['-c', 'http.followRedirects=false', '-c', 'protocol.ext.allow=never',
+		'fetch', '--no-tags', '--', policy.repository, ref]);
 	const fetchedTip = git(workspace, ['rev-parse', '--verify', 'FETCH_HEAD^{commit}']);
 	try {
 		git(workspace, ['merge-base', '--is-ancestor', commit, fetchedTip]);
@@ -70,18 +73,31 @@ async function normalizeRuntimeModes(directory) {
 	}
 }
 
-async function main([policyPath, ref, commit, version, outputPath, ...extra]) {
-	if (!policyPath || !ref || !commit || !outputPath || extra.length ||
+async function main([policyPath, ref, commit, version, outputPath, compatibilityPath, ...extra]) {
+	if (!policyPath || !ref || !commit || !outputPath || !compatibilityPath || extra.length ||
 		!/^(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})-dev\.[1-9][0-9]{0,8}$/.test(version ?? '') ||
 		process.platform !== 'darwin' || process.arch !== 'arm64' || process.versions.node !== DEVELOPMENT_NODE_VERSION) {
-		throw new Error('requires Apple Silicon and pinned Node: package-daemon-development.mjs POLICY FULL_REF COMMIT VERSION NEW_OUTPUT_DIR');
+		throw new Error('requires Apple Silicon and pinned Node: package-daemon-development.mjs POLICY FULL_REF COMMIT VERSION NEW_OUTPUT_DIR COMPATIBILITY');
 	}
 	const macOSVersion = execFileSync('/usr/bin/sw_vers', ['-productVersion'], { encoding: 'utf8', timeout: 5000 }).trim();
 	requireBundleTarget({ minimumMacOS: DEVELOPMENT_MINIMUM_MACOS, version }, {
 		platform: process.platform, architecture: process.arch, macOSVersion, requestedVersion: version,
 	});
 	const policy = readDevelopmentPolicy(JSON.parse(await readFile(policyPath, 'utf8')));
-	await packageDevelopmentCandidate({ policy, ref, commit, version, outputPath });
+	const compatibility = JSON.parse(await readFile(compatibilityPath, 'utf8'));
+	requireBundleCompatibility(compatibility);
+	await packageDevelopmentCandidate({ policy, ref, commit, version, outputPath }, {
+		buildRuntime: async (checkout, stage) => {
+			await buildDevelopmentRuntime(checkout, stage);
+			const compiled = execFileSync(process.execPath, ['--input-type=module', '-e',
+				'import {SCHEMA_VERSION} from "./out/db/graph/store.js"; process.stdout.write(String(SCHEMA_VERSION));'],
+			{ cwd: checkout, encoding: 'utf8' });
+			if (Number(compiled) !== compatibility.graphSchema) throw new Error('build graph schema differs from release declaration');
+			await writeFile(join(stage, 'out/release-compatibility.json'), JSON.stringify({
+				version: 1, releaseId: commit, startup: 'rollback-compatible', ...compatibility,
+			}), { flag: 'wx', mode: 0o600 });
+		},
+	});
 }
 
 export async function packageDevelopmentCandidate({ policy, ref, commit, version, outputPath }, {

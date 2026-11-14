@@ -99,6 +99,7 @@ export interface SupervisorOptions {
 	readonly installation: Pick<InstallationMutationGate, 'read' | 'admit'>;
 	readonly daemon: PinnedDaemon;
 	readonly configureLaunch?: (daemon: PinnedDaemon, reservation: MutationReservation) => PinnedDaemon;
+	readonly verifyLaunch?: (reservation: MutationReservation) => Promise<void>;
 	readonly adoptRunFiles?: (reservation: MutationReservation) => RunFileGuard | undefined;
 	readonly verifyReady: (generation: string, pid: number) => Promise<void>;
 	readonly reconcileExit: (generation: string, pid: number | undefined) => Promise<void>;
@@ -253,6 +254,7 @@ export class DaemonSupervisor {
 			throw error;
 		}
 		try {
+			await this.options.verifyLaunch?.(reservation);
 			child = (this.options.spawnChild ?? spawnSupervisedDaemon)(daemon, generation, {
 				frame: frame => this.childFrame(generation, frame),
 				exit: (code, signal) => { void this.reap(generation, code, signal); },

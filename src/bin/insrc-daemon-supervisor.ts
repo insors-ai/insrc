@@ -16,6 +16,7 @@ import { SupervisorRunFiles } from '../daemon/supervisor-run-files.js';
 import { listenForSupervisorControllers } from '../daemon/supervisor-socket.js';
 import { qualifiedPairFromReservation } from '../daemon/release-compatibility.js';
 import { adoptLegacyRunGuard } from '../daemon/legacy-run-guard.js';
+import { verifyManagedDevelopmentLaunch } from '../daemon/managed-bundle-proof.js';
 
 async function verifyReady(socketPath: string, pid: number, uid: number): Promise<void> {
 	let resolvePeer!: (peer: DarwinPeerCredentials) => void;
@@ -51,6 +52,7 @@ async function main(): Promise<void> {
 	const publicShutdown = new SupervisorPublicShutdown(gate, owner);
 	const supervisor = new DaemonSupervisor({
 		installation: gate,
+		verifyLaunch: async reservation => verifyManagedDevelopmentLaunch(installation, reservation, (await gate.read()).installedBundle),
 		daemon: {
 			runtime: installation.runtime, entry: join(installation.releaseRoot, 'out/daemon/index.js'), cwd: installation.releaseRoot,
 			env: { ...process.env, INSRC_MODE: 'daemon', INSRC_DAEMON_ROOT: installation.releaseRoot, PATH: installation.pathEnv },

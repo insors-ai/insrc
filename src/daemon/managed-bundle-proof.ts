@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import type { ManagedInstallation } from '../shared/managed-daemon-installation.js';
 import { readDaemonBundleReleaseFloor } from '../shared/daemon-bundle-release-floor.js';
 import type { DaemonBundleReleaseFloor } from '../shared/daemon-bundle-release-floor.js';
+import type { InstallationJournal, MutationReservation } from '../shared/installation-mutation-gate.js';
 
 export interface ManagedBundleProof {
 	readonly version: 1;
@@ -81,4 +82,27 @@ export async function verifyManagedBundleProof(installation: ManagedInstallation
 	const modulePath = fileURLToPath(new URL('../../scripts/stage-daemon-bundle.mjs', import.meta.url));
 	const { measureBundleRuntime } = await import(modulePath) as { measureBundleRuntime: (root: string) => Promise<string> };
 	if (await measureBundleRuntime(root) !== proof.fingerprint) throw new Error('pinned bundle runtime changed');
+}
+
+export async function verifyManagedDevelopmentLaunch(
+	installation: ManagedInstallation,
+	reservation: MutationReservation,
+	installed: InstallationJournal['installedBundle'],
+): Promise<void> {
+	const activation = reservation.kind === 'start' ? reservation.activation : undefined;
+	const update = reservation.kind === 'update' ? reservation.predecessor : undefined;
+	const pair = update?.bundleProof;
+	const candidate = update?.pins?.candidate.releaseRoot === installation.releaseRoot;
+	const selected = activation?.bundleProof ?? (pair === undefined ? installed?.proof
+		: candidate ? pair.candidate : pair.priorBundle);
+	if (selected?.floor.domain !== 'development') {
+		if (installed?.proof.floor.domain === 'development' || pair?.candidate.floor.domain === 'development') {
+			throw new Error('development launch has no matching bundle proof');
+		}
+		return;
+	}
+	const root = activation?.installation.releaseRoot ?? (pair === undefined ? installed?.releaseRoot
+		: candidate ? update?.pins?.candidate.releaseRoot : update?.pins?.prior.releaseRoot);
+	if (root !== installation.releaseRoot) throw new Error('development launch differs from pinned release root');
+	await verifyManagedBundleProof(installation, selected);
 }

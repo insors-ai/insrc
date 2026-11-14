@@ -9,21 +9,23 @@ import { once } from 'node:events';
 import { sha256 } from '../daemon-bundle-metadata.mjs';
 import { developmentPolicySigningBytes, verifyDevelopmentManifest } from '../daemon-development-metadata.mjs';
 import { measureBundleRuntime } from '../stage-daemon-bundle.mjs';
-import { developmentHandoffSigningBytes, signDevelopmentCandidate } from '../sign-daemon-development.mjs';
+import { developmentHandoffSigningBytes, developmentQualificationSigningBytes, signDevelopmentCandidate } from '../sign-daemon-development.mjs';
 import { closeGraphStore, getGraphStore, SCHEMA_VERSION, setGraphStorePath } from '../../src/db/graph/store.js';
 import { verifyQuiescedReleaseStores } from '../../src/daemon/release-compatibility.js';
+import { observeDevelopmentReopen } from '../qualify-daemon-development.mjs';
 
 test('development signer binds the authenticated archive, sequence and exact qualified predecessor', async () => {
 	const root = await realpath(await mkdtemp(join(tmpdir(), 'insrc-development-signer-')));
 	try {
 		const issuer = generateKeyPairSync('ed25519');
 		const builder = generateKeyPairSync('ed25519');
+		const qualifier = generateKeyPairSync('ed25519');
 		const pem = issuer.publicKey.export({ type: 'spki', format: 'pem' });
 		const repository = 'https://github.com/example/daemon.git';
 		const sourceRef = 'refs/heads/preview';
 		const policyBytes = Buffer.from(JSON.stringify({ repository, releaseRef: 'refs/heads/main', developmentRefs: [sourceRef] }));
 		const ledgerDirectory = join(root, 'ledger');
-		await mkdir(ledgerDirectory);
+		await mkdir(ledgerDirectory, { mode: 0o700 });
 		const compatibility = { graphSchema: SCHEMA_VERSION, formats: { lance: '1', repoAndIndexQueue: '1', config: '1', workflowAndSession: '1' } };
 		const payload = join(root, 'payload');
 		await mkdir(join(payload, 'tools'), { recursive: true, mode: 0o700 });
@@ -36,6 +38,9 @@ test('development signer binds the authenticated archive, sequence and exact qua
 			await mkdir(directory);
 			const version = '1.0.0-dev.1';
 			const archiveName = `insrc-daemon-${version}-darwin-arm64.tar.gz`;
+			await writeFile(join(payload, 'out/release-compatibility.json'), JSON.stringify({
+				version: 1, releaseId: sourceCommit, startup: 'rollback-compatible', ...compatibility,
+			}), { mode: 0o600 });
 			execFileSync('/usr/bin/tar', ['--format', 'ustar', '-czf', join(directory, archiveName), '-C', payload, 'tools', 'out']);
 			const archive = await readFile(join(directory, archiveName));
 			const candidate = { schemaVersion: 1, channel: 'development', repository, sourceRef, fetchedTip: sourceCommit,
@@ -54,6 +59,7 @@ test('development signer binds the authenticated archive, sequence and exact qua
 		const prior = await signDevelopmentCandidate({ ...common, directory: first.directory, sequence: 1 });
 		assert.deepEqual(await signDevelopmentCandidate({ ...common, directory: first.directory, sequence: 1 }), prior);
 		await assert.rejects(signDevelopmentCandidate({ ...common, directory: next.directory, sequence: 1 }), /conflicting.*record/);
+		await assert.rejects(signDevelopmentCandidate({ ...common, directory: next.directory, sequence: 3 }), /ENOENT/);
 		await assert.rejects(signDevelopmentCandidate({ ...common, builderKey: pem, directory: next.directory, sequence: 2 }), /handoff signature/);
 		const statePath = join(root, 'graph.lmdb');
 		await mkdir(join(root, 'lance'));
@@ -93,16 +99,57 @@ test('development signer binds the authenticated archive, sequence and exact qua
 			candidateArchiveSha256: next.candidate.archiveSha256, candidateRuntimeFingerprint: next.candidate.runtimeFingerprint,
 			predecessorCompatibility: compatibility, candidateCompatibility: compatibility,
 			launchProfile: 'managed', candidateWriteObserved, candidateInterrupted: exitSignal === 'SIGKILL', predecessorReopened };
-		const upgrade = { ...common, directory: next.directory, sequence: 2, prior };
-		await assert.rejects(signDevelopmentCandidate({ ...upgrade, evidence: Buffer.from(JSON.stringify({ ...record, predecessorReopened: false })) }), /crash-reopen/);
-		const evidence = Buffer.from(JSON.stringify(record));
-		await assert.rejects(signDevelopmentCandidate({ ...upgrade, evidence, compatibility: { ...compatibility, graphSchema: 2 } }), /writable formats/);
-		const signed = await signDevelopmentCandidate({ ...upgrade, evidence });
+		const upgrade = { ...common, directory: next.directory, sequence: 2, prior,
+			qualificationKey: qualifier.publicKey.export({ type: 'spki', format: 'pem' }) };
+		const attest = (value: typeof record) => {
+			const evidence = Buffer.from(JSON.stringify(value));
+			return { evidence, evidenceSignature: sign(null, developmentQualificationSigningBytes(evidence), qualifier.privateKey) };
+		};
+		const qualification = attest(record);
+		await assert.rejects(signDevelopmentCandidate({ ...upgrade, ...qualification, evidenceSignature: Buffer.alloc(64) }), /qualification signature/);
+		await assert.rejects(signDevelopmentCandidate({ ...upgrade, ...attest({ ...record, predecessorReopened: false }) }), /crash-reopen/);
+		await assert.rejects(signDevelopmentCandidate({ ...upgrade, ...qualification, compatibility: { ...compatibility, graphSchema: 2 } }), /writable formats/);
+		const signed = await signDevelopmentCandidate({ ...upgrade, ...qualification });
 		const { manifest } = verifyDevelopmentManifest(signed.bytes, signed.signature, pem);
 		assert.equal(manifest.predecessor?.manifestSha256, sha256(prior.bytes));
-		assert.equal(manifest.predecessor?.qualificationEvidenceSha256, sha256(evidence));
+		assert.equal(manifest.predecessor?.qualificationEvidenceSha256, sha256(qualification.evidence));
 	} finally {
 		await closeGraphStore();
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test('qualification invokes both release roots and rejects a predecessor that cannot reopen', async () => {
+	const root = await realpath(await mkdtemp(join(tmpdir(), 'insrc-qualification-probe-')));
+	try {
+		const runtime = await realpath(process.execPath);
+		const makeRelease = async (name: string, denyReopen: boolean) => {
+			const release = join(root, name);
+			await mkdir(join(release, 'out/db/graph'), { recursive: true });
+			await writeFile(join(release, 'package.json'), '{"type":"module"}');
+			await writeFile(join(release, 'out/db/graph/store.js'), `
+				import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+				export const SCHEMA_VERSION = 1;
+				let path;
+				export function setGraphStorePath(value) { path = value; }
+				export async function closeGraphStore() {}
+				export async function getGraphStore() {
+					const state = existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : {};
+					if (${denyReopen} && state['development-qualification-candidate']) throw new Error('cannot reopen');
+					return { meta: { get: key => state[key], async put(key, value) {
+						state[key] = value;
+						writeFileSync(path, JSON.stringify(state));
+					} } };
+				}
+			`);
+			return { root: release, runtime };
+		};
+		const prior = await makeRelease('prior', false);
+		const candidate = await makeRelease('candidate', false);
+		await observeDevelopmentReopen(prior, candidate, join(root, 'pass'), 1);
+		const incompatible = await makeRelease('incompatible-prior', true);
+		await assert.rejects(observeDevelopmentReopen(incompatible, candidate, join(root, 'fail'), 1), /cannot reopen/);
+	} finally {
 		await rm(root, { recursive: true, force: true });
 	}
 });

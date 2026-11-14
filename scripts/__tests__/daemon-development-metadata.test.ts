@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { generateKeyPairSync, sign } from 'node:crypto';
 import { test } from 'node:test';
 import {
-	developmentManifestSigningBytes, encodeDevelopmentManifest, readDevelopmentPolicy, verifyAndStageDevelopmentBundle,
+	developmentManifestSigningBytes, developmentPolicySigningBytes, encodeDevelopmentManifest, readDevelopmentPolicy,
+	verifyAndStageDevelopmentBundle,
 } from '../daemon-development-metadata.mjs';
 import { manifestSigningBytes, sha256, verifyBundleManifest } from '../daemon-bundle-metadata.mjs';
 
@@ -26,7 +27,11 @@ const manifest = {
 const host = { platform: 'darwin', architecture: 'arm64', macOSVersion: '15.0', nodeVersion: '22.22.1', requestedVersion: manifest.version };
 const bytes = encodeDevelopmentManifest(manifest);
 const signature = sign(null, developmentManifestSigningBytes(bytes), privateKey);
-const input = { bytes, signature, publicKey: pem, policy, host };
+const signedPolicy = (value: typeof policy) => {
+	const policyBytes = Buffer.from(JSON.stringify(value));
+	return { policyBytes, policySignature: sign(null, developmentPolicySigningBytes(policyBytes), privateKey) };
+};
+const input = { bytes, signature, publicKey: pem, ...signedPolicy(policy), host };
 
 test('development verification accepts a configured ref and canonical manifest', async () => {
 	assert.deepEqual((await verifyAndStageDevelopmentBundle(input)).manifest, manifest);
@@ -45,8 +50,14 @@ test('development verification rejects invalid branch policy, signatures and hos
 		assert.throws(() => readDevelopmentPolicy({ ...policy, developmentRefs: [ref] }));
 	}
 	await assert.rejects(verifyAndStageDevelopmentBundle({
-		...input, policy: { ...policy, developmentRefs: ['refs/heads/other'] },
+		...input, ...signedPolicy({ ...policy, developmentRefs: ['refs/heads/other'] }),
 	}), /branch policy/);
+	await assert.rejects(verifyAndStageDevelopmentBundle({
+		...input, policyBytes: Buffer.from(JSON.stringify({ ...policy, developmentRefs: ['refs/heads/other'] })),
+	}), /branch policy signature/);
+	await assert.rejects(verifyAndStageDevelopmentBundle({
+		...input, policySignature: signature,
+	}), /branch policy signature/);
 	await assert.rejects(verifyAndStageDevelopmentBundle({ ...input, signature: Buffer.alloc(64) }), /development signature/);
 	for (const domain of ['production', 'qualification']) {
 		await assert.rejects(verifyAndStageDevelopmentBundle({

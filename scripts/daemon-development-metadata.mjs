@@ -8,6 +8,7 @@ export const DEVELOPMENT_NODE_VERSION = '22.22.1';
 export const DEVELOPMENT_MINIMUM_MACOS = '15.0';
 const MAX_MANIFEST_BYTES = 64 * 1024;
 const signingPrefix = Buffer.from('insrc-daemon-bundle-development-v1\0');
+const policyPrefix = Buffer.from('insrc-daemon-bundle-development-policy-v1\0');
 const oid = /^[a-f0-9]{40}$/;
 const digest = /^[a-f0-9]{64}$/;
 const version = /^(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})-dev\.[1-9][0-9]{0,8}$/;
@@ -100,14 +101,23 @@ export function developmentManifestSigningBytes(bytes) {
 	return Buffer.concat([signingPrefix, bytes]);
 }
 
-export async function verifyAndStageDevelopmentBundle({ bytes, signature, publicKey, policy, host, archive, releaseParent }) {
-	const signed = developmentManifestSigningBytes(bytes);
-	const key = createPublicKey(publicKey);
+export function developmentPolicySigningBytes(bytes) {
+	requireField(Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= MAX_MANIFEST_BYTES, 'policy size');
+	return Buffer.concat([policyPrefix, bytes]);
+}
+
+function requireSignature(signed, signature, key, description) {
 	requireField(key.asymmetricKeyType === 'ed25519' && Buffer.isBuffer(signature) && signature.length === 64 &&
-		verify(null, signed, key, signature), 'development signature');
+		verify(null, signed, key, signature), description);
+}
+
+export async function verifyAndStageDevelopmentBundle({ bytes, signature, publicKey, policyBytes, policySignature, host, archive, releaseParent }) {
+	const key = createPublicKey(publicKey);
+	requireSignature(developmentPolicySigningBytes(policyBytes), policySignature, key, 'branch policy signature');
+	requireSignature(developmentManifestSigningBytes(bytes), signature, key, 'development signature');
 	const manifest = JSON.parse(new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes));
 	requireField(encodeDevelopmentManifest(manifest).equals(bytes), 'canonical manifest bytes');
-	const trusted = readDevelopmentPolicy(policy);
+	const trusted = readDevelopmentPolicy(JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(policyBytes)));
 	requireField(manifest.keyId === sha256(key.export({ type: 'spki', format: 'der' })), 'pinned key identity');
 	requireField(trusted.repository === manifest.repository && trusted.developmentRefs.includes(manifest.sourceRef), 'branch policy');
 	requireField(host.nodeVersion === DEVELOPMENT_NODE_VERSION, 'bootstrap Node version');

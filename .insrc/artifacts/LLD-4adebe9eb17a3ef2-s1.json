@@ -1,0 +1,377 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1794662517722-xautqe",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-14T13:22:15.725Z",
+    "epicCreatedAt": "2026-11-14T13:09:02.500Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 17701,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4adebe9eb17a3ef2",
+    "epicSlug": "separate-daemon-development-release-build-lanes",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1794662517722-xautqe",
+    "hldEffectiveHash": "a80d7d095d4f87c4b84d7467f0578c90a64017ef615ef673faaf48cf16a4acb8",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Separate daemon development and release build lanes",
+    "standalone": true,
+    "sizeClass": "feature",
+    "triageRationale": "One cohesive deployment contract across existing candidate, qualification and promotion jobs. Requires a reviewed branch/provenance contract and local positive/negative tests.",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "e37f73c25de439d45637b5d84a4007737b22c6b0e8e723b051739347e38dcae5",
+        "at": "2026-11-14T13:22:15.844Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "envelope": {
+      "attachments": []
+    },
+    "revision": 2
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Use v2 for unpublished development builds and protected main for production release candidates. Tests still run locally, and only the archive built and qualified from main can be published."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Separate daemon development and release build lanes"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "api": [
+        {
+          "name": "Build candidate",
+          "signature": "branch ref + exact commit SHA + version → lane, run, artifact and SHA-256",
+          "parameters": [],
+          "returns": {
+            "type": "result",
+            "meaning": "Verified lane and exact candidate identity or refusal."
+          },
+          "errors": [
+            {
+              "type": "ReleaseGate",
+              "condition": "Branch, provenance, or protection does not match the lane."
+            }
+          ],
+          "preconditions": [
+            "Derive lane from actual dispatch ref; admit only main and v2. Require GitHub branch protection on main. The v2 build job has read-only permissions and no signing or release environment.",
+            "For both lanes dispatch SHA must equal requested SHA; reject all other refs."
+          ],
+          "postconditions": [
+            "Upload unpublished artifact with lane-distinct name and branch/lane in candidate metadata. Run no Actions tests."
+          ]
+        },
+        {
+          "name": "Qualify candidates",
+          "signature": "main build run + artifact + exact commit → qualification signature, then local evidence",
+          "parameters": [],
+          "returns": {
+            "type": "result",
+            "meaning": "Verified lane and exact candidate identity or refusal."
+          },
+          "errors": [
+            {
+              "type": "ReleaseGate",
+              "condition": "Branch, provenance, or protection does not match the lane."
+            }
+          ],
+          "preconditions": [
+            "Run the release qualification-signing workflow from protected main and accept only successful candidate runs originating at main. Verify branch and commit on run and artifact metadata, repository/workflow identity, lane and digest.",
+            "Use v2 candidates for local packaging and smoke checks only; never give a v2 job production or qualification signing credentials."
+          ],
+          "postconditions": [
+            "Before testing, the isolated qualification signer fetches and verifies the exact main artifact and signs its manifest using only the qualification key. This signature authenticates a test input; it does not attest to passing tests or authorize publication.",
+            "The operator downloads the same archive and signed manifest; the disposable Apple Silicon installer verifies the qualification signature before execution. The operator then records the passing checks in the protected release-control record, binding repository, main commit, run ID, artifact ID, manifest SHA-256 and archive SHA-256."
+          ]
+        },
+        {
+          "name": "Publish main release",
+          "signature": "approved evidence commit + archive SHA-256 → immutable-identity prerelease",
+          "parameters": [],
+          "returns": {
+            "type": "result",
+            "meaning": "Verified lane and exact candidate identity or refusal."
+          },
+          "errors": [
+            {
+              "type": "ReleaseGate",
+              "condition": "Branch, provenance, or protection does not match the lane."
+            }
+          ],
+          "preconditions": [
+            "Promotion executes only on protected main and behind the production environment approval. Independently require the exact candidate origin branch to be main even when run IDs and digests are valid; validate the approved evidence and qualification signature.",
+            "Do not reuse a v2 archive after merging its source to main. A main candidate must be built and locally qualified separately.",
+            "Promotion happens after local qualification and review of that immutable release-control revision. Recheck the recorded evidence and its digests, the qualification signature, GitHub main run/artifact provenance, and exact manifest/archive bytes before granting the production signing step."
+          ],
+          "postconditions": [
+            "Production signs the unchanged manifest bytes and publishes the unchanged locally qualified main archive. The qualification workflow never needs local evidence; only production promotion consumes the approved evidence."
+          ]
+        }
+      ],
+      "surfaceLevel": "internal-shared"
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Candidate provenance",
+        "change": "field-add",
+        "details": "Build metadata records origin branch and lane. GitHub's repository, workflow run and artifact metadata are authoritative for origin; archive metadata is cross-checked, never used alone to decide eligibility. Promotion and qualification signing are fixed to main rather than taking an expected branch from workflow inputs.",
+        "callSites": [
+          "scripts/daemon-release-artifact.sh",
+          ".github/workflows/daemon-candidate.yml",
+          ".github/workflows/daemon-promotion.yml",
+          ".github/workflows/daemon-qualification-sign.yml"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A v2 artifact is submitted to main qualification or production promotion",
+          "detection": "Exact GitHub run/artifact provenance differs from fixed expected main ref.",
+          "response": "Reject before signing or publishing.",
+          "userImpact": "Build and qualify a new main candidate.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Byte-identical archive from v2 and main",
+          "expected": "Only main-origin run and artifact qualify for production."
+        },
+        {
+          "input": "Manual workflow missing on default branch",
+          "expected": "Add the workflow definitions through a narrow reviewed main change; keep main candidate build disabled until packaging code is present in its selected main revision."
+        }
+      ],
+      "invariantsToPreserve": []
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "contract",
+          "purpose": "Exercise branch routing and cross-lane failures locally",
+          "subjects": [
+            "New local workflow policy fixture: main protected builds a release candidate, main unprotected refuses, v2 creates an unsigned development artifact, and all other refs refuse",
+            "New mocked GitHub API integration: main run plus matching artifact succeeds; v2 origin, mismatched run branch and artifact branch, wrong repository/workflow/commit/run ID or expired artifact all refuse before download or signing",
+            "New workflow wiring check: both qualification-sign and promotion enforce main provenance independently, dev jobs have no signing environment, and no Actions test commands are added",
+            "New local sequence coverage: qualification signature precedes verified test install; failed or absent local record blocks production signing; valid approved evidence admits the identical manifest/archive"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "To add: build workflow policy fixture exercising protected and unprotected main, v2, and an unrelated ref; ensure no hosted test commands or dev signing credentials"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "To add: mocked GitHub API success for main; replay v2 with matching digest at both production gates and assert refusal before download/signing; separately exercise mixed run/artifact identity and expired artifact"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "To add: signed qualification manifest is usable before evidence exists; promotion refuses missing/mismatched evidence and signs only the exact qualified input bytes after approval"
+          ]
+        }
+      ],
+      "testFramework": "Add new local executable coverage during implementation. Existing tests cover digest and evidence checks and no rebuild; they do not currently exercise two-lane routing or mocked GitHub branch provenance. Run Node tests locally only."
+    },
+    "migration": {
+      "stateBefore": "All candidate and signing workflows currently require v2.",
+      "stateAfter": "v2 builds unpublished dev candidates; protected main builds, signs and promotes its own candidates.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Land the manual workflow definitions on main via a narrow reviewed change so GitHub can dispatch v2, without merging the full v2 implementation.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Run unsigned v2 development builds. Enable main release builds only once main contains the installer and packaging code and required protections/environments.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Build and qualify a fresh main candidate locally; do not promote historic v2 pilot artifacts.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Clone-based installer remains default; permit no prior v2 release-control evidence for production.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Separate lanes",
+        "oneLineSummary": "Build from both refs and release only main.",
+        "approach": "Classify by the actual dispatch branch and enforce main provenance independently at production signing.",
+        "pros": [
+          "Hard separation and exact-archive qualification"
+        ],
+        "cons": [
+          "A merge to main requires a new qualification"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Promote v2 candidates",
+        "oneLineSummary": "Publish an existing development candidate.",
+        "approach": "Approve a v2 artifact and publish without a main build.",
+        "pros": [
+          "Reuses the development candidate"
+        ],
+        "cons": [
+          "Violates the requested release origin"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Production artifact would originate at v2."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "narrative": "Shows the separation between pre-test qualification signing and approval for production signing.",
+      "participants": [
+        {
+          "id": "dev",
+          "label": "v2 development build",
+          "description": "Produces unpublished unsigned development artifacts"
+        },
+        {
+          "id": "build",
+          "label": "main candidate build",
+          "description": "Produces one unpublished release candidate"
+        },
+        {
+          "id": "sign",
+          "label": "Qualification signer",
+          "description": "Authenticates the main test input before tests"
+        },
+        {
+          "id": "local",
+          "label": "Local Apple Silicon",
+          "description": "Verifies and tests the exact signed candidate"
+        },
+        {
+          "id": "approval",
+          "label": "Release control",
+          "description": "Holds reviewed immutable local evidence"
+        },
+        {
+          "id": "publish",
+          "label": "Production promotion",
+          "description": "Revalidates main provenance and approved exact bytes"
+        }
+      ],
+      "messages": [
+        {
+          "from": "dev",
+          "to": "local",
+          "label": "Provide unsigned development artifact",
+          "description": "Development smoke checks do not confer production eligibility"
+        },
+        {
+          "from": "build",
+          "to": "sign",
+          "label": "Pass exact main run and artifact identity",
+          "description": "Signer verifies workflow provenance and archive digest"
+        },
+        {
+          "from": "sign",
+          "to": "local",
+          "label": "Provide qualification signature",
+          "description": "Local installer authenticates the main archive before running it"
+        },
+        {
+          "from": "local",
+          "to": "approval",
+          "label": "Submit exact-archive qualification evidence",
+          "description": "Record commits, run ID, artifact ID, and both digests"
+        },
+        {
+          "from": "approval",
+          "to": "publish",
+          "label": "Approve immutable evidence revision",
+          "description": "Production promotion verifies proof and signs unchanged bytes"
+        },
+        {
+          "from": "publish",
+          "to": "publish",
+          "label": "Publish exact locally tested archive",
+          "description": "Production does not rebuild or accept v2 candidates"
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/separate-daemon-development-release-build-lanes-E202611144adebe9e/S001/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": ".github/workflows/daemon-candidate.yml"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": ".github/workflows/daemon-qualification-sign.yml"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": ".github/workflows/daemon-promotion.yml"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "scripts/daemon-release-artifact.sh"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "scripts/__tests__/promote-daemon-candidate.test.ts"
+    }
+  ]
+}

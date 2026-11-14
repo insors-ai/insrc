@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story s1
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-11-14T12:24:44.000Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-11-14T12:24:44.000Z  ·  **Updated:** 2026-11-14T12:52:00.130Z
 
-**Commit:** a482110d4
+**Commit:** c83844958
 
 ## Scope
 
@@ -13,3 +13,27 @@ Fix two defects in the shipped VS Code scratchpads popup (ISSUE-3183af2a005db14f
 ## Triage rationale
 
 bugfix small: both defects localized inside the shipped scratchpads feature (epic 4642d49ab0593787); 3-4 files in vscode-plugin/src/chat+panels, all reuse of existing paths; no new contract.
+
+## Summary
+
+ISSUE-3183af2a fix shipped @94de6d114 + @c83844958: scratch-new always attempts openDocument (browse-refresh failure no longer skips it; failed open logged), fresh scratch document panels reveal with preserveFocus, the popup's New/Browse entries are icon-only SVG rows in a top-right .scratchacts strip with chatRows descending into it, the scratch factory postMessage logs dropped posts (false delivery / rejection) instead of swallowing them, and tests pin the generation-tagged ready-replay race (pre-ready content replayed exactly once, consumed on duplicate ready). Focused tests 432 pass + tsc clean.
+
+## Tasks validated
+
+- ✓ `s1`
+
+**Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
+
+## Changes
+
+- `.insrc/artifacts/ISSUE-3183af2a005db14f.json` — **insrc-build** (2026-11-14T12:52:00.130Z)
+- `.insrc/artifacts/ISSUE-3183af2a005db14f.log.jsonl` — **insrc-build** (2026-11-14T12:52:00.130Z)
+- `docs/standalone/scratchpad-popup-new-scratchpad-does-not-E202611143183af2a/ISSUE.md` — **insrc-build** (2026-11-14T12:52:00.130Z)
+- `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` — **insrc-build** (2026-11-14T12:52:00.130Z)
+- `vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts` — **insrc-build** (2026-11-14T12:52:00.130Z)
+- `vscode-plugin/src/chat/chat-panel.ts` — **insrc-build** (2026-11-14T12:52:00.130Z)
+- `vscode-plugin/src/chat/scratch-host.ts` — **insrc-build** (2026-11-14T12:52:00.130Z)
+- `vscode-plugin/src/extension.ts` — **insrc-build** (2026-11-14T12:52:00.130Z)
+- `vscode-plugin/src/panels/__tests__/scratch-panel.test.ts` — **insrc-build** (2026-11-14T12:52:00.130Z)
+- `vscode-plugin/src/panels/scratch-panels.ts` — **insrc-build** (2026-11-14T12:52:00.130Z)
+- `vscode-plugin/src/panels/types.ts` — **insrc-build** (2026-11-14T12:52:00.130Z)

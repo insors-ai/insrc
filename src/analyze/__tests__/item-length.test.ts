@@ -131,6 +131,41 @@ test('measureItem does not establish a length for a changed or a missing file (m
 	}
 });
 
+test('measureItem returns the whole content of a whole-file and a line-range item and no content for a changed, missing, unreadable or unhashed file', () => {
+	const ix = indexDoc();
+	try {
+		const big = byName(ix, 'section', 'Big');
+		const whole = { kind: 'document', file: ix.file, startLine: 1, endLine: 1, body: '' } as const;
+
+		// A line-range item (a section) and a whole-file item (a document) both give their full text, and its length is totalChars.
+		const section = measureItem(big, { recordedFileHash: ix.hash });
+		const lines = DOC.split('\n').slice(big.startLine - 1, big.endLine).join('\n');
+		assert.equal(section.content, lines, 'the section is its lines, not the 8,192 stored characters');
+		assert.equal(section.content?.length, section.totalChars);
+		const document = measureItem(whole, { recordedFileHash: ix.hash });
+		assert.equal(document.content, DOC, 'a document is the whole file');
+		assert.equal(document.content?.length, document.totalChars);
+
+		// No hash, a changed file, a removed file and an unreadable file give no content and the reason, and never throw.
+		const noHash = measureItem(big, { recordedFileHash: undefined });
+		assert.equal(noHash.content, undefined);
+		assert.equal(noHash.reason, 'no hash was recorded for the file when it was indexed');
+		const unreadable = measureItem(big, { recordedFileHash: ix.hash, readFile: () => { throw Object.assign(new Error('denied'), { code: 'EACCES' }); } });
+		assert.equal(unreadable.content, undefined);
+		assert.equal(unreadable.reason, 'the file could not be read (EACCES)');
+		writeFileSync(ix.file, `# Title\n\nA new paragraph pushed everything down.\n\n${DOC}`);
+		const changed = measureItem(big, { recordedFileHash: ix.hash });
+		assert.equal(changed.content, undefined);
+		assert.equal(changed.reason, 'the file changed since it was indexed');
+		rmSync(ix.file);
+		const gone = measureItem(big, { recordedFileHash: ix.hash });
+		assert.equal(gone.content, undefined);
+		assert.equal(gone.reason, 'the file no longer exists');
+	} finally {
+		rmSync(ix.dir, { recursive: true, force: true });
+	}
+});
+
 test('indexerFileHash is the hash the indexer records on a file entity', () => {
 	// The indexer's function is private; this module repeats it. If the indexer's
 	// changes, every measure would read "changed since it was indexed".

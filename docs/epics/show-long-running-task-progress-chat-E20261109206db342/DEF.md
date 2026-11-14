@@ -27,13 +27,12 @@ Users following long-running daemon workflows, analysis, reviews and test sweeps
 - **E20261109206db342:FR001** — Users see the latest verified stage, measurable work and terminal outcome for supported long-running operations.
 - **E20261109206db342:FR002** — Users can follow several tasks in their own chats across turns, switches and reconnects, with observations scoped to the right attempt.
 - **E20261109206db342:FR003** — Supported clients show native updates without extra model calls, and users can explicitly enable one-minute fallback observation where supported.
-- **E20261109206db342:FR004** — Users can launch an authorized long-running command as a daemon-owned task, end the turn, and still see its measured progress and terminal result in the originating chat while the chat's session lock is released.
 
 ## 3. Non-goals
 
 - **Changes to review execution, workflow stages, approval gates or model providers** — Observation follows existing execution ownership and results.
 - **insrc TUI changes, deprecated insrc-ide work, or third-party CLI patches** — Initial delivery targets VS Code chat and verified native CLI surfaces.
-- **Recurring or scheduled jobs, attaching to pre-existing processes, and automatic restart of a task** — Observation covers instrumented, authorized executions. Launching an authorized one-shot command as a daemon-owned task is in scope (s7); scheduling, recurrence, attachment to existing processes and automatic restart stay excluded.
+- **General job scheduling, arbitrary process attachment or automatic task restart** — Initial delegates observe instrumented, authorized executions.
 - **Fabricated ETA or progress, raw model output as progress, and universal MCP Tasks support** — Progress is measured, bounded and capability-specific.
 
 ## 4. Assumptions
@@ -47,7 +46,7 @@ Users following long-running daemon workflows, analysis, reviews and test sweeps
 
 | ID | Type | Text | Source |
 | :--- | :--- | :--- | :--- |
-| `k1` | contract | Cover workflow and analyze operations through their supported IPC entry points, design reviews, code reviews and managed test sweeps and authorized one-shot commands launched as daemon-owned tasks with a shared authorized task/attempt progress contract. | [[c1]] |
+| `k1` | contract | Cover workflow and analyze operations through their supported IPC entry points, design reviews, code reviews and managed test sweeps with a shared authorized task/attempt progress contract. | [[c1]] |
 | `k2` | invariant | Reuse the existing Unix IPC and typed progress/delta seams compatibly. Preserve existing frame semantics, cancellation, final results and behavior for clients without progress observers. Client database access remains IPC-only. | [[c2]] |
 | `k3` | contract | Each initial task delegate supplies bounded structured progress() for an authorized attempt, shared by direct delivery and optional polling. Measured phase, counts, active unit, milestones and freshness stay distinct from lifecycle, connectivity, liveness and retention. Unknown measurements stay unknown. | [[c3]] |
 | `k4` | contract | Publish native progress with zero extra model invocations. MCP forwards monotonic progress with an optional caller token only during its valid request lifetime. No token means normal completion without notifications. Live-qualify visible rendering independently of protocol support. Qualify delivery beyond the launching turn and across native session exit separately from in-request rendering and scheduling. Retain results for authorized reattachment where native session activity cannot be maintained. | [[c3]] |

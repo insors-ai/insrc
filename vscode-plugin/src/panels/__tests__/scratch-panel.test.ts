@@ -229,7 +229,7 @@ test('scratch-panel.test.ts: document viewType insrc.scratchpad renders content 
   // The bootstrap applies it via textContent only: run the script over a fake DOM.
   const doc = bodyStub('pre', 'insrc-scratchdoc');
   const listeners: Array<(e: unknown) => void> = [];
-  runInNewContext(documentBootstrap(), {
+  runInNewContext(documentBootstrap(1), {
     acquireVsCodeApi: () => ({ postMessage: () => {} }),
     window: {
       addEventListener: (t: string, l: (e: unknown) => void) => { if (t === 'message') listeners.push(l); },
@@ -265,7 +265,7 @@ test('scratch-panel.test.ts: selectionchange with non-empty selection shows the 
   };
   const docListeners: Array<(e?: unknown) => void> = [];
   let activeElement: unknown = undefined; // the document's focused element
-  runInNewContext(documentBootstrap(), {
+  runInNewContext(documentBootstrap(1), {
     acquireVsCodeApi: () => ({ postMessage: (m: unknown) => { sent.push(m); } }),
     window: {
       addEventListener: () => {},
@@ -294,7 +294,7 @@ test('scratch-panel.test.ts: selectionchange with non-empty selection shows the 
   fire(sendBtn, 'click');
   const posted = JSON.parse(JSON.stringify(sent)) as Array<{ v: number; payload: { type: string; text?: string } }>;
   assert.deepEqual(posted.filter((m) => m.payload.type === 'send-to-chat'), [{ v: 1, payload: { type: 'send-to-chat', text: 'selected <text>' } }], 'the captured selection was posted, not lost to the focus change');
-  assert.ok(posted.some((m) => m.payload.type === 'scratch-ready'), 'the bootstrap signalled scratch-ready');
+  assert.ok(posted.some((m) => (m as { payload?: { type?: string; gen?: number } }).payload?.type === 'scratch-ready' && (m as { payload: { gen: number } }).payload.gen === 1), 'the bootstrap signalled scratch-ready with its generation tag echoed');
   // Clicking elsewhere collapses the selection with focus NOT on the button: hidden again.
   activeElement = undefined;
   for (const l of docListeners) l();
@@ -378,12 +378,12 @@ test('scratch-panel.test.ts: scratch-ready vs read-completion ordering — ready
     const open = c.openDocument('a.md');
     await new Promise((r) => setTimeout(r, 10));
     const panel = h.panels.at(-1)!;
-    panel.injectMessage({ v: 1, payload: { type: 'scratch-ready' } }); // ready BEFORE the read resolves
+    panel.injectMessage({ v: 1, payload: { type: 'scratch-ready', gen: 1 } }); // ready BEFORE the read resolves
     release();
     await open;
     await new Promise((r) => setTimeout(r, 10));
     assert.deepEqual(contentsOf(panel), ['content A'], 'the post-ready read posts its content exactly once');
-    panel.injectMessage({ v: 1, payload: { type: 'scratch-ready' } }); // duplicate ready: nothing to replay
+    panel.injectMessage({ v: 1, payload: { type: 'scratch-ready', gen: 1 } }); // duplicate ready: nothing to replay
     await new Promise((r) => setTimeout(r, 10));
     assert.deepEqual(contentsOf(panel), ['content A'], 'a duplicate scratch-ready does not re-post — no replay copy was retained for a ready generation');
   }
@@ -399,10 +399,10 @@ test('scratch-panel.test.ts: scratch-ready vs read-completion ordering — ready
     await new Promise((r) => setTimeout(r, 10));
     const panel = h.panels.at(-1)!;
     assert.deepEqual(contentsOf(panel), ['content B'], 'the pre-ready read posted its content once');
-    panel.injectMessage({ v: 1, payload: { type: 'scratch-ready' } });
+    panel.injectMessage({ v: 1, payload: { type: 'scratch-ready', gen: 1 } });
     await new Promise((r) => setTimeout(r, 10));
     assert.deepEqual(contentsOf(panel), ['content B', 'content B'], 'the first ready replays the retained copy (the webview was not yet listening)');
-    panel.injectMessage({ v: 1, payload: { type: 'scratch-ready' } });
+    panel.injectMessage({ v: 1, payload: { type: 'scratch-ready', gen: 1 } });
     await new Promise((r) => setTimeout(r, 10));
     assert.deepEqual(contentsOf(panel), ['content B', 'content B'], 'a second ready does not re-post — the replay copy was consumed');
     // A NEXT open retires the previous generation's bookkeeping: open another doc, then
@@ -412,7 +412,7 @@ test('scratch-panel.test.ts: scratch-ready vs read-completion ordering — ready
     await new Promise((r) => setTimeout(r, 10));
     const panel2 = h.panels.at(-1)!;
     assert.equal(panel2, panel, 'the document singleton is reused across opens');
-    panel2.injectMessage({ v: 1, payload: { type: 'scratch-ready' } });
+    panel2.injectMessage({ v: 1, payload: { type: 'scratch-ready', gen: 2 } });
     await new Promise((r) => setTimeout(r, 10));
     // The new generation's own retained copy replays (its read completed pre-ready);
     // the OLD generation's copy was retired at the generation bump and is NOT replayed.
@@ -435,7 +435,7 @@ test('scratch-panel.test.ts: scratch-ready vs read-completion ordering — ready
     panelA.userClose(); // close BEFORE scratch-ready: the retained copy must be released
     await new Promise((r) => setTimeout(r, 10));
     // A late ready from the disposed webview must not re-post the closed generation.
-    panelA.injectMessage({ v: 1, payload: { type: 'scratch-ready' } });
+    panelA.injectMessage({ v: 1, payload: { type: 'scratch-ready', gen: 1 } });
     await new Promise((r) => setTimeout(r, 10));
     assert.deepEqual(contentsOf(panelA), ['content A'], 'no replay after close — the retained copy was released by the dispose');
     // Reopen b.md: the fresh panel gets only its own content, never the closed A again.
@@ -443,11 +443,59 @@ test('scratch-panel.test.ts: scratch-ready vs read-completion ordering — ready
     await new Promise((r) => setTimeout(r, 10));
     const panelB = h.panels.at(-1)!;
     assert.notEqual(panelB, panelA, 'reopening after close creates a fresh panel');
-    panelB.injectMessage({ v: 1, payload: { type: 'scratch-ready' } });
+    // The close bumped docGeneration to 2 (retiring all retained state); the reopen's
+    // page load is therefore generation 3 — only a ready tagged 3 may replay.
+    panelB.injectMessage({ v: 1, payload: { type: 'scratch-ready', gen: 3 } });
     await new Promise((r) => setTimeout(r, 10));
     assert.deepEqual(contentsOf(panelB), ['content B', 'content B'], 'the reopened panel replays only its own content — the closed generation left nothing behind');
     assert.ok(!contentsOf(panelB).includes('content A'), 'the closed generation was never replayed');
   }
+});
+
+test('scratch-panel.test.ts: a STALE scratch-ready (generation tag from a superseded page load) delivered AFTER an A->B switch is ignored — it must not mark generation B ready (t6: bind readiness to the sending generation)', async () => {
+  const contentsOf = (panel: FakePanel): string[] =>
+    panel.posted.filter((m) => (m as { payload?: { type?: string } }).payload?.type === 'scratch-content')
+      .map((m) => (m as { payload: { text: string } }).payload.text);
+  const h = harness();
+  await seed(h, 'a.md', 'content A', 1);
+  await seed(h, 'b.md', 'content B', 2);
+  // Gate A's read so B's open (generation 2) lands while A (generation 1) is still in flight.
+  let releaseA!: () => void;
+  const gateA = new Promise<void>((r) => { releaseA = r; });
+  const origRead = h.store.readScratch.bind(h.store);
+  let aCalls = 0;
+  const store: ScratchStore = {
+    ...h.store,
+    readScratch: async (id: string) => {
+      if (id === 'a.md' && aCalls++ === 0) await gateA;
+      return origRead(id);
+    },
+  };
+  const c = createScratchPanels({ panels: h.factory, store, genNonce: () => 'N', setPanelTitle: () => {}, onSendToChat: () => {} });
+  const openA = c.openDocument('a.md'); // generation 1
+  const handleB = await c.openDocument('b.md'); // generation 2, same cached panel
+  assert.ok(handleB !== undefined);
+  const panel = h.panels.at(-1)!;
+  await new Promise((r) => setTimeout(r, 10));
+  // B's read already posted (generation 2 not yet ready -> a replay copy is retained).
+  assert.deepEqual(contentsOf(panel), ['content B'], 'B posted its content once');
+  // The STALE ready from generation 1's webview arrives late, after the A->B switch.
+  panel.injectMessage({ v: 1, payload: { type: 'scratch-ready', gen: 1 } });
+  await new Promise((r) => setTimeout(r, 10));
+  assert.deepEqual(contentsOf(panel), ['content B'], 'a stale ready (gen 1) does NOT replay or mark generation 2 ready');
+  // A ready with NO generation tag is likewise untrusted and ignored.
+  panel.injectMessage({ v: 1, payload: { type: 'scratch-ready' } });
+  await new Promise((r) => setTimeout(r, 10));
+  assert.deepEqual(contentsOf(panel), ['content B'], 'an untagged ready is ignored too');
+  // Generation 2's OWN ready still works: replays the retained copy exactly once.
+  panel.injectMessage({ v: 1, payload: { type: 'scratch-ready', gen: 2 } });
+  await new Promise((r) => setTimeout(r, 10));
+  assert.deepEqual(contentsOf(panel), ['content B', 'content B'], 'generation 2\'s own ready replays its retained copy once');
+  // The late A read is dropped by the generation guard as before.
+  releaseA();
+  await openA;
+  await new Promise((r) => setTimeout(r, 10));
+  assert.ok(!contentsOf(panel).includes('content A'), 'the late A read was dropped');
 });
 
 test('scratch-panel.test.ts: a FAILED row-initiated delete re-renders the browse table WITH the delete error row (the undeleted scratch stays visible but the failure is surfaced, not logged away)', async () => {

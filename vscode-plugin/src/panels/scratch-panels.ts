@@ -157,17 +157,22 @@ const DOC_STYLE =
   `.scratch-send[hidden]{display:none;}` +
   `.scratch-send svg{width:15px;height:15px;}`;
 
-/** The document view's nonce'd bootstrap: selectionchange latches the text, the button posts it. */
-export function documentBootstrap(): string {
+/** The document view's nonce'd bootstrap: selectionchange latches the text, the button posts it.
+ * The ready handshake is generation-tagged: the host embeds the current docGeneration in the
+ * page, the webview echoes it back, so a stale ready from a previous page load can never mark
+ * the live generation ready. */
+export function documentBootstrap(gen: number): string {
   return `const vs=acquireVsCodeApi();` +
     `const doc=document.getElementById('insrc-scratchdoc');` +
     `const sendBtn=document.getElementById('insrc-sendtochat');` +
     // Webview-ready handshake: the host replays any content posted before the bootstrap
-    // installed its listener, so an early read completion can never be lost.
+    // installed its listener, so an early read completion can never be lost. The echoed
+    // generation tag lets the host ignore a ready from a superseded page load.
+    `var gen=${Number.isFinite(gen) && gen >= 0 ? Math.floor(gen) : 0};` +
     `var pending=null;` +
     `window.addEventListener('message',function(e){var m=e.data&&e.data.payload;if(!m)return;` +
     `if(m.type==='scratch-content'&&typeof m.text==='string'){if(doc)doc.textContent=m.text;else pending=m.text;}});` +
-    `vs.postMessage({v:1,payload:{type:'scratch-ready'}});` +
+    `vs.postMessage({v:1,payload:{type:'scratch-ready',gen:gen}});` +
     // The captured selection text, latched at selectionchange so a later focus (the
     // button click) or selectionchange cannot lose it before the click handler reads it.
     `var captured='';` +
@@ -347,9 +352,18 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
         panel.onMessage((m) => {
           const env = m as { v?: unknown; payload?: unknown } | null;
           if (env === null || env.v !== 1 || typeof env.payload !== 'object' || env.payload === null) return;
-          const msg = env.payload as { type?: unknown; text?: unknown };
+          const msg = env.payload as { type?: unknown; text?: unknown; gen?: unknown };
           if (msg.type === 'send-to-chat' && typeof msg.text === 'string') sendToChat(capUtf8(msg.text));
           else if (msg.type === 'scratch-ready') {
+            // Bind readiness to the GENERATION THAT SENT the ready, compared against the
+            // LIVE docGeneration: a stale ready from a superseded webview load (delivered
+            // after an A->B switch) carries the old tag and is ignored — otherwise it could
+            // mark the new generation ready before its own bootstrap installed its
+            // listener, and a then-arriving read would post without retaining a replay copy.
+            // (The listener may outlive the open that registered it — the panel singleton is
+            // reused across opens — so the closure-captured `generation` must NOT be used here.)
+            const msgGen = typeof msg.gen === 'number' && Number.isFinite(msg.gen) ? Math.floor(msg.gen) : undefined;
+            if (msgGen === undefined || msgGen !== docGeneration) return;
             // The webview finished installing its listeners: replay the current
             // generation's content so a read that completed before readiness is not lost.
             // The ready flag STAYS for this generation (retired when the next open bumps
@@ -378,7 +392,7 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
       log.warn(`insrc: could not set the scratchpad panel title — ${String(err)}`);
     }
     try {
-      handle.setHtml(shellHtml(id, documentBodyHtml() + `<style>${DOC_STYLE}</style>`, nonce(), documentBootstrap()));
+      handle.setHtml(shellHtml(id, documentBodyHtml() + `<style>${DOC_STYLE}</style>`, nonce(), documentBootstrap(generation)));
     } catch (err) {
       log.warn(`insrc: could not render the scratchpad document — ${String(err)}`);
       return handle;

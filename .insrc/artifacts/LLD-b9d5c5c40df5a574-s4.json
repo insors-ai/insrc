@@ -67,6 +67,13 @@
         "choice": "Map constants to Define requirements",
         "rationale": "User approved the recommendation 2026-11-14: reconcile the s1 inventory with the Define's sixteen limits and nine cuts, record the mapping before tasks; revise upstream only on a contradiction.",
         "resolvedAt": "2026-11-14T12:52:24.497Z"
+      },
+      "q2098d8b0": {
+        "question": "The HLD's Story s4 boundary text has a grammar slip from the split with Story s10 ('...cache key is taken. moving the table-listing lookup...'); it should be corrected the next time the HLD is edited.",
+        "status": "resolved",
+        "choice": "Targeted sentence repair",
+        "rationale": "User approved 2026-11-14: correct the grammar slip at the next HLD edit, not now (an edit clears the HLD's approval); smallest change, boundary preserved.",
+        "resolvedAt": "2026-11-14T12:53:19.185Z"
       }
     }
   },

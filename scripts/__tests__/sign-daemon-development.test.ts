@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { generateKeyPairSync, sign } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { once } from 'node:events';
 import { sha256 } from '../daemon-bundle-metadata.mjs';
 import { developmentPolicySigningBytes, verifyDevelopmentManifest } from '../daemon-development-metadata.mjs';
 import { measureBundleRuntime } from '../stage-daemon-bundle.mjs';
@@ -52,10 +53,43 @@ test('development signer binds the authenticated archive, sequence and exact qua
 		assert.deepEqual(await signDevelopmentCandidate({ ...common, directory: first.directory, sequence: 1 }), prior);
 		await assert.rejects(signDevelopmentCandidate({ ...common, directory: next.directory, sequence: 1 }), /conflicting.*record/);
 		await assert.rejects(signDevelopmentCandidate({ ...common, builderKey: pem, directory: next.directory, sequence: 2 }), /handoff signature/);
+		// Exercise the write/interruption/reopen sequence with a deterministic
+		// file-backed fixture. The full daemon qualification runs in the VM task.
+		const statePath = join(root, 'store.json');
+		await writeFile(statePath, JSON.stringify({ format: 1, rows: ['prior'] }));
+		const child = spawn(process.execPath, ['-e', `
+			const fs = require('node:fs');
+			const path = process.argv[1];
+			const state = JSON.parse(fs.readFileSync(path, 'utf8'));
+			if (state.format !== 1) process.exit(1);
+			state.rows.push('candidate');
+			const fd = fs.openSync(path, 'w');
+			fs.writeFileSync(fd, JSON.stringify(state));
+			fs.fsyncSync(fd);
+			fs.closeSync(fd);
+			process.stdout.write('write persisted');
+			setInterval(() => {}, 1000);
+		`, statePath], { stdio: ['ignore', 'pipe', 'inherit'] });
+		const exited = once(child, 'exit');
+		let candidateWriteObserved = false;
+		try {
+			const [event] = await once(child.stdout!, 'data', { signal: AbortSignal.timeout(5000) });
+			candidateWriteObserved = event.toString() === 'write persisted';
+		} finally {
+			child.kill('SIGKILL');
+		}
+		const [, exitSignal] = await exited;
+		const reopened = execFileSync(process.execPath, ['-e', `
+			const state = JSON.parse(require('node:fs').readFileSync(process.argv[1], 'utf8'));
+			if (state.format !== 1) process.exit(1);
+			process.stdout.write(JSON.stringify(state.rows));
+		`, statePath], { encoding: 'utf8' });
+		assert.equal(reopened, '["prior","candidate"]');
 		const record = { schemaVersion: 1, predecessorManifestSha256: sha256(prior.bytes),
 			predecessorRuntimeFingerprint: first.candidate.runtimeFingerprint, candidateCommit: next.candidate.commit,
 			candidateArchiveSha256: next.candidate.archiveSha256, candidateRuntimeFingerprint: next.candidate.runtimeFingerprint,
-			launchProfile: 'managed', candidateWriteObserved: true, candidateInterrupted: true, predecessorReopened: true };
+			launchProfile: 'managed', candidateWriteObserved, candidateInterrupted: exitSignal === 'SIGKILL',
+			predecessorReopened: reopened === '["prior","candidate"]' };
 		const upgrade = { ...common, directory: next.directory, sequence: 2, prior };
 		await assert.rejects(signDevelopmentCandidate({ ...upgrade, evidence: Buffer.from(JSON.stringify({ ...record, predecessorReopened: false })) }), /crash-reopen/);
 		const evidence = Buffer.from(JSON.stringify(record));

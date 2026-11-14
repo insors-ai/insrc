@@ -18,7 +18,7 @@ try {
 	const runtime = await realpath(process.execPath);
 	await cp(runtime, join(stage, 'node'));
 	await cp(resolve(dirname(runtime), '..', 'LICENSE'), join(stage, 'LICENSE.node'));
-	for (const name of ['daemon-bundle-metadata.mjs', 'verify-daemon-bundle.mjs']) {
+	for (const name of ['daemon-bundle-metadata.mjs', 'verify-daemon-bundle.mjs', 'stage-daemon-bundle.mjs']) {
 		await cp(fileURLToPath(new URL(name, import.meta.url)), join(stage, name));
 	}
 	await mkdir(join(stage, 'trust'));
@@ -35,7 +35,7 @@ try {
 	await writeFile(archive, '', { flag: 'wx' });
 	try {
 		execFileSync('/usr/bin/tar', ['--no-mac-metadata', '--no-xattrs', '--format', 'ustar', '-czf', resolve(archive),
-			'-C', stage, 'node', 'LICENSE.node', 'daemon-bundle-metadata.mjs', 'verify-daemon-bundle.mjs', 'trust']);
+			'-C', stage, 'node', 'LICENSE.node', 'daemon-bundle-metadata.mjs', 'verify-daemon-bundle.mjs', 'stage-daemon-bundle.mjs', 'trust']);
 		process.stdout.write(`${sha256(await readFile(archive))}  ${archive}\n`);
 	} catch (error) {
 		await rm(archive, { force: true });

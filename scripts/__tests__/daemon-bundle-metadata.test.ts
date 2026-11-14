@@ -16,6 +16,22 @@ const manifest = {
 	predecessors: [],
 };
 const encode = (value: object) => Buffer.from(JSON.stringify(value));
+const { verifyAndStageBundle } = await import(new URL('../verify-daemon-bundle.mjs', import.meta.url).href);
+
+test('bootstrap rejects invalid manifest and target before opening any archive', async () => {
+	const key = generateKeyPairSync('ed25519');
+	const pem = key.publicKey.export({ format: 'pem', type: 'spki' });
+	const bytes = encode(manifest);
+	const signed = (b: Buffer) => sign(null, manifestSigningBytes(b, 'qualification'), key.privateKey);
+	const host = { platform: 'darwin', architecture: 'arm64', macOSVersion: '15.2', requestedVersion: manifest.version };
+	const args = { bytes, signature: signed(bytes), domain: 'qualification', key: pem, host,
+		archive: '/nonexistent-candidate.tar.gz', releaseParent: '/nonexistent-release-parent' };
+	await assert.rejects(verifyAndStageBundle({ ...args, signature: Buffer.alloc(64) }), /signature/);
+	await assert.rejects(verifyAndStageBundle({ ...args, host: { ...host, architecture: 'x64' } }), /unsupported/);
+	const invalid = encode({ ...manifest, schemaVersion: 2 });
+	await assert.rejects(verifyAndStageBundle({ ...args, bytes: invalid, signature: signed(invalid) }), /channel or sequence/);
+	await assert.rejects(verifyAndStageBundle(args), { code: 'ENOENT' });
+});
 
 test('bundle signatures bind raw bytes, signer, trust domain and supported target', () => {
 	const key = generateKeyPairSync('ed25519');

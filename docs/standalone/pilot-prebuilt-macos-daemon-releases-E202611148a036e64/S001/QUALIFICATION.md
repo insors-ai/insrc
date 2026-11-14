@@ -40,14 +40,35 @@ by the build run and artifact ID. Do not test against a production install.
    records operator assertions and evidence digests; it does not run or
    certify the tests itself.
 
+## Development and release lanes
+
+Dispatch the candidate workflow against `v2` to build an unsigned development
+artifact. Use it for local packaging checks; it cannot be signed or published
+by the release workflows. The candidate workflow definition must first be
+present on GitHub's default branch. A narrow workflow-only change can register
+it on `main` before the rest of the release implementation is merged.
+
+Keep the repository variable `INSRC_DAEMON_MAIN_RELEASE_READY` unset until
+`main` contains the packaging and installer code and the protections below
+have been verified. Set it to exactly `true` to enable the `main` release lane.
+This switch does not affect unsigned development builds.
+
 ## Release setup
 
-Protect `v2`, and create a `daemon-release-control` branch requiring a release
+Protect `main`, and create a `daemon-release-control` branch requiring a release
 CODEOWNER review, stale review dismissal, and no direct writes or bypasses.
 Store each promotion's approved record under `qualification/`. Configure
 `daemon-pilot-qualification` and `daemon-pilot-production` with designated
-reviewers and disallow self-approval. The production policy check requires a
-read-only repository administration token `INSRC_RELEASE_POLICY_READ_TOKEN`.
+reviewers, disallow self-approval and administrator bypass, and allow exactly
+one deployment rule: branch `main`. Do not allow tag rules. Verify these
+settings in GitHub before enabling the lane. When the API does not expose
+the administrator bypass flag, verify it in the environment settings UI.
+
+Set a read-only `INSRC_RELEASE_POLICY_READ_TOKEN` in both signing environments.
+It needs repository Variables and Actions read access, plus the read access
+needed to inspect branch protection. The promotion preparation job also uses
+a read-only policy credential to verify the release-control branch; it must
+have no signing or release permissions.
 
 Generate two distinct project-owned Ed25519 pairs. Set
 `INSRC_QUALIFICATION_KEY` only on the qualification environment and
@@ -60,9 +81,17 @@ Recover a lost signer from the project's encrypted backup. If its key is
 unrecoverable or suspected compromised, pause promotion until a trust
 migration is implemented. Preserve installed trust and release sequences.
 
-Build with `daemon-candidate.yml`, sign the candidate manifest with
-`daemon-qualification-sign.yml`, and run the above checks locally. Dispatch
-`daemon-promotion.yml` from protected `v2` with the approved control commit
-and the same archive SHA-256. Verify both inputs in the environment review
-before approving. An interrupted publish may leave a tag or draft; inspect
-it before any manual repair. A rerun never silently replaces a tag or asset.
+Build from protected `main` with `daemon-candidate.yml`. Pass the exact run ID,
+successful attempt, artifact ID and commit to `daemon-qualification-sign.yml`
+from `main`. Test the signed archive locally and review the qualification
+record. Then dispatch `daemon-promotion.yml` from protected `main` with the
+approved control commit and the same archive SHA-256. Verify both inputs in
+the environment review before approving. A different attempt is ineligible
+even if its archive bytes are identical.
+
+To stop releases, remove the readiness variable, cancel queued,
+approval-pending and running main release workflows, and verify they are
+terminal. The workflows recheck live readiness before signing and each
+publication operation, but GitHub may finish a write it already accepted.
+Inspect and reconcile any tag, draft or partial asset set before re-enabling.
+A rerun never silently replaces a tag or asset.

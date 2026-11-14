@@ -24,16 +24,19 @@ import type { ItemMeasure, MeasuredEntity } from '../item-length.js';
 export type StoredItem = MeasuredEntity & { readonly repo: string };
 
 export interface ItemMeasurer {
-	/** The item's full length from its file, and whether the indexer cut the stored body. */
+	/**
+	 * The item's full length and its full content from its file, and whether the indexer cut the stored body.
+	 * `content` is absent when the file could not be confirmed to hold the item (`reason` says why).
+	 */
 	measure(entity: StoredItem): Promise<ItemMeasure>;
 	/**
 	 * The `partlyRead` entry for an item of whose stored body `readChars`
 	 * characters were used, or undefined when nothing shows the item is
 	 * longer than that. It IS longer when the stored body is longer than
 	 * what was used, when the indexer cut the stored body, or when the file
-	 * shows a greater length. A file that changed since it was indexed
-	 * establishes no length; the entry then carries a null total, and is
-	 * made only when one of the first two holds.
+	 * shows a greater length. An item whose file could not be confirmed to
+	 * hold it (changed, missing, unreadable or unhashed) is never presented
+	 * as read: its entry is always made, with a null total and the reason.
 	 */
 	partlyRead(what: string, entity: StoredItem, readChars: number): Promise<PartlyReadItem | undefined>;
 }
@@ -80,7 +83,8 @@ export function createItemMeasurer(db: DbClient, entities?: readonly Entity[]): 
 		measure,
 		async partlyRead(what, entity, readChars) {
 			const m = await measure(entity);
-			const longer = readChars < m.storedChars || m.cutByIndexer
+			const unconfirmed = m.content === undefined;
+			const longer = unconfirmed || readChars < m.storedChars || m.cutByIndexer
 				|| (m.totalChars !== null && m.totalChars > readChars);
 			return longer ? partlyReadEntry(what, readChars, m) : undefined;
 		},

@@ -232,15 +232,18 @@ test('the enumeration\'s reached limit, partly read section and skipped search b
 		assert.equal(report.completeness.complete, false, who);
 		assert.deepEqual(what(report.completeness, 'limited'), ['document sections'], who);
 		assert.equal(report.completeness.limited![0]!.limit, 1, who);
-		assert.equal(report.completeness.partlyRead?.length, 1, who);
-		assert.match(report.completeness.partlyRead![0]!.what, /rollback-[ab]\.md/, who);
+		// A fixture entity with no recorded file hash is not confirmed, so it is reported too; the section is the one under test.
+		const sectionsRead = (report.completeness.partlyRead ?? []).filter(p => /rollback-[ab]\.md/.test(p.what));
+		assert.equal(sectionsRead.length, 1, who);
 		assert.deepEqual(what(report.completeness, 'skipped'), ["the document index's search by meaning"], who);
 	}
 	assert.deepEqual(read.completeness, made.completeness);
 
 	// A check on inline constraints has none of them.
 	const inline = await check(codeAdherenceCheckRuntime, runId, { constraints: [{ constraint: 'x MUST y' }] });
-	assert.deepEqual([inline.completeness.limited, inline.completeness.partlyRead, inline.completeness.skipped], [undefined, undefined, undefined]);
+	// The fixture's code entity has no recorded file hash, so it may be reported as unconfirmed; no document section is.
+	assert.deepEqual([inline.completeness.limited, inline.completeness.skipped], [undefined, undefined]);
+	assert.deepEqual((inline.completeness.partlyRead ?? []).filter(p => /rollback-[ab]\.md/.test(p.what)), []);
 });
 
 test('an inline list or stored-document ids are used alone when given, with a topic also present, and no enumeration is made; an empty inline list beside ids uses the ids, and beside a topic uses the topic', async () => {

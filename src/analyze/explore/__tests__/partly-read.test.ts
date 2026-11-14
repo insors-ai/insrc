@@ -150,8 +150,10 @@ test('a section whose file changed since it was indexed is reported as partly re
 		what: `${guide} § Refund rules`, readChars: 2_000, totalChars: null,
 		totalNote: 'the file changed since it was indexed',
 	});
-	// A short section of the changed file: nothing shows it is longer than what was read, so it is not reported.
-	assert.equal((prep.prepared.completenessFacts?.partlyRead ?? []).some(p => p.what.endsWith('§ Refund short')), false);
+	// A short section of the changed file: the file cannot be confirmed to hold it, so it is never presented as read.
+	const short = (prep.prepared.completenessFacts?.partlyRead ?? []).find(p => p.what.endsWith('§ Refund short'));
+	assert.equal(short?.totalChars, null);
+	assert.equal(short?.totalNote, 'the file changed since it was indexed');
 });
 
 // ---------------------------------------------------------------------------
@@ -288,5 +290,31 @@ test('the measurer finds the file\'s recorded hash in the graph, and reports an 
 	const orphan: Entity = { ...short, file: join(REPO, 'docs/unknown.md') };
 	writeFileSync(orphan.file, 'x');
 	assert.equal((await m.measure(orphan)).reason, 'no hash was recorded for the file when it was indexed');
-	assert.equal(await m.partlyRead('orphan', orphan, short.body.length), undefined, 'read in full as far as anything shows');
+	// The file cannot be confirmed to hold the item, so even a stored body read in full is reported, with the reason.
+	assert.deepEqual(await m.partlyRead('orphan', orphan, short.body.length), {
+		what: 'orphan', readChars: short.body.length, totalChars: null,
+		totalNote: 'no hash was recorded for the file when it was indexed',
+	});
+});
+
+test('measure returns content for a confirmed item and a skipped or partlyRead entry with its reason for an unconfirmed one', async () => {
+	const m = createItemMeasurer(await getDb());
+	const big = section('Refund rules');
+
+	// Confirmed: the hash the indexer recorded matches, so the item's full content is returned with its length.
+	const confirmed = await m.measure(big);
+	assert.equal(confirmed.content, lines(GUIDE, big));
+	assert.equal(confirmed.content?.length, confirmed.totalChars);
+	const short = section('Refund short');
+	assert.equal((await m.measure(short)).content, short.body, 'a short section is its stored body');
+	assert.equal(await m.partlyRead('short', short, short.body.length), undefined, 'read whole and confirmed: nothing is reported');
+
+	// Unconfirmed (no recorded hash): no content, and the item is reported as not covered with the reason, never as read.
+	const orphan: Entity = { ...section('Refund short'), file: join(REPO, 'docs/never-indexed.md') };
+	writeFileSync(orphan.file, 'x');
+	const unconfirmed = await m.measure(orphan);
+	assert.equal(unconfirmed.content, undefined);
+	assert.deepEqual(await m.partlyRead('orphan', orphan, orphan.body.length), {
+		what: 'orphan', readChars: orphan.body.length, totalChars: null, totalNote: unconfirmed.reason,
+	});
 });

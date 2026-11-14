@@ -19,7 +19,7 @@ test('compact runtime rejects foreign ownership impossible completion and oversi
 });
 
 test('source history and cleanup contracts bind exact identities without conferring authority', () => {
- const manifest = { schemaVersion: 1, key, attempt: 1, generationId: digest, inputDigest: other, validatorVersion: 1, sourceIdentity: digest, manifestDigest: other, objects: [{ queryDigest: digest, contentDigest: other, bytes: 5 }], views: [{ id: 'task-1', objectDigests: [other] }], byteTotals: { stored: 5, decoded: 5 } };
+ const manifest = { schemaVersion: 1, key, attempt: 1, generationId: digest, identityDigest: digest, inputDigest: other, validatorVersion: 1, sourceIdentity: digest, manifestDigest: other, objects: [{ queryDigest: digest, contentDigest: other, bytes: 5 }], views: [{ id: 'task-1', objectDigests: [other] }], byteTotals: { stored: 5, decoded: 5 } };
  assert.deepEqual(decodePreparedContextManifest(manifest, key, limit), manifest);
  assert.throws(() => decodePreparedContextManifest({ ...manifest, objects: [...manifest.objects, ...manifest.objects] }, key, limit), /Duplicate/);
  assert.throws(() => decodePreparedContextManifest({ ...manifest, views: [{ id: 'task-1', objectDigests: [digest] }] }, key, limit), /Unresolved/);

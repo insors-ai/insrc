@@ -48,7 +48,11 @@ export function updateStoredCodeCheckpoint(path:string,mutate:(current:StoredRev
 /** Shared durable byte writer. Callers own their format/size validation and
  * serialization lane; this preserves the existing exact save outcomes. */
 export async function writeCheckpoint(path: string, serialized: string, io: CheckpointIO = defaultIO): Promise<void> {
- requireReview(Buffer.byteLength(serialized) <= reviewJsonLimit(), 'checkpoint', 'JSON exceeds limit');
+ return writeReviewBytes(path, serialized, reviewJsonLimit(), io);
+}
+/** Same atomic durability for bounded raw context objects and JSON envelopes. */
+export async function writeReviewBytes(path: string, serialized: string | Uint8Array, maxBytes: number, io: CheckpointIO = defaultIO): Promise<void> {
+ requireReview(Number.isSafeInteger(maxBytes) && maxBytes > 0 && Buffer.byteLength(serialized) <= maxBytes, 'checkpoint', 'JSON exceeds limit');
  const temporary = `${path}.${randomUUID()}.tmp`;
  let created = false, renameStarted = false, replaced = false, failure: { cause: unknown } | undefined;
  const identity = async (): Promise<string | null | undefined> => {

@@ -38,10 +38,10 @@ export type ReviewRuntime = Static<typeof ReviewRuntimeSchema>;
 
 export const PreparedContextManifestSchema = object({
  schemaVersion: Type.Literal(1), key: ReviewKeySchema, attempt: positive,
- generationId: digest, inputDigest: digest, validatorVersion: positive,
+ generationId: digest, identityDigest: digest, inputDigest: digest, validatorVersion: positive,
  sourceIdentity: digest, manifestDigest: digest,
- objects: Type.Array(object({ queryDigest: digest, contentDigest: digest, bytes: count }), { maxItems: 10000 }),
- views: Type.Array(object({ id, objectDigests: Type.Array(digest, { maxItems: 10000, uniqueItems: true }) }), { maxItems: 10000 }),
+ objects: Type.Array(object({ queryDigest: digest, contentDigest: digest, bytes: count }), { maxItems: 100000 }),
+ views: Type.Array(object({ id, objectDigests: Type.Array(digest, { maxItems: 100000, uniqueItems: true }) }), { maxItems: 10000 }),
  byteTotals: object({ stored: count, decoded: count }),
 });
 export type PreparedContextManifest = Static<typeof PreparedContextManifestSchema>;

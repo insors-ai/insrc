@@ -10,7 +10,7 @@ import type { ReviewKey } from '../../shared/review-resources.js';
 import { reviewPath } from '../code-review/task-review/contracts.js';
 import type { BatchReviewSources, ReviewSources, ReviewObjectRequest, PinnedBlob, ChangedRange } from '../code-review/task-review/sources.js';
 import type { ReviewPreparationLimits } from '../../config/review.js';
-import { writeCheckpoint } from '../code-review/task-review/checkpoint.js';
+import { writeReviewBytes } from '../code-review/task-review/checkpoint.js';
 
 /** Main-owned implementation, injected through the private preparation service
  * when workers are wired. One instance accounts every session in a project. */
@@ -18,6 +18,7 @@ export interface SourceCapacity {
  reserve(bytes: number): Promise<string>;
  commit(token: string, bytes: number): Promise<void>;
  split(token: string, bytes: readonly number[]): Promise<readonly string[]>;
+ combine(tokens: readonly string[]): Promise<string>;
  release(token: string): Promise<void>;
 }
 export class ReviewPreparationCapacity implements SourceCapacity {
@@ -49,7 +50,16 @@ export class ReviewPreparationCapacity implements SourceCapacity {
   this.reservations.delete(token); this.used += total - reserved;
   return parts.map(bytes => { const child = randomUUID(); this.reservations.set(child, bytes); return child; });
  }
+ async combine(tokens: readonly string[]): Promise<string> {
+  if (!tokens.length || new Set(tokens).size !== tokens.length || tokens.some(t => !this.reservations.has(t))) throw new Error('Invalid source reservation consolidation');
+  const bytes = tokens.reduce((sum, token) => sum + this.reservations.get(token)!, 0), combined = randomUUID();
+  for (const token of tokens) this.reservations.delete(token);
+  this.reservations.set(combined, bytes); return combined;
+ }
  get bytes(): number { return this.used; }
+ assertReserved(token: string, bytes: number): void {
+  if (!Number.isSafeInteger(bytes) || bytes < 0 || this.reservations.get(token) !== bytes) throw new Error('Unbound preparation capacity receipt');
+ }
 }
 type Method = keyof ReviewSources;
 interface Entry { readonly name: string; readonly digest: string; readonly bytes: number; }
@@ -70,6 +80,7 @@ function decode(method: Method, bytes: Buffer): unknown {
  * All query maps are bounded and all active evidence remains disk-pinned. */
 export class ReviewSourceSession implements ReviewSources {
  private readonly entries = new Map<string, Entry>();
+ private readonly queriesByDigest = new Map<string, string>();
  private readonly memory = new Map<string, Buffer>();
  private readonly tokens = new Set<string>();
  private memoryBytes = 0;
@@ -131,16 +142,16 @@ export class ReviewSourceSession implements ReviewSources {
  }
  private async stage(method: Method, key: string, value: unknown, token: string): Promise<void> {
   const bytes = encode(method, value), metadata = Buffer.byteLength(key) * 2 + 512;
-  if (this.entries.size >= 10000 || bytes.length + this.metadataBytes + metadata > this.limits.memoryMaxBytes) throw new Error('Source session memory/identity capacity exhausted');
+  if (this.entries.size >= 100000 || bytes.length + this.metadataBytes + metadata > this.limits.memoryMaxBytes) throw new Error('Source session memory/identity capacity exhausted');
   const entry = { name: `${sha(key)}.json`, digest: sha(bytes), bytes: bytes.length };
   const line = JSON.stringify({ query: key, ...entry }) + '\n';
   // Reservation covers immutable payload, its temporary write, and the index.
   await this.capacity.commit(token, bytes.length * 2 + Buffer.byteLength(line));
-  await writeCheckpoint(join(this.directory, entry.name), bytes.toString());
+  await writeReviewBytes(join(this.directory, entry.name), bytes, this.limits.memoryMaxBytes);
   const index = await open(join(this.directory, 'queries.jsonl'), constants.O_WRONLY | constants.O_APPEND | constants.O_CREAT | constants.O_NOFOLLOW, 0o600);
   try { await index.writeFile(line); await index.sync(); } finally { await index.close(); }
   const directory = await open(this.directory, 'r'); try { await directory.sync(); } finally { await directory.close(); }
-  this.entries.set(key, entry); this.metadataBytes += metadata; this.metrics.storedBytes += bytes.length + Buffer.byteLength(line);
+  this.entries.set(key, entry); this.queriesByDigest.set(sha(key), key); this.metadataBytes += metadata; this.metrics.storedBytes += bytes.length + Buffer.byteLength(line);
   await this.capacity.commit(token, bytes.length + Buffer.byteLength(line));
   this.keep(key, bytes);
  }
@@ -216,6 +227,17 @@ export class ReviewSourceSession implements ReviewSources {
   });
  }
  snapshot() { return { ...this.metrics, memoryBytes: this.memoryBytes + this.metadataBytes }; }
+ evidence(): Promise<readonly { queryDigest: string; contentDigest: string; bytes: number }[]> {
+  return this.enqueue(async () => [...this.entries].map(([query, entry]) => ({ queryDigest: sha(query), contentDigest: entry.digest, bytes: entry.bytes })));
+ }
+ readEvidence(queryDigest: string): Promise<Buffer> {
+  return this.enqueue(async () => {
+   const key = this.queriesByDigest.get(queryDigest), entry = key && this.entries.get(key);
+   if (!key || !entry) throw new Error('Unknown session evidence');
+   const method = (JSON.parse(key) as [Method])[0], bytes = encode(method, await this.load(method, key, entry));
+   if (sha(bytes) !== entry.digest) throw new Error('Evidence encoding mismatch'); return bytes;
+  });
+ }
  async close(): Promise<void> {
   if (this.closed) return; this.closing = true; await this.tail;
   // The owning worker must dispose its native readers before calling close.
@@ -224,6 +246,6 @@ export class ReviewSourceSession implements ReviewSources {
   if (!identity.isDirectory() || identity.isSymbolicLink() || identity.dev !== this.identity.dev || identity.ino !== this.identity.ino) throw new Error('Source staging directory replaced; retain capacity/evidence');
   await rm(this.directory, { recursive: true });
   for (const token of this.tokens) await this.capacity.release(token);
-  this.tokens.clear(); this.entries.clear(); this.memory.clear(); this.memoryBytes = 0; this.metadataBytes = 0; this.closed = true;
+  this.tokens.clear(); this.entries.clear(); this.queriesByDigest.clear(); this.memory.clear(); this.memoryBytes = 0; this.metadataBytes = 0; this.closed = true;
  }
 }

@@ -23,7 +23,7 @@ import { captureAnalysisDiagnostics } from '../connection-access.js';
  * list.
  */
 
-import { runGrepSearch } from '../../daemon/tools/builtins/search/grep.js';
+import { runCompleteSearch } from './search-text.js';
 import { getLogger } from '../../shared/logger.js';
 
 import { textSearchCompleteness } from './completeness-facts.js';
@@ -42,9 +42,6 @@ const log = getLogger('analyze:explore:config-trace');
 // Configuration
 // ---------------------------------------------------------------------------
 
-const DEFAULT_TOP_K = 40;
-const MAX_TOP_K     = 200;
-
 /** File extensions that read as declarative config -- hits here get
  *  role='definition' unless the line shape says otherwise. */
 const CONFIG_EXTS = new Set([
@@ -59,7 +56,6 @@ const CONFIG_EXTS = new Set([
 interface ConfigTraceParams {
 	readonly key:  string;
 	readonly path?: string;
-	readonly topK?: number;
 }
 
 function parseParams(exp: Exploration): ConfigTraceParams {
@@ -68,15 +64,11 @@ function parseParams(exp: Exploration): ConfigTraceParams {
 	if (key.length === 0) {
 		throw new Error('config.trace: params.key is required (non-empty string)');
 	}
-	const topK = typeof p['topK'] === 'number' && p['topK']! > 0
-		? Math.min(MAX_TOP_K, Math.floor(p['topK'] as number))
-		: DEFAULT_TOP_K;
 	const path = typeof p['path'] === 'string' && (p['path'] as string).length > 0
 		? (p['path'] as string)
 		: undefined;
 	return {
 		key,
-		topK,
 		...(path !== undefined ? { path } : {}),
 	};
 }
@@ -98,15 +90,12 @@ export async function runConfigTrace(
 	// Escape regex-special chars so `foo.bar[0]`-style keys survive.
 	const literal = escapeRegex(params.key);
 
-	// At least 1, as the search itself enforces: a topK below 1 floors to 0.
-	const limit = Math.max(1, params.topK ?? DEFAULT_TOP_K);
 	// A search that could not run throws, and the executor reports the lookup as
 	// failed. It does not return an empty result: that would read as "nothing matches".
-	const data = await runGrepSearch({
+	const data = await runCompleteSearch('config.trace', {
 		pattern: literal,
 		root,
 		caseInsensitive: false,
-		limit,
 	});
 
 	const hits: ConfigTraceHit[] = data.hits.map(h => {
@@ -124,12 +113,11 @@ export async function runConfigTrace(
 			key:       params.key,
 			backend:   data.usedRipgrep ? 'ripgrep' : 'node',
 			hits:      hits.length,
-			truncated: data.truncated,
 	}, 'config.trace: complete']);
 
 	return {
 		type:      'config.trace',
-		completeness: textSearchCompleteness(data, limit),
+		completeness: textSearchCompleteness(data),
 		key:       params.key,
 		hits,
 		backend:   data.usedRipgrep ? 'ripgrep' : 'node',

@@ -22,9 +22,11 @@ import { captureAnalysisDiagnostics } from '../connection-access.js';
  */
 
 import { getLogger } from '../../shared/logger.js';
-import { runGrepSearch } from '../../daemon/tools/builtins/search/grep.js';
+import { GrepIncompleteError, runGrepSearch } from '../../daemon/tools/builtins/search/grep.js';
+import type { GrepSearchOptions, SearchGrepData } from '../../daemon/tools/builtins/search/grep.js';
 
 import { textSearchCompleteness } from './completeness-facts.js';
+import { LookupFailedError } from './lookup-failed.js';
 
 import type {
 	Exploration,
@@ -36,13 +38,6 @@ import type {
 const log = getLogger('analyze:explore:search-text');
 
 // ---------------------------------------------------------------------------
-// Configuration
-// ---------------------------------------------------------------------------
-
-const DEFAULT_TOP_K = 30;
-const MAX_TOP_K     = 200;
-
-// ---------------------------------------------------------------------------
 // Params
 // ---------------------------------------------------------------------------
 
@@ -50,7 +45,6 @@ interface SearchTextParams {
 	readonly pattern:         string;
 	readonly glob?:           string;
 	readonly caseInsensitive?: boolean;
-	readonly topK?:           number;
 	/** When provided, search under this subpath rather than the repo
 	 *  root. Must be inside `ctx.repoPath` (checked at run-time). */
 	readonly path?:           string;
@@ -66,9 +60,6 @@ function parseParams(exp: Exploration): SearchTextParams {
 		? (p['glob'] as string)
 		: undefined;
 	const caseInsensitive = p['caseInsensitive'] === true;
-	const topK = typeof p['topK'] === 'number' && p['topK']! > 0
-		? Math.min(MAX_TOP_K, Math.floor(p['topK'] as number))
-		: DEFAULT_TOP_K;
 	const path = typeof p['path'] === 'string' && (p['path'] as string).length > 0
 		? (p['path'] as string)
 		: undefined;
@@ -76,7 +67,6 @@ function parseParams(exp: Exploration): SearchTextParams {
 		pattern,
 		...(glob !== undefined ? { glob } : {}),
 		caseInsensitive,
-		topK,
 		...(path !== undefined ? { path } : {}),
 	};
 }
@@ -98,16 +88,13 @@ export async function runSearchText(
 		? resolveScopedPath(params.path, ctx.repoPath)
 		: ctx.repoPath;
 
-	// At least 1, as the search itself enforces: a topK below 1 floors to 0.
-	const limit = Math.max(1, params.topK ?? DEFAULT_TOP_K);
 	// A search that could not run throws, and the executor reports the lookup as
 	// failed. It does not return an empty result: that would read as "nothing matches".
-	const data = await runGrepSearch({
+	const data = await runCompleteSearch('search.text', {
 		pattern:         params.pattern,
 		root,
 		...(params.glob !== undefined ? { glob: params.glob } : {}),
 		caseInsensitive: params.caseInsensitive === true,
-		limit,
 	});
 
 	const hits: SearchTextHit[] = data.hits.map(h => ({
@@ -126,12 +113,11 @@ export async function runSearchText(
 			root,
 			backend:         data.usedRipgrep ? 'ripgrep' : 'node',
 			hits:            hits.length,
-			truncated:       data.truncated,
 	}, 'search.text: complete']);
 
 	return {
 		type:      'search.text',
-		completeness: textSearchCompleteness(data, limit),
+		completeness: textSearchCompleteness(data),
 		pattern:   params.pattern,
 		hits,
 		backend:   data.usedRipgrep ? 'ripgrep' : 'node',
@@ -142,6 +128,26 @@ export async function runSearchText(
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * The analyzer's text search: every hit with its whole line. A search that runs
+ * past its deadline or whose ripgrep fails is the failed lookup, carrying the
+ * hits gathered; it is never returned as a result, empty or complete.
+ */
+export async function runCompleteSearch(lookup: string, opts: Omit<GrepSearchOptions, 'complete'>): Promise<SearchGrepData> {
+	try {
+		return await runGrepSearch({ ...opts, complete: true });
+	} catch (err) {
+		if (err instanceof GrepIncompleteError) {
+			throw new LookupFailedError(
+				`${lookup}: the search did not finish: ${err.message}`,
+				err.hits.map(h => ({ source: `${h.path}:${h.line}`, content: h.text })),
+				{ cause: err },
+			);
+		}
+		throw err;
+	}
+}
 
 /**
  * Enforce that `candidate` resolves to a path inside `repoRoot`.

@@ -18,7 +18,7 @@ import { leasedDataPool } from '../../__tests__/fixtures/leased-data-pool.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
@@ -42,6 +42,7 @@ import type { RepoCompleteness } from '../../../shared/types.js';
 import { readFileSync } from 'node:fs';
 import { runConceptResolve } from '../concept-resolve.js';
 import { runConfigTrace } from '../config-trace.js';
+import { LookupFailedError } from '../lookup-failed.js';
 import { runConventionDetect } from '../convention-detect.js';
 import { runDataModelTrace } from '../data-model-trace.js';
 import { runDbConnectionsList } from '../db-connections-list.js';
@@ -55,7 +56,7 @@ import { runFreeformProbe } from '../freeform-probe.js';
 import { runImportGraph } from '../import-graph.js';
 import { runManifestsLocate } from '../manifests-locate.js';
 import { runModuleProfile } from '../module-profile.js';
-import { runSearchText } from '../search-text.js';
+import { runCompleteSearch, runSearchText } from '../search-text.js';
 import { runSymbolLocate } from '../symbol-locate.js';
 import { runTestLocate } from '../test-locate.js';
 import type { Exploration, ExplorationOutput, ExplorationRunnerContext, ExplorationType } from '../types.js';
@@ -421,44 +422,40 @@ test('data-model.trace reports its overall limit and both per-target limits', as
 // The text lookups and the search's omissions
 // ---------------------------------------------------------------------------
 
-test("search.text and config.trace turn the search's omissions into skipped, partlyRead and limited", async () => {
-	// Limit reached: six lines match in files the search reads, three are kept.
-	const cut = await runSearchText(exp('search.text', { pattern: 'needle', topK: 3 }), ctx);
-	assert.equal(cut.hits.length, 3);
-	assert.equal(cut.completeness.complete, false);
-	const hitLimit = limitOf(cut.completeness, 'hits');
-	assert.deepEqual([hitLimit.limit, hitLimit.scope], [3, 'overall']);
-	assert.equal(cut.completeness.total, null, 'the search stopped, so how many lines match is not known');
-	assert.equal(cut.completeness.returned, 3);
+test('search.text and config.trace return every hit with its whole line and no limited entry, and a timed-out search is the failed lookup output with its gathered hits', async () => {
+	// A topK is ignored: all six lines match, the 907-character one whole, and the 2 MB file is searched.
+	const all = await runSearchText(exp('search.text', { pattern: 'needle', topK: 3 }), ctx);
+	assert.equal(all.hits.length, 6);
+	assert.ok(all.hits.some(h => h.text.length === 907), 'the 907-character line is whole');
+	assert.ok(all.hits.some(h => h.file.endsWith('big.bin')), 'a file over 2 MB is searched');
+	assert.equal(all.completeness.limited, undefined);
+	assert.equal(all.completeness.partlyRead, undefined);
+	assert.equal(all.completeness.skipped, undefined);
+	assert.equal(all.completeness.complete, true);
+	assert.equal(all.completeness.total, 6);
+	// What the backend never reads is stated once, whichever backend ran.
+	assert.equal((all.completeness.basisNote ?? '').split('Not searched, by rule:').length, 2);
 
-	// Room for every hit: the long line is a hit, cut to 500, and named with its real length.
-	const all = await runSearchText(exp('search.text', { pattern: 'needle', topK: 50 }), ctx);
-	const longHit = all.hits.find(h => h.text.length === 500);
-	assert.ok(longHit, 'the 907-character line is among the hits, cut to 500');
-	const partly = all.completeness.partlyRead ?? [];
-	assert.deepEqual(partly, [{ what: 'src/pay/charge.ts:4', readChars: 500, totalChars: 907 }]);
-	assert.equal(all.completeness.complete, false, 'a shortened line makes the result incomplete');
-	// What the backend never reads is stated, whichever backend ran.
-	assert.match(all.completeness.basisNote ?? '', /^Not searched, by rule: /);
-	if (all.backend === 'node') {
-		// The Node search skips the file over 2 MB and says so.
-		assert.deepEqual(all.completeness.skipped, [{ what: 'big.bin', reason: 'the file is over the 2 MB size limit' }]);
-	}
-
-	// config.trace goes through the same search and the same record.
 	const cfg = await runConfigTrace(exp('config.trace', { key: 'pay.key', topK: 1 }), ctx);
-	assert.equal(cfg.hits.length, 1);
-	assert.equal(limitOf(cfg.completeness, 'hits').limit, 1);
+	assert.equal(cfg.hits.length, 2);
+	assert.equal(cfg.completeness.limited, undefined);
+	assert.equal(cfg.completeness.complete, true);
 	assert.equal(cfg.completeness.basis, 'text');
-	const cfgAll = await runConfigTrace(exp('config.trace', { key: 'pay.key' }), ctx);
-	assert.equal(cfgAll.hits.length, 2);
-	assert.equal(cfgAll.completeness.limited, undefined, 'both hits fit, so no limit is reported');
-	assert.equal(cfgAll.completeness.partlyRead, undefined);
-	// Within the limit the result is complete, unless the search itself skipped a
-	// file: the Node search skips big.bin for its size, and that is not complete.
-	assert.equal(cfgAll.completeness.complete, cfgAll.completeness.skipped === undefined);
-	if (cfgAll.backend === 'node') {
-		assert.deepEqual(cfgAll.completeness.skipped, [{ what: 'big.bin', reason: 'the file is over the 2 MB size limit' }]);
+
+	// A search that runs past its deadline is the failed lookup, with the hits it gathered.
+	const bin = mkdtempSync(join(tmpdir(), 'insrc-slow-rg-'));
+	try {
+		const rg = join(bin, 'rg');
+		writeFileSync(rg, `#!/bin/sh\necho "${REPO}/src/pay/refund.ts:1:needle in refund"\nsleep 30\n`);
+		chmodSync(rg, 0o755);
+		await assert.rejects(
+			runCompleteSearch('search.text', { pattern: 'needle', root: REPO, _backend: { rgCommand: rg, rgTimeoutMs: 300 } }),
+			(err: unknown) => err instanceof LookupFailedError
+				&& /did not finish/.test(err.message)
+				&& err.partial.length === 1 && err.partial[0]!.content === 'needle in refund',
+		);
+	} finally {
+		rmSync(bin, { recursive: true, force: true });
 	}
 });
 
@@ -537,16 +534,6 @@ test('every graph-based record carries the coverage note, on the paths that retu
 	assert.equal(records['symbol.locate, no match']!.complete, true);
 	assert.equal(records['capability.reuse-check, model call skipped']!.complete, false);
 	assert.match(records['capability.reuse-check, facts not carried']!.basisNote ?? '', /was not carried from its first step/);
-});
-
-test('a limit below 1 does not make a text lookup fail', async () => {
-	// A topK of 0.5 floors to 0; the search itself runs with at least 1.
-	const out = await runSearchText(exp('search.text', { pattern: 'needle', topK: 0.5 }), ctx);
-	assert.equal(out.hits.length, 1);
-	assert.equal(limitOf(out.completeness, 'hits').limit, 1);
-	const cfg = await runConfigTrace(exp('config.trace', { key: 'pay.key', topK: 0.5 }), ctx);
-	assert.equal(cfg.hits.length, 1);
-	assert.equal(limitOf(cfg.completeness, 'hits').limit, 1);
 });
 
 // ---------------------------------------------------------------------------

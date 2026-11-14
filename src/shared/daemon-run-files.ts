@@ -220,9 +220,13 @@ function claimGuardForReclaim(path: string, owner: ProcessIdentity, read: Proces
 		let record: { owner: ProcessIdentity; nonce: string };
 		try { record = parseOwnerRecord(readFileSync(join(path, entry), 'utf8')); } catch { return withhold(); } // an unreadable claim withholds
 		// A standing claim is honored unless its recorded holder is conclusively dead — the same verdict as
-		// a stale guard owner. The pruned claim's own unique name is removed; a concurrent pruner's ENOENT
-		// only means the dead claim was already pruned first.
-		if (!conclusivelyDeadOwner(record, read)) return withhold();
+		// a stale guard owner. A holder identity the reader cannot verdict at all withholds the same way,
+		// retiring this reclaimer's own claim first so a transient reader failure never abandons a live
+		// claim holding the guard. The pruned claim's own unique name is removed; a concurrent pruner's
+		// ENOENT only means the dead claim was already pruned first.
+		let holderDead: boolean;
+		try { holderDead = conclusivelyDeadOwner(record, read); } catch { return withhold(); }
+		if (!holderDead) return withhold();
 		try { unlinkSync(join(path, entry)); } catch { /* another reclaimer pruned this dead claim first */ }
 	}
 	try {

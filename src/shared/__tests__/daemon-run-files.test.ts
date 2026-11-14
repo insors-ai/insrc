@@ -251,12 +251,14 @@ test('a paused reclaimer cannot quarantine or vacate the live replacement a star
 	const path = join(dir, 'guard');
 	staleGuard(path, 'linux:stale-boot:111', 'nonce-live');
 	let winner: RunFileGuard | undefined;
+	let identityAtPause: ReturnType<typeof runFileIdentity>;
 	let probed = false;
 	// The identity reader is the pause point: while the paused reclaimer renders its dead-owner verdict,
 	// a competing starter quarantines the same dead guard and completes its own acquisition, so the
 	// paused one resumes holding evidence about a record that no longer occupies the path.
 	const pausedReader: ProcessIdentityReader = () => {
 		winner ??= acquireReclaim(path, acquiringOwner, () => undefined);
+		identityAtPause ??= runFileIdentity(path); // captured while the winner's guard is live, before the paused reclaimer resumes
 		return undefined; // the recorded owner is gone
 	};
 	// The after-verdict probe fires after the paused reader has returned, during the reclaimer's resumed
@@ -275,9 +277,8 @@ test('a paused reclaimer cannot quarantine or vacate the live replacement a star
 	// polluted, and the recomputed conflict names the replacement instead of replaying the stale verdict.
 	assert.throws(() => acquireReclaim(path, acquiringOwner, pausedReader, afterVerdict), /ownership conflict/);
 	const guard = winner!;
-	const before = runFileIdentity(path);
 	assert.doesNotThrow(() => guard.assertOwned()); // the live replacement keeps its guard, intact and in place
-	assert.deepEqual(runFileIdentity(path), before); // the resumed operation never moved the live guard directory
+	assert.deepEqual(runFileIdentity(path), identityAtPause); // the whole resumed operation — probe included — never moved the live guard directory
 	assert.deepEqual(readdirSync(path), ['owner.json']); // the failed reclaim left no claim or other residue
 	assert.equal(quarantinedSiblings(path).length, 1); // only the dead record was ever quarantined
 	assert.equal(readFileSync(PATHS.daemonLog, 'utf8').split('\n').filter((line) => line.includes('nonce-live')).length, 1); // exactly the winner's recovery line
@@ -304,10 +305,21 @@ test('a standing reclaim claim with a live or unreadable holder withholds; a con
 	assert.equal(quarantinedSiblings(path).length, 0, 'unreadable claim');
 	assert.equal(existsSync(join(path, 'reclaim.claim.unreadable')), true, 'unreadable claim preserved');
 	assert.deepEqual(readdirSync(path).sort(), ['owner.json', 'reclaim.claim.unreadable'], 'unreadable claim'); // again no residue of the withholding reclaimer's own claim
+	// A holder identity the reader cannot verdict at all withholds the same way, and the failing reclaimer
+	// retires its own claim: a transient reader failure never abandons a live claim holding the guard.
+	unlinkSync(join(path, 'reclaim.claim.unreadable'));
+	const unverifiablePid = 454545;
+	writeFileSync(join(path, 'reclaim.claim.unverifiable-holder'), JSON.stringify({ owner: { pid: unverifiablePid, startedAt: 'linux:current-boot:444', commandLine: 'unverifiable-holder' }, nonce: 'claim-unverifiable' }));
+	assert.throws(() => acquireReclaim(path, acquiringOwner, (pid) => {
+		if (pid === unverifiablePid) throw new Error('identity unreadable');
+		return undefined; // the guard owner verdicts fine; only the claim holder's identity throws
+	}), /not reclaimed automatically/);
+	assert.equal(quarantinedSiblings(path).length, 0, 'unverifiable holder');
+	assert.deepEqual(readdirSync(path).sort(), ['owner.json', 'reclaim.claim.unverifiable-holder'], 'unverifiable holder'); // the throwing reclaimer left no claim of its own
 	// A conclusively dead holder is recovered: the dead claim is pruned by its own name, the reclaimer
 	// proceeds under its own claim, and the guard is quarantined; neither the evidence directory nor
 	// the fresh guard keeps any claim file.
-	unlinkSync(join(path, 'reclaim.claim.unreadable'));
+	unlinkSync(join(path, 'reclaim.claim.unverifiable-holder'));
 	writeFileSync(join(path, 'reclaim.claim.dead-holder'), JSON.stringify({ owner: { pid: RECORDED_PID, startedAt: 'linux:stale-boot:111', commandLine: 'crashed-reclaimer' }, nonce: 'claim-dead' }));
 	const guard = acquireReclaim(path, acquiringOwner, () => undefined);
 	assert.equal(guard.path, path);

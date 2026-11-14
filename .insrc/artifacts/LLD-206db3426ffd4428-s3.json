@@ -79,6 +79,13 @@
         "choice": "Keep s3 consume-only",
         "rationale": "User approved: s1 owns binding and authorization; plan checks early whether s1 exposes a hook.",
         "resolvedAt": "2026-11-14T18:05:03.405Z"
+      },
+      "q26e40d27": {
+        "question": "Source of review progress: the status board carries only the display projection, so the delegates read ReviewWorkers.progressOf, a new read-only accessor in src/daemon/threads/review-workers.ts. That is the daemon's review-worker hosting class, not a review engine; confirm it is acceptable under the DEF non-goal on changes to review execution.",
+        "status": "resolved",
+        "choice": "Accept the read-only accessor",
+        "rationale": "User approved folding ReviewWorkers.progressOf into the first task.",
+        "resolvedAt": "2026-11-14T18:05:50.891Z"
       }
     }
   },

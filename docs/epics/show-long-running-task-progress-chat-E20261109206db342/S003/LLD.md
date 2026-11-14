@@ -382,6 +382,8 @@ Add retries and followUp counters to ReviewProgress (task-review/progress.ts) an
   - **resolved**: a1: Two typed coordinators — User approved planning with a second typed coordinator; widening s2's union (a2) is the recorded fallback. _(2026-11-14T18:04:05.007Z)_
 - `q9cc2552d` — Who binds a review identity (project, family, reviewId, attempt) to a TaskRef and mints the ProducerAuthorization at review start? sc1 and the HLD put owner binding and registration in s1; s3 should only supply the review identity and delegates. Confirm this stays consume-only, or raise an HLD back-flow, before the plan.
   - **resolved**: Keep s3 consume-only — User approved: s1 owns binding and authorization; plan checks early whether s1 exposes a hook. _(2026-11-14T18:05:03.405Z)_
+- `q26e40d27` — Source of review progress: the status board carries only the display projection, so the delegates read ReviewWorkers.progressOf, a new read-only accessor in src/daemon/threads/review-workers.ts. That is the daemon's review-worker hosting class, not a review engine; confirm it is acceptable under the DEF non-goal on changes to review execution.
+  - **resolved**: Accept the read-only accessor — User approved folding ReviewWorkers.progressOf into the first task. _(2026-11-14T18:05:50.891Z)_
 
 ## Citations
 

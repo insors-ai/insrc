@@ -30,7 +30,7 @@
     "triageRationale": "Triage classified this as a feature (one cohesive story) reusing the chat webview attach-button/popup/PanelFactory/PATHS.insrc-store patterns; new surface is the ~/.insrc/scratches dir, new protocol message types, and a new scratchpad module + panels. Routed to standalone design.story (LLD) -> plan -> build.",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "approved",
+      "status": "completed",
       "revision": {
         "number": 3,
         "contentHash": "062149f7c447b5917480314cd479fdaa985f9169985de992991fd1b6193336f2",

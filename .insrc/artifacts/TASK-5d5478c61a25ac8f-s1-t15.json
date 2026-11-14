@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c951d003-d10a-4a23-ac06-b1cdfbd6ce2d",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-13T05:36:10.172Z",
+    "epicCreatedAt": "2026-11-11T16:00:50.440Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5d5478c61a25ac8f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Gate promotion on published product qualification",
+      "parent": {
+        "entityId": "STORY-5d5478c61a25ac8f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-5d5478c61a25ac8f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t12",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t14",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "withdrawn",
+      "revision": {
+        "number": 1,
+        "contentHash": "deae371039485227fe2181e8c7589ede124c9eebb2fcce390c4bde7af9411110",
+        "at": "2026-11-13T05:36:10.172Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-13T05:36:10.179Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Gate promotion on published product qualification",
+    "summary": "Produce and verify release evidence for the product matrix and enforce it before promotion.",
+    "size": "M",
+    "order": 15,
+    "acceptanceChecks": [
+      "Publication verifies the exact release head, signed profiles and immutable real-product receipts from independent builds. Refuse missing or invalid evidence before promotion. Use a disposable signer for tests."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Missing or stale release evidence prevents promotion and leaves the incumbent running"
+      },
+      {
+        "level": "smoke",
+        "name": "Release publication validates real running and stopped upgrades for every enabled profile"
+      }
+    ],
+    "planTaskId": "t15"
+  },
+  "citations": []
+}

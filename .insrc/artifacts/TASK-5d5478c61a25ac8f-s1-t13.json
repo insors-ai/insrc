@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4ee7019b-2869-43dd-ad6c-b0ab6a6f1f2d",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-13T05:36:10.145Z",
+    "epicCreatedAt": "2026-11-11T16:00:50.440Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5d5478c61a25ac8f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Gate restored legacy lifecycle requests",
+      "parent": {
+        "entityId": "STORY-5d5478c61a25ac8f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-5d5478c61a25ac8f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 4"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t17",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "b38685b032a288b56d638d025ce423a3e65929498372f307f10a4bfa742f1847",
+        "at": "2026-11-13T08:27:50.673Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-13T05:36:10.151Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Gate restored legacy lifecycle requests",
+    "summary": "Complete guarded archived rollback, pinned admin preload and distinct public stop and private update drain paths, including the supported shell LaunchAgent transformation.",
+    "size": "L",
+    "order": 10,
+    "acceptanceChecks": [
+      "Only the trusted controller can reconstruct the pinned shell LaunchAgent as the guarded private Node descriptor. Preserve passive policy and launch identity. Both handler tables arbitrate Stop and refuse old Update. Publish verified rollback before opening guarded dispatch."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "A competing legacy command and interruption during rollback cannot reopen the launcher before durable outcome"
+      },
+      {
+        "level": "integration",
+        "name": "Real restored legacy update and shutdown RPCs cannot interrupt rollback or a managed retry"
+      },
+      {
+        "level": "integration",
+        "name": "Idle public stop and authorized private drain require distinct admission and reconcile exact exit"
+      }
+    ],
+    "planTaskId": "t13"
+  },
+  "citations": []
+}

@@ -1,0 +1,280 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 5,
+        "contentHash": "c8ece60bee4bab4ece03497557b19a064a601a7492030e45eec723e14e24915c",
+        "at": "2026-11-14T07:52:47.094Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-040f5793-20fe-4298-bb94-4ff4ed4c334e",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-14T07:34:20.403Z",
+    "epicCreatedAt": "2026-11-14T06:38:49.736Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8a036e6436ae82ab",
+    "storyId": "s1",
+    "revision": 5,
+    "updatedAt": "2026-11-14T07:52:09.882Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "pilot-prebuilt-macos-daemon-releases"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": false
+      },
+      {
+        "id": "t2",
+        "passed": false
+      },
+      {
+        "id": "t3",
+        "passed": false
+      },
+      {
+        "id": "t4",
+        "passed": false
+      },
+      {
+        "id": "t6",
+        "passed": false
+      }
+    ],
+    "summary": "Use a protected promotion workflow to bind reviewed local evidence to the exact archived candidate and publish only unchanged bytes.",
+    "testRecord": {
+      "md": "docs/standalone/pilot-prebuilt-macos-daemon-releases-E202611148a036e64/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".github/workflows/daemon-candidate.yml"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T07:52:09.882Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/package-daemon-candidate.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T07:52:09.882Z"
+      },
+      {
+        "target": {
+          "file": "scripts/package-daemon-candidate.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T07:52:09.882Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/daemon-bundle-metadata.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T07:52:09.882Z"
+      },
+      {
+        "target": {
+          "file": "scripts/daemon-bundle-metadata.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T07:52:09.882Z"
+      },
+      {
+        "target": {
+          "file": "scripts/package-daemon-bootstrap.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T07:52:09.882Z"
+      },
+      {
+        "target": {
+          "file": "scripts/verify-daemon-bootstrap.sh"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T07:52:09.882Z"
+      },
+      {
+        "target": {
+          "file": "scripts/verify-daemon-bundle.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T07:52:09.882Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/stage-daemon-bundle.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T07:52:09.882Z"
+      },
+      {
+        "target": {
+          "file": "scripts/stage-daemon-bundle.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T07:52:09.882Z"
+      },
+      {
+        "target": {
+          "file": "scripts/daemon-ctl.sh"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T07:52:09.882Z"
+      },
+      {
+        "target": {
+          "file": "scripts/insrc"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T07:52:09.882Z"
+      },
+      {
+        "target": {
+          "file": "scripts/install-daemon-bundle.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T07:52:09.882Z"
+      },
+      {
+        "target": {
+          "file": "src/bin/insrc-daemon-control.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T07:52:09.882Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/fresh-managed-activation.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T07:52:09.882Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/managed-bundle-proof.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T07:52:09.882Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/managed-update-handoff.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T07:52:09.882Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/managed-update-preparation.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T07:52:09.882Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/managed-update-recovery.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T07:52:09.882Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/__tests__/daemon-bundle-release-floor.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T07:52:09.882Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/daemon-bundle-release-floor.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T07:52:09.882Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/installation-mutation-gate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T07:52:09.882Z"
+      },
+      {
+        "target": {
+          "file": ".github/workflows/daemon-qualification-sign.yml"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T07:52:09.882Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/pilot-prebuilt-macos-daemon-releases-E202611148a036e64/S001/QUALIFICATION.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T07:52:09.882Z"
+      },
+      {
+        "target": {
+          "file": "scripts/daemon-release-artifact.sh"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T07:52:09.882Z"
+      },
+      {
+        "target": {
+          "file": "scripts/prepare-daemon-qualification.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T07:52:09.882Z"
+      },
+      {
+        "target": {
+          "file": "scripts/record-daemon-qualification.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T07:52:09.882Z"
+      },
+      {
+        "target": {
+          "file": ".github/workflows/daemon-promotion.yml"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T07:52:09.882Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/promote-daemon-candidate.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T07:52:09.882Z"
+      },
+      {
+        "target": {
+          "file": "scripts/promote-daemon-candidate.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T07:52:09.882Z"
+      }
+    ],
+    "commit": "ed6143d4c"
+  },
+  "citations": []
+}

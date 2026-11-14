@@ -30,7 +30,7 @@
     "triageRationale": "Grounded on the analyze pass over vscode-plugin/src/chat: the hardcoded 'claude' label is a single literal in render-registry.ts:450. Provider/model already exist on both sides of the webview channel (session-store + run-config echo at chat-panel.ts:1059), so the fix threads them into the assistant view-model meta and renders PROVIDER/model at the whoRow call. One module, a handful of files + tests, one obvious approach, no new contract. Sized small → standalone design.story → build.",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "approved",
+      "status": "completed",
       "revision": {
         "number": 1,
         "contentHash": "46f75d75e5977d7b0a8e667004bb914659e27a9a27c6c82e48b0f930f23f58dd",

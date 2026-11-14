@@ -1,0 +1,134 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-478eecd4-21a2-471a-8321-4bc70b5805a7",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T17:01:18.440Z",
+    "epicCreatedAt": "2026-11-11T16:00:50.440Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5d5478c61a25ac8f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Qualify local install, migration and rollback",
+      "parent": {
+        "entityId": "STORY-5d5478c61a25ac8f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-5d5478c61a25ac8f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 4"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t14",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t18",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 3,
+        "contentHash": "010ed39412f0181bf1ee06b89732f4e9cd5d4fc1188a1ae18e8111ae8f28af1b",
+        "at": "2026-11-13T08:27:50.714Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T17:01:18.450Z"
+      }
+    },
+    "revision": 3
+  },
+  "body": {
+    "title": "Qualify local install, migration and rollback",
+    "summary": "Exercise the real source-built installer against disposable macOS state, preserve Linux behavior, and run the full regression sweep after implementation. Record exact source test evidence for the promotion gate.",
+    "size": "L",
+    "order": 13,
+    "acceptanceChecks": [
+      "Cover fresh start and idle, running and stopped managed updates, broker-denied legacy migration, passive and shell job restoration, rollback with intact stores and later retry. Check normal Linux lifecycle. Run the full regression sweep only after implementation tasks."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Linux normal install, update and restart unchanged"
+      },
+      {
+        "level": "smoke",
+        "name": "Fresh install and verified ordinary restart"
+      },
+      {
+        "level": "smoke",
+        "name": "Fresh --no-start and later supervisor start"
+      },
+      {
+        "level": "smoke",
+        "name": "First supported update of a qualified prior build with broker denial"
+      },
+      {
+        "level": "smoke",
+        "name": "Direct install and passive recovery job with exact loader argv"
+      },
+      {
+        "level": "smoke",
+        "name": "Verified stopped and running rollback with configuration and store integrity"
+      },
+      {
+        "level": "smoke",
+        "name": "Real product passive and recovery job loader arguments, verified broker refusal, data-preserving rollback and subsequent managed update"
+      },
+      {
+        "level": "smoke",
+        "name": "Source-built macOS migration preserves running and stopped service intent"
+      },
+      {
+        "level": "smoke",
+        "name": "Restored rollback guards public lifecycle and admits private retry"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

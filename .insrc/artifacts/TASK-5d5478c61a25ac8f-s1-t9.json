@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9ed40041-01bf-4d89-aadd-4b8ccd9a5844",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-13T05:36:10.089Z",
+    "epicCreatedAt": "2026-11-11T16:00:50.440Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5d5478c61a25ac8f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Verify signed release and trust metadata",
+      "parent": {
+        "entityId": "STORY-5d5478c61a25ac8f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-5d5478c61a25ac8f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "withdrawn",
+      "revision": {
+        "number": 1,
+        "contentHash": "4a3dd4a93ee7ddfc3d2b660e548a275d5e0852b625b62ec1c8358e2dd5fd5b8d",
+        "at": "2026-11-13T05:36:10.089Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-13T05:36:10.095Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify signed release and trust metadata",
+    "summary": "Add the trusted bootstrap verification contract and admission evidence.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "Bind source, branch, candidate tree and ordered releases to a scoped signature. Reject invalid, expired, revoked or replayed metadata and retain the durable receipt for offline recovery."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Trust rotation, expiry, replay and offline rollback at the fence boundary"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4726e8b0-e97b-4a8e-bc0e-356640c496a3",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-14T07:29:56.675Z",
+    "epicCreatedAt": "2026-11-14T06:38:49.736Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8a036e6436ae82ab",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Build a macOS arm64 candidate",
+      "parent": {
+        "entityId": "STORY-8a036e6436ae82ab-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8a036e6436ae82ab-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "215be2d722163dedc5697ee2d4762e508a6db737a3b9bda96fd97f68d4096179",
+        "at": "2026-11-14T07:29:56.682Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T07:29:56.685Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Build a macOS arm64 candidate",
+    "summary": "Package pinned Node, runtime files and native bits and add the Actions candidate build and upload.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Exact protected input commit and version appear in build metadata; candidate artifact identity and digest are recorded.",
+      "Actions runs build only; local packaging checks verify runtime layout and portability."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Candidate layout and build-only workflow"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1794412813443-4pdgj8",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T16:00:50.440Z",
+    "epicCreatedAt": "2026-11-11T16:00:50.440Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 36995,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "5d5478c61a25ac8f",
+    "epicSlug": "enable-managed-daemon-lifecycle-macos-install",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "77fbae0c8b1f869fca3d482378bc0155ef1d84a182ec42ee53c8ae0d34b1303c",
+        "at": "2026-11-11T16:00:50.454Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T16:06:08.450Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "parentRef": {
+      "epicHash": "5d5478c61a25ac8f",
+      "slug": "EPIC-5d5478c61a25ac8f"
+    }
+  },
+  "body": {
+    "title": "Enable managed daemon lifecycle on macOS install and update",
+    "reproduction": "Run the standard installer on a clean macOS account using a release that contains the managed supervisor. The installer starts the daemon directly, leaving restart dependent on the legacy process broker. On an existing Mac, update to that release through the normal flow. The installation still takes the legacy path, which can deny the next restart with errno 1. [[c1]] [[c2]] [[c5]]",
+    "rootCause": "The installer invokes daemon-ctl start without establishing a managed installation. The shell selects the supervisor only when an installation selector exists. The current controller can stage a disabled selector and migrate a legacy LaunchAgent, but its migration interface needs explicit release pins, qualifications, and a LaunchAgent descriptor that ordinary install and update flows do not supply. [[c1]] [[c2]] [[c3]] [[c4]]",
+    "fixIntent": "On a fresh Mac, install and register the per-user supervisor through the ordinary installer and verify a successful start and restart. On an existing Mac, let an ordinary supported update identify the current installation and migrate it automatically without requiring the user to run launchctl or edit files. Cover the verified legacy LaunchAgent, the temporary recovery job, and supported direct installs. Establish how each legacy daemon can exit when broker capture is denied. Preserve configuration, repository data, and the prior running or stopped state across rollback. Qualify success, interruption, and rollback on macOS and preserve Linux behavior. [[c3]] [[c4]] [[c5]]"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "scripts/insrc-daemon-install.sh:388"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "scripts/daemon-ctl.sh:260"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/bin/insrc-daemon-control.ts:57"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/managed-update-recovery.ts:274"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-3992d2e1e26124dc"
+    }
+  ]
+}

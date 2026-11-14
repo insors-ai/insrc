@@ -1,0 +1,1472 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 44,
+        "contentHash": "be1e37147e144e6da713cf4c0142371de94018619c3e3ab41d8f33c78d0564c0",
+        "at": "2026-11-13T08:54:49.434Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "5d5478c61a25ac8f",
+    "storyId": "s1",
+    "createdAt": "2026-11-11T17:08:15.460Z",
+    "updatedAt": "2026-11-13T08:54:49.410Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-11T16:00:50.440Z",
+    "epicSlug": "enable-managed-daemon-lifecycle-macos-install",
+    "revision": 44
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "ffbb06102",
+        "ranAt": "2026-11-11T17:11:37.571Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Release provenance, changed bytes and absent legacy declaration",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-release-staging.test.ts",
+                "title": "Release provenance, changed bytes and absent legacy declaration",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Staging leaves the installed release executable and unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-release-staging.test.ts",
+                "title": "Staging leaves the installed release executable and unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/managed-release-staging.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3835,
+            "titles": [
+              {
+                "title": "Release provenance, changed bytes and absent legacy declaration",
+                "result": "pass"
+              },
+              {
+                "title": "Staging leaves the installed release executable and unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "7f835b056",
+        "ranAt": "2026-11-11T20:02:31.083Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Explicit fresh activation start intent and owned partial publication",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/fresh-managed-activation.test.ts",
+                "title": "Explicit fresh activation start intent and owned partial publication",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Fresh controller activation reconciles partial selector and bootstrap",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/fresh-managed-activation.test.ts",
+                "title": "Fresh controller activation reconciles partial selector and bootstrap",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/managed-daemon-lifecycle.test.ts",
+                "title": "Managed daemon accepts verified readiness beyond the normal watchdog reply deadline",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/fresh-managed-activation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 12450,
+            "titles": [
+              {
+                "title": "Fresh install and verified ordinary restart",
+                "result": "pass"
+              },
+              {
+                "title": "Fresh --no-start and later supervisor start",
+                "result": "pass"
+              },
+              {
+                "title": "Explicit fresh activation start intent and owned partial publication",
+                "result": "pass"
+              },
+              {
+                "title": "Fresh controller activation reconciles partial selector and bootstrap",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/managed-daemon-lifecycle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10706,
+            "titles": [
+              {
+                "title": "Managed watchdog arm has reserved capacity during a controller request burst",
+                "result": "pass"
+              },
+              {
+                "title": "Managed daemon accepts verified readiness beyond the normal watchdog reply deadline",
+                "result": "pass"
+              },
+              {
+                "title": "IPC and signal shutdown with no controller",
+                "result": "pass"
+              },
+              {
+                "title": "Hung before shutdown reply and hung native close after watchdog readiness",
+                "result": "pass"
+              },
+              {
+                "title": "Hold a client connection open during managed server.close and confirm forced reap releases the supervisor guard and permits exactly one restart",
+                "result": "pass"
+              },
+              {
+                "title": "Public RPC arm gets busy during update while an admitted drain and local signal preserve their watchdog path",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "9c1c937a4",
+        "ranAt": "2026-11-11T18:28:22.792Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Predecessor variants and backward decoding",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/legacy-cutover-admission.test.ts",
+                "title": "Predecessor variants and backward decoding",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Old shell/helper concurrent with canonical launcher exchange and old child attempting to open stores",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/legacy-cutover-admission.test.ts",
+                "title": "Old shell/helper concurrent with canonical launcher exchange and old child attempting to open stores",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/legacy-cutover-admission.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 25445,
+            "titles": [
+              {
+                "title": "Predecessor variants and backward decoding",
+                "result": "pass"
+              },
+              {
+                "title": "Old shell/helper concurrent with canonical launcher exchange and old child attempting to open stores",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "efed53180",
+        "ranAt": "2026-11-11T18:35:06.638Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Graceful, broker-denied and unknown drain evidence",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/legacy-run-guard.test.ts",
+                "title": "Graceful, broker-denied and unknown drain evidence",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/legacy-daemon-cutover.test.ts",
+                "title": "Legacy cutover observes the exact authenticated process exit before cleaning its publication",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Guard adoption binds exact identities and recovers on either side of transfer",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/legacy-run-guard.test.ts",
+                "title": "Guard adoption binds exact identities and recovers on either side of transfer",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/legacy-daemon-cutover.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1676,
+            "titles": [
+              {
+                "title": "Legacy cutover observes the exact authenticated process exit before cleaning its publication",
+                "result": "pass"
+              },
+              {
+                "title": "Legacy LaunchAgent pinning rejects automatic restart before migration",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/legacy-run-guard.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6639,
+            "titles": [
+              {
+                "title": "Graceful, broker-denied and unknown drain evidence",
+                "result": "pass"
+              },
+              {
+                "title": "Guard adoption binds exact identities and recovers on either side of transfer",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "20838f08e",
+        "ranAt": "2026-11-11T18:45:52.327Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Uncertain publication with durable success versus no outcome",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-update-transaction.test.ts",
+                "title": "Uncertain publication with durable success versus no outcome",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Startup guard transfer, candidate bootstrap failure, rollback and repeated recovery",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-update-transaction.test.ts",
+                "title": "Startup guard transfer, candidate bootstrap failure, rollback and repeated recovery",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/legacy-run-guard.test.ts",
+                "title": "Guard adoption binds exact identities and recovers on either side of transfer",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Rollback restores an idle job without launching and refuses unqualified RunAtLoad",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-update-transaction.test.ts",
+                "title": "Rollback restores an idle job without launching and refuses unqualified RunAtLoad",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/legacy-run-guard.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 12904,
+            "titles": [
+              {
+                "title": "Graceful, broker-denied and unknown drain evidence",
+                "result": "pass"
+              },
+              {
+                "title": "Guard adoption binds exact identities and recovers on either side of transfer",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/managed-update-transaction.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 28014,
+            "titles": [
+              {
+                "title": "Incompatible supervisor version produces one terminal failure after reconciliation",
+                "result": "pass"
+              },
+              {
+                "title": "Terminal outcome and marker ordering, including persistence failure",
+                "result": "pass"
+              },
+              {
+                "title": "Uncertain publication with durable success versus no outcome",
+                "result": "pass"
+              },
+              {
+                "title": "Fail hello after candidate job registration before child start, remove the candidate job and restore the prior release",
+                "result": "pass"
+              },
+              {
+                "title": "Observe in-flight status throughout injected rollback, then exactly one terminal outcome after restored readiness or a durable operator-recovery decision",
+                "result": "pass"
+              },
+              {
+                "title": "Kill the controller at reservation, job registration, probation, and after outcome publication",
+                "result": "pass"
+              },
+              {
+                "title": "Relaunch supervisor after provisional release selection and verify recovery restores the old selector before uncommitted rollback, or preserves the candidate after success",
+                "result": "pass"
+              },
+              {
+                "title": "Recovery job and legacy migration",
+                "result": "pass"
+              },
+              {
+                "title": "Rollback after legacy stop but before managed readiness restores the saved service",
+                "result": "pass"
+              },
+              {
+                "title": "Startup guard transfer, candidate bootstrap failure, rollback and repeated recovery",
+                "result": "pass"
+              },
+              {
+                "title": "Rollback restores an idle job without launching and refuses unqualified RunAtLoad",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "c751c08d1",
+        "ranAt": "2026-11-11T19:05:38.178Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Running managed update IPC and stopped local managed update",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-update-handoff.test.ts",
+                "title": "Running managed update IPC and stopped local managed update",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/managed-release-staging.test.ts",
+                "title": "The stopped installed controller fetches and commits a qualified update without daemon IPC",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Managed update acknowledges before slow preparation and survives client disconnect",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-update-handoff.test.ts",
+                "title": "Managed update acknowledges before slow preparation and survives client disconnect",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/managed-update-handoff.test.ts",
+                "title": "A lost or unwritten update acknowledgement keeps the detached helper behind its launch gate",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/managed-release-staging.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8151,
+            "titles": [
+              {
+                "title": "Release provenance, changed bytes and absent legacy declaration",
+                "result": "pass"
+              },
+              {
+                "title": "The stopped installed controller fetches and commits a qualified update without daemon IPC",
+                "result": "pass"
+              },
+              {
+                "title": "Staging leaves the installed release executable and unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/managed-update-handoff.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 23753,
+            "titles": [
+              {
+                "title": "Candidate job handoff records registration before child admission and keeps release selection provisional",
+                "result": "pass"
+              },
+              {
+                "title": "Running managed update IPC and stopped local managed update",
+                "result": "pass"
+              },
+              {
+                "title": "A failed candidate hello yields an exact job receipt without admitting a daemon child",
+                "result": "pass"
+              },
+              {
+                "title": "A lost or unwritten update acknowledgement keeps the detached helper behind its launch gate",
+                "result": "pass"
+              },
+              {
+                "title": "Managed update acknowledges before slow preparation and survives client disconnect",
+                "result": "pass"
+              },
+              {
+                "title": "Managed update helper waits for acknowledgement write before destructive work",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "93f2631f1",
+        "ranAt": "2026-11-11T19:57:18.765Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Installer and updated CLI, VS Code and JetBrains route matrix",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/macos-upgrade-routing.test.ts",
+                "title": "Installer and updated CLI, VS Code and JetBrains route matrix",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/freshness/__tests__/daemon-freshness.test.ts",
+                "title": "Legacy macOS freshness uses the installer and checks the resulting commit before reporting success",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/macos-upgrade-routing.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9677,
+            "titles": [
+              {
+                "title": "Installer and updated CLI, VS Code and JetBrains route matrix",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/freshness/__tests__/daemon-freshness.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 807,
+            "titles": [
+              {
+                "title": "Correlated update outcomes ignore unrelated terminal records and changed installedCommit",
+                "result": "pass"
+              },
+              {
+                "title": "Legacy macOS freshness uses the installer and checks the resulting commit before reporting success",
+                "result": "pass"
+              },
+              {
+                "title": "Candidate status projects the prior commit during validation and a later rollback in both IDE confirmation flows",
+                "result": "pass"
+              },
+              {
+                "title": "Lost update acknowledgement does not trigger an automatic duplicate request",
+                "result": "pass"
+              },
+              {
+                "title": "startup-check drift: notify shows Update/Dismiss; update() runs ONLY on 'Update'",
+                "result": "pass"
+              },
+              {
+                "title": "startup-check drift: Dismiss (and closed→undefined) does NOT call update()",
+                "result": "pass"
+              },
+              {
+                "title": "skip paths: unreachable / installedCommit===\"\" / up-to-date / ls-remote fail → no notify, no update",
+                "result": "pass"
+              },
+              {
+                "title": "self-update: current!==lastSeen + drift → update() with NO prompt (notify-after), setLastSeen recorded",
+                "result": "pass"
+              },
+              {
+                "title": "first-ever activation (lastSeen undefined) is treated as self-update when there is drift",
+                "result": "pass"
+              },
+              {
+                "title": "self-update mode but daemon already up to date → no update, no notify, still setLastSeen (fire-once, k4)",
+                "result": "pass"
+              },
+              {
+                "title": "an undeterminable current version (\"\") falls back to the prompt path, never auto-updates",
+                "result": "pass"
+              },
+              {
+                "title": "reconnect-and-confirm success: updateOutcome().state===\"succeeded\" → success notify",
+                "result": "pass"
+              },
+              {
+                "title": "reconnect tolerates a socket drop across passes: throws on pass 1, confirms on pass 2",
+                "result": "pass"
+              },
+              {
+                "title": "a STALE succeeded outcome (finished before the update started) is ignored; commit-advance decides",
+                "result": "pass"
+              },
+              {
+                "title": "failure: update() rejects → exactly ONE failure notify with the raw error, no retry",
+                "result": "pass"
+              },
+              {
+                "title": "failure: updateOutcome().state===\"failed\" (fresh) → one failure notify carrying the raw error",
+                "result": "pass"
+              },
+              {
+                "title": "failure: commit never advances within the budget → one failure notify, no second update()",
+                "result": "pass"
+              },
+              {
+                "title": "launched:false → a single failure notify, no confirm loop",
+                "result": "pass"
+              },
+              {
+                "title": "never-throws: a throwing seam is swallowed; runDaemonFreshnessCheck resolves; setLastSeen still runs",
+                "result": "pass"
+              },
+              {
+                "title": "setLastSeen(current) is recorded on the skip path too (self-update fires once)",
+                "result": "pass"
+              },
+              {
+                "title": "post-update nudge: on a confirmed update, notify is called with the reload-nudge message AND a Reload Window action",
+                "result": "pass"
+              },
+              {
+                "title": "post-update nudge: choosing 'Reload Window' with the seam present invokes reloadWindow() exactly once",
+                "result": "pass"
+              },
+              {
+                "title": "post-update nudge: dismissing the nudge (undefined) does NOT invoke reloadWindow()",
+                "result": "pass"
+              },
+              {
+                "title": "post-update nudge: with reloadWindow omitted, the flow is notification-only and never crashes",
+                "result": "pass"
+              },
+              {
+                "title": "post-update nudge: a reloadWindow rejection is swallowed — runDaemonFreshnessCheck still resolves",
+                "result": "pass"
+              },
+              {
+                "title": "post-update nudge: the nudge also follows the startup-check prompt path (Update → success → nudge)",
+                "result": "pass"
+              },
+              {
+                "title": "post-update nudge: NO nudge on a no-op update (already current) or a failed update",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "7f835b056",
+        "ranAt": "2026-11-11T20:05:03.874Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Linux normal install, update and restart unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/linux-installed-lifecycle.test.ts",
+                "title": "Linux normal install, update and restart unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Fresh install and verified ordinary restart",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/fresh-managed-activation.test.ts",
+                "title": "Fresh install and verified ordinary restart",
+                "result": "pass"
+              }
+            ],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "/private/tmp/insrc-q-2hobzg6j/activation-restart.log — real pinned build activated via the compiled installer controller and verified through the ordinary restart script"
+            }
+          },
+          {
+            "name": "Fresh --no-start and later supervisor start",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/fresh-managed-activation.test.ts",
+                "title": "Fresh --no-start and later supervisor start",
+                "result": "pass"
+              }
+            ],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "/private/tmp/insrc-product-qualify.h6uo8d/install.log — full normal installer registered an idle supervisor; the real start after the readiness fix is in /private/tmp/insrc-q-2hobzg6j/activation-restart.log"
+            }
+          },
+          {
+            "name": "First supported update of a qualified prior build with broker denial",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-release-staging.test.ts",
+                "title": "First supported update of a qualified prior build with broker denial",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/managed-release-staging.test.ts",
+                "title": "The stopped installed controller fetches and commits a qualified update without daemon IPC",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Direct install and passive recovery job with exact loader argv",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-release-staging.test.ts",
+                "title": "First supported update of a qualified prior build with broker denial",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/legacy-cutover-admission.test.ts",
+                "title": "Predecessor variants and backward decoding",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Verified stopped and running rollback with configuration and store integrity",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-update-transaction.test.ts",
+                "title": "Startup guard transfer, candidate bootstrap failure, rollback and repeated recovery",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/managed-update-transaction.test.ts",
+                "title": "Rollback restores an idle job without launching and refuses unqualified RunAtLoad",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/managed-update-transaction.test.ts",
+                "title": "Uncertain publication with durable success versus no outcome",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/legacy-run-guard.test.ts",
+                "title": "Guard adoption binds exact identities and recovers on either side of transfer",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/fresh-managed-activation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 11907,
+            "titles": [
+              {
+                "title": "Fresh install and verified ordinary restart",
+                "result": "pass"
+              },
+              {
+                "title": "Fresh --no-start and later supervisor start",
+                "result": "pass"
+              },
+              {
+                "title": "Explicit fresh activation start intent and owned partial publication",
+                "result": "pass"
+              },
+              {
+                "title": "Fresh controller activation reconciles partial selector and bootstrap",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/legacy-cutover-admission.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6242,
+            "titles": [
+              {
+                "title": "Predecessor variants and backward decoding",
+                "result": "pass"
+              },
+              {
+                "title": "Old shell/helper concurrent with canonical launcher exchange and old child attempting to open stores",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/legacy-run-guard.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1598,
+            "titles": [
+              {
+                "title": "Graceful, broker-denied and unknown drain evidence",
+                "result": "pass"
+              },
+              {
+                "title": "Guard adoption binds exact identities and recovers on either side of transfer",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/linux-installed-lifecycle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2796,
+            "titles": [
+              {
+                "title": "Linux normal install, update and restart unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/managed-release-staging.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 14509,
+            "titles": [
+              {
+                "title": "Release provenance, changed bytes and absent legacy declaration",
+                "result": "pass"
+              },
+              {
+                "title": "The stopped installed controller fetches and commits a qualified update without daemon IPC",
+                "result": "pass"
+              },
+              {
+                "title": "First supported update of a qualified prior build with broker denial",
+                "result": "pass"
+              },
+              {
+                "title": "Staging leaves the installed release executable and unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/managed-update-transaction.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 13104,
+            "titles": [
+              {
+                "title": "Incompatible supervisor version produces one terminal failure after reconciliation",
+                "result": "pass"
+              },
+              {
+                "title": "Terminal outcome and marker ordering, including persistence failure",
+                "result": "pass"
+              },
+              {
+                "title": "Uncertain publication with durable success versus no outcome",
+                "result": "pass"
+              },
+              {
+                "title": "Fail hello after candidate job registration before child start, remove the candidate job and restore the prior release",
+                "result": "pass"
+              },
+              {
+                "title": "Observe in-flight status throughout injected rollback, then exactly one terminal outcome after restored readiness or a durable operator-recovery decision",
+                "result": "pass"
+              },
+              {
+                "title": "Kill the controller at reservation, job registration, probation, and after outcome publication",
+                "result": "pass"
+              },
+              {
+                "title": "Relaunch supervisor after provisional release selection and verify recovery restores the old selector before uncommitted rollback, or preserves the candidate after success",
+                "result": "pass"
+              },
+              {
+                "title": "Recovery job and legacy migration",
+                "result": "pass"
+              },
+              {
+                "title": "Rollback after legacy stop but before managed readiness restores the saved service",
+                "result": "pass"
+              },
+              {
+                "title": "Startup guard transfer, candidate bootstrap failure, rollback and repeated recovery",
+                "result": "pass"
+              },
+              {
+                "title": "Rollback restores an idle job without launching and refuses unqualified RunAtLoad",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "07ba2927e",
+        "ranAt": "2026-11-13T05:43:54.435Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Trust rotation, expiry, replay and offline rollback at the fence boundary",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-release-trust.test.ts",
+                "title": "Trust rotation, expiry, replay and offline rollback at the fence boundary",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/managed-release-trust.test.ts",
+                "title": "Signed release metadata rejects wrong authority, duplicate fields, tree, order, expiry and revocation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/managed-release-trust.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 636,
+            "titles": [
+              {
+                "title": "Signed release metadata rejects wrong authority, duplicate fields, tree, order, expiry and revocation",
+                "result": "pass"
+              },
+              {
+                "title": "Trust rotation, expiry, replay and offline rollback at the fence boundary",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "4d9ae9ad2",
+        "ranAt": "2026-11-13T06:42:25.812Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Changed native code, loadable data, bindings, signature policy, injected modules, symlinks and unidentified variance fail closed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-release-inventory.test.ts",
+                "title": "Changed native code, loadable data, bindings, signature policy, injected modules, symlinks and unidentified variance fail closed",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/managed-release-mach-o.test.ts",
+                "title": "Independent same-commit macOS build equivalence and tamper rejection",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/managed-release-staging.test.ts",
+                "title": "First supported update of a qualified prior build with broker denial",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/managed-release-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 430,
+            "titles": [
+              {
+                "title": "Changed native code, loadable data, bindings, signature policy, injected modules, symlinks and unidentified variance fail closed",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/managed-release-mach-o.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 28378,
+            "titles": [
+              {
+                "title": "Independent same-commit macOS build equivalence and tamper rejection",
+                "result": "pass"
+              },
+              {
+                "title": "Independent unequal-length debug roots preserve canonical native identity and malformed offsets or codeLimit are rejected",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/managed-release-staging.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 14813,
+            "titles": [
+              {
+                "title": "Release provenance, changed bytes and absent legacy declaration",
+                "result": "pass"
+              },
+              {
+                "title": "The stopped installed controller fetches and commits a qualified update without daemon IPC",
+                "result": "pass"
+              },
+              {
+                "title": "First supported update of a qualified prior build with broker denial",
+                "result": "pass"
+              },
+              {
+                "title": "Staging leaves the installed release executable and unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "94e1a9c3e",
+        "ranAt": "2026-11-13T06:06:21.409Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Independent same-commit macOS build equivalence and tamper rejection",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-release-mach-o.test.ts",
+                "title": "Independent same-commit macOS build equivalence and tamper rejection",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Independent unequal-length debug roots preserve canonical native identity and malformed offsets or codeLimit are rejected",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-release-mach-o.test.ts",
+                "title": "Independent unequal-length debug roots preserve canonical native identity and malformed offsets or codeLimit are rejected",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/managed-release-mach-o.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 28597,
+            "titles": [
+              {
+                "title": "Independent same-commit macOS build equivalence and tamper rejection",
+                "result": "pass"
+              },
+              {
+                "title": "Independent unequal-length debug roots preserve canonical native identity and malformed offsets or codeLimit are rejected",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "b4c318b04",
+        "ranAt": "2026-11-13T06:33:51.345Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Invalid or missing authorization prevents bootstrap checkout execution, npm scripts and bridge invocation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-release-bootstrap.test.ts",
+                "title": "Invalid or missing authorization prevents bootstrap checkout execution, npm scripts and bridge invocation",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/managed-release-bootstrap.test.ts",
+                "title": "Fresh macOS install and Linux install preserve their existing build and launch routes",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/macos-upgrade-routing.test.ts",
+                "title": "Installer and updated CLI, VS Code and JetBrains route matrix",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/macos-upgrade-routing.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8888,
+            "titles": [
+              {
+                "title": "Installer and updated CLI, VS Code and JetBrains route matrix",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/managed-release-bootstrap.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3095,
+            "titles": [
+              {
+                "title": "Invalid or missing authorization prevents bootstrap checkout execution, npm scripts and bridge invocation",
+                "result": "pass"
+              },
+              {
+                "title": "Fresh macOS install and Linux install preserve their existing build and launch routes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t16",
+        "commit": "1f6e8c616",
+        "ranAt": "2026-11-13T08:40:14.429Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Only an authorized channel tag can reach checkout and npm",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-release-bootstrap.test.ts",
+                "title": "Only an authorized channel tag can reach checkout and npm",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/managed-release-bootstrap.test.ts",
+                "title": "The installation journal persists signed source floors independently per channel",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Installer and updated CLI, VS Code and JetBrains route matrix",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/macos-upgrade-routing.test.ts",
+                "title": "Installer and updated CLI, VS Code and JetBrains route matrix",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/macos-upgrade-routing.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 11490,
+            "titles": [
+              {
+                "title": "Installer and updated CLI, VS Code and JetBrains route matrix",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/managed-release-bootstrap.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7268,
+            "titles": [
+              {
+                "title": "The installation journal persists signed source floors independently per channel",
+                "result": "pass"
+              },
+              {
+                "title": "Only an authorized channel tag can reach checkout and npm",
+                "result": "pass"
+              },
+              {
+                "title": "Fresh macOS install and Linux install preserve their existing build and launch routes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t17",
+        "commit": "d97c98093",
+        "ranAt": "2026-11-13T08:53:05.594Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Changed local runtime bytes block cutover or offline rollback",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-release-staging.test.ts",
+                "title": "Changed local runtime bytes block cutover or offline rollback",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Tagged compatibility rejects a conflicting declaration and admits a known historical predecessor",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-release-staging.test.ts",
+                "title": "Tagged compatibility rejects a conflicting declaration and admits a known historical predecessor",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Running managed update IPC and stopped local managed update",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-release-staging.test.ts",
+                "title": "The stopped installed controller fetches and commits a qualified update without daemon IPC",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/managed-release-staging.test.ts",
+                "title": "First supported update of a qualified prior build with broker denial",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/managed-update-handoff.test.ts",
+                "title": "Running managed update IPC and stopped local managed update",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/managed-release-staging.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 18424,
+            "titles": [
+              {
+                "title": "Release provenance, changed bytes and absent legacy declaration",
+                "result": "pass"
+              },
+              {
+                "title": "Tagged compatibility rejects a conflicting declaration and admits a known historical predecessor",
+                "result": "pass"
+              },
+              {
+                "title": "Changed local runtime bytes block cutover or offline rollback",
+                "result": "pass"
+              },
+              {
+                "title": "The stopped installed controller fetches and commits a qualified update without daemon IPC",
+                "result": "pass"
+              },
+              {
+                "title": "First supported update of a qualified prior build with broker denial",
+                "result": "pass"
+              },
+              {
+                "title": "Staging leaves the installed release executable and unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/managed-update-handoff.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 23404,
+            "titles": [
+              {
+                "title": "Candidate job handoff records registration before child admission and keeps release selection provisional",
+                "result": "pass"
+              },
+              {
+                "title": "Running managed update IPC and stopped local managed update",
+                "result": "pass"
+              },
+              {
+                "title": "A failed candidate hello yields an exact job receipt without admitting a daemon child",
+                "result": "pass"
+              },
+              {
+                "title": "A lost or unwritten update acknowledgement keeps the detached helper behind its launch gate",
+                "result": "pass"
+              },
+              {
+                "title": "Managed update acknowledges before slow preparation and survives client disconnect",
+                "result": "pass"
+              },
+              {
+                "title": "Managed update helper waits for acknowledgement write before destructive work",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t18",
+        "commit": "d97c98093",
+        "ranAt": "2026-11-13T08:54:49.410Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Promotion requires passing source-built evidence for the exact signed head",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/source-release-promotion.test.ts",
+                "title": "Promotion requires passing source-built evidence for the exact signed head",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Published installer and both IDEs embed the same trusted verifier",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/source-release-promotion.test.ts",
+                "title": "Published installer and both IDEs embed the same trusted verifier",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/source-release-promotion.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7885,
+            "titles": [
+              {
+                "title": "Promotion requires passing source-built evidence for the exact signed head",
+                "result": "pass"
+              },
+              {
+                "title": "Published installer and both IDEs embed the same trusted verifier",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

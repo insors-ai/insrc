@@ -1,0 +1,283 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 5,
+        "contentHash": "127b102a0f37f55626fb730461838f2a9ed1a13d8c6da5b24cdb6fc6b7845ded",
+        "at": "2026-11-14T07:52:09.921Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "8a036e6436ae82ab",
+    "storyId": "s1",
+    "createdAt": "2026-11-14T07:34:20.403Z",
+    "updatedAt": "2026-11-14T07:52:09.882Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-14T06:38:49.736Z",
+    "epicSlug": "pilot-prebuilt-macos-daemon-releases",
+    "revision": 5
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "c35776117",
+        "ranAt": "2026-11-14T07:34:20.403Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Candidate layout and build-only workflow",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/package-daemon-candidate.test.ts",
+                "title": "candidate layout survives moving the runtime and rejects external links",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/package-daemon-candidate.test.ts",
+                "title": "candidate workflow accepts only the protected dispatch revision and has no test or publish jobs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/package-daemon-candidate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 522,
+            "titles": [
+              {
+                "title": "candidate layout survives moving the runtime and rejects external links",
+                "result": "pass"
+              },
+              {
+                "title": "candidate workflow accepts only the protected dispatch revision and has no test or publish jobs",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "29bd123ed",
+        "ranAt": "2026-11-14T07:38:04.569Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Bootstrap checksum and signature/target trust",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/daemon-bundle-metadata.test.ts",
+                "title": "bundle signatures bind raw bytes, signer, trust domain and supported target",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/daemon-bundle-metadata.test.ts",
+                "title": "qualification requires one passing record per required local test",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/daemon-bundle-metadata.test.ts",
+                "title": "bootstrap checksum rejects changed bytes before bootstrap execution",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/daemon-bundle-metadata.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 511,
+            "titles": [
+              {
+                "title": "bundle signatures bind raw bytes, signer, trust domain and supported target",
+                "result": "pass"
+              },
+              {
+                "title": "qualification requires one passing record per required local test",
+                "result": "pass"
+              },
+              {
+                "title": "bootstrap checksum rejects changed bytes before bootstrap execution",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "294ac4f23",
+        "ranAt": "2026-11-14T07:40:43.640Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Archive path and digest rejection",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/stage-daemon-bundle.test.ts",
+                "title": "staging authenticates archive bytes and rejects links leaving the runtime",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/stage-daemon-bundle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 840,
+            "titles": [
+              {
+                "title": "staging authenticates archive bytes and rejects links leaving the runtime",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "ca55b4090",
+        "ranAt": "2026-11-14T07:48:13.921Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Fresh activation, legacy handoff, floor and offline crash recovery",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/daemon-bundle-release-floor.test.ts",
+                "title": "a release floor permits identical retry but rejects rollback or conflicting reuse",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/fresh-managed-activation.test.ts",
+                "title": "Fresh controller activation reconciles partial selector and bootstrap",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/fresh-managed-activation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9777,
+            "titles": [
+              {
+                "title": "Fresh install and verified ordinary restart",
+                "result": "pass"
+              },
+              {
+                "title": "Fresh --no-start and later supervisor start",
+                "result": "pass"
+              },
+              {
+                "title": "Explicit fresh activation start intent and owned partial publication",
+                "result": "pass"
+              },
+              {
+                "title": "Fresh controller activation reconciles partial selector and bootstrap",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/shared/__tests__/daemon-bundle-release-floor.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 344,
+            "titles": [
+              {
+                "title": "a release floor permits identical retry but rejects rollback or conflicting reuse",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "ed6143d4c",
+        "ranAt": "2026-11-14T07:52:09.882Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Promotion controls, evidence binding and no rebuild",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/promote-daemon-candidate.test.ts",
+                "title": "promotion admits only the approved manifest, archive and local evidence",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/promote-daemon-candidate.test.ts",
+                "title": "promotion requires protected approval and never rebuilds the candidate",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/promote-daemon-candidate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 564,
+            "titles": [
+              {
+                "title": "promotion admits only the approved manifest, archive and local evidence",
+                "result": "pass"
+              },
+              {
+                "title": "promotion requires protected approval and never rebuilds the candidate",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

@@ -1,0 +1,81 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cd55ac50-57c8-4f6f-8192-9b8245bd4c55",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-13T05:36:10.118Z",
+    "epicCreatedAt": "2026-11-11T16:00:50.440Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5d5478c61a25ac8f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Verify supported native build variance",
+      "parent": {
+        "entityId": "STORY-5d5478c61a25ac8f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-5d5478c61a25ac8f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "withdrawn",
+      "revision": {
+        "number": 1,
+        "contentHash": "b0a881d185d7351a523c2de474356805afb6b5ebf11e7e24d50bdf992ffd0c82",
+        "at": "2026-11-13T05:36:10.118Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-13T05:36:10.124Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify supported native build variance",
+    "summary": "Verify signed reference equivalence for the named native add-ons.",
+    "size": "L",
+    "order": 10,
+    "acceptanceChecks": [
+      "Independent unequal-length build roots verify against the same signed reference. Changed executable data, loader relationships, layout or signature coverage fail closed."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Independent same-commit macOS build equivalence and tamper rejection"
+      },
+      {
+        "level": "integration",
+        "name": "Independent unequal-length debug roots preserve canonical native identity and malformed offsets or codeLimit are rejected"
+      }
+    ],
+    "planTaskId": "t11"
+  },
+  "citations": []
+}

@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-fbed8034-21bd-4026-9590-9db0f6e45ee8",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-13T05:36:10.158Z",
+    "epicCreatedAt": "2026-11-11T16:00:50.440Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5d5478c61a25ac8f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Reserve restored upgrades before preparation",
+      "parent": {
+        "entityId": "STORY-5d5478c61a25ac8f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-5d5478c61a25ac8f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 4"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t13",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t17",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "b7568729236e19cfa50066e33cd7e437249d6d2d3c98ddac3e5ee4140fc97962",
+        "at": "2026-11-13T08:27:50.691Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-13T05:36:10.165Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Reserve restored upgrades before preparation",
+    "summary": "Arbitrate the restored installer route before fetch or build. Keep the original reservation through qualification and cutover. Preserve managed acknowledgement and recover abandoned preflight.",
+    "size": "M",
+    "order": 11,
+    "acceptanceChecks": [
+      "Stop and Update serialize before restored preparation. Failure releases admission only after checking unchanged live state. Existing managed acknowledgement precedes verification and build."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "A restored installer reserves before source fetch or build and releases admission on preparation failure"
+      },
+      {
+        "level": "integration",
+        "name": "Managed acknowledgement precedes a preparation exceeding the client deadlines and lost reply cancels only unstarted work"
+      }
+    ],
+    "planTaskId": "t14"
+  },
+  "citations": []
+}

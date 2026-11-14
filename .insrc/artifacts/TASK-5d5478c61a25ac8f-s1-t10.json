@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f1302c0f-b1a6-4d61-a0c2-4378b76ad259",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-13T05:36:10.103Z",
+    "epicCreatedAt": "2026-11-11T16:00:50.440Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5d5478c61a25ac8f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Verify the installed runtime inventory",
+      "parent": {
+        "entityId": "STORY-5d5478c61a25ac8f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-5d5478c61a25ac8f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "withdrawn",
+      "revision": {
+        "number": 1,
+        "contentHash": "b6707d2db310537540e020390080831e0490ea1685145f8f2671b3f80124f8fd",
+        "at": "2026-11-13T05:36:10.103Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-13T05:36:10.110Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify the installed runtime inventory",
+    "summary": "Measure the complete execution inventory and produce the exact local rollback pin.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "Reject unexpected executable files, unsafe links and unsupported optional package layouts. Retain every qualified file in the raw rollback pin and revalidate it at cutover."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Changed native code, loadable data, bindings, signature policy, injected modules, symlinks and unidentified variance fail closed"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

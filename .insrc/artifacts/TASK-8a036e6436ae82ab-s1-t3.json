@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a80d77e7-1bc5-4c7e-a047-671094a81730",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-14T07:29:56.698Z",
+    "epicCreatedAt": "2026-11-14T06:38:49.736Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8a036e6436ae82ab",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Verify and stage daemon bundles",
+      "parent": {
+        "entityId": "STORY-8a036e6436ae82ab-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8a036e6436ae82ab-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8a036e6436ae82ab-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-8a036e6436ae82ab-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "bb3ec4664dc3ac7d6de56a40e0586d8638c73c260254bf6e114000a6da19b40d",
+        "at": "2026-11-14T07:29:56.703Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T07:29:56.706Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify and stage daemon bundles",
+    "summary": "Implement archive verification and extraction under a private same-volume staging directory; capture the relocated runtime pin.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Size/digest and archive path/type/permission validation reject invalid bundles without touching active state.",
+      "Staged runtime identity includes manifest, archive and relocated file fingerprints."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Archive path and digest rejection"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

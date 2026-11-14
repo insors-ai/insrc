@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-fa634eca-70a4-4bdf-811b-b3966014a127",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-13T08:27:50.806Z",
+    "epicCreatedAt": "2026-11-11T16:00:50.440Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5d5478c61a25ac8f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Verify signed Git source before checkout",
+      "parent": {
+        "entityId": "STORY-5d5478c61a25ac8f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-5d5478c61a25ac8f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 4"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c4b69f36d58d43db938f53f54e084c4c5e2107381d1b9d648a118ee490a796f4",
+        "at": "2026-11-13T08:27:50.806Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-13T08:27:50.815Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify signed Git source before checkout",
+    "summary": "Replace authorization with one pinned SSH signing key, verify the signed channel tag against exact branch head before checkout and journal the channel sequence floor. Reuse the shared installer entry point.",
+    "size": "L",
+    "order": 8,
+    "acceptanceChecks": [
+      "Only a correctly signed annotated tag for the configured channel and exact branch head authorizes checkout. Reject unsigned or malformed tags, foreign signers, wrong target, stale sequence and same-sequence substitution. Permit identical retries. Confirm denied input never reaches npm or a downloaded controller."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Only an authorized channel tag can reach checkout and npm"
+      },
+      {
+        "level": "integration",
+        "name": "Installer and updated CLI, VS Code and JetBrains route matrix"
+      }
+    ],
+    "planTaskId": "t16"
+  },
+  "citations": []
+}

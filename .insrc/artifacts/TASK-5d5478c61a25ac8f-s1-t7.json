@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-720931d4-9e3e-4341-aba9-bad5ec2af40a",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T17:01:18.415Z",
+    "epicCreatedAt": "2026-11-11T16:00:50.440Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5d5478c61a25ac8f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Wire normal IDE first-upgrade actions",
+      "parent": {
+        "entityId": "STORY-5d5478c61a25ac8f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-5d5478c61a25ac8f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 4"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "48754076bcae4d9d01c5036ade32721bc8004659c901230d69c33697f9f13d7b",
+        "at": "2026-11-11T17:01:18.415Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T17:01:18.427Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire normal IDE first-upgrade actions",
+    "summary": "Route VS Code and JetBrains installed update actions through the shared installer bridge on unmanaged macOS.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "Updated IDE lifecycle and freshness flows stage the migration before legacy shutdown and report verified outcomes.",
+      "Older callers can use the current normal installer as the first-upgrade entry without manual launchd or file edits. Managed clients keep the existing IPC outcome contract."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Installer and updated CLI, VS Code and JetBrains route matrix"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

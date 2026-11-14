@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4ff9e10a-cce5-4575-a4cc-d3915e7e102d",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-14T07:29:56.729Z",
+    "epicCreatedAt": "2026-11-14T06:38:49.736Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8a036e6436ae82ab",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Promote the exact qualified candidate",
+      "parent": {
+        "entityId": "STORY-8a036e6436ae82ab-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8a036e6436ae82ab-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8a036e6436ae82ab-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "abe2d3adc9a881df727446087ac9586198aa9c122fb4f7b622a7a0775ecc4fcb",
+        "at": "2026-11-14T07:29:56.734Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T07:29:56.739Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Promote the exact qualified candidate",
+    "summary": "Add protected promotion that signs the verified manifest and publishes the same asset as an opt-in prerelease; document recovery and key rotation.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "Promotion binds the approved protected revision, rechecks evidence/identity and rejects changed or expired assets; no rebuild or hosted tests.",
+      "Production signs identical manifest bytes; no default installer change or publication during implementation."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Promotion controls, evidence binding and no rebuild"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

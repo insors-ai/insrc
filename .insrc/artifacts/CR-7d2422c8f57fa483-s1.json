@@ -1,0 +1,5353 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "store-4ab1f79c-5733-47db-87c4-67604918db30",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T19:10:06.427Z",
+    "epicCreatedAt": "2026-11-11T14:26:38.657Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 2,
+    "epicHash": "7d2422c8f57fa483",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicSlug": "code-review-reuse-refused-when-only",
+    "standalone": true,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 2,
+        "contentHash": "5140f53fc691ea2239599ecf3a6969910e3cf9cccc777b53b584dad4c0875521",
+        "at": "2026-11-11T19:34:02.595Z",
+        "by": {
+          "id": "insrc:code-review",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 2
+  },
+  "body": {
+    "kind": "code-review",
+    "format": "task-based",
+    "storyId": "s1",
+    "status": "changes_requested",
+    "reviews": [
+      {
+        "reviewId": "reuse-identity-7d24-s1",
+        "attempt": 1,
+        "storyId": "s1",
+        "reviewer": "daemon",
+        "status": "changes_requested",
+        "finalScopeIdentity": "d49022d251a3324357ca0f87f529cb1de47011c2e8f5994eee2074ccffb786df",
+        "attributionIdentity": "111906a58733b5bd9b78d95f9d805fc0dad854f51f8912326dcb32636b07ed16",
+        "taskScopeIdentities": [
+          {
+            "taskId": "t1",
+            "identity": "c3a29f1bff358f098b00996f9a417db42bc7831c331927a8e54fc1ee6c4196a6"
+          },
+          {
+            "taskId": "t2",
+            "identity": "bcc2979c26bd1ec7b7313b296109740ebdae5eddbd196f219624a4686f9c4ea3"
+          },
+          {
+            "taskId": "t3",
+            "identity": "7f47b21fcf8d018ea4ac967d0351e4511622fa9567293f6ae730fa95d9ca6dd7"
+          }
+        ],
+        "scope": {
+          "reviewRevision": "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65",
+          "finalScope": {
+            "revision": "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65",
+            "identity": "d49022d251a3324357ca0f87f529cb1de47011c2e8f5994eee2074ccffb786df",
+            "entries": [
+              {
+                "originChangeIndex": 0,
+                "path": "docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/LLD-SELF-REVIEW.md",
+                "blobOid": "a62142f5657e2e96aff1c659d84ad4483f8fe20e",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      41,
+                      51
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 1,
+                "path": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                "blobOid": "95789c1dc19fe436f27f91eed9402f67ab982eaa",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      3
+                    ]
+                  },
+                  {
+                    "after": [
+                      17,
+                      17
+                    ]
+                  },
+                  {
+                    "after": [
+                      21,
+                      25
+                    ]
+                  },
+                  {
+                    "after": [
+                      28,
+                      36
+                    ]
+                  },
+                  {
+                    "after": [
+                      39,
+                      40
+                    ]
+                  },
+                  {
+                    "after": [
+                      42,
+                      50
+                    ]
+                  },
+                  {
+                    "after": [
+                      52,
+                      56
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 2,
+                "path": "src/workflow/code-review/task-review/attribution-binding.ts",
+                "blobOid": "550afa277c99047af0c0ba4e1b6bf7218fe61e45",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      72,
+                      72
+                    ]
+                  },
+                  {
+                    "after": [
+                      76,
+                      76
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 3,
+                "path": "src/workflow/code-review/task-review/contracts.ts",
+                "blobOid": "ae2aec28889c796d8d3165770eb119143b78d853",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      112,
+                      112
+                    ]
+                  },
+                  {
+                    "after": [
+                      116,
+                      117
+                    ]
+                  },
+                  {
+                    "after": [
+                      132,
+                      132
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 4,
+                "path": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                "blobOid": "95789c1dc19fe436f27f91eed9402f67ab982eaa",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      19,
+                      20
+                    ]
+                  },
+                  {
+                    "after": [
+                      57,
+                      120
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 5,
+                "path": "src/workflow/code-review/task-review/attribution-binding.ts",
+                "blobOid": "550afa277c99047af0c0ba4e1b6bf7218fe61e45",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      7,
+                      7
+                    ]
+                  },
+                  {
+                    "after": [
+                      23,
+                      26
+                    ]
+                  },
+                  {
+                    "after": [
+                      29,
+                      29
+                    ]
+                  },
+                  {
+                    "after": [
+                      32,
+                      32
+                    ]
+                  },
+                  {
+                    "after": [
+                      35,
+                      36
+                    ]
+                  },
+                  {
+                    "after": [
+                      42,
+                      43
+                    ]
+                  },
+                  {
+                    "after": [
+                      51,
+                      51
+                    ]
+                  },
+                  {
+                    "after": [
+                      53,
+                      54
+                    ]
+                  },
+                  {
+                    "after": [
+                      60,
+                      60
+                    ]
+                  },
+                  {
+                    "after": [
+                      62,
+                      62
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 6,
+                "path": "src/workflow/code-review/task-review/__tests__/admission-history.test.ts",
+                "blobOid": "0eb79a71fb7b5bcd44c8afb17a934936f530dee3",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      46,
+                      46
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 7,
+                "path": "src/workflow/code-review/task-review/__tests__/admission.test.ts",
+                "blobOid": "062013768c49106f64dde2fb0633aff25b7ab4bc",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      59,
+                      59
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 8,
+                "path": "src/workflow/code-review/task-review/__tests__/attribution-scope.test.ts",
+                "blobOid": "a4965939f8d0bf5c4ed451fce08735a2855cb707",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      26,
+                      26
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 9,
+                "path": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+                "blobOid": "4fefa25ea6a4c21405649ca9b39d1ac532bb0807",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      21,
+                      21
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 10,
+                "path": "src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts",
+                "blobOid": "2cab28393060575b8aeb72f841fb388fa4c2ac48",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      52,
+                      52
+                    ]
+                  },
+                  {
+                    "after": [
+                      93,
+                      93
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 11,
+                "path": "src/workflow/code-review/task-review/__tests__/publication-fixture.ts",
+                "blobOid": "8ecde4f6c2a07a1cbff1a7355cffa90e9b10741f",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      43,
+                      43
+                    ]
+                  },
+                  {
+                    "after": [
+                      48,
+                      48
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 12,
+                "path": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                "blobOid": "95789c1dc19fe436f27f91eed9402f67ab982eaa",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      4,
+                      16
+                    ]
+                  },
+                  {
+                    "after": [
+                      18,
+                      18
+                    ]
+                  },
+                  {
+                    "after": [
+                      26,
+                      27
+                    ]
+                  },
+                  {
+                    "after": [
+                      37,
+                      38
+                    ]
+                  },
+                  {
+                    "after": [
+                      41,
+                      41
+                    ]
+                  },
+                  {
+                    "after": [
+                      51,
+                      51
+                    ]
+                  },
+                  {
+                    "after": [
+                      121,
+                      276
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 13,
+                "path": "src/workflow/code-review/task-review/__tests__/selected-code.test.ts",
+                "blobOid": "e0d313239d00cbf4712cd4fd9bef22977f97b88f",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      71,
+                      71
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 14,
+                "path": "src/workflow/code-review/task-review/__tests__/transition.test.ts",
+                "blobOid": "233e90c059b71a80f2c5cc933d5d7f243421cf89",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      41,
+                      41
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 15,
+                "path": "src/workflow/code-review/task-review/assessment.ts",
+                "blobOid": "ead9a040692005abc93275f7e9ad01c1fa5ab9c2",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      12,
+                      13
+                    ]
+                  },
+                  {
+                    "after": [
+                      91,
+                      91
+                    ]
+                  },
+                  {
+                    "after": [
+                      95,
+                      95
+                    ]
+                  },
+                  {
+                    "after": [
+                      98,
+                      98
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 16,
+                "path": "src/workflow/code-review/task-review/attribution-binding.ts",
+                "blobOid": "550afa277c99047af0c0ba4e1b6bf7218fe61e45",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      6,
+                      6
+                    ]
+                  },
+                  {
+                    "after": [
+                      115,
+                      121
+                    ]
+                  },
+                  {
+                    "after": [
+                      127,
+                      142
+                    ]
+                  },
+                  {
+                    "after": [
+                      151,
+                      152
+                    ]
+                  },
+                  {
+                    "after": [
+                      155,
+                      156
+                    ]
+                  },
+                  {
+                    "after": [
+                      162,
+                      164
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 17,
+                "path": "src/workflow/code-review/task-review/__tests__/publication-fixture.ts",
+                "blobOid": "8ecde4f6c2a07a1cbff1a7355cffa90e9b10741f",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      3,
+                      3
+                    ]
+                  },
+                  {
+                    "after": [
+                      20,
+                      21
+                    ]
+                  }
+                ]
+              }
+            ],
+            "dispositions": [
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    41,
+                    51
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      41,
+                      51
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    1,
+                    3
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      1,
+                      3
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    4,
+                    5
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 12,
+                    "segmentIndex": 0
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    6,
+                    6
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      17,
+                      17
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    7,
+                    7
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 4,
+                    "segmentIndex": 1
+                  },
+                  {
+                    "changeIndex": 12,
+                    "segmentIndex": 1
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    8,
+                    12
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      21,
+                      25
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    13,
+                    13
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 12,
+                    "segmentIndex": 2
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    14,
+                    22
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      28,
+                      36
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    23,
+                    23
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 12,
+                    "segmentIndex": 3
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    24,
+                    25
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      39,
+                      40
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    26,
+                    26
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 12,
+                    "segmentIndex": 4
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    27,
+                    35
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      42,
+                      50
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    36,
+                    36
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 12,
+                    "segmentIndex": 5
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    37,
+                    41
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      52,
+                      56
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    66,
+                    66
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      72,
+                      72
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    70,
+                    70
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      76,
+                      76
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    112,
+                    112
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      112,
+                      112
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    116,
+                    117
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      116,
+                      117
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    132,
+                    132
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      132,
+                      132
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    5,
+                    5
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 12,
+                    "segmentIndex": 0
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    8,
+                    9
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      19,
+                      20
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    44,
+                    107
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      57,
+                      120
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    7,
+                    7
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      7,
+                      7
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    23,
+                    26
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      23,
+                      26
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    29,
+                    29
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      29,
+                      29
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    32,
+                    32
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      32,
+                      32
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    35,
+                    36
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      35,
+                      36
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 5
+                },
+                "sourcePart": {
+                  "after": [
+                    42,
+                    43
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      42,
+                      43
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 6
+                },
+                "sourcePart": {
+                  "after": [
+                    51,
+                    51
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      51,
+                      51
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 7
+                },
+                "sourcePart": {
+                  "after": [
+                    53,
+                    54
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      53,
+                      54
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 8
+                },
+                "sourcePart": {
+                  "after": [
+                    60,
+                    60
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      60,
+                      60
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 9
+                },
+                "sourcePart": {
+                  "after": [
+                    62,
+                    62
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      62,
+                      62
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 10
+                },
+                "sourcePart": {
+                  "after": [
+                    123,
+                    123
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 16,
+                    "segmentIndex": 2
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 6,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    46,
+                    46
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      46,
+                      46
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 7,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    59,
+                    59
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      59,
+                      59
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    26,
+                    26
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      26,
+                      26
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    21,
+                    21
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      21,
+                      21
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 10,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    52,
+                    52
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      52,
+                      52
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 10,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    93,
+                    93
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      93,
+                      93
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 11,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    42,
+                    42
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      43,
+                      43
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 11,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    47,
+                    47
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      48,
+                      48
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 12,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    4,
+                    16
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      4,
+                      16
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 12,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    18,
+                    18
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      18,
+                      18
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 12,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    26,
+                    27
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      26,
+                      27
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 12,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    37,
+                    38
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      37,
+                      38
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 12,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    41,
+                    41
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      41,
+                      41
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 12,
+                  "segmentIndex": 5
+                },
+                "sourcePart": {
+                  "after": [
+                    51,
+                    51
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      51,
+                      51
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 12,
+                  "segmentIndex": 6
+                },
+                "sourcePart": {
+                  "after": [
+                    121,
+                    276
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      121,
+                      276
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 13,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    71,
+                    71
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      71,
+                      71
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 14,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    41,
+                    41
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      41,
+                      41
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 15,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    12,
+                    13
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      12,
+                      13
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 15,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    91,
+                    91
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      91,
+                      91
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 15,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    95,
+                    95
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      95,
+                      95
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 15,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    98,
+                    98
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      98,
+                      98
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 16,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    6,
+                    6
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      6,
+                      6
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 16,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    115,
+                    121
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      115,
+                      121
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 16,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    127,
+                    142
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      127,
+                      142
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 16,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    151,
+                    152
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      151,
+                      152
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 16,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    155,
+                    156
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      155,
+                      156
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 16,
+                  "segmentIndex": 5
+                },
+                "sourcePart": {
+                  "after": [
+                    162,
+                    164
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      162,
+                      164
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 17,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    3,
+                    3
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      3,
+                      3
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 17,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    20,
+                    21
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      20,
+                      21
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              }
+            ],
+            "selectedTaskIds": [
+              "t1",
+              "t2",
+              "t3"
+            ],
+            "testCount": 10,
+            "attributionIdentity": "111906a58733b5bd9b78d95f9d805fc0dad854f51f8912326dcb32636b07ed16",
+            "attributionState": "accepted",
+            "tasks": [
+              {
+                "taskId": "t1",
+                "changeIndexes": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11,
+                  12,
+                  13,
+                  14
+                ],
+                "testIndexes": [
+                  0,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9
+                ],
+                "decision": {
+                  "action": "initial"
+                },
+                "identity": "c3a29f1bff358f098b00996f9a417db42bc7831c331927a8e54fc1ee6c4196a6"
+              },
+              {
+                "taskId": "t2",
+                "changeIndexes": [
+                  0,
+                  4,
+                  5,
+                  12,
+                  16
+                ],
+                "testIndexes": [
+                  0,
+                  1
+                ],
+                "decision": {
+                  "action": "initial"
+                },
+                "identity": "bcc2979c26bd1ec7b7313b296109740ebdae5eddbd196f219624a4686f9c4ea3"
+              },
+              {
+                "taskId": "t3",
+                "changeIndexes": [
+                  0,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11,
+                  12,
+                  13,
+                  14,
+                  15,
+                  16,
+                  17
+                ],
+                "testIndexes": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9
+                ],
+                "decision": {
+                  "action": "initial"
+                },
+                "identity": "7f47b21fcf8d018ea4ac967d0351e4511622fa9567293f6ae730fa95d9ca6dd7"
+              }
+            ]
+          },
+          "storyId": "s1",
+          "documents": {
+            "lld": {
+              "path": "docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/LLD.md",
+              "commit": "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65"
+            },
+            "plan": {
+              "path": "docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/PLAN.md",
+              "commit": "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "d53a356131bee6b447475ab72a8cd5d0105baefa",
+              "parent": "dfe1551ba45aa10d74bb77a052af77e4cee8d409",
+              "files": [
+                {
+                  "path": "docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/LLD-SELF-REVIEW.md",
+                  "segments": [
+                    {
+                      "after": [
+                        41,
+                        51
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "453462b94ea3ad6ce3c561e482d76cc3a6f2c599",
+              "parent": "a74e307d490724f76e153d6e082f4678b3ac603c",
+              "files": [
+                {
+                  "path": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        41
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/attribution-binding.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        66,
+                        66
+                      ]
+                    },
+                    {
+                      "after": [
+                        70,
+                        70
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/contracts.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        112,
+                        112
+                      ]
+                    },
+                    {
+                      "after": [
+                        116,
+                        117
+                      ]
+                    },
+                    {
+                      "after": [
+                        132,
+                        132
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "aeffb3a7a4f4e4f0040128801b739f9f5febb28d",
+              "parent": "453462b94ea3ad6ce3c561e482d76cc3a6f2c599",
+              "files": [
+                {
+                  "path": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        5,
+                        5
+                      ]
+                    },
+                    {
+                      "after": [
+                        8,
+                        9
+                      ]
+                    },
+                    {
+                      "after": [
+                        44,
+                        107
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/attribution-binding.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        7,
+                        7
+                      ]
+                    },
+                    {
+                      "after": [
+                        23,
+                        26
+                      ]
+                    },
+                    {
+                      "after": [
+                        29,
+                        29
+                      ]
+                    },
+                    {
+                      "after": [
+                        32,
+                        32
+                      ]
+                    },
+                    {
+                      "after": [
+                        35,
+                        36
+                      ]
+                    },
+                    {
+                      "after": [
+                        42,
+                        43
+                      ]
+                    },
+                    {
+                      "after": [
+                        51,
+                        51
+                      ]
+                    },
+                    {
+                      "after": [
+                        53,
+                        54
+                      ]
+                    },
+                    {
+                      "after": [
+                        60,
+                        60
+                      ]
+                    },
+                    {
+                      "after": [
+                        62,
+                        62
+                      ]
+                    },
+                    {
+                      "after": [
+                        123,
+                        123
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "c34ae2cd9bf1434d017e5e8545b39adcee623a65",
+              "parent": "1ca6b7d5d092533571734e324c40e14b0c07e9ae",
+              "files": [
+                {
+                  "path": "src/workflow/code-review/task-review/__tests__/admission-history.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        46,
+                        46
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/__tests__/admission.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        59,
+                        59
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/__tests__/attribution-scope.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        26,
+                        26
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        21,
+                        21
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        52,
+                        52
+                      ]
+                    },
+                    {
+                      "after": [
+                        93,
+                        93
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/__tests__/publication-fixture.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        42,
+                        42
+                      ]
+                    },
+                    {
+                      "after": [
+                        47,
+                        47
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        4,
+                        16
+                      ]
+                    },
+                    {
+                      "after": [
+                        18,
+                        18
+                      ]
+                    },
+                    {
+                      "after": [
+                        26,
+                        27
+                      ]
+                    },
+                    {
+                      "after": [
+                        37,
+                        38
+                      ]
+                    },
+                    {
+                      "after": [
+                        41,
+                        41
+                      ]
+                    },
+                    {
+                      "after": [
+                        51,
+                        51
+                      ]
+                    },
+                    {
+                      "after": [
+                        121,
+                        276
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/__tests__/selected-code.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        71,
+                        71
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/__tests__/transition.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        41,
+                        41
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/assessment.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        12,
+                        13
+                      ]
+                    },
+                    {
+                      "after": [
+                        91,
+                        91
+                      ]
+                    },
+                    {
+                      "after": [
+                        95,
+                        95
+                      ]
+                    },
+                    {
+                      "after": [
+                        98,
+                        98
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/attribution-binding.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        6,
+                        6
+                      ]
+                    },
+                    {
+                      "after": [
+                        115,
+                        121
+                      ]
+                    },
+                    {
+                      "after": [
+                        127,
+                        142
+                      ]
+                    },
+                    {
+                      "after": [
+                        151,
+                        152
+                      ]
+                    },
+                    {
+                      "after": [
+                        155,
+                        156
+                      ]
+                    },
+                    {
+                      "after": [
+                        162,
+                        164
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "9acbf7d3d3cfa0530175919f4de9d7f17ad5c11a",
+              "parent": "1b31e2ae784dd2c0da7387ddf45fa8fb3999c399",
+              "files": [
+                {
+                  "path": "src/workflow/code-review/task-review/__tests__/publication-fixture.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        3,
+                        3
+                      ]
+                    },
+                    {
+                      "after": [
+                        20,
+                        21
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "t1",
+            "status": "passed",
+            "summary": "Inspected all submitted changed segments against the pinned LLD, Plan and acceptance checks. No blocking defects found within the selected finding scope.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Reviewed test bodies and assertions. Coverage checks acceptance of v2 and absent format fields, rejection of unsupported values, existing rejection messages for unpinned/pending/failed attempts, and saved v1 validation and rebinding. Inspected all submitted fixture changes and relevant regression assertions. This assessment establishes coverage review completeness, not test execution.",
+              "evidenceReferences": [
+                "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/compatibility.test.ts",
+                "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+                "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/PLAN.md"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: Tests, integration checks, typecheck and build were not run. Builder-reported passes were not treated as reviewer executions."
+            ],
+            "inspectedReferences": [
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/LLD.md",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/PLAN.md",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/LLD-SELF-REVIEW.md",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/TESTS.md",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/contracts.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/attribution-binding.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/assessment.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/publication-fixture.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/admission-history.test.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/admission.test.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/attribution-scope.test.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/selected-code.test.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/transition.test.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/compatibility.test.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts"
+            ],
+            "executedTests": []
+          },
+          {
+            "taskId": "t2",
+            "status": "passed",
+            "summary": "Inspected all submitted changed segments against the pinned LLD, Plan and acceptance checks. No material correctness, compatibility, naming or coverage defects found.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Reviewed both submitted test files' bodies and assertions. Coverage demonstrates pinned v1 identities, v2 provenance invariance and behavioral sensitivity, no-test identities, format-aware diagnostics, reuse and migration behavior, refusal aggregation, and publication validation. Inspected the intermediate t2 implementation to confirm it retained v1 reuse behavior before t3. Verification describes coverage inspection, not test execution.",
+              "evidenceReferences": [
+                "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+                "aeffb3a7a4f4e4f0040128801b739f9f5febb28d:src/workflow/code-review/task-review/attribution-binding.ts",
+                "453462b94ea3ad6ce3c561e482d76cc3a6f2c599:src/workflow/code-review/task-review/attribution-binding.ts"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: No tests, integration checks, typechecks or builds were run by this reviewer. Submitted pass results are builder-reported; TESTS.md records earlier task-stage revisions and does not independently establish execution at the final pin."
+            ],
+            "inspectedReferences": [
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/LLD.md",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/PLAN.md",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/LLD-SELF-REVIEW.md",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/TESTS.md",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/attribution-binding.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+              "aeffb3a7a4f4e4f0040128801b739f9f5febb28d:src/workflow/code-review/task-review/attribution-binding.ts",
+              "453462b94ea3ad6ce3c561e482d76cc3a6f2c599:src/workflow/code-review/task-review/attribution-binding.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/assessment.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/contracts.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/admission.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/record.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/attribution-repair.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/publication-fixture.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/history-fixture.ts"
+            ],
+            "executedTests": []
+          },
+          {
+            "taskId": "t3",
+            "status": "changes_requested",
+            "summary": "Completed inspection of all submitted segments, requirements, design, acceptance checks, and relevant test assertions. The required reuse and compatibility paths are covered, but aggregate feedback can truncate refused task IDs contrary to the LLD.",
+            "findings": [
+              {
+                "severity": "MED",
+                "location": "src/workflow/code-review/task-review/attribution-binding.ts:138",
+                "message": "Preserve the complete refused-task list when bounded feedback overflows.",
+                "rationale": "The 8192-byte truncation applies to the entire message, including the task-ID prefix. For example, forty valid 241-character t-prefixed numeric IDs already exceed that bound before any refusal detail. Later IDs disappear, so reviewers may need additional rejected submissions to discover every affected task. This contradicts the LLD's explicit overflow requirement that every refused ID survive. The three-short-ID test does not exercise this boundary. Provide complete actionable task identification within the feedback contract and add an overflow assertion.",
+                "evidenceReferences": [
+                  "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/attribution-binding.ts",
+                  "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/shared/review-diagnostics.ts",
+                  "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/runners/plan/schemas.ts",
+                  "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                  "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/LLD.md"
+                ]
+              }
+            ],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Inspected bodies and assertions in all ten supplied test files and the changed fixture. Coverage demonstrates one-task and three-task provenance-only reuse, real test changes and case ordering, cross-format refusal with one rejection count, immediate malformed/foreign-source rejection, saved v1 rebinding including v1 reuse, and published v2 identity validation. Existing attribution-binding and compatibility files are unchanged from the pre-story commit. All acceptance checks were assessed. The aggregate-message overflow coverage defect is reported above.",
+              "evidenceReferences": [
+                "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+                "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/compatibility.test.ts",
+                "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/admission-history.test.ts",
+                "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/admission.test.ts",
+                "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/attribution-scope.test.ts",
+                "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+                "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts",
+                "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/selected-code.test.ts",
+                "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/transition.test.ts"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: This reviewer did not run tests, integration checks, typechecks, or builds. Supplied reports claim passing runs at 38e986bfa2e3; the inspected TESTS.md records earlier gate revisions. Neither was treated as reviewer execution."
+            ],
+            "inspectedReferences": [
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/ISSUE.md",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/LLD.md",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/PLAN.md",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/LLD-SELF-REVIEW.md",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/TESTS.md",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/assessment.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/attribution-binding.ts",
+              "d53a356131bee6b447475ab72a8cd5d0105baefa:src/workflow/code-review/task-review/attribution-binding.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/contracts.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/admission.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/record.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/packet.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/attribution-repair.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/shared/review-diagnostics.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/runners/plan/schemas.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/tasks/pure.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/config/review.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/publication-fixture.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/history-fixture.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/compatibility.test.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/admission-history.test.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/admission.test.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/attribution-scope.test.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/selected-code.test.ts",
+              "38e986bfa2e34df46e468fc8a1f7dca7b06e3b65:src/workflow/code-review/task-review/__tests__/transition.test.ts"
+            ],
+            "executedTests": []
+          }
+        ],
+        "summary": "3 selected task assessment(s): changes_requested.\nNative output diagnostics: [{\"phase\":\"attribution\",\"provider\":\"codex\",\"resolved\":true,\"errors\":[{\"code\":\"HOST_VALIDATION_ERROR\",\"field\":\"attribution\",\"correction\":\"Correct the host-rejected review field before resubmitting.\",\"occurrences\":1}]}]",
+        "completedAt": "2026-11-11T19:10:03.219Z",
+        "buildFingerprint": "7271792fdaa128d1a0e9eab128719bafbece8dd4b7631e2f1efa96cbad10debd"
+      },
+      {
+        "reviewId": "reuse-identity-7d24-s1-r2",
+        "attempt": 1,
+        "storyId": "s1",
+        "reviewer": "daemon",
+        "status": "passed",
+        "finalScopeIdentity": "accc489c66fd667d8623c6dd75e71ece5499001b90b23bd3fb2c573f0eba1ddb",
+        "attributionIdentity": "64750464289a05183bb21a48aa820ac24a0cb944b857c8c8f63f1e92c2b4aeac",
+        "taskScopeIdentities": [
+          {
+            "taskId": "t1",
+            "identity": "1b4e50019bdaeeca0d623ead071c06010ff1e344b2d91399b136784e73998b3f"
+          },
+          {
+            "taskId": "t2",
+            "identity": "b8fd963d32c8cf3ccd88211efc1893987a8b5ec4b2edfe103e24e720e8683703"
+          },
+          {
+            "taskId": "t3",
+            "identity": "f24c33f9a4a49a6ee15d96852652e68049c9365c0c5c86075a7fa40f1cea0c85"
+          }
+        ],
+        "scope": {
+          "reviewRevision": "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc",
+          "finalScope": {
+            "revision": "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc",
+            "identity": "accc489c66fd667d8623c6dd75e71ece5499001b90b23bd3fb2c573f0eba1ddb",
+            "entries": [
+              {
+                "originChangeIndex": 0,
+                "path": "docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/LLD-SELF-REVIEW.md",
+                "blobOid": "a62142f5657e2e96aff1c659d84ad4483f8fe20e",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      41,
+                      51
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 1,
+                "path": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                "blobOid": "20c39c400b25d89abed8ef260c845d93e239a6ea",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      3
+                    ]
+                  },
+                  {
+                    "after": [
+                      17,
+                      17
+                    ]
+                  },
+                  {
+                    "after": [
+                      21,
+                      25
+                    ]
+                  },
+                  {
+                    "after": [
+                      28,
+                      36
+                    ]
+                  },
+                  {
+                    "after": [
+                      39,
+                      40
+                    ]
+                  },
+                  {
+                    "after": [
+                      42,
+                      50
+                    ]
+                  },
+                  {
+                    "after": [
+                      52,
+                      56
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 2,
+                "path": "src/workflow/code-review/task-review/attribution-binding.ts",
+                "blobOid": "af7128493f774f647d5ffcfef671f9fa14721b99",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      72,
+                      72
+                    ]
+                  },
+                  {
+                    "after": [
+                      76,
+                      76
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 3,
+                "path": "src/workflow/code-review/task-review/contracts.ts",
+                "blobOid": "ae2aec28889c796d8d3165770eb119143b78d853",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      112,
+                      112
+                    ]
+                  },
+                  {
+                    "after": [
+                      116,
+                      117
+                    ]
+                  },
+                  {
+                    "after": [
+                      132,
+                      132
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 4,
+                "path": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                "blobOid": "20c39c400b25d89abed8ef260c845d93e239a6ea",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      19,
+                      20
+                    ]
+                  },
+                  {
+                    "after": [
+                      57,
+                      120
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 5,
+                "path": "src/workflow/code-review/task-review/attribution-binding.ts",
+                "blobOid": "af7128493f774f647d5ffcfef671f9fa14721b99",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      7,
+                      7
+                    ]
+                  },
+                  {
+                    "after": [
+                      23,
+                      26
+                    ]
+                  },
+                  {
+                    "after": [
+                      29,
+                      29
+                    ]
+                  },
+                  {
+                    "after": [
+                      32,
+                      32
+                    ]
+                  },
+                  {
+                    "after": [
+                      35,
+                      36
+                    ]
+                  },
+                  {
+                    "after": [
+                      42,
+                      43
+                    ]
+                  },
+                  {
+                    "after": [
+                      51,
+                      51
+                    ]
+                  },
+                  {
+                    "after": [
+                      53,
+                      54
+                    ]
+                  },
+                  {
+                    "after": [
+                      60,
+                      60
+                    ]
+                  },
+                  {
+                    "after": [
+                      62,
+                      62
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 6,
+                "path": "src/workflow/code-review/task-review/__tests__/admission-history.test.ts",
+                "blobOid": "0eb79a71fb7b5bcd44c8afb17a934936f530dee3",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      46,
+                      46
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 7,
+                "path": "src/workflow/code-review/task-review/__tests__/admission.test.ts",
+                "blobOid": "062013768c49106f64dde2fb0633aff25b7ab4bc",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      59,
+                      59
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 8,
+                "path": "src/workflow/code-review/task-review/__tests__/attribution-scope.test.ts",
+                "blobOid": "a4965939f8d0bf5c4ed451fce08735a2855cb707",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      26,
+                      26
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 9,
+                "path": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+                "blobOid": "4fefa25ea6a4c21405649ca9b39d1ac532bb0807",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      21,
+                      21
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 10,
+                "path": "src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts",
+                "blobOid": "2cab28393060575b8aeb72f841fb388fa4c2ac48",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      52,
+                      52
+                    ]
+                  },
+                  {
+                    "after": [
+                      93,
+                      93
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 11,
+                "path": "src/workflow/code-review/task-review/__tests__/publication-fixture.ts",
+                "blobOid": "8ecde4f6c2a07a1cbff1a7355cffa90e9b10741f",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      43,
+                      43
+                    ]
+                  },
+                  {
+                    "after": [
+                      48,
+                      48
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 12,
+                "path": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                "blobOid": "20c39c400b25d89abed8ef260c845d93e239a6ea",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      4,
+                      7
+                    ]
+                  },
+                  {
+                    "after": [
+                      9,
+                      16
+                    ]
+                  },
+                  {
+                    "after": [
+                      18,
+                      18
+                    ]
+                  },
+                  {
+                    "after": [
+                      26,
+                      27
+                    ]
+                  },
+                  {
+                    "after": [
+                      37,
+                      38
+                    ]
+                  },
+                  {
+                    "after": [
+                      41,
+                      41
+                    ]
+                  },
+                  {
+                    "after": [
+                      51,
+                      51
+                    ]
+                  },
+                  {
+                    "after": [
+                      121,
+                      276
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 13,
+                "path": "src/workflow/code-review/task-review/__tests__/selected-code.test.ts",
+                "blobOid": "e0d313239d00cbf4712cd4fd9bef22977f97b88f",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      71,
+                      71
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 14,
+                "path": "src/workflow/code-review/task-review/__tests__/transition.test.ts",
+                "blobOid": "233e90c059b71a80f2c5cc933d5d7f243421cf89",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      41,
+                      41
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 15,
+                "path": "src/workflow/code-review/task-review/assessment.ts",
+                "blobOid": "ead9a040692005abc93275f7e9ad01c1fa5ab9c2",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      12,
+                      13
+                    ]
+                  },
+                  {
+                    "after": [
+                      91,
+                      91
+                    ]
+                  },
+                  {
+                    "after": [
+                      95,
+                      95
+                    ]
+                  },
+                  {
+                    "after": [
+                      98,
+                      98
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 16,
+                "path": "src/workflow/code-review/task-review/attribution-binding.ts",
+                "blobOid": "af7128493f774f647d5ffcfef671f9fa14721b99",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      6,
+                      6
+                    ]
+                  },
+                  {
+                    "after": [
+                      115,
+                      121
+                    ]
+                  },
+                  {
+                    "after": [
+                      127,
+                      137
+                    ]
+                  },
+                  {
+                    "after": [
+                      152,
+                      155
+                    ]
+                  },
+                  {
+                    "after": [
+                      164,
+                      165
+                    ]
+                  },
+                  {
+                    "after": [
+                      168,
+                      169
+                    ]
+                  },
+                  {
+                    "after": [
+                      175,
+                      177
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 17,
+                "path": "src/workflow/code-review/task-review/__tests__/publication-fixture.ts",
+                "blobOid": "8ecde4f6c2a07a1cbff1a7355cffa90e9b10741f",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      3,
+                      3
+                    ]
+                  },
+                  {
+                    "after": [
+                      20,
+                      21
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 18,
+                "path": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                "blobOid": "20c39c400b25d89abed8ef260c845d93e239a6ea",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      8,
+                      8
+                    ]
+                  },
+                  {
+                    "after": [
+                      277,
+                      293
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 19,
+                "path": "src/workflow/code-review/task-review/attribution-binding.ts",
+                "blobOid": "af7128493f774f647d5ffcfef671f9fa14721b99",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      138,
+                      151
+                    ]
+                  }
+                ]
+              }
+            ],
+            "dispositions": [
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    41,
+                    51
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      41,
+                      51
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    1,
+                    3
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      1,
+                      3
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    4,
+                    5
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 12,
+                    "segmentIndex": 0
+                  },
+                  {
+                    "changeIndex": 18,
+                    "segmentIndex": 0
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    6,
+                    6
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      17,
+                      17
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    7,
+                    7
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 4,
+                    "segmentIndex": 1
+                  },
+                  {
+                    "changeIndex": 12,
+                    "segmentIndex": 1
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    8,
+                    12
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      21,
+                      25
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    13,
+                    13
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 12,
+                    "segmentIndex": 2
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    14,
+                    22
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      28,
+                      36
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    23,
+                    23
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 12,
+                    "segmentIndex": 3
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    24,
+                    25
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      39,
+                      40
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    26,
+                    26
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 12,
+                    "segmentIndex": 4
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    27,
+                    35
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      42,
+                      50
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    36,
+                    36
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 12,
+                    "segmentIndex": 5
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    37,
+                    41
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      52,
+                      56
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    66,
+                    66
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      72,
+                      72
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    70,
+                    70
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      76,
+                      76
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    112,
+                    112
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      112,
+                      112
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    116,
+                    117
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      116,
+                      117
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    132,
+                    132
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      132,
+                      132
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    5,
+                    5
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 12,
+                    "segmentIndex": 0
+                  },
+                  {
+                    "changeIndex": 18,
+                    "segmentIndex": 0
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    8,
+                    9
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      19,
+                      20
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    44,
+                    107
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      57,
+                      120
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    7,
+                    7
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      7,
+                      7
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    23,
+                    26
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      23,
+                      26
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    29,
+                    29
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      29,
+                      29
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    32,
+                    32
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      32,
+                      32
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    35,
+                    36
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      35,
+                      36
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 5
+                },
+                "sourcePart": {
+                  "after": [
+                    42,
+                    43
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      42,
+                      43
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 6
+                },
+                "sourcePart": {
+                  "after": [
+                    51,
+                    51
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      51,
+                      51
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 7
+                },
+                "sourcePart": {
+                  "after": [
+                    53,
+                    54
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      53,
+                      54
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 8
+                },
+                "sourcePart": {
+                  "after": [
+                    60,
+                    60
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      60,
+                      60
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 9
+                },
+                "sourcePart": {
+                  "after": [
+                    62,
+                    62
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      62,
+                      62
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 10
+                },
+                "sourcePart": {
+                  "after": [
+                    123,
+                    123
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 16,
+                    "segmentIndex": 2
+                  },
+                  {
+                    "changeIndex": 19,
+                    "segmentIndex": 0
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 6,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    46,
+                    46
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      46,
+                      46
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 7,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    59,
+                    59
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      59,
+                      59
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    26,
+                    26
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      26,
+                      26
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    21,
+                    21
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      21,
+                      21
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 10,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    52,
+                    52
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      52,
+                      52
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 10,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    93,
+                    93
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      93,
+                      93
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 11,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    42,
+                    42
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      43,
+                      43
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 11,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    47,
+                    47
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      48,
+                      48
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 12,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    4,
+                    7
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      4,
+                      7
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 12,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    8,
+                    8
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 18,
+                    "segmentIndex": 0
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 12,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    9,
+                    16
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      9,
+                      16
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 12,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    18,
+                    18
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      18,
+                      18
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 12,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    26,
+                    27
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      26,
+                      27
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 12,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    37,
+                    38
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      37,
+                      38
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 12,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    41,
+                    41
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      41,
+                      41
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 12,
+                  "segmentIndex": 5
+                },
+                "sourcePart": {
+                  "after": [
+                    51,
+                    51
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      51,
+                      51
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 12,
+                  "segmentIndex": 6
+                },
+                "sourcePart": {
+                  "after": [
+                    121,
+                    276
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      121,
+                      276
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 13,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    71,
+                    71
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      71,
+                      71
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 14,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    41,
+                    41
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      41,
+                      41
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 15,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    12,
+                    13
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      12,
+                      13
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 15,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    91,
+                    91
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      91,
+                      91
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 15,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    95,
+                    95
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      95,
+                      95
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 15,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    98,
+                    98
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      98,
+                      98
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 16,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    6,
+                    6
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      6,
+                      6
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 16,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    115,
+                    121
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      115,
+                      121
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 16,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    127,
+                    137
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      127,
+                      137
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 16,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    138,
+                    138
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 19,
+                    "segmentIndex": 0
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 16,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    139,
+                    142
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      152,
+                      155
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 16,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    151,
+                    152
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      164,
+                      165
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 16,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    155,
+                    156
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      168,
+                      169
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 16,
+                  "segmentIndex": 5
+                },
+                "sourcePart": {
+                  "after": [
+                    162,
+                    164
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      175,
+                      177
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 17,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    3,
+                    3
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      3,
+                      3
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 17,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    20,
+                    21
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      20,
+                      21
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 18,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    8,
+                    8
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      8,
+                      8
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 18,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    277,
+                    293
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      277,
+                      293
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 19,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    138,
+                    151
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      138,
+                      151
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              }
+            ],
+            "selectedTaskIds": [
+              "t1",
+              "t2",
+              "t3"
+            ],
+            "testCount": 10,
+            "attributionIdentity": "64750464289a05183bb21a48aa820ac24a0cb944b857c8c8f63f1e92c2b4aeac",
+            "attributionState": "accepted",
+            "tasks": [
+              {
+                "taskId": "t1",
+                "changeIndexes": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11,
+                  12,
+                  13,
+                  14,
+                  17,
+                  18
+                ],
+                "testIndexes": [
+                  0,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9
+                ],
+                "decision": {
+                  "action": "initial"
+                },
+                "identity": "1b4e50019bdaeeca0d623ead071c06010ff1e344b2d91399b136784e73998b3f"
+              },
+              {
+                "taskId": "t2",
+                "changeIndexes": [
+                  0,
+                  4,
+                  5,
+                  12,
+                  16,
+                  18,
+                  19
+                ],
+                "testIndexes": [
+                  0,
+                  1
+                ],
+                "decision": {
+                  "action": "initial"
+                },
+                "identity": "b8fd963d32c8cf3ccd88211efc1893987a8b5ec4b2edfe103e24e720e8683703"
+              },
+              {
+                "taskId": "t3",
+                "changeIndexes": [
+                  0,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11,
+                  12,
+                  13,
+                  14,
+                  15,
+                  16,
+                  17,
+                  18,
+                  19
+                ],
+                "testIndexes": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9
+                ],
+                "decision": {
+                  "action": "initial"
+                },
+                "identity": "f24c33f9a4a49a6ee15d96852652e68049c9365c0c5c86075a7fa40f1cea0c85"
+              }
+            ]
+          },
+          "storyId": "s1",
+          "documents": {
+            "lld": {
+              "path": "docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/LLD.md",
+              "commit": "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc"
+            },
+            "plan": {
+              "path": "docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/PLAN.md",
+              "commit": "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "d53a356131bee6b447475ab72a8cd5d0105baefa",
+              "parent": "dfe1551ba45aa10d74bb77a052af77e4cee8d409",
+              "files": [
+                {
+                  "path": "docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/LLD-SELF-REVIEW.md",
+                  "segments": [
+                    {
+                      "after": [
+                        41,
+                        51
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "453462b94ea3ad6ce3c561e482d76cc3a6f2c599",
+              "parent": "a74e307d490724f76e153d6e082f4678b3ac603c",
+              "files": [
+                {
+                  "path": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        41
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/attribution-binding.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        66,
+                        66
+                      ]
+                    },
+                    {
+                      "after": [
+                        70,
+                        70
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/contracts.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        112,
+                        112
+                      ]
+                    },
+                    {
+                      "after": [
+                        116,
+                        117
+                      ]
+                    },
+                    {
+                      "after": [
+                        132,
+                        132
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "aeffb3a7a4f4e4f0040128801b739f9f5febb28d",
+              "parent": "453462b94ea3ad6ce3c561e482d76cc3a6f2c599",
+              "files": [
+                {
+                  "path": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        5,
+                        5
+                      ]
+                    },
+                    {
+                      "after": [
+                        8,
+                        9
+                      ]
+                    },
+                    {
+                      "after": [
+                        44,
+                        107
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/attribution-binding.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        7,
+                        7
+                      ]
+                    },
+                    {
+                      "after": [
+                        23,
+                        26
+                      ]
+                    },
+                    {
+                      "after": [
+                        29,
+                        29
+                      ]
+                    },
+                    {
+                      "after": [
+                        32,
+                        32
+                      ]
+                    },
+                    {
+                      "after": [
+                        35,
+                        36
+                      ]
+                    },
+                    {
+                      "after": [
+                        42,
+                        43
+                      ]
+                    },
+                    {
+                      "after": [
+                        51,
+                        51
+                      ]
+                    },
+                    {
+                      "after": [
+                        53,
+                        54
+                      ]
+                    },
+                    {
+                      "after": [
+                        60,
+                        60
+                      ]
+                    },
+                    {
+                      "after": [
+                        62,
+                        62
+                      ]
+                    },
+                    {
+                      "after": [
+                        123,
+                        123
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "c34ae2cd9bf1434d017e5e8545b39adcee623a65",
+              "parent": "1ca6b7d5d092533571734e324c40e14b0c07e9ae",
+              "files": [
+                {
+                  "path": "src/workflow/code-review/task-review/__tests__/admission-history.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        46,
+                        46
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/__tests__/admission.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        59,
+                        59
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/__tests__/attribution-scope.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        26,
+                        26
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        21,
+                        21
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        52,
+                        52
+                      ]
+                    },
+                    {
+                      "after": [
+                        93,
+                        93
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/__tests__/publication-fixture.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        42,
+                        42
+                      ]
+                    },
+                    {
+                      "after": [
+                        47,
+                        47
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        4,
+                        16
+                      ]
+                    },
+                    {
+                      "after": [
+                        18,
+                        18
+                      ]
+                    },
+                    {
+                      "after": [
+                        26,
+                        27
+                      ]
+                    },
+                    {
+                      "after": [
+                        37,
+                        38
+                      ]
+                    },
+                    {
+                      "after": [
+                        41,
+                        41
+                      ]
+                    },
+                    {
+                      "after": [
+                        51,
+                        51
+                      ]
+                    },
+                    {
+                      "after": [
+                        121,
+                        276
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/__tests__/selected-code.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        71,
+                        71
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/__tests__/transition.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        41,
+                        41
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/assessment.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        12,
+                        13
+                      ]
+                    },
+                    {
+                      "after": [
+                        91,
+                        91
+                      ]
+                    },
+                    {
+                      "after": [
+                        95,
+                        95
+                      ]
+                    },
+                    {
+                      "after": [
+                        98,
+                        98
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/attribution-binding.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        6,
+                        6
+                      ]
+                    },
+                    {
+                      "after": [
+                        115,
+                        121
+                      ]
+                    },
+                    {
+                      "after": [
+                        127,
+                        142
+                      ]
+                    },
+                    {
+                      "after": [
+                        151,
+                        152
+                      ]
+                    },
+                    {
+                      "after": [
+                        155,
+                        156
+                      ]
+                    },
+                    {
+                      "after": [
+                        162,
+                        164
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "9acbf7d3d3cfa0530175919f4de9d7f17ad5c11a",
+              "parent": "1b31e2ae784dd2c0da7387ddf45fa8fb3999c399",
+              "files": [
+                {
+                  "path": "src/workflow/code-review/task-review/__tests__/publication-fixture.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        3,
+                        3
+                      ]
+                    },
+                    {
+                      "after": [
+                        20,
+                        21
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc",
+              "parent": "9660a7595b33f88f2624c36ddd721f77c1960171",
+              "files": [
+                {
+                  "path": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        8,
+                        8
+                      ]
+                    },
+                    {
+                      "after": [
+                        277,
+                        293
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/attribution-binding.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        138,
+                        151
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "t1",
+            "status": "passed",
+            "summary": "Inspected all submitted changed segments against the pinned LLD, Plan and acceptance checks. The strict schema, accepted-only validation and legacy compatibility behavior satisfy the requirements. No blocking findings.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Reviewed test bodies and assertions, including all submitted fixture changes. Tests explicitly cover v2 acceptance, invalid format rejection, absent-field compatibility, rejection on unpinned/pending/failed attempts, and saved v1 rebinding. Relevant regression assertions cover admission, publication, recovery, capacity and retained history. Coverage assessment is complete; reported passing runs were not treated as reviewer executions.",
+              "evidenceReferences": [
+                "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/admission.test.ts",
+                "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/admission-history.test.ts",
+                "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/attribution-scope.test.ts",
+                "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+                "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts",
+                "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/selected-code.test.ts",
+                "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/transition.test.ts",
+                "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/compatibility.test.ts",
+                "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: Tests, integration checks, typecheck and build were not run. Builder-reported results at 9f3c52f1c4a7 were not independently verified; the inspected TESTS.md records earlier validation revisions."
+            ],
+            "inspectedReferences": [
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/LLD.md",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/PLAN.md",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/LLD-SELF-REVIEW.md",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/TESTS.md",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/contracts.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/attribution-binding.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/assessment.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/publication-fixture.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/admission-history.test.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/admission.test.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/attribution-scope.test.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/selected-code.test.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/transition.test.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/compatibility.test.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts"
+            ],
+            "executedTests": []
+          },
+          {
+            "taskId": "t2",
+            "status": "passed",
+            "summary": "Inspected all submitted changed segments against the pinned LLD, Plan and acceptance checks. No material defects found. The implementation preserves v1 identities, applies the specified v2 test identity, and handles provenance diagnostics and bounded refusal aggregation consistently.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Reviewed test bodies and assertions for every acceptance check: pinned v1 constants; v2 provenance independence and sensitivity to file blob, cases, case order and result; no-test requirement/source/document binding; format-aware mismatch text; and unchanged v1 behavior at the intermediate t2 commit. Also inspected integration assertions for reuse, legacy restoration, publication integrity, refusal aggregation, the submission budget and overflow feedback. Coverage review is complete; execution was not independently performed.",
+              "evidenceReferences": [
+                "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+                "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/compatibility.test.ts",
+                "aeffb3a7a4f4e4f0040128801b739f9f5febb28d:src/workflow/code-review/task-review/attribution-binding.ts"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: Tests, integration checks, typecheck and build were not run independently. The submitted 17-case and 5-case passes are builder-reported for 9f3c52f1c4a7; TESTS.md records earlier validation commits and does not independently confirm those final-pin runs."
+            ],
+            "inspectedReferences": [
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/LLD.md",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/PLAN.md",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/LLD-SELF-REVIEW.md",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/TESTS.md",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/attribution-binding.ts",
+              "aeffb3a7a4f4e4f0040128801b739f9f5febb28d:src/workflow/code-review/task-review/attribution-binding.ts",
+              "453462b94ea3ad6ce3c561e482d76cc3a6f2c599:src/workflow/code-review/task-review/attribution-binding.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/compatibility.test.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/publication-fixture.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/assessment.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/attribution-repair.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/shared/review-diagnostics.ts"
+            ],
+            "executedTests": []
+          },
+          {
+            "taskId": "t3",
+            "status": "passed",
+            "summary": "Inspected every submitted changed segment, pinned requirements/design, all seven acceptance checks, and relevant test bodies and assertions. No blocking defects found. Format-aware binding, refusal aggregation, legacy restoration, fixture updates, and bounded refusal listings satisfy the submitted scope.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Coverage inspection is complete. Assertions demonstrate single-task and three-task provenance-only reuse, real-change rejection, one rejection for multiple format refusals, immediate malformed/foreign-party source failures, unchanged v1 restoration, v2 publication validation, and bounded overflow listings. Inspected all supplied regression test bodies; attribution-binding and compatibility files are unchanged from the design baseline. Builder-reported final-pin passes were not independently executed; pinned TESTS.md records earlier versions.",
+              "evidenceReferences": [
+                "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+                "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+                "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/compatibility.test.ts",
+                "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/TESTS.md"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: No tests, integration checks, typecheck, or build were run during this review. Submitted execution results remain builder-reported."
+            ],
+            "inspectedReferences": [
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/LLD.md",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/PLAN.md",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/LLD-SELF-REVIEW.md",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/TESTS.md",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/assessment.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/attribution-binding.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/contracts.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/attribution-repair.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/admission.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/record.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/packet.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/shared/review-diagnostics.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/publication-fixture.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/history-fixture.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/compatibility.test.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/admission-history.test.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/admission.test.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/attribution-scope.test.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/selected-code.test.ts",
+              "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc:src/workflow/code-review/task-review/__tests__/transition.test.ts"
+            ],
+            "executedTests": []
+          }
+        ],
+        "summary": "3 selected task assessment(s): passed.\nNative output diagnostics: [{\"phase\":\"attribution\",\"provider\":\"codex\",\"resolved\":true,\"errors\":[{\"code\":\"HOST_VALIDATION_ERROR\",\"field\":\"attribution\",\"correction\":\"Correct the host-rejected review field before resubmitting.\",\"occurrences\":1}]}]",
+        "completedAt": "2026-11-11T19:32:15.991Z",
+        "buildFingerprint": "7271792fdaa128d1a0e9eab128719bafbece8dd4b7631e2f1efa96cbad10debd"
+      }
+    ]
+  },
+  "citations": []
+}

@@ -137,3 +137,38 @@ test('phase progress flush waits for an already running durable update', async t
  await new Promise(resolve => setImmediate(resolve)); assert.equal(completed, false);
  release(); await first; await second; assert.equal(completed, true);
 });
+
+test('cancellation preserves accepted history and permits confirmed native closure after stopping admission', async t => {
+ const f=await setup(t);await f.store.activate(f.handle);const history=await readFile(f.path),before=f.writes.length;
+ const leases=new ReviewProcessLeases({daemonInstance:f.runtime.daemonEpoch,authorize:()=>{},verifyIntent:()=>{}}),owner=leases.register(f.key,f.runtime.workerIncarnation);
+ t.after(async()=>{await leases.close(owner);if(leases.recheck(owner))leases.release(owner);});
+ const reservation=leases.reserve(owner,1,{kind:'cancellation-fixture',command:process.execPath,args:['-e','setInterval(()=>{},1000)'],cwd:f.f.repo});
+ const receipt=await f.store.resource(f.handle,'open',reservation),run=leases.start(owner,1,receipt,async()=>{});
+ assert.equal((await run.started).spawned,true);
+ const cancelling=await f.store.beginCancellation(f.handle,'cancel-1','Fixture user cancellation');
+ assert.equal(cancelling.cancellation!.operationState,'cancelling');
+ assert.deepEqual(await readFile(f.path),history);
+ await assert.rejects(f.store.finishCancellation(f.handle,false,false),/not reclaimed/);
+ assert.equal(f.store.snapshot(f.handle).cancellation!.operationState,'cancelling');
+ await leases.close(owner);await run.result;
+ assert.ok(f.writes.length>before);
+});
+
+test('durable cancellation allows exact closure and reports a resource fence until disposal is confirmed',async t=>{
+ const f=await setup(t);await f.store.activate(f.handle);const history=await readFile(f.path);
+ const leases=new ReviewProcessLeases({daemonInstance:f.runtime.daemonEpoch,authorize:()=>{},verifyIntent:()=>{}}),owner=leases.register(f.key,f.runtime.workerIncarnation);
+ t.after(async()=>{await leases.close(owner);if(leases.recheck(owner))leases.release(owner);});
+ const reservation=leases.reserve(owner,1,{kind:'cancel-tool',command:process.execPath,args:['-e','setInterval(()=>{},1000)'],cwd:f.f.repo});
+ const receipt=await f.store.resource(f.handle,'open',reservation),run=leases.start(owner,1,receipt,async()=>{});await run.started;
+ const initial=await f.store.beginCancellation(f.handle,'cancel-1','Stop only this review');
+ assert.equal((await f.store.beginCancellation(f.handle,'cancel-1','Stop only this review')).cancellation!.requestedAt,initial.cancellation!.requestedAt);
+ const late=leases.reserve(owner,2,{kind:'late-spawn',command:process.execPath,args:['-e','process.exit(0)'],cwd:f.f.repo});
+ await assert.rejects(f.store.resource(f.handle,'open',late),/admission closed/);
+ f.store.publishProgress(f.handle,{progress:{...f.runtime.progress,observedAt:'2026-11-14T01:00:00.000Z'}});
+ const fenced=await f.store.finishCancellation(f.handle,true,false);assert.equal(fenced.cancellation!.operationState,'resource_fenced');
+ await leases.close(owner);const outcome=await run.result;assert.equal(outcome.disposal.state,'confirmed');assert.ok(outcome.disposal.state==='confirmed');
+ await f.store.resource(f.handle,'close',reservation,{reservation,disposal:outcome.disposal});
+ const stopped=await f.store.finishCancellation(f.handle,true,true);assert.equal(stopped.cancellation!.operationState,'stopped');assert.equal(stopped.resourceGuard.openLeases.length,0);
+ assert.deepEqual(await readFile(f.path),history);assert.equal(stopped.progress.completedUnits,0);
+ const writes=f.writes.length;f.store.snapshot(f.handle);f.store.snapshot(f.handle);assert.equal(f.writes.length,writes,'observation does not write or create activity');
+});

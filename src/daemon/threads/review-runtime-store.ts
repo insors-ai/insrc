@@ -19,6 +19,7 @@ import { getLogger } from '../../shared/logger.js';
 import type { HistoryBoundaryReceipt } from '../../workflow/review/history-binding.js';
 
 export interface ReviewRuntimeHandle { readonly key: Readonly<ReviewKey>; readonly runtimeId: string; }
+class RuntimeOperationRefused extends Error {}
 interface Owner { handle: ReviewRuntimeHandle; current: ReviewRuntime; stamp: string; fenced: boolean; }
 type Progress = Pick<ReviewRuntime, 'progress' | 'preparation'>;
 const lanes = new Map<string, Promise<void>>();
@@ -97,7 +98,7 @@ export class ReviewRuntimeStore {
     await this.write(path, bytes);
     if (owner.fenced || this.owners.get(handle) !== owner) throw new Error('Runtime owner released during durable write');
     owner.current = next; owner.stamp = hash(bytes); return structuredClone(next);
-   } catch (error) { owner.fenced = true; throw error; }
+   } catch (error) { if (!(error instanceof RuntimeOperationRefused)) owner.fenced = true; throw error; }
   });
  }
  async activate(handle: ReviewRuntimeHandle): Promise<void> {
@@ -116,7 +117,7 @@ export class ReviewRuntimeStore {
   if (!same(reservation.key, handle.key) || reservation.workerIncarnation !== current.workerIncarnation || reservation.daemonInstance !== current.daemonEpoch) throw new Error('Foreign runtime reservation');
   if (operation === 'close' && (!closure || closure.disposal.state !== 'confirmed' || !same(closure.reservation, reservation))) throw new Error('Host-confirmed disposal required');
   await this.mutate(handle, value => {
-   if (value.state !== 'active' || operation === 'open' && value.cancellation) throw new Error('Runtime native admission closed');
+   if (operation === 'open' ? value.state !== 'active' || value.cancellation : !['active', 'interrupted'].includes(value.state)) throw new RuntimeOperationRefused('Runtime native admission closed');
    const lease = { operationId: reservation.operationId, workerIncarnation: reservation.workerIncarnation, kind: reservation.kind, openedAt: reservation.openedAt };
    const old = value.resourceGuard.openLeases.find(l => l.operationId === lease.operationId);
    if (old && !same(old, lease)) throw new Error('Conflicting runtime lease');
@@ -127,11 +128,35 @@ export class ReviewRuntimeStore {
    workerIncarnation: current.workerIncarnation, daemonInstance: current.daemonEpoch, sourceValidation: current.checkpointBinding.historyBindingDigest ? 'qualified' : 'unverified' };
  }
  publishProgress(handle: ReviewRuntimeHandle, progress: Progress): void {
-  this.owner(handle); this.pending.set(handle, structuredClone(progress));
+  const owner = this.owner(handle); if (owner.current.cancellation || owner.current.state !== 'active') return;
+  this.pending.set(handle, structuredClone(progress));
   if (!this.timers.has(handle)) {
-   const timer = setTimeout(() => { this.timers.delete(handle); void this.flushProgress(handle).catch(this.progressError); }, 250);
+   const timer = setTimeout(() => { this.timers.delete(handle); void this.flushProgress(handle).catch(error => { if (!(error instanceof RuntimeOperationRefused)) this.progressError(error); }); }, 250);
    timer.unref(); this.timers.set(handle, timer);
   }
+ }
+ /** Observation never creates activity or durability writes. */
+ snapshot(handle: ReviewRuntimeHandle): ReviewRuntime { return structuredClone(this.owner(handle).current); }
+ async beginCancellation(handle: ReviewRuntimeHandle, actionId: string, reason: string): Promise<ReviewRuntime> {
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/.test(actionId) || !reason.trim() || reason.length > 2048) throw new Error('Invalid cancellation request');
+  const prior = this.owner(handle).current.cancellation;
+  if (prior) { if (prior.actionId !== actionId || prior.reason !== reason) throw new Error('Conflicting cancellation replay'); return this.snapshot(handle); }
+  clearTimeout(this.timers.get(handle)); this.timers.delete(handle); this.pending.delete(handle);
+  return this.mutate(handle, value => {
+   if (value.cancellation) {
+    if (value.cancellation.actionId !== actionId || value.cancellation.reason !== reason) throw new RuntimeOperationRefused('Conflicting cancellation replay');
+    return;
+   }
+   if (!['active', 'initializing', 'interrupted'].includes(value.state)) throw new Error('Runtime is not cancellable');
+   value.cancellation = { actionId, reason, requestedAt: new Date().toISOString(), operationState: 'cancelling' };
+   value.state = 'interrupted';
+  });
+ }
+ async finishCancellation(handle: ReviewRuntimeHandle, workerEnded: boolean, resourcesDisposed: boolean): Promise<ReviewRuntime> {
+  return this.mutate(handle, value => {
+   if (!workerEnded || !value.cancellation) throw new RuntimeOperationRefused('Cancellation has not reclaimed its worker');
+   value.cancellation.operationState = resourcesDisposed && value.resourceGuard.openLeases.length === 0 ? 'stopped' : 'resource_fenced';
+  });
  }
  async flushProgress(handle: ReviewRuntimeHandle): Promise<void> {
   clearTimeout(this.timers.get(handle)); this.timers.delete(handle);
@@ -139,7 +164,8 @@ export class ReviewRuntimeStore {
   if (!progress) { await serial(reviewRuntimePath(handle.key), async () => { this.owner(handle); }); return; }
   this.pending.delete(handle);
   await this.mutate(handle, value => {
-   if (value.state !== 'active' || progress.progress.completedUnits !== value.progress.completedUnits) throw new Error('Progress cannot authorize completed work');
+   if (value.state !== 'active' || value.cancellation) throw new RuntimeOperationRefused('Runtime progress admission closed');
+   if (progress.progress.completedUnits !== value.progress.completedUnits) throw new Error('Progress cannot authorize completed work');
    value.progress = progress.progress;
    if (progress.preparation) value.preparation = progress.preparation;
   });
@@ -149,6 +175,7 @@ export class ReviewRuntimeStore {
  async acceptHistory(handle: ReviewRuntimeHandle, receipt: HistoryBoundaryReceipt, verify: () => Promise<void>): Promise<void> {
   const proof = structuredClone(receipt);
   await this.mutate(handle, async value => {
+   if (value.state !== 'active' || value.cancellation) throw new RuntimeOperationRefused('Runtime history admission closed');
    if (!same(proof.key, handle.key) || proof.runtimeId !== value.runtimeId || proof.attempt !== value.attempt || proof.inputDigest !== value.checkpointBinding.inputDigest || value.state !== 'active') throw new Error('Foreign runtime history receipt');
    await verify();
    const next = proof.binding, old = value.checkpointBinding;

@@ -90,5 +90,7 @@ export class CodePreparation {
    testDocumentDigest: preparationDigest(inputs.map(p => [p.tests, p.documents])) },
   { 'code-packets': packets }, this.session, this.limits, this.capacity);
  }
+ observeSources(observer: Parameters<ReviewSourceSession['observe']>[0]): () => void { return this.session?.observe(observer) ?? (() => {}); }
+ sourceMetrics(): ReturnType<ReviewSourceSession['snapshot']> | undefined { return this.session?.snapshot(); }
  async close(): Promise<void> { await this.tail; this.failed = true; await this.session?.close(); }
 }

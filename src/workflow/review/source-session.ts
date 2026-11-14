@@ -91,7 +91,9 @@ export class ReviewSourceSession implements ReviewSources {
  private failed = false;
  private closing = false;
  private closed = false;
- private readonly metrics = { logicalQueries: 0, physicalQueries: 0, cacheHits: 0, diskHits: 0, objectInventoryBatches: 0, objectReadBatches: 0, storedBytes: 0 };
+ private observer: ((metrics: ReturnType<ReviewSourceSession['snapshot']>) => Promise<void>) | undefined;
+ private observed = '';
+ private readonly metrics = { logicalQueries: 0, logicalCompleted: 0, physicalQueries: 0, physicalCompleted: 0, cacheHits: 0, diskHits: 0, objectInventoryBatches: 0, objectReadBatches: 0, storedBytes: 0 };
  private constructor(readonly directory: string, readonly key: Readonly<ReviewKey>, private readonly source: BatchReviewSources, private readonly limits: ReviewPreparationLimits, private readonly capacity: SourceCapacity, private readonly identity: { dev: bigint; ino: bigint }) {}
  static async create(key: ReviewKey, source: BatchReviewSources, limits: ReviewPreparationLimits, capacity: SourceCapacity): Promise<ReviewSourceSession> {
   if (!Value.Check(ReviewKeySchema, key)) throw new Error('Invalid source session identity');
@@ -110,7 +112,12 @@ export class ReviewSourceSession implements ReviewSources {
   if (this.closing || this.closed) return Promise.reject(new Error('Source session closed'));
   const result = this.tail.then(async () => {
    if (this.failed) throw new Error('Source session fenced; explicit new preparation required');
-   try { return await work(); } catch (error) { this.failed = true; throw error; }
+   try {
+    const value = await work();
+    const stamp = JSON.stringify([this.metrics.logicalCompleted, this.metrics.physicalCompleted, this.metrics.cacheHits, this.metrics.storedBytes, this.metrics.objectInventoryBatches, this.metrics.objectReadBatches]);
+    if (this.observer && stamp !== this.observed) { await this.observer(this.snapshot()); this.observed = stamp; }
+    return value;
+   } catch (error) { this.failed = true; throw error; }
   });
   this.tail = result.then(() => {}, () => {}); return result;
  }
@@ -160,13 +167,13 @@ export class ReviewSourceSession implements ReviewSources {
  private async fetch(method: Method, args: readonly unknown[], work: () => Promise<unknown>): Promise<unknown> {
   this.metrics.logicalQueries++;
   const key = this.queryKey(method, args), entry = this.entries.get(key);
-  if (entry) { this.metrics.cacheHits++; return this.load(method, key, entry); }
+  if (entry) { const value = await this.load(method, key, entry); this.metrics.cacheHits++; this.metrics.logicalCompleted++; return value; }
   const wireBounds: Record<Method, number> = { file: Math.ceil(4 * 1024 * 1024 * 4 / 3) + 512, commit: 4 * 1024 * 1024,
    isAncestor: 64, pathChanges: 2 * 1024 * 1024, changedRanges: 32 * 1024 * 1024 };
   const token = await this.capacity.reserve(Math.min(this.limits.memoryMaxBytes, wireBounds[method]) * 2 + 16384); this.tokens.add(token);
   this.metrics.physicalQueries++;
-  const value = await work(); await this.stage(method, key, value, token);
-  return this.load(method, key, this.entries.get(key)!);
+  const value = await work(); await this.stage(method, key, value, token); this.metrics.physicalCompleted++;
+  const loaded = await this.load(method, key, this.entries.get(key)!); this.metrics.logicalCompleted++; return loaded;
  }
  commit(oid: string, field?: string): Promise<readonly string[]> {
   pinned(oid); return this.enqueue(() => this.fetch('commit', [oid], () => this.source.commit(oid, field)) as Promise<readonly string[]>);
@@ -221,12 +228,22 @@ export class ReviewSourceSession implements ReviewSources {
      const ownTokens = await this.capacity.split(token, decoded.map(d => d.encoded.length * 2 + 16384));
      this.tokens.delete(token); for (const child of ownTokens) this.tokens.add(child);
      for (const [j, d] of decoded.entries()) {
-      this.metrics.physicalQueries++; await this.stage(d.method, d.key, d.value, ownTokens[j]!);
+      this.metrics.physicalQueries++; await this.stage(d.method, d.key, d.value, ownTokens[j]!); this.metrics.physicalCompleted++;
      }
      at = end;
     }
    }
+   for (const request of requests) {
+    const method = request.path === undefined ? 'commit' : 'file', args = request.path === undefined ? [request.commit] : [request.commit, request.path];
+    const key = this.queryKey(method, args); await this.load(method, key, this.entries.get(key)!); this.metrics.logicalCompleted++;
+   }
+   this.metrics.cacheHits += requests.length - pending.length;
   });
+ }
+ observe(observer: (metrics: ReturnType<ReviewSourceSession['snapshot']>) => Promise<void>): () => void {
+  if (this.observer || this.closed || this.closing) throw new Error('Source progress observer unavailable');
+  this.observer = observer;
+  return () => { if (this.observer === observer) this.observer = undefined; };
  }
  snapshot() { return { ...this.metrics, memoryBytes: this.memoryBytes + this.metadataBytes }; }
  evidence(): Promise<readonly { queryDigest: string; contentDigest: string; bytes: number }[]> {

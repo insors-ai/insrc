@@ -28,6 +28,10 @@ import { reviewCleanupScope,reviewUnknownCleanupScope } from '../../workflow/rev
 import type { CleanupResult } from '../../workflow/code-review/task-review/cleanup.js';
 import { startWorker } from './workers.js';
 import type { StartedWorker } from './workers.js';
+import { Value } from '@sinclair/typebox/value';
+import { ReviewCancellationInputSchema } from '../../shared/review-preparation.js';
+import type { ReviewRuntime, ReviewCancellationReceipt } from '../../shared/review-preparation.js';
+import type { ReviewRuntimeStore, ReviewRuntimeHandle } from './review-runtime-store.js';
 import { REVIEW_BOOTSTRAP_MS } from './review-worker-contract.js';
 
 export interface ReviewWorkerScope {
@@ -80,6 +84,7 @@ interface Entry {
  executed?:boolean|undefined;
  closing?:Promise<void>|undefined;
  reclaimedHealthy?:boolean|undefined;
+ runtime?:{store:ReviewRuntimeStore;handle:ReviewRuntimeHandle}|undefined;
  readonly detach:()=>void;
 }
 const keyOf=(key:ReviewKey)=>JSON.stringify([key.project,key.family,key.reviewId]);
@@ -87,6 +92,8 @@ const keyOf=(key:ReviewKey)=>JSON.stringify([key.project,key.family,key.reviewId
  * session-wide queue, or per-review TargetRegistry singleton registration. */
 export class ReviewWorkers {
  private readonly entries=new Map<string,Entry>();
+ private readonly cancelAdmissions=new Map<string,{attempt:number;actionId:string;reason:string;connection:string|undefined;epoch:string|undefined;work:Promise<ReviewCancellationReceipt>}>();
+ private readonly cancellations=new Map<string,{entry:Entry;receipt:ReviewCancellationReceipt;reason:string;work?:Promise<void>}>();
  private readonly cleanup=new Set<string>();
  private readonly cleanupTargets=new Map<string,ReviewCleanupTarget>();
  private readonly resourceHolds=new Map<string,{readonly cleanupScope:string}>();
@@ -124,6 +131,8 @@ export class ReviewWorkers {
   if(!scope.subject||!scope.cleanupScope||!['daemon','controller'].includes(scope.reviewer)||scope.epicHash!==undefined&&!/^[0-9a-f]{16}$/.test(scope.epicHash))throw new Error('Invalid trusted review scope');
   if(context.connectionSignal.aborted)throw new Error('Review connection lost');
   if(this.scopeCleaning(key,scope)&&cleanupScope!==scope.cleanupScope)throw new Error('Review subject or cleanup busy');
+  const cancelled=this.cancellations.get(keyOf(key));
+  if(cancelled&&input.operation!=='resume'&&!(input.attempt===cancelled.receipt.attempt+1))throw new Error('Stopped review requires explicit recovery or a separate new attempt');
   const previous=this.entries.get(keyOf(key));
   if(previous){
    if(previous.closing){
@@ -163,7 +172,7 @@ export class ReviewWorkers {
   const ready=new Promise<StartedReviewWorker>((resolve,reject)=>{resolveReady=resolve;rejectReady=reject;});
   const native=new ReviewNativeHost({leases:this.leases,owner:processOwner,port:port1,
    assertActive:()=>this.active(entry),resolveBinary:this.deps.resolveBinary,
-   persist:(operation,reservation,closure)=>this.call(entry,`review.worker.resource.${operation}`,{reservation,closure},true) as Promise<import('../../shared/review-native.js').ReviewIntentReceipt>,
+   persist:(operation,reservation,closure)=>entry.runtime?entry.runtime.store.resource(entry.runtime.handle,operation,reservation,closure):this.call(entry,`review.worker.resource.${operation}`,{reservation,closure},true) as Promise<import('../../shared/review-native.js').ReviewIntentReceipt>,
    onLost:()=>{if(entry)void this.closeEntry(entry);},
   });
   const lost=()=>{void this.closeEntry(entry);};
@@ -185,7 +194,7 @@ export class ReviewWorkers {
    void started.reclaimed.then(()=>this.closeEntry(entry));resolveReady(started);
    if(entry.closing)void started.worker.terminate();
   },error=>{rejectReady(error);void this.closeEntry(entry);});
-  const {progress:_internalProgress,...admission}=(await ready).admission;return admission;
+  const {progress:_internalProgress,...admission}=(await ready).admission;this.cancellations.delete(keyOf(key));return admission;
  }
  private assertController(e:Entry,context:TrustedRpcContext):void{
   if(e.scope.reviewer==='controller'&&(context.connectionIdentity!==e.context.connectionIdentity||context.daemonEpoch!==e.context.daemonEpoch||context.connectionSignal?.aborted))throw new Error('Review owner mismatch');
@@ -201,13 +210,73 @@ export class ReviewWorkers {
    catch(error){e.pending.delete(requestId);reject(error);}
   });
  }
+ /** Private main-host binding, installed before execution by the coordinated
+  * new-format bootstrap. It is not accepted from MCP or IPC arguments. */
+ bindRuntime(identity:ReviewWorkerIdentity,store:ReviewRuntimeStore,handle:ReviewRuntimeHandle):void{
+  const e=this.entries.get(keyOf(identity.key));if(!e||!sameReviewWorker(e.input,identity)||e.executed||e.closing||e.runtime)throw new Error('Cannot bind foreign or active preparation runtime');
+  const value=store.snapshot(handle);
+  if(!sameReviewWorker(e.input,{key:handle.key,incarnation:value.workerIncarnation})||value.attempt!==e.attempt||value.state!=='active')throw new Error('Unbound preparation runtime');
+  e.runtime={store,handle};
+ }
+ preparationProgress(identity:ReviewWorkerIdentity,value:Pick<ReviewRuntime,'progress'|'preparation'>):void{
+  const e=this.entries.get(keyOf(identity.key));
+  if(!e||!sameReviewWorker(e.input,identity)||e.closing||e.fence.state==='closing'||!e.runtime||!e.progress?.display)return;
+  const runtime=e.runtime.store.snapshot(e.runtime.handle);if(runtime.state!=='active'||runtime.cancellation||value.progress.completedUnits!==runtime.progress.completedUnits)return;
+  const display={...e.progress.display,...(value.preparation?{preparation:structuredClone(value.preparation)}:{}),observedAt:value.progress.observedAt};
+  e.progress={...e.progress,display,updatedAt:value.progress.observedAt};
+  this.deps.services.board.publish({threadId:e.started!.threadId,cls:'review',role:e.input.key.family==='code'?'code-review':'design-review',busy:true,method:display.phase,queued:0,reviewProgress:display,reviewSubject:e.scope.subject});
+ }
+ async cancel(key:ReviewKey,attempt:number,actionId:string,reason:string,context:TrustedRpcContext):Promise<ReviewCancellationReceipt>{
+  const id=keyOf(key),pending=this.cancelAdmissions.get(id);
+  if(pending){
+   if(pending.connection!==context.connectionIdentity||pending.epoch!==context.daemonEpoch||context.connectionSignal?.aborted)throw new Error('Review cancellation owner mismatch');
+   if(pending.attempt!==attempt||pending.actionId!==actionId||pending.reason!==reason)throw new Error('Conflicting cancellation replay');
+   return pending.work;
+  }
+  const work=this.cancelOwned(key,attempt,actionId,reason,context);
+  this.cancelAdmissions.set(id,{attempt,actionId,reason,connection:context.connectionIdentity,epoch:context.daemonEpoch,work});
+  try{return await work;}finally{if(this.cancelAdmissions.get(id)?.work===work)this.cancelAdmissions.delete(id);}
+ }
+ private async cancelOwned(key:ReviewKey,attempt:number,actionId:string,reason:string,context:TrustedRpcContext):Promise<ReviewCancellationReceipt>{
+  if(!Value.Check(ReviewCancellationInputSchema,{actionId,reason})||!reason.trim())throw new Error('Invalid cancellation request');
+  const previous=this.cancellations.get(keyOf(key)),e=previous?.entry??this.entries.get(keyOf(key));
+  if(!e||context.connectionIdentity!==e.context.connectionIdentity||context.daemonEpoch!==e.context.daemonEpoch||context.connectionSignal?.aborted)throw new Error('Review cancellation owner mismatch');
+  if(attempt!==e.attempt)throw new Error('Cancellation attempt conflict');
+  if(previous){if(previous.receipt.actionId!==actionId||previous.reason!==reason)throw new Error('Conflicting cancellation replay');return structuredClone(previous.receipt);}
+  if(!e.runtime)throw new Error('Review has no compact runtime; coordinated update required');
+  if(this.cancellations.size>=1024)throw new Error('Retained cancellation capacity exhausted');
+  // Revoke native dispatch synchronously, before waiting on any durability lane.
+  e.fence.close();e.lifetime.abort();
+  let value;
+  try{value=await e.runtime.store.beginCancellation(e.runtime.handle,actionId,reason);}
+  catch(error){void this.closeEntry(e).catch(()=>{});throw error;}
+  const receipt:ReviewCancellationReceipt={key:e.input.key,attempt,actionId,requestedAt:value.cancellation!.requestedAt,operationState:value.cancellation!.operationState};
+  const record:{entry:Entry;receipt:ReviewCancellationReceipt;reason:string;work?:Promise<void>}={entry:e,receipt,reason};this.cancellations.set(keyOf(key),record);
+  record.work=(async()=>{
+   try{
+    await this.closeEntry(e);
+    const ended=e.fence.reclaimed&&(!e.started||e.started.worker.threadId===-1);
+    if(!ended)return;
+    const state=await e.runtime!.store.finishCancellation(e.runtime!.handle,true,e.native.reclaimable&&e.reclaimedHealthy===true);
+    record.receipt={...record.receipt,operationState:state.cancellation!.operationState};
+   }catch{if(e.fence.reclaimed&&(!e.started||e.started.worker.threadId===-1))record.receipt={...record.receipt,operationState:'resource_fenced'};}
+  })();
+  return structuredClone(receipt);
+ }
+ hasCancellation(key:ReviewKey,attempt:number):boolean{return this.cancellations.get(keyOf(key))?.receipt.attempt===attempt;}
+ cancellationProgress(key:ReviewKey,attempt:number,context:TrustedRpcContext):unknown{
+  const record=this.cancellations.get(keyOf(key));if(!record||record.receipt.attempt!==attempt)throw new Error('Cancellation not found');
+  this.assertController(record.entry,context);
+  return structuredClone({...record.entry.progress?.observation,operationState:record.receipt.operationState,cancellation:record.receipt,freshness:'live'});
+ }
  /** Family adapters expose only their typed actions, never arbitrary methods. */
  async progress(key:ReviewKey,context:TrustedRpcContext):Promise<unknown>{
   const e=this.entries.get(keyOf(key));if(!e)throw new Error('Review worker not found');this.assertController(e,context);
   // Observation never waits on a blocked worker or changes its owner.
   const cached=e.progress?.observation;if(!cached)throw new Error('Review admission is not durably acknowledged yet');
   const stale=Date.now()-Date.parse(e.progress!.updatedAt)>2000||!!e.closing;
-  return structuredClone({...cached,freshness:e.input.key.family==='code'?(stale?'stale':'live'):(stale?'stored':'live')});
+  const runtime=e.runtime?.store.snapshot(e.runtime.handle);
+  return structuredClone({...cached,...(runtime?.preparation?{preparation:runtime.preparation}:{}),freshness:e.input.key.family==='code'?(stale?'stale':'live'):(stale?'stored':'live')});
  }
  /** Explicit retries consume stored feedback only. A cold owner still joins
   * native/resource fencing and the ordinary worker reclamation contract. */
@@ -412,6 +481,8 @@ export class ReviewWorkers {
   if(this.shutdownWork)return this.shutdownWork;
   const work=(async()=>{
    await Promise.all([...this.entries.values()].map(e=>this.closeEntry(e)));
+   await Promise.allSettled([...this.cancelAdmissions.values()].map(value=>value.work));
+   await Promise.allSettled([...this.cancellations.values()].flatMap(value=>value.work?[value.work]:[]));
    for(const worker of this.storedWorkers)await worker.terminate();
    await Promise.allSettled([...this.storedRuns]);
   })();this.shutdownWork=work;

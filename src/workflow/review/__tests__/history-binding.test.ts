@@ -177,3 +177,17 @@ test('design plan and dependency-ordered chunk results get successor bindings wi
  assert.equal(proof.binding.generationId, receipt.generationId); assert.equal(proof.completedUnits, 2);
  assert.equal(JSON.parse(await readFile(reviewRuntimePath(key), 'utf8')).progress.completedUnits, 2);
 });
+
+test('cancellation after durable publication preserves committed feedback and publication proof without accepting a late runtime boundary',async t=>{
+ const f=await code(t),history=await HistoryBindingSession.open(f.receipt,f.cp,{authorize:f.authorize,validate:f.validate,capacity:f.capacity,limits:f.limits,invalidateSource:f.invalidateSource});
+ await f.acceptRuntime(history.latest());let cp=await f.read();cp.attempts[0]['review-response'].tasks.push(f.result('t1'),f.result('t2'));cp.attempts[0].header.status='passed';cp.attempts[0].header.completedAt=time;
+ await f.acceptRuntime(await history.accept(cp));cp=await f.read();
+ f.f.put(`.insrc/artifacts/CR-${hash}-s1.json`,{meta:{workflow:'code-review',schemaVersion:3},body:{kind:'code-review',format:'task-based',storyId:'s1',status:'passed',reviews:[completedSummary(f.prepared,cp.attempts[0],f.key.reviewId)]}});
+ cp.attempts[0]['review-response'].crPublication='complete';const publication=await history.accept(cp),physical=f.source.snapshot().physicalQueries,before=await readFile(f.path,'utf8');
+ await f.store.beginCancellation(f.handle,'cancel-publication','Stop this review after committed feedback');
+ await assert.rejects(f.acceptRuntime(publication),/history admission closed/);
+ assert.equal(f.store.snapshot(f.handle).progress.completedUnits,2);assert.equal(f.store.snapshot(f.handle).publicationBoundary,undefined);
+ assert.equal(await readFile(f.path,'utf8'),before);assert.equal((await f.read()).attempts[0]['review-response'].crPublication,'complete');
+ assert.equal(f.source.snapshot().physicalQueries,physical);
+ assert.equal((await f.store.finishCancellation(f.handle,true,true)).cancellation!.operationState,'stopped');
+});

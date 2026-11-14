@@ -694,6 +694,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// verdict (ac2); on ok, grounding is structured entity summaries, never
 		// raw file text (ac3, k6).
 		'designReview.start': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('start', params, context),
+		'designReview.cancel': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('cancel', params, context),
 		'designReview.progress': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('progress', params, context),
 		'designReview.assignment': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('assignment', params, context),
 		'designReview.plan': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('plan', params, context),
@@ -703,6 +704,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		'designReview.recover': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('recover', params, context),
 		'designReview.failure': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('failure', params, context),
 		'codeReview.task.cleanup': async params => (await import('./task-review-rpc.js')).cleanupApprovedTaskReviews(params),
+		'codeReview.task.cancel': async (params,context) => (await import('./task-review-rpc.js')).cancelTaskReview(params,context),
 		'codeReview.task.progress': async (params,context) => (await import('./task-review-rpc.js')).readTaskReviewProgress(params,context),
 		'codeReview.task.publish': async (params,context) => (await import('./task-review-rpc.js')).publishStoredTaskReview(params,context),
 		'codeReview.task.start': async (params, context) => (await import('./task-review-rpc.js')).startTaskReview(params, context),

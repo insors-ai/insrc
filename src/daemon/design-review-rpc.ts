@@ -7,7 +7,7 @@ import type { DesignReviewRequest } from '../workflow/review/design-review/contr
 export function designReviewStep(raw:unknown,trusted?:TrustedRpcContext):Promise<unknown>{
  return productionReviews().design(raw,trusted,currentStepContext()?.client);
 }
-export async function designReviewOperation(phase:DesignReviewRequest['phase'],raw:unknown,trusted?:TrustedRpcContext):Promise<unknown>{
+export async function designReviewOperation(phase:DesignReviewRequest['phase']|'cancel',raw:unknown,trusted?:TrustedRpcContext):Promise<unknown>{
  requireDesign(raw&&typeof raw==='object'&&!Array.isArray(raw),'invalid_request','Expected operation parameters');
  const fields=raw as Record<string,unknown>;
  requireDesign(fields['phase']===undefined||fields['phase']===phase,'invalid_phase','Operation and phase disagree');

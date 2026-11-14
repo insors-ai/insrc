@@ -11,6 +11,9 @@ import type { StartedReviewWorker } from '../../../../daemon/threads/review-work
 import { startWorker } from '../../../../daemon/threads/workers.js';
 import type { ReviewPacket,TaskReviewResult } from '../contracts.js';
 import { loadStoredCheckpoint } from '../checkpoint.js';
+import { ReviewRuntimeStore } from '../../../../daemon/threads/review-runtime-store.js';
+import type { ReviewRuntime } from '../../../../shared/review-preparation.js';
+import { preparationDigest } from '../../../review/prepared-context.js';
 import { reviewWorkerCheckpoint } from '../../../../daemon/threads/review-worker-contract.js';
 
 const hash='1234567890abcdef';
@@ -122,4 +125,29 @@ test('replay and controller admission-to-assignment retain one execution identit
  await f.registry.execute(corrected,f.context);await rpc(replacement,'fixture.release');
  await until(async()=>{const a=(await loadStoredCheckpoint(reviewWorkerCheckpoint(corrected.key)))!.attempts.at(-1)!;return'review-response'in a&&a.header.status==='running';});
  const saved=(await loadStoredCheckpoint(reviewWorkerCheckpoint(corrected.key)))!;assert.equal(saved.attempts.length,2);assert.deepEqual(saved.attempts[0],failure);assert.equal(saved.attempts[1]!.header.attempt,2);
+});
+
+
+test('targeted main cancellation rejects another session and retires only its exact admitted worker',async t=>{
+ const f=fixture(t,'daemon'),submission=f.submit('cancel-target'),ack=await f.registry.admit(submission,f.context);
+ const peerContext={...f.context,connectionIdentity:'independent-session'},peer=await f.registry.admit(f.submit('cancel-peer'),peerContext);
+ const key=ack.key,path=reviewWorkerCheckpoint(key),cp=JSON.parse(readFileSync(path,'utf8')),store=new ReviewRuntimeStore();
+ const value:ReviewRuntime={schemaVersion:1,key,attempt:1,runtimeId:'cancel-runtime',daemonEpoch:f.context.daemonEpoch,workerIncarnation:ack.incarnation,sequence:0,checkpointBinding:{inputDigest:preparationDigest(f.packet),semanticSequence:0},state:'initializing',resourceGuard:{daemonInstance:f.context.daemonEpoch,openLeases:[]},progress:{completedUnits:0,totalUnits:null,observedAt:new Date().toISOString(),lastMeaningfulActivityAt:null}};
+ const handle=await store.initialize(value);t.after(()=>store.release(handle));
+ writeFileSync(path,JSON.stringify({...cp,schemaVersion:3,runtime:{runtimeId:value.runtimeId,inputDigest:value.checkpointBinding.inputDigest}}));
+ await store.activate(handle);f.registry.bindRuntime(ack,store,handle);
+ const pinned=readFileSync(path,'utf8');
+ await assert.rejects(f.registry.cancel(key,1,'cancel-action','User stopped review',peerContext),/owner mismatch/);
+ await assert.rejects(f.registry.cancel(key,2,'cancel-action','User stopped review',f.context),/attempt conflict/);
+ const pending=f.registry.cancel(key,1,'cancel-action','User stopped review',f.context);
+ await assert.rejects(f.registry.cancel(key,1,'conflicting-action','Different reason',f.context),/Conflicting/);
+ const replay=f.registry.cancel(key,1,'cancel-action','User stopped review',f.context),receipt=await pending;assert.equal(receipt.operationState,'cancelling');assert.deepEqual(await replay,receipt);
+ await until(async()=>((f.registry.cancellationProgress(key,1,f.context) as any).operationState==='stopped'));
+ const repeated=await f.registry.cancel(key,1,'cancel-action','User stopped review',f.context);assert.equal(repeated.requestedAt,receipt.requestedAt);assert.equal(repeated.operationState,'stopped');
+ assert.equal(f.started.get('cancel-target')!.worker.threadId,-1);
+ assert.ok(f.registry.identity(peer.key));assert.equal((await f.registry.progress(peer.key,peerContext) as any).status,'pending');
+ assert.equal((await rpc(f.started.get('cancel-peer')!,'fixture.stats')).calls,0);
+ assert.equal(readFileSync(path,'utf8'),pinned,'cancellation never rewrites input or accepted history');
+ await assert.rejects(f.registry.execute(ack,f.context),/not found|Foreign|fenced|missing/i);
+ await assert.rejects(f.registry.admit(submission,f.context),/explicit recovery/);
 });

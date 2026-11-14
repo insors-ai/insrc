@@ -18,3 +18,13 @@ test('admission DTOs render preparing or failure without empty success',async()=
  const planning={...completed,status:'running' as const,family:'design' as const,phase:'planning',completed:0,total:0};assert.equal(reviewProgressLabel(planning),'Preparing review');
  assert.equal(isReviewWorkerStatus({...progress,total:-1}),false);
 });
+
+test('preparation DTO preserves nullable totals and separate cancellation states',()=>{
+ const progress:ReviewWorkerStatus={project:'/repo',family:'code',reviewId:'review-1',attempt:1,status:'pending',phase:'scope_preparation',completed:0,total:0,observedAt:'2026-11-14T00:00:00.000Z',freshness:'live',preparation:{stage:'fetch_sources',logicalCompleted:2,physicalCompleted:1,cacheHits:1,bytes:123,total:null,elapsedMs:250}};
+ assert.equal(isReviewWorkerStatus(progress),true);assert.equal(reviewProgressLabel(progress),'Preparing review: fetch sources (2)');
+ assert.equal(reviewProgressLabel({...progress,preparation:{...progress.preparation!,total:5}}),'Preparing review: fetch sources (2/5)');
+ for(const [operationState,label] of [['cancelling','Cancelling review'],['stopped','Review stopped'],['resource_fenced','Review stopped; resource clearance required']] as const)assert.equal(reviewProgressLabel({...progress,operationState}),label);
+ assert.equal(isReviewWorkerStatus({...progress,operationState:'cancelled'}),false);
+ assert.equal(isReviewWorkerStatus({...progress,preparation:{...progress.preparation!,total:1}}),false);
+ assert.equal(progress.status,'pending','cancellation presentation does not manufacture an assessment verdict');
+});

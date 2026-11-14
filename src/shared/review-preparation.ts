@@ -17,6 +17,11 @@ const stamp = Type.String({ minLength: 20, maxLength: 30 });
 const enumeration = <T extends string>(values: readonly T[]) => Type.Union(values.map(v => Type.Literal(v)));
 const binding = object({ generationId: digest, manifestDigest: digest, historyBindingDigest: digest });
 export const ReviewRuntimeReferenceSchema = object({ runtimeId: id, inputDigest: digest });
+export const ReviewOperationStateSchema = enumeration(['cancelling', 'stopped', 'resource_fenced']);
+export const ReviewCancellationInputSchema = object({ actionId: id, reason: Type.String({ minLength: 1, maxLength: 2048 }) });
+export const ReviewCancellationReceiptSchema = object({ key: ReviewKeySchema, attempt: positive, actionId: id, requestedAt: stamp, operationState: ReviewOperationStateSchema });
+export type ReviewCancellationReceipt = Static<typeof ReviewCancellationReceiptSchema>;
+export const ReviewCancellationRequestSchema = object({ phase: Type.Literal('cancel'), repo: ReviewKeySchema.properties.project, reviewId: ReviewKeySchema.properties.reviewId, attempt: positive, ...ReviewCancellationInputSchema.properties });
 export const ReviewPreparationProgressSchema = object({
  stage: enumeration(['validate_input', 'inspect_history', 'source_inventory', 'fetch_sources', 'qualify_scope', 'build_views', 'commit_context']),
  logicalCompleted: count, physicalCompleted: count, cacheHits: count, bytes: count,
@@ -30,7 +35,7 @@ export const ReviewRuntimeSchema = object({
  resourceGuard: ReviewResourceGuardSchema,
  preparation: Type.Optional(ReviewPreparationProgressSchema),
  progress: object({ completedUnits: count, totalUnits: Type.Union([count, Type.Null()]), observedAt: stamp, lastMeaningfulActivityAt: Type.Union([stamp, Type.Null()]) }),
- cancellation: Type.Optional(object({ actionId: id, reason: Type.String({ minLength: 1, maxLength: 2048 }), requestedAt: stamp, operationState: enumeration(['cancelling', 'stopped', 'resource_fenced']) })),
+ cancellation: Type.Optional(object({ actionId: id, reason: Type.String({ minLength: 1, maxLength: 2048 }), requestedAt: stamp, operationState: ReviewOperationStateSchema })),
  committedResultBoundary: Type.Optional(object({ semanticSequence: positive, historyBindingDigest: digest })),
  publicationBoundary: Type.Optional(object({ semanticSequence: positive, preservationDigest: digest, artifactId: id })),
 });

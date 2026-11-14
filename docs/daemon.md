@@ -697,8 +697,10 @@ the pattern.
 
 Every answer states whether it is complete, and code writes that statement,
 never a model. Each lookup, and each task of a plan-tree run, returns a
-*completeness record* for its own result: how many items it returned, how
-many exist where that is known, every limit it reached, everything it
+*completeness record* for its own result (no lookup stops at a count or cuts an
+item any more: it returns every result and reads every item whole, and a result
+too large for one model call is divided and combined): how many items it returned, how
+many exist where that is known, everything it
 skipped, every item it read only in part, and what the result is based on
 (the stored graph, a text search, the documentation index, the file system,
 a data source, or a model's own choice of what to look at). A lookup that
@@ -715,8 +717,8 @@ of the lookups that ran for the request:
 "report": {
   "completeness": {
     "complete":   false,
-    "incomplete": [{ "sourceId": "search.text [e2]", "sourceKind": "lookup",
-                     "reason": "limit of 30 hits reached (the search stops at 30 hits)" }],
+    "incomplete": [{ "sourceId": "db.tables.list [e2]", "sourceKind": "lookup",
+                     "reason": "skipped namespaces outside the listing (the store has no namespaces; they are derived from a sample of its keys, which are not scanned in full)" }],
     "failed":     [{ "sourceId": "symbol.locate [e3]", "sourceKind": "lookup",
                      "reason": "the graph store is closed" }],
     "basisNotes": ["…"]          // optional: each distinct note of the sources, once
@@ -746,7 +748,7 @@ The text form of an answer starts with one line written from the report:
 
 ```
 Complete.
-Incomplete: 1 incomplete: search.text [e2] — limit of 30 hits reached (the search stops at 30 hits). 1 failed: symbol.locate [e3] — the graph store is closed.
+Incomplete: 1 incomplete: db.tables.list [e2] — skipped namespaces outside the listing (the store has no namespaces; they are derived from a sample of its keys, which are not scanned in full). 1 failed: symbol.locate [e3] — the graph store is closed.
 ```
 
 It is the first line of the markdown `insrc_analyze` and `insrc_analyze_step`
@@ -1138,7 +1140,7 @@ the first that is given is used alone:
 |---|---|
 | `constraints` | Uses the inline list. An empty list counts as not given. |
 | `constraintIds` | Uses the stored key constraints of the summarised documents with those ids. |
-| `constraintTopic` | Looks the constraints up itself: it enumerates, from the documents of the repository it reads, the constraints on that topic. `maxConstraintSources` (1 to 30) says how many document sections the lookup reads. |
+| `constraintTopic` | Looks the constraints up itself: it enumerates, from the documents of the repository it reads, the constraints on that topic. Every matching section is read. |
 
 The topic is a subject in the documents' own words ("build and test rules for
 CI workflows"), not a file path. The documents read are those of the whole
@@ -1161,8 +1163,7 @@ validation refuses it in every plan, with a message that says to give
 **One lookup per topic in a run.** The first check of a run that asks for a
 topic makes the lookup and writes it to
 `~/.insrc/analyze/<runId>/constraints/<key>.json`; every later check of the
-run on the same topic (letters and spacing aside) and the same
-`maxConstraintSources` reads that file, so the checks of one run judge against
+run on the same topic (letters and spacing aside) reads that file, so the checks of one run judge against
 the same list. The plans of a tree share it. The file holds the repository, the
 topic, the task that made the lookup and the lookup's whole result. A lookup
 that fails is not written, and the next check tries again.
@@ -1171,9 +1172,8 @@ that fails is not written, and the next check tries again.
 `constraints` (the list the check judged against, each with its source
 document) and `constraintSource`: `{ kind: 'documents', topic, repoPath,
 retrievedSectionCount, record }`, `{ kind: 'inline' }` or
-`{ kind: 'stored-documents', ids }`. What the lookup left out (a limit of
-sections it reached, a section it read only in part, a search by meaning that
-did not run) is in the task's completeness record.
+`{ kind: 'stored-documents', ids }`. What the lookup left out (a section it
+read only in part, a search by meaning that did not run) is in the task's completeness record.
 
 **Why a check fails.** Each cause has its own reason on the failed task:
 

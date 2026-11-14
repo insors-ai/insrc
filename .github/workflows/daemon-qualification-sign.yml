@@ -3,6 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       run_id: { required: true, type: string }
+      run_attempt: { required: true, type: string }
       artifact_id: { required: true, type: string }
       commit: { required: true, type: string }
       sequence: { required: true, type: string }
@@ -12,7 +13,7 @@ permissions:
   actions: read
 jobs:
   sign:
-    if: github.ref == 'refs/heads/v2' && github.ref_protected
+    if: github.ref == 'refs/heads/main' && github.ref_protected && vars.INSRC_DAEMON_MAIN_RELEASE_READY == 'true'
     environment: daemon-pilot-qualification
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -28,11 +29,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           RUN_ID: ${{ inputs.run_id }}
+          RUN_ATTEMPT: ${{ inputs.run_attempt }}
           ARTIFACT_ID: ${{ inputs.artifact_id }}
           COMMIT: ${{ inputs.commit }}
           COMPATIBILITY: ${{ inputs.compatibility }}
         run: |
-          bash scripts/daemon-release-artifact.sh "$RUN_ID" "$ARTIFACT_ID" "$COMMIT" "$RUNNER_TEMP/candidate"
+          bash scripts/daemon-release-artifact.sh "$RUN_ID" "$RUN_ATTEMPT" "$ARTIFACT_ID" "$COMMIT" "$RUNNER_TEMP/candidate"
           printf '%s' "$COMPATIBILITY" > "$RUNNER_TEMP/compatibility.json"
       - name: Sign qualification manifest
         env:

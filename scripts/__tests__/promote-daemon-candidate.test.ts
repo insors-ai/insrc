@@ -22,7 +22,9 @@ test('promotion admits only the approved manifest, archive and local evidence', 
 		const build = { version: '0.2.1-pilot.1', commit: 'a'.repeat(40), target: 'darwin-arm64', minimumMacOS: '15.0',
 			nodeVersion: '22.22.1', archiveName: 'insrc-daemon-0.2.1-pilot.1-darwin-arm64.tar.gz',
 			archiveSha256, archiveBytes: archive.length };
-		const manifest = Buffer.from(JSON.stringify({ ...build, runtimeFingerprint: 'e'.repeat(64), schemaVersion: 1, channel: 'macos-arm64-pilot',
+		const candidateOrigin = { repository: '42', branch: 'main', lane: 'release', commit: build.commit,
+			runId: '123', runAttempt: '1', artifactId: '456' };
+		const manifest = Buffer.from(JSON.stringify({ ...build, candidateOrigin, runtimeFingerprint: 'e'.repeat(64), schemaVersion: 1, channel: 'macos-arm64-pilot',
 			sequence: 1, compatibility: { graphSchema: 1, formats: { lance: '1', repoAndIndexQueue: '1', config: '1', workflowAndSession: '1' } },
 			predecessors: [] }));
 		const key = generateKeyPairSync('ed25519');
@@ -31,16 +33,21 @@ test('promotion admits only the approved manifest, archive and local evidence', 
 		await writeFile(join(recordDir, 'qualification.v1.json'), JSON.stringify({
 			schemaVersion: 1, qualifiedAt: '2026-11-14T07:00:00Z', host: { macOSVersion: '15.0', arch: 'arm64', nodeVersion: build.nodeVersion },
 			candidate: { repository, commit: build.commit, version: build.version, target: build.target, runId: '123', artifactId: '456',
-				archiveSha256, archiveBytes: archive.length, manifestSha256: sha256(manifest) },
+				archiveSha256, archiveBytes: archive.length, manifestSha256: sha256(manifest), candidateOrigin },
 			tests: QUALIFICATION_TESTS.map((id: string) => ({ id, result: 'pass', evidenceSha256: sha256(log) })),
 		}));
 		for (const id of QUALIFICATION_TESTS) await writeFile(join(recordDir, `${id}.log`), log);
 		await writeFile(join(recordDir, 'manifest.json'), manifest);
 		await writeFile(join(recordDir, 'manifest.qualification.sig'), sign(null, manifestSigningBytes(manifest, 'qualification'), key.privateKey));
-		await writeFile(join(artifactDir, 'candidate.json'), JSON.stringify(build));
+		await writeFile(join(artifactDir, 'candidate.json'), JSON.stringify({ ...build, branch: 'main', lane: 'release', runId: '123', runAttempt: '1' }));
+		const originFile = join(artifactDir, 'verified-origin.json');
+		await writeFile(originFile, JSON.stringify(candidateOrigin));
 		await writeFile(join(artifactDir, build.archiveName), archive);
 		const args = { recordDir, artifactDir, repository, archiveSha256, qualificationKey };
 		assert.deepEqual((await checkPromotion(args)).bytes, manifest);
+		await writeFile(originFile, JSON.stringify({ ...candidateOrigin, runAttempt: '2', artifactId: '789' }));
+		await assert.rejects(checkPromotion(args), /signed candidate origin differs/);
+		await writeFile(originFile, JSON.stringify(candidateOrigin));
 		await assert.rejects(checkPromotion({ ...args, archiveSha256: 'b'.repeat(64) }), /approval/);
 		await writeFile(join(artifactDir, build.archiveName), Buffer.alloc(archive.length));
 		await assert.rejects(checkPromotion(args), /digest mismatch/);

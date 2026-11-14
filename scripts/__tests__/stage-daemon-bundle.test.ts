@@ -47,7 +47,11 @@ test('staging authenticates archive bytes and rejects links leaving the runtime'
 		await mkdir(releaseDir);
 		const archiveName = 'insrc-daemon-0.2.1-pilot.1-darwin-arm64.tar.gz';
 		await writeFile(join(releaseDir, archiveName), await readFile(archive));
+		const candidateOrigin = { repository: '42', branch: 'main', lane: 'release', commit: manifest.commit,
+			runId: '100', runAttempt: '1', artifactId: '101' };
+		await writeFile(join(releaseDir, 'verified-origin.json'), JSON.stringify(candidateOrigin));
 		await writeFile(join(releaseDir, 'candidate.json'), JSON.stringify({ ...manifest, archiveName,
+			branch: candidateOrigin.branch, lane: candidateOrigin.lane, runId: candidateOrigin.runId, runAttempt: candidateOrigin.runAttempt,
 			version: '0.2.1-pilot.1', target: 'darwin-arm64', nodeVersion: '22.22.1', minimumMacOS: '15.0',
 			runtimeFingerprint: '0'.repeat(64) }));
 		const compatibility = join(dir, 'compatibility.json');
@@ -59,6 +63,7 @@ test('staging authenticates archive bytes and rejects links leaving the runtime'
 		const signed = verifyBundleManifest(await readFile(join(releaseDir, 'manifest.json')),
 			await readFile(join(releaseDir, 'manifest.qualification.sig')), 'qualification', publicKey.export({ type: 'spki', format: 'pem' }));
 		assert.equal(signed.runtimeFingerprint, staged.fingerprint);
+		assert.deepEqual(signed.candidateOrigin, candidateOrigin);
 		await writeFile(staged.runtime, 'changed executable');
 		assert.notEqual(await measureBundleRuntime(staged.root), staged.fingerprint);
 		await symlink('../../../outside', join(source, 'out/daemon/escape'));

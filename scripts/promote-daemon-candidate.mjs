@@ -4,7 +4,8 @@ import { createReadStream } from 'node:fs';
 import { stat, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { manifestSigningBytes, readQualification, sha256, verifyBundleManifest, requireBundleTarget } from './daemon-bundle-metadata.mjs';
+import { isDeepStrictEqual } from 'node:util';
+import { manifestSigningBytes, readCandidateOrigin, readQualification, sha256, verifyBundleManifest, requireBundleTarget } from './daemon-bundle-metadata.mjs';
 import { readBoundedRegular } from './verify-daemon-bundle.mjs';
 
 export async function checkPromotion({ recordDir, artifactDir, repository, archiveSha256, qualificationKey }) {
@@ -15,8 +16,15 @@ export async function checkPromotion({ recordDir, artifactDir, repository, archi
 	if (sha256(bytes) !== c.manifestSha256) throw new Error('qualification manifest checksum mismatch');
 	const signature = await readBoundedRegular(join(recordDir, 'manifest.qualification.sig'), 64);
 	const manifest = verifyBundleManifest(bytes, signature, 'qualification', qualificationKey);
+	const origin = readCandidateOrigin(JSON.parse((await readBoundedRegular(join(artifactDir, 'verified-origin.json'), 8192)).toString('utf8')));
+	if (!isDeepStrictEqual(origin, c.candidateOrigin) || !isDeepStrictEqual(origin, manifest.candidateOrigin)) {
+		throw new Error('signed candidate origin differs from approved evidence or GitHub artifact');
+	}
 	requireBundleTarget(manifest, { platform: 'darwin', architecture: q.host.arch, macOSVersion: q.host.macOSVersion, requestedVersion: c.version });
 	const build = JSON.parse((await readBoundedRegular(join(artifactDir, 'candidate.json'), 8192)).toString('utf8'));
+	for (const field of ['branch', 'lane', 'commit', 'runId', 'runAttempt']) {
+		if (build[field] !== origin[field]) throw new Error(`candidate origin differs: ${field}`);
+	}
 	for (const field of ['commit', 'version', 'target', 'archiveSha256', 'archiveBytes']) {
 		if (manifest[field] !== c[field] || build[field] !== c[field]) throw new Error(`candidate identity mismatch: ${field}`);
 	}

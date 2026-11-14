@@ -19,7 +19,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   prepare:
-    if: github.ref == 'refs/heads/v2' && github.ref_protected
+    if: github.ref == 'refs/heads/main' && github.ref_protected && vars.INSRC_DAEMON_MAIN_RELEASE_READY == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -73,10 +73,10 @@ jobs:
             import { readBoundedRegular } from "./scripts/verify-daemon-bundle.mjs";
             import { readQualification } from "./scripts/daemon-bundle-metadata.mjs";
             const { candidate: c } = readQualification(await readBoundedRegular(process.argv[1], 32768));
-            process.stdout.write([c.runId,c.artifactId,c.commit].join(" "));
+            process.stdout.write([c.runId,c.candidateOrigin.runAttempt,c.artifactId,c.commit].join(" "));
           ' "$record/qualification.v1.json")
-          read -r run artifact commit <<< "$identity"
-          bash scripts/daemon-release-artifact.sh "$run" "$artifact" "$commit" "$RUNNER_TEMP/candidate"
+          read -r run attempt artifact commit <<< "$identity"
+          bash scripts/daemon-release-artifact.sh "$run" "$attempt" "$artifact" "$commit" "$RUNNER_TEMP/candidate"
           node scripts/promote-daemon-candidate.mjs "$record" "$RUNNER_TEMP/candidate" "$GH_REPO" "$DIGEST" > "$RUNNER_TEMP/promotion.json"
       - name: Publish the same archive as a prerelease
         env:

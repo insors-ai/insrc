@@ -18,7 +18,8 @@ for (const id of QUALIFICATION_TESTS) {
 	tests.push({ id, result: 'pass', evidenceSha256: sha256(evidence) });
 }
 const record = Buffer.from(JSON.stringify({ schemaVersion: 1, qualifiedAt: new Date().toISOString(),
-	candidate: { repository, commit, version, target, runId, artifactId, archiveSha256, archiveBytes, manifestSha256: sha256(manifestBytes) },
+	candidate: { repository, commit, version, target, runId, artifactId, archiveSha256, archiveBytes, manifestSha256: sha256(manifestBytes),
+		candidateOrigin: manifest.candidateOrigin },
 	host: { macOSVersion, arch: 'arm64', nodeVersion }, tests }, null, 2) + '\n');
 readQualification(record);
 await writeFile(join(recordDir, 'qualification.v1.json'), record, { flag: 'wx' });

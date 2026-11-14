@@ -37,10 +37,21 @@ function compatibility(value) {
 		'compatibility formats');
 }
 
+export function readCandidateOrigin(value) {
+	keys(value, ['repository', 'branch', 'lane', 'commit', 'runId', 'runAttempt', 'artifactId'], 'candidate origin fields');
+	const id = /^[1-9][0-9]{0,19}$/;
+	requireField(matches(id, value.repository) && value.branch === 'main' && value.lane === 'release' &&
+		matches(commit, value.commit) && matches(id, value.runId) && matches(/^[1-9][0-9]{0,2}$/, value.runAttempt) &&
+		matches(id, value.artifactId), 'candidate origin identity');
+	return value;
+}
+
 export function readBundleManifest(bytes) {
 	const m = boundedJson(bytes, 64 * 1024);
 	keys(m, ['schemaVersion', 'channel', 'sequence', 'version', 'commit', 'target', 'minimumMacOS', 'nodeVersion',
-		'archiveName', 'archiveSha256', 'archiveBytes', 'runtimeFingerprint', 'compatibility', 'predecessors'], 'manifest v1 fields');
+		'archiveName', 'archiveSha256', 'archiveBytes', 'runtimeFingerprint', 'compatibility', 'predecessors',
+		...(Object.hasOwn(m ?? {}, 'candidateOrigin') ? ['candidateOrigin'] : [])], 'manifest v1 fields');
+	if (Object.hasOwn(m, 'candidateOrigin')) requireField(readCandidateOrigin(m.candidateOrigin).commit === m.commit, 'manifest origin commit');
 	requireField(m.schemaVersion === 1 && m.channel === 'macos-arm64-pilot' && positive(m.sequence), 'channel or sequence');
 	requireField(matches(version, m.version) && matches(commit, m.commit), 'version or commit');
 	requireField(m.target === 'darwin-arm64' && matches(macOS, m.minimumMacOS) && m.nodeVersion === '22.22.1', 'target or node runtime');
@@ -95,9 +106,12 @@ export function requireBundleTarget(manifest, { platform, architecture, macOSVer
 export function readQualification(bytes) {
 	const q = boundedJson(bytes, 32 * 1024);
 	keys(q, ['schemaVersion', 'qualifiedAt', 'candidate', 'host', 'tests'], 'qualification v1 fields');
-	keys(q.candidate, ['repository', 'commit', 'version', 'target', 'runId', 'artifactId', 'archiveSha256', 'archiveBytes', 'manifestSha256'], 'candidate fields');
+	keys(q.candidate, ['repository', 'commit', 'version', 'target', 'runId', 'artifactId', 'archiveSha256', 'archiveBytes', 'manifestSha256',
+		'candidateOrigin'], 'candidate fields');
 	keys(q.host, ['macOSVersion', 'arch', 'nodeVersion'], 'qualification host');
 	const c = q.candidate;
+	const origin = readCandidateOrigin(c.candidateOrigin);
+	requireField(origin.commit === c.commit && origin.runId === c.runId && origin.artifactId === c.artifactId, 'qualification origin');
 	requireField(q.schemaVersion === 1 && matches(/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{3})?Z$/, q.qualifiedAt) &&
 		Number.isFinite(Date.parse(q.qualifiedAt)), 'qualification time');
 	requireField(matches(/^[a-zA-Z0-9_.-]{1,100}\/[a-zA-Z0-9_.-]{1,100}$/, c.repository) &&

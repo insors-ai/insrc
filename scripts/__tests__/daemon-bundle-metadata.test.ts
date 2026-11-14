@@ -126,6 +126,7 @@ test('qualification requires one passing record per required local test', () => 
 	const q = {
 		schemaVersion: 1, qualifiedAt: '2026-11-14T07:00:00Z',
 		candidate: { repository: 'insors-ai/insrc', commit: manifest.commit, version: manifest.version, target: manifest.target,
+			candidateOrigin: { repository: '42', branch: 'main', lane: 'release', commit: manifest.commit, runId: '100', runAttempt: '1', artifactId: '101' },
 			runId: '100', artifactId: '101', archiveBytes: 1024, archiveSha256: manifest.archiveSha256, manifestSha256: 'c'.repeat(64) },
 		host: { macOSVersion: '15.2', arch: 'arm64', nodeVersion: '22.22.1' },
 		tests: QUALIFICATION_TESTS.map((id: string) => ({ id, result: 'pass', evidenceSha256: 'd'.repeat(64) })),

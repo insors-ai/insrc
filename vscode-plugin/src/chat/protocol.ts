@@ -16,6 +16,7 @@ import type { TerminalTheme } from './design-tokens.js';
 import type { ProviderId } from './cli-adapter.js';
 import type { TranscriptEntry, ChatSummary, ChatStatus, SessionProgress } from './session-store.js';
 import type { AttachmentRef } from './attachment-store.js';
+import type { ScratchEntry } from './scratch-store.js';
 import type { SectionIndex } from './docs-sections.js';
 // S002 sc1: the docs-content variant types its functional record by INDEXING off
 // DocsContent (which itself indexes off the daemon's ArtifactReviewView), so the
@@ -289,7 +290,14 @@ export type HostToWebview =
     }
   // Story E202610138d4b90c9:S001: the answer to an 'open-companion'. `html` is the file's
   // text for the frame; absent when the file is not one of the document's or could not be read.
-  | { readonly type: 'docs-companion'; readonly artifactId: string; readonly relPath: string; readonly html?: string | undefined };
+  | { readonly type: 'docs-companion'; readonly artifactId: string; readonly relPath: string; readonly html?: string | undefined }
+  // Story E202611134642d49a:S001 t2: the answer to a 'scratch-open-menu' — the most recent
+  // scratchpads (the host lists top 5 by mtime). `error` is one plain sentence when the
+  // store could not list; the menu then renders unusable with that line.
+  | { readonly type: 'scratch-list'; readonly entries: readonly ScratchEntry[]; readonly error?: string | undefined }
+  // Story E202611134642d49a:S001 t2: the answer to a 'send-to-chat' (posted from the
+  // scratchpad document view) — text the chat webview inserts into its input and focuses.
+  | { readonly type: 'insert-into-input'; readonly text: string };
 
 /** Webview -> host: user intents. */
 export type WebviewToHost =
@@ -354,7 +362,20 @@ export type WebviewToHost =
   | { readonly type: 'open-link'; readonly url: string }
   | { readonly type: 'open-code-ref'; readonly path: string; readonly line?: number | undefined }
   // Epic E20261014613abdb3 Story S002: an outbox action on one row ('outbox-retry-now' is Story S004's).
-  | OutboxAction;
+  | OutboxAction
+  // Story E202611134642d49a:S001 t2: the scratchpads button's menu opens; the host answers
+  // with 'scratch-list' (top 5 by mtime) so the menu can render.
+  | { readonly type: 'scratch-open-menu' }
+  // Story E202611134642d49a:S001 t2: TITLELESS new-scratchpad intent — the host acquires the
+  // title itself (window.showInputBox), then creates and opens.
+  | { readonly type: 'scratch-new' }
+  | { readonly type: 'scratch-open'; readonly id: string }
+  | { readonly type: 'scratch-delete'; readonly id: string }
+  // Story E202611134642d49a:S001 t2: open the browse-all table panel (viewType insrc.scratchpads).
+  | { readonly type: 'scratch-browse' }
+  // Story E202611134642d49a:S001 t2: the scratchpad document view's floating button on a
+  // selection — answered by the host with 'insert-into-input' on the chat webview.
+  | { readonly type: 'send-to-chat'; readonly text: string };
 
 /** A pending attachment as the webview shows it: no path. */
 export interface PendingAttachmentView {
@@ -373,7 +394,9 @@ export const HOST_TO_WEBVIEW_TYPES = [
   'history-list',
   'active-list',
   'transcript-row',
+  'approval-position',
   'docs-list',
+  'docs-review-progress',
   'docs-content',
   'user-row',
   'theme',
@@ -383,13 +406,17 @@ export const HOST_TO_WEBVIEW_TYPES = [
   'docs-companion',
   'turn-running',
   'run-catalog',
+  'run-config',
   'outbox',
+  'scratch-list',
+  'insert-into-input',
 ] as const;
 
 export const WEBVIEW_TO_HOST_TYPES = [
   'submit-turn',
   'new-chat',
   'open-chat',
+  'set-run-config',
   'set-edit-mode',
   'edit-decision',
   'docs-decision',
@@ -412,10 +439,38 @@ export const WEBVIEW_TO_HOST_TYPES = [
   'outbox-dismiss',
   'outbox-resend',
   'outbox-retry-now',
+  'scratch-open-menu',
+  'scratch-new',
+  'scratch-open',
+  'scratch-delete',
+  'scratch-browse',
+  'send-to-chat',
 ] as const;
 
 export type HostToWebviewType = (typeof HOST_TO_WEBVIEW_TYPES)[number];
 export type WebviewToHostType = (typeof WEBVIEW_TO_HOST_TYPES)[number];
+
+/**
+ * Compile-time union/array equality (verified by tsc, which DOES typecheck this file —
+ * the __tests__ are excluded from tsconfig, so the runtime test only asserts the
+ * array side): each const array contains exactly its union's discriminants, neither
+ * direction having a member or array entry the other lacks.
+ */
+type _AssertTrue<T extends true> = T;
+type _HostArrayEqualsUnion = _AssertTrue<
+  HostToWebviewType extends HostToWebview['type']
+    ? HostToWebview['type'] extends HostToWebviewType
+      ? true
+      : false
+    : false
+>;
+type _WebviewArrayEqualsUnion = _AssertTrue<
+  WebviewToHostType extends WebviewToHost['type']
+    ? WebviewToHost['type'] extends WebviewToHostType
+      ? true
+      : false
+    : false
+>;
 
 /** Wrap a payload in the versioned envelope. */
 export function envelope<T>(payload: T): Envelope<T> {

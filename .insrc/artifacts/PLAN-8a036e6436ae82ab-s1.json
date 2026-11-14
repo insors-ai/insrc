@@ -1,0 +1,289 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1794641075772-4pe4le",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-14T07:25:40.440Z",
+    "epicCreatedAt": "2026-11-14T06:38:49.736Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 64351,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8a036e6436ae82ab",
+    "epicSlug": "pilot-prebuilt-macos-daemon-releases",
+    "storyId": "s1",
+    "lldRunId": "wf-1794639851378-gchapf",
+    "lldEffectiveHash": "e47bf71ad6dd01d8cf9fa4079c47cf117ba842af834e0ffbadbff4c374b5df04",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "20f5426a193d2bf7bcdd364afe82b7cdff654b53bc90c1ce680f6988ea82ea9a",
+        "at": "2026-11-14T07:25:40.550Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T07:29:54.848Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "acedfc216f402e4e481bf08338da3b40656ed917"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Build a macOS arm64 candidate",
+        "summary": "Package pinned Node, runtime files and native bits and add the Actions candidate build and upload.",
+        "size": "M",
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Exact protected input commit and version appear in build metadata; candidate artifact identity and digest are recorded.",
+          "Actions runs build only; local packaging checks verify runtime layout and portability."
+        ],
+        "order": 1,
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Candidate layout and build-only workflow"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Implement release metadata and bootstrap trust",
+        "summary": "Define bounded manifest and qualification schemas, signature verification, and pinned bootstrap distribution.",
+        "size": "M",
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "An independently supplied bootstrap checksum is required; rejected manifest signature, target, and schema stop before archive execution.",
+          "Test and production keys and namespaces are separate."
+        ],
+        "order": 2,
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Bootstrap checksum and signature/target trust"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Verify and stage daemon bundles",
+        "summary": "Implement archive verification and extraction under a private same-volume staging directory; capture the relocated runtime pin.",
+        "size": "M",
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Size/digest and archive path/type/permission validation reject invalid bundles without touching active state.",
+          "Staged runtime identity includes manifest, archive and relocated file fingerprints."
+        ],
+        "order": 3,
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Archive path and digest rejection"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Integrate fresh install, migration, and rollback",
+        "summary": "Wire fresh and upgrade admission, compatibility checks, durable release proofs and sequence floor into managed lifecycle and recovery.",
+        "size": "L",
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Fresh install needs no predecessor; migrates compatible clone state and leaves unsafe predecessors untouched.",
+          "Offline recovery reads old and new journals, restores only pinned predecessor and does not lower the floor."
+        ],
+        "order": 4,
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Fresh activation, legacy handoff, floor and offline crash recovery"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Qualify candidates locally",
+        "summary": "Add the protected candidate signer, isolated Mac qualification procedure and evidence record.",
+        "size": "M",
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Local qualification uses the production verification path in its separate test trust domain; validates fresh install, migration, restart and rollback.",
+          "Evidence records all required passes and binds commit, version, manifest, run, artifact and archive."
+        ],
+        "order": 5,
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "live",
+            "name": "Isolated Apple Silicon exact-archive lifecycle"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Promote the exact qualified candidate",
+        "summary": "Add protected promotion that signs the verified manifest and publishes the same asset as an opt-in prerelease; document recovery and key rotation.",
+        "size": "M",
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Promotion binds the approved protected revision, rechecks evidence/identity and rejects changed or expired assets; no rebuild or hosted tests.",
+          "Production signs identical manifest bytes; no default installer change or publication during implementation."
+        ],
+        "order": 6,
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Promotion controls, evidence binding and no rebuild"
+          }
+        ]
+      }
+    ],
+    "summary": {
+      "prose": "Implement an opt-in Apple Silicon build and release path, with all testing run locally and publication limited to the qualified artifact.",
+      "audience": "technical"
+    },
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "ac1",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "ac2",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "ac3",
+        "coveredByTaskIds": [
+          "t2",
+          "t3",
+          "t4",
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Local malicious-manifest, archive entry, and digest mismatch fixtures",
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Local workflow lint and protected-input/promotion tests",
+        "coveredByTaskIds": [
+          "t1",
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Fresh install, clone migration with state, supervisor restart, rollback after failed upgrade",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Verify installed runtime needs no host Git, npm or compiler",
+        "coveredByTaskIds": [
+          "t1",
+          "t4",
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/standalone/pilot-prebuilt-macos-daemon-releases-E202611148a036e64/S001/LLD.md:34"
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "docs/standalone/pilot-prebuilt-macos-daemon-releases-E202611148a036e64/S001/LLD.md:91"
+    },
+    {
+      "id": "c3",
+      "kind": "doc",
+      "ref": "docs/standalone/pilot-prebuilt-macos-daemon-releases-E202611148a036e64/S001/LLD.md:91"
+    },
+    {
+      "id": "c4",
+      "kind": "doc",
+      "ref": "docs/standalone/pilot-prebuilt-macos-daemon-releases-E202611148a036e64/S001/LLD.md:176"
+    },
+    {
+      "id": "c5",
+      "kind": "doc",
+      "ref": "docs/standalone/pilot-prebuilt-macos-daemon-releases-E202611148a036e64/S001/LLD.md:53"
+    },
+    {
+      "id": "c6",
+      "kind": "doc",
+      "ref": "docs/standalone/pilot-prebuilt-macos-daemon-releases-E202611148a036e64/S001/LLD.md:72"
+    }
+  ]
+}

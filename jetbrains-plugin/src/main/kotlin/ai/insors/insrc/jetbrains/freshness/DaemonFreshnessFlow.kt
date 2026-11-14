@@ -121,6 +121,19 @@ object DaemonFreshnessFlow {
         // update. beginUpdate serialises them: the winner runs, the losers skip silently.
         if (!deps.beginUpdate()) return
         try {
+            val bridge = try { deps.upgradeLegacy?.invoke() } catch (t: Throwable) {
+                DaemonActionResult.Failed(t.message ?: "the macOS upgrade bridge failed")
+            }
+            if (bridge != null) {
+                val current = if (bridge is DaemonActionResult.Ok) deps.gateway.installedCommit() else null
+                if (bridge is DaemonActionResult.Ok && !current.isNullOrEmpty() && current != priorCommit) {
+                    deps.notify.show(NotifyKind.INFO, RELOAD_NUDGE_MESSAGE, null)
+                } else {
+                    val reason = (bridge as? DaemonActionResult.Failed)?.reason ?: "the migrated daemon did not report an updated commit"
+                    deps.notify.show(NotifyKind.FAILURE, failureMessage(reason), null)
+                }
+                return
+            }
             val startedAtMs = deps.now()
             // sc1 — the daemon-owned IPC (k2), never a shell-out. Returns Failed on refusal
             // (e.g. 'update already in progress') / unreachable; never throws.
@@ -285,4 +298,5 @@ class FreshnessDeps(
      */
     val beginUpdate: () -> Boolean = { true },
     val endUpdate: () -> Unit = {},
+    val upgradeLegacy: (() -> DaemonActionResult?)? = null,
 )

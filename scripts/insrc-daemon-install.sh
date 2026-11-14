@@ -14,9 +14,9 @@
 #   6. Start the daemon (unless --no-start).
 #   7. Print next-step guidance (MCP registration, interactive TUI).
 #
-# The script is INTENTIONALLY the entire distribution -- there is no
-# code payload. The actual daemon source is pulled from GitHub at
-# install time. Update the install by re-running this script or by
+# The release script includes the trusted macOS upgrade verifier. The
+# daemon source is pulled from GitHub at install time.
+# Update the install by re-running this script or by
 # running $INSTALL_ROOT/scripts/daemon-ctl.sh update.
 #
 # Usage:
@@ -55,8 +55,20 @@ NODE_MIN_MAJOR=20
 INSTALL_ROOT="$DEFAULT_TARGET"
 REPO_URL="$DEFAULT_REPO_URL"
 BRANCH="$DEFAULT_BRANCH"
+EXPLICIT_REPO=0
+EXPLICIT_BRANCH=0
 START_AFTER_INSTALL=1
 ASSUME_YES=0
+FRESH_MAC_INSTALL=0
+# Filled by release packaging with the verifier and independently provisioned public key.
+INSRC_RELEASE_BOOTSTRAP_B64=''
+
+write_release_verifier() {
+	(
+		unset NODE_OPTIONS NODE_PATH
+		node --input-type=commonjs -e 'const fs=require("node:fs"); fs.writeFileSync(process.argv[1], Buffer.from(process.argv[2],"base64"), {flag:"wx",mode:0o600});' "$1" "$INSRC_RELEASE_BOOTSTRAP_B64"
+	)
+}
 EMBEDDER_CHOICE="auto"     # auto | ollama | onnx
 LOG_FILE=""
 
@@ -100,8 +112,8 @@ confirm() {
 while [ $# -gt 0 ]; do
 	case "$1" in
 		--target)    shift; INSTALL_ROOT="${1:-}"; [ -n "$INSTALL_ROOT" ] || die "--target requires a value" ;;
-		--branch)    shift; BRANCH="${1:-}";       [ -n "$BRANCH" ]       || die "--branch requires a value" ;;
-		--repo)      shift; REPO_URL="${1:-}";     [ -n "$REPO_URL" ]     || die "--repo requires a value" ;;
+		--branch)    shift; BRANCH="${1:-}"; EXPLICIT_BRANCH=1; [ -n "$BRANCH" ] || die "--branch requires a value" ;;
+		--repo)      shift; REPO_URL="${1:-}"; EXPLICIT_REPO=1; [ -n "$REPO_URL" ] || die "--repo requires a value" ;;
 		--no-start)  START_AFTER_INSTALL=0 ;;
 		--embedder)
 			shift
@@ -161,6 +173,71 @@ command -v npm >/dev/null 2>&1 || die "npm not found on PATH (comes with Node.js
 # Step 2: clone or update the checkout
 # ---------------------------------------------------------------------------
 
+FRESH_MARKER="$HOME/.insrc/managed-lifecycle/fresh-install.pending"
+if [ "$(uname -s)" = Darwin ] && [ -f "$FRESH_MARKER" ] && [ ! -L "$FRESH_MARKER" ]; then
+	[ "$(cat "$FRESH_MARKER")" = "$INSTALL_ROOT" ] || die "fresh installation is pending for a different target" 4
+	FRESH_MAC_INSTALL=1
+fi
+if [ "$(uname -s)" = Darwin ] && [ -f "$INSTALL_ROOT/out/bin/insrc-daemon-control.js" ] && [ -f "$HOME/.insrc/managed-lifecycle/journal.json" ]; then
+	RESUME_ARGS=(resume-fresh)
+	if [ "$FRESH_MAC_INSTALL" -eq 1 ]; then RESUME_ARGS+=("$INSTALL_ROOT"); fi
+	if node "$INSTALL_ROOT/out/bin/insrc-daemon-control.js" "${RESUME_ARGS[@]}"; then
+		if [ "$FRESH_MAC_INSTALL" -eq 1 ]; then rm -f "$FRESH_MARKER"; fi
+		ok "recovered managed daemon installation"
+		exit 0
+	else
+		rc=$?
+		[ "$rc" -eq 10 ] || die "managed daemon activation could not be recovered" 4
+	fi
+fi
+
+# An existing macOS installation must stay executable while its replacement is built.
+if [ "$(uname -s)" = Darwin ] && [ "$FRESH_MAC_INSTALL" -eq 0 ] && [ -e "$INSTALL_ROOT" ]; then
+	if [ ! -d "$INSTALL_ROOT/.git" ] && [ ! -f "$HOME/.insrc/managed-lifecycle/installation.json" ] \
+		&& [ -f "$HOME/.insrc/managed-lifecycle/journal.json" ] && [ -x "$INSTALL_ROOT/scripts/daemon-ctl.sh" ]; then
+		"$INSTALL_ROOT/scripts/daemon-ctl.sh" recover || die "interrupted macOS upgrade could not be recovered" 4
+	fi
+	if [ -f "$HOME/.insrc/managed-lifecycle/installation.json" ] && [ -x "$INSTALL_ROOT/scripts/daemon-ctl.sh" ]; then
+		if node -e 'const fs=require("fs"); process.exit(JSON.parse(fs.readFileSync(process.argv[1],"utf8")).enabled === true ? 0 : 1)' "$HOME/.insrc/managed-lifecycle/installation.json"; then
+			UPDATE_ARGS=(update)
+			if [ "$EXPLICIT_REPO" -eq 1 ]; then UPDATE_ARGS+=(--repo-url "$REPO_URL"); fi
+			if [ "$EXPLICIT_BRANCH" -eq 1 ]; then UPDATE_ARGS+=(--branch "$BRANCH"); fi
+			cd /
+			INSRC_DAEMON_UPDATE_WAIT=1 INSRC_DAEMON_ROOT="$INSTALL_ROOT" exec "$INSTALL_ROOT/scripts/daemon-ctl.sh" "${UPDATE_ARGS[@]}"
+		fi
+	fi
+	[ -d "$INSTALL_ROOT/.git" ] || die "existing target is neither a legacy checkout nor a managed launcher" 3
+	confirm "stage a verified macOS daemon upgrade" || die "user declined" 1
+	if [ "$EXPLICIT_REPO" -eq 0 ]; then
+		REPO_URL=$(git -C "$INSTALL_ROOT" remote get-url origin)
+		CONFIG_REPO=$(node -e 'try {const c=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")); console.log(c.daemonUpdate?.repoUrl ?? "");}catch(e){if(e.code!=="ENOENT")throw e;}' "$HOME/.insrc/config.json")
+		if [ -n "$CONFIG_REPO" ]; then REPO_URL="$CONFIG_REPO"; fi
+	fi
+	if [ "$EXPLICIT_BRANCH" -eq 0 ]; then
+		BRANCH=$(git -C "$INSTALL_ROOT" symbolic-ref --short HEAD)
+		CONFIG_BRANCH=$(node -e 'try {const c=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")); console.log(c.daemonUpdate?.branch ?? "");}catch(e){if(e.code!=="ENOENT")throw e;}' "$HOME/.insrc/config.json")
+		if [ -n "$CONFIG_BRANCH" ]; then BRANCH="$CONFIG_BRANCH"; fi
+	fi
+	case "$REPO_URL" in https://*|http://*|ssh://*|git://*|file://*|/*|*@*:*) ;; *) die "unsupported daemon origin" 3 ;; esac
+	git check-ref-format --branch "$BRANCH" >/dev/null || die "invalid daemon branch" 3
+	BRIDGE=$(mktemp -d "${TMPDIR:-/tmp}/insrc-upgrade-XXXXXXXX")
+	trap 'rm -rf "$BRIDGE"' EXIT
+	log "preparing the macOS upgrade bridge beside the installed release"
+	[ -n "$INSRC_RELEASE_BOOTSTRAP_B64" ] || die "production source release signing key is not provisioned" 4
+	write_release_verifier "$BRIDGE/verifier.mjs"
+	(
+		unset NODE_OPTIONS NODE_PATH
+		node "$BRIDGE/verifier.mjs" authorize "$BRIDGE" "$HOME/.insrc" "$REPO_URL" "$BRANCH"
+	) || die "macOS upgrade bridge authorization failed" 4
+	( cd "$BRIDGE/checkout" && CXXFLAGS="${CXXFLAGS:+$CXXFLAGS }-std=c++17" npm ci --no-fund --no-audit && npm run --silent build )
+	[ -f "$BRIDGE/checkout/out/bin/insrc-daemon-control.js" ] || die "selected branch has no macOS upgrade bridge" 4
+	INSTALL_ROOT=$(cd "$INSTALL_ROOT" && pwd -P)
+	cd /
+	# The controller owns cleanup after exec, so no old checkout shell remains during the fence census.
+	unset NODE_OPTIONS NODE_PATH
+	exec node "$BRIDGE/checkout/out/bin/insrc-daemon-control.js" prepare-legacy-upgrade "$INSTALL_ROOT" "$REPO_URL" "$BRANCH" "$BRIDGE"
+fi
+
 if [ -e "$INSTALL_ROOT" ]; then
 	if [ ! -d "$INSTALL_ROOT/.git" ]; then
 		die "$INSTALL_ROOT exists but is not a git checkout -- move it aside or use --target <other>" 3
@@ -186,10 +263,15 @@ if [ -e "$INSTALL_ROOT" ]; then
 		ok "already at ${CURRENT:0:8} (no-op)"
 	fi
 else
+	if [ "$(uname -s)" = Darwin ]; then FRESH_MAC_INSTALL=1; fi
 	log "cloning $REPO_URL into $INSTALL_ROOT (branch: $BRANCH) ..."
 	mkdir -p "$(dirname "$INSTALL_ROOT")"
 	git clone --quiet --branch "$BRANCH" --single-branch "$REPO_URL" "$INSTALL_ROOT"
 	ok "clone complete"
+	if [ "$FRESH_MAC_INSTALL" -eq 1 ] && [ ! -e "$FRESH_MARKER" ]; then
+		mkdir -m 700 -p "$(dirname "$FRESH_MARKER")"
+		(umask 077; set -C; printf '%s\n' "$INSTALL_ROOT" > "$FRESH_MARKER")
+	fi
 fi
 
 # ---------------------------------------------------------------------------
@@ -209,7 +291,9 @@ rm -f "$INSTALL_MARKER"
 # The lockfile's hash before npm can rewrite it: the one the update paths compare.
 LOCK_HASH=$(git -C "$DAEMON_SRC" hash-object package-lock.json 2>/dev/null || echo "")
 log "installing daemon dependencies (may take a few minutes on first install) ..."
-( cd "$DAEMON_SRC" && CXXFLAGS="${CXXFLAGS:+$CXXFLAGS }-std=c++17" npm install --no-fund --no-audit ) 2>&1 | tail -3 | while IFS= read -r line; do
+INSTALL_COMMAND=install
+if [ "$FRESH_MAC_INSTALL" -eq 1 ]; then INSTALL_COMMAND=ci; fi
+( cd "$DAEMON_SRC" && CXXFLAGS="${CXXFLAGS:+$CXXFLAGS }-std=c++17" npm "$INSTALL_COMMAND" --no-fund --no-audit ) 2>&1 | tail -3 | while IFS= read -r line; do
 	printf '   %s\n' "$line"
 done
 if [ -n "$LOCK_HASH" ]; then
@@ -388,7 +472,21 @@ fi
 CTL="$INSTALL_ROOT/scripts/daemon-ctl.sh"
 if [ ! -x "$CTL" ] && [ -f "$CTL" ]; then chmod +x "$CTL" 2>/dev/null || true; fi
 
-if [ "$START_AFTER_INSTALL" -eq 1 ] && [ -x "$CTL" ]; then
+if [ "$FRESH_MAC_INSTALL" -eq 1 ]; then
+	ACTIVATION_INTENT=idle
+	if [ "$START_AFTER_INSTALL" -eq 1 ]; then ACTIVATION_INTENT=start; fi
+	HELPER="$INSTALL_ROOT/out/bin/insrc-daemon-control.js"
+	[ -f "$HELPER" ] || die "this daemon release does not include the macOS supervisor controller" 4
+	if [ -n "$INSRC_RELEASE_BOOTSTRAP_B64" ]; then
+		BRIDGE=$(mktemp -d "${TMPDIR:-/tmp}/insrc-verifier-XXXXXXXX")
+		trap 'rm -rf "$BRIDGE"' EXIT
+		write_release_verifier "$BRIDGE/verifier.mjs"
+		node "$HELPER" activate-fresh "$INSTALL_ROOT" "$ACTIVATION_INTENT" "$BRIDGE/verifier.mjs"
+	else
+		node "$HELPER" activate-fresh "$INSTALL_ROOT" "$ACTIVATION_INTENT"
+	fi
+	rm -f "$FRESH_MARKER"
+elif [ "$START_AFTER_INSTALL" -eq 1 ] && [ -x "$CTL" ]; then
 	log "starting daemon ..."
 	INSRC_DAEMON_ROOT="$INSTALL_ROOT" "$CTL" start --skip-sync --skip-install --skip-build 2>&1 | tail -3 | while IFS= read -r line; do
 		printf '   %s\n' "$line"

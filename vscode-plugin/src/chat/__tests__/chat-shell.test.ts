@@ -21,13 +21,13 @@ import { fakeAttachmentFs } from './fake-attachment-fs.js';
 import { PROVIDER_ICON_SVGS } from '../provider-icons.js';
 import { waitFor } from './fixtures.js';
 
-const ROW_PX = 10;
+export const ROW_PX = 10;
 const VIEW_PX = 100;
 
 type Stub = BodyStub & Record<string, unknown>;
 
 /** The shell script running in its own context over fake elements; `msg` delivers a host message. */
-interface Shell {
+export interface Shell {
   term: BodyStub;
   bar: BodyStub;
   sent: Array<Record<string, unknown>>;
@@ -41,7 +41,7 @@ interface Shell {
   tickIntervals: () => void;
 }
 /** `attach` gives the host its attachment seams, so the shell has the attach controls. */
-function runShell(opts: { attach?: boolean | undefined; queue?: boolean | undefined; clock?: { t: number } | undefined; store?: ReturnType<typeof createInMemoryChatSessionStore> | undefined; channel?: ChatPanelChannel | undefined; catalog?: unknown; hostDeps?: Partial<ChatPanelHostDeps> | undefined } = {}): Shell {
+export function runShell(opts: { attach?: boolean | undefined; queue?: boolean | undefined; clock?: { t: number } | undefined; store?: ReturnType<typeof createInMemoryChatSessionStore> | undefined; channel?: ChatPanelChannel | undefined; catalog?: unknown; hostDeps?: Partial<ChatPanelHostDeps> | undefined } = {}): Shell {
   let html = '';
   const inner: ChatPanelChannel = opts.channel ?? { setHtml: (h) => { html = h; }, postMessage: () => {}, onMessage: () => {}, onDidDispose: () => {}, reveal: () => {}, dispose: () => {} };
   // keep runShell's own html snapshot in sync when a caller supplies the channel
@@ -202,7 +202,7 @@ test('the shell script bounds the view of a long active session: rows past the l
 
 // ---- Story E2026101259da3204:S001 t7: the attach button, the chips and the paste ----
 
-const ofType = (v: Shell, type: string): Array<Record<string, unknown>> => v.sent.filter((m) => m['type'] === type);
+export const ofType = (v: Shell, type: string): Array<Record<string, unknown>> => v.sent.filter((m) => m['type'] === type);
 const byClass = (root: BodyStub, cls: string): BodyStub[] => allOf(root).filter((n) => n.className.split(/\s+/).includes(cls));
 /** A paste event over clipboard items; counts preventDefault calls. */
 function pasteEvent(items: Array<{ kind: string; type: string; file?: { type: string; name: string; dataUrl: string } | undefined }>): { event: Record<string, unknown>; prevented: () => number } {
@@ -360,6 +360,31 @@ test('shell: the attach button is icon-only with an aria-label, sits first in th
   assert.ok(on.includes('function doSubmit(){if(!box.value.trim()&&attCount===0)return;'));
   assert.ok(off.includes('<div class="statusbar"><span class="seg" id="insrc-modeseg">'), 'without the attach seam the status bar opens with the mode seg');
   assert.ok(off.includes('<span class="runctl">'), 'the bottom-right runctl group is present');
+});
+
+test("webview-host.test.ts + chat-shell.test.ts: existing CSP/nonce tests preserved when the shell is extracted to panels/shell.ts (shell output byte-identical, all existing assertions pass unmodified)", async () => {
+  // Story E202611134642d49a:S001 t3: the chat panel renders through the SAME shared shell as
+  // the other webview panels (panels/shell.ts), so its CSP meta, nonce'd single script and
+  // document envelope come from shellHtml — not from a hand-assembled document in chat-panel.
+  const { shellHtml } = await import('../../panels/shell.js');
+  const html = runShell().html;
+  // The chat document IS the shared shell's envelope: doctype, head with charset + CSP meta,
+  // one nonce'd script, closing tags — exactly what shellHtml emits (hideTitle: the chat
+  // paints its own .chrome header, so no <h2>).
+  assert.ok(html.startsWith('<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; img-src data:; style-src \'unsafe-inline\'; script-src \'nonce-N\';">'), 'the chat document starts with the shared shell frame + the chat-only img-src data: extra');
+  assert.ok(html.endsWith('</body></html>'), 'the chat document ends with the shared shell envelope');
+  assert.ok(!html.includes('<h2>'), 'hideTitle: the chat paints its own .chrome header, no shell <h2>');
+  assert.equal((html.match(/<script\b/g) ?? []).length, 1, 'still exactly one script tag');
+  assert.match(html, /<script nonce="N">/, 'the single script carries the render nonce');
+  assert.ok(html.includes('<body class="insrc-term">'), 'the body carries only insrc-term');
+  // The chat's own styles ride as headExtra AFTER the shell's <style> block, so the shell
+  // rules keep their cascade position — the same contract shellHtml documents.
+  const shellStyleEnd = html.indexOf('</style>');
+  assert.ok(shellStyleEnd > 0 && html.indexOf('<body', shellStyleEnd) > 0 || html.slice(0, html.indexOf('<body')).includes('</style></head>'), 'the shared shell <style> closes the head before the body');
+  assert.ok(html.includes('<style>') && html.indexOf('<style>') < html.indexOf('<body'), 'styles are inside the head');
+  // Byte-parity of the frame with the extracted module: the same call shellHtml makes.
+  const probed = shellHtml('', '<p>probe</p>', 'N', undefined, { cspExtra: ' img-src data:;', hideTitle: true, bodyClass: 'insrc-term' });
+  assert.ok(probed.startsWith(html.slice(0, html.indexOf('<style>'))), 'the chat frame is byte-identical to shellHtml\'s envelope for the same nonce + cspExtra');
 });
 
 test('shell script: a chip click on a sent message posts open-attachment, and the error sentence is shown and cleared', () => {
@@ -1135,8 +1160,8 @@ test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1; Story e0821209d9
 });
 
 // Send chat prompts with Enter (Story d15a24eb41e0771c/s1).
-type Composer = BodyStub & { value: string; selectionStart: number; selectionEnd: number; setRangeText?: (t: string, s: number, e: number, mode: string) => void; focusedWith?: unknown };
-function composer(v: Shell, text: string, start = text.length, end = start): Composer {
+export type Composer = BodyStub & { value: string; selectionStart: number; selectionEnd: number; setRangeText?: (t: string, s: number, e: number, mode: string) => void; focusedWith?: unknown };
+export function composer(v: Shell, text: string, start = text.length, end = start): Composer {
   const box = v.el('insrc-input') as Composer;
   box.value = text;
   box.selectionStart = start;

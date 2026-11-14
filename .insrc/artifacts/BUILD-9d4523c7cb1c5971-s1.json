@@ -1,0 +1,72 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 3,
+        "contentHash": "c52084f3d16607dc995f4b737b70fb4886aa618a2e7c9c412d1cf847307d2d69",
+        "at": "2026-11-13T05:28:59.468Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-683baa84-e9eb-49fc-afe2-6a83ef20bdbb",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-13T05:02:37.366Z",
+    "epicCreatedAt": "2026-11-12T19:54:27.239Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9d4523c7cb1c5971",
+    "storyId": "s1",
+    "revision": 3,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "Bugfix magnitude small (ISSUE-9d4523c7cb1c5971): per the bugfix advance rule, a small bugfix routes issue->build as a no-LLD standalone build, which the build step admits on its 'trivial' path (producesLld=false) with the defect scope in focus; the tracked ledger entries are the approved ISSUE artifact plus the standalone BUILD record.",
+    "epicSlug": "daemon-ctl-sh-fails-node-command",
+    "updatedAt": "2026-11-13T05:28:29.938Z"
+  },
+  "body": {
+    "focus": "daemon-ctl.sh fails with 'node: command not found' when launched from a GUI process (VS Code startup auto-start broken)\n\nReproduction: On macOS with the daemon installed at ~/.insrc/daemon but stopped, open VS Code: the extension activates on onStartupFinished, probes reachability ('stopped'), and runs `bash ~/.insrc/daemon/scripts/daemon-ctl.sh start --skip-sync --skip-install --skip-build`. The daemon never comes up; the status bar shows errored with 'the daemon git / npm / build / start step failed'. Direct reproduction: `env -i HOME=$HOME PATH=/usr/bin:/bin bash ~/.insrc/daemon/scripts/daemon-ctl.sh start --skip-sync --skip-install --skip-build` exits 4 with 'line 212: node: command not found' (also seen in the real ctl log /tmp/insrc/daemon-ctl-20261112-173605-1198.log). Expected: the script starts the already-built daemon regardless of the caller's PATH.\n\nRoot cause: daemon-ctl.sh invokes a bare `node` in stop_managed_daemon (scripts/daemon-ctl.sh:212), supervised_lifecycle (:266), socket_status (:237) and spawn_daemon (:197), assuming `node` is on PATH. GUI-launched processes on macOS (the VS Code extension host, which spawn()s bash with the process env) have PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin, which contains no node on this machine (node lives at /opt/homebrew/bin/node). Since commit 17605863f (2026-11-10) cmd_start unconditionally calls stop_managed_daemon before spawning, so even a plain start dies at line 212 with exit 4 before ever reaching spawn_daemon. The extension-side auto-start chain (vscode-plugin/src/activation.ts:92 -> vscode-plugin/src/daemon/controller.ts:112 -> vscode-plugin/src/daemon/subprocess.ts:36, which only merges opts.env over process.env and adds nothing to PATH) is intact and correctly classifies the socket as 'stopped'; the failure is wholly inside the shell script's node assumption.\n\nFix intent: Make daemon-ctl.sh independent of an inherited PATH node: resolve a Node binary once at the top of the script (honor an explicit override env var such as INSRC_NODE_BIN, then `command -v node`, then well-known install locations — /opt/homebrew/bin, /usr/local/bin, ~/.nvm/versions/node/*/bin, the daemon checkout's own node_modules/.bin, plus the node recorded at install time if one is persisted) and use that absolute path for every `node ...` call (stop_managed_daemon, supervised_lifecycle, socket_status, spawn_daemon). Optionally also let the VS Code controller pass the extension host's process.execPath bin dir in the spawned env (mirroring the JetBrains plugin's envWithNodeOnPath pattern). Add regression tests that run the script with a PATH lacking node and assert it still resolves and starts/stops cleanly.",
+    "producesLld": false,
+    "commit": "a6ab1afcd",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Pinned node resolution in scripts/daemon-ctl.sh (resolve_node: INSRC_NODE_BIN, PATH, well-known locations via INSRC_NODE_LOCATIONS seam, recorded ~/.insrc/daemon-node read with pure shell builtins) and replaced all four bare `node` call sites with $NODE_BIN; added daemon-ctl-node-path.test.ts with 7 hermetic regression tests including a full start->status cycle under a node-free GUI PATH. Committed a6ab1afcd on v2 with Insrc-Story trailer.",
+    "testRecord": {
+      "md": "docs/standalone/daemon-ctl-sh-fails-node-command-E202611129d4523c7/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "scripts/daemon-ctl.sh"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-13T05:28:29.938Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/daemon-ctl-node-path.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-13T05:28:29.938Z"
+      }
+    ]
+  },
+  "citations": []
+}

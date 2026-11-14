@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6613a0df-a976-4c11-bc50-b52dfe3b4d6c",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-13T08:52:27.230Z",
+    "epicCreatedAt": "2026-11-13T06:38:38.894Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4642d49ab0593787",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Scratch panels controller + browse-all table view (insrc.scratchpads)",
+      "parent": {
+        "entityId": "STORY-4642d49ab0593787-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-4642d49ab0593787-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-4642d49ab0593787-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-4642d49ab0593787-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3a1b4a32a36d746ff0c27f36252183260d1e174527c4bda3e6435d79279c7439",
+        "at": "2026-11-13T08:52:27.236Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-13T08:52:27.239Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Scratch panels controller + browse-all table view (insrc.scratchpads)",
+    "summary": "NEW vscode-free scratch-panels controller (panels/scratch-panels.ts): wraps the injected PanelFactory with per-viewType create-or-reveal singletons + injected setTitle, and implements the insrc.scratchpads browse-all tabular editor-pane view (Name/Modified columns, icon-only Open/Delete rows with title hover text + data-id, empty/error rows, unbounded list data). Plus the browse-table half of scratch-panel.test.ts.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "vscode-plugin/src/panels/scratch-panels.ts is a NEW vscode-free controller wrapping the injected PanelFactory (extension.ts:447) with its own create-or-reveal singleton cache per viewType (mirroring openSingleton webview-host.ts:214); onDidDispose clears the cached handle",
+      "handle exposes setHtml/reveal/setTitle/onDidDispose/onMessage/postMessage/dispose — setTitle is an injected op with a production adapter to the underlying WebviewPanel title; stock PanelHandle (panels/types.ts:134-135) has none",
+      "insrc.scratchpads browse view renders a tabular editor pane: Name + Modified columns, per-row icon-only Open/Delete buttons with title hover text and data-id posting scratch-open {id}/scratch-delete {id}, empty hint row, error row; table data comes from an UNBOUNDED listScratches() (no limit) fetched by the host, never the capped menu list",
+      "panel creation failure returns undefined + panelLog warning (never throws) and next click retries",
+      "scratch-panel.test.ts (new) covers browse table, row buttons, empty/error states, create-or-reveal reuse of a single panel instance"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "scratch-panel.test.ts: browse viewType insrc.scratchpads renders a table with Name and Modified columns (ac3)"
+      },
+      {
+        "level": "integration",
+        "name": "scratch-panel.test.ts: each row has icon-only Open/Delete buttons (title hover text, data-id) posting scratch-open/scratch-delete (ac3, ac5)"
+      },
+      {
+        "level": "integration",
+        "name": "scratch-panel.test.ts: empty list renders a hint row; create-or-reveal reuses a single panel instance; panel-factory failure returns undefined + logged and next click retries (ac3)"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

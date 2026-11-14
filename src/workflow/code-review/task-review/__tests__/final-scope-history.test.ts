@@ -49,7 +49,7 @@ test('final history: unmapped attribution preserves bounded true failure without
  const f=await fixture(true,2);try{
   const cp=f.checkpoint(),a=cp.attempts[0]!;
   assert.throws(()=>failAttribution(a,new Error('must not downgrade'),false),/downgraded/);
-  delete a.header.acceptedAttribution;delete a.header.taskScopeIdentities;delete a.header.attributionIdentity;a.header.attributionState='pending';a['review-response'].tasks=[];
+  delete a.header.acceptedAttribution;delete a.header.taskScopeIdentities;delete a.header.attributionIdentity;delete a.header.taskIdentityFormat;a.header.attributionState='pending';a['review-response'].tasks=[];
   failAttribution(a,new Error('Provider rejected scope: '+ 'é'.repeat(10000)),false);
   assert.ok(Buffer.byteLength(a.header.attributionFailure!.summary)<=8192);
   a['review-response'].tasks=a.header.selectedTaskIds.map(id=>unmappedTaskFailure(id,false));
@@ -90,7 +90,7 @@ test('final history: fresh native and controller attribution failures publish al
 test('final history: completed no-pin records retain byte-identical read-only coordinates',async()=>{
  const f=await fixture();try{
   const cp=f.checkpoint(),a=cp.attempts[0]!;delete a.submitted.reviewRevision;
-  for(const k of ['finalScopeIdentity','attributionState','acceptedAttribution','taskScopeIdentities','attributionIdentity']as const)delete a.header[k];
+  for(const k of ['finalScopeIdentity','attributionState','acceptedAttribution','taskScopeIdentities','attributionIdentity','taskIdentityFormat']as const)delete a.header[k];
   await saveCheckpoint(checkpointPath(f.repo,'publication'),cp);
   const p=await publishTaskCheckpoint(f.repo,hash,'publication',f.deps),body=f.readRecord(p.jsonPath).body,bytes=JSON.stringify(body);
   assert.equal(body.reviews[0]!.scope.finalScope,undefined);assert.equal(JSON.stringify(validateTaskBody(body)),bytes);

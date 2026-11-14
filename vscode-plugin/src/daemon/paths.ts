@@ -8,6 +8,7 @@
  */
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { readManagedInstallation } from '../../../src/shared/managed-daemon-installation.js';
 
 export interface DaemonPaths {
   /** The installed daemon checkout — ~/.insrc/daemon (DAEMON_ROOT). */
@@ -18,6 +19,11 @@ export interface DaemonPaths {
   daemonEntry: string;
   /** The installer bundled in the extension package (assets/insrc-daemon-install.sh). */
   bundledInstaller: string;
+  managedStateRoot?: string;
+}
+
+export async function selectedDaemonRoot(paths: DaemonPaths): Promise<string | undefined> {
+  return paths.managedStateRoot === undefined ? undefined : (await readManagedInstallation(paths.managedStateRoot))?.releaseRoot;
 }
 
 /** The installed-daemon root, honoring INSRC_DAEMON_ROOT like daemon-ctl.sh does. */
@@ -38,5 +44,6 @@ export function defaultDaemonPaths(extensionPath: string): DaemonPaths {
     ctlScript: join(daemonRoot, 'scripts', 'daemon-ctl.sh'),
     daemonEntry: join(daemonRoot, 'out', 'daemon', 'index.js'),
     bundledInstaller: join(extensionPath, 'assets', 'insrc-daemon-install.sh'),
+    ...(process.platform === 'darwin' ? { managedStateRoot: join(homedir(), '.insrc') } : {}),
   };
 }

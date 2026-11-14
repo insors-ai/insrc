@@ -1,0 +1,298 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1794417662086-ats23b",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T17:22:54.172Z",
+    "epicCreatedAt": "2026-11-11T14:26:38.657Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "claude-opus-5-5"
+        }
+      ]
+    },
+    "elapsedMs": 111502,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7d2422c8f57fa483",
+    "epicSlug": "code-review-reuse-refused-when-only",
+    "storyId": "s1",
+    "lldRunId": "wf-1794410314395-9seizo",
+    "lldEffectiveHash": "8d914e7749757415268bf2e0dd5a5b0a2f6dbed3582a0f945a42e555daf4e71a",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9dc6896f37956f396fd25fc7d88a8650d350047db0ccd1df57f93b9419716fd8",
+        "at": "2026-11-11T17:22:54.346Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T17:27:50.863Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "eee7f7893cfbdd4a69101e902d1a8789f59b4513"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this Story changes two files in the code-review task-review module: the attempt header gains an optional identity-format field, and the attribution binding learns a second task identity format that ignores test-row provenance, carries a provenance digest for accurate rejection text, and reports every refused reuse task in one rejection. The work lands in three steps, header first, then the identity, then the format-aware bind, each with tests in a new reuse-identity test file; existing reuse tests must keep passing unchanged.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Record the task identity format on the attempt header",
+        "summary": "Add the optional taskIdentityFormat: 'final-task-v2' field to the attempt header interface and its strict schema in src/workflow/code-review/task-review/contracts.ts, export the TaskIdentityFormat type, and extend validateSavedAttribution so the field must be absent on unpinned, pending and failed attempts.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A header with taskIdentityFormat 'final-task-v2' passes the strict schema; any other value is refused.",
+          "An unpinned, pending or failed attempt carrying taskIdentityFormat is refused with the existing messages.",
+          "Saved attempts without the field validate exactly as before."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: the attempt header schema accepts only the v2 identity format"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: an identity format on an unaccepted attempt is refused"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add the v2 task identity and a provenance-aware fingerprint",
+        "summary": "Give taskFinalInput and taskFinalIdentity an optional format: 'final-task-v1' (default) stays byte-identical; 'final-task-v2' hashes each test as { file, cases, result, blobOid }. Fingerprint test entries carry identity (v2 digest) and provenance (whole-row digest), and reuseMismatch takes the comparison format and compares provenance only under v1. Until t3, requireReuseIdentity passes 'final-task-v1' so behaviour is unchanged.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "v1 identities equal the constants pinned from the pre-change code.",
+          "v2 identity ignores command, executionDetails and evidenceReferences and changes with test file blob, cases (including order) and result.",
+          "A task with no tests has a v2 identity over requirements, changes and documents.",
+          "Under v1 the rejection text names a provenance-only test change; under v2 it does not.",
+          "After t2 alone, existing reuse behaviour and rejection text are unchanged."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: the v1 task identity equals the identity pinned from the pre-change code"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: the v2 task identity ignores command, execution details and evidence references"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: the v2 task identity changes with the test file, cases or result"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: a task with no assigned tests keeps a v2 identity over requirements, changes and documents"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: the rejection names a provenance-only change between two v1 attempts"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Bind in the attempt's format and report all reuse refusals at once",
+        "summary": "bindTaskFinalIdentities resolves its format (header field, else v1 for accepted, v2 for pending), records taskIdentityFormat on a newly accepted candidate, and passes the format to the reuse check. requireReuseIdentity gains the optional format parameter and refuses a cross-format source. Source checks still throw at once; format and identity refusals are collected and raised as one TaskReviewInputError (single refusal unchanged).",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Provenance-only edits keep reuse of a v2 source, for one task and for three tasks in one submission.",
+          "A real test change still refuses reuse with the existing reassess text.",
+          "Three tasks whose source is v1 are refused in one rejection naming all three, costing one attribution submission.",
+          "Malformed reuse decisions (not earlier, foreign-party) still fail at once with the existing origins error.",
+          "Saved v1 attempts, including a v1 attempt that reused a v1 attempt, re-bind unchanged.",
+          "A published v2 reuse row passes validateTaskBody's reuse-identity check.",
+          "Existing attribution-binding and compatibility tests pass unchanged."
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5",
+          "c6",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: a correction attempt reuses a task when only provenance text in its test rows changed"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: three tasks reused after their evidence references are removed are accepted in one submission"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: reuse is still refused with reassess feedback when a test's cases changed"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: reordered test cases refuse reuse"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: reuse from an attempt recorded under the earlier identity format is refused with reassess feedback"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: three tasks whose source used the earlier identity format are refused in one rejection naming all three"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: a saved attempt without an identity format re-binds with its stored v1 identities"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: a saved v1 attempt that reused a v1 attempt still re-binds"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/code-review/task-review/__tests__/reuse-identity.test.ts: a published v2 reuse row passes the record reuse-identity check"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts: existing tests pass unchanged"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/code-review/task-review/__tests__/compatibility.test.ts: existing tests pass unchanged"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "taskFinalIdentity",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "taskInputFingerprint",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "reuseMismatch",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "bindTaskFinalIdentities",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "requireReuseIdentity",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "restoreAcceptedAssignments",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "recordAttributionRejection",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "validateTaskBody",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges: ReviewAttempt.header taskIdentityFormat and validateSavedAttribution"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails: taskFinalIdentity format parameter"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails: taskInputFingerprint provenance and reuseMismatch format"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails: bindTaskFinalIdentities and requireReuseIdentity"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 errorPaths"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 testStrategy"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 migration"
+    }
+  ]
+}

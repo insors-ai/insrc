@@ -4,15 +4,18 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { accepted, openManagedSupervisorLink } from '../cli/services/managed-daemon-control.js';
 import type { ManagedSupervisorLink } from '../cli/services/managed-daemon-control.js';
 import type { SupervisorReply } from '../shared/daemon-supervisor-protocol.js';
-import type { MutationReservation, InstallationMutationGate } from '../shared/installation-mutation-gate.js';
+import type { AdmittedSourceRelease, MutationReservation, InstallationMutationGate } from '../shared/installation-mutation-gate.js';
+import type { RunFileGuard } from '../shared/daemon-run-files.js';
+import { verifyStagedReleasePin } from './managed-release-staging.js';
 import {
-	publishManagedSelector, registerManagedJob, removeManagedJob, requireQuiescentInstallation,
+	installFreshSelectorMember, publishManagedSelector, registerManagedJob, removeManagedJob, requireQuiescentInstallation,
 } from '../shared/managed-daemon-installation.js';
 import type { ManagedInstallation } from '../shared/managed-daemon-installation.js';
 import {
 	COMPATIBILITY_RECEIPT, COMPATIBILITY_STEP, requireQualifiedReleasePair, verifyQuiescedReleaseStores,
 } from './release-compatibility.js';
 import type { QualifiedReleasePair, ReleaseCompatibility } from './release-compatibility.js';
+import { giveLegacyRunGuard, settleLegacyRunGuard } from './legacy-run-guard.js';
 
 type Update = Extract<MutationReservation, { kind: 'update' }>;
 type Gate = Pick<InstallationMutationGate, 'admit' | 'recordIntent' | 'recordReceipt'>;
@@ -21,6 +24,18 @@ export interface ManagedUpdatePins {
 	readonly prior: ManagedInstallation;
 	readonly candidate: ManagedInstallation;
 	readonly compatibility: QualifiedReleasePair;
+	readonly sourceRelease?: AdmittedSourceRelease;
+}
+
+/** Recheck signed raw pins at the live mutation boundary. The prior may have been archived. */
+export async function verifyManagedUpdateInventory(pins: ManagedUpdatePins, priorRoot = pins.prior.releaseRoot): Promise<void> {
+	if (pins.sourceRelease !== undefined) {
+		await verifyStagedReleasePin({ root: priorRoot, runtime: pins.prior.runtime, commit: pins.prior.releaseId,
+			fingerprint: pins.sourceRelease.priorFingerprint });
+		await verifyStagedReleasePin({ root: pins.candidate.releaseRoot, runtime: pins.candidate.runtime, commit: pins.candidate.releaseId,
+			fingerprint: pins.sourceRelease.candidateFingerprint });
+		return;
+	}
 }
 
 export function qualifyManagedUpdate(
@@ -40,7 +55,7 @@ export interface HandoffEffects {
 	readonly remove: typeof removeManagedJob;
 	readonly select: typeof publishManagedSelector;
 	readonly register: typeof registerManagedJob;
-	readonly inspectStores: (pins: ManagedUpdatePins) => Promise<void>;
+	readonly inspectStores: (pins: ManagedUpdatePins, guard?: RunFileGuard) => Promise<void>;
 }
 
 export async function connectManagedSupervisor(installation: ManagedInstallation): Promise<ManagedSupervisorLink> {
@@ -63,13 +78,14 @@ const effects: HandoffEffects = {
 	},
 	select: publishManagedSelector,
 	register: registerManagedJob,
-	async inspectStores({ prior, candidate, compatibility }) {
-		await requireQuiescentInstallation(prior);
-		await requireQuiescentInstallation(candidate);
+	async inspectStores({ prior, candidate, compatibility }, guard) {
+		await requireQuiescentInstallation(prior, guard);
+		await requireQuiescentInstallation(candidate, guard);
 		// The detached daemon updater owns the stopped store for this inspection.
 		const { declareLiveStoreOwner } = await import('../db/graph/store.js');
 		declareLiveStoreOwner();
 		await verifyQuiescedReleaseStores(prior.stateRoot, compatibility);
+		guard?.assertOwned();
 	},
 };
 
@@ -91,7 +107,9 @@ export interface HandoffReceipt {
 	readonly generation: string | null;
 }
 
-export async function recordManagedUpdatePins(gate: Gate, update: Update, pins: ManagedUpdatePins): Promise<void> {
+export async function recordManagedUpdatePins(
+	gate: Gate & Partial<Pick<InstallationMutationGate, 'admitSourceRelease'>>, update: Update, pins: ManagedUpdatePins,
+): Promise<void> {
 	const { prior, candidate, compatibility } = pins;
 	const { predecessor } = update;
 	if (predecessor.priorRelease !== prior.releaseId || predecessor.candidateRelease !== candidate.releaseId
@@ -99,9 +117,14 @@ export async function recordManagedUpdatePins(gate: Gate, update: Update, pins: 
 		throw new Error('update reservation does not match pinned releases');
 	}
 	await gate.admit(update);
+	const compatibilityIntent = JSON.stringify(compatibility);
+	if (pins.sourceRelease !== undefined) {
+		if (gate.admitSourceRelease === undefined) throw new Error('signed source admission is unavailable');
+		await gate.admitSourceRelease(update, pins.sourceRelease);
+	}
 	await gate.recordIntent(update, 'release-pins', JSON.stringify({ prior, candidate }));
 	await gate.recordReceipt(update, 'release-pins', 'pinned for this transaction');
-	await gate.recordIntent(update, COMPATIBILITY_STEP, JSON.stringify(compatibility));
+	await gate.recordIntent(update, COMPATIBILITY_STEP, compatibilityIntent);
 	await gate.recordReceipt(update, COMPATIBILITY_STEP, COMPATIBILITY_RECEIPT);
 }
 
@@ -124,6 +147,7 @@ export async function stageManagedUpdate(
 			|| (predecessor.generation !== undefined && predecessor.generation !== status.generation)) {
 			throw new Error('predecessor state changed after update reservation');
 		}
+		await verifyManagedUpdateInventory(pins);
 		await intent('predecessor-stop', JSON.stringify({ generation: status.generation, state: status.state }));
 		let stopped = status;
 		if (status.state === 'running' && status.generation !== null) {
@@ -143,16 +167,19 @@ export async function stageManagedUpdate(
 }
 
 export async function stageManagedCandidate(
-	gate: Gate, update: Update, pins: ManagedUpdatePins, operations = effects,
+	gate: Gate, update: Update, pins: ManagedUpdatePins, operations = effects, guard?: RunFileGuard,
 ): Promise<HandoffReceipt> {
 	const { candidate } = pins;
 	const revalidate = async () => { await gate.admit(update); };
 	const intent = (step: string, detail: string) => gate.recordIntent(update, step, detail);
 	const receipt = (step: string, detail: string) => gate.recordReceipt(update, step, detail);
 	await revalidate();
-	await operations.inspectStores(pins);
+	await operations.inspectStores(pins, guard);
 	await intent('provisional-selector', candidate.releaseId);
-	await operations.select(candidate, revalidate);
+	if (update.predecessor.selectorAbsent) {
+		await installFreshSelectorMember(candidate, 'descriptor', update.id, revalidate);
+		await installFreshSelectorMember(candidate, 'manifest', update.id, revalidate);
+	} else await operations.select(candidate, revalidate);
 	await receipt('provisional-selector', candidate.releaseId);
 
 	await intent('candidate-job', candidate.releaseId);
@@ -163,7 +190,14 @@ export async function stageManagedCandidate(
 	try {
 		const idle = accepted(await link.call({ op: 'status', generation: null }));
 		if (idle.state !== 'idle' || idle.generation !== null) throw new Error('candidate supervisor is not idle after handshake');
-		if (!update.predecessor.wasRunning) return { job, generation: null };
+		if (guard !== undefined) {
+			if (job.incarnation === undefined) throw new Error('candidate supervisor lacks an authenticated incarnation');
+			await giveLegacyRunGuard(gate, update, candidate.stateRoot, job.incarnation);
+		}
+		if (!update.predecessor.wasRunning) {
+			if (guard !== undefined) await settleLegacyRunGuard(gate, update, candidate.stateRoot);
+			return { job, generation: null };
+		}
 		await intent('candidate-start', candidate.releaseId);
 		await revalidate();
 		const started = accepted(await link.call({ op: 'start', generation: null, updateId: update.id }));

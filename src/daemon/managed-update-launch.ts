@@ -1,18 +1,9 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
-
 import { fork } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
-import { lstat, readFile, realpath } from 'node:fs/promises';
+import { lstat, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { accepted, openManagedSupervisorLink } from '../cli/services/managed-daemon-control.js';
-import { readDarwinIncarnation } from '../shared/darwin-lifecycle.js';
-import { InstallationMutationGate } from '../shared/installation-mutation-gate.js';
-import type { MutationReservation } from '../shared/installation-mutation-gate.js';
-import { readManagedInstallation, readManagedUpdateInputs, verifyManagedReleaseRuntime } from '../shared/managed-daemon-installation.js';
-import { PATHS } from '../shared/paths.js';
-import { readInstalledCommit } from './installed-commit.js';
-import { qualifyManagedUpdate } from './managed-update-handoff.js';
-import type { ManagedUpdatePins } from './managed-update-handoff.js';
+import type { InstallationMutationGate, MutationReservation } from '../shared/installation-mutation-gate.js';
 import { readReleaseCompatibility } from './release-compatibility.js';
 
 type Update = Extract<MutationReservation, { kind: 'update' }>;
@@ -76,9 +67,9 @@ function waitForReservation(child: ChildProcess): Promise<string> {
 }
 
 /** The detached owner reserves first, and may only stage the update after the private release. */
-export async function runAcknowledgedManagedUpdate<T>(
-	gate: UpdateGate, reserve: () => Promise<Update>, pins: ManagedUpdatePins,
-	stage: (gate: UpdateGate, update: Update, pins: ManagedUpdatePins) => Promise<T>,
+export async function runAcknowledgedManagedUpdate<T, P>(
+	gate: UpdateGate, reserve: () => Promise<Update>, pins: P,
+	stage: (gate: UpdateGate, update: Update, pins: P) => Promise<T>,
 ): Promise<T | undefined> {
 	const update = await reserve();
 	if (!await waitForLaunch(update.id)) {
@@ -121,44 +112,4 @@ export function readQualifiedReleasePairs(qualifications: unknown) {
 		const pair = value as { prior?: unknown; candidate?: unknown };
 		return { prior: readReleaseCompatibility(pair.prior), candidate: readReleaseCompatibility(pair.candidate) };
 	});
-}
-
-/** Preflight and reserve inside the detached daemon-owned process so it owns all receipts. */
-export async function prepareManagedUpdate() {
-	const root = await realpath(PATHS.insrc);
-	const prior = await readManagedInstallation(root);
-	if (prior === undefined) throw new Error('managed update requires an enabled installed daemon');
-	const { candidate, qualifications } = await readManagedUpdateInputs(root);
-	const qualified = readQualifiedReleasePairs(qualifications);
-	const pins = qualifyManagedUpdate(prior, candidate,
-		await releaseDeclaration(prior.releaseRoot), await releaseDeclaration(candidate.releaseRoot), qualified);
-	await verifyManagedReleaseRuntime(prior);
-	await verifyManagedReleaseRuntime(candidate);
-	const link = await openManagedSupervisorLink(prior);
-	const gate = new InstallationMutationGate(root);
-	try {
-		const status = accepted(await link.call({ op: 'status', generation: null }));
-		if (!['idle', 'exited', 'running'].includes(status.state)) throw new Error('predecessor is already changing state');
-		const owner = await readDarwinIncarnation(process.pid);
-		return {
-			pins, gate,
-			reserve: async (): Promise<Update> => {
-				const reservation = await gate.reserve({
-					kind: 'update', owner, predecessor: {
-						priorRelease: prior.releaseId, candidateRelease: candidate.releaseId,
-						wasRunning: status.state === 'running', generation: status.generation,
-						priorCommit: readInstalledCommit(prior.releaseRoot), pins: { prior, candidate },
-					},
-				}) as Update;
-				try {
-					const selected = await readManagedInstallation(root);
-					if (JSON.stringify(selected) !== JSON.stringify(prior)) throw new Error('installation selector changed before update reservation');
-					return reservation;
-				} catch (error) {
-					await gate.cancelUnstartedUpdate(reservation);
-					throw error;
-				}
-			},
-		};
-	} finally { link.close(); }
 }

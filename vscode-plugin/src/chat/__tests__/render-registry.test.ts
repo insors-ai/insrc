@@ -71,6 +71,7 @@ interface Registry {
   withIsolatedPending<T>(fn: () => T): T;
   forgetPendingIn(nodes: FakeNode[]): void;
   redrawDiff(row: unknown): boolean;
+  setRunIdentity(provider: string, model: string): void;
 }
 function makeRegistry(): { reg: Registry; appended: FakeNode[] } {
   const { document } = fakeDocument();
@@ -1388,4 +1389,57 @@ test('parity: host toViewModel meta.at === webview toViewModel meta.at, includin
   assert.equal(typeof hostAt, 'string');
   assert.equal(typeof webAt, 'string');
   assert.ok(Math.abs(new Date(hostAt).getTime() - new Date(webAt).getTime()) < 5000, 'both mirrors stamp the delta at render time');
+});
+
+// Story c760757cc9077508/s1 — the assistant who-label is the composed run identity
+// '<PROVIDER>/<model>' from setRunIdentity (the webview's echoed run-config state).
+const whoLabel = (row: FakeNode): string => findByClass(findByClass(row, 'insrc-who')!, 'insrc-wholabel')!.textContent;
+
+test('s1: msgRow assistant label composes PROVIDER/model-lowercased from setRunIdentity (per provider)', () => {
+  const { reg } = makeRegistry();
+  for (const [provider, model, expected] of [
+    ['claude', 'opus-4.5', 'CLAUDE/opus-4.5'],
+    ['codex', 'gpt-5.2', 'CODEX/gpt-5.2'],
+    ['ollama', 'Qwen3.6:35B-A3B', 'OLLAMA/qwen3.6:35b-a3b'], // colons/dashes kept, only case lowered
+  ] as const) {
+    reg.setRunIdentity(provider, model);
+    const row = reg.renderRow(reg.toViewModel({ role: 'assistant', text: 'yo', at: FIX_AT }))!;
+    assert.equal(whoLabel(row), expected, `${provider}/${model}`);
+  }
+});
+
+test("s1: empty model ('') is the CLI default — the label is the bare provider, no trailing '/'", () => {
+  const { reg } = makeRegistry();
+  reg.setRunIdentity('codex', '');
+  const row = reg.renderRow(reg.toViewModel({ role: 'assistant', text: 'yo' }))!;
+  assert.equal(whoLabel(row), 'CODEX');
+  assert.ok(!whoLabel(row).endsWith('/'));
+});
+
+test("s1: no run identity yet ('' provider) falls back to the neutral 'assistant' — never the literal 'claude'", () => {
+  const { reg } = makeRegistry();
+  const row = reg.renderRow(reg.toViewModel({ role: 'assistant', text: 'yo' }))!;
+  const label = whoLabel(row);
+  assert.equal(label, 'assistant');
+  assert.notEqual(label, 'claude');
+  // Once the run-config echo lands, the next rendered row composes the real identity.
+  reg.setRunIdentity('claude', 'opus-4.5');
+  assert.equal(whoLabel(reg.renderRow(reg.toViewModel({ role: 'assistant', text: 'again' }))!), 'CLAUDE/opus-4.5');
+});
+
+test('s1: a session-restored replay assistant row and a live assistant-delta row render the SAME composed label (both through msgRow)', () => {
+  const { reg } = makeRegistry();
+  reg.setRunIdentity('codex', 'gpt-5.2');
+  const replay = reg.renderRow(reg.toViewModel({ role: 'assistant', text: 'restored', at: FIX_AT }))!;
+  const live = reg.renderRow(reg.toViewModel({ kind: 'assistant-delta', turnId: 't', text: 'streaming' } as TurnEvent))!;
+  assert.equal(whoLabel(replay), 'CODEX/gpt-5.2');
+  assert.equal(whoLabel(live), 'CODEX/gpt-5.2');
+  assert.equal(whoLabel(replay), whoLabel(live));
+});
+
+test("s1: the webview source no longer contains the literal 'claude' who-label and exposes setRunIdentity", () => {
+  const src = renderRegistryWebviewSource();
+  assert.doesNotMatch(src, /'claude'/, 'no hardcoded claude label in the renderer');
+  assert.match(src, /function setRunIdentity\(/);
+  assert.match(src, /setRunIdentity:setRunIdentity/);
 });

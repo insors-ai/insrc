@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ea58e8ae-6993-4da3-85da-369e63fe847f",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-13T08:52:27.187Z",
+    "epicCreatedAt": "2026-11-13T06:38:38.894Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4642d49ab0593787",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Scratch store module + unit tests (vscode-free, fake-fs drivable)",
+      "parent": {
+        "entityId": "STORY-4642d49ab0593787-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-4642d49ab0593787-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "62b75d879b693e30821cf020e159936db7c0b42e05419f286ecb249b353cf659",
+        "at": "2026-11-13T08:52:27.195Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-13T08:52:27.197Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Scratch store module + unit tests (vscode-free, fake-fs drivable)",
+    "summary": "New vscode-free store module vscode-plugin/src/chat/scratch-store.ts (ScratchFs interface + nodeScratchFs node default, createScratchStore/listScratches/createScratch/readScratch/deleteScratch) over plain .md files in the store root, mirroring attachment-store.ts's optional-fs + deps-injected pattern; plus fake-scratch-fs.ts and scratch-store.test.ts unit tests. link()-only atomic no-clobber publication, O_NOFOLLOW fd reads, ENOENT->[] and idempotent delete, ScratchRefused/ScratchNotFound/ScratchStoreError mapping. No daemon IPC.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "vscode-plugin/src/chat/scratch-store.ts + __tests__/fake-scratch-fs.ts are new files only (no edits to existing modules)",
+      "createScratchStore({root}) with fs omitted defaults to the node adapter; production wiring passes only { root, logger }",
+      "listScratches() returns ScratchEntry[] {id,name,mtime,size} sorted mtime desc (ties id asc), ENOENT readdir -> [], skips non-files/failed stats/non-.md, optional limit cap (menu uses 5; browse-all omits)",
+      "createScratch(title, body?) writes <yyyymmdd-hhmmss>-<slug>.md (slug: lowercase, spaces->dashes, non [a-z0-9-] dropped, all-symbol -> 'scratch'), collision ladder -2,-3 via lstat probes",
+      "publication is link(temp,new)+unlink(temp) ONLY (never rename): temp name has pid+random suffix and does not match *.md; EEXIST -> next suffix; post-link unlink failure is non-fatal and never returned as failure",
+      "readScratch validates id (^[A-Za-z0-9][A-Za-z0-9._-]*\\.md$, not '.'/'..', resolve strictly inside root) then open(O_RDONLY|O_NOFOLLOW)+fstat regular file -> else ScratchRefused; ENOENT at open or fd-read -> ScratchNotFound; single fd is source of truth",
+      "deleteScratch validates via lstat regular file (symlinks refused -> ScratchRefused), unlink only (never recursive), ENOENT at lstat or unlink treated as success (idempotent)",
+      "error mapping: EACCES/ENOSPC/EROFS/not-a-dir -> ScratchStoreError; unit tests with fake fs prove refusal paths make ZERO fs mutation calls",
+      "unit suite scratch-store.test.ts passes incl. two-instance concurrent-create race over a real tmp dir proving exclusive publication"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "scratch-store.test.ts: listScratches returns entries sorted by mtime desc with id/name/mtime/size (ENOENT->[], non-.md skipped, limit cap, ties id asc)"
+      },
+      {
+        "level": "unit",
+        "name": "scratch-store.test.ts: createScratch writes <yyyymmdd-hhmmss>-<slug>.md via temp write + link()+unlink publication (never rename), collision ladder -2/-3, slug rules incl. all-symbol fallback 'scratch'; entry appears at list head"
+      },
+      {
+        "level": "unit",
+        "name": "scratch-store.test.ts: refusal tests — ids '.', '..', traversal strings, symlinks and directories named *.md cause ScratchRefused with ZERO fs mutation calls recorded by fake-scratch-fs"
+      },
+      {
+        "level": "unit",
+        "name": "scratch-store.test.ts: concurrent-create race with two independent store instances over the same real tmp dir — both racing creates succeed with distinct files, contents intact (link()+unlink exclusive publication, EEXIST suffix retry)"
+      },
+      {
+        "level": "unit",
+        "name": "scratch-store.test.ts: ENOENT mapping — readdir ENOENT -> []; absence before lstat and disappearance between lstat and final read/unlink -> ScratchNotFound (read) / success (delete, idempotent)"
+      },
+      {
+        "level": "unit",
+        "name": "scratch-store.test.ts: readScratch opens with O_RDONLY|O_NOFOLLOW + fstat single-fd regular-file check — symlink swapped in after validation yields ELOOP -> ScratchRefused; error mapping EACCES/ENOSPC/EROFS -> ScratchStoreError"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

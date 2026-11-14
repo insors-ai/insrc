@@ -3,7 +3,7 @@
 import { execFile } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { constants } from 'node:fs';
-import { access, lstat, mkdir, open, readFile, realpath, rename, rm, unlink, writeFile } from 'node:fs/promises';
+import { access, link, lstat, mkdir, open, readFile, realpath, rename, rm, unlink, writeFile } from 'node:fs/promises';
 import { createConnection } from 'node:net';
 import { dirname, isAbsolute, join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -148,17 +148,23 @@ export async function inspectPinnedLaunchJob(job: DarwinLaunchJob): Promise<Veri
 }
 
 /** A legacy predecessor must be stopped by its owner before managed cutover. */
-export async function requireQuiescentInstallation(installation: ManagedInstallation): Promise<void> {
+export async function requireQuiescentInstallation(installation: ManagedInstallation,
+	guard?: { readonly path: string; assertOwned(): void },
+): Promise<void> {
 	const paths = installationPaths(installation.stateRoot);
-	for (const path of [paths.daemonPid, paths.daemonSocket, paths.runGuard, paths.updateLock]) {
+	if (guard !== undefined && guard.path !== paths.runGuard) failure('run-file guard belongs to another installation');
+	guard?.assertOwned();
+	for (const path of [paths.daemonPid, paths.daemonSocket, paths.updateLock]) {
 		if (await exists(path)) failure(`installation is not quiescent: ${path}`);
 	}
+	if (guard === undefined && await exists(paths.runGuard)) failure(`installation is not quiescent: ${paths.runGuard}`);
 	const { stdout } = await exec('/bin/ps', ['-axww', '-o', 'command='], { encoding: 'utf8', timeout: 5000, maxBuffer: 1024 * 1024 });
 	const entries = [installation.releaseRoot, process.env['INSRC_DAEMON_ROOT'] ?? join(installation.stateRoot, 'daemon')]
 		.map(root => join(root, 'out/daemon/index.js'));
 	if (stdout.split('\n').some(line => line.trim().split(/\s+/)[0]?.includes('node') && entries.some(entry => line.includes(entry)))) {
 		failure('a process still runs the installed legacy daemon entry');
 	}
+	guard?.assertOwned();
 }
 
 function xml(value: string): string {
@@ -223,6 +229,123 @@ export async function publishManagedSelector(installation: ManagedInstallation, 
 	await revalidate();
 	await publishPrivateFile(paths.manifest, JSON.stringify(installation) + '\n');
 	await verifyManagedSelectorFiles(installation);
+}
+
+/** Install or reconcile one fresh selector member without overwriting a conflicting file. */
+function freshSelectorContents(installation: ManagedInstallation, member: 'descriptor' | 'manifest'): string {
+	return member === 'descriptor' ? descriptor(supervisorJob(installation), installation) : JSON.stringify(installation) + '\n';
+}
+
+/** Read-only ownership check that admits the exact two-link publication left by a crash. */
+export async function verifyFreshSelectorOwnership(installation: ManagedInstallation, activationId: string): Promise<void> {
+	if (!installation.enabled || !/^[a-f0-9-]{36}$/.test(activationId)) failure('invalid fresh activation pin');
+	const paths = installationPaths(installation.stateRoot);
+	await privateDirectory(paths.directory);
+	for (const member of ['descriptor', 'manifest'] as const) {
+		const path = paths[member];
+		if (!await exists(path)) continue;
+		const info = await lstat(path);
+		if (!info.isFile() || info.uid !== uid() || (info.mode & 0o077) !== 0 || info.size > 8192 || info.nlink > 2) {
+			failure('fresh activation file is not an owned private file');
+		}
+		if (info.nlink === 2) {
+			const staged = await lstat(`${path}.activate-${activationId}`);
+			if (!staged.isFile() || staged.dev !== info.dev || staged.ino !== info.ino) {
+				failure('fresh activation hard link belongs to another publication');
+			}
+		}
+		if (await readFile(path, 'utf8') !== freshSelectorContents(installation, member)) {
+			failure('fresh activation publication belongs to a different installation');
+		}
+	}
+}
+
+export async function installFreshSelectorMember(
+	installation: ManagedInstallation, member: 'descriptor' | 'manifest', activationId: string, revalidate: () => Promise<void>,
+): Promise<void> {
+	if (!installation.enabled || !/^[a-f0-9-]{36}$/.test(activationId)) failure('invalid fresh activation pin');
+	const paths = installationPaths(installation.stateRoot);
+	await privateDirectory(paths.directory);
+	const path = paths[member];
+	const temporary = `${path}.activate-${activationId}`;
+	const expected = freshSelectorContents(installation, member);
+	const inspect = async (target: string) => {
+		if (!await exists(target)) return undefined;
+		const info = await lstat(target);
+		if (!info.isFile() || info.uid !== uid() || (info.mode & 0o077) !== 0 || info.size > 8192 || info.nlink > 2) {
+			failure('fresh activation file is not an owned private file');
+		}
+		return info;
+	};
+	const same = (a: NonNullable<Awaited<ReturnType<typeof inspect>>>, b: typeof a) => a.dev === b.dev && a.ino === b.ino;
+	let staged = await inspect(temporary);
+	const published = await inspect(path);
+	if (published !== undefined) {
+		if (await readFile(path, 'utf8') !== expected || (staged === undefined ? published.nlink !== 1 : !same(staged, published))) {
+			failure('fresh activation publication belongs to a different installation');
+		}
+	} else {
+		if (staged !== undefined) {
+			if (staged.nlink !== 1) failure('fresh activation staging file has another owner');
+			await revalidate();
+			await unlink(temporary);
+			staged = undefined;
+		}
+		await revalidate();
+		const file = await open(temporary, 'wx', 0o600);
+		try { await file.writeFile(expected); await file.sync(); } finally { await file.close(); }
+		staged = await inspect(temporary);
+		await revalidate();
+		await link(temporary, path);
+	}
+	if (staged !== undefined) {
+		const current = await inspect(temporary);
+		const target = await inspect(path);
+		if (current === undefined || target === undefined || !same(staged, current) || !same(current, target)) {
+			failure('fresh activation staging identity changed');
+		}
+		await revalidate();
+		await unlink(temporary);
+	}
+	const directory = await open(paths.directory, constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW);
+	try { await directory.sync(); } finally { await directory.close(); }
+}
+
+/** Undo a receipted fresh publication after the supervisor has been verified absent. */
+export async function removeFreshSelectorMember(
+	installation: ManagedInstallation, member: 'descriptor' | 'manifest', revalidate: () => Promise<void>,
+): Promise<void> {
+	const paths = installationPaths(installation.stateRoot);
+	const path = paths[member];
+	const before = runFileIdentity(path);
+	if (before === undefined) return;
+	await privateFile(path);
+	const expected = freshSelectorContents(installation, member);
+	if (await readFile(path, 'utf8') !== expected) failure('fresh activation cleanup refuses a foreign publication');
+	await revalidate();
+	const current = runFileIdentity(path);
+	if (current === undefined || !sameRunFile(before, current)) failure('fresh activation publication changed before cleanup');
+	await unlink(path);
+	const directory = await open(paths.directory, constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW);
+	try { await directory.sync(); } finally { await directory.close(); }
+}
+
+export function requireAbsentManagedSelector(root: string): void {
+	const paths = installationPaths(root);
+	if (runFileIdentity(paths.manifest) !== undefined || runFileIdentity(paths.descriptor) !== undefined) {
+		failure('managed selector or descriptor appeared before activation');
+	}
+}
+
+export async function restoreAbsentManagedSelector(installation: ManagedInstallation, id: string, revalidate: () => Promise<void>): Promise<void> {
+	await verifyFreshSelectorOwnership(installation, id);
+	const paths = installationPaths(installation.stateRoot);
+	for (const member of ['manifest', 'descriptor'] as const) {
+		const pending = runFileIdentity(`${paths[member]}.activate-${id}`);
+		if (pending !== undefined) await installFreshSelectorMember(installation, member, id, revalidate);
+		await removeFreshSelectorMember(installation, member, revalidate);
+	}
+	requireAbsentManagedSelector(installation.stateRoot);
 }
 
 /** Unload the pinned job after its child has exited and retain exact proof of the job's own exit. */

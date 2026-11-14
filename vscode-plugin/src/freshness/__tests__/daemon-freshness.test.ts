@@ -120,6 +120,23 @@ test('Correlated update outcomes ignore unrelated terminal records and changed i
   assert.ok(!rec.messages.includes(RELOAD_NUDGE_MESSAGE));
 });
 
+test('Legacy macOS freshness uses the installer and checks the resulting commit before reporting success', async () => {
+  for (const advances of [true, false]) {
+    let commit = INSTALLED;
+    const client = fakeClient({ installedCommit: () => commit });
+    const { notify, rec } = fakeNotify('Update');
+    await runDaemonFreshnessCheck(deps({ client, notify, versionState: fakeVersionState('1', '1'),
+      upgradeLegacy: async () => {
+        if (advances) commit = UPSTREAM;
+        return { ok: true, state: 'running' };
+      },
+    }));
+    assert.equal(client.updateCalls, 0);
+    assert.equal(rec.messages.includes(RELOAD_NUDGE_MESSAGE), advances);
+    if (!advances) assert.match(rec.messages.at(-1) ?? '', /did not report an updated commit/);
+  }
+});
+
 test('Candidate status projects the prior commit during validation and a later rollback in both IDE confirmation flows', async () => {
   let reads = 0;
   const client = fakeClient({

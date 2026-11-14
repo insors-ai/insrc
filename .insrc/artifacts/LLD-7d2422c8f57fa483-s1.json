@@ -30,7 +30,7 @@
     "triageRationale": "Sized bugfix ISSUE-7d2422c8f57fa483, approved 2026-11-11; revised after design review rounds 1 and 2.",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 3,
         "contentHash": "9cf1a5d44b0fc842b3a9d3b692ec84b1cc22c8f155e17e8d23646ad59605276b",
@@ -41,12 +41,27 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T17:20:42.981Z",
+        "override": {
+          "reason": "Daemon design review correction rounds fail in impact (technical_retry_exhausted). Three rounds done: round 1 daemon (changes requested, all addressed), rounds 2-3 recorded controller self-reviews per the user's fallback instruction; round 3 passed with no open MED or HIGH. Record: docs/standalone/code-review-reuse-refused-when-only-E202611117d2422c8/S001/LLD-SELF-REVIEW.md. User approved with override 2026-11-11."
+        }
+      }
     },
     "envelope": {
+      "description": "",
+      "references": [],
       "attachments": []
     },
-    "revision": 3
+    "revision": 3,
+    "rangeBase": "ffbb06102d4d7b5da029b55d4a84cc2fe30f480f"
   },
   "body": {
     "summary": {

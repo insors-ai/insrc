@@ -3,8 +3,8 @@ import { diagnosticText } from '../../../shared/review-diagnostics.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { createHash } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
-import { decodeReview, reviewJsonLimit, requireReview } from './contracts.js';
-import type { ReviewAttempt } from './contracts.js';
+import { decodeReview, reviewJsonLimit, requireReview, TaskReviewInputError } from './contracts.js';
+import type { ReviewAttempt, TaskIdentityFormat } from './contracts.js';
 import { AcceptedTaskAttributionSchema, AcceptedDecisionSchema } from './final-scope-contracts.js';
 import type { AcceptedTaskAttribution } from './final-scope-contracts.js';
 import { deriveTaskAssignments } from './packet.js';
@@ -20,23 +20,27 @@ const digest = (value: unknown) => createHash('sha256').update(canonical(value))
 export function attributionIdentity(state: 'accepted' | 'unmapped_failure', finalScopeIdentity: string, selectedTaskIds: readonly string[], testCount: number, rows: readonly (AcceptedTaskAttribution & { identity: string })[]): string {
  return digest({ format: 'final-attribution-v1', state, finalScopeIdentity, selectedTaskIds, testCount, rows });
 }
-function taskFinalInput(prepared: PreparedReviewPacket, assignment: TaskAssignment) {
+type TestRow = PreparedReviewPacket['packet']['tests'][number];
+/** v2 test entry: only what the committed test proves (file, its cases, the result and the committed file blob), not provenance text. */
+const v2TestEntry = (test: TestRow, blobOid: string | null | undefined) => ({ file: test.file, cases: test.cases, result: test.result, blobOid });
+function taskFinalInput(prepared: PreparedReviewPacket, assignment: TaskAssignment, format: TaskIdentityFormat = 'final-task-v1') {
  requireReview(prepared.projection && prepared.finalTestBlobs?.length === prepared.packet.tests.length, 'attribution', 'Missing final task source identities');
  const task = prepared.tasks.find(t => t.id === assignment.taskId)!;
- return { format: 'final-task-v1', taskId: task.id, title: task.title, summary: task.summary, acceptanceChecks: assignment.acceptanceChecks,
+ return { format, taskId: task.id, title: task.title, summary: task.summary, acceptanceChecks: assignment.acceptanceChecks,
   changes: assignment.changes.map(c => { requireReview('origin' in c, 'attribution', 'Historical scope cannot authorize pinned reuse'); return { path: c.path, blobOid: c.after?.oid ?? null, findingScope: c.findingScope, segments: c.segments }; }),
   documents: Object.entries(prepared.packet.documents).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([role, ref]) => ({ role, ...ref, contentIdentity: digest(prepared.documents[role as keyof typeof prepared.documents]) })),
-  tests: assignment.tests.map(test => { const index = prepared.packet.tests.indexOf(test); requireReview(index >= 0, 'attribution', 'Unknown assigned test'); return { detail: test, blobOid: prepared.finalTestBlobs![index] }; }),
+  tests: assignment.tests.map(test => { const index = prepared.packet.tests.indexOf(test); requireReview(index >= 0, 'attribution', 'Unknown assigned test'); const blobOid = prepared.finalTestBlobs![index]; return format === 'final-task-v1' ? { detail: test, blobOid } : v2TestEntry(test, blobOid); }),
  };
 }
-export function taskFinalIdentity(prepared: PreparedReviewPacket, assignment: TaskAssignment): string {
- return digest(taskFinalInput(prepared, assignment));
+export function taskFinalIdentity(prepared: PreparedReviewPacket, assignment: TaskAssignment, format: TaskIdentityFormat = 'final-task-v1'): string {
+ return digest(taskFinalInput(prepared, assignment, format));
 }
 export interface TaskInputFingerprint {
  readonly requirements: string;
  readonly sources: readonly { path: string; identity: string }[];
  readonly documents: readonly { path: string; identity: string }[];
- readonly tests: readonly { path: string; identity: string }[];
+ /** identity: v2 test fields; provenance: the whole submitted row (the v1 test entry). */
+ readonly tests: readonly { path: string; identity: string; provenance: string }[];
 }
 /** Small transient diagnostics: retain hashes, never historical source buffers. */
 export function taskInputFingerprint(prepared: PreparedReviewPacket, assignment: TaskAssignment): TaskInputFingerprint {
@@ -44,16 +48,18 @@ export function taskInputFingerprint(prepared: PreparedReviewPacket, assignment:
  return {requirements:digest([input.taskId,input.title,input.summary,input.acceptanceChecks]),
   sources:input.changes.map(c=>({path:c.path,identity:digest(c)})),
   documents:input.documents.map(d=>({path:`${d.role}:${d.path}`,identity:digest(d)})),
-  tests:input.tests.map(t=>({path:t.detail.file,identity:digest(t)}))};
+  tests:assignment.tests.map(test=>{const blobOid=prepared.finalTestBlobs![prepared.packet.tests.indexOf(test)];return {path:test.file,identity:digest(v2TestEntry(test,blobOid)),provenance:digest({detail:test,blobOid})};})};
 }
-function reuseMismatch(review: AdmittedReview, assignment: TaskAssignment, sourceAttempt: number): string {
+/** Rejection text naming what changed under the compared format; provenance-only test edits count only under v1. */
+export function reuseMismatch(review: AdmittedReview, assignment: TaskAssignment, sourceAttempt: number, format: TaskIdentityFormat): string {
  const before=review.priorTaskInputs?.get(sourceAttempt)?.get(assignment.taskId),after=taskInputFingerprint(review.prepared,assignment);
  const changed:string[]=[];
  if(before){
   if(before.requirements!==after.requirements)changed.push('requirements');
   for(const kind of ['sources','documents','tests'] as const){
+   const compared=(entries:readonly {path:string;identity:string;provenance?:string}[],path:string)=>entries.filter(x=>x.path===path).map(x=>kind==='tests'&&format!=='final-task-v1'?{path:x.path,identity:x.identity}:x);
    for(const path of new Set([...before[kind],...after[kind]].map(x=>x.path))){
-    if(!isDeepStrictEqual(before[kind].filter(x=>x.path===path),after[kind].filter(x=>x.path===path)))changed.push(`${kind} ${JSON.stringify(path)}`);
+    if(!isDeepStrictEqual(compared(before[kind],path),compared(after[kind],path)))changed.push(`${kind} ${JSON.stringify(path)}`);
    }
   }
  }
@@ -63,11 +69,11 @@ function reuseMismatch(review: AdmittedReview, assignment: TaskAssignment, sourc
 export function validateSavedAttribution(attempt: ReviewAttempt): void {
  const h = attempt.header;
  if (!attempt.submitted.reviewRevision) {
-  requireReview(h.finalScopeIdentity === undefined && h.attributionState === undefined && h.acceptedAttribution === undefined && h.taskScopeIdentities === undefined && h.attributionIdentity === undefined && h.attributionFailure === undefined, 'attribution', 'Unpinned history cannot carry final-scope authority'); return;
+  requireReview(h.finalScopeIdentity === undefined && h.attributionState === undefined && h.acceptedAttribution === undefined && h.taskScopeIdentities === undefined && h.attributionIdentity === undefined && h.attributionFailure === undefined && h.taskIdentityFormat === undefined, 'attribution', 'Unpinned history cannot carry final-scope authority'); return;
  }
  requireReview(h.finalScopeIdentity && h.attributionState, 'attribution', 'Pinned attempt requires final-scope attribution phase');
  if (h.attributionState !== 'accepted') {
-  requireReview(h.acceptedAttribution === undefined && h.taskScopeIdentities === undefined, 'attribution', 'Unmapped phase cannot carry accepted task bindings');
+  requireReview(h.acceptedAttribution === undefined && h.taskScopeIdentities === undefined && h.taskIdentityFormat === undefined, 'attribution', 'Unmapped phase cannot carry accepted task bindings');
   if (h.attributionState === 'pending') requireReview(h.attributionIdentity === undefined && h.attributionFailure === undefined, 'attribution', 'Pending attribution has terminal bindings');
   else {
    requireReview(h.attributionFailure && Buffer.byteLength(h.attributionFailure.code)<=64 && Buffer.byteLength(h.attributionFailure.summary)<=8192 && h.attributionIdentity === attributionIdentity('unmapped_failure', h.finalScopeIdentity, h.selectedTaskIds, attempt.submitted.tests.length, []), 'attribution', 'Invalid unmapped failure binding');
@@ -106,16 +112,47 @@ export function assignmentsToRows(review: AdmittedReview, assignments: readonly 
   decision: review.attempt.header.attempt === 1 ? { action: 'initial' as const } : decodeReview(AcceptedDecisionSchema, a.reassessment),
  }; });
 }
-export function requireReuseIdentity(review: AdmittedReview, assignment: TaskAssignment): void {
+/** The identity format an attempt binds in: its recorded format, else v1 for an attempt accepted before formats were recorded, else v2. */
+export function attemptIdentityFormat(header: ReviewAttempt['header']): TaskIdentityFormat {
+ return header.taskIdentityFormat ?? (header.attributionState === 'accepted' ? 'final-task-v1' : 'final-task-v2');
+}
+export interface ReuseRefusal { readonly taskId: string; readonly field: string; readonly message: string }
+/** Format or identity refusal for one reuse decision, or undefined when reuse holds. Malformed decisions and sources still throw at once. */
+export function reuseRefusal(review: AdmittedReview, assignment: TaskAssignment, format: TaskIdentityFormat = attemptIdentityFormat(review.attempt.header)): ReuseRefusal | undefined {
  const decision = assignment.reassessment;
  requireReview(decision?.action === 'reuse' && decision.sourceAttempt !== undefined && decision.sourceAttempt < review.attempt.header.attempt, 'origins', 'Reuse requires an earlier accepted source');
  const source = review.checkpoint.attempts.find(e => e.header.attempt === decision.sourceAttempt);
  requireReview(source?.submitted.reviewRevision && source.header.reviewer === review.attempt.header.reviewer && source.header.attributionState === 'accepted' && source['review-response'].tasks.some(t => t.taskId === assignment.taskId), 'origins', 'Missing or foreign-party accepted source');
  validateSavedAttribution(source);
- if(source.header.taskScopeIdentities?.find(b => b.taskId === assignment.taskId)?.identity !== taskFinalIdentity(review.prepared, assignment)){
-  const taskIndex=review.attempt.header.selectedTaskIds.indexOf(assignment.taskId);
-  requireReview(false, `origins/tasks/${taskIndex}/sourceAttempt/${decision.sourceAttempt}`, reuseMismatch(review,assignment,decision.sourceAttempt));
- }
+ const field = `origins/tasks/${review.attempt.header.selectedTaskIds.indexOf(assignment.taskId)}/sourceAttempt/${decision.sourceAttempt}`;
+ if ((source.header.taskIdentityFormat ?? 'final-task-v1') !== format) return { taskId: assignment.taskId, field, message: diagnosticText(`Task ${JSON.stringify(assignment.taskId)} cannot reuse attempt ${decision.sourceAttempt}: its result was recorded under an earlier task identity format. Set action to "reassess" and omit sourceAttempt for this task; retain eligible reuse for other tasks.`, 8192) };
+ if (source.header.taskScopeIdentities?.find(b => b.taskId === assignment.taskId)?.identity !== taskFinalIdentity(review.prepared, assignment, format)) return { taskId: assignment.taskId, field, message: reuseMismatch(review, assignment, decision.sourceAttempt, format) };
+ return undefined;
+}
+/** Raise every refusal of one submission as a single rejection, so it costs one attribution submission however many tasks are refused. */
+export function throwReuseRefusals(review: AdmittedReview, refusals: readonly ReuseRefusal[]): void {
+ if (!refusals.length) return;
+ const order = review.attempt.header.selectedTaskIds, sorted = [...refusals].sort((a, b) => order.indexOf(a.taskId) - order.indexOf(b.taskId));
+ const first = sorted[0]!;
+ if (sorted.length === 1) throw new TaskReviewInputError(first.field, first.message);
+ throw new TaskReviewInputError(first.field, diagnosticText(`${refusedListing(sorted.map(r => r.taskId), order)} ${sorted.map(r => r.message).join(' ')}`, 8192));
+}
+/** Share of the 8192-byte feedback bound reserved for naming the refused tasks; per-task detail follows and may be cut. */
+const REFUSED_LISTING_BYTES = 4096;
+/** Names every refused task by id; when the ids do not fit the listing share, by their 1-based Plan positions as ranges, which stay short whatever the id length. */
+export function refusedListing(taskIds: readonly string[], order: readonly string[]): string {
+ const byId = `${taskIds.length} tasks cannot reuse their source attempt: ${taskIds.map(id => JSON.stringify(id)).join(', ')}.`;
+ if (Buffer.byteLength(byId) <= REFUSED_LISTING_BYTES) return byId;
+ const positions = taskIds.map(id => order.indexOf(id) + 1).sort((a, b) => a - b), ranges: string[] = [];
+ for (let i = 0; i < positions.length; i++) { let j = i; while (j + 1 < positions.length && positions[j + 1] === positions[j]! + 1) j++; ranges.push(i === j ? `${positions[i]}` : `${positions[i]}-${positions[j]}`); i = j; }
+ const head = `${taskIds.length} tasks cannot reuse their source attempt; their task ids are too long to list, so they are named by Plan task position: `;
+ let listed = '', shown = 0;
+ for (const range of ranges) { const next = listed ? `${listed}, ${range}` : range; if (Buffer.byteLength(head + next) + 40 > REFUSED_LISTING_BYTES) break; listed = next; shown++; }
+ return `${head}${listed}${shown < ranges.length ? ` and ${ranges.length - shown} more position ranges` : ''}.`;
+}
+export function requireReuseIdentity(review: AdmittedReview, assignment: TaskAssignment, format?: TaskIdentityFormat): void {
+ const refusal = reuseRefusal(review, assignment, format);
+ if (refusal) throwReuseRefusals(review, [refusal]);
 }
 /** Mutate one complete candidate; caller MUST await its save before ACK/dispatch. */
 export async function bindTaskFinalIdentities(review: AdmittedReview, input: readonly AcceptedTaskAttribution[]): Promise<readonly TaskAssignment[]> {
@@ -124,16 +161,20 @@ export async function bindTaskFinalIdentities(review: AdmittedReview, input: rea
   const decision = rows.find(r => r.taskId === a.taskId)!.decision;
   return decision.action === 'initial' ? a : { ...a, reassessment: { ...decision } };
  });
- const identities = assignments.map(a => ({ taskId: a.taskId, identity: taskFinalIdentity(review.prepared, a) }));
+ const format = attemptIdentityFormat(review.attempt.header);
+ const identities = assignments.map(a => ({ taskId: a.taskId, identity: taskFinalIdentity(review.prepared, a, format) }));
  const ordered = assignments.map(a => rows.find(r => r.taskId === a.taskId)!);
  const candidate = { finalScopeIdentity: review.prepared.projection!.identity, attributionState: 'accepted' as const, acceptedAttribution: ordered, taskScopeIdentities: identities,
-  attributionIdentity: attributionIdentity('accepted', review.prepared.projection!.identity, review.attempt.header.selectedTaskIds, review.prepared.packet.tests.length, ordered.map(r => ({ ...r, identity: identities.find(b => b.taskId === r.taskId)!.identity }))) };
+  attributionIdentity: attributionIdentity('accepted', review.prepared.projection!.identity, review.attempt.header.selectedTaskIds, review.prepared.packet.tests.length, ordered.map(r => ({ ...r, identity: identities.find(b => b.taskId === r.taskId)!.identity }))),
+  ...(format === 'final-task-v2' ? { taskIdentityFormat: format } : {}) };
  if (review.attempt.header.attributionState === 'accepted') {
   for (const key of Object.keys(candidate) as (keyof typeof candidate)[]) requireReview(isDeepStrictEqual(review.attempt.header[key], candidate[key]), 'attribution', 'Accepted mapping cannot change within an attempt');
  } else requireReview(review.attempt.header.attributionState === 'pending', 'attribution', 'Attribution phase cannot accept a mapping');
  requireReview(Buffer.byteLength(JSON.stringify(candidate))<=reviewJsonLimit(),'projection_limit','Accepted attribution exceeds review storage capacity');
  validateSavedAttribution({ ...review.attempt, header: { ...review.attempt.header, ...candidate } });
- for (const a of assignments) if (a.reassessment?.action === 'reuse') requireReuseIdentity(review, a);
+ const refusals: ReuseRefusal[] = [];
+ for (const a of assignments) if (a.reassessment?.action === 'reuse') { const refusal = reuseRefusal(review, a, format); if (refusal) refusals.push(refusal); }
+ throwReuseRefusals(review, refusals);
  qualifyReviewCapacity({...review,checkpoint:{...review.checkpoint,attempts:review.checkpoint.attempts.map(a=>a===review.attempt?{...a,header:{...a.header,...candidate}}:a)},attempt:{...review.attempt,header:{...review.attempt.header,...candidate}}});
  Object.assign(review.attempt.header, candidate);
  return assignments;

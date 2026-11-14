@@ -70,6 +70,7 @@ class DaemonFreshnessFlowTest {
         budget: Long = 5_000L,
         beginUpdate: () -> Boolean = { true },
         endUpdate: () -> Unit = {},
+        upgradeLegacy: (() -> DaemonActionResult?)? = null,
     ) = FreshnessDeps(
         gateway = gateway,
         gitLsRemote = gitLsRemote,
@@ -82,6 +83,7 @@ class DaemonFreshnessFlowTest {
         now = now,
         beginUpdate = beginUpdate,
         endUpdate = endUpdate,
+        upgradeLegacy = upgradeLegacy,
     )
 
     @Test
@@ -96,6 +98,21 @@ class DaemonFreshnessFlowTest {
         assertEquals(1, gateway.updateCalls)
         assertTrue(notify.messages.last().contains("confirmation is pending"))
         assertFalse(notify.messages.contains(DaemonFreshnessFlow.RELOAD_NUDGE_MESSAGE))
+    }
+
+    @Test
+    fun `legacy macOS freshness verifies the bridged update without invoking old IPC`() {
+        for (advances in listOf(true, false)) {
+            val gateway = FakeGateway()
+            val notify = RecordingNotify(clickUpdate = true)
+            DaemonFreshnessFlow.check(deps(gateway, notify, FakeVersionState("1", "1"), upgradeLegacy = {
+                if (advances) gateway.commit = UPSTREAM
+                DaemonActionResult.Ok()
+            }))
+            assertEquals(0, gateway.updateCalls)
+            assertEquals(advances, notify.messages.contains(DaemonFreshnessFlow.RELOAD_NUDGE_MESSAGE))
+            if (!advances) assertEquals(NotifyKind.FAILURE, notify.kinds.last())
+        }
     }
 
     @Test

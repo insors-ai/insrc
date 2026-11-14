@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>insrc · Native Ollama coding harness PRD</title>
+  <style>
+    :root { color-scheme: light dark; --ink: #19281f; --paper: #f6f9f4; --panel: #e9f1e5; --line: #bdcbbd; --accent: #2d612e; }
+    @media (prefers-color-scheme: dark) {
+      :root { --ink: #e4ede2; --paper: #111915; --panel: #1c2a22; --line: #425549; --accent: #b9df85; }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.6 system-ui, sans-serif; }
+    main { max-width: 62rem; margin: auto; padding: clamp(1.25rem, 5vw, 4rem); }
+    header { border-bottom: 1px solid var(--line); padding-bottom: 1rem; }
+    h1, h2, h3 { line-height: 1.2; }
+    h1 { font-size: clamp(2rem, 6vw, 3.4rem); margin: .35em 0; letter-spacing: -.035em; }
+    h2 { margin-top: 2.2rem; }
+    h3 { margin-bottom: .4rem; }
+    a { color: var(--accent); text-underline-offset: .18em; }
+    nav, .table { background: var(--panel); border: 1px solid var(--line); border-radius: .5rem; }
+    nav { margin-top: 1.5rem; padding: .75rem 1rem; }
+    nav ul { display: flex; flex-wrap: wrap; gap: .35rem 1.2rem; list-style: none; margin: 0; padding: 0; }
+    .table { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { text-align: left; vertical-align: top; padding: .65rem .85rem; }
+    thead, tbody tr + tr { border-bottom: 1px solid var(--line); }
+    tbody tr:last-child { border-bottom: 0; }
+    li + li { margin-top: .35rem; }
+    nav li + li { margin-top: 0; }
+    code { overflow-wrap: anywhere; }
+    @media print { :root { color-scheme: light; --ink: #111; --paper: #fff; --panel: #fff; --line: #999; --accent: #25492c; } main { padding: 0; } h2, h3 { break-after: avoid; } tr { break-inside: avoid; } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <p>insrc · Product requirements · Draft · 13 November 2026</p>
+    <h1>Native Ollama coding harness</h1>
+    <p>Run tracked coding tasks with an Ollama model in an insrc-controlled session. The session can inspect a repository, call MCP tools, make authorized edits, run tests, and return a validated workflow result.</p>
+  </header>
+  <nav aria-label="Contents">
+    <ul>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#journey">User journey</a></li>
+      <li><a href="#requirements">Requirements</a></li>
+      <li><a href="#structured-output">Structured output</a></li>
+      <li><a href="#framework">Framework decision</a></li>
+      <li><a href="#quality">Non-functional requirements</a></li>
+      <li><a href="#acceptance">Acceptance and rollout</a></li>
+      <li><a href="#references">References</a></li>
+    </ul>
+  </nav>
+
+  <section id="scope">
+    <h2>Problem and scope</h2>
+    <p>insrc already has a native <code>OllamaProvider</code> for inference, streaming, tool calls, and structured completions. It also has a daemon tool executor and MCP workflow tools. A coding session needs to connect these pieces through a supervised loop that retains task state, routes tool calls, and returns a result the workflow can trust.</p>
+    <p>In this PRD, <strong>native Ollama</strong> means the coding harness uses the Ollama chat protocol through insrc's provider boundary. insrc controls the session contract, repository scope, tool policy, and workflow result. An embedded library can implement the loop if it preserves those controls and supports the native transport.</p>
+    <p>The first release targets a single user, one registered repository, and one approved build task with a local Ollama model. Ollama Cloud is a later qualification target subject to insrc's existing cloud access policy and the selected model's capabilities. Multi-agent coordination, a new IDE interface, and automatic workflow approval are outside the first release.</p>
+  </section>
+
+  <section id="journey">
+    <h2>User journey</h2>
+    <ol>
+      <li>Select a registered repository, an approved coding task, and a configured Ollama model. See the effective model and whether the session has permission to edit files and run tests.</li>
+      <li>Start the session from insrc. The harness loads the task, repository steering, relevant indexed context, and scoped context from shared project memory. It exposes tools permitted for that task.</li>
+      <li>Follow progress as the model requests context, proposes edits, and runs approved checks. Handle any existing human permission prompts and cancel the session if needed.</li>
+      <li>Inspect the resulting diff, test results, and workflow output. A valid result goes back to the existing build and review flow. Failures show which actions completed and what remains to be done.</li>
+    </ol>
+  </section>
+
+  <section id="requirements">
+    <h2>Functional requirements</h2>
+    <div class="table">
+      <table aria-label="Functional requirements">
+        <thead><tr><th scope="col">ID</th><th scope="col">Capability</th><th scope="col">Required behavior</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">FR-01</th><td>Start a scoped session</td><td>Bind the session to the registered repository, worktree, tracked task, starting revision, and configured model. Check provider readiness and required capabilities before authorizing tools. Surface an actionable blocker for unavailable or incompatible models.</td></tr>
+          <tr><th scope="row">FR-02</th><td>Native inference loop</td><td>Use the existing <code>LLMProvider</code> boundary and <code>OllamaProvider</code> for native Ollama calls. Stream progress, collect complete tool requests, execute them under host policy, and send corresponding results back to the model. Preserve the association between calls and results. Apply a finite limit to model turns, tool invocations, and output repairs.</td></tr>
+          <tr><th scope="row">FR-03</th><td>MCP and built-in tools</td><td>Expose the approved subset of insrc MCP and daemon capabilities. Discover the available tool schemas and validate arguments before dispatch. Preserve workflow continuation tokens between calls. Return a clear result for denied, unavailable, or failed calls so the session can respond appropriately.</td></tr>
+          <tr><th scope="row">FR-04</th><td>Edits and tests</td><td>Reuse daemon tool execution and approval. Authorize writes against the selected worktree and run only test commands permitted by the host. Capture affected paths, test exit status, and relevant output. Report success only for checks that actually completed successfully.</td></tr>
+          <tr><th scope="row">FR-05</th><td>Workflow output</td><td>Once tool work is complete, request a final result against the workflow schema. Use native schema formatting on qualified local model and version combinations. Validate every final result on the host using the existing validation code. If a result fails validation, provide bounded corrective feedback and return a visible failure if retries are exhausted. Repair attempts must have no side-effecting tools.</td></tr>
+          <tr><th scope="row">FR-06</th><td>Lifecycle and recovery</td><td>Show running, awaiting permission, completed, failed, and cancelled states. Persist the session and completed action receipts. On cancellation, stop scheduling new work and propagate cancellation to in-flight calls where supported. Show partial edits and uncertain tool outcomes. Require reconciliation before repeating any write or command whose outcome is unknown.</td></tr>
+          <tr><th scope="row">FR-07</th><td>Workflow handoff</td><td>Return the validated result, diff reference, and test evidence to the tracked build stage. Preserve the existing code review, human approval, and presentation gates. Keep the daemon responsible for repository and index storage access.</td></tr>
+          <tr><th scope="row">FR-08</th><td>Ollama Cloud qualification</td><td>Qualify a cloud model and route independently of the local release. Require a route permitted by the existing cloud policy or an explicitly approved policy change. For a route without native schema formatting, request a structured response, validate it on the host, and apply the same bounded correction and failure behavior as local sessions.</td></tr>
+          <tr><th scope="row">FR-09</th><td>Shared project memory</td><td>Use the insrc managed memory adapter for persistent project context. At session start and cross-agent handoff, load current scoped instructions and relevant handoff context within the session's token budget. Submit eligible new context as a managed-session delta through the same adapter. Preserve project identity, provenance, privacy exclusions, and the configured persistence policy. Surface memory retrieval and submission outcomes, including unavailable context and submissions still awaiting processing.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The shared memory service owns project memory across sessions and agents, including corrections and forgetting. The harness owns execution recovery records such as tool receipts and interrupted actions. The managed adapter owns capture and excludes context it previously delivered from new capture. Every framework candidate must use this adapter for project memory. <a href="../epics/share-project-memory-across-agents-applications-E2026110117123b6d/HLD.md">Shared project memory design</a></p>
+  </section>
+
+  <section id="structured-output">
+    <h2>Structured output</h2>
+    <ol>
+      <li><strong>Use the workflow schema.</strong> The host supplies the exact JSON Schema for the current workflow phase and validates every final artifact against it with Ajv before handing it back to the workflow. Validate MCP tool arguments against their own schemas before dispatch.</li>
+      <li><strong>Finalize after tool work.</strong> Request one JSON artifact after edits and tests complete. Give the finalization and repair calls only the task context, recorded tool evidence, and the schema. Those calls have no access to action tools. Check claimed test outcomes and other reported actions against host receipts.</li>
+      <li><strong>Choose an output mode for the model and route.</strong> Use Ollama's native schema format on qualified local configurations. For Ollama Cloud, qualify prompt-based JSON over an approved route without a provider-side schema constraint. A JSON mode or dedicated response tool may be used only after the exact model and route pass the same acceptance tests. <a href="https://docs.ollama.com/capabilities/structured-outputs">Ollama structured outputs</a></li>
+      <li><strong>Repair invalid responses within a fixed budget.</strong> Treat missing output, invalid JSON, and schema violations as validation failures. Return concise validation feedback, including field paths when available, and request a replacement artifact. Keep one overall correction budget across the worker and host. If the budget runs out, report the failure, retain the diff and test evidence, and leave the workflow pending.</li>
+      <li><strong>Qualify finalization for each prototype.</strong> Start with insrc's <code>validateAgainstSchema</code> and <code>withStructuredRetry</code> using <code>OllamaProvider</code>. If a Python worker owns finalization, evaluate Python Instructor with a Pydantic response model. The <code>insors-extraction</code> precedent uses <code>instructor.from_openai</code> with <code>Mode.JSON</code> over Ollama's OpenAI-compatible <code>/v1</code> endpoint, with tests against local Ollama. Any such adapter must satisfy the PRD's native transport requirement. The original workflow schema remains authoritative at the insrc boundary. <a href="../../src/agent/providers/structured-output.ts">insrc validation and retry helpers</a> · <a href="https://python.useinstructor.com/integrations/ollama/">Instructor's Ollama integration</a></li>
+    </ol>
+  </section>
+
+  <section id="framework">
+    <h2>Framework decision</h2>
+    <p><strong>Prototype a Vibe fork with a native Ollama backend.</strong> Pin an Apache 2.0 release and verify that its Unified Harness provider code is available under terms that permit modification and redistribution. Build that release before changing it. Add native Ollama as a selectable provider in Vibe's existing model and provider configuration. Its endpoint setting selects the server and its API style selects the protocol. The new backend must speak Ollama's native <code>/api/chat</code> protocol. Use insrc's existing Vibe app-server integration for session verification and turn handling. <a href="../../src/agent/providers/cli-provider.ts">Existing Vibe integration</a> · <a href="https://docs.mistral.ai/vibe/code/cli/configuration-reference">Vibe configuration</a> · <a href="https://github.com/mistralai/mistral-vibe/blob/main/CONTRIBUTING.md">Vibe build guide</a></p>
+    <ul>
+      <li>Map messages, tool definitions, tool calls and their results across the native chat stream. Verify multiple tool calls, cancellation, partial responses, provider errors, and final token counts. Treat absent usage counts as unavailable.</li>
+      <li>Qualify model capabilities for tool use, thinking, context limits, and optional inputs. Check that compaction and other auxiliary inference use the intended model and provider. Verify that local sessions work with internet access disabled and without Mistral credentials.</li>
+      <li>Exercise final artifact generation independently of Vibe's coding turns. Keep insrc's workflow schema, bounded repairs, tool authorization, and shared project memory in force. Qualify local schema formatting and the approved Cloud route separately.</li>
+    </ul>
+    <p>Measure how much code the native adapter would require and where that code would live. Record the Python and Rust build and runtime dependencies, release packaging, and maintenance cost of any changes to upstream Vibe. The prototype must cover authorized edits and tests, cancellation, and an interrupted action with an uncertain result. <a href="https://github.com/mistralai/mistral-vibe/blob/main/LICENSE">Vibe license</a></p>
+    <p>If Vibe cannot meet those requirements with a maintainable adapter, evaluate the MIT-licensed OpenHands Software Agent SDK or a small TypeScript runner built on the existing provider, executor, and workflow interfaces. OpenHands uses LiteLLM by default, so verify its native provider integration separately. Use the same task, model, tool policy, and schema for each candidate. Review the licenses of the exact components and plugins selected for redistribution. <a href="https://github.com/OpenHands/software-agent-sdk">OpenHands SDK and license</a> · <a href="https://github.com/OpenHands/software-agent-sdk/blob/main/openhands-sdk/pyproject.toml">SDK dependencies</a></p>
+  </section>
+
+  <section id="quality">
+    <h2>Non-functional requirements</h2>
+    <ul>
+      <li><strong>Security.</strong> Treat repository and tool output as untrusted input. Keep permissions outside model prompts. Enforce the registered worktree boundary, including paths resolved through symlinks. Keep credentials out of model context and diagnostics. Give subprocesses only the credentials and network access required by approved tools.</li>
+      <li><strong>Reliability.</strong> Use stable action identifiers and durable receipts for tool effects. Recovery must distinguish completed, failed, and unknown outcomes. Keep model requests serialized per the repository's existing provider policy.</li>
+      <li><strong>Observability.</strong> Record the model, session and task identity, tool decisions, timings, validation failures, and terminal status. Redact secrets from persisted logs. Track completion rate, schema validation success, and time spent in inference and tools during the pilot.</li>
+      <li><strong>Resource limits.</strong> Bound context growth, tool output, elapsed time, and repair attempts. Preserve the approved task and unresolved work when reducing context. Show when a configured limit ends the session.</li>
+      <li><strong>Compatibility.</strong> Keep a tested list of supported Ollama versions and model configurations. Document the operating systems and prerequisites for any bundled runtime or workspace isolation. Verify offline operation for local inference and local tools after setup.</li>
+    </ul>
+  </section>
+
+  <section id="acceptance">
+    <h2>Acceptance and rollout</h2>
+    <h3>Phase 1 · Local vertical slice and framework evaluation</h3>
+    <ol>
+      <li>On a small approved task in a registered test repository, a local Ollama session calls an insrc MCP tool, makes an authorized edit, runs a permitted test, and returns a schema-valid artifact through the normal workflow handoff.</li>
+      <li>A denied write and an out-of-scope path both produce a visible denial and leave the filesystem unchanged. Cancelling a session stops new tool calls and shows any changes already made.</li>
+      <li>Fixtures cover missing output, malformed JSON, and valid JSON that violates the workflow schema. A valid correction is accepted within the configured budget. Exhausting the budget leaves the workflow pending and preserves edit and test evidence. Verify that repair does not rerun edits or tests.</li>
+    </ol>
+    <h3>Phase 2 · Local pilot</h3>
+    <p>Exercise restart recovery, permission prompts, missing model and MCP failures, failed tests, and local operation without internet access. Demonstrate that an interrupted tool call with an uncertain outcome does not trigger a duplicate write or command. Publish the tested model and platform combinations and the pilot metrics before widening availability.</p>
+    <p>Demonstrate a handoff in both directions between the Ollama harness and another supported managed agent. After the memory service applies an eligible submission, a new session in the same project receives the scoped handoff. A session in a different project receives only its own context. Verify that corrections and forgetting affect subsequent sessions, that replay avoids duplicate capture, and that memory outages are visible.</p>
+    <h3>Phase 3 · Ollama Cloud qualification</h3>
+    <p>On an approved route, repeat the end-to-end acceptance case with the chosen cloud model. Verify prompt-based JSON with a representative workflow schema, one successful repair after an invalid response, and explicit failure when retries are exhausted. Record the model, route, and output mode that passed.</p>
+    <h3>Open decisions</h3>
+    <ul>
+      <li>Which local model and minimum Ollama version should the pilot support?</li>
+      <li>Can Vibe's Unified Harness use insrc's native Ollama provider and tool policy through a maintainable adapter, and which component should own durable session state?</li>
+      <li>Which approved cloud route, if any, can use the native Ollama protocol while honoring repository policy?</li>
+    </ul>
+  </section>
+
+  <section id="references">
+    <h2>References</h2>
+    <ul>
+      <li><a href="../../AGENTS.md">insrc architecture and workflow rules</a></li>
+      <li><a href="../insrc-agent-integration-review.md">Existing agent integration review</a></li>
+      <li><a href="../../src/daemon/tools/executor.ts">Daemon tool executor</a></li>
+      <li><a href="../../src/mcp/server.ts">insrc MCP server</a></li>
+      <li><a href="https://docs.ollama.com/capabilities/tool-calling">Ollama native tool calling</a></li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

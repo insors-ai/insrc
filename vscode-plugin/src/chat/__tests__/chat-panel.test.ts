@@ -32,6 +32,8 @@ import { DatabaseSync } from 'node:sqlite';
 import { appendFileSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join as pathJoin } from 'node:path';
+import { fire, allOf, type BodyStub } from './fake-dom.js';
+import { runShell, ofType, composer, type Shell, type Composer } from './chat-shell.test.js';
 
 /** rmSync that tolerates a still-running observer pass recreating a lock file mid-teardown. */
 async function rmrf(p: string): Promise<void> {
@@ -550,6 +552,26 @@ test('S005 shell: run-config controls (provider·model popup + effort gauge) + h
   assert.match(html, /guardMd\(/, 'assistant markdown is sanitized via guardMd after the marked render');
 });
 
+test('c760757cc9077508/s1: the webview seeds reg.setRunIdentity from the run-config attrs and re-seeds on every run-config message', () => {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+    genNonce: () => 'FIXEDNONCE',
+  });
+  host.open();
+  const html = fc.html();
+  // Bootstrap: the label source is seeded from the server-rendered data-* before first paint.
+  assert.match(html, /reg\.setRunIdentity\(rstate\(\)\.provider,rstate\(\)\.model\)/, 'seeded from the run-config button attrs at bootstrap');
+  // run-config handler: every echo re-seeds the label source (open/switch/restore/set-run-config).
+  assert.match(html, /else if\(m\.type==='run-config'\)\{curProv=m\.provider\|\|'';if\(rb\)\{[^}]*\}reg\.setRunIdentity\(m\.provider\|\|'',m\.model\|\|''\);rlabel\(\);/, 'the run-config handler re-seeds setRunIdentity');
+  // The renderer source carries the compose helper and no literal 'claude' label.
+  assert.match(html, /function assistantLabel\(\)/, 'the webview embeds the compose helper');
+  assert.doesNotMatch(html, /whoRow\('assistant','\\u25c6','claude'/, 'no hardcoded claude who-label');
+});
+
 test('S005 shell: empty providers.available -> disabled selector', () => {
   const fc = fakeChannel();
   const host = createChatPanelHost({
@@ -693,6 +715,31 @@ test('S005 open-chat: restores a prior transcript; a missing id is a no-op + ref
   const hlBefore = historyLists(fc).length;
   fc.send(env('open-chat', { chatId: 'does-not-exist' }));
   assert.ok(historyLists(fc).length > hlBefore, 'a missing id re-posts history-list (dead row dropped)');
+});
+
+test('c760757cc9077508/s1: the restore path posts run-config BEFORE session-restored, so replayed assistant rows compose the restored session’s identity', () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const prior = store.create('codex');
+  prior.model = 'gpt-5.2';
+  store.append(prior.id, { role: 'assistant', text: 'earlier', at: '2026-11-11T04:18:13.568Z' });
+  store.save(prior);
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]), codex: scriptedAdapter([]) }, ['claude', 'codex']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('open-chat', { chatId: prior.id }));
+  const types = fc.posted.map((m) => m.payload.type);
+  const rc = types.lastIndexOf('run-config');
+  const sr = types.lastIndexOf('session-restored');
+  assert.ok(rc >= 0 && sr >= 0, 'both run-config and session-restored were posted');
+  assert.ok(rc < sr, `run-config (idx ${rc}) precedes session-restored (idx ${sr}) — restored rows render under the new identity`);
+  const rcMsg = fc.posted[rc]!.payload as { provider?: string; model?: string };
+  assert.equal(rcMsg.provider, 'codex');
+  assert.equal(rcMsg.model, 'gpt-5.2');
 });
 
 test('S005 ac3 native resume: turn 2 carries resume from turn 1 done.sessionId; only the new prompt is sent', async () => {
@@ -4557,10 +4604,10 @@ test('the shell embeds the pager: line() appends through it, session-restored re
   // An older page goes to prepend; live rows are tracked (stamped, then trimmed) with their row index.
   assert.match(html, /else if\(m\.type==='transcript-page'\)\{pager\.prepend\(m\);\}/);
   assert.match(html, /if\(m\.type==='turn-event'\)\{const ev=m\.event;pager\.track\(m\.rowIndex,function\(\)\{/);
-  assert.match(html, /else if\(m\.type==='user-row'\)\{pager\.track\(m\.rowIndex,function\(\)\{reg\.appendKeyed\(reg\.toViewModel\(\{role:'user',text:m\.text,attachments:m\.attachments\}\),m\.key\);\}\);\}/);
+  assert.match(html, /else if\(m\.type==='user-row'\)\{pager\.track\(m\.rowIndex,function\(\)\{reg\.appendKeyed\(reg\.toViewModel\(\{role:'user',text:m\.text,attachments:m\.attachments,at:m\.at\}\),m\.key\);\}\);\}/);
   assert.match(html, /else if\(m\.type==='transcript-row'\)\{pager\.track\(m\.rowIndex,function\(\)\{var r=m\.row;if\(r&&r\.role==='diff'&&r\.replaces!=null\)\{reg\.redrawDiff\(r\);\}else if\(r\)\{reg\.renderRow\(reg\.toViewModel\(r\)\);\}\}\);\}/, 'a row the host pushed is tracked with its index too');
   assert.match(html, /function track\(rowIndex,fn\)\{var from=term\.children\.length;try\{return fn\(\);\}finally\{stamp\(from,rowIndex\);if\(!rendering&&following\(\)\)toBottom\(\);trimIfNeeded\(\);showJump\(\);\}\}/, 'track stamps the new nodes, moves a following view to the bottom once the row is filled, and then trims');
-  assert.match(html, /else if\(m\.type==='run-config'\)\{curProv=m\.provider\|\|'';if\(rb\)\{rb\.setAttribute\('data-provider',m\.provider\|\|''\);rb\.setAttribute\('data-model',m\.model\|\|''\);rb\.setAttribute\('data-effort',m\.effort\|\|''\);\}rlabel\(\);elabel\(\);updatePickers\(\);\}/, 'the run-config echo branch settles the buttons from the session');
+  assert.match(html, /else if\(m\.type==='run-config'\)\{curProv=m\.provider\|\|'';if\(rb\)\{rb\.setAttribute\('data-provider',m\.provider\|\|''\);rb\.setAttribute\('data-model',m\.model\|\|''\);rb\.setAttribute\('data-effort',m\.effort\|\|''\);\}reg\.setRunIdentity\(m\.provider\|\|'',m\.model\|\|''\);rlabel\(\);elabel\(\);updatePickers\(\);\}/, 'the run-config echo branch re-seeds the identity, then settles the buttons from the session');
 });
 
 test("the shell is still one nonce'd inline script, with no direct scrollTop write outside the pager, no innerHTML outside the guarded markdown path and no remote origin", () => {
@@ -4828,6 +4875,9 @@ function attachHarness(opts: { adapter?: StreamAdapter | undefined; wrapStore?: 
     providers: registry({ claude: adapter }, ['claude']),
     store: sessions,
     cwd: () => '/repo',
+    // Fixed clock: the live user-row echo carries the persisted row's `at`
+    // (e4ce70ad1ae43d31/s1), so the assertions below can deep-equal it.
+    now: () => '2026-11-13T00:00:00.000Z',
     logger: { warn: () => {}, error: (m) => errors.push(m) },
     ...(opts.queue !== undefined ? { queue: opts.queue } : {}),
     attachments: {
@@ -5112,8 +5162,9 @@ test("host: a submit stores the user's text with the attachments on the row, ech
   // The stored row keeps the user's own words and lists the files; no path block in its text.
   const stored = h.sessions.get(sid)!.transcript[0]!;
   assert.deepEqual({ ...stored, at: 'x' }, { role: 'user', text: 'look at these', at: 'x', attachments: refs });
-  // The live echo carries the same attachments, under the row's key.
-  assert.deepEqual(userRows(h.fc), [{ type: 'user-row', target: { sessionId: sid, viewGeneration: 1 }, text: 'look at these', key: 'r0', rowIndex: 0, attachments: refs }]);
+  // The live echo carries the same attachments, under the row's key, plus the
+  // persisted row's `at` (the harness pins now() to a fixed instant).
+  assert.deepEqual(userRows(h.fc), [{ type: 'user-row', target: { sessionId: sid, viewGeneration: 1 }, text: 'look at these', key: 'r0', rowIndex: 0, attachments: refs, at: '2026-11-13T00:00:00.000Z' }]);
   // The files stay on disk: the message refers to them.
   assert.deepEqual(attFiles(h), [`${dir}/1-shot.png`, `${dir}/2-mynotes.txt`]);
 
@@ -5125,7 +5176,7 @@ test("host: a submit stores the user's text with the attachments on the row, ech
   assert.equal(h.runs[1]!.prompt, 'and again');
   const row = h.sessions.get(sid)!.transcript.filter((r) => r.role === 'user')[1]!;
   assert.deepEqual(Object.keys(row), ['role', 'text', 'at']);
-  assert.deepEqual(Object.keys(userRows(h.fc)[1]!), ['type', 'target', 'text', 'key', 'rowIndex']);
+  assert.deepEqual(Object.keys(userRows(h.fc)[1]!), ['type', 'target', 'text', 'key', 'rowIndex', 'at']);
   assert.equal(h.pendings().length, pendingPosts, 'a message without attachments posts no pending list');
 });
 
@@ -8448,4 +8499,220 @@ test('ISSUE-7dc5ecde2730fb17: an open panel keeps both repeating timers without 
     globalThis.setInterval = realSet;
     globalThis.clearInterval = realClear;
   }
+});
+
+// ---- Story E202611134642d49a:S001 t2: scratchpad messages are accepted-but-forwarded
+// (handlers land in t7) and non-string payloads are REJECTED (dropped + warned) ----
+
+test('host: scratchpad messages with valid payloads are accepted without throwing and post nothing; non-string id/text is dropped with a warning', async () => {
+  const fc = fakeChannel();
+  const warns: string[] = [];
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: scriptedAdapter([]) }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo', logger: { warn: (m) => warns.push(m), error: () => {} } });
+  host.open();
+  const before = fc.posted.length;
+  assert.doesNotThrow(() => {
+    fc.send(env('scratch-open-menu'));
+    fc.send(env('scratch-new'));
+    fc.send(env('scratch-browse'));
+    fc.send(env('scratch-open', { id: '20260113-083000-pad.md' }));
+    fc.send(env('scratch-delete', { id: '20260113-083000-pad.md' }));
+    fc.send(env('send-to-chat', { text: 'selected text' }));
+  });
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(fc.posted.length, before, 'well-formed scratchpad messages post nothing from the panel (t7 owns the replies)');
+  assert.deepEqual(warns, [], 'no warning for well-formed payloads');
+  assert.doesNotThrow(() => {
+    fc.send(env('scratch-open', { id: 42 }));
+    fc.send(env('scratch-delete', {}));
+    fc.send(env('send-to-chat', { text: null }));
+  });
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(warns.length, 3, 'each non-string payload is dropped with its own warning');
+  assert.match(warns.join('\n'), /non-string id/);
+  assert.match(warns.join('\n'), /non-string text/);
+  assert.equal(fc.posted.length, before, 'malformed payloads post nothing either');
+});
+
+// ---- Story E202611134642d49a:S001 t4: chat webview scratchpad button, menu, insert-into-input ----
+
+test('chat-panel.test.ts: #insrc-scratch sibling button with class attachbtn + inline SVG + title exists next to #insrc-attach (ac2, ac5)', () => {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+    attachments: { store: createAttachmentStore({ root: '/att', fs: fakeAttachmentFs().fs }), pickFiles: async () => [], open: () => {} },
+    scratchpads: { enabled: true },
+  });
+  host.open();
+  const html = fc.html();
+  assert.ok(html.includes('id="insrc-attach"'), 'the attach button is present');
+  const attachIdx = html.indexOf('id="insrc-attach"');
+  const scratchIdx = html.indexOf('id="insrc-scratch"');
+  assert.ok(scratchIdx > attachIdx, 'the scratch button comes after the attach button');
+  assert.ok(scratchIdx - attachIdx < 700, 'the scratch button is directly next to the attach button');
+  const button = /<button id="insrc-scratch" type="button" class="attachbtn" aria-haspopup="menu" aria-expanded="false" aria-label="scratchpads" title="scratchpads">(.*?)<\/button>/.exec(html);
+  assert.ok(button, 'the scratch button matches the icon-only attachbtn shape');
+  assert.match(button![1]!, /^<svg [^>]*aria-hidden="true"[^>]*>.*<\/svg>$/s, 'the button carries an inline SVG');
+  assert.equal(button![1]!.replace(/<[^>]*>/g, '').trim(), '', 'no visible text content on the button');
+  assert.ok(html.includes('<div id="insrc-scratchmenu" class="popup chatmenu" role="menu" aria-label="scratchpads"></div>'), 'the scratch menu reuses .popup.chatmenu');
+  const fc2 = fakeChannel();
+  createChatPanelHost({ createPanel: () => fc2.channel, providers: registry({ claude: scriptedAdapter([]) }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' }).open();
+  assert.doesNotMatch(fc2.html(), /insrc-scratch/, 'without the seam there is no scratch button');
+});
+
+test('chat-panel.test.ts: #insrc-scratchmenu .popup.chatmenu renders recent items + New scratchpad + Browse all from a scratch-list push, incl. empty-state hint and error row (ac2)', () => {
+  const v = runShell({ hostDeps: { scratchpads: { enabled: true } } });
+  const menu = v.el('insrc-scratchmenu');
+  // A scratch-list push caches the list; the menu re-renders when open.
+  fire(v.el('insrc-scratch'), 'click');
+  assert.deepEqual(ofType(v, 'scratch-open-menu'), [{ type: 'scratch-open-menu' }], 'the button click posts scratch-open-menu (ac3)');
+  assert.ok(menu.listeners['click'] !== undefined, 'the menu swallows its own clicks');
+  v.msg({ type: 'scratch-list', entries: [
+    { id: '20260113-083000-pad.md', name: '20260113-083000-pad', mtime: 300, size: 12 },
+    { id: '20260113-082000-other.md', name: '20260113-082000-other', mtime: 200, size: 5 },
+  ] });
+  const lblOf = (c: BodyStub): string => {
+    const lbl = c.querySelector('.lbl') as BodyStub | null;
+    return lbl?.textContent ?? '';
+  };
+  const labels = (): string[] => menu.children.map(lblOf);
+  assert.deepEqual(labels(), ['20260113-083000-pad', '20260113-082000-other', 'New scratchpad', 'Browse all'], 'recent entries then the two action rows');
+  // Row clicks post the right intents (fire the row's own onclick, as chatMenuKey does).
+  const clickRow = (c: BodyStub): void => { const fn = (c as unknown as { onclick?: (e?: unknown) => void }).onclick; assert.equal(typeof fn, 'function', 'the row has a click handler'); fn!(); };
+  const rows = menu.children.filter((c) => c.attrs['aria-disabled'] !== 'true');
+  clickRow(rows[0]!);
+  assert.deepEqual(ofType(v, 'scratch-open'), [{ type: 'scratch-open', id: '20260113-083000-pad.md' }]);
+  clickRow(rows[2]!);
+  assert.deepEqual(ofType(v, 'scratch-new'), [{ type: 'scratch-new' }], 'New scratchpad posts the titleless intent');
+  clickRow(rows[3]!);
+  assert.deepEqual(ofType(v, 'scratch-browse'), [{ type: 'scratch-browse' }]);
+  // Empty list: the hint row, then the two actions.
+  v.msg({ type: 'scratch-list', entries: [] });
+  assert.equal(labels().length, 3);
+  assert.match(labels()[0]!, /no scratchpads yet/i, 'empty-state hint row');
+  // Error list: one disabled row naming the failure.
+  v.msg({ type: 'scratch-list', entries: [], error: 'scratchpads unavailable: EACCES' });
+  assert.deepEqual(labels(), ['scratchpads unavailable: EACCES'], 'error row replaces the entries');
+  assert.equal(menu.children[0]!.attrs['aria-disabled'], 'true', 'the error row is disabled');
+  // Second click closed the menu (toggle); a later push while closed only caches the list.
+  fire(v.el('insrc-scratch'), 'click');
+  assert.ok(!(menu.children.length === 0), 'rows stay while closed');
+  v.msg({ type: 'scratch-list', entries: [{ id: '20260113-090000-late.md', name: '20260113-090000-late', mtime: 400, size: 1 }] });
+  assert.deepEqual(labels(), ['scratchpads unavailable: EACCES'], 'a push while closed does not re-render');
+  fire(v.el('insrc-scratch'), 'click');
+  assert.deepEqual(labels(), ['20260113-090000-late', 'New scratchpad', 'Browse all'], 'the reopened menu renders the cached list');
+});
+
+test("chat-panel.test.ts: bootstrap click on #insrc-scratch posts {type:'scratch-open-menu'} (ac2)", () => {
+  const v = runShell({ hostDeps: { scratchpads: { enabled: true } } });
+  assert.deepEqual(ofType(v, 'scratch-open-menu'), []);
+  fire(v.el('insrc-scratch'), 'click');
+  assert.deepEqual(ofType(v, 'scratch-open-menu'), [{ type: 'scratch-open-menu' }]);
+  fire(v.el('insrc-scratch'), 'click'); // toggles closed, no second post contract change: still posts the intent
+  assert.equal(ofType(v, 'scratch-open-menu').length, 2);
+  // Without the seam: no listener, no posts, no menu element script.
+  const plain = runShell();
+  assert.equal(plain.el('insrc-scratch').listeners['click']?.length ?? 0, 0);
+  fire(plain.el('insrc-scratch'), 'click');
+  assert.deepEqual(ofType(plain, 'scratch-open-menu'), []);
+});
+
+test('chat-panel.test.ts: host insert-into-input handler inserts into #insrc-input (:2784) per the deterministic rule — caret mid-draft in a non-empty draft, and an active range selection replaced — existing content preserved, focuses it, no submit-turn/cancel-turn posted (ac4)', () => {
+  const v: Shell = runShell({ hostDeps: { scratchpads: { enabled: true } } });
+  // Caret mid-draft in a non-empty draft: splice at the caret, existing content preserved.
+  let box: Composer = composer(v, 'hello world', 5, 5);
+  v.msg({ type: 'insert-into-input', text: 'beautiful ' });
+  assert.equal(box.value, 'hellobeautiful  world', 'inserted at the caret, both sides kept');
+  assert.equal(box.selectionStart, 15, 'the caret moves after the inserted text');
+  assert.equal((box as unknown as { focusedWith?: unknown }).focusedWith !== undefined, true, 'the input was focused');
+  assert.deepEqual(ofType(v, 'submit-turn'), [], 'no submit posted');
+  assert.deepEqual(ofType(v, 'cancel-turn'), [], 'no cancel posted');
+  // Active range selection: the range is replaced.
+  box = composer(v, 'hello world', 6, 11);
+  v.msg({ type: 'insert-into-input', text: 'there' });
+  assert.equal(box.value, 'hello there', 'the active range was replaced');
+  assert.equal(box.selectionEnd, 11);
+  // Caret at the end of a non-empty draft: append with ONE separating newline.
+  box = composer(v, 'draft', 5, 5);
+  v.msg({ type: 'insert-into-input', text: 'appended' });
+  assert.equal(box.value, 'draft\nappended', 'appended with one newline only');
+  // Caret at the end of an EMPTY draft: plain append, no leading newline.
+  box = composer(v, '', 0, 0);
+  v.msg({ type: 'insert-into-input', text: 'first' });
+  assert.equal(box.value, 'first');
+  // #insrc-prompt is never a target: its value/text is untouched by the handler.
+  const prompt = v.el('insrc-prompt');
+  const promptBefore = prompt.textContent;
+  v.msg({ type: 'insert-into-input', text: 'x' });
+  assert.equal(prompt.textContent, promptBefore, '#insrc-prompt was not modified');
+  // A non-string payload is ignored without throwing.
+  assert.doesNotThrow(() => v.msg({ type: 'insert-into-input', text: 42 }));
+  assert.deepEqual(ofType(v, 'submit-turn').concat(ofType(v, 'cancel-turn')), [], 'still no submit/cancel');
+});
+
+test('chat-panel.test.ts: insert-into-input append guarantees exactly ONE separating newline at the draft/text boundary — draft ending in \\n, text starting with \\n, or both (t4 multi-newline MED)', () => {
+  const v: Shell = runShell({ hostDeps: { scratchpads: { enabled: true } } });
+  let box: Composer;
+  // Draft ends with a newline, text does not start with one: no extra separator.
+  box = composer(v, 'draft\n', 6, 6);
+  v.msg({ type: 'insert-into-input', text: 'appended' });
+  assert.equal(box.value, 'draft\nappended', 'one newline total when the draft already ends with one');
+  // Draft does not end with a newline, text starts with one: no extra separator.
+  box = composer(v, 'draft', 5, 5);
+  v.msg({ type: 'insert-into-input', text: '\nappended' });
+  assert.equal(box.value, 'draft\nappended', 'one newline total when the text already starts with one');
+  // BOTH sides have a newline: the text\'s leading newline is stripped, exactly one remains.
+  box = composer(v, 'draft\n', 6, 6);
+  v.msg({ type: 'insert-into-input', text: '\nappended' });
+  assert.equal(box.value, 'draft\nappended', 'one newline total when both sides carry one — never two');
+  // Multi-line inserted text keeps its internal newlines; only the boundary is normalized.
+  box = composer(v, 'draft', 5, 5);
+  v.msg({ type: 'insert-into-input', text: 'line1\nline2' });
+  assert.equal(box.value, 'draft\nline1\nline2', 'internal newlines preserved, boundary gets exactly one');
+  // Empty draft with a leading-newline text: no separator at all.
+  box = composer(v, '', 0, 0);
+  v.msg({ type: 'insert-into-input', text: '\nfirst' });
+  assert.equal(box.value, '\nfirst', 'empty draft appends verbatim (no double newline at the head)');
+  // Caret stays after the inserted text in every case.
+  assert.equal(box.selectionStart, box.value.length, 'the caret lands at the end after the insert');
+  assert.deepEqual(ofType(v, 'submit-turn').concat(ofType(v, 'cancel-turn')), [], 'no submit/cancel posted');
+});
+
+test('chat-panel.test.ts + scratch-panel.test.ts: every button in the new UI is icon-only with a title attribute — no visible text content on buttons (ac5)', async () => {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+    attachments: { store: createAttachmentStore({ root: '/att', fs: fakeAttachmentFs().fs }), pickFiles: async () => [], open: () => {} },
+    scratchpads: { enabled: true },
+  });
+  host.open();
+  const html = fc.html();
+  for (const id of ['insrc-attach', 'insrc-scratch']) {
+    const m = new RegExp(`<button id="${id}"[^>]*>([\\s\\S]*?)</button>`).exec(html);
+    assert.ok(m, `#${id} exists`);
+    assert.ok(m![0].includes('title="'), `#${id} has a hover title`);
+    assert.equal(m![1]!.replace(/<[^>]*>/g, '').trim(), '', `#${id} has no visible text (icon only)`);
+    assert.match(m![1]!, /^<svg /, `#${id} carries an inline SVG icon`);
+  }
+  // The scratch menu's rows are built from mitem at runtime; the button markup is the only
+  // button-creating markup added by t4 — assert no new <button> literal without a strict
+  // title= hover (aria-label alone is not a visible hover title). The same icon-only+title
+  // contract is pinned for the scratchpad panels in scratch-panel.test.ts (browse Open/Delete
+  // and the floating Send-to-chat button).
+  // ac5 is scoped to the buttons t4 ADDED (attach + scratch); the older chrome buttons
+  // (active/history/run/effort/jump) predate the scratchpad feature and are out of scope here.
+  const buttonLiterals = html.match(/<button [^>]*>/g) ?? [];
+  const scratchButtons = buttonLiterals.filter((b) => b.includes('id="insrc-attach"') || b.includes('id="insrc-scratch"'));
+  assert.equal(scratchButtons.length, 2, 'exactly the attach + scratch buttons are in scope');
+  for (const b of scratchButtons) assert.ok(b.includes('title="'), `every scratchpad-UI button literal carries a strict title= hover: ${b.slice(0, 80)}`);
+  const { dirname, join } = await import('node:path');
+  const { fileURLToPath } = await import('node:url');
+  const here = dirname(fileURLToPath(import.meta.url));
+  assert.match(readFileSync(join(here, '..', '..', 'panels', '__tests__', 'scratch-panel.test.ts'), 'utf8'), /title/, 'scratch-panel.test.ts pins the icon-only+title contract for the scratch panels');
+  void allOf;
 });

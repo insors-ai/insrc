@@ -139,7 +139,10 @@ sourceSets.named("test") {
 // repo; it does NOT wire the two build systems or toolchains together (k6). Both ship
 // under classpath /insrc/ (/insrc/insrc-daemon-install.sh, /insrc/steering-block.md).
 val bundleBackendAssets by tasks.registering(Copy::class) {
-    from(rootProject.file("../scripts/insrc-daemon-install.sh"))
+    from(providers.environmentVariable("INSRC_PACKAGED_INSTALLER")
+        .map { rootProject.file(it) }.orElse(rootProject.file("../scripts/insrc-daemon-install.sh"))) {
+        rename { "insrc-daemon-install.sh" }
+    }
     from(rootProject.file("../src/prompts/steering-block.md"))
     into(layout.buildDirectory.dir("generated-resources/insrc"))
 }

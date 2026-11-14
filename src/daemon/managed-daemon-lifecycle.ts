@@ -11,6 +11,9 @@ import type { DaemonRunFileOwnership, RunFileLease } from './run-file-ownership.
 import type { ShutdownWatchdog } from './shutdown-watchdog.js';
 
 const REPLY_MS = 2_000;
+// Readiness includes an authenticated status RPC to the newly started daemon
+// and verification of its published run files. The supervisor owns the startup deadline.
+const READY_REPLY_MS = 15_000;
 const PUBLIC_REPLY_FLUSH_MS = 50;
 
 export function isManagedDaemon(): boolean {
@@ -108,9 +111,10 @@ export class ManagedDaemonLifecycle {
 		if (this.used.has(slot)) throw new SupervisorLifecycleError('watchdog-protocol', 'duplicate inherited request');
 		const request: SupervisorRequest = { ...details, v: 1, id: randomUUID(), op, generation: this.generation };
 		const bytes = encodeSupervisorFrame(request);
+		const replyMs = op === 'ready' ? READY_REPLY_MS : REPLY_MS;
 		return new Promise<Extract<SupervisorReply, { ok: true }>>((resolve, reject) => {
 			const timer = setTimeout(() => this.close(new SupervisorLifecycleError('watchdog-timeout',
-				'supervisor did not acknowledge ' + request.op)), REPLY_MS);
+				'supervisor did not acknowledge ' + request.op)), replyMs);
 			this.pending.set(request.id, { request, slot, timer, resolve, reject });
 			this.used.add(slot);
 			this.channel.write(bytes);

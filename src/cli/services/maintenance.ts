@@ -27,7 +27,7 @@ import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 import { rpc } from '../client.js';
-import { checkUpdateSource, readUpdateSource } from '../../shared/update-source.js';
+import { checkUpdateSource, readUpdateSource, updateSourceArgs } from '../../shared/update-source.js';
 import type { UpdateSource } from '../../shared/update-source.js';
 import type { RegisteredRepo } from '../../shared/types.js';
 import { describeStop, startDaemon, stopDaemon } from './daemon.js';
@@ -108,10 +108,20 @@ export type LogFn = (line: string) => void;
 /** Fast-forward sync + conditional install + build against DAEMON_ROOT.
  *  Never starts the daemon. Faithful to `daemon-ctl.sh cmd_update`. */
 export async function update(opts: UpdateOptions, onLog: LogFn): Promise<MaintenanceResult> {
-	if (await readManagedInstallation() !== undefined) {
-		return { ok: false, steps: [], error: 'managed installation requires the transactional updater' };
-	}
 	const root = DAEMON_ROOT;
+	if (process.platform === 'darwin') {
+		try {
+			if (await readManagedInstallation() !== undefined || existsSync(join(root, 'scripts', 'insrc-daemon-install.sh'))) {
+				const source = opts.source ?? readUpdateSource();
+				const wanted = checkUpdateSource({ repoUrl: opts.repoUrl ?? source.repoUrl, branch: opts.branch ?? source.branch });
+				const args = [join(root, 'scripts', 'daemon-ctl.sh'), 'update', ...updateSourceArgs(wanted)];
+				const code = await stream('/bin/bash', args, onLog, '/', { ...process.env, INSRC_DAEMON_ROOT: root, INSRC_DAEMON_UPDATE_WAIT: '1' });
+				return code === 0 ? { ok: true, steps: ['transactional-update'] } : { ok: false, steps: [], error: 'macOS daemon update failed' };
+			}
+		} catch (error) {
+			return { ok: false, steps: [], error: error instanceof Error ? error.message : String(error) };
+		}
+	}
 	const steps: string[] = [];
 
 	if (!existsSync(join(root, '.git')) || !existsSync(join(root, 'package.json')) || !existsSync(join(root, 'src'))) {

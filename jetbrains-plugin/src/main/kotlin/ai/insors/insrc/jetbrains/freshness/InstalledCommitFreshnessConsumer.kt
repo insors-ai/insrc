@@ -8,6 +8,9 @@ import ai.insors.insrc.jetbrains.daemon.DaemonGateway
 import ai.insors.insrc.jetbrains.daemon.DaemonGatewayService
 import ai.insors.insrc.jetbrains.daemon.DaemonStatusResult
 import ai.insors.insrc.jetbrains.daemon.DaemonUpdateOutcomeResult
+import ai.insors.insrc.jetbrains.daemon.LifecycleCommand
+import ai.insors.insrc.jetbrains.lifecycle.DaemonLifecycleCommandRunner
+import ai.insors.insrc.jetbrains.lifecycle.DefaultDaemonScriptLocator
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationGroupManager
@@ -15,6 +18,8 @@ import com.intellij.notification.NotificationType
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.extensions.PluginId
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 
 /**
@@ -79,25 +84,24 @@ class InstalledCommitFreshnessConsumer(
             // multi-window opens serialise through this shared flag (MED-1). The loser
             // skips the update silently rather than triggering the daemon's reject path.
             val inFlight = java.util.concurrent.atomic.AtomicBoolean(false)
+            val scripts = DefaultDaemonScriptLocator()
+            val lifecycle = DaemonLifecycleCommandRunner.production()
             val deps = FreshnessDeps(
                 gateway = GatewayFreshnessView(gateway),
-                gitLsRemote = ::gitLsRemote,
+                gitLsRemote = { root, branch -> gitLsRemote((scripts.managedReleaseRoot() ?: Path.of(root)).toString(), branch) },
                 notify = ::showBalloon,
                 versionState = object : PluginVersionState {
                     override val current: String = runningPluginVersion()
                     override fun getLastSeen(): String? = store.getLastSeen()
                     override fun setLastSeen(version: String) = store.setLastSeen(version)
                 },
-                daemonRoot = daemonRoot(),
+                daemonRoot = scripts.daemonRoot().toString(),
                 beginUpdate = { inFlight.compareAndSet(false, true) },
                 endUpdate = { inFlight.set(false) },
+                upgradeLegacy = { scripts.existingUpgradeTarget()?.let { lifecycle.run(LifecycleCommand.UPDATE) } },
             )
             return InstalledCommitFreshnessConsumer(deps)
         }
-
-        /** The daemon checkout root under the insrc home (`~/.insrc/daemon`). */
-        private fun daemonRoot(): String =
-            java.nio.file.Path.of(System.getProperty("user.home"), ".insrc", "daemon").toString()
 
         /** The plugin's own currently-running version, or "" when undeterminable. */
         private fun runningPluginVersion(): String =
@@ -110,7 +114,12 @@ class InstalledCommitFreshnessConsumer(
          */
         private fun gitLsRemote(root: String, branch: String): String {
             return try {
-                val process = ProcessBuilder("git", "-C", root, "ls-remote", "origin", branch)
+                val config = Path.of(System.getProperty("user.home"), ".insrc", "config.json")
+                val source = if (Files.isRegularFile(config)) com.google.gson.JsonParser.parseString(Files.readString(config))
+                    .asJsonObject.getAsJsonObject("daemonUpdate") else null
+                val origin = source?.get("repoUrl")?.asString?.trim()?.takeIf { it.isNotEmpty() } ?: "origin"
+                val ref = source?.get("branch")?.asString?.trim()?.takeIf { it.isNotEmpty() } ?: branch
+                val process = ProcessBuilder("git", "-C", root, "ls-remote", "--", origin, ref)
                     .redirectErrorStream(true)
                     .start()
                 // Bound the wait BEFORE reading (MED-2): readText() blocks until EOF, so a

@@ -53,15 +53,9 @@ class InstalledCommitFreshnessConsumerTest {
     }
 
     @Test
-    fun `the freshness wiring drives the daemon-owned IPC, not the lifecycle shell-out (k2)`() {
-        // Scan for the shell-out MECHANISM (types/calls) rather than the substring
-        // "daemon-ctl", which appears legitimately in the k2 explanatory doc comments.
+    fun `freshness routes legacy macOS through the installer and keeps managed IPC`() {
         val src = codeLines(readConsumerSource())
-        assertFalse(src.contains("controller.run"), "must not reuse the lifecycle shell-out (k2)")
-        assertFalse(src.contains("DaemonProvisioner"), "must not drive the script provisioner (k2)")
-        assertFalse(src.contains("DaemonLifecycleCommandRunner"), "must not drive the lifecycle command runner (k2)")
-        assertFalse(src.contains("ProvisionKind"), "must not use the INSTALL/UPDATE shell-out kinds (k2)")
-        // It DOES reach the daemon-owned IPC: the gateway view forwards update()/updateOutcome().
+        assertTrue(src.contains("upgradeLegacy = { scripts.existingUpgradeTarget()?.let { lifecycle.run(LifecycleCommand.UPDATE) } }"))
         assertTrue(src.contains("gateway.update()"), "consumes the daemon-owned update() IPC (k2)")
         assertTrue(src.contains("gateway.updateOutcome()"), "consumes the daemon-owned updateOutcome() IPC")
     }

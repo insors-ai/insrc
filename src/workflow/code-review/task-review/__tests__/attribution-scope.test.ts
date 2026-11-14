@@ -23,7 +23,7 @@ const reassessment=(taskId:string)=>({...row(taskId),action:'reassess',reason:'F
 // These units test a NEW candidate mapping, not mutation of an accepted mapping.
 function unaccepted(entry: ReviewAttempt): void {
  entry.header.attributionState='pending';
- delete entry.header.acceptedAttribution;delete entry.header.taskScopeIdentities;delete entry.header.attributionIdentity;
+ delete entry.header.acceptedAttribution;delete entry.header.taskScopeIdentities;delete entry.header.attributionIdentity;delete entry.header.taskIdentityFormat;
 }
 
 test('single-task attribution prompt and native schema select t4 only on initial and subsequent attempts',async()=>{

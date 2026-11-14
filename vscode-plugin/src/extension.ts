@@ -25,7 +25,8 @@ import { createCommandRegistry } from './surfaces/command-registry.js';
 import { createConsentGate } from './surfaces/consent-gate.js';
 import { activateExtension } from './activation.js';
 import { defaultSubprocessRunner } from './daemon/subprocess.js';
-import { defaultDaemonPaths } from './daemon/paths.js';
+import { defaultDaemonPaths, selectedDaemonRoot } from './daemon/paths.js';
+import { readUpdateSource } from '../../src/shared/update-source.js';
 import { createDaemonLifecycleController } from './daemon/controller.js';
 import { registerDaemonCommands, restartDaemonAndReport } from './daemon/commands.js';
 import type { ModelDefinitions } from './models/definitions.js';
@@ -58,6 +59,11 @@ import type { PanelHandle } from './panels/types.js';
 import { runSetModelTier, type DecisionResult, type ModelCheckResult } from './models/model-tier-picker.js';
 import { runDaemonFreshnessCheck } from './freshness/daemon-freshness.js';
 import { createChatPanelHost, CHAT_PANEL_TITLE, CHAT_VIEW_TYPE, DEFAULT_TURN_LOCK_TIMEOUT_MS, type ChatPanelChannel } from './chat/chat-panel.js';
+import { createScratchStore } from './chat/scratch-store.js';
+import { createScratchHost, SCRATCH_INTENT_TYPES, type ScratchChatSeam } from './chat/scratch-host.js';
+import { createScratchPanels } from './panels/scratch-panels.js';
+import type { HostToWebview, WebviewToHost } from './chat/protocol.js';
+import { makeNonce } from './panels/html.js';
 import { createFileSessionLocks, defaultIsAlive, defaultProcessStartTime } from './chat/session-lock.js';
 import { chatIsOffered, createQueueFactory, processAliveCheck, queuePathOf, repoKeyOf, windowKeyOf } from './chat/chat-queue-setup.js';
 import type { SqliteDatabase } from './chat/chat-queue-store.js';
@@ -225,10 +231,14 @@ export function activate(context: vscode.ExtensionContext): void {
   void activationSettled.then(() => runDaemonFreshnessCheck({
     client,
     daemonRoot: paths.daemonRoot,
-    gitLsRemote: (root, branch) =>
-      new Promise<string>((resolve) => {
+    upgradeLegacy: async () => paths.managedStateRoot !== undefined && await selectedDaemonRoot(paths) === undefined
+      ? controller.run('update') : undefined,
+    gitLsRemote: async (root, branch) => {
+      const checkout = await selectedDaemonRoot(paths) ?? root;
+      const configured = readUpdateSource();
+      return new Promise<string>((resolve) => {
         // A failure/timeout ⇒ undeterminable ⇒ '' (the flow skips). Never reject.
-        execFile('git', ['-C', root, 'ls-remote', 'origin', branch], { timeout: 15_000 }, (err, stdout) => {
+        execFile('git', ['-C', checkout, 'ls-remote', '--', configured.repoUrl ?? 'origin', configured.branch ?? branch], { timeout: 15_000 }, (err, stdout) => {
           if (err !== null) {
             resolve('');
             return;
@@ -236,7 +246,8 @@ export function activate(context: vscode.ExtensionContext): void {
           const firstLine = stdout.split('\n', 1)[0] ?? '';
           resolve(firstLine.split(/\s+/, 1)[0] ?? '');
         });
-      }),
+      });
+    },
     notify: (message, ...actions) =>
       Promise.resolve(vscode.window.showInformationMessage(message, {}, ...actions)),
     versionState: {
@@ -627,6 +638,10 @@ export function activate(context: vscode.ExtensionContext): void {
     // under ~/.insrc/chat-attachments, the only directory a turn is allowed to read them from.
     // They go with their session on eviction and are swept at start, like its output files.
     const chatAttachments = createAttachmentStore({ root: join(PATHS.insrc, 'chat-attachments'), logger: panelLog });
+    // Story E202611134642d49a:S001 t7: scratchpads are plain *.md files under ~/.insrc/scratches
+    // (fs omitted -> the node default applies; no daemon IPC). Built next to the other chat
+    // stores; the host router + panels controller are wired after chatHost below.
+    const scratchStore = createScratchStore({ root: join(PATHS.insrc, 'scratches'), logger: panelLog });
     const chatSessionsRoot = join(PATHS.insrc, 'chat-sessions');
     const migratedChats = migrateChatSessionsFromMemento({ memento: context.globalState, root: chatSessionsRoot, logger: panelLog });
     const chatStore = createFileChatSessionStore({
@@ -743,13 +758,57 @@ export function activate(context: vscode.ExtensionContext): void {
       lockActiveGroup: () => vscode.commands.executeCommand('workbench.action.lockEditorGroup'),
       warn: panelLog.warn,
     });
+    // Story E202611134642d49a:S001 t7: the chat channel is built HERE (one adapter for a fresh
+    // panel and a VS-Code-restored one). The scratch host router (declared after chatHost) needs
+    // the live channel to post scratch-list / insert-into-input and to observe ready/dispose, so
+    // the adapter records it: `chatChannel` is the live chat channel (undefined when closed) and
+    // `chatReady` resolves on the webview's next ready handshake. The scratch intents themselves
+    // are routed by intercepting onDidReceiveMessage below — see scratchOnMessage.
+    let chatChannel: ChatPanelChannel | undefined;
+    let chatReadyWaiters: Array<() => void> = [];
+    let chatReady = false;
+    // Forward reference: assigned once the scratch host is constructed after chatHost.
+    let scratchOnMessage: (msg: WebviewToHost) => void = () => {};
     const webviewPanelChannel = (panel: vscode.WebviewPanel): ChatPanelChannel => {
       panel.iconPath = {
         light: vscode.Uri.file(join(context.extensionPath, 'media', 'insrc-icon.svg')),
         dark: vscode.Uri.file(join(context.extensionPath, 'media', 'insrc-icon-dark.svg')),
       };
       chatGroupLock.attach(panel);
-      return webviewChannel(panel);
+      const base = webviewChannel(panel);
+      const wrapped: ChatPanelChannel = {
+        setHtml: (html) => base.setHtml(html),
+        postMessage: (message) => base.postMessage(message),
+        reveal: (opts) => base.reveal(opts),
+        dispose: () => base.dispose(),
+        onDidDispose: (listener) => base.onDidDispose(listener),
+        onMessage: (listener) => {
+          base.onMessage((m) => {
+            // Route the six scratchpad intents to the scratch host router (declared below via
+            // a forward reference) AND pass every message to the chat host's own listener.
+            const env = m as { v?: unknown; payload?: unknown } | null;
+            if (env !== null && env.v === 1 && typeof env.payload === 'object' && env.payload !== null) {
+              const p = env.payload as { type?: unknown };
+              if (typeof p.type === 'string' && SCRATCH_INTENT_TYPES.has(p.type)) scratchOnMessage(p as WebviewToHost);
+              if (p.type === 'ready') {
+                chatReady = true;
+                for (const w of chatReadyWaiters.splice(0)) w();
+              }
+            }
+            listener(m);
+          });
+        },
+      };
+      chatChannel = wrapped;
+      chatReady = false;
+      base.onDidDispose(() => {
+        if (chatChannel === wrapped) {
+          chatChannel = undefined;
+          chatReady = false;
+          for (const w of chatReadyWaiters.splice(0)) w();
+        }
+      });
+      return wrapped;
     };
     // Story E20261013e62a9269:S001: a document a chat turn presents for approval is opened in the
     // review pane, quietly. The review host is made below; the presenter reaches it when a
@@ -875,6 +934,9 @@ export function activate(context: vscode.ExtensionContext): void {
         // Open BESIDE the active editor group (a split), not on top of the current editor;
         // the shared factory wraps it + stamps the themed insrc mark.
         webviewPanelChannel(vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Beside, { enableScripts: true })),
+      // Story E202611134642d49a:S001 t4/t7: the scratchpad menu in the chat status bar
+      // (icon-only button next to attach) — the store lives in the extension host below.
+      scratchpads: { enabled: true },
       providers: chatProviders,
       store: chatStore,
       cwd: () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd(),
@@ -901,6 +963,70 @@ export function activate(context: vscode.ExtensionContext): void {
       turnLockTimeoutMs: () =>
         Math.max(1000, vscode.workspace.getConfiguration().get<number>('insrc.chat.turnLockTimeoutMs') ?? DEFAULT_TURN_LOCK_TIMEOUT_MS),
     });
+    // Story E202611134642d49a:S001 t7: the scratchpad feature's extension-host wiring. The
+    // panels controller owns the two scratch viewTypes (browse-all table + single document);
+    // the vscode-free router (scratch-host.ts) owns the six intents over injected boundaries.
+    // Both live inside the chat gate because every entry point is the chat panel's scratchpad
+    // button; nothing is registered outside `if (chatEnabled)`.
+    // The panels factory keeps the raw WebviewPanel in its closure so setPanelTitle can set
+    // the real tab title (the stock PanelHandle has no title op — the controller injects one).
+    const scratchPanelFactory = ({ viewType, title }: { readonly viewType: string; readonly title: string }): PanelHandle => {
+      const panel = vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, { enableScripts: true });
+      const handle: PanelHandle = {
+        setHtml: (html) => {
+          panel.webview.html = html;
+        },
+        reveal: () => panel.reveal(),
+        onDidDispose: (listener) => {
+          panel.onDidDispose(listener);
+        },
+        onMessage: (listener) => {
+          panel.webview.onDidReceiveMessage(listener);
+        },
+        postMessage: (message) => {
+          panel.webview.postMessage(message).then(undefined, () => {
+            /* ignore — a disposed panel's post is non-fatal */
+          });
+        },
+        dispose: () => panel.dispose(),
+      };
+      // Stash the raw panel on the handle so the title adapter below can reach it.
+      (handle as PanelHandle & { __rawPanel?: unknown }).__rawPanel = panel;
+      return handle;
+    };
+    const chatSeam: ScratchChatSeam = {
+      open: () => chatHost.open(),
+      ready: () => (chatReady ? Promise.resolve() : new Promise<void>((r) => void chatReadyWaiters.push(r))),
+      disposed: () => chatChannel === undefined,
+      post: (msg: HostToWebview) => {
+        chatChannel?.postMessage({ v: 1, payload: msg });
+      },
+    };
+    const scratchPanels = createScratchPanels({
+      panels: scratchPanelFactory,
+      store: scratchStore,
+      logger: panelLog,
+      genNonce: makeNonce,
+      setPanelTitle: (panel, title) => {
+        const raw = (panel as PanelHandle & { __rawPanel?: vscode.WebviewPanel }).__rawPanel;
+        if (raw !== undefined) raw.title = title;
+      },
+      // A document view's Send-to-chat: routed by the shared scratch host (reveal chat, await
+      // the ready handshake, push the capped insert-into-input; disposed chat drops silently).
+      onSendToChat: (text) => scratchHost.onMessage({ type: 'send-to-chat', text }),
+    });
+    context.subscriptions.push({ dispose: () => scratchPanels.dispose() });
+    // The six scratchpad webview->host intents arrive on the CHAT panel's channel; the wrapped
+    // adapter (webviewPanelChannel above) routes them here while the chat host still receives
+    // every message unchanged. scratch-new's title comes from the injected input boundary.
+    const scratchHost = createScratchHost({
+      store: scratchStore,
+      panels: scratchPanels,
+      chat: chatSeam,
+      promptTitle: () => Promise.resolve(vscode.window.showInputBox({ prompt: 'Name the new scratchpad' })),
+      logger: panelLog,
+    });
+    scratchOnMessage = (msg: WebviewToHost): void => scratchHost.onMessage(msg);
     // Gate the editor-title icon (contributes.menus["editor/title"] when:insrc.chat.ready) on an
     // activate-time context key set ONLY here, inside the flag gate \u2014 NOT the live
     // config.insrc.chat.enabled. So toggling the setting without a window reload cannot surface a

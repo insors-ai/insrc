@@ -141,8 +141,8 @@ test('group-lock: extension.ts wires thin seams into createChatGroupLock and att
   assert.match(b, /executeCommand\('workbench\.action\.lockEditorGroup'\)/, 'the lock seam runs the built-in lock command');
   assert.match(
     b,
-    /const webviewPanelChannel = \(panel: vscode\.WebviewPanel\): ChatPanelChannel => \{[\s\S]*?chatGroupLock\.attach\(panel\);\s*return webviewChannel\(panel\);/,
-    'the single create+restore adapter attaches the lock',
+    /const webviewPanelChannel = \(panel: vscode\.WebviewPanel\): ChatPanelChannel => \{[\s\S]*?chatGroupLock\.attach\(panel\);[\s\S]*?const base = webviewChannel\(panel\);/,
+    'the single create+restore adapter attaches the lock and wraps the shared channel',
   );
   // The view-type literal lives only in chat-panel.ts; extension.ts compares nothing itself.
   assert.doesNotMatch(src, /insrc\.chatPanel/, 'no chat view-type literal in extension.ts');
@@ -379,4 +379,396 @@ test('extension wiring: the repo-config panel probes mcp.status WITH the selecte
   const src = read(EXT).replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
   assert.match(src, /mcpRegistration: \(repoPath\?: string\) => daemonData\.mcpRegistration\(repoPath, repoConfigReadTimeoutMs\)/,
     'the selected repo path and timeout are forwarded to the daemon probe');
+});
+
+
+// ---- Story E202611134642d49a:S001 t7: scratchpad extension wiring (store + host handlers) ----
+//
+// The four PLAN-named tests drive the REAL vscode-free scratch host (chat/scratch-host.ts)
+// over fakes — executing the cancellation/answer flows, error+recovery, reveal/ready/cap
+// ordering and disposal drop — and assert the extension.ts binding (store root next to the
+// attachment store, injected input boundary, channel interceptor) by source scan.
+import { createScratchHost, SCRATCH_INTENT_TYPES, type ScratchChatSeam } from '../scratch-host.js';
+import { createScratchPanels, SCRATCHPADS_VIEW_TYPE, type ScratchPanels } from '../../panels/scratch-panels.js';
+import type { ScratchStore, ScratchEntry } from '../scratch-store.js';
+import type { PanelFactory, PanelHandle } from '../../panels/types.js';
+import type { HostToWebview } from '../protocol.js';
+import { runShell, ofType } from './chat-shell.test.js';
+import { fire, type BodyStub } from './fake-dom.js';
+
+interface FakeScratchStore extends ScratchStore {
+  readonly calls: string[];
+  failList: boolean;
+  failCreate: boolean;
+  failDelete: boolean;
+  entries: ScratchEntry[];
+  created: string[];
+  deleted: string[];
+}
+const fakeStore = (): FakeScratchStore => {
+  const s: FakeScratchStore = {
+    calls: [], failList: false, failCreate: false, failDelete: false, created: [], deleted: [],
+    entries: [{ id: '20260113-090000-late.md', name: '20260113-090000-late', mtime: 400, size: 1 }],
+    listScratches: async (limit?: number) => {
+      s.calls.push(`list:${limit ?? 'all'}`);
+      if (s.failList) throw new Error('EACCES: permission denied');
+      return s.entries.slice(0, limit);
+    },
+    createScratch: async (title: string) => {
+      s.calls.push(`create:${title}`);
+      if (s.failCreate) throw new Error('ENOSPC: no space left on device');
+      s.created.push(title);
+      const e: ScratchEntry = { id: `${title}.md`, name: title, mtime: 500, size: 0 };
+      s.entries = [e, ...s.entries];
+      return e;
+    },
+    readScratch: async (id: string) => ({ entry: s.entries.find((e) => e.id === id) ?? { id, name: id, mtime: 0, size: 0 }, content: 'body' }),
+    deleteScratch: async (id: string) => {
+      s.calls.push(`delete:${id}`);
+      if (s.failDelete) throw new Error('EPERM: operation not permitted');
+      s.deleted.push(id); s.entries = s.entries.filter((e) => e.id !== id);
+    },
+  };
+  return s;
+};
+
+interface FakePanels extends ScratchPanels {
+  readonly calls: string[];
+}
+const fakePanels = (): FakePanels => {
+  const p: FakePanels = {
+    calls: [],
+    openBrowse: async () => { p.calls.push('openBrowse'); return undefined; },
+    openDocument: async (id: string) => { p.calls.push(`openDocument:${id}`); return undefined; },
+    refreshBrowse: async () => { p.calls.push('refreshBrowse'); },
+    closeDocumentIfShowing: (id: string) => { p.calls.push(`closeDocumentIfShowing:${id}`); },
+    invalidateId: (id: string) => { p.calls.push(`invalidateId:${id}`); },
+    showingId: undefined,
+    dispose: () => { p.calls.push('dispose'); },
+  };
+  return p;
+};
+
+interface FakeChat extends ScratchChatSeam {
+  readonly posted: HostToWebview[];
+  opened: number;
+  readyCalls: number;
+  isDisposed: boolean;
+  /** When true, ready() stays pending until releaseReady() — tests control the handshake. */
+  gateReady: boolean;
+  private release?: () => void;
+}
+const fakeChat = (): FakeChat => {
+  const c: FakeChat = {
+    posted: [], opened: 0, readyCalls: 0, isDisposed: false, gateReady: false,
+    open: () => { c.opened++; },
+    ready: () => {
+      c.readyCalls++;
+      if (!c.gateReady) return Promise.resolve();
+      return new Promise<void>((r) => { c.release = r; });
+    },
+    disposed: () => c.isDisposed,
+    post: (msg: HostToWebview) => { c.posted.push(msg); },
+  };
+  return c;
+};
+/** Flush the microtask queue so fire-and-forget async handlers settle. */
+const flush = async (): Promise<void> => { for (let i = 0; i < 20; i++) await Promise.resolve(); };
+
+test('extension-chat-wiring.test.ts: extension.ts constructs createScratchStore with root join(PATHS.insrc, \'scratches\') (ac1)', () => {
+  const src = read(EXT);
+  const block = /if \(chatEnabled\) \{([\s\S]*?)\n  \}/.exec(src);
+  assert.ok(block, 'the chatEnabled block is present');
+  const b = block![1]!;
+  // The store is constructed NEXT TO the attachment store (the ac1 adjacency), inside the gate.
+  assert.match(b, /createAttachmentStore\(\{\s*root:\s*join\(PATHS\.insrc,\s*'chat-attachments'\),\s*logger:\s*panelLog\s*\}\);\s*\n([\s\S]*?)createScratchStore\(\{\s*root:\s*join\(PATHS\.insrc,\s*'scratches'\),\s*logger:\s*panelLog\s*\}\)/, 'createScratchStore({ root: join(PATHS.insrc, \'scratches\'), logger: panelLog }) sits right after createAttachmentStore, with fs omitted');
+  assert.match(b, /createScratchHost\(\{[\s\S]*?store:\s*scratchStore,[\s\S]*?panels:\s*scratchPanels,[\s\S]*?promptTitle:/, 'the vscode-free scratch host is constructed over the store, panels and the injected input boundary');
+  assert.match(b, /promptTitle:\s*\(\)\s*=>\s*Promise\.resolve\(vscode\.window\.showInputBox\(/, 'the scratch-new title comes from the showInputBox boundary, not a direct call inside the handler');
+  assert.match(b, /scratchpads:\s*\{\s*enabled:\s*true\s*\}/, 'the chat host gets the scratchpads seam enabled');
+  assert.match(b, /createScratchPanels\(\{[\s\S]*?panels:\s*scratchPanelFactory,[\s\S]*?genNonce:\s*makeNonce,[\s\S]*?setPanelTitle:/, 'the panels controller gets the title-capable factory, nonce source and setPanelTitle adapter');
+  assert.match(b, /onSendToChat:\s*\(text\)\s*=>\s*scratchHost\.onMessage\(\{\s*type:\s*'send-to-chat',\s*text\s*\}\)/, 'the document view send-to-chat routes through the shared scratch host');
+  // The scratch-host module itself is vscode-free.
+  const host = read(join(HERE, '..', 'scratch-host.ts'));
+  assert.doesNotMatch(host, /from ['"]vscode['"]/, 'scratch-host.ts imports nothing from vscode');
+});
+
+test('extension-chat-wiring.test.ts: scratch-new title acquisition end-to-end — prompt cancelled -> no create + unchanged list; prompt answered -> create + list refresh + document open', async () => {
+  const store = fakeStore();
+  const panels = fakePanels();
+  const chat = fakeChat();
+  let promptAnswer: string | undefined = undefined;
+  const host = createScratchHost({ store, panels, chat, promptTitle: async () => promptAnswer, logger: { warn: () => {} } });
+  // Cancelled prompt: no create, and the UNCHANGED list is re-sent.
+  host.onMessage({ type: 'scratch-new' });
+  await flush();
+  assert.deepEqual(store.created, [], 'a cancelled prompt creates nothing');
+  assert.deepEqual(store.calls.filter((c) => c.startsWith('create:')), [], 'createScratch is never called');
+  const cancelList = chat.posted.filter((m) => m.type === 'scratch-list');
+  assert.equal(cancelList.length, 1, 'the unchanged list is re-sent once');
+  assert.deepEqual((cancelList[0] as { entries: unknown }).entries, store.entries, 'the re-sent list is unchanged');
+  assert.ok(!('error' in (cancelList[0] as object)), 'no error field on a successful list');
+  // Blank-after-trim prompt: same no-op contract.
+  chat.posted.length = 0;
+  promptAnswer = '   ';
+  host.onMessage({ type: 'scratch-new' });
+  await flush();
+  assert.deepEqual(store.created, [], 'a blank-trimmed prompt creates nothing');
+  assert.equal(chat.posted.filter((m) => m.type === 'scratch-list').length, 1, 'the unchanged list is re-sent again');
+  // Non-string prompt answer: dropped (no create), unchanged list re-sent.
+  chat.posted.length = 0;
+  promptAnswer = 42 as unknown as string | undefined;
+  host.onMessage({ type: 'scratch-new' });
+  await flush();
+  assert.deepEqual(store.created, [], 'a non-string prompt answer creates nothing');
+  assert.equal(chat.posted.filter((m) => m.type === 'scratch-list').length, 1, 'the unchanged list is re-sent after a malformed title');
+  // Answered prompt: create + browse refresh + document open + re-sent list.
+  chat.posted.length = 0;
+  promptAnswer = 'My Pad';
+  host.onMessage({ type: 'scratch-new' });
+  await flush();
+  assert.deepEqual(store.created, ['My Pad'], 'the answered prompt creates the scratchpad with the trimmed title');
+  assert.deepEqual(panels.calls, ['refreshBrowse', 'openDocument:My Pad.md'], 'the browse table refreshes then the new document opens');
+  const lists = chat.posted.filter((m) => m.type === 'scratch-list');
+  assert.equal(lists.length, 1, 'the changed list is re-sent');
+  assert.equal(((lists[0] as { entries: ScratchEntry[] }).entries)[0]?.id, 'My Pad.md', 'the new scratchpad heads the list');
+});
+
+test('extension-chat-wiring.test.ts: scratch-new with a FAILING create still re-sends the list but WITH the error field (the menu must not look healthy after a failed create)', async () => {
+  const store = fakeStore();
+  const panels = fakePanels();
+  const chat = fakeChat();
+  const host = createScratchHost({ store, panels, chat, promptTitle: async () => 'Broken Pad', logger: { warn: () => {} } });
+  store.failCreate = true; // createScratch rejects; the subsequent listScratches succeeds
+  host.onMessage({ type: 'scratch-new' });
+  await flush();
+  assert.deepEqual(store.created, [], 'nothing was created');
+  assert.deepEqual(panels.calls, [], 'no browse refresh / document open on a failed create');
+  const lists = chat.posted.filter((m) => m.type === 'scratch-list');
+  assert.equal(lists.length, 1, 'the list is still re-sent after a failed create');
+  const list = lists[0] as { entries: ScratchEntry[]; error?: string };
+  assert.deepEqual(list.entries, store.entries.slice(0, 5), 'the entries are the (unchanged, successful) list');
+  assert.match(list.error ?? '', /^create failed: Error: ENOSPC: no space left on device$/, 'the re-sent list carries the create error, not a silent healthy menu');
+  // A later successful create recovers: the next list has NO error field.
+  chat.posted.length = 0;
+  store.failCreate = false;
+  host.onMessage({ type: 'scratch-new' });
+  await flush();
+  const recovered = chat.posted.filter((m) => m.type === 'scratch-list');
+  assert.equal(recovered.length, 1, 'the recovered create re-sends the list');
+  assert.ok(!('error' in (recovered[0] as object)), 'the recovered list carries no error field');
+});
+
+test('extension-chat-wiring.test.ts: scratch-delete with a FAILING delete still re-sends the list but WITH the delete error field; the panels are still closed/refreshed; a later successful delete clears it (t7 delete-failure surfacing)', async () => {
+  const store = fakeStore();
+  const panels = fakePanels();
+  const chat = fakeChat();
+  const host = createScratchHost({ store, panels, chat, promptTitle: async () => undefined, logger: { warn: () => {} } });
+  store.failDelete = true; // deleteScratch rejects; the subsequent listScratches succeeds
+  host.onMessage({ type: 'scratch-delete', id: '20260113-090000-late.md' });
+  await flush();
+  assert.deepEqual(store.deleted, [], 'nothing was actually deleted');
+  assert.deepEqual(panels.calls, ['invalidateId:20260113-090000-late.md', 'closeDocumentIfShowing:20260113-090000-late.md', 'refreshBrowse'], 'the delete still invalidates, closes and refreshes the panels');
+  const lists = chat.posted.filter((m) => m.type === 'scratch-list');
+  assert.equal(lists.length, 1, 'the list is still re-sent after a failed delete');
+  const list = lists[0] as { entries: ScratchEntry[]; error?: string };
+  assert.equal(list.entries.length, 1, 'the entries are the (unchanged, successful) list — the scratch is still there');
+  assert.match(list.error ?? '', /^delete failed: Error: EPERM: operation not permitted$/, 'the re-sent list carries the delete error, not a silent success');
+  // A later successful delete recovers: the next list has NO error field.
+  chat.posted.length = 0;
+  store.failDelete = false;
+  host.onMessage({ type: 'scratch-delete', id: '20260113-090000-late.md' });
+  await flush();
+  const recovered = chat.posted.filter((m) => m.type === 'scratch-list');
+  assert.equal(recovered.length, 1, 'the recovered delete re-sends the list');
+  assert.ok(!('error' in (recovered[0] as object)), 'the recovered list carries no error field');
+  assert.deepEqual(store.deleted, ['20260113-090000-late.md'], 'the retry actually deleted the scratch');
+});
+
+test('extension-chat-wiring.test.ts: scratch-list error field renders the unavailable row and a later success recovers; host switch cases for all six webview->host messages and both host->webview pushes', async () => {
+  // The interceptor routes exactly the six intents.
+  assert.deepEqual([...SCRATCH_INTENT_TYPES].sort(), ['scratch-browse', 'scratch-delete', 'scratch-new', 'scratch-open', 'scratch-open-menu', 'send-to-chat'], 'exactly the six scratch intents are intercepted');
+  const src = read(EXT);
+  const block = /if \(chatEnabled\) \{([\s\S]*?)\n  \}/.exec(src);
+  assert.ok(block, 'the chatEnabled block is present');
+  assert.match(block![1]!, /SCRATCH_INTENT_TYPES\.has\(p\.type\)\)\s*scratchOnMessage\(p as WebviewToHost\)/, 'the wrapped chat channel routes the six intents to the scratch host before the chat listener');
+  const store = fakeStore();
+  const panels = fakePanels();
+  const chat = fakeChat();
+  const host = createScratchHost({ store, panels, chat, promptTitle: async () => undefined });
+  // Store failure: the scratch-list push carries entries: [] + the unavailable error field.
+  store.failList = true;
+  host.onMessage({ type: 'scratch-open-menu' });
+  await flush();
+  let list = chat.posted.find((m) => m.type === 'scratch-list') as { entries: unknown; error?: string } | undefined;
+  assert.ok(list, 'a scratch-list push is posted');
+  assert.deepEqual(list!.entries, [], 'entries is empty on failure');
+  assert.match(list!.error ?? '', /^scratchpads unavailable: /, 'the error field carries the unavailable prefix (the webview renders it as the error row)');
+  // A later success recovers: entries posted with NO error field.
+  chat.posted.length = 0;
+  store.failList = false;
+  host.onMessage({ type: 'scratch-open-menu' });
+  await flush();
+  list = chat.posted.find((m) => m.type === 'scratch-list') as { entries: ScratchEntry[]; error?: string } | undefined;
+  assert.ok(list, 'a later scratch-list push is posted');
+  assert.equal(list!.entries.length, 1, 'the recovered list carries the entries');
+  assert.ok(!('error' in list!), 'no error field on success — distinct from the failure push');
+  // All six intents dispatch to their handlers.
+  chat.posted.length = 0; panels.calls.length = 0; store.calls.length = 0;
+  host.onMessage({ type: 'scratch-open-menu' });
+  host.onMessage({ type: 'scratch-open', id: 'a.md' });
+  host.onMessage({ type: 'scratch-delete', id: 'b.md' });
+  host.onMessage({ type: 'scratch-browse' });
+  host.onMessage({ type: 'send-to-chat', text: 'hello' });
+  await flush();
+  assert.ok(store.calls.includes('list:5'), 'scratch-open-menu -> top-5 list');
+  assert.ok(panels.calls.includes('openDocument:a.md'), 'scratch-open -> document panel');
+  assert.deepEqual(store.deleted, ['b.md'], 'scratch-delete -> store delete');
+  assert.ok(panels.calls.includes('invalidateId:b.md'), 'scratch-delete invalidates pending opens of the id');
+  assert.ok(panels.calls.includes('closeDocumentIfShowing:b.md'), 'scratch-delete closes the document panel if it shows the id');
+  assert.ok(panels.calls.includes('refreshBrowse'), 'scratch-delete refreshes the browse table');
+  assert.ok(panels.calls.includes('openBrowse'), 'scratch-browse -> browse panel');
+  assert.equal(chat.posted.filter((m) => m.type === 'insert-into-input').length, 1, 'send-to-chat -> insert-into-input push');
+  // Malformed fields are rejected (dropped + logged), never thrown.
+  assert.doesNotThrow(() => {
+    host.onMessage({ type: 'scratch-open', id: 42 as unknown as string });
+    host.onMessage({ type: 'scratch-delete', id: null as unknown as string });
+    host.onMessage({ type: 'send-to-chat', text: 7 as unknown as string });
+  });
+  await flush();
+  assert.ok(!panels.calls.includes('openDocument:42'), 'a non-string scratch-open id is dropped');
+  assert.deepEqual(store.deleted, ['b.md'], 'a non-string scratch-delete id is dropped');
+  assert.equal(chat.posted.filter((m) => m.type === 'insert-into-input').length, 1, 'a non-string send-to-chat text is dropped');
+  // Malformed/unknown payload.type: the runtime guard drops them without throwing or dispatching.
+  const dispatchesBefore = store.calls.length + panels.calls.length + chat.posted.length;
+  assert.doesNotThrow(() => {
+    host.onMessage(42 as unknown as WebviewToHost);
+    host.onMessage(null as unknown as WebviewToHost);
+    host.onMessage({ type: 7 } as unknown as WebviewToHost);
+    host.onMessage({ type: 'not-a-scratch-intent' } as unknown as WebviewToHost);
+    host.onMessage({} as unknown as WebviewToHost);
+  });
+  await flush();
+  assert.equal(store.calls.length + panels.calls.length + chat.posted.length, dispatchesBefore, 'a non-string or unknown payload.type dispatches nothing');
+  // Both host->webview pushes are the protocol's two scratch pushes.
+  assert.ok(chat.posted.some((m) => m.type === 'scratch-list') && chat.posted.some((m) => m.type === 'insert-into-input'), 'both host->webview pushes (scratch-list, insert-into-input) are used');
+  // End-to-end render: the REAL webview shell (runShell) shows the error row from a failed
+  // store and re-renders the recovered entries from a later successful push.
+  {
+    const v = runShell({ hostDeps: { scratchpads: { enabled: true } } });
+    const menu = v.el('insrc-scratchmenu');
+    const renderStore = fakeStore();
+    const renderHost = createScratchHost({
+      store: renderStore,
+      panels: fakePanels(),
+      chat: {
+        open: () => {},
+        ready: () => Promise.resolve(),
+        disposed: () => false,
+        post: (m) => { if (m.type === 'scratch-list') v.msg(m); },
+      },
+      promptTitle: async () => undefined,
+    });
+    const lblOf = (c: BodyStub): string => (c.querySelector('.lbl') as BodyStub | null)?.textContent ?? '';
+    const labels = (): string[] => menu.children.map(lblOf);
+    fire(v.el('insrc-scratch'), 'click');
+    assert.deepEqual(ofType(v, 'scratch-open-menu'), [{ type: 'scratch-open-menu' }], 'the status-bar scratch button posts scratch-open-menu into the host router');
+    renderStore.failList = true;
+    renderHost.onMessage({ type: 'scratch-open-menu' });
+    await flush();
+    assert.equal(labels().length, 1, 'the failure renders exactly one row');
+    assert.match(labels()[0]!, /^scratchpads unavailable: .*EACCES/, 'the real menu renders the unavailable error row');
+    assert.equal(menu.children[0]!.attrs['aria-disabled'], 'true', 'the error row is disabled in the real render');
+    renderStore.failList = false;
+    renderHost.onMessage({ type: 'scratch-open-menu' });
+    await flush();
+    assert.deepEqual(labels(), ['20260113-090000-late', 'New scratchpad', 'Browse all'], 'a later success re-renders the recovered entries in the real menu');
+  }
+  // Panel-factory failure: the REAL controller returns undefined, logs a warning, and the
+  // next open retries and succeeds (the ac-mapped coverage the wiring suite must carry).
+  {
+    const warns: string[] = [];
+    const logger = { warn: (m: string) => { warns.push(m); } };
+    interface FakePanel extends PanelHandle { readonly viewType: string }
+    const made: FakePanel[] = [];
+    let failFactory = false;
+    const factory: PanelFactory = (o) => {
+      if (failFactory) throw new Error('editor busy');
+      const listeners: Array<() => void> = [];
+      const h: FakePanel = {
+        viewType: o.viewType,
+        setHtml: () => {},
+        reveal: () => {},
+        onDidDispose: (l) => { listeners.push(l); },
+        onMessage: () => {},
+        postMessage: () => {},
+        dispose: () => { listeners.forEach((l) => l()); },
+      };
+      made.push(h);
+      return h;
+    };
+    const panels = createScratchPanels({ panels: factory, store: fakeStore(), logger, genNonce: () => 'n' });
+    const first = await panels.openBrowse();
+    assert.ok(first !== undefined, 'the first browse opens');
+    assert.equal(made.length, 1);
+    assert.equal(made[0]!.viewType, SCRATCHPADS_VIEW_TYPE, 'the browse panel uses the scratchpads view type');
+    made[0]!.dispose(); // clear the cached singleton so the next open goes through the factory
+    failFactory = true;
+    const before = warns.length;
+    const failed = await panels.openBrowse();
+    assert.equal(failed, undefined, 'a factory failure returns undefined (never throws)');
+    assert.ok(warns.length > before && warns[warns.length - 1]!.includes('editor busy'), 'the failure is logged with its reason');
+    failFactory = false;
+    const retried = await panels.openBrowse();
+    assert.ok(retried !== undefined && made.length === 2, 'the next open retries and succeeds');
+    panels.dispose();
+  }
+});
+
+test('extension-chat-wiring.test.ts: send-to-chat reveals the chat panel, awaits the ready handshake, then pushes insert-into-input capped at 65,536 UTF-8 bytes; disposed chat drops silently', async () => {
+  const store = fakeStore();
+  const panels = fakePanels();
+  const chat = fakeChat();
+  const host = createScratchHost({ store, panels, chat, promptTitle: async () => undefined });
+  // Reveal + ready ordering: with a gated ready, open() is called BEFORE ready() resolves,
+  // and nothing is posted until the handshake fires.
+  chat.gateReady = true;
+  host.onMessage({ type: 'send-to-chat', text: 'selection text' });
+  await flush();
+  assert.equal(chat.opened, 1, 'send-to-chat reveals (opens) the chat panel first');
+  assert.equal(chat.readyCalls, 1, 'then awaits the ready handshake');
+  assert.equal(chat.posted.length, 0, 'nothing is posted before ready');
+  (chat as unknown as { release: () => void }).release!();
+  await flush();
+  const pushed = chat.posted.filter((m) => m.type === 'insert-into-input');
+  assert.equal(pushed.length, 1, 'insert-into-input is pushed after ready');
+  assert.deepEqual(pushed[0], { type: 'insert-into-input', text: 'selection text' }, 'the text passes through unchanged under the cap');
+  // Cap: >65,536 UTF-8 bytes is truncated with an ellipsis, final string within the cap.
+  chat.posted.length = 0; chat.gateReady = false;
+  const big = '😀'.repeat(20_000); // 80,000 bytes
+  host.onMessage({ type: 'send-to-chat', text: big });
+  await flush();
+  const capped = chat.posted.find((m) => m.type === 'insert-into-input') as { text: string } | undefined;
+  assert.ok(capped, 'the capped insert is pushed');
+  assert.ok(Buffer.byteLength(capped!.text, 'utf8') <= 65_536, 'the final string is within 65,536 UTF-8 bytes');
+  assert.ok(capped!.text.endsWith('…'), 'the truncated insert ends with the ellipsis');
+  assert.ok(!capped!.text.includes('\uD83D') || capped!.text.codePointAt(capped!.text.length - 2) !== 0xD83D, 'no split surrogate pair before the ellipsis');
+  // Disposed chat: open + ready still run, but the push is dropped silently (no throw).
+  chat.posted.length = 0;
+  chat.isDisposed = true;
+  assert.doesNotThrow(() => host.onMessage({ type: 'send-to-chat', text: 'x' }));
+  await flush();
+  assert.equal(chat.opened, 3, 'a closed chat is opened before the disposed check (once per send-to-chat)');
+  assert.equal(chat.posted.filter((m) => m.type === 'insert-into-input').length, 0, 'a disposed chat drops the text silently');
+  // extension.ts binding: open-before-disposed-check ordering and the capped push.
+  const src = read(EXT);
+  const block = /if \(chatEnabled\) \{([\s\S]*?)\n  \}/.exec(src);
+  assert.ok(block, 'the chatEnabled block is present');
+  const chatSeam = /const chatSeam: ScratchChatSeam = \{([\s\S]*?)\n    \};/.exec(block![1]!);
+  assert.ok(chatSeam, 'the chat seam is built inside the gate');
+  assert.match(chatSeam![1]!, /open:\s*\(\)\s*=>\s*chatHost\.open\(\)/, 'the seam opens the chat host');
+  assert.match(chatSeam![1]!, /disposed:\s*\(\)\s*=>\s*chatChannel === undefined/, 'disposed reflects the live channel');
+  assert.match(chatSeam![1]!, /post:\s*\(msg: HostToWebview\)\s*=>\s*\{\s*chatChannel\?\.postMessage\(\{\s*v:\s*1,\s*payload:\s*msg\s*\}\);?\s*\}/, 'posts are enveloped and fire-and-forget');
+  const hostSrc = read(join(HERE, '..', 'scratch-host.ts'));
+  assert.match(hostSrc, /deps\.chat\.open\(\);\s*\n\s*await deps\.chat\.ready\(\);\s*\n\s*if \(deps\.chat\.disposed\(\)\) return;/, 'the host opens the chat, awaits ready, THEN checks disposed (a closed chat is opened first)');
+  assert.match(hostSrc, /type:\s*'insert-into-input',\s*text:\s*capUtf8\(text\)/, 'the push is capped via the shared capUtf8');
 });

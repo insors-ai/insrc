@@ -38,7 +38,7 @@ test('transition: every fresh producer and MCP schema explicitly supplies the fi
 test('transition: interrupted unpinned work is read-only on both reviewer routes without mutation',async()=>{
  for(const reviewer of ['daemon','controller']as const){const f=await fixture();try{
   const cp=f.checkpoint('old'),a=cp.attempts[0]!;a.header.reviewer=reviewer;a.header.status='running';delete a.header.completedAt;a['review-response'].tasks=[];delete a.submitted.reviewRevision;
-  for(const k of ['finalScopeIdentity','attributionState','acceptedAttribution','taskScopeIdentities','attributionIdentity']as const)delete a.header[k];
+  for(const k of ['finalScopeIdentity','attributionState','acceptedAttribution','taskScopeIdentities','attributionIdentity','taskIdentityFormat']as const)delete a.header[k];
   const path=checkpointPath(f.repo,'old');await saveCheckpoint(path,cp);const bytes=readFileSync(path,'utf8');
   await assert.rejects(prepareReviewAdmission(f.repo,'old',1,undefined,reviewer,f.deps.sources,{operation:'resume'}),/Interrupted unpinned history is read-only; submit a new pinned attempt/);
   assert.equal(readFileSync(path,'utf8'),bytes);

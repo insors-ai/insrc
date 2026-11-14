@@ -10,6 +10,11 @@ import { matchesDarwinPeer, readDarwinIncarnation } from './darwin-lifecycle.js'
 import type { DarwinIncarnation, DarwinLaunchJob } from './darwin-lifecycle.js';
 import { SupervisorLifecycleError } from './daemon-supervisor-protocol.js';
 import type { ManagedInstallation } from './managed-daemon-installation.js';
+import type { RunFileIdentity } from './daemon-run-files.js';
+import { assertReleaseTrustFloor, readReleaseQualificationReceipt, readReleaseTrustFloor, RELEASE_FENCE_FRESHNESS_MS } from './managed-release-trust.js';
+import type { ReleaseQualificationReceipt, ReleaseTrustFloor } from './managed-release-trust.js';
+import { assertSourceReleaseFloor, readVerifiedSourceRelease } from './managed-source-release.js';
+import type { VerifiedSourceRelease } from './managed-source-release.js';
 
 const HELPER = fileURLToPath(new URL('../../out/bin/insrc-darwin-lifecycle', import.meta.url));
 const MAX_BYTES = 128 * 1024;
@@ -23,6 +28,9 @@ export interface UpdatePredecessor {
 	readonly wasRunning: boolean;
 	readonly generation?: string | null;
 	readonly pins?: { readonly prior: ManagedInstallation; readonly candidate: ManagedInstallation };
+	readonly launch?: LegacyLaunchPin;
+	readonly selectorAbsent?: true;
+	readonly preparing?: true;
 	readonly legacy?: {
 		readonly job: DarwinLaunchJob;
 		readonly descriptorHash: string;
@@ -32,9 +40,21 @@ export interface UpdatePredecessor {
 	};
 }
 
+export type LegacyLaunchPin =
+	| { readonly kind: 'direct' | 'job'; readonly process: DarwinIncarnation; readonly cwd: string;
+		readonly argv: readonly string[]; readonly pidFile: RunFileIdentity; readonly socketFile: RunFileIdentity }
+	| { readonly kind: 'stopped' };
+
 export type MutationRequest =
-	| { readonly kind: 'start' | 'stop' | 'restart'; readonly owner: DarwinIncarnation }
+	| { readonly kind: 'start'; readonly owner: DarwinIncarnation; readonly activation?: FreshActivation }
+	| { readonly kind: 'stop' | 'restart'; readonly owner: DarwinIncarnation }
 	| { readonly kind: 'update'; readonly owner: DarwinIncarnation; readonly predecessor: UpdatePredecessor };
+
+export interface FreshActivation {
+	readonly installation: ManagedInstallation;
+	readonly startChild: boolean;
+	readonly fingerprint: string;
+}
 
 export interface MutationAuthority {
 	readonly id: string;
@@ -68,6 +88,78 @@ export interface InstallationJournal {
 	readonly root: string;
 	readonly active: MutationReservation | null;
 	readonly outcome: DurableUpdateOutcome | null;
+	readonly releaseTrust?: ReleaseTrustFloor;
+	readonly sourceReleases?: readonly VerifiedSourceRelease[];
+}
+
+export const RELEASE_TRUST_STEP = 'release-trust';
+export const SOURCE_RELEASE_STEP = 'source-release';
+
+export interface AdmittedSourceRelease {
+	readonly source: VerifiedSourceRelease;
+	readonly catalog: string;
+	readonly priorFingerprint: string;
+	readonly candidateFingerprint: string;
+	readonly launchProfile: string;
+}
+
+function readAdmittedSourceRelease(value: unknown, update: Extract<MutationReservation, { kind: 'update' }>): AdmittedSourceRelease {
+	if (!object(value) || typeof value.catalog !== 'string' || !/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/.test(value.catalog)
+		|| typeof value.priorFingerprint !== 'string' || !/^[a-f0-9]{64}$/.test(value.priorFingerprint)
+		|| typeof value.candidateFingerprint !== 'string' || !/^[a-f0-9]{64}$/.test(value.candidateFingerprint)
+		|| typeof value.launchProfile !== 'string' || !/^(?:managed|legacy-(?:direct|stopped|shell-job|node-job))$/.test(value.launchProfile)) {
+		return conflict('invalid durable source release receipt');
+	}
+	const source = readVerifiedSourceRelease(value.source);
+	if (source.commit !== update.predecessor.candidateRelease) return conflict('source release belongs to another update');
+	return { source, catalog: value.catalog, priorFingerprint: value.priorFingerprint,
+		candidateFingerprint: value.candidateFingerprint, launchProfile: value.launchProfile };
+}
+
+export function recordedSourceRelease(update: Extract<MutationReservation, { kind: 'update' }>): AdmittedSourceRelease | undefined {
+	const entry = update.entries.find(item => item.step === SOURCE_RELEASE_STEP);
+	if (entry === undefined) return undefined;
+	if (entry.receipt !== 'verified') return conflict('source release admission is incomplete');
+	return readAdmittedSourceRelease(JSON.parse(entry.intent), update);
+}
+
+export interface AdmittedReleaseQualification {
+	readonly updateId: string;
+	readonly qualification: ReleaseQualificationReceipt;
+	readonly priorFingerprint: string;
+	readonly candidateFingerprint: string;
+}
+
+function readAdmittedReleaseQualification(value: unknown, active: Extract<MutationReservation, { kind: 'update' }>): AdmittedReleaseQualification {
+	if (!object(value) || Object.keys(value).length !== 4 || value.updateId !== active.id
+		|| typeof value.priorFingerprint !== 'string' || !/^[a-f0-9]{64}$/.test(value.priorFingerprint)
+		|| typeof value.candidateFingerprint !== 'string' || !/^[a-f0-9]{64}$/.test(value.candidateFingerprint)) {
+		return conflict('invalid durable release qualification receipt');
+	}
+	const qualification = readReleaseQualificationReceipt(value.qualification);
+	if (qualification.priorCommit !== active.predecessor.priorCommit
+		|| qualification.priorCommit !== active.predecessor.priorRelease
+		|| qualification.candidateCommit !== active.predecessor.candidateRelease) {
+		return conflict('release qualification belongs to another update pair');
+	}
+	return { updateId: active.id, qualification, priorFingerprint: value.priorFingerprint, candidateFingerprint: value.candidateFingerprint };
+}
+
+function requireFreshReleaseAdmission(proof: AdmittedReleaseQualification, floor: ReleaseTrustFloor | undefined): void {
+	const { trust, validUntil } = proof.qualification;
+	const now = Date.now();
+	assertReleaseTrustFloor(trust, floor);
+	if (now < trust.observedAt || now >= validUntil || now - trust.observedAt > RELEASE_FENCE_FRESHNESS_MS) {
+		conflict('release trust requires a fresh verification before cutover');
+	}
+}
+
+/** Read only the recorded decision during offline recovery. No network or fresh trust is required. */
+export function recordedReleaseQualification(active: Extract<MutationReservation, { kind: 'update' }>): AdmittedReleaseQualification | undefined {
+	const step = active.entries.find(entry => entry.step === RELEASE_TRUST_STEP);
+	if (step === undefined) return undefined; // Historical journal.
+	if (step.receipt !== 'verified') return conflict('release qualification admission is incomplete');
+	return readAdmittedReleaseQualification(JSON.parse(step.intent), active);
 }
 
 export type RecoveryDecision = 'idle' | 'uncommitted' | 'activate' | 'finish-rollback' | 'fenced';
@@ -105,19 +197,40 @@ function validOwner(value: unknown): value is DarwinIncarnation {
 		&& text(value.startedAt) && text(value.executable) && isAbsolute(value.executable);
 }
 
+function validLegacyLaunch(value: unknown): value is LegacyLaunchPin {
+	if (!object(value)) return false;
+	if (value.kind === 'stopped') return Object.keys(value).length === 1;
+	const file = (entry: unknown) => object(entry)
+		&& ['dev', 'ino', 'ctimeNs', 'mtimeNs', 'size'].every(key => typeof entry[key] === 'string' && /^\d+$/.test(entry[key]));
+	return (value.kind === 'direct' || value.kind === 'job') && validOwner(value.process)
+		&& text(value.cwd) && isAbsolute(value.cwd) && Array.isArray(value.argv) && value.argv.length >= 2
+		&& value.argv.length <= 4 && value.argv.every(arg => text(arg) && !/[\r\n]/.test(arg))
+		&& file(value.pidFile) && file(value.socketFile);
+}
+
 function validPredecessor(value: unknown): value is UpdatePredecessor {
 	if (!object(value) || !text(value.priorRelease) || !text(value.candidateRelease)
 		|| typeof value.priorCommit !== 'string' || typeof value.wasRunning !== 'boolean'
 		|| (value.generation !== undefined && value.generation !== null && !text(value.generation))) return false;
-	if (value.pins === undefined) return value.legacy === undefined;
+	if (value.selectorAbsent !== undefined && (value.selectorAbsent !== true || value.launch === undefined)) return false;
+	if (value.preparing !== undefined && (value.preparing !== true || value.candidateRelease !== 'unqualified'
+		|| value.pins !== undefined || value.launch !== undefined || value.legacy !== undefined)) return false;
+	if (value.pins === undefined) return value.legacy === undefined && value.launch === undefined;
 	if (!object(value.pins)) return false;
 	const { prior, candidate } = value.pins;
 	const pin = (item: unknown, releaseId: string, enabled: boolean): item is ManagedInstallation =>
 		object(item) && item.releaseId === releaseId && item.version === 1 && item.enabled === enabled
 		&& text(item.stateRoot) && isAbsolute(item.stateRoot) && text(item.releaseRoot) && isAbsolute(item.releaseRoot)
 		&& text(item.runtime) && isAbsolute(item.runtime) && typeof item.pathEnv === 'string';
-	if (!pin(prior, value.priorRelease, value.legacy === undefined) || !pin(candidate, value.candidateRelease, true)
+	if (value.launch !== undefined && (!validLegacyLaunch(value.launch)
+		|| value.wasRunning !== (value.launch.kind !== 'stopped') || value.generation != null
+		|| (value.launch.kind === 'job' && value.legacy === undefined)
+		|| (value.launch.kind === 'direct' && value.legacy !== undefined))) return false;
+	if (!pin(prior, value.priorRelease, value.legacy === undefined && value.launch === undefined) || !pin(candidate, value.candidateRelease, true)
 		|| prior.stateRoot !== candidate.stateRoot) return false;
+	if (value.launch !== undefined && value.launch.kind !== 'stopped'
+		&& (value.launch.process.executable !== prior.runtime || value.launch.cwd !== prior.releaseRoot
+			|| value.launch.argv.at(-1) !== join(prior.releaseRoot, 'out/daemon/index.js'))) return false;
 	if (value.legacy === undefined) return true;
 	if (!object(value.legacy)) return false;
 	const { job, descriptorHash, entry, baseline, runAtLoad } = value.legacy;
@@ -125,6 +238,7 @@ function validPredecessor(value: unknown): value is UpdatePredecessor {
 		&& text(job.label) && /^[A-Za-z0-9][A-Za-z0-9.-]*$/.test(job.label)
 		&& text(job.descriptor) && isAbsolute(job.descriptor) && text(job.program) && isAbsolute(job.program)
 		&& Array.isArray(job.args) && job.args.length > 0 && job.args.every(text) && job.args[0] === job.program
+		&& (job.workingDirectory === undefined || job.workingDirectory === prior.releaseRoot)
 		&& typeof descriptorHash === 'string' && /^[a-f0-9]{64}$/.test(descriptorHash)
 		&& typeof runAtLoad === 'boolean'
 		&& text(entry) && isAbsolute(entry) && pin(baseline, value.candidateRelease, false)
@@ -132,8 +246,22 @@ function validPredecessor(value: unknown): value is UpdatePredecessor {
 }
 
 function validRequest(value: unknown): value is MutationRequest {
-	return object(value) && validOwner(value.owner) && (value.kind === 'start' || value.kind === 'stop'
-		|| value.kind === 'restart' || (value.kind === 'update' && validPredecessor(value.predecessor)));
+	return object(value) && validOwner(value.owner) && ((value.kind === 'start'
+		&& (value.activation === undefined || validActivation(value.activation))) || value.kind === 'stop'
+		|| value.kind === 'restart' || (value.kind === 'update' && validPredecessor(value.predecessor)
+			&& (value.predecessor.launch === undefined || ((value.predecessor.launch.kind === 'stopped'
+				|| value.predecessor.launch.process.uid === value.owner.uid)
+				&& (value.predecessor.legacy === undefined || value.predecessor.legacy.job.uid === value.owner.uid)))));
+}
+
+function validActivation(value: unknown): value is FreshActivation {
+	if (!object(value) || typeof value.startChild !== 'boolean' || !object(value.installation)) return false;
+	const pin = value.installation;
+	return pin.version === 1 && pin.enabled === true && typeof pin.releaseId === 'string'
+		&& /^(?:[a-f0-9]{40}|[a-f0-9]{64})$/.test(pin.releaseId)
+		&& [pin.stateRoot, pin.releaseRoot, pin.runtime].every(path => text(path) && isAbsolute(path))
+		&& typeof pin.pathEnv === 'string' && !/[\r\n\0]/.test(pin.pathEnv)
+		&& typeof value.fingerprint === 'string' && /^[a-f0-9]{64}$/.test(value.fingerprint);
 }
 
 function validEntries(value: unknown): value is readonly JournalEntry[] {
@@ -163,6 +291,15 @@ function readJournal(bytes: string, root: string, uid: number): InstallationJour
 		|| !text(outcome.detail) || (outcome.finishedAt !== undefined
 			&& (typeof outcome.finishedAt !== 'string' || !Number.isFinite(Date.parse(outcome.finishedAt)))))) conflict('invalid installation outcome');
 	const journal = parsed as unknown as InstallationJournal;
+	if (journal.releaseTrust !== undefined) readReleaseTrustFloor(journal.releaseTrust);
+	if (journal.sourceReleases !== undefined) {
+		if (!Array.isArray(journal.sourceReleases)) conflict('invalid signed source release floor');
+		for (const release of journal.sourceReleases) readVerifiedSourceRelease(release);
+	}
+	if (journal.active?.kind === 'start' && journal.active.activation !== undefined
+		&& journal.active.activation.installation.stateRoot !== root) conflict('fresh activation names another installation root');
+	if (journal.active?.kind === 'update' && journal.active.predecessor.launch !== undefined
+		&& journal.active.predecessor.pins?.prior.stateRoot !== root) conflict('legacy migration names another installation root');
 	if (journal.active !== null && journal.outcome !== null && journal.active.id === journal.outcome.id
 		&& journal.active.kind !== 'update') {
 		conflict('update outcome belongs to an ordinary lifecycle reservation');
@@ -278,6 +415,10 @@ export class InstallationMutationGate {
 		return this.arbitrate(async (state, uid) => {
 			if (state.active !== null) busy();
 			if (!validRequest(request) || request.owner.uid !== uid) conflict('invalid installation owner');
+			if (request.kind === 'start' && request.activation !== undefined
+				&& request.activation.installation.stateRoot !== this.root) conflict('fresh activation names another installation root');
+			if (request.kind === 'update' && request.predecessor.launch !== undefined
+				&& request.predecessor.pins?.prior.stateRoot !== this.root) conflict('legacy migration names another installation root');
 			const active: MutationReservation = { ...request, id: randomUUID(), entries: [] };
 			await this.write({ ...state, active });
 			return active;
@@ -309,6 +450,64 @@ export class InstallationMutationGate {
 		});
 	}
 
+	/** Commit the monotonic floor and immutable receipt together, before any cutover intent. */
+	async admitReleaseQualification(authority: MutationAuthority, proof: AdmittedReleaseQualification): Promise<void> {
+		await assertLiveOwner(authority.owner, this.helper);
+		await this.arbitrate(async state => {
+			const active = this.admitted(state, authority);
+			if (active.kind !== 'update' || active.predecessor.preparing === true || active.entries.length !== 0) {
+				return conflict('release qualification must precede cutover');
+			}
+			this.permit(state, active, 'lifecycle');
+			const verified = readAdmittedReleaseQualification(proof, active);
+			requireFreshReleaseAdmission(verified, state.releaseTrust);
+			const entry = { step: RELEASE_TRUST_STEP, intent: JSON.stringify(verified), receipt: 'verified' };
+			await this.write({ ...state, releaseTrust: verified.qualification.trust, active: { ...active, entries: [entry] } });
+		});
+	}
+
+	/** Advance trust independently of qualification so an observed revocation cannot be replayed away. */
+	async observeReleaseTrust(observed: ReleaseTrustFloor): Promise<void> {
+		const floor = readReleaseTrustFloor(observed);
+		await this.arbitrate(async state => {
+			assertReleaseTrustFloor(floor, state.releaseTrust);
+			if (floor.observedAt > Date.now()) conflict('release trust observation is from the future');
+			await this.write({ ...state, releaseTrust: floor });
+		});
+	}
+
+	/** Keep a monotonic floor for each signed source channel under the journal lock. */
+	async observeSourceRelease(source: VerifiedSourceRelease): Promise<void> {
+		const release = readVerifiedSourceRelease(source);
+		await this.arbitrate(async state => {
+			const floors = state.sourceReleases ?? [];
+			assertSourceReleaseFloor(release, floors);
+			if (floors.some(item => item.tagObject === release.tagObject && item.channel.repoUrl === release.channel.repoUrl
+				&& item.channel.branch === release.channel.branch)) return;
+			const others = floors.filter(item => item.channel.repoUrl !== release.channel.repoUrl || item.channel.branch !== release.channel.branch);
+			await this.write({ ...state, sourceReleases: [...others, release] });
+		});
+	}
+
+	async admitSourceRelease(authority: MutationAuthority, proof: AdmittedSourceRelease): Promise<void> {
+		await assertLiveOwner(authority.owner, this.helper);
+		await this.arbitrate(async state => {
+			const active = this.admitted(state, authority);
+			if (active.kind !== 'update' || active.predecessor.preparing || active.entries.length) {
+				return conflict('source release admission must precede cutover');
+			}
+			this.permit(state, active, 'lifecycle');
+			const checked = readAdmittedSourceRelease(proof, active);
+			assertSourceReleaseFloor(checked.source, state.sourceReleases ?? []);
+			if (!state.sourceReleases?.some(floor => floor.tagObject === checked.source.tagObject
+				&& floor.channel.repoUrl === checked.source.channel.repoUrl && floor.channel.branch === checked.source.channel.branch)) {
+				return conflict('source release is not the observed channel head');
+			}
+			const entry = { step: SOURCE_RELEASE_STEP, intent: JSON.stringify(checked), receipt: 'verified' };
+			await this.write({ ...state, active: { ...active, entries: [entry] } });
+		});
+	}
+
 	private async append(
 		authority: MutationAuthority, step: string, kind: 'intent' | 'receipt', detail: string, purpose: MutationPurpose,
 	): Promise<void> {
@@ -317,6 +516,14 @@ export class InstallationMutationGate {
 			const active = this.admitted(state, authority);
 			const last = active.entries.at(-1);
 			this.permit(state, active, purpose);
+			if (kind === 'intent' && active.kind === 'update'
+				&& (step === 'legacy-launcher-fence' || (step === 'predecessor-stop'
+					&& !active.entries.some(entry => entry.step === 'legacy-launcher-fence')))) {
+				const qualification = recordedReleaseQualification(active);
+				if (qualification !== undefined) requireFreshReleaseAdmission(qualification, state.releaseTrust);
+				const source = recordedSourceRelease(active);
+				if (source !== undefined) assertSourceReleaseFloor(source.source, state.sourceReleases ?? []);
+			}
 			if (kind === 'intent' && ((last !== undefined && last.receipt === undefined)
 				|| active.entries.some(entry => entry.step === step) || active.entries.length >= MAX_STEPS)) {
 				conflict('installation journal has an unresolved, repeated or excess intent');
@@ -370,6 +577,23 @@ export class InstallationMutationGate {
 				conflict('cannot cancel an update that has started');
 			}
 			await this.write({ ...state, active: null });
+		});
+	}
+
+	/** Preserve the acknowledged update ID when replacing preparation with exact release pins. */
+	async qualifyUpdate(authority: MutationAuthority, predecessor: UpdatePredecessor): Promise<Extract<MutationReservation, { kind: 'update' }>> {
+		await assertLiveOwner(authority.owner, this.helper);
+		return this.arbitrate(async state => {
+			const active = this.admitted(state, authority);
+			this.permit(state, active, 'lifecycle');
+			if (active.kind !== 'update' || active.predecessor.preparing !== true || active.entries.length !== 0
+				|| predecessor.preparing !== undefined || predecessor.pins?.prior.stateRoot !== this.root
+				|| active.predecessor.priorRelease !== predecessor.priorRelease
+				|| active.predecessor.wasRunning !== predecessor.wasRunning || active.predecessor.generation !== predecessor.generation
+				|| !validRequest({ ...active, predecessor })) conflict('qualified update differs from admitted preparation');
+			const qualified = { ...active, predecessor };
+			await this.write({ ...state, active: qualified });
+			return qualified;
 		});
 	}
 

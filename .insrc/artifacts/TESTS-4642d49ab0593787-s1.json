@@ -1,0 +1,2534 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 60,
+        "contentHash": "495df436bccd3838aff779bb424b6d52f3cfe3a8f92a0d8e5bc6af7f8537fb45",
+        "at": "2026-11-13T12:12:12.926Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "4642d49ab0593787",
+    "storyId": "s1",
+    "createdAt": "2026-11-13T08:59:23.823Z",
+    "updatedAt": "2026-11-13T12:12:12.872Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-13T06:38:38.894Z",
+    "epicSlug": "vs-code-plugin-scratchpads-insrc-scratches",
+    "revision": 60
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "990385080",
+        "ranAt": "2026-11-13T12:00:09.478Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "scratch-store.test.ts: listScratches returns entries sorted by mtime desc with id/name/mtime/size (ENOENT->[], non-.md skipped, limit cap, ties id asc)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/scratch-store.test.ts",
+                "title": "scratch-store.test.ts: listScratches returns entries sorted by mtime desc with id/name/mtime/size (ENOENT->[], non-.md skipped, limit cap, ties id asc)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "scratch-store.test.ts: createScratch writes <yyyymmdd-hhmmss>-<slug>.md via temp write + link()+unlink publication (never rename), collision ladder -2/-3, slug rules incl. all-symbol fallback 'scratch'; entry appears at list head",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/scratch-store.test.ts",
+                "title": "scratch-store.test.ts: createScratch writes <yyyymmdd-hhmmss>-<slug>.md via temp write + link()+unlink publication (never rename), collision ladder -2/-3, slug rules incl. all-symbol fallback 'scratch'; entry appears at list head",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "scratch-store.test.ts: refusal tests — ids '.', '..', traversal strings, symlinks and directories named *.md cause ScratchRefused with ZERO fs mutation calls recorded by fake-scratch-fs",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/scratch-store.test.ts",
+                "title": "scratch-store.test.ts: refusal tests — ids '.', '..', traversal strings, symlinks and directories named *.md cause ScratchRefused with ZERO fs mutation calls recorded by fake-scratch-fs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "scratch-store.test.ts: concurrent-create race with two independent store instances over the same real tmp dir — both racing creates succeed with distinct files, contents intact (link()+unlink exclusive publication, EEXIST suffix retry)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/scratch-store.test.ts",
+                "title": "scratch-store.test.ts: concurrent-create race with two independent store instances over the same real tmp dir — both racing creates succeed with distinct files, contents intact (link()+unlink exclusive publication, EEXIST suffix retry)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "scratch-store.test.ts: ENOENT mapping — readdir ENOENT -> []; absence before lstat and disappearance between lstat and final read/unlink -> ScratchNotFound (read) / success (delete, idempotent)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/scratch-store.test.ts",
+                "title": "scratch-store.test.ts: ENOENT mapping — readdir ENOENT -> []; absence before lstat and disappearance between lstat and final read/unlink -> ScratchNotFound (read) / success (delete, idempotent)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "scratch-store.test.ts: readScratch opens with O_RDONLY|O_NOFOLLOW + fstat single-fd regular-file check — symlink swapped in after validation yields ELOOP -> ScratchRefused; error mapping EACCES/ENOSPC/EROFS -> ScratchStoreError",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/scratch-store.test.ts",
+                "title": "scratch-store.test.ts: readScratch opens with O_RDONLY|O_NOFOLLOW + fstat single-fd regular-file check — symlink swapped in after validation yields ELOOP -> ScratchRefused; error mapping EACCES/ENOSPC/EROFS -> ScratchStoreError",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/scratch-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 315,
+            "titles": [
+              {
+                "title": "scratch-store.test.ts: listScratches returns entries sorted by mtime desc with id/name/mtime/size (ENOENT->[], non-.md skipped, limit cap, ties id asc)",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-store.test.ts: listScratches surfaces ScratchStoreError on a non-ENOENT readdir failure",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-store.test.ts: createScratch writes <yyyymmdd-hhmmss>-<slug>.md via temp write + link()+unlink publication (never rename), collision ladder -2/-3, slug rules incl. all-symbol fallback 'scratch'; entry appears at list head",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-store.test.ts: refusal tests — ids '.', '..', traversal strings, symlinks and directories named *.md cause ScratchRefused with ZERO fs mutation calls recorded by fake-scratch-fs",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-store.test.ts: ENOENT mapping — readdir ENOENT -> []; absence before lstat and disappearance between lstat and final read/unlink -> ScratchNotFound (read) / success (delete, idempotent)",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-store.test.ts: readScratch opens with O_RDONLY|O_NOFOLLOW + fstat single-fd regular-file check — symlink swapped in after validation yields ELOOP -> ScratchRefused; error mapping EACCES/ENOSPC/EROFS -> ScratchStoreError",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-store.test.ts: createScratchStore with fs omitted defaults to the node adapter (production path passes only { root, logger })",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-store.test.ts: concurrent-create race with two independent store instances over the same real tmp dir — both racing creates succeed with distinct files, contents intact (link()+unlink exclusive publication, EEXIST suffix retry)",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-store.test.ts: a failed create before link() leaves no visible *.md and removes the temp best-effort",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-store.test.ts: listScratches skips entries whose lstat fails between readdir and lstat",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-store.test.ts: writeFile/copyFile-style symlink seeding helper not used — deleteScratch on a symlink refuses and the symlink target is untouched",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "18c3cbbc3",
+        "ranAt": "2026-11-13T09:15:43.373Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "protocol.test.ts: all eight new message types appear in their own direction's union + const array only, with direction-isolation and union/array-equality assertions passing (ac5)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/protocol.test.ts",
+                "title": "protocol.test.ts: all eight new message types appear in their own direction's union + const array only, with direction-isolation and union/array-equality assertions passing (ac5)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/protocol.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 341,
+            "titles": [
+              {
+                "title": "restore and targeted action frames preserve session, turn and generation identity",
+                "result": "pass"
+              },
+              {
+                "title": "WEBVIEW_TO_HOST_TYPES reserves 'cancel-turn' alongside every prior kind (additive, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "a { type: 'cancel-turn' } WebviewToHost message typechecks and carries no other field",
+                "result": "pass"
+              },
+              {
+                "title": "every existing WebviewToHost message still constructs with its original shape (no drift, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "S004: WEBVIEW_TO_HOST_TYPES reserves 'permission-decision' + 'set-permission-mode' (additive, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): WEBVIEW_TO_HOST_TYPES reserves 'selection-decision' (additive, exhaustiveness passes, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): a selection-decision message typechecks with requestId + selected ids",
+                "result": "pass"
+              },
+              {
+                "title": "S004: permission-decision typechecks with optional accepted-but-inert scope; set-permission-mode carries a PermissionMode",
+                "result": "pass"
+              },
+              {
+                "title": "WEBVIEW_TO_HOST_TYPES includes 'load-older' and HOST_TO_WEBVIEW_TYPES includes 'transcript-page', alongside every prior kind",
+                "result": "pass"
+              },
+              {
+                "title": "protocol: the four new webview messages and attachments-pending are in the type lists, and user-row carries attachments",
+                "result": "pass"
+              },
+              {
+                "title": "protocol: transcript-row is a host message and edit-prompt is not",
+                "result": "pass"
+              },
+              {
+                "title": "plugin protocol: 'docs-decision-result' and 'docs-companion' are host messages, 'open-companion' is a webview message, and 'docs-decision' carries a decision and a comments list",
+                "result": "pass"
+              },
+              {
+                "title": "protocol: the host-to-webview and webview-to-host type lists include the outbox message and its four actions",
+                "result": "pass"
+              },
+              {
+                "title": "protocol allowlist includes open-link and open-code-ref",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4: active-list is a host->webview kind and ActiveChatEntry carries id/title/provider/status/lastActivityAt; open-chat stays the only open message",
+                "result": "pass"
+              },
+              {
+                "title": "run-config message shape is encoded in the HostToWebview union and posted by the host on open/switch/restore/set-run-config",
+                "result": "pass"
+              },
+              {
+                "title": "protocol.test.ts: all eight new message types appear in their own direction's union + const array only, with direction-isolation and union/array-equality assertions passing (ac5)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "b0ce5feaa",
+        "ranAt": "2026-11-13T12:12:12.872Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "webview-host.test.ts + chat-shell.test.ts: existing CSP/nonce tests preserved when the shell is extracted to panels/shell.ts (shell output byte-identical, all existing assertions pass unmodified)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/webview-host.test.ts",
+                "title": "webview-host.test.ts + chat-shell.test.ts: existing CSP/nonce tests preserved when the shell is extracted to panels/shell.ts (shell output byte-identical, all existing assertions pass unmodified)",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+                "title": "webview-host.test.ts + chat-shell.test.ts: existing CSP/nonce tests preserved when the shell is extracted to panels/shell.ts (shell output byte-identical, all existing assertions pass unmodified)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 602,
+            "titles": [
+              {
+                "title": "the shell script runs: a windowed restore shows one page at the bottom with the bar, a page request round-trips and keeps the reader's place, a live row does not move a reader who scrolled up, and an old-style restore still works",
+                "result": "pass"
+              },
+              {
+                "title": "the shell script bounds the view of a long active session: rows past the limit are trimmed at the bottom and come back on request",
+                "result": "pass"
+              },
+              {
+                "title": "shell script: the attach button posts pick-attachments, an image paste posts attach-image with its base64 and is prevented, a text paste is untouched, chips render from attachments-pending with a remove control, and a blank box with chips submits",
+                "result": "pass"
+              },
+              {
+                "title": "shell: the attach button is icon-only with an aria-label, sits first in the status bar, and the content security policy is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "webview-host.test.ts + chat-shell.test.ts: existing CSP/nonce tests preserved when the shell is extracted to panels/shell.ts (shell output byte-identical, all existing assertions pass unmodified)",
+                "result": "pass"
+              },
+              {
+                "title": "shell script: a chip click on a sent message posts open-attachment, and the error sentence is shown and cleared",
+                "result": "pass"
+              },
+              {
+                "title": "transcript-row: a diff row without replaces appends a widget stamped with its row index; one with replaces redraws the widget of that sid and keeps it open; a withdrawn one hides it; one for an unknown or trimmed sid changes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "transcript-row: a marker row appends the same line a restored marker row draws",
+                "result": "pass"
+              },
+              {
+                "title": "diff widget: a diff row in a session-restored window and in a transcript-page is appended as a widget",
+                "result": "pass"
+              },
+              {
+                "title": "chat shell: the outbox band is present only with the queue, and the queue hint replaces the input placeholder only with it; an outbox message draws its rows and summary and each action posts its seq; with the queue a submit does not mark the turn running",
+                "result": "pass"
+              },
+              {
+                "title": "a retrying row shows 'attempt n of 3', a countdown, a retry-now button and a cancel button, and retry-now posts outbox-retry-now with its seq",
+                "result": "pass"
+              },
+              {
+                "title": "chat shell: the progress widget is never hidden: idle at the start, working after turn-running, idle after done, error, Stop and session-restored",
+                "result": "pass"
+              },
+              {
+                "title": "session restore uses stored phase and elapsed time without another provider event",
+                "result": "pass"
+              },
+              {
+                "title": "chat shell binds Stop to a pending run before the provider spawns",
+                "result": "pass"
+              },
+              {
+                "title": "chat shell: an informational line's done does not end a running turn, and the turn's own done and error still do",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): #insrc-active chip sits LEFT of the .right history chip; active-list populates dot-coded menu rows; activating one posts open-chat { chatId }",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): TRUE end-to-end round trip — activating an active-menu row posts open-chat, the real host receives it, and answers session-restored for that chat",
+                "result": "pass"
+              },
+              {
+                "title": "history run-config restores provider model and effort across sessions and legacy defaults in the executable shell",
+                "result": "pass"
+              },
+              {
+                "title": "new-session model and effort controls open and apply selections in the executable shell",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): a rendered menu row and both triggers inline the REAL provider SVG (not a source string), and the empty active trigger reads \"no active work\"",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): activating a row writes the selection optimistically (both triggers re-render to the chosen chat before any host reply) and posts open-chat/new-chat",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-0d3939248a956860: opening the history menu on a fresh (draft) chat focuses the TOP row WITHOUT scrolling to it; arrow keys still scroll",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): activating a persisted history row posts open-chat (not new-chat) even when that chat is absent from the active list",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): session-restored settles BOTH triggers on the restored chat (and clears one absent from a list)",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): a history-list-only response (a rejected open-chat) recovers BOTH triggers to the confirmed session",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): active-list reconcile re-settles the active trigger to the confirmed session (dropped from active -> cleared)",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): the menu keyboard moves the roving tabindex (ArrowDown/ArrowUp/Home/End) and Escape closes",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): an unknown provider falls back to an empty .pico (no broken SVG or image)",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): session-restored-before-list ordering settles BOTH triggers once the lists arrive",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): the 'vibe' provider branch inlines the Vibe SVG too, not just Claude/Codex",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1; Story e0821209d94791d0/s1): with a run-config provider set, the #insrc-newchat button posts new-chat carrying that provider",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Enter submits and prevents the line break",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Enter while a turn is running still submits",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Enter on an empty box sends nothing and adds no line break",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Ctrl+Enter inserts a line at the caret and does not submit",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Ctrl+Enter replaces a selection with one line",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Cmd+Enter inserts a line and does not submit",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Ctrl+Shift+Enter is a new line, never a send",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Shift+Enter does not submit and leaves the browser's line break",
+                "result": "pass"
+              },
+              {
+                "title": "composer: an Enter confirming an IME composition does not submit",
+                "result": "pass"
+              },
+              {
+                "title": "composer: the placeholders state the new keys",
+                "result": "pass"
+              },
+              {
+                "title": "shell: the jump button sits outside the transcript and a click returns focus to the prompt",
+                "result": "pass"
+              },
+              {
+                "title": "picker opens in the real webview script and recovers catalog over the host handshake without reloading an active turn",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/panels/__tests__/webview-host.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 486,
+            "titles": [
+              {
+                "title": "showStatusMenu offers EXACTLY five items, including Manage Connections and Delivery Board, and routes each choice to the matching panel",
+                "result": "pass"
+              },
+              {
+                "title": "openConnections(): unwired onOpenConnections logs a warning and opens nothing (no throw)",
+                "result": "pass"
+              },
+              {
+                "title": "openConnections(): a synchronous throw from a wired onOpenConnections fake is caught and logged, matching the onDetailAction/onRepoConfigWrite/onRepoRegisterProviders/onModelTiersWrite sink precedent",
+                "result": "pass"
+              },
+              {
+                "title": "openDeliveryBoard(): unwired onOpenDeliveryBoard logs a warning and opens nothing (no throw)",
+                "result": "pass"
+              },
+              {
+                "title": "openDeliveryBoard(): a synchronous throw from a wired onOpenDeliveryBoard fake is caught and logged, matching the onOpenConnections sink precedent",
+                "result": "pass"
+              },
+              {
+                "title": "Cancel path: a dismissed menu (undefined) opens no panel (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "openDetailedStatus creates ONE panel with the daemon/workflows/debug tabs, defaults to daemon, renders gateway.status() (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "the shared shell styles form controls with theme variables — selects/dropdowns do not fall back to the browser white ground",
+                "result": "pass"
+              },
+              {
+                "title": "Degraded render: a rejected gateway.status() still opens the panel + tabs with an error body and never throws",
+                "result": "pass"
+              },
+              {
+                "title": "a setHtml throw (e.g. panel disposed mid-render) degrades to a logged no-op — never an unhandled rejection or a sync throw",
+                "result": "pass"
+              },
+              {
+                "title": "single-instance: a second open reveals the same panel + switches tab, and after user-close a later open creates fresh",
+                "result": "pass"
+              },
+              {
+                "title": "openRepoConfiguration creates/reveals the separate Repo Configuration shell (single-instance)",
+                "result": "pass"
+              },
+              {
+                "title": "S005: openDetailedStatus renders the daemon tab from detailRenderers.daemon (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "S005: a {switchTab:'workflows'} message re-invokes the workflows renderer exactly once and re-sets the html (ac2/ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "S005: a {refresh} message re-invokes the ACTIVE tab renderer exactly once (ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "S005: NO timer/interval is armed — with no message the renderer call-count stays flat (no background poll, ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "S005: an unknown message type, or switchTab with an invalid tab, is a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "S005: a late switchTab/refresh after the panel was disposed is skipped",
+                "result": "pass"
+              },
+              {
+                "title": "S005: the rendered Detailed Status shell carries a strict CSP + a per-render nonce on the only inline script",
+                "result": "pass"
+              },
+              {
+                "title": "S006: the controller is armed ONLY after the webview {ready} handshake — never before (MED-1 fix: the initial batch is not posted into a not-yet-loaded document)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: activating the debug tab calls onActivate; switch-away / re-activate / panel-close dispose it EXACTLY once (one live)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: refresh stops then re-arms the ticker on the fresh document (re-seeds the log; LOW-1 fix)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: a controller ctx.postMessage lands on the panel, and the shell wires the appendLog listener via textContent",
+                "result": "pass"
+              },
+              {
+                "title": "S006: a {type:'action',action} message is forwarded to onDetailAction; a malformed action is a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "S006: a host built with no tabControllers/onDetailAction behaves exactly as the S005 shell (no throw, no ticker)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: never-throw — an onActivate throw, a dispose throw, and an onDetailAction throw are all caught + logged",
+                "result": "pass"
+              },
+              {
+                "title": "S007: openRepoConfiguration renders the wired repoRenderer body; with no repoRenderer it renders the S004 placeholder unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "S007: a {selectRepo} message re-renders via repoRenderer(selectedRepo); a {repoWrite} forwards a validated RepoConfigWrite",
+                "result": "pass"
+              },
+              {
+                "title": "S007: a malformed selectRepo/repoWrite is a silent no-op (no re-render, no forward, no throw)",
+                "result": "pass"
+              },
+              {
+                "title": "Tracker writes require the active repo and current rendered document",
+                "result": "pass"
+              },
+              {
+                "title": "Story s3: a throwing tracker write sink is caught and logged; errors never reach the webview",
+                "result": "pass"
+              },
+              {
+                "title": "a delayed repo render never replaces the current selection",
+                "result": "pass"
+              },
+              {
+                "title": "Repo Configuration paints model controls while Tracker and Providers are still loading",
+                "result": "pass"
+              },
+              {
+                "title": "Tracker stays expanded across repaints and resets when the repo changes",
+                "result": "pass"
+              },
+              {
+                "title": "S007: the empty selectRepo option clears the selection back to picker-only",
+                "result": "pass"
+              },
+              {
+                "title": "S007: a repoRenderer throw (config read reject) degrades to an error body; an onRepoConfigWrite throw is caught",
+                "result": "pass"
+              },
+              {
+                "title": "source-scan: webview-host.ts imports no vscode module (extension.ts stays the sole vscode importer)",
+                "result": "pass"
+              },
+              {
+                "title": "a {repoRegisterProviders} message forwards a validated RepoProviderRegistration to onRepoRegisterProviders; malformed ones are silent no-ops",
+                "result": "pass"
+              },
+              {
+                "title": "the repo bootstrap script posts repoRegisterProviders with the checked data-provider values",
+                "result": "pass"
+              },
+              {
+                "title": "S001: openModelTiers always opens/reveals the panel (never a no-op); with no modelTiersRenderer it renders the placeholder",
+                "result": "pass"
+              },
+              {
+                "title": "S001: a {kind:'tierField'} modelTiersWrite forwards a validated ModelTiersWrite; a {kind:'coreFloor'} one too; malformed ones are silent no-ops",
+                "result": "pass"
+              },
+              {
+                "title": "S001: a modelTiersRenderer throw degrades to an error body; an onModelTiersWrite throw is caught",
+                "result": "pass"
+              },
+              {
+                "title": "the model-tiers bootstrap script posts modelTiersWrite for both a tier field change and the core-floor change",
+                "result": "pass"
+              },
+              {
+                "title": "the shared shellHtml style block defines .section/.section-head/.count/.rows/.role-row/.provider-row/.status-chip/.floor-row rules",
+                "result": "pass"
+              },
+              {
+                "title": "webview-host.test.ts + chat-shell.test.ts: existing CSP/nonce tests preserved when the shell is extracted to panels/shell.ts (shell output byte-identical, all existing assertions pass unmodified)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "e5f820bc6",
+        "ranAt": "2026-11-13T11:31:23.838Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "chat-panel.test.ts: #insrc-scratch sibling button with class attachbtn + inline SVG + title exists next to #insrc-attach (ac2, ac5)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                "title": "chat-panel.test.ts: #insrc-scratch sibling button with class attachbtn + inline SVG + title exists next to #insrc-attach (ac2, ac5)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chat-panel.test.ts: #insrc-scratchmenu .popup.chatmenu renders recent items + New scratchpad + Browse all from a scratch-list push, incl. empty-state hint and error row (ac2)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                "title": "chat-panel.test.ts: #insrc-scratchmenu .popup.chatmenu renders recent items + New scratchpad + Browse all from a scratch-list push, incl. empty-state hint and error row (ac2)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chat-panel.test.ts: bootstrap click on #insrc-scratch posts {type:'scratch-open-menu'} (ac2)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                "title": "chat-panel.test.ts: bootstrap click on #insrc-scratch posts {type:'scratch-open-menu'} (ac2)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chat-panel.test.ts: host insert-into-input handler inserts into #insrc-input (:2784) per the deterministic rule — caret mid-draft in a non-empty draft, and an active range selection replaced — existing content preserved, focuses it, no submit-turn/cancel-turn posted (ac4)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                "title": "chat-panel.test.ts: host insert-into-input handler inserts into #insrc-input (:2784) per the deterministic rule — caret mid-draft in a non-empty draft, and an active range selection replaced — existing content preserved, focuses it, no submit-turn/cancel-turn posted (ac4)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chat-panel.test.ts + scratch-panel.test.ts: every button in the new UI is icon-only with a title attribute — no visible text content on buttons (ac5)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                "title": "chat-panel.test.ts + scratch-panel.test.ts: every button in the new UI is icon-only with a title attribute — no visible text content on buttons (ac5)",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/panels/__tests__/scratch-panel.test.ts",
+                "title": "chat-panel.test.ts + scratch-panel.test.ts: every button in the new UI is icon-only with a title attribute — no visible text content on buttons (ac5)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10697,
+            "titles": [
+              {
+                "title": "the shell script runs: a windowed restore shows one page at the bottom with the bar, a page request round-trips and keeps the reader's place, a live row does not move a reader who scrolled up, and an old-style restore still works",
+                "result": "pass"
+              },
+              {
+                "title": "the shell script bounds the view of a long active session: rows past the limit are trimmed at the bottom and come back on request",
+                "result": "pass"
+              },
+              {
+                "title": "shell script: the attach button posts pick-attachments, an image paste posts attach-image with its base64 and is prevented, a text paste is untouched, chips render from attachments-pending with a remove control, and a blank box with chips submits",
+                "result": "pass"
+              },
+              {
+                "title": "shell: the attach button is icon-only with an aria-label, sits first in the status bar, and the content security policy is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "shell script: a chip click on a sent message posts open-attachment, and the error sentence is shown and cleared",
+                "result": "pass"
+              },
+              {
+                "title": "transcript-row: a diff row without replaces appends a widget stamped with its row index; one with replaces redraws the widget of that sid and keeps it open; a withdrawn one hides it; one for an unknown or trimmed sid changes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "transcript-row: a marker row appends the same line a restored marker row draws",
+                "result": "pass"
+              },
+              {
+                "title": "diff widget: a diff row in a session-restored window and in a transcript-page is appended as a widget",
+                "result": "pass"
+              },
+              {
+                "title": "chat shell: the outbox band is present only with the queue, and the queue hint replaces the input placeholder only with it; an outbox message draws its rows and summary and each action posts its seq; with the queue a submit does not mark the turn running",
+                "result": "pass"
+              },
+              {
+                "title": "a retrying row shows 'attempt n of 3', a countdown, a retry-now button and a cancel button, and retry-now posts outbox-retry-now with its seq",
+                "result": "pass"
+              },
+              {
+                "title": "chat shell: the progress widget is never hidden: idle at the start, working after turn-running, idle after done, error, Stop and session-restored",
+                "result": "pass"
+              },
+              {
+                "title": "session restore uses stored phase and elapsed time without another provider event",
+                "result": "pass"
+              },
+              {
+                "title": "chat shell binds Stop to a pending run before the provider spawns",
+                "result": "pass"
+              },
+              {
+                "title": "chat shell: an informational line's done does not end a running turn, and the turn's own done and error still do",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): #insrc-active chip sits LEFT of the .right history chip; active-list populates dot-coded menu rows; activating one posts open-chat { chatId }",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): TRUE end-to-end round trip — activating an active-menu row posts open-chat, the real host receives it, and answers session-restored for that chat",
+                "result": "pass"
+              },
+              {
+                "title": "history run-config restores provider model and effort across sessions and legacy defaults in the executable shell",
+                "result": "pass"
+              },
+              {
+                "title": "new-session model and effort controls open and apply selections in the executable shell",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): a rendered menu row and both triggers inline the REAL provider SVG (not a source string), and the empty active trigger reads \"no active work\"",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): activating a row writes the selection optimistically (both triggers re-render to the chosen chat before any host reply) and posts open-chat/new-chat",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-0d3939248a956860: opening the history menu on a fresh (draft) chat focuses the TOP row WITHOUT scrolling to it; arrow keys still scroll",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): activating a persisted history row posts open-chat (not new-chat) even when that chat is absent from the active list",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): session-restored settles BOTH triggers on the restored chat (and clears one absent from a list)",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): a history-list-only response (a rejected open-chat) recovers BOTH triggers to the confirmed session",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): active-list reconcile re-settles the active trigger to the confirmed session (dropped from active -> cleared)",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): the menu keyboard moves the roving tabindex (ArrowDown/ArrowUp/Home/End) and Escape closes",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): an unknown provider falls back to an empty .pico (no broken SVG or image)",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): session-restored-before-list ordering settles BOTH triggers once the lists arrive",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): the 'vibe' provider branch inlines the Vibe SVG too, not just Claude/Codex",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1; Story e0821209d94791d0/s1): with a run-config provider set, the #insrc-newchat button posts new-chat carrying that provider",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Enter submits and prevents the line break",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Enter while a turn is running still submits",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Enter on an empty box sends nothing and adds no line break",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Ctrl+Enter inserts a line at the caret and does not submit",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Ctrl+Enter replaces a selection with one line",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Cmd+Enter inserts a line and does not submit",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Ctrl+Shift+Enter is a new line, never a send",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Shift+Enter does not submit and leaves the browser's line break",
+                "result": "pass"
+              },
+              {
+                "title": "composer: an Enter confirming an IME composition does not submit",
+                "result": "pass"
+              },
+              {
+                "title": "composer: the placeholders state the new keys",
+                "result": "pass"
+              },
+              {
+                "title": "shell: the jump button sits outside the transcript and a click returns focus to the prompt",
+                "result": "pass"
+              },
+              {
+                "title": "picker opens in the real webview script and recovers catalog over the host handshake without reloading an active turn",
+                "result": "pass"
+              },
+              {
+                "title": "submit-turn posts each TurnEvent INCREMENTALLY (deltas observable before done)",
+                "result": "pass"
+              },
+              {
+                "title": "single-in-flight: a second submit waits for the first, which reports to its end — no interleave; the first is not killed (H1/M2)",
+                "result": "pass"
+              },
+              {
+                "title": "new-chat mid-stream stops the prior turn (no cross-session post) (M3)",
+                "result": "pass"
+              },
+              {
+                "title": "malformed submit-turn (non-string text) is a no-op, no unhandled rejection (M4)",
+                "result": "pass"
+              },
+              {
+                "title": "an errored turn persists its transcript rows (L3)",
+                "result": "pass"
+              },
+              {
+                "title": "empty/whitespace submit-turn is a no-op (no run)",
+                "result": "pass"
+              },
+              {
+                "title": "a terminal error TurnEvent is posted inline; unknown-provider is surfaced, not thrown",
+                "result": "pass"
+              },
+              {
+                "title": "onDidDispose cancels the active turn and stops posting further",
+                "result": "pass"
+              },
+              {
+                "title": "unknown / edit-* / docs-* inbound messages are accepted-but-ignored no-ops",
+                "result": "pass"
+              },
+              {
+                "title": "no provider installed: open posts an error notice (no crash)",
+                "result": "pass"
+              },
+              {
+                "title": "rendered shell: one nonce'd inline script + strict CSP + sc1 style + no remote origin",
+                "result": "pass"
+              },
+              {
+                "title": "rendered shell mints a FRESH nonce per render",
+                "result": "pass"
+              },
+              {
+                "title": "S004 rendered shell: non-delta turn-events route through the marker mapper (sc1 class, not the bare bracket)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 integration: a status->tool-call(mcp)->status->file-edit->done turn posts a marker per event and persists status+done rows (ac1/ac2, k8)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (ux polish): a tool-result event persists a STRUCTURED role:tool-result row (command+output), never a marker",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (ux polish): a turn with NO tool-result events persists a byte-identical transcript (no tool-result rows)",
+                "result": "pass"
+              },
+              {
+                "title": "S005 shell: run-config controls (provider·model popup + effort gauge) + history-dropdown; one script + CSP intact",
+                "result": "pass"
+              },
+              {
+                "title": "c760757cc9077508/s1: the webview seeds reg.setRunIdentity from the run-config attrs and re-seeds on every run-config message",
+                "result": "pass"
+              },
+              {
+                "title": "S005 shell: empty providers.available -> disabled selector",
+                "result": "pass"
+              },
+              {
+                "title": "S005 open() posts a history-list",
+                "result": "pass"
+              },
+              {
+                "title": "open()/close leaves NO empty session in history — the chat opens a draft, persisted only on first turn",
+                "result": "pass"
+              },
+              {
+                "title": "LLM titling: the first turn swaps the truncated-prompt title for the LLM-derived name (+ refreshes history)",
+                "result": "pass"
+              },
+              {
+                "title": "LLM titling: a failed/empty derivation keeps the truncated-prompt fallback",
+                "result": "pass"
+              },
+              {
+                "title": "LLM titling: with no deriveTitle injected, the truncated-prompt fallback is kept (no built-in CLI call)",
+                "result": "pass"
+              },
+              {
+                "title": "S005 new-chat: valid provider creates a fixed-provider session + re-posts history; non-available is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "S005 open-chat: restores a prior transcript; a missing id is a no-op + refreshes history",
+                "result": "pass"
+              },
+              {
+                "title": "c760757cc9077508/s1: the restore path posts run-config BEFORE session-restored, so replayed assistant rows compose the restored session’s identity",
+                "result": "pass"
+              },
+              {
+                "title": "S005 ac3 native resume: turn 2 carries resume from turn 1 done.sessionId; only the new prompt is sent",
+                "result": "pass"
+              },
+              {
+                "title": "switching a chat mid-stream keeps its in-flight turn",
+                "result": "pass"
+              },
+              {
+                "title": "S005 a first-turn error still refreshes the history dropdown (title label)",
+                "result": "pass"
+              },
+              {
+                "title": "A to B to A restores progress and rejects cross-session terminal and stale actions",
+                "result": "pass"
+              },
+              {
+                "title": "two same-repo turns retain separate progress, decisions and verified Stop",
+                "result": "pass"
+              },
+              {
+                "title": "S008 integration: a turn persists each marker row with cssClass === markerFor(ev).cssClass (ac2); assistant rows carry none",
+                "result": "pass"
+              },
+              {
+                "title": "S008 integration: open-chat restore posts marker rows carrying their cssClass (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 shell: session-restored replay routes through the sc1 registry (keyed, single-sourced, carries the stored class); CSP/one-script/textContent intact",
+                "result": "pass"
+              },
+              {
+                "title": "a pre-spawn Stop requires the selected pending run identity",
+                "result": "pass"
+              },
+              {
+                "title": "concurrent edits invalidate unsafe rollback baselines",
+                "result": "pass"
+              },
+              {
+                "title": "diff sections: an added section is pushed as a diff row with a sid and posted as transcript-row with its row index; an update and a withdraw are pushed as rows that name that sid, and no earlier row is changed",
+                "result": "pass"
+              },
+              {
+                "title": "diff sections: a check is requested after every tool-result and file-edit event and once more at the end of the turn, and the session is saved after late rows",
+                "result": "pass"
+              },
+              {
+                "title": "diff sections: overflow and unreadable push one marker row each and post it as transcript-row",
+                "result": "pass"
+              },
+              {
+                "title": "diff sections: with no snapshot, or with the editor view, no diff state is made and the rows and messages are those of today",
+                "result": "pass"
+              },
+              {
+                "title": "diff sections: the restored window and an older page carry each section's latest version at its first row's place",
+                "result": "pass"
+              },
+              {
+                "title": "diff sections: while the diff state is open the file-edit marker and the successful edit result write no row, and a failed edit pushes and posts the path marker then the error row",
+                "result": "pass"
+              },
+              {
+                "title": "diff sections: an edit whose path has no section after its check gets its path marker, posted as transcript-row, for a claude result, for a codex applied file-edit and at the end of the turn; an edit whose path has a section gets none",
+                "result": "pass"
+              },
+              {
+                "title": "diff sections: a background check writes only to its originating chat",
+                "result": "pass"
+              },
+              {
+                "title": "diff sections: the Stop control, a newer turn's start, a sink error and closing the panel each end the open diff state and settle its held paths",
+                "result": "pass"
+              },
+              {
+                "title": "diff sections: a followed turn writes and posts its rows as today and asks for no check, also while the governor still holds a snapshot",
+                "result": "pass"
+              },
+              {
+                "title": "S006 integration: set-edit-mode updates + persists session.editMode (a draft persists it on its first turn)",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-0d3939248a956860: changing the model or effort of a draft does not write it to history; the first turn persists the run config",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-0d3939248a956860: the history-list feed leaves out stored chats with no message (they stay in the store)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: without editGovernance the host behaves as before (no transcript-row; file-edit marker still renders)",
+                "result": "pass"
+              },
+              {
+                "title": "S006 shell: edit-mode toggle + diff renderer live inside the ONE nonce'd script; CSP/textContent invariants intact",
+                "result": "pass"
+              },
+              {
+                "title": "S001 ac1: submit-turn posts a live user-row (the prompt appears during the turn, not only on reload)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 lc1: two identical prompts yield two distinct-keyed live user-rows",
+                "result": "pass"
+              },
+              {
+                "title": "S002 ac2: a cancel-turn message cancels the in-flight turn (cancelActive -> provider.cancel)",
+                "result": "pass"
+              },
+              {
+                "title": "S002: a cancel-turn with no active turn is an idempotent no-op (no throw)",
+                "result": "pass"
+              },
+              {
+                "title": "S002 (ux-polish) ac1/ac2/t3: the leading \">\" prompt (#insrc-prompt) is the send/stop control; the trailing #insrc-send button is retired",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (74bc0120) ac5: the session dropdown cap doubles to 36ch; the rest of the chip is untouched",
+                "result": "pass"
+              },
+              {
+                "title": "run-config controls: the statusbar runctl group carries the run button, gauge, popups and catalog",
+                "result": "pass"
+              },
+              {
+                "title": "run-config popup bootstrap: catalog parse + button wiring posts new-chat / set-run-config; run-config echo branch present",
+                "result": "pass"
+              },
+              {
+                "title": "regression: the history trigger still opens/new-chats, and session-restored still clears + replays",
+                "result": "pass"
+              },
+              {
+                "title": "both message bubbles span the full row (100%) and the assistant carries no magenta left rail; wrapper stays 100%",
+                "result": "pass"
+              },
+              {
+                "title": "S002 ac1: the fixed-region layout holds — #insrc-term is the only scroll region; header + input stay flex:0",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): the <body> carries no surface class — so .insrc-term-<surface>{display:block} cannot override body{display:flex} and collapse the flex-fill",
+                "result": "pass"
+              },
+              {
+                "title": "S002 ac1/k1: all pre-existing element ids remain; one inline script; no innerHTML/remote origin",
+                "result": "pass"
+              },
+              {
+                "title": "S002: an empty submit is a host no-op (no turn starts)",
+                "result": "pass"
+              },
+              {
+                "title": "S002 ac3: renderShell embeds a single #insrc-progress widget above the input, not hidden and starting idle",
+                "result": "pass"
+              },
+              {
+                "title": "S002 ac3/lc1: status events are never persisted to the durable transcript (host skip unchanged)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 t1: renderShell embeds the role-tone + markdown/JSON widget + caption CSS (inline, CSP-safe)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): renderShell has the SINGLE merged mode control + wires the approval seams",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (fidelity) ac1: the input is a FLUSH 2-line prompt — #insrc-input has no box chrome, rows=2 kept, ❯ top-aligned",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (fidelity) ac2: the placeholder gains the interrupt hint",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-6ae99f6e: the header holds ONLY the chat triggers (active + session); the provider + mode selects live in the footer status bar",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 UX (now Story 546198e11c24c1e3/s1): both chrome dropdowns render the provider icon — rows carry the real SVG, the empty active trigger reads \"no active work\"",
+                "result": "pass"
+              },
+              {
+                "title": "UI: the #insrc-history session dropdown carries a leading history/clock glyph so its purpose reads",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-095906bac5bbacaf: every image source the shell DECLARES is permitted by its own CSP (a declared-but-blocked icon must fail)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (fidelity) ac4 (regression): the S002 send/stop control + mode/provider switching are unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "edits mode: a new chat runs in Auto",
+                "result": "pass"
+              },
+              {
+                "title": "edits mode: a request for a disabled or invalid mode is dropped and the next turn runs in Auto",
+                "result": "pass"
+              },
+              {
+                "title": "edits mode: a chat saved as manual opens and runs in Auto, and its saved choice is kept",
+                "result": "pass"
+              },
+              {
+                "title": "edits mode: a chat saved as edit-auto opens and runs in Auto, and its saved choice is kept",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t7: permission-decision is relayed to the live turn adapter.decide with (turnId, requestId, decision)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t7: permission-decision with no active turn is a safe no-op (never throws)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 adopt(channel) wires + posts theme/session-restored/history-list (restored panel shows history)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 adopt() supersedes an already-live channel (prior disposed; single active channel)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 adopt() with no agentic CLI posts the same error a fresh open does",
+                "result": "pass"
+              },
+              {
+                "title": "S001 the webview posts a ready handshake AFTER attaching its message listener (initial load + every reload)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 a ready message (re)posts theme + active session + history — a reloaded webview repopulates",
+                "result": "pass"
+              },
+              {
+                "title": "S001 ready before any open-time delivery still populates history (models the dropped initial post)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): approving a permission-denied request re-runs the blocked action with the tool pre-allowed, resuming the session",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): denying a permission-denied request does NOT re-run (the turn stays denied)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): Approve on a tool-gate WITH a command re-runs naming the EXACT command (not the vague nudge) + pre-allows the tool",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): Approve on a tool-gate WITHOUT a command falls back to the tool-name phrasing (+ allowedTools)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): Approve on a dir-block does NOT re-run/grant — it posts an informational message; argv/allowlist untouched",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix) + S003 (ux polish): Deny drops both a tool-gate and a dir-block — no re-run; posts ONLY the rejected outcome chip",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): an in-turn request is relayed to adapter.decide (codex/in-turn relay); an id the host does not hold still falls through",
+                "result": "pass"
+              },
+              {
+                "title": "S003 ac2: approving a tool-gate WITH a command re-runs with [toolName] but posts ZERO user-row echoes (suppressEcho)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 ac2: a NORMAL user turn still posts its user-row echo (suppressEcho gates ONLY the synthetic grant re-run)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 ac2: the tool-name FALLBACK grant (no command) also suppresses the echo + records the approved outcome",
+                "result": "pass"
+              },
+              {
+                "title": "S003 ac3: a dir-block Approve records an approved outcome (even though it does NOT re-run)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 ac4: after an approve, the persisted transcript carries the outcome row and NO approval-request (the pending card never replays)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): set-permission-mode persists onto the active (saved) session",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): the mode FOLLOWS the session — opening a chat adopts its persisted mode",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): the webview sets the mode control from a restored session",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): renderShell wires the selection decision sink + routes selection turn-events (approval path intact)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): a selection-decision records the outcome (chosen LABELS) AND continues the run via a synthesized user turn",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): a selection-decision for an unknown/stale requestId is a safe no-op (no outcome, no run)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): a selection-decision with an empty/invalid selected list is dropped (no outcome, no run)",
+                "result": "pass"
+              },
+              {
+                "title": "a message sent while the previous CLI process is still alive after its answer waits, shows 'Waiting for the previous turn to finish', and starts only after that process exits",
+                "result": "pass"
+              },
+              {
+                "title": "with a short timeout, the still-running holder is stopped and the new turn starts after its exit is confirmed",
+                "result": "pass"
+              },
+              {
+                "title": "Stop ends the running process at once and the waiting message then runs; with the queue every message runs, in order, one answer each",
+                "result": "pass"
+              },
+              {
+                "title": "a lock failure other than a dropped wait is logged and shown, never a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "a turn whose adapter fails to start releases the session lease (the next turn does not wait)",
+                "result": "pass"
+              },
+              {
+                "title": "a turn records its cursor on the session as lines are handled and clears it at the terminal event",
+                "result": "pass"
+              },
+              {
+                "title": "after a reload (a new host over the same store) a session with a live cursor is followed from the saved offset, only new events are posted and appended, and the cursor is cleared at the end",
+                "result": "pass"
+              },
+              {
+                "title": "a cursor whose generation is gone (rolled over twice) is cleared without resuming",
+                "result": "pass"
+              },
+              {
+                "title": "a second live window that is not the cursor's owner does not follow it; once the owner host is gone it takes over",
+                "result": "pass"
+              },
+              {
+                "title": "switching chats keeps the session-file reader and stores output in its own chat",
+                "result": "pass"
+              },
+              {
+                "title": "Stop ends a resumed turn's process through the handle resume() hands over",
+                "result": "pass"
+              },
+              {
+                "title": "closing the panel mid-turn leaves a session-file turn running with its cursor saved",
+                "result": "pass"
+              },
+              {
+                "title": "a failing store save or a failing process stop never becomes an unhandled rejection",
+                "result": "pass"
+              },
+              {
+                "title": "a save failing at the end of a turn is logged; the turn still ends cleanly and the history is refreshed",
+                "result": "pass"
+              },
+              {
+                "title": "a save failing while the derived title is stored is logged, never an unhandled rejection, and the history is still refreshed",
+                "result": "pass"
+              },
+              {
+                "title": "a failing save of a selection or permission outcome is logged and the run still continues",
+                "result": "pass"
+              },
+              {
+                "title": "a failing edit-governor call is logged, never an unhandled rejection",
+                "result": "pass"
+              },
+              {
+                "title": "three requests in one turn: only the first card is posted (with '1 of 3')",
+                "result": "pass"
+              },
+              {
+                "title": "a turn followed after reload routes its approval-requests through the queue and its end ends the batch",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6 round-trip: a delivered batch is not restored after a reload — the removal is persisted and resolved decisions are filtered from restored batches, so the follow-up never re-runs",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR6: reload in the removal->spawn window keeps the full actionable record — a turn-ended decision persists the unresolved record (command included) BEFORE the batch removal is persisted; a reloaded host re-enters the requests as cards, never blindly re-runs",
+                "result": "pass"
+              },
+              {
+                "title": "Stop with requests queued records each as rejected and clears the queue",
+                "result": "pass"
+              },
+              {
+                "title": "outcome rows: one role:'permission-outcome' row per decision, in decision order, and no approval-request rows (restore shows only chips)",
+                "result": "pass"
+              },
+              {
+                "title": "the second card is posted only after the first is decided; a decision on a waiting card's id does nothing",
+                "result": "pass"
+              },
+              {
+                "title": "live-turn provider with two requests: decide() is called for the first before the second card is posted; no follow-up turn is started",
+                "result": "pass"
+              },
+              {
+                "title": "an in-turn request that carries a toolName is relayed with decide(), not batched (routing by resolution)",
+                "result": "pass"
+              },
+              {
+                "title": "approving all three starts exactly one follow-up turn, after the last decision and the turn's end, with allowedTools = all three tools and a prompt naming the three approved actions",
+                "result": "pass"
+              },
+              {
+                "title": "no approval ever supersedes a running follow-up: turns.start is called once per batch",
+                "result": "pass"
+              },
+              {
+                "title": "deny: a denied request gets a rejected chip, the next request is still asked, and the follow-up names it as denied; all denied -> no follow-up and an informational message",
+                "result": "pass"
+              },
+              {
+                "title": "a follow-up that is refused again forms the next batch and its follow-up carries the previous batch's grants",
+                "result": "pass"
+              },
+              {
+                "title": "a user-typed message while requests are queued records each as rejected, clears the queue, resets the grant chain and runs as a normal turn",
+                "result": "pass"
+              },
+              {
+                "title": "a live provider with a queued in-turn request, then the user types a message: decide(turnId, requestId, 'deny') is called before the new turn starts, and the request gets a rejected chip",
+                "result": "pass"
+              },
+              {
+                "title": "a request joining the queue while the head is shown updates the shown card in place (one card per requestId)",
+                "result": "pass"
+              },
+              {
+                "title": "reloading the webview while requests are queued re-posts the head card, and deciding it continues the queue",
+                "result": "pass"
+              },
+              {
+                "title": "live rows carry rowIndex from all five writers: assistant, marker and tool-result events, the user-row, a permission outcome and a selection outcome are each posted with the absolute index of the row already written; status and approval-request carry none",
+                "result": "pass"
+              },
+              {
+                "title": "write-then-post order: when each live row is posted, the transcript already holds it at that index",
+                "result": "pass"
+              },
+              {
+                "title": "a followed turn keeps writing to its chat after a switch and only posts rows while shown",
+                "result": "pass"
+              },
+              {
+                "title": "load-older for the active session answers one transcript-page whose rows end just before `before`; repeated requests walk back to index 0",
+                "result": "pass"
+              },
+              {
+                "title": "load-older for another session id, or with a malformed before or sessionId, posts nothing",
+                "result": "pass"
+              },
+              {
+                "title": "session-restored carries firstIndex 0 and total while the whole transcript is still sent",
+                "result": "pass"
+              },
+              {
+                "title": "the shell embeds the pager: line() appends through it, session-restored replays with absolute keys through its reset, transcript-page goes to prepend, live rows are stamped and trimmed, and the provider lock settles from total",
+                "result": "pass"
+              },
+              {
+                "title": "the shell is still one nonce'd inline script, with no direct scrollTop write outside the pager, no innerHTML outside the guarded markdown path and no remote origin",
+                "result": "pass"
+              },
+              {
+                "title": "opening a 1,000-row session posts session-restored with at most 200 rows, firstIndex at a turn start, total 1,000 and the session's mode; a short session is posted whole with firstIndex 0",
+                "result": "pass"
+              },
+              {
+                "title": "ready, new-chat and open-chat post the same windowed session-restored",
+                "result": "pass"
+              },
+              {
+                "title": "a ready after older pages were requested posts the latest window again, with the approval head after it",
+                "result": "pass"
+              },
+              {
+                "title": "the stored session is unchanged by paging: after restores and page loads the saved transcript equals the original rows",
+                "result": "pass"
+              },
+              {
+                "title": "the chat panel run over the file store: a turn's saves append only that turn's rows, a restored session shows the same rows, and a failing save is logged without breaking the turn",
+                "result": "pass"
+              },
+              {
+                "title": "host: attach-image and pick-attachments add to the active session's pending list and post attachments-pending; remove-attachment removes one; errors are posted as one sentence and the list is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "host: ready, new-chat and open-chat post each session's own pending list; an unknown or foreign attachment id in remove or open does nothing; open-attachment opens the resolved path of a row's or a pending attachment",
+                "result": "pass"
+              },
+              {
+                "title": "host without the attachments seams: the shell has no attach button or chip row and the four messages are ignored",
+                "result": "pass"
+              },
+              {
+                "title": "host: an attach-image whose base64 length implies more than the limit is refused without decoding and without calling the store",
+                "result": "pass"
+              },
+              {
+                "title": "host: a dismissed dialog posts nothing, and a pick over the limit keeps the first ten and posts one error sentence",
+                "result": "pass"
+              },
+              {
+                "title": "host: a submit stores the user's text with the attachments on the row, echoes them on user-row, sends a prompt that ends with the attached-files block of absolute paths, passes readDirs, and clears the pending list",
+                "result": "pass"
+              },
+              {
+                "title": "host: a submit with blank text and an attachment runs a turn and names the chat from the attachment; with blank text and none it is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "host: a submit waits for an attachment still being written, and the message carries every chip in order",
+                "result": "pass"
+              },
+              {
+                "title": "host: a later turn of a session with an attachment still passes readDirs, a session with none passes none, and a grant re-run keeps it",
+                "result": "pass"
+              },
+              {
+                "title": "host: a grant re-run and a selection continuation leave the pending list untouched and attach nothing",
+                "result": "pass"
+              },
+              {
+                "title": "host: a submit with blank text and an attachment supersedes queued approvals",
+                "result": "pass"
+              },
+              {
+                "title": "host: with the queue, a submit with blank text and an attachment leaves the waiting cards as they are, waits, and runs once they are decided",
+                "result": "pass"
+              },
+              {
+                "title": "host: a chat switch while a submit waits drops the submit and keeps the chips on their session, and a second submit runs after the first",
+                "result": "pass"
+              },
+              {
+                "title": "chat host: a run turn begins a presenter turn just before it starts, passes the documents a tool call declares and no tool result, and ends it once when the run is over, also for a turn that failed, was stopped or was superseded; a message refused before any run begins none; a presenter that throws does not disturb the turn",
+                "result": "pass"
+              },
+              {
+                "title": "chat host: a followed turn begins a presenter turn on its first event, not when the follow is asked for, passes its declared documents and ends it when the follow ended; a ready message during a run turn begins nothing and reads nothing, and the run turn opens only a document it declares",
+                "result": "pass"
+              },
+              {
+                "title": "chat host: a turn followed by a second message still passes its declared documents to the presenter, which opens the document it presents, once",
+                "result": "pass"
+              },
+              {
+                "title": "chat host: submitExternal in a window without a queue answers unavailable with a note and keeps nothing",
+                "result": "pass"
+              },
+              {
+                "title": "the chat host passes a tool-call's declared documents to the presenter and nothing else, and ends the turn without opening anything",
+                "result": "pass"
+              },
+              {
+                "title": "the chat host shows a line for a not-pending name and for an unreadable pending list from the presenter's outcome",
+                "result": "pass"
+              },
+              {
+                "title": "the chat host feeds the declaration from both a followed live turn and a hosted run",
+                "result": "pass"
+              },
+              {
+                "title": "the chat opens a declared pending document even when the insrc_present tool call itself failed",
+                "result": "pass"
+              },
+              {
+                "title": "runCatalogView: maps cliKind→provider, keeps only installed providers, drops rejected models, picks the first alias",
+                "result": "pass"
+              },
+              {
+                "title": "new-chat with model/effort: the draft carries them and the next turn request includes them",
+                "result": "pass"
+              },
+              {
+                "title": "set-run-config: updates the session for subsequent turns and echoes run-config; invalid shapes are no-ops",
+                "result": "pass"
+              },
+              {
+                "title": "a started chat refuses a provider change (host backstop); an unstarted draft allows it",
+                "result": "pass"
+              },
+              {
+                "title": "providerIcon: the OFFICIAL vendor mark per provider (path data from media/providers/*.svg), fill=currentColor, empty for unknown ids",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t2: turn start -> working; terminal with no pending requests -> done",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t2: mid-turn approval-request -> waiting-input; terminal with pending card stays waiting-input; decision -> done",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t2: resolving the last request while the turn is still unfinished (liveTurn kept, e.g. after observation failure) does NOT mark done",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t2: an error terminal is a failure exit -> done",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t2: two pending requests keep waiting-input until BOTH are decided; selection-request also waits",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t2: Stop (cancel-turn) is a failure exit -> done",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t2: an adapter failure (onError, not onTerminal) is a failure exit -> done",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t3: active-list is posted on open and on every status change; the timer recomputes it (purge)",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4: selecting an active-chat entry (open-chat { chatId }) opens that chat exactly like the history dropdown",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t5: the observer reconciles a detached chat with a dead owner — ingests requests (waiting-input), then terminal -> done, clears cursor, persists checkpoint",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t5 integration: observer ingests a REAL session-output file — a split select marker resolves to one persisted request with prompt+options, then done -> waiting-input kept",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t5: the observer resumes from the PERSISTED checkpoint across passes — a split marker consumed up to the checkpoint offset resolves via the restored decoder buffer+seq (request id sel-<turn>-5)",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t5: the decoder-captured native session id survives a budget-limited pass — a checkpoint that consumed codex thread.started before completing restores it into the resume, and the completing pass persists nativeSessionId even when the terminal line carries none",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t5: a budget boundary between tool_use and tool_result keeps the command/edit-path correlation — the checkpoint carries toolCommands/editPaths and the resumed pass restores them into the decoder",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t5: an idle budget-aborted observer pass (no onDecoderState callback) does not drop the checkpoint’s decoder fields",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t5: the observer recovers a segment lost through a REAL rollover (stale cursor at a discarded generation -> SegmentGone -> oldestRetainedGeneration/recoverTurn replay from the archived generation -> done)",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t5: a FAILED final transition save leaves liveTurn AND status intact (one atomic write), so the next observer pass retries instead of skipping a working session with no liveTurn",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t5: a checkpoint of ANOTHER turn is ignored — the observer re-anchors to the turn start, so a split marker at the liveTurn cursor still resolves (waiting-input, not a silent done)",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t5: the observer reconciles an ORPHANED turn (ownerHostPid 0, e.g. left by a detach in this window) — it is not skipped as this host's own",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t5: the observer budget watchdog ends a pass even when the followed process is idle (no events), and later ticks still run (no overlap)",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6: switching chats persists the unresolved request; reopening restores it by its original requestId (card re-posted), and deciding it runs the follow-up and marks the persisted outcome",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6: a RESTORED request whose stdin is dead (decide reports undelivered) is delivered as a follow-up run and marked approved — never a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6: a LIVE turn whose decide() reports UNDELIVERED (dead stdin) falls back to a follow-up run — decide was actually consulted and the follow-up starts exactly once (never a silent no-op)",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR1: an ASYNC stdin failure after the original turn ended and the user switched chats resolves to the ORIGINATING chat — never the selected one",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR1-R2: repeated request IDs across chats/turns keep separate delivery ownership — a late failure for A’s turn never starts B’s continuation",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR1-R2b: the one-shot follow-up guard is per conversation+request — a repeated request id in ANOTHER chat still gets its own follow-up, never a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR1-R3: a LATER turn in the SAME conversation reusing a request id gets its own follow-up and its own record — the earlier turn’s resolution is not inherited",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR3-R3: live-unwritable WITH a known native handle — the host stops and verifies the original process, then the continuation resumes that native session",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR3-R4a: an ASYNC stdin failure while the original is alive takes the same live-unwritable recovery — original stopped+verified, continuation resumes the native handle",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR3-R4b: a process that ignores SIGTERM+SIGKILL (stop not verified) makes recovery record delivery-failed and launch nothing",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR3-R5: an async delivery failure for chat A’s turn, fired while chat B is selected and running, stops ONLY A’s original process — never the selected chat’s turn — and the continuation resumes A’s native handle",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR3-R5 fail-closed: when no per-turn handle exists for the originating turn of another chat, recovery records delivery-failed and never stops the selected chat as a substitute",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR1-R4: restored turn-ended records with a repeated id — approve/deny updates only its OWN record, across reload",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t8/MR4-R3: a legacy bare call id in the persisted checkpoint dedups only its OWN turn (observer replay) — a later NEW turn reusing the id still presents",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t8: the observer dispatches a DETACHED chat's insrc_present to the presenter, deduped by declarationId across passes",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t8/MR4: a declaration the OBSERVER dispatched is NOT re-presented when the follow reader replays the same tool call on reattach — one panel per declaration across readers",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t5: a terminal seen in a budget-limited pass rewinds the checkpoint INCLUDING the decoder seq/buffer — a marker split ACROSS the terminal completes on the retry with a stable requestId",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t5: a fully drained segment whose process is VERIFIED DEAD completes via the death gate even without a terminal event (no synthetic observation failure blocks it)",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t5: an unterminated trailing line after the terminal — flushed when the writer is DEAD (no turn-end marker, no endTurn call), held while it lives and ingested when completed",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t5: recoverTurn failure falls back to the liveTurn cursor PAIRED with the lifecycle decoder state — a mid-marker offset is not resumed with an empty decoder",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t5: an observer-completed detached chat persists its transcript rows AND the native session id — reopening shows the output and the next turn can resume",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t5: when recoverTurn cannot re-anchor (turn retained nowhere), the observer falls back to the ADVANCED live cursor and must NOT truncate the transcript to a turn-start length — persisted rows are kept, not deleted",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6: fresh-host reload restores a snapshot-only request (no pendingRequests record) AND posts its actionable card after session-restored",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/LLD-s7: multi-select restoration after LiveTurn cleared — reattaching re-posts the actionable selection card with prompt AND multi preserved",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6: an abandoned follow-up (decided undelivered, then the turn is stopped before the follow-up spawns) records delivery-failed — never approved",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6: a follow-up stalled behind a still-blocked original turn is recorded delivery-failed by the stall timer — never left approved indefinitely",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/LLD-s7: the native session id is captured from the first turn’s output BEFORE any done and persisted across a reload; the dead-stdin recovery (no preceding done) resumes THAT native session in the follow-up run",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/LLD-s7: live-unwritable with NO recoverable native handle records session-lost — no continuation starts a fresh session",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4: host round trip — the open-chat { chatId } the shell posts (webview->host) is answered session-restored for that exact chat (the shell script execution itself is covered end-to-end in chat-shell.test.ts)",
+                "result": "pass"
+              },
+              {
+                "title": "history reopen from disk preserves each provider model effort and next-turn request after reload",
+                "result": "pass"
+              },
+              {
+                "title": "catalog reconciliation drops incompatible effort on model, provider and history changes",
+                "result": "pass"
+              },
+              {
+                "title": "unavailable catalog preserves restored selection and blocks unsupported edits and dispatch",
+                "result": "pass"
+              },
+              {
+                "title": "catalog refresh coalesces requests, retains good data and rejects disposed generation results",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-7dc5ecde2730fb17: an open panel keeps both repeating timers without holding the process open, and dispose clears them",
+                "result": "pass"
+              },
+              {
+                "title": "host: scratchpad messages with valid payloads are accepted without throwing and post nothing; non-string id/text is dropped with a warning",
+                "result": "pass"
+              },
+              {
+                "title": "chat-panel.test.ts: #insrc-scratch sibling button with class attachbtn + inline SVG + title exists next to #insrc-attach (ac2, ac5)",
+                "result": "pass"
+              },
+              {
+                "title": "chat-panel.test.ts: #insrc-scratchmenu .popup.chatmenu renders recent items + New scratchpad + Browse all from a scratch-list push, incl. empty-state hint and error row (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "chat-panel.test.ts: bootstrap click on #insrc-scratch posts {type:'scratch-open-menu'} (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "chat-panel.test.ts: host insert-into-input handler inserts into #insrc-input (:2784) per the deterministic rule — caret mid-draft in a non-empty draft, and an active range selection replaced — existing content preserved, focuses it, no submit-turn/cancel-turn posted (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "chat-panel.test.ts + scratch-panel.test.ts: every button in the new UI is icon-only with a title attribute — no visible text content on buttons (ac5)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/panels/__tests__/scratch-panel.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 404,
+            "titles": [
+              {
+                "title": "scratch-panel.test.ts: browse viewType insrc.scratchpads renders a table with Name and Modified columns (ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: each row has icon-only Open/Delete buttons (title hover text, data-id) posting scratch-open/scratch-delete (ac3, ac5)",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: empty list renders a hint row; create-or-reveal reuses a single panel instance; panel-factory failure returns undefined + logged and next click retries (ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: document viewType insrc.scratchpad renders content via textContent only (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: selectionchange with non-empty selection shows the floating icon-only Send-to-chat button (title) which posts send-to-chat {text}; selection-to-button click preserves the captured selection across focus/selectionchange (ac4, ac5)",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: A->B document switching asserts setTitle(B) on the SAME panel instance alongside content, with reversed read completion (generation guard)",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: stale ENOENT, deleting a non-displayed document, delete invalidates pending opens of the deleted id, closing/reopening the document panel during an outstanding read (dispose invalidates the generation, late read dropped)",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: UTF-8 cap — final inserted string incl. ellipsis within 65,536 bytes, with a multibyte boundary case",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: browseHtml error row and empty hint are CSP-safe (escaped)",
+                "result": "pass"
+              },
+              {
+                "title": "chat-panel.test.ts + scratch-panel.test.ts: every button in the new UI is icon-only with a title attribute — no visible text content on buttons (ac5)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "0a9a87f55",
+        "ranAt": "2026-11-13T11:39:37.442Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "scratch-panel.test.ts: browse viewType insrc.scratchpads renders a table with Name and Modified columns (ac3)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/scratch-panel.test.ts",
+                "title": "scratch-panel.test.ts: browse viewType insrc.scratchpads renders a table with Name and Modified columns (ac3)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "scratch-panel.test.ts: each row has icon-only Open/Delete buttons (title hover text, data-id) posting scratch-open/scratch-delete (ac3, ac5)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/scratch-panel.test.ts",
+                "title": "scratch-panel.test.ts: each row has icon-only Open/Delete buttons (title hover text, data-id) posting scratch-open/scratch-delete (ac3, ac5)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "scratch-panel.test.ts: empty list renders a hint row; create-or-reveal reuses a single panel instance; panel-factory failure returns undefined + logged and next click retries (ac3)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/scratch-panel.test.ts",
+                "title": "scratch-panel.test.ts: empty list renders a hint row; create-or-reveal reuses a single panel instance; panel-factory failure returns undefined + logged and next click retries (ac3)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/panels/__tests__/scratch-panel.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 410,
+            "titles": [
+              {
+                "title": "scratch-panel.test.ts: browse viewType insrc.scratchpads renders a table with Name and Modified columns (ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: each row has icon-only Open/Delete buttons (title hover text, data-id) posting scratch-open/scratch-delete (ac3, ac5)",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: empty list renders a hint row; create-or-reveal reuses a single panel instance; panel-factory failure returns undefined + logged and next click retries (ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: document viewType insrc.scratchpad renders content via textContent only (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: selectionchange with non-empty selection shows the floating icon-only Send-to-chat button (title) which posts send-to-chat {text}; selection-to-button click preserves the captured selection across focus/selectionchange (ac4, ac5)",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: A->B document switching asserts setTitle(B) on the SAME panel instance alongside content, with reversed read completion (generation guard)",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: stale ENOENT, deleting a non-displayed document, delete invalidates pending opens of the deleted id, closing/reopening the document panel during an outstanding read (dispose invalidates the generation, late read dropped)",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: UTF-8 cap — final inserted string incl. ellipsis within 65,536 bytes, with a multibyte boundary case",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: browseHtml error row and empty hint are CSP-safe (escaped)",
+                "result": "pass"
+              },
+              {
+                "title": "chat-panel.test.ts + scratch-panel.test.ts: every button in the new UI is icon-only with a title attribute — no visible text content on buttons (ac5)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "76ccce876",
+        "ranAt": "2026-11-13T10:06:39.666Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "scratch-panel.test.ts: document viewType insrc.scratchpad renders content via textContent only (ac4)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/scratch-panel.test.ts",
+                "title": "scratch-panel.test.ts: document viewType insrc.scratchpad renders content via textContent only (ac4)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "scratch-panel.test.ts: selectionchange with non-empty selection shows the floating icon-only Send-to-chat button (title) which posts send-to-chat {text}; selection-to-button click preserves the captured selection across focus/selectionchange (ac4, ac5)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/scratch-panel.test.ts",
+                "title": "scratch-panel.test.ts: selectionchange with non-empty selection shows the floating icon-only Send-to-chat button (title) which posts send-to-chat {text}; selection-to-button click preserves the captured selection across focus/selectionchange (ac4, ac5)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "scratch-panel.test.ts: A->B document switching asserts setTitle(B) on the SAME panel instance alongside content, with reversed read completion (generation guard)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/scratch-panel.test.ts",
+                "title": "scratch-panel.test.ts: A->B document switching asserts setTitle(B) on the SAME panel instance alongside content, with reversed read completion (generation guard)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "scratch-panel.test.ts: stale ENOENT, deleting a non-displayed document, delete invalidates pending opens of the deleted id, closing/reopening the document panel during an outstanding read (dispose invalidates the generation, late read dropped)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/scratch-panel.test.ts",
+                "title": "scratch-panel.test.ts: stale ENOENT, deleting a non-displayed document, delete invalidates pending opens of the deleted id, closing/reopening the document panel during an outstanding read (dispose invalidates the generation, late read dropped)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "scratch-panel.test.ts: UTF-8 cap — final inserted string incl. ellipsis within 65,536 bytes, with a multibyte boundary case",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/scratch-panel.test.ts",
+                "title": "scratch-panel.test.ts: UTF-8 cap — final inserted string incl. ellipsis within 65,536 bytes, with a multibyte boundary case",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/panels/__tests__/scratch-panel.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 481,
+            "titles": [
+              {
+                "title": "scratch-panel.test.ts: browse viewType insrc.scratchpads renders a table with Name and Modified columns (ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: each row has icon-only Open/Delete buttons (title hover text, data-id) posting scratch-open/scratch-delete (ac3, ac5)",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: empty list renders a hint row; create-or-reveal reuses a single panel instance; panel-factory failure returns undefined + logged and next click retries (ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: document viewType insrc.scratchpad renders content via textContent only (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: selectionchange with non-empty selection shows the floating icon-only Send-to-chat button (title) which posts send-to-chat {text}; selection-to-button click preserves the captured selection across focus/selectionchange (ac4, ac5)",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: A->B document switching asserts setTitle(B) on the SAME panel instance alongside content, with reversed read completion (generation guard)",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: stale ENOENT, deleting a non-displayed document, delete invalidates pending opens of the deleted id, closing/reopening the document panel during an outstanding read (dispose invalidates the generation, late read dropped)",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: UTF-8 cap — final inserted string incl. ellipsis within 65,536 bytes, with a multibyte boundary case",
+                "result": "pass"
+              },
+              {
+                "title": "scratch-panel.test.ts: browseHtml error row and empty hint are CSP-safe (escaped)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "ae1d3633c",
+        "ranAt": "2026-11-13T11:35:02.462Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "extension-chat-wiring.test.ts: extension.ts constructs createScratchStore with root join(PATHS.insrc, 'scratches') (ac1)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
+                "title": "extension-chat-wiring.test.ts: extension.ts constructs createScratchStore with root join(PATHS.insrc, 'scratches') (ac1)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "extension-chat-wiring.test.ts: scratch-new title acquisition end-to-end — prompt cancelled -> no create + unchanged list; prompt answered -> create + list refresh + document open",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
+                "title": "extension-chat-wiring.test.ts: scratch-new title acquisition end-to-end — prompt cancelled -> no create + unchanged list; prompt answered -> create + list refresh + document open",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "extension-chat-wiring.test.ts: scratch-list error field renders the unavailable row and a later success recovers; host switch cases for all six webview->host messages and both host->webview pushes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
+                "title": "extension-chat-wiring.test.ts: scratch-list error field renders the unavailable row and a later success recovers; host switch cases for all six webview->host messages and both host->webview pushes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "extension-chat-wiring.test.ts: send-to-chat reveals the chat panel, awaits the ready handshake, then pushes insert-into-input capped at 65,536 UTF-8 bytes; disposed chat drops silently",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
+                "title": "extension-chat-wiring.test.ts: send-to-chat reveals the chat panel, awaits the ready handshake, then pushes insert-into-input capped at 65,536 UTF-8 bytes; disposed chat drops silently",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "manual/optional smoke: click scratchpad button in the chat status bar, create a scratchpad, browse all, select text, Send to chat (only if a display/VS Code harness is available; otherwise covered by the integration fake-dom suite — no live LLM or daemon calls)",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "No display/VS Code harness in this environment; covered by the integration fake-dom suite (runShell + createScratchHost + createScratchPanels over fakes) in extension-chat-wiring.test.ts — 72/72 pass, tsc clean @ae1d3633c."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 652,
+            "titles": [
+              {
+                "title": "the shell script runs: a windowed restore shows one page at the bottom with the bar, a page request round-trips and keeps the reader's place, a live row does not move a reader who scrolled up, and an old-style restore still works",
+                "result": "pass"
+              },
+              {
+                "title": "the shell script bounds the view of a long active session: rows past the limit are trimmed at the bottom and come back on request",
+                "result": "pass"
+              },
+              {
+                "title": "shell script: the attach button posts pick-attachments, an image paste posts attach-image with its base64 and is prevented, a text paste is untouched, chips render from attachments-pending with a remove control, and a blank box with chips submits",
+                "result": "pass"
+              },
+              {
+                "title": "shell: the attach button is icon-only with an aria-label, sits first in the status bar, and the content security policy is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "shell script: a chip click on a sent message posts open-attachment, and the error sentence is shown and cleared",
+                "result": "pass"
+              },
+              {
+                "title": "transcript-row: a diff row without replaces appends a widget stamped with its row index; one with replaces redraws the widget of that sid and keeps it open; a withdrawn one hides it; one for an unknown or trimmed sid changes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "transcript-row: a marker row appends the same line a restored marker row draws",
+                "result": "pass"
+              },
+              {
+                "title": "diff widget: a diff row in a session-restored window and in a transcript-page is appended as a widget",
+                "result": "pass"
+              },
+              {
+                "title": "chat shell: the outbox band is present only with the queue, and the queue hint replaces the input placeholder only with it; an outbox message draws its rows and summary and each action posts its seq; with the queue a submit does not mark the turn running",
+                "result": "pass"
+              },
+              {
+                "title": "a retrying row shows 'attempt n of 3', a countdown, a retry-now button and a cancel button, and retry-now posts outbox-retry-now with its seq",
+                "result": "pass"
+              },
+              {
+                "title": "chat shell: the progress widget is never hidden: idle at the start, working after turn-running, idle after done, error, Stop and session-restored",
+                "result": "pass"
+              },
+              {
+                "title": "session restore uses stored phase and elapsed time without another provider event",
+                "result": "pass"
+              },
+              {
+                "title": "chat shell binds Stop to a pending run before the provider spawns",
+                "result": "pass"
+              },
+              {
+                "title": "chat shell: an informational line's done does not end a running turn, and the turn's own done and error still do",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): #insrc-active chip sits LEFT of the .right history chip; active-list populates dot-coded menu rows; activating one posts open-chat { chatId }",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): TRUE end-to-end round trip — activating an active-menu row posts open-chat, the real host receives it, and answers session-restored for that chat",
+                "result": "pass"
+              },
+              {
+                "title": "history run-config restores provider model and effort across sessions and legacy defaults in the executable shell",
+                "result": "pass"
+              },
+              {
+                "title": "new-session model and effort controls open and apply selections in the executable shell",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): a rendered menu row and both triggers inline the REAL provider SVG (not a source string), and the empty active trigger reads \"no active work\"",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): activating a row writes the selection optimistically (both triggers re-render to the chosen chat before any host reply) and posts open-chat/new-chat",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-0d3939248a956860: opening the history menu on a fresh (draft) chat focuses the TOP row WITHOUT scrolling to it; arrow keys still scroll",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): activating a persisted history row posts open-chat (not new-chat) even when that chat is absent from the active list",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): session-restored settles BOTH triggers on the restored chat (and clears one absent from a list)",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): a history-list-only response (a rejected open-chat) recovers BOTH triggers to the confirmed session",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): active-list reconcile re-settles the active trigger to the confirmed session (dropped from active -> cleared)",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): the menu keyboard moves the roving tabindex (ArrowDown/ArrowUp/Home/End) and Escape closes",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): an unknown provider falls back to an empty .pico (no broken SVG or image)",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): session-restored-before-list ordering settles BOTH triggers once the lists arrive",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): the 'vibe' provider branch inlines the Vibe SVG too, not just Claude/Codex",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1; Story e0821209d94791d0/s1): with a run-config provider set, the #insrc-newchat button posts new-chat carrying that provider",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Enter submits and prevents the line break",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Enter while a turn is running still submits",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Enter on an empty box sends nothing and adds no line break",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Ctrl+Enter inserts a line at the caret and does not submit",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Ctrl+Enter replaces a selection with one line",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Cmd+Enter inserts a line and does not submit",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Ctrl+Shift+Enter is a new line, never a send",
+                "result": "pass"
+              },
+              {
+                "title": "composer: Shift+Enter does not submit and leaves the browser's line break",
+                "result": "pass"
+              },
+              {
+                "title": "composer: an Enter confirming an IME composition does not submit",
+                "result": "pass"
+              },
+              {
+                "title": "composer: the placeholders state the new keys",
+                "result": "pass"
+              },
+              {
+                "title": "shell: the jump button sits outside the transcript and a click returns focus to the prompt",
+                "result": "pass"
+              },
+              {
+                "title": "picker opens in the real webview script and recovers catalog over the host handshake without reloading an active turn",
+                "result": "pass"
+              },
+              {
+                "title": "extension.ts gates the chat command on insrc.chat.enabled (config read)",
+                "result": "pass"
+              },
+              {
+                "title": "extension.ts constructs createChatPanelHost with the real injected vscode seams + memento store",
+                "result": "pass"
+              },
+              {
+                "title": "the chat host + protocol + store modules are vscode-free",
+                "result": "pass"
+              },
+              {
+                "title": "package.json contributes the chat command + the insrc.chat.enabled config (default on)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: package.json contributes insrc.chat.diffView (string enum chat|editor, default chat)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: extension.ts reads insrc.chat.diffView (full dotted key) + injects editGovernance seams",
+                "result": "pass"
+              },
+              {
+                "title": "chat wiring: the governance deps carry relPath and no computeDiff, and git is run with the given environment",
+                "result": "pass"
+              },
+              {
+                "title": "S006: the edit-governor module is vscode-free",
+                "result": "pass"
+              },
+              {
+                "title": "group-lock: package.json contributes insrc.chat.lockGroup (boolean, default true, machine scope)",
+                "result": "pass"
+              },
+              {
+                "title": "group-lock: extension.ts wires thin seams into createChatGroupLock and attaches it in the one panel adapter",
+                "result": "pass"
+              },
+              {
+                "title": "group-lock: the module is vscode-free",
+                "result": "pass"
+              },
+              {
+                "title": "S007: package.json contributes the insrc.chat.docsReview command",
+                "result": "pass"
+              },
+              {
+                "title": "S007: extension.ts wires the docs-review host inside the chat gate over the shared client",
+                "result": "pass"
+              },
+              {
+                "title": "S007: the docs-review host + client modules are vscode-free",
+                "result": "pass"
+              },
+              {
+                "title": "editor-title: the chat opens from an editor/title icon, NOT an Activity Bar container",
+                "result": "pass"
+              },
+              {
+                "title": "editor-title: the real insrc icon SVGs exist, are non-empty, and ship in the .vsix",
+                "result": "pass"
+              },
+              {
+                "title": "editor-title: extension.ts opens the chat as an editor-tab panel + gates the icon, docs-review intact",
+                "result": "pass"
+              },
+              {
+                "title": "the extension passes a file-backed lock registry and the turnLockTimeoutMs setting",
+                "result": "pass"
+              },
+              {
+                "title": "package.json contributes insrc.chat.turnLockTimeoutMs (number, default 600000, minimum 1000)",
+                "result": "pass"
+              },
+              {
+                "title": "the extension builds a session output on ~/.insrc/chat-output, passes it to the provider registry, and wires onEvict and the start-up sweep",
+                "result": "pass"
+              },
+              {
+                "title": "extension.ts runs the migration before it builds the file store over join(PATHS.insrc, 'chat-sessions') with the session cap and the onEvict, and the output sweep keeps the store's ids and the migration's kept ids",
+                "result": "pass"
+              },
+              {
+                "title": "extension wiring: the store is built on ~/.insrc/chat-attachments, the picker and opener are injected, onEvict removes a session's attachments and the start-up sweep uses the same keep set",
+                "result": "pass"
+              },
+              {
+                "title": "extension wiring: without a queue the chat command, the chat-ready context, the chat tab serializer and the review host's notifyChat are not set up, and with a queue they are",
+                "result": "pass"
+              },
+              {
+                "title": "extension wiring: package.json lists insrc.chat.open in menus.commandPalette only when insrc.chat.ready",
+                "result": "pass"
+              },
+              {
+                "title": "extension wiring: a restored chat tab gets the chat's current title, since VS Code keeps the title a tab was saved with",
+                "result": "pass"
+              },
+              {
+                "title": "extension wiring: the repo-config panel probes mcp.status WITH the selected repo path, so the project-layer .vibe/config.toml counts for vibe",
+                "result": "pass"
+              },
+              {
+                "title": "extension-chat-wiring.test.ts: extension.ts constructs createScratchStore with root join(PATHS.insrc, 'scratches') (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "extension-chat-wiring.test.ts: scratch-new title acquisition end-to-end — prompt cancelled -> no create + unchanged list; prompt answered -> create + list refresh + document open",
+                "result": "pass"
+              },
+              {
+                "title": "extension-chat-wiring.test.ts: scratch-list error field renders the unavailable row and a later success recovers; host switch cases for all six webview->host messages and both host->webview pushes",
+                "result": "pass"
+              },
+              {
+                "title": "extension-chat-wiring.test.ts: send-to-chat reveals the chat panel, awaits the ready handshake, then pushes insert-into-input capped at 65,536 UTF-8 bytes; disposed chat drops silently",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

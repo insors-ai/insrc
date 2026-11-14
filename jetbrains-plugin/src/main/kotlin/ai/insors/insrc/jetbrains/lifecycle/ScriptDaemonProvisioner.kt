@@ -32,6 +32,7 @@ fun interface SubprocessRunner {
  */
 fun interface DaemonScriptLocator {
     fun scriptFor(kind: ProvisionKind): Path?
+    fun existingUpgradeTarget(): Path? = null
 }
 
 /**
@@ -53,7 +54,11 @@ class ScriptDaemonProvisioner(
     private val log = logger<ScriptDaemonProvisioner>()
 
     override fun run(kind: ProvisionKind, node: NodeRuntime): ProvisionOutcome {
-        val script = locator.scriptFor(kind)
+        val route = runCatching {
+            val legacy = if (kind == ProvisionKind.UPDATE) locator.existingUpgradeTarget() else null
+            legacy to locator.scriptFor(if (legacy == null) kind else ProvisionKind.INSTALL)
+        }.getOrElse { return ProvisionOutcome(ok = false, reason = it.message ?: "Invalid daemon installation") }
+        val (legacy, script) = route
         if (script == null || !Files.exists(script)) {
             log.warn("insrc: daemon setup script for $kind not found — skipping")
             return ProvisionOutcome(ok = false, reason = "insrc setup tooling is unavailable")
@@ -62,9 +67,10 @@ class ScriptDaemonProvisioner(
         // INSTALL runs the install script; UPDATE runs `daemon-ctl.sh update`.
         val command = when (kind) {
             ProvisionKind.INSTALL -> listOf("bash", script.toString())
-            ProvisionKind.UPDATE -> listOf("bash", script.toString(), "update")
+            ProvisionKind.UPDATE -> if (legacy == null) listOf("bash", script.toString(), "update")
+                else listOf("bash", script.toString(), "-y", "--target", legacy.toString())
         }
-        val env = envWithNodeOnPath(node)
+        val env = envWithNodeOnPath(node) + ("INSRC_DAEMON_UPDATE_WAIT" to "1")
 
         return try {
             val exit = runner.run(Subprocess(command = command, env = env))
@@ -110,7 +116,7 @@ class ScriptDaemonProvisioner(
     /** The real runner: spawn via [ProcessBuilder], inheriting IO, returning the exit code. */
     class ProcessBuilderRunner : SubprocessRunner {
         override fun run(spec: Subprocess): Int {
-            val pb = ProcessBuilder(spec.command).redirectErrorStream(true)
+            val pb = ProcessBuilder(spec.command).redirectErrorStream(true).redirectOutput(ProcessBuilder.Redirect.DISCARD)
             pb.environment().clear()
             pb.environment().putAll(spec.env)
             return pb.start().waitFor()

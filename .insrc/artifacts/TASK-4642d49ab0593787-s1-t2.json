@@ -1,0 +1,76 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2429e606-01e7-48b2-b0c6-3235346b1398",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-13T08:52:27.199Z",
+    "epicCreatedAt": "2026-11-13T06:38:38.894Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4642d49ab0593787",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Protocol: 8 new direction-isolated message types + exhaustiveness tests",
+      "parent": {
+        "entityId": "STORY-4642d49ab0593787-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-4642d49ab0593787-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ffd35f8895e43ded5a0ce8aa0625efae4f5e3ba84daa33607780a8568e144cea",
+        "at": "2026-11-13T08:52:27.205Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-13T08:52:27.207Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Protocol: 8 new direction-isolated message types + exhaustiveness tests",
+    "summary": "Extend vscode-plugin/src/chat/protocol.ts with the eight scratchpad message types, each in its OWN direction's union + const array only (direction-isolated), and update protocol.test.ts exhaustiveness/direction-isolation assertions. Purely additive.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "six webview->host types ('scratch-open-menu', titleless 'scratch-new', 'scratch-open' {id}, 'scratch-delete' {id}, 'scratch-browse', 'send-to-chat' {text}) added ONLY to the webview->host union and WEBVIEW_TO_HOST_TYPES (protocol.ts:403)",
+      "two host->webview types ('scratch-list' {entries, error?}, 'insert-into-input' {text}) added ONLY to the host->webview union and HOST_TO_WEBVIEW_TYPES (:378)",
+      "protocol.test.ts asserts exhaustiveness, direction isolation (each new type in its own array and NOT the other's), and union/array equality — all passing",
+      "payload field names are part of the contract; ids/texts/titles are strings at runtime (non-strings rejected by the host switch)",
+      "change is purely additive — no existing message type, union member, or array entry altered"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "protocol.test.ts: all eight new message types appear in their own direction's union + const array only, with direction-isolation and union/array-equality assertions passing (ac5)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

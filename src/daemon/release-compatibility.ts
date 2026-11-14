@@ -2,6 +2,8 @@
 
 import { lstat } from 'node:fs/promises';
 import { join } from 'node:path';
+import { recordedReleaseQualification } from '../shared/installation-mutation-gate.js';
+import { releaseMetadataDigest } from '../shared/managed-release-trust.js';
 import type { MutationReservation } from '../shared/installation-mutation-gate.js';
 
 const FORMAT_KEYS = ['lance', 'repoAndIndexQueue', 'config', 'workflowAndSession'] as const;
@@ -46,6 +48,27 @@ function sameFormats(left: ReleaseCompatibility, right: ReleaseCompatibility): b
 		&& FORMAT_KEYS.every(key => left.formats[key] === right.formats[key]);
 }
 
+const LAUNCH_PROFILES = new Set(['managed', 'legacy-direct', 'legacy-stopped', 'legacy-shell-job', 'legacy-node-job']);
+
+/** The verified source tree owns the exact predecessor declarations and permitted launch profiles. */
+export function readTaggedReleaseCompatibility(value: unknown, priorCommit: string, candidateCommit: string) {
+	if (!object(value) || value.version !== 1 || !object(value.candidate) || !object(value.predecessors)
+		|| Object.hasOwn(value.candidate, 'releaseId') || !Object.hasOwn(value.predecessors, priorCommit)) {
+		throw new Error('signed source does not declare compatibility with the installed commit');
+	}
+	const predecessor = value.predecessors[priorCommit];
+	if (!object(predecessor) || !object(predecessor.declaration) || Object.hasOwn(predecessor.declaration, 'releaseId')
+		|| predecessor.crashConsistentReopening !== true || !Array.isArray(predecessor.launchProfiles)
+		|| predecessor.launchProfiles.length === 0 || new Set(predecessor.launchProfiles).size !== predecessor.launchProfiles.length
+		|| !predecessor.launchProfiles.every((item: unknown) => typeof item === 'string' && LAUNCH_PROFILES.has(item))) {
+		throw new Error('signed source does not qualify crash-consistent reopening for the installed commit');
+	}
+	const prior = readReleaseCompatibility({ ...predecessor.declaration, releaseId: priorCommit });
+	const candidate = readReleaseCompatibility({ ...value.candidate, releaseId: candidateCommit });
+	return { ...requireQualifiedReleasePair(prior, candidate, [{ prior, candidate }]),
+		launchProfiles: predecessor.launchProfiles as readonly string[] };
+}
+
 /** The caller supplies qualifications from trusted release metadata, never from the candidate. */
 export function requireQualifiedReleasePair(
 	prior: ReleaseCompatibility, candidate: ReleaseCompatibility, qualified: readonly QualifiedReleasePair[],
@@ -61,8 +84,12 @@ export function requireQualifiedReleasePair(
 
 /** Read the exact pair the update owner qualified before displacing the predecessor. */
 export function qualifiedPairFromReservation(reservation: Extract<MutationReservation, { kind: 'update' }>): QualifiedReleasePair {
+	const admitted = recordedReleaseQualification(reservation);
 	const step = reservation.entries.find(entry => entry.step === COMPATIBILITY_STEP);
 	if (step?.receipt !== COMPATIBILITY_RECEIPT) throw new Error('update lacks durable release qualification');
+	if (admitted !== undefined && admitted.qualification.compatibilityDigest !== releaseMetadataDigest(Buffer.from(step.intent))) {
+		throw new Error('durable writable formats differ from the signed qualification');
+	}
 	const value: unknown = JSON.parse(step.intent);
 	if (!object(value)) throw new Error('invalid release qualification');
 	const prior = readReleaseCompatibility(value.prior);

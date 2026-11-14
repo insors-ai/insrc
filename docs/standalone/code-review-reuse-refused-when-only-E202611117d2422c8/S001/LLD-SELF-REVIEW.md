@@ -38,3 +38,14 @@ Checked against the code:
 | ac3-proof-not-cross-version | MED | ac3 relies on tests that compute and check identities with the same code. No existing test pins an identity literal, so a change to the v1 input would go unnoticed. | Add a test that pins v1 identities computed with the pre-change code on a hand-built prepared packet: `7b854ad9e2e64cb264d9d32e5f9680c201e002faec9a15f59a7c58a0f141ab95` with one test row, `93a44cddf3b97cb48249894b044e9bd0672bc7d12787ab0472f94ea974c7a489` with no tests. |
 | source-check-collection-unstated | LOW | The LLD does not say whether the existing source checks (missing, later or foreign-party source) are collected with the refusals. | State that they still throw at once, unchanged. They reject a malformed decision, not changed inputs. |
 | format-on-unaccepted-attempt | LOW | `validateSavedAttribution` does not say that `taskIdentityFormat` must be absent unless the attempt is accepted. | Require it absent on unpinned, pending and failed attempts, as for the other accepted-only fields. |
+
+## Round 3: controller self-review, passed
+
+Checked the regenerated LLD against the round-2 findings and the code:
+
+- **Pinned identities.** §5 names both v1 identities computed with the unmodified `attribution-binding.ts` (`git diff` was empty when they were computed), and ac3 maps to the test that asserts them.
+- **Source checks.** §2.2, §2.3 and §4 state that the existing source checks throw at once and are not collected. Only format and identity refusals are combined.
+- **Accepted-only field.** §2.6 and §4 require `taskIdentityFormat` absent on unpinned, pending and failed attempts, with a mapped test. The migration step 1 includes it.
+- **Consistency.** No section still claims "reassessed once"; §4, §6 and the summary all state one rejection per submission.
+
+No open MED or HIGH findings. Three rounds used, the limit for this cycle.

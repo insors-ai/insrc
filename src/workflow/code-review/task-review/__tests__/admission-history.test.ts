@@ -43,7 +43,7 @@ test('failed admission survives successful next attempt publication and post-cle
    requestId: 'clearance-1', decision: 'approve', reviewKey: { project: f.repo, family: 'code', reviewId: cp.reviewId }, guardDigest: 'a'.repeat(64), leaseIds: ['op-1'],
   } } };
   const qualified = structuredClone(base.attempts[0]!); qualified.header.attempt = 2; qualified.header.attributionState = 'pending';
-  delete qualified.header.acceptedAttribution; delete qualified.header.taskScopeIdentities; delete qualified.header.attributionIdentity;
+  delete qualified.header.acceptedAttribution; delete qualified.header.taskScopeIdentities; delete qualified.header.attributionIdentity; delete qualified.header.taskIdentityFormat;
   const prepared = await prepareReviewPacket(f.packet, f.deps.sources, true);
   const view: ReviewCheckpoint = { ...base, attempts: [qualified] };
   await bindTaskFinalIdentities({ path, checkpoint: view, attempt: qualified, prepared }, [{ taskId: 't1', changeIndexes: [0], testIndexes: [0], decision: { action: 'reassess', reason: 'Previous attempt never assessed code' } }]);

@@ -914,7 +914,7 @@
     ]
   },
   "scripts": {
-    "sync-assets": "cp ../scripts/insrc-daemon-install.sh assets/insrc-daemon-install.sh && cp ../src/prompts/steering-block.md assets/steering-block.md",
+    "sync-assets": "cp \"${INSRC_PACKAGED_INSTALLER:-../scripts/insrc-daemon-install.sh}\" assets/insrc-daemon-install.sh && cp ../src/prompts/steering-block.md assets/steering-block.md",
     "bundle": "npm run sync-assets && node esbuild.mjs",
     "sync-manifest": "tsx scripts/sync-manifest-catalog.mjs",
     "build": "npm run sync-assets && tsx scripts/sync-manifest-catalog.mjs --check && tsc -p tsconfig.json",

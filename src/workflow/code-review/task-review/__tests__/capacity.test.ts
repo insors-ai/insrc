@@ -18,7 +18,7 @@ import { bindTaskFinalIdentities } from '../attribution-binding.js';
 async function pending(f:Awaited<ReturnType<typeof fixture>>,id='capacity'):Promise<AdmittedReview>{
  const prepared=await prepareReviewPacket(f.packet,f.deps.sources),checkpoint=f.checkpoint(id),attempt=checkpoint.attempts[0]!;
  attempt['review-response'].tasks=[];delete attempt.header.completedAt;
- delete attempt.header.acceptedAttribution;delete attempt.header.taskScopeIdentities;delete attempt.header.attributionIdentity;attempt.header.attributionState='pending';
+ delete attempt.header.acceptedAttribution;delete attempt.header.taskScopeIdentities;delete attempt.header.attributionIdentity;delete attempt.header.taskIdentityFormat;attempt.header.attributionState='pending';
  return{path:checkpointPath(f.repo,id),prepared,checkpoint,attempt,capacity:await readCapacityBaseline(f.repo,hash,'s1')};
 }
 

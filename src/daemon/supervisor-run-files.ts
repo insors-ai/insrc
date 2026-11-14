@@ -5,7 +5,7 @@ import { lstat, mkdir, readFile, rmdir, unlink, writeFile } from 'node:fs/promis
 import { dirname, join } from 'node:path';
 import type { ProcessIdentity } from '../shared/daemon-process.js';
 import { sameRunFile } from '../shared/daemon-run-files.js';
-import type { RunFileIdentity } from '../shared/daemon-run-files.js';
+import type { RunFileGuard, RunFileIdentity } from '../shared/daemon-run-files.js';
 import { SupervisorLifecycleError } from '../shared/daemon-supervisor-protocol.js';
 
 type FileKind = 'directory' | 'pid' | 'socket';
@@ -42,8 +42,8 @@ function matches(expected: OwnedFile, current: OwnedFile | undefined): boolean {
 }
 
 interface Guard {
-	assertOwned(): Promise<void>;
-	release(): Promise<void>;
+	assertOwned(): void | Promise<void>;
+	release(): void | Promise<void>;
 }
 
 /** Use the same on-disk guard and owner format as unmanaged startup, without synchronous process probes. */
@@ -97,16 +97,21 @@ export class SupervisorRunFiles {
 
 	constructor(private readonly paths: SupervisedRunFilePaths, private readonly owner: ProcessIdentity, private readonly uid: number) {}
 
-	async prepare(generation: string): Promise<void> {
+	async prepare(generation: string, adopted?: RunFileGuard): Promise<void> {
 		if (this.active !== undefined) throw ownership('previous run-file generation is not reconciled');
 		await mkdir(dirname(this.paths.guardPath), { recursive: true });
-		const guard = await acquire(this.paths.guardPath, this.owner, this.uid);
+		if (adopted !== undefined && (adopted.path !== this.paths.guardPath || adopted.owner.pid !== this.owner.pid
+			|| adopted.owner.startedAt !== this.owner.startedAt || adopted.owner.commandLine !== this.owner.commandLine)) {
+			throw ownership('adopted guard names a different supervisor');
+		}
+		const guard = adopted ?? await acquire(this.paths.guardPath, this.owner, this.uid);
 		try {
+			await guard.assertOwned();
 			const before = await this.snapshot();
 			if (before.pid !== undefined || before.socket !== undefined) {
 				throw ownership('previous run-file publication has not been reconciled');
 			}
-		} catch (error) { await guard.release(); throw error; }
+		} catch (error) { if (adopted === undefined) await guard.release(); throw error; }
 		this.active = { id: generation, guard, acquiring: undefined, releasing: undefined,
 			publication: undefined, token: undefined, granted: false, fenced: false };
 	}

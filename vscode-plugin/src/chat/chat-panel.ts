@@ -49,6 +49,11 @@ import {
   type FsSeam,
   type DiffView,
 } from './edit-governor.js';
+// Story E202611134642d49a:S001 t3: the chat consumes the SAME shared CSP+nonce shell
+// as the other webview panels (panels/shell.ts). The chat-specific bits (img-src data:
+// for the header glyph, marked/hljs in the one nonce'd script, its own styles) are
+// passed as shell arguments so the CSP/nonce frame itself is single-sourced.
+import { shellHtml, IMG_DATA_CSP } from '../panels/shell.js';
 
 /** The injected panel seam (mirrors extension.ts's PanelHandle). All vscode API lives here. */
 export interface ChatPanelChannel {
@@ -190,6 +195,14 @@ export interface ChatPanelHostDeps {
    * vscode module. Absent -> no attach button, no chip row, and the attachment messages are ignored.
    */
   readonly attachments?: ChatAttachmentDeps | undefined;
+  /**
+   * Story E202611134642d49a:S001 t4: the scratchpad menu in the chat status bar. When present,
+   * the webview renders the icon-only #insrc-scratch button next to #insrc-attach, posts
+   * 'scratch-open-menu' on click and renders the host's 'scratch-list' pushes into
+   * #insrc-scratchmenu. Absent -> no button, no menu, and the scratch messages are ignored
+   * by the webview (the host switch still refuses non-string payload fields).
+   */
+  readonly scratchpads?: { readonly enabled: true } | undefined;
   /** Epic babd84c6e2fb480a Story S001: opens a clicked link or code reference. Absent -> the clicks are ignored. */
   readonly links?: LinkOpener | undefined;
   /**
@@ -483,6 +496,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // chat switch lose nothing (a window reload does). `clientId` is the webview's own name for a
   // pasted image, echoed back so it can show the thumbnail it holds.
   const att = deps.attachments;
+  // Story E202611134642d49a:S001 t4: the scratchpad button is always available in the status
+  // bar (the store lives in the extension host), but the seam is injectable so tests without a
+  // scratch setup see no button — the same contract as the attach seam.
+  const scratchOn = deps.scratchpads !== undefined;
   const links = deps.links;
   interface PendingAttachment {
     readonly ref: AttachmentRef;
@@ -1047,10 +1064,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // and the transcript's total row count; the webview asks for older pages with 'load-older'.
   const postRestored = (s: ChatSession): void => {
     reconcileSessionConfig(s);
+    // Story c760757cc9077508/s1: echo the run config BEFORE the transcript — the webview's
+    // assistant who-labels compose from it at render time, so the restore must not render
+    // rows under the previous session's identity. ([run-config, session-restored] order.)
+    postRunConfig(s);
     const window = latestWindow(s.transcript);
     viewGeneration += 1;
     post({ type: 'session-restored', sessionId: s.id, viewGeneration, progress: readTurnProgress(s), pendingTurnId: runtimes.get(s.id)?.pendingTurnId, transcript: [...window.rows], mode: permissionMode, firstIndex: window.firstIndex, total: s.transcript.length });
-    postRunConfig(s);
     postOutbox(); // Epic E20261014613abdb3 Story S002: each chat shows its own outbox
   };
 
@@ -2111,15 +2131,15 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
 
   const renderShell = (): string => {
     const nonce = genNonce();
-    const style = renderStyle(theme); // a complete <style>…</style> (sc1 palette: --it-* tokens)
     // `img-src data:` is load-bearing, not decoration: the header session switcher paints its
     // clock/history glyph as an inline data-URI SVG background layer (.chrome #insrc-history below).
     // A CSS background-image url() is fetched under `img-src`, so without this directive it inherits
     // `default-src 'none'` and the browser blocks the icon while the sibling linear-gradient arrow
     // layers (not fetches) still paint — the glyph silently disappears. Scoped to `data:` ONLY: no
     // remote origin becomes loadable, scripts stay nonce-only, and default-src stays 'none'.
-    const csp = `default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';`;
-    // The chat-surface LAYOUT (S003), ported VERBATIM from the reviewed S001 design mock
+    // Story E202611134642d49a:S001 t3: the CSP+nonce frame itself now comes from the shared
+    // panels/shell.ts shellHtml; only this directive differs from the other panels.
+    const chatCspExtra = IMG_DATA_CSP;
     // (docs/epics/…/S001/mocks.html): a single-dark terminal .box (chrome header · .pad transcript
     // with row/gutter markers · dashed .inputline with a ❯ caret · .statusbar), filling the panel
     // edge to edge. The sc1 renderTerminalStyle still supplies the marker ::before glyphs; this
@@ -2230,7 +2250,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // we deliberately do NOT add overflow-y:auto so #insrc-term stays the panel's single scroll region).
       `#insrc-input{flex:1 1 auto;min-width:0;resize:none;height:40px;background:transparent;color:var(--input-fg);caret-color:var(--accent);padding:9px 4px;font-family:var(--font);font-size:13px;line-height:1.5;outline:none;}` +
       `#insrc-input::placeholder{color:var(--placeholder);}` +
-      `.statusbar{display:flex;gap:12px;align-items:center;padding:7px 13px;background:var(--bg-inset);border-top:1px solid var(--border-lit);color:var(--muted);font-size:11.5px;flex-wrap:wrap;flex:0 0 auto;}` +
+      // position:relative so the scratchpad menu (position:absolute) anchors to the status bar
+      // itself, directly under its icon-only button, instead of to a wrapper span (t4 fix).
+      `.statusbar{position:relative;display:flex;gap:12px;align-items:center;padding:7px 13px;background:var(--bg-inset);border-top:1px solid var(--border-lit);color:var(--muted);font-size:11.5px;flex-wrap:wrap;flex:0 0 auto;}` +
       // ISSUE-6ae99f6e: the functional provider + mode (edits) selects live in the status bar, styled as
       // segments; the mode seg carries the amber 'auto-approve' pill (S004 k6 i) via .statusbar .perm-auto.
       `.statusbar .seg{display:inline-flex;align-items:center;gap:5px;}` +
@@ -2275,6 +2297,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // Run-config controls in the status bar's bottom-right corner: the provider·model
       // button + effort gauge button, and their popups opening UPWARD from there.
       `.statusbar .runctl{margin-left:auto;display:inline-flex;align-items:center;gap:8px;position:relative;}` +
+      // Story E202611134642d49a:S001 t4: the scratchpad button is a DIRECT child of the status
+      // bar (a sibling of #insrc-attach, no wrapper span) so the menu anchors to the bar itself
+      // and sits directly under the button; it opens UPWARD from the status bar (the .popup
+      // default already opens upward; left:0 keeps it under the button at the bar's left edge).
+      (scratchOn
+        ? `#insrc-scratchmenu{bottom:calc(100% + 8px);top:auto;right:auto;left:0;}`
+        : '') +
       `.runbtn,.gaugebtn{display:inline-flex;align-items:center;gap:6px;height:24px;background:var(--dropdown-bg);border:1px solid var(--dropdown-border);border-radius:6px;padding:0 8px;cursor:pointer;color:var(--fg);font-family:var(--font);font-size:12px;font-weight:500;}` +
       `.runbtn:hover,.gaugebtn:hover{color:var(--accent);}` +
       `.runbtn:focus-visible,.gaugebtn:focus-visible{outline:1px solid var(--focus);outline-offset:1px;}` +
@@ -2400,6 +2429,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // Keyboard focus is shown in the theme's focus colour (last, so it wins over the rules above).
       `#insrc-prompt:focus-visible,#insrc-older:focus-visible,.segsel:focus-visible,.attachbtn:focus-visible,.attchip__x:focus-visible,.insrc-attchip:focus-visible{outline:1px solid var(--focus);outline-offset:1px;}` +
       `</style>`;
+    // Story E202611134642d49a:S001 t3: the chat renders through the SAME shared shell as the
+    // other webview panels. The chat keeps its own body markup; everything else — CSP meta
+    // (with the chat-only img-src data: extra), the nonce'd single script — comes from
+    // shellHtml. The chat's styles are appended as headExtra AFTER the shell's own <style>
+    // so the shell rules keep their cascade position; the title <h2> is suppressed because
+    // the chat paints its own .chrome header.
+    const chatStyles = renderStyle(theme) + layoutStyle;
     const provCls = surfaceClass('provider-dropdown');
     const histCls = surfaceClass('history-dropdown');
     const available = deps.providers.available;
@@ -2482,6 +2518,22 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         `attBar.hidden=items.length===0&&!m.error;}` +
         `if(attBtn)attBtn.addEventListener('click',function(){vs.postMessage({v:1,payload:{type:'pick-attachments'}});});` +
         `reg.onAttachmentOpen(function(id){vs.postMessage({v:1,payload:{type:'open-attachment',attachmentId:id}});});`;
+    // Story E202611134642d49a:S001 t4: the scratchpad menu. The button posts scratch-open-menu;
+    // the host answers with a 'scratch-list' push (recent entries, or an error). Rows post
+    // scratch-open {id} / scratch-new / scratch-browse. Empty and error states render as hint
+    // rows, so the menu is never blank. Rendering reuses mitem/chatMenuKey/closePops.
+    const scratchScript = !scratchOn
+      ? ''
+      : `var scratchBtn=document.getElementById('insrc-scratch'),scratchMenu=document.getElementById('insrc-scratchmenu'),scratchList=null;` +
+        `function renderScratchMenu(m){scratchMenu.innerHTML='';var err=typeof m.error==='string'?m.error:'';if(err){scratchMenu.appendChild(mitem(false,err.indexOf('scratchpads unavailable:')===0?err:'scratchpads unavailable: '+err,undefined,undefined,undefined,true,''));return;}var es=Array.isArray(m.entries)?m.entries:[];` +
+        `if(es.length===0){scratchMenu.appendChild(mitem(false,'no scratchpads yet — use “New scratchpad” below',undefined,undefined,undefined,true,''));}` +
+        `es.forEach(function(e){if(e&&typeof e.id==='string'){var row=mitem(false,String(e.name!==undefined?e.name:e.id),undefined,undefined,undefined,false,'');row.setAttribute('data-id',e.id);row.onclick=function(){vs.postMessage({v:1,payload:{type:'scratch-open',id:e.id}});};scratchMenu.appendChild(row);}});` +
+        `var newRow=mitem(false,'New scratchpad',undefined,undefined,undefined,false,'');newRow.onclick=function(){vs.postMessage({v:1,payload:{type:'scratch-new'}});};scratchMenu.appendChild(newRow);` +
+        `var brRow=mitem(false,'Browse all',undefined,undefined,undefined,false,'');brRow.onclick=function(){vs.postMessage({v:1,payload:{type:'scratch-browse'}});};scratchMenu.appendChild(brRow);}` +
+        `if(scratchBtn)scratchBtn.addEventListener('click',function(e){if(e&&e.stopPropagation)e.stopPropagation();vs.postMessage({v:1,payload:{type:'scratch-open-menu'}});toggleChatMenu(scratchBtn,scratchMenu,function(){renderScratchMenu(scratchList||{entries:[]});});});` +
+        `if(scratchBtn)scratchBtn.addEventListener('keydown',function(e){triggerKey(scratchBtn,scratchMenu,function(){renderScratchMenu(scratchList||{entries:[]});},e);});` +
+        `if(scratchMenu)scratchMenu.addEventListener('click',function(e){if(e&&e.stopPropagation)e.stopPropagation();});` +
+        `if(scratchMenu)scratchMenu.addEventListener('keydown',function(e){chatMenuKey(scratchBtn,scratchMenu,e);});`;
     // A paste holding images attaches them and is prevented; any other paste is left alone.
     const pasteScript = !attachOn
       ? ''
@@ -2546,6 +2598,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `const rb=document.getElementById('insrc-runbtn'),gb=document.getElementById('insrc-effortbtn');` +
       `const rp=document.getElementById('insrc-runpop'),ep=document.getElementById('insrc-effortpop');` +
       `function rstate(){return{provider:rb?rb.getAttribute('data-provider')||'':'',model:rb?rb.getAttribute('data-model')||'':'',effort:rb?rb.getAttribute('data-effort')||'':''};}` +
+      // Story c760757cc9077508/s1: seed the assistant who-label source from the server-rendered
+      // run-config attributes, so the first paint already composes PROVIDER/model (no fallback flash).
+      `reg.setRunIdentity(rstate().provider,rstate().model);` +
       `var ICONS=${JSON.stringify(PROVIDER_ICON_SVGS)};function pico(p){return ICONS[p]||'';}` +
       `function rprov(p){return catalog.filter(function(f){return f.id===p;})[0];}` +
       `function rmodel(p,m){var f=rprov(p);return f?f.models.filter(function(x){return x.id===m||x.alias===m||(x.otherAliases&&x.otherAliases.indexOf(m)>=0);})[0]:undefined;}` +
@@ -2556,7 +2611,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `function catalogHint(){return catalogStatus==='loading'?'Loading model catalog…':catalogStatus==='unavailable'?'Model catalog unavailable. Reopen to retry.':'';}` +
       `function requestCatalog(){vs.postMessage({v:1,payload:{type:'open-run-picker'}});}` +
       `function updatePickers(){if(rp&&rp.classList.contains('open'))renderProvPane();if(ep&&ep.classList.contains('open'))renderEffortPop();}` +
-      `function closePops(){if(rp)rp.classList.remove('open');if(ep)ep.classList.remove('open');if(rb)rb.setAttribute('aria-expanded','false');if(gb)gb.setAttribute('aria-expanded','false');if(actMenu)actMenu.classList.remove('open');if(histMenu)histMenu.classList.remove('open');if(act)act.setAttribute('aria-expanded','false');if(hs)hs.setAttribute('aria-expanded','false');chatFocused=null;}` +
+      `function closePops(){if(rp)rp.classList.remove('open');if(ep)ep.classList.remove('open');if(rb)rb.setAttribute('aria-expanded','false');if(gb)gb.setAttribute('aria-expanded','false');if(actMenu)actMenu.classList.remove('open');if(histMenu)histMenu.classList.remove('open');if(act)act.setAttribute('aria-expanded','false');if(hs)hs.setAttribute('aria-expanded','false');${scratchOn ? 'if(scratchMenu)scratchMenu.classList.remove(\'open\');if(scratchBtn)scratchBtn.setAttribute(\'aria-expanded\',\'false\');' : ''}chatFocused=null;}` +
       `function mitem(sel,label,sub,onclick,onhover,dis,icon){var d=document.createElement('div');d.className='item'+(sel?' sel':'')+(dis?' dis':'');d.setAttribute('role','menuitem');if(dis)d.setAttribute('aria-disabled','true');d.innerHTML='<span class="pico">'+(icon||'')+'</span><span class="chk">✓</span><span class="lbl"></span>'+(sub?'<span class="sub"></span>':'');d.querySelector('.lbl').textContent=label;if(sub)d.querySelector('.sub').textContent=sub;if(!dis){if(onhover)d.onmouseenter=onhover;d.onclick=onclick;}return d;}` +
       // Story 546198e11c24c1e3/s1: the chat dropdowns. The two triggers render from selected-id
       // membership (histChatFor/activeChatFor return the entry or undefined); the menus reuse mitem's
@@ -2594,6 +2649,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `if(histMenu)histMenu.addEventListener('click',function(e){if(e&&e.stopPropagation)e.stopPropagation();});` +
       `if(actMenu)actMenu.addEventListener('keydown',function(e){chatMenuKey(act,actMenu,e);});` +
       `if(histMenu)histMenu.addEventListener('keydown',function(e){chatMenuKey(hs,histMenu,e);});` +
+      // Story E202611134642d49a:S001 t4: the scratchpad menu (declared after the shared menu
+      // helpers it reuses: mitem/closePops/toggleChatMenu/triggerKey/chatMenuKey).
+      scratchScript +
       `function renderProvPane(hover){var pp=document.getElementById('insrc-provpane');pp.innerHTML='<div class="pane-h">Provider</div>';var s=rstate();document.getElementById('insrc-popfoot').textContent=catalogHint()||(started?'Provider is fixed once a chat has started · model and effort apply to the next turns.':'Provider change starts a new chat · model change applies to the next turns.');catalog.forEach(function(f){pp.appendChild(mitem(f.id===s.provider,f.label,String(f.models.length),function(){if(f.id!==s.provider){vs.postMessage({v:1,payload:{type:'new-chat',provider:f.id,model:''}});}},function(){renderModelPane(f);},started&&f.id!==s.provider,pico(f.id)));});renderModelPane(rprov(hover||s.provider));}` +
       `function renderModelPane(f){if(!f)return;var mp=document.getElementById('insrc-modelpane');mp.innerHTML='<div class="pane-h"></div>';mp.querySelector('.pane-h').textContent=f.label;var s=rstate();mp.appendChild(mitem(s.model==='', 'default','CLI default',function(){pickModel(f,'');}));f.models.forEach(function(m){mp.appendChild(mitem(f.id===s.provider&&rmodel(s.provider,s.model)===m,m.name,m.alias||m.id,function(){pickModel(f,m.id);}));});}` +
       `function pickModel(f,id){var s=rstate();if(f.id!==s.provider){vs.postMessage({v:1,payload:{type:'new-chat',provider:f.id,model:id,effort:s.effort}});}else{vs.postMessage({v:1,payload:{type:'set-run-config',model:id}});closePops();}}` +
@@ -2699,7 +2757,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // chat has a message — so re-settle the lock here alongside the existing provider re-sync.
       // Run-config echo: the host confirms a session's provider/model/effort (open/switch/
       // restore / set-run-config) — the buttons' labels and data-* follow it.
-      `else if(m.type==='run-config'){curProv=m.provider||'';if(rb){rb.setAttribute('data-provider',m.provider||'');rb.setAttribute('data-model',m.model||'');rb.setAttribute('data-effort',m.effort||'');}rlabel();elabel();updatePickers();}` +
+      `else if(m.type==='run-config'){curProv=m.provider||'';if(rb){rb.setAttribute('data-provider',m.provider||'');rb.setAttribute('data-model',m.model||'');rb.setAttribute('data-effort',m.effort||'');}reg.setRunIdentity(m.provider||'',m.model||'');rlabel();elabel();updatePickers();}` +
       `else if(m.type==='run-catalog'&&m.revision>=catalogRevision){catalogRevision=m.revision;catalogStatus=m.status;catalog=Array.isArray(m.providers)?m.providers:[];rlabel();elabel();updatePickers();}` +
       // history-list: the persisted chats repopulate the session dropdown; reconcile BOTH triggers
       // against cur (a rejected open-chat arrives as history-list alone, so this also clears a stale
@@ -2709,6 +2767,18 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // dropdown; each row carries a status dot (red/yellow/green) + the provider icon + title; the
       // chip glyph shows the most urgent status. reconcile() settles BOTH triggers against cur.
       `else if(m.type==='active-list'){actEntries=m.chats||[];var urg='';var rank={'waiting-input':3,working:2,done:1};(m.chats||[]).forEach(function(c){if((rank[c.status]||0)>(rank[urg]||0))urg=c.status;});if(actChip&&actChip.dataset)actChip.dataset.urgent=urg;reconcile();}` +
+      // Story E202611134642d49a:S001 t4: the host's answer to scratch-open-menu — cache the
+      // list and re-render the menu if it is open (a closed menu renders on its next open).
+      (scratchOn ? `else if(m.type==='scratch-list'){scratchList=m;if(scratchMenu&&scratchMenu.classList.contains('open'))renderScratchMenu(m);}` : '') +
+      // Story E202611134642d49a:S001 t4: a scratchpad's Send-to-chat. Deterministic insertion
+      // into #insrc-input ONLY: splice at the caret, replacing an active range; when the caret
+      // is at the end of a non-empty draft, append with one separating newline. Never touches
+      // #insrc-prompt and never posts submit/cancel — the user decides when to send.
+      (scratchOn ? `else if(m.type==='insert-into-input'){if(typeof m.text!=='string')return;var v=m.text;var s=typeof box.selectionStart==='number'?box.selectionStart:box.value.length,e=typeof box.selectionEnd==='number'?box.selectionEnd:s;` +
+        `if(e>s){box.value=box.value.slice(0,s)+v+box.value.slice(e);box.selectionStart=box.selectionEnd=s+v.length;}` +
+        `else if(s>=box.value.length&&box.value!==''){var tailNl=box.value.charCodeAt(box.value.length-1)===10,headNl=v.charCodeAt(0)===10;if(tailNl&&headNl)v=v.slice(1);var sep=(tailNl||headNl)?'':'\\n';box.value=box.value+sep+v;box.selectionStart=box.selectionEnd=box.value.length;}` +
+        `else{box.value=box.value.slice(0,s)+v+box.value.slice(s);box.selectionStart=box.selectionEnd=s+v.length;}` +
+        `box.focus();}` : '') +
       `});` +
       `const box=document.getElementById('insrc-input');` +
       // S002 ac2: submit converges on ONE path (Enter and the leading '>' prompt control); it
@@ -2737,17 +2807,14 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // host re-sends theme + active session + history and the dropdown/transcript are always
       // repopulated instead of being lost to a post-after-setHtml race.
       `vs.postMessage({v:1,payload:{type:'ready',targetedActions:true}});`;
-    return (
-      `<!DOCTYPE html><html><head><meta charset="utf-8">` +
-      `<meta http-equiv="Content-Security-Policy" content="${attr(csp)}">` +
-      `${style}${layoutStyle}</head>` +
+    return shellHtml(
+      '',
       // The body carries ONLY `insrc-term` (which defines the --it-* tokens + base font the marker
       // rows inherit). It must NOT carry a surface class (surfaceClass('chat') etc.): that rule is
       // `.insrc-term-chat{display:block;border:…}` and, as a class (0,1,0), it OVERRIDES the element
       // rule `body{display:flex}` (0,0,1) — collapsing the whole flex-fill layout so the panel box
       // only grows to content height (the "box doesn't fill / input floats mid-panel" bug). Surface
       // classes belong on the inner surface divs, never the root body.
-      `<body class="insrc-term">` +
       `<div class="box">` +
       // Fixed header (mock .chrome): the active-chats chip LEFT-aligned + the session switcher RIGHT-aligned.
       // Story 546198e11c24c1e3/s1: both are <button> triggers (aria-haspopup='menu') with custom
@@ -2791,6 +2858,15 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           `<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M13.2 7.3 8 12.5a3.2 3.2 0 0 1-4.5-4.5l5.6-5.6a2.1 2.1 0 0 1 3 3L6.6 10.9a1.1 1.1 0 0 1-1.5-1.5l4.8-4.8"/></svg>` +
           `</button>`
         : '') +
+      // Story E202611134642d49a:S001 t4: the sibling icon-only scratchpad button, a DIRECT DOM
+      // sibling of #insrc-attach inside the status bar (no wrapper span), with its own
+      // upward-opening menu positioned absolutely against the bar under the button.
+      (scratchOn
+        ? `<button id="insrc-scratch" type="button" class="attachbtn" aria-haspopup="menu" aria-expanded="false" aria-label="scratchpads" title="scratchpads">` +
+          `<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M4 1.5h6l3 3V14a.5.5 0 0 1-.5.5h-8A.5.5 0 0 1 4 14V2a.5.5 0 0 1 .5-.5Z"/><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" d="M10 1.5V5h3.5"/><path fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" d="M6 8h4M6 10.5h4M6 13h2.5"/></svg>` +
+          `</button>` +
+          `<div id="insrc-scratchmenu" class="popup chatmenu" role="menu" aria-label="scratchpads"></div>`
+        : '') +
       `<span class="seg" id="insrc-modeseg">edits <select id="insrc-mode" class="segsel ${provCls}" aria-label="mode"><option value="manual" disabled>Manual</option><option value="edit-auto" disabled>Edit Automatically</option><option value="auto" selected>Auto</option></select></span>` +
       // Run-config controls, bottom-right corner of the status bar. The popups open upward.
       `<span class="runctl">` +
@@ -2810,8 +2886,15 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `<div id="insrc-catalog" hidden data-catalog="${catalogJson}" data-status="${catalogStatus}"></div>` +
       `</span>` +
       `</div>` +
-      `</div>` +
-      `<script nonce="${nonce}">${MARKED_SRC}\n;${HLJS_SRC}\n;${bootstrap}</script></body></html>`
+      `</div>`,
+      nonce,
+      `${MARKED_SRC}\n;${HLJS_SRC}\n;${bootstrap}`,
+      // Story E202611134642d49a:S001 t3: the shared shell frame (CSP meta + nonce'd single
+      // script + envelope). The chat-only `img-src data:` (header glyph data-URI) is the
+      // cspExtra; the chat's own styles ride as headExtra AFTER the shell's <style> so the
+      // shell rules keep their cascade position; the title <h2> is suppressed because the
+      // chat paints its own .chrome header.
+      { cspExtra: chatCspExtra, headExtra: `<style>${chatStyles}</style>`, bodyClass: 'insrc-term', hideTitle: true },
     );
   };
 
@@ -3627,6 +3710,22 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       case 'open-code-ref':
         if (links !== undefined) void links.openCodeRef(msg.path, msg.line);
         return;
+      // Story E202611134642d49a:S001 t2: the six scratchpad intents are declared in the
+      // protocol, but their HANDLERS are wired by the extension host (t7) through the
+      // injected scratch boundary — the chat panel itself has no scratchpad case yet.
+      // The payload fields are part of the contract: a non-string id/text here is a
+      // malformed message and is REJECTED (dropped, never throws) just like the default.
+      case 'scratch-open-menu':
+      case 'scratch-new':
+      case 'scratch-browse':
+        return; // titleless intents: no payload fields to validate
+      case 'scratch-open':
+      case 'scratch-delete':
+        if (typeof msg.id !== 'string') { log.warn('[chat] dropped malformed scratch message: non-string id'); return; }
+        return; // accepted; the t7 handler consumes it
+      case 'send-to-chat':
+        if (typeof msg.text !== 'string') { log.warn('[chat] dropped malformed send-to-chat: non-string text'); return; }
+        return; // accepted; the t7 handler consumes it
       default:
         // docs-decision (S007) or any unknown/forward variant: accepted-but-ignored
         // seam — never an error.

@@ -11,6 +11,7 @@ import { performance } from 'node:perf_hooks';
 import { SupervisorFrameReader, SupervisorLifecycleError, encodeSupervisorFrame, readSupervisorReply, readSupervisorRequest } from '../shared/daemon-supervisor-protocol.js';
 import type { SupervisorExit, SupervisorReply, SupervisorRequest, SupervisorState } from '../shared/daemon-supervisor-protocol.js';
 import type { DarwinIncarnation } from '../shared/darwin-lifecycle.js';
+import type { RunFileGuard } from '../shared/daemon-run-files.js';
 import type { InstallationMutationGate, MutationReservation } from '../shared/installation-mutation-gate.js';
 import type { SupervisorRunFiles } from './supervisor-run-files.js';
 
@@ -98,6 +99,7 @@ export interface SupervisorOptions {
 	readonly installation: Pick<InstallationMutationGate, 'read' | 'admit'>;
 	readonly daemon: PinnedDaemon;
 	readonly configureLaunch?: (daemon: PinnedDaemon, reservation: MutationReservation) => PinnedDaemon;
+	readonly adoptRunFiles?: (reservation: MutationReservation) => RunFileGuard | undefined;
 	readonly verifyReady: (generation: string, pid: number) => Promise<void>;
 	readonly reconcileExit: (generation: string, pid: number | undefined) => Promise<void>;
 	readonly allowInitialStart: () => Promise<boolean>;
@@ -242,7 +244,7 @@ export class DaemonSupervisor {
 		request: SupervisorRequest, reservation: MutationReservation, owner: DarwinIncarnation, generation: string,
 	): Promise<SupervisorReply> {
 		const daemon = this.options.configureLaunch?.(this.options.daemon, reservation) ?? this.options.daemon;
-		await this.options.runFiles?.prepare(generation);
+		await this.options.runFiles?.prepare(generation, this.options.adoptRunFiles?.(reservation));
 		let child: ManagedChild;
 		try {
 			await this.authorize(request, owner);

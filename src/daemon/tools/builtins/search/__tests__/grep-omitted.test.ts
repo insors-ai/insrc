@@ -384,11 +384,23 @@ test('through the Node fallback with complete set, every hit with its whole line
 		assert.deepEqual(r.omitted.skippedFiles, [{ path: 'secret.txt', reason: 'unreadable' }], 'the scan went on past the unreadable file');
 		assert.equal(r.omitted.excludedByRule, NODE_EXCLUDED_BY_RULE);
 
-		// Past the deadline (here none is left once the first file is read) the call fails with what it gathered.
+		// Past the deadline (here none is left) the call fails with what it gathered, never a success. The check is made
+		// at every entry, so a tree of directories and unreadable files is stopped as well as one of readable files.
 		await assert.rejects(
 			runGrepSearch({ pattern: 'needle', root, complete: true, _backend: { ...NO_RIPGREP, rgTimeoutMs: 0 } }),
-			(err: unknown) => err instanceof GrepIncompleteError && err.reason === 'timeout' && err.hits.length >= 1,
+			(err: unknown) => err instanceof GrepIncompleteError && err.reason === 'timeout' && Array.isArray(err.hits),
 		);
+		const bare = tmp();
+		try {
+			mkdirSync(join(bare, 'a'));
+			mkdirSync(join(bare, 'b'));
+			await assert.rejects(
+				runGrepSearch({ pattern: 'needle', root: bare, complete: true, _backend: { ...NO_RIPGREP, rgTimeoutMs: 0 } }),
+				(err: unknown) => err instanceof GrepIncompleteError && err.reason === 'timeout',
+			);
+		} finally {
+			cleanup(bare);
+		}
 	} finally {
 		cleanup(root, [lockedFile]);
 	}

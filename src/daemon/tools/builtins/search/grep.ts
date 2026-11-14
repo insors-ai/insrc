@@ -162,6 +162,11 @@ export async function runGrepSearch(opts: GrepSearchOptions): Promise<SearchGrep
 	// Complete mode: no hit limit, and the same deadline as the ripgrep backend, checked after each file.
 	const deadlineMs = opts._backend?.rgTimeoutMs ?? RG_TIMEOUT_MS;
 	const deadline = Date.now() + deadlineMs;
+	const checkDeadline = (): void => {
+		if (complete && Date.now() >= deadline) {
+			throw new GrepIncompleteError(`the search was stopped after ${deadlineMs} ms with ${hits.length} hits gathered`, 'timeout', hits);
+		}
+	};
 	const globRe = opts.glob !== undefined ? globToFileRegex(opts.glob) : null;
 	const skippedFiles: { path: string; reason: 'too-large' | 'unreadable' }[] = [];
 	const shortenedLines: { path: string; line: number; totalChars: number }[] = [];
@@ -176,6 +181,7 @@ export async function runGrepSearch(opts: GrepSearchOptions): Promise<SearchGrep
 			return;
 		}
 		for (const entry of entries) {
+			checkDeadline();
 			if (!complete && hits.length >= limit) { truncated = true; return; }
 			const name = entry.name;
 			if (name.startsWith('.') || IGNORE_DIRS.has(name)) { continue; }
@@ -203,9 +209,6 @@ export async function runGrepSearch(opts: GrepSearchOptions): Promise<SearchGrep
 					if (!complete && text.length > MAX_LINE_CHARS) shortenedLines.push({ path, line: i + 1, totalChars: text.length });
 					if (!complete && hits.length >= limit) { truncated = true; return; }
 				}
-			}
-			if (complete && Date.now() >= deadline) {
-				throw new GrepIncompleteError(`the search was stopped after ${deadlineMs} ms with ${hits.length} hits gathered`, 'timeout', hits);
 			}
 		}
 	}

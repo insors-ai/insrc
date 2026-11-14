@@ -463,6 +463,33 @@ test('a quarantine rename failure retires the caller\'s claim and a live retry r
 	guard.release();
 });
 
+test('a claim revalidation that cannot read the caller\'s own claim retires it and withholds', () => {
+	const path = join(dir, 'guard');
+	staleGuard(path, 'linux:stale-boot:111', 'nonce-revalidate');
+	// Fail the revalidation read exactly at its own window: the before-revalidation probe makes this
+	// caller's just-published claim file unreadable, so claimStillMine's read throws (EACCES) instead of
+	// verdicting the bytes — the transient-failure shape the retirement must cover, not a vanished file.
+	const beforeRevalidation: ReclaimProbe = (phase) => {
+		if (phase !== 'before-revalidation') return;
+		const entry = readdirSync(path).find((name) => name.startsWith('reclaim.claim'));
+		assert.ok(entry !== undefined, 'the caller\'s own claim stands at the probe');
+		chmodSync(join(path, entry!), 0o000);
+	};
+	// The unreadable claim cannot be vouched for, so the reclaim withholds — and the claim must be
+	// retired on the way out, not abandoned: the file's unique name makes the unlink safe even though
+	// the revalidation could not read it.
+	assert.throws(() => acquireReclaim(path, acquiringOwner, () => undefined, beforeRevalidation), /not reclaimed automatically/);
+	assert.equal(readdirSync(path).filter((entry) => entry.startsWith('reclaim.claim')).length, 0, 'the unreadable claim was retired, not abandoned');
+	assert.equal(quarantinedSiblings(path).length, 0); // the guard was never renamed
+	assert.equal(readdirSync(path).includes('owner.json'), true); // the verdicted record stays in place
+	// The same caller is still alive and retries with an honest read: no live claim of its own holds the
+	// guard hostage, so the recovery proceeds and the stale record is quarantined.
+	const guard = acquireRunFileGuard(path, acquiringOwner, () => undefined);
+	assert.equal(guard.path, path);
+	assert.equal(quarantinedSiblings(path).length, 1);
+	guard.release();
+});
+
 test('acquireRunFileGuard leaves a symlink guard as a conflict', () => {
 	ensureDaemonLog();
 	const target = join(dir, 'target');

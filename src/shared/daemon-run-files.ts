@@ -182,7 +182,7 @@ interface ReclaimClaim {
 }
 
 /** Internal seam for regression tests: fires at the named point inside a single reclaim attempt. */
-export type ReclaimProbe = (phase: 'after-verdict' | 'before-quarantine') => void;
+export type ReclaimProbe = (phase: 'after-verdict' | 'before-revalidation' | 'before-quarantine') => void;
 
 /** The path of one claim file, named by that claim's own nonce so removal can only ever target the
  * exact claim it verdicted — never a live holder's file from under it. */
@@ -292,9 +292,15 @@ function quarantineDeadGuard(path: string, owner: ProcessIdentity, read: Process
 		retireOwnClaim(path, claim.nonce);
 		return false;
 	}
+	probe?.('before-revalidation');
 	if (!claimStillMine(path, claim)) {
 		// This reclaimer's own claim file no longer stands byte-identical where it was published, so its
-		// serialization cannot be vouched for. Fail closed without touching the guard.
+		// serialization cannot be vouched for — the re-read may even have failed transiently (EMFILE),
+		// leaving the published claim standing unread. Retire it either way before failing closed: the
+		// file's name is uniquely this caller's, so the removal can never touch another reclaimer's claim
+		// and is a no-op when the file already vanished; an unretired claim would be honored as a live
+		// holder's and hold the guard hostage until this process exits.
+		retireOwnClaim(path, claim.nonce);
 		return false;
 	}
 	probe?.('before-quarantine');

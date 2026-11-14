@@ -1,3 +1,4 @@
+import { runInStepContext } from '../../shared/step-context.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { writeFile,mkdtemp,rm,readFile } from 'node:fs/promises';
@@ -32,7 +33,8 @@ test('every supported review method delegates heavy work to its dedicated owner'
  const context={connectionIdentity:'route-owner',daemonEpoch:'route-epoch',connectionSignal:new AbortController().signal};
  const c={repo:code.repo,epicHash:hash,reviewId:'route-code',attempt:1};
  const d={repo:design.repo,reviewId:'route-design',attempt:1};
- const ack=await startTaskReview({...c,packet:code.packet,timingProtocol:'activity-v1'},context) as {reviewer:string};
+ const envelope=await runInStepContext({cwd:code.repo,client:'vibe'},()=>handleTaskReviewStep({...c,phase:'start',packet:code.packet},context));
+ const ack=JSON.parse(envelope.content[0]!.text) as {reviewer:string};
  assert.equal(ack.reviewer,'controller');
  const designAck=await designReviewOperation('start',{...d,artifactPath:design.json},context) as {checkpointPath:string};
  assert.ok(owners.get(c.reviewId)!>0);assert.ok(owners.get(d.reviewId)!>0);
@@ -40,7 +42,7 @@ test('every supported review method delegates heavy work to its dedicated owner'
  const until=async(fn:()=>Promise<any>)=>{const end=Date.now()+10000;while(true){try{const result=await fn();if(result.kind&&result.kind!=='pending')return result;}catch(error){if(Date.now()>end)throw error;}if(Date.now()>end)throw Error('Assignment unavailable');await new Promise(r=>setTimeout(r,20));}};
  const frame=await until(()=>exchangeControllerTaskReview(c,context,'assignment'));assert.equal(frame.taskId,'t1');
  await assert.rejects(startTaskReview({...c,operation:'resume',timingProtocol:'activity-v1'},context),/active/);
- await assert.rejects(handleTaskReviewStep({...c,phase:'resume'},context),/active/);
+ await assert.rejects(runInStepContext({cwd:code.repo,client:'vibe'},()=>handleTaskReviewStep({...c,phase:'resume'},context)),/active/);
  await assert.rejects(exchangeControllerTaskReview({...c,taskId:frame.taskId,executionId:frame.executionId,sequence:frame.nextSequence,scope:{tasks:[{taskId:'t1',changeIndexes:[0],testIndexes:[0]}]}},context,'scope'));
  const activity=await exchangeControllerTaskReview({...c,taskId:frame.taskId,executionId:frame.executionId,sequence:frame.nextSequence,event:{kind:'model_output'}},context,'activity') as any;
  t.diagnostic(`Code activity accepted: ${JSON.stringify(activity)}`);
@@ -187,4 +189,41 @@ test('production cleanup preserves the explicit locator for a successful no-docu
  const {approveArtifactByJsonPath}=await import('../../workflow/gates.js');const {lifecycleFor}=await import('../lifecycle-registry.js');await approveArtifactByJsonPath(join(code.repo,`.insrc/artifacts/BUILD-${hash}-s1.json`),{lifecycle:lifecycleFor(code.repo).service});
  const cleaned=await host.registry.cleanupApproved({project:code.repo,family:'code',epicHash:hash,storyId:'s1'});
  assert.ok(cleaned.deleted.includes(checkpointPath(code.repo,cp.reviewId)),JSON.stringify(cleaned));assert.equal(Atomics.load(calls,0),0);
+});
+
+test('production cold public publication retries preserve historical version-one evidence without models',async t=>{
+ const {designPreservationDigest}=await import('../../workflow/review/design-review/history.js');
+ const f=impactFixture(t,'daemon');await writeFile(join(f.repo,'.insrc/schema.json'),JSON.stringify({version:2}));
+ f.baseline.publication={reviewId:'review-1',attempt:1,state:'pending'};
+ const preserved=designPreservationDigest({...f.checkpoint,attempts:[f.baseline]});
+ await saveDesignCheckpoint(f.repo,{...f.checkpoint,attempts:[f.baseline]});
+ const calls=new Int32Array(new SharedArrayBuffer(4));
+ const host=new ProductionReviews({services:new ThreadServices(()=>({startedAt:0,modelState:{status:'ready'},installedCommit:'fixture'})),registeredRepos:async()=>new Set([f.repo]),track:()=>{},start:(svc,input,port,deps)=>startReviewWorkerBootstrap(svc,input,port,{...deps,start:(s,n,_script,extra,created)=>startWorker(s,n,'__tests__/helpers/review-maintenance',{workerData:{...extra!.workerData,calls:calls.buffer},transferList:extra!.transferList},created)})});
+ installProductionReviews(host);t.after(()=>host.shutdown());
+ const context={connectionIdentity:'public-publication',daemonEpoch:'epoch',connectionSignal:new AbortController().signal};
+ await designReviewOperation('recover',{repo:f.repo,reviewId:'review-1',attempt:1,actionId:'public-retry',operation:'retry_publication'},context);
+ const {loadStoredDesignCheckpoint}=await import('../../workflow/review/design-review/checkpoint.js');
+ const end=Date.now()+15000;let done=false;
+ while(Date.now()<end){const cp=await loadStoredDesignCheckpoint(f.repo,'review-1');if(cp?.attempts[0]&&'publication'in cp.attempts[0]&&cp.attempts[0].publication?.state==='complete'){assert.equal(cp.schemaVersion,1);assert.equal(designPreservationDigest(cp),preserved);done=true;break;}await new Promise(r=>setTimeout(r,20));}
+ assert.ok(done,'public retry must publish historical evidence');assert.equal(Atomics.load(calls,0),0);
+});
+
+test('production restart refreshes reviewer authority while an incumbent design worker is registered',async t=>{
+ const f=impactFixture(t,'daemon');await writeFile(join(f.repo,'.insrc/schema.json'),JSON.stringify({version:2}));
+ f.baseline.status='invalidated';f.baseline.publication={reviewId:'review-1',attempt:1,state:'complete'};
+ await saveDesignCheckpoint(f.repo,{...f.checkpoint,attempts:[f.baseline]});
+ const barrier=new Int32Array(new SharedArrayBuffer(20));Atomics.store(barrier,1,1);
+ const parties:string[]=[],threads:number[]=[];
+ const host=new ProductionReviews({services:new ThreadServices(()=>({startedAt:0,modelState:{status:'ready'},installedCommit:'fixture'})),registeredRepos:async()=>new Set([f.repo]),track:()=>{},start:(svc,input,port,deps)=>{parties.push(input.reviewer);return startReviewWorkerBootstrap(svc,input,port,{...deps,start:(s,n,_script,extra,created)=>startWorker(s,n,'../../workflow/review/design-review/__tests__/helpers/worker-admission',{workerData:{...extra!.workerData,fixtureBarrier:barrier.buffer},transferList:extra!.transferList},w=>{threads.push(w.threadId);created?.(w);})});}});
+ installProductionReviews(host);t.after(()=>host.shutdown());
+ const context={connectionIdentity:'restart-author',daemonEpoch:'epoch',connectionSignal:new AbortController().signal};
+ const request={phase:'recover',repo:f.repo,reviewId:'review-1',attempt:1,actionId:'fresh-author',operation:'restart_full',userDecision:{action:'restart_full',reason:'Fixture explicitly approves author change restart',recordedAt:new Date().toISOString()}};
+ const key={project:f.repo,family:'design' as const,reviewId:'review-1'};
+ await host.registry.admit({key,attempt:1,actionId:request.actionId,submitted:request,route:{artifactPath:f.json}},context);
+ const head=JSON.parse(await readFile(f.json,'utf8'));head.meta.authoredBy='controller';await writeFile(f.json,JSON.stringify(head));
+ await designReviewOperation('recover',request,context);
+ const {loadStoredDesignCheckpoint}=await import('../../workflow/review/design-review/checkpoint.js');
+ const end=Date.now()+15000;let done=false;
+ while(Date.now()<end){const cp=await loadStoredDesignCheckpoint(f.repo,'review-1');if(cp?.attempts.length===2&&cp.attempts[1]!.status==='passed'){assert.equal(cp.subject!.reviewer,'daemon');done=true;break;}await new Promise(r=>setTimeout(r,20));}
+ assert.ok(done,'fresh independent worker completes approved restart');assert.deepEqual(parties,['controller','daemon']);assert.notEqual(threads[0],threads[1]);
 });

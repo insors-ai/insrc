@@ -5,12 +5,12 @@ import { canonicalReviewStory, prepareReviewAdmission } from './admission.js';
 import { loadStoredCheckpoint } from './checkpoint.js';
 import { requireReview,isCodeAdmission } from './contracts.js';
 import { qualifiedCodeView } from './worker-checkpoint.js';
-import { validateTaskBody, taskAttemptSummary,mergeCodeAdmissionFailure,codeReviewPreservationDigest } from './record.js';
+import { taskAttemptSummary,mergeCodeAdmissionFailure,codeReviewPreservationDigest } from './record.js';
 import { withoutReviewResourceGuard,persistReviewResourceAudit } from '../../review/resource-audit.js';
 import { createRepoLifecycle } from '../../artifact-core/repo-lifecycle.js';
-import { readDesignFile } from '../../review/design-review/subject.js';
+import { readTaskReviewHistory } from './history.js';
 import type { ReviewSources } from './sources.js';
-import { artifactJsonPath, codeReviewArtifactId } from '../../storage.js';
+import { codeReviewArtifactId } from '../../storage.js';
 
 export interface CleanupResult { deleted: string[]; retained: string[]; errors: string[]; }
 /** Called under the daemon owner's story fence, after BUILD approval. No models. */
@@ -31,12 +31,10 @@ export async function cleanupStoryCheckpoints(project:string,hash:string,story:s
    requireReview(canonicalReviewStory(saved.storyId,hash)===canonicalReviewStory(story,hash),'storyId','Different story; retained');
    const latest=saved.attempts.at(-1);requireReview(latest,'checkpoint','Empty attempt history');
    requireReview(saved.attempts.every(a=>!a.resourceGuard?.openLeases.length&&!['pending','running'].includes(a.header.status)&&(isCodeAdmission(a)||a.header.status==='failed'||a['review-response'].crPublication==='complete')),'checkpoint','Unfinished, unpublished or resource-fenced attempt; retained');
+   const body=await readTaskReviewHistory(project,hash,canonicalReviewStory(story,hash));
    const qualified=qualifiedCodeView(saved);
    // Reuse the existing strict source/history/CR comparison rather than invent a second preservation validator.
    if(qualified){const last=qualified.attempts.at(-1)!;await prepareReviewAdmission(project,saved.reviewId,last.header.attempt,undefined,last.header.reviewer,deps.sources,{operation:'resume',epicHash:hash,qualifiedHistory:qualified});}
-   const cr=JSON.parse(readDesignFile(project,artifactJsonPath(project,codeReviewArtifactId(hash,canonicalReviewStory(story,hash))))) as {meta?:{schemaVersion?:number};body?:unknown};
-   requireReview(cr.meta?.schemaVersion===2||cr.meta?.schemaVersion===3,'CR','Required permanent CR missing');
-   const body=validateTaskBody(cr.body);
    for(const attempt of saved.attempts){
     if(isCodeAdmission(attempt)){requireReview(codeReviewPreservationDigest(mergeCodeAdmissionFailure(body,saved.reviewId,attempt))===codeReviewPreservationDigest(body),'CR','Technical admission history is not preserved');continue;}
     const summary=body.reviews.find(r=>r.reviewId===saved.reviewId&&r.attempt===attempt.header.attempt);

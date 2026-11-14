@@ -74,7 +74,7 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
    if(!stored||!isDeepStrictEqual(qualifiedDesignProjection(stored),input))throw new Error('Publication projection no longer matches the durable design evidence');
    return publishDesignReview(stored);
   };
-  const design=init.review.key.family==='design'?new DesignReviewWorker(init.review,deps.design?{...deps.design,...(init.review.maintenance?{publish:publishDesign}:{})}:{admit:recordDesignAdmission,publish:publishDesign,provider:()=>{const resolved=router().resolveProviderForRole('review',loadAnalyzeConfig(),init.review.key.project);return{provider:resolved.provider,model:resolved.resolution.model};}}):undefined;
+  const design=init.review.key.family==='design'?new DesignReviewWorker(init.review,deps.design?{...deps.design,publish:init.review.maintenance?publishDesign:deps.design.publish??publishDesign}:{admit:recordDesignAdmission,publish:publishDesign,provider:()=>{const resolved=router().resolveProviderForRole('review',loadAnalyzeConfig(),init.review.key.project);return{provider:resolved.provider,model:resolved.resolution.model};}}):undefined;
   const coordinator=code?.coordinator??design!.coordinator;
   let progressSequence=0,publishing=false,maintenanceWork=false,publishingStored=false,lastProgressStamp:string|undefined,observationAttempt=init.review.attempt;
   const snapshot=async()=>{

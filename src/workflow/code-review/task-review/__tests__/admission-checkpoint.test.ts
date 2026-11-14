@@ -1,3 +1,4 @@
+import { attributionIdentity } from '../attribution-binding.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -81,4 +82,22 @@ test('unverified admission and resource guards preserve pinned code history and 
   await saveStoredCheckpoint(path, next);
   assert.deepEqual(await loadStoredCheckpoint(path), next);
  } finally { f.cleanup(); }
+});
+
+test('mixed legacy story spellings survive version-two admission without rewriting pinned packets',async()=>{
+ const f=await fixture();
+ try{
+  const cp=f.checkpoint('mixed-aliases'),first=cp.attempts[0]!;
+  first.header.status='passed';first['review-response'].crPublication='complete';
+  const second=structuredClone(first);second.header.attempt=2;second.submitted.storyId=`STORY-${hash}-s1`;
+  second.header.acceptedAttribution=second.header.acceptedAttribution!.map(row=>({...row,decision:{action:'reassess' as const,reason:'Reassess the same canonical subject'}}));
+  second.header.attributionIdentity=attributionIdentity('accepted',second.header.finalScopeIdentity!,second.header.selectedTaskIds,second.submitted.tests.length,second.header.acceptedAttribution.map(row=>({...row,identity:second.header.taskScopeIdentities!.find(b=>b.taskId===row.taskId)!.identity})));
+  cp.attempts.push(second);
+  const before=structuredClone(cp.attempts),time=new Date().toISOString();
+  const input:CodeAdmissionAttempt={phase:'admission',validation:'unverified',operation:'start',acceptedAt:time,header:{attempt:3,reviewer:'daemon',status:'pending',createdAt:time},submitted:structuredClone(f.packet),progress:new ReviewProgressTracker().snapshot()};
+  const saved=appendCodeAdmission({project:f.repo,reviewId:cp.reviewId,storyId:'s1',taskId:'t1'},input,cp);
+  assert.deepEqual(saved.attempts.slice(0,2),before);
+  const path=checkpointPath(f.repo,cp.reviewId);await saveStoredCheckpoint(path,saved);assert.deepEqual(await loadStoredCheckpoint(path),saved);
+  const foreign=structuredClone(saved);foreign.attempts[1]!.submitted.storyId='STORY-bbbbbbbbbbbbbbbb-s2';assert.throws(()=>decodeStoredCheckpoint(foreign),/Foreign admission subject/);
+ }finally{f.cleanup();}
 });

@@ -58,7 +58,7 @@ export class DesignReviewWorker {
     const stored=await loadStoredDesignCheckpoint(project,cp.reviewId);
     // Historical publication repair has no native work and must preserve its
     // existing format/preservation identity, rather than minting admission.
-    if(input.maintenance&&stored?.schemaVersion===1)return saveDesignCheckpoint(project,cp);
+    if((input.maintenance||this.recoveryRequest?.operation==='retry_publication')&&stored?.schemaVersion===1)return saveDesignCheckpoint(project,cp);
     return saveWorkerDesignCheckpoint(project,cp);
    },
   });

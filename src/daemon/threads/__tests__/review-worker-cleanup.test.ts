@@ -77,6 +77,14 @@ test('approval cleanup retains active targets and preserves both-family permanen
    const retained=code?await cleanupApprovedTaskReviews({repo,epicHash,storyId:'s1'}):await cleanupDesignArtifact(repo,design!.id);
    assert.equal(retained.deleted.length,0);assert.ok(retained.retained.length>0);
   }finally{release();await blocked;await publishing;}
+  if(code){
+   const permanent=join(repo,`.insrc/artifacts/${id}.json`),raw=await readFile(permanent,'utf8'),head=JSON.parse(raw),checkpointBytes=await readFile(path,'utf8');
+   await writeFile(permanent,JSON.stringify({...head,meta:{...head.meta,schemaVersion:2}}));
+   const refused=await cleanupApprovedTaskReviews({repo,epicHash,storyId:'s1'});
+   assert.equal(refused.deleted.length,0);assert.ok(refused.retained.includes(path));assert.match(refused.errors.join(' '),/capability mismatch/);
+   assert.equal(await readFile(path,'utf8'),checkpointBytes,'invalid permanent history cannot mutate or delete the checkpoint');
+   await writeFile(permanent,raw);
+  }
   const cleaned=code?await cleanupApprovedTaskReviews({repo,epicHash,storyId:'s1'}):await cleanupDesignArtifact(repo,design!.id);
   assert.ok(cleaned.deleted.includes(path),JSON.stringify(cleaned));assert.equal(existsSync(path),false);
   const history=await registry.storedProgress(key,2,code?{epicHash,storyId:'s1'}:{artifactPath:design!.json,includeResult:true}) as any;

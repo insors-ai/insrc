@@ -229,7 +229,7 @@ export class ReviewWorkers {
   if(e.publication||e.cleanupOwner||this.scopeCleaning(e.input.key,e.scope))throw new Error('Review publication or cleanup is active');
   if(request.repo!==e.input.key.project||request.reviewId!==e.input.key.reviewId||request.phase!=='recover')throw new Error('Foreign design recovery request');
   if(request.operation==='restart_full'){
-   const scope=await this.deps.resolveScope(identity.key,context);
+   const scope=await this.deps.resolveScope(identity.key,context,{...e.input,submitted:request});
    if(scope.reviewer!==e.scope.reviewer){
     await this.call(e,'review.worker.assertIdle',{});
     await this.closeEntry(e);if(this.entries.has(keyOf(identity.key)))throw new Error('Review resources remain fenced');

@@ -387,9 +387,11 @@ go to the daemon; daemon-authored artifacts go to the live controller. Unknown
 provenance is refused. No self-review fallback or retired review protocol.
 
 Start returns a durable short acknowledgement; native work runs in the background.
-Poll `progress` conservatively (about every 10–30 seconds), show meaningful status
-and completed-chunk progress to the user, and wait for full completion before corrections
-or approval. Default polling returns metadata only. Set includeResult true and use
+To wait, call `progress` again directly, without sleeping first, or wait with ONE
+background command that exits when the checkpoint reaches a terminal status. Never arm
+a placeholder or no-op wait, and stop any armed wait before ending a turn that asks the
+user a question. Show meaningful status and completed-chunk progress to the user, and
+wait for full completion before corrections or approval. Default polling returns metadata only. Set includeResult true and use
 afterCompletedChunk/nextCompletedChunk to retrieve one completed chunk per page.
 Polling does not renew activity or execute model calls. The checkpoint path is returned.
 
@@ -474,6 +476,10 @@ fallback. A story with no valid independent whole-story review is withheld.
    the model in the tool call. Store the returned checkpoint path.
 2. `progress`: observe the same repo/epicHash/reviewId/attempt, or read the atomic
    checkpoint. This never starts/resumes work. Report meaningful progress to user.
+   To wait, call `progress` again directly, without sleeping first, or wait with ONE
+   background command that exits when the checkpoint reaches a terminal status. Never
+   arm a placeholder or no-op wait; stop any armed wait before ending a turn that asks
+   the user a question.
 3. For a controller reviewer, use `assignment`, `scope`, `activity`, `result` on the
    live owner connection. Follow returned prompt/schema/taskId/executionId/nextSequence.
    Scope/result/activity require the exact task/execution/sequence envelope.

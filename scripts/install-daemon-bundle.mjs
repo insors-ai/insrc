@@ -22,7 +22,8 @@ export async function pinnedRecovery(journal, { stateRoot, root, domain, key }) 
 		m.sequence !== proof.floor.sequence || m.channel !== proof.floor.channel ||
 		m.archiveSha256 !== proof.floor.archiveSha256 || dirname(releaseRoot) !== root || await realpath(releaseRoot) !== releaseRoot ||
 		runtime !== join(releaseRoot, 'tools/node') || await realpath(runtime) !== runtime ||
-		await measureBundleRuntime(releaseRoot) !== proof.fingerprint) throw new Error('unfinished bundle transaction does not match its authenticated release');
+		proof.fingerprint !== m.runtimeFingerprint ||
+		await measureBundleRuntime(releaseRoot) !== m.runtimeFingerprint) throw new Error('unfinished bundle transaction does not match its authenticated release');
 	return { runtime, entry: join(releaseRoot, 'out/bin/insrc-daemon-control.js') };
 }
 

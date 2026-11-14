@@ -227,14 +227,6 @@ class Rollback {
 				await this.receipt(pending.step, 'reconciled to the pinned predecessor by rollback');
 			}
 		}
-		if (provisional !== undefined) {
-			await this.journal('rollback-selector', prior.releaseId, async () => {
-				if (initial.predecessor.selectorAbsent) await restoreAbsentManagedSelector(candidate, initial.id, this.revalidate);
-				else await this.operations.select(rollbackSelector(initial), this.revalidate);
-				return prior.releaseId;
-			});
-		}
-		await verifyRollbackSelector(initial, this.operations);
 		const releaseProof = recordedReleaseQualification(initial);
 		const source = recordedSourceRelease(initial);
 		const verifyPrior = async () => {
@@ -251,6 +243,18 @@ class Rollback {
 				throw new Error('pinned rollback inventory changed');
 			}
 		};
+
+		if (provisional !== undefined) {
+			await this.journal('rollback-selector', prior.releaseId, async () => {
+				if (initial.predecessor.selectorAbsent) await restoreAbsentManagedSelector(candidate, initial.id, this.revalidate);
+				else {
+					await verifyPrior();
+					await this.operations.select(rollbackSelector(initial), this.revalidate);
+				}
+				return prior.releaseId;
+			});
+		}
+		await verifyRollbackSelector(initial, this.operations);
 
 		if (legacyUpdate) {
 			await this.journal('rollback-legacy-service', prior.releaseId, async () => {

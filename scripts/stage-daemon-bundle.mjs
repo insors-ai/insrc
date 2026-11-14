@@ -168,6 +168,9 @@ export async function stageVerifiedBundle(archive, manifest, releaseParent, mani
 			!(await lstat(entry)).isFile()) throw new Error('bundle runtime or entrypoint missing');
 		const final = `${work}.staged`;
 		const fingerprint = await measureBundleRuntime(root);
+		if (manifest.runtimeFingerprint !== undefined && fingerprint !== manifest.runtimeFingerprint) {
+			throw new Error('extracted runtime differs from the signed fingerprint');
+		}
 		await rename(root, final);
 		return { root: final, runtime: join(final, 'tools/node'), commit: manifest.commit, fingerprint,
 			manifestSha256, archiveSha256: manifest.archiveSha256 };

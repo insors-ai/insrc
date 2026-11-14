@@ -13,6 +13,7 @@ const manifest = {
 	schemaVersion: 1, channel: 'macos-arm64-pilot', sequence: 1, version: '0.2.1-pilot.1',
 	commit: 'a'.repeat(40), target: 'darwin-arm64', minimumMacOS: '15.2', nodeVersion: '22.22.1',
 	archiveName: 'insrc-daemon-0.2.1-pilot.1-darwin-arm64.tar.gz', archiveSha256: 'b'.repeat(64), archiveBytes: 1024,
+	runtimeFingerprint: 'e'.repeat(64),
 	compatibility: { graphSchema: 1, formats: { lance: 'v1', repoAndIndexQueue: 'v1', config: 'v1', workflowAndSession: 'v1' } },
 	predecessors: [],
 };
@@ -36,13 +37,14 @@ test('installed trust rejects a self-signed proof and recovery selects only the 
 		const runtime = join(releaseRoot, 'tools/node');
 		mkdirSync(join(releaseRoot, 'tools'), { recursive: true });
 		writeFileSync(runtime, 'runtime fixture');
-		const bytes = encode(manifest);
+		const fingerprint = await measureBundleRuntime(releaseRoot);
+		const bytes = encode({ ...manifest, runtimeFingerprint: fingerprint });
 		const signed = (privateKey: typeof trusted.privateKey) =>
 			sign(null, manifestSigningBytes(bytes, 'production'), privateKey).toString('base64');
 		const proof = readManagedBundleProof({
 			version: 1, floor: { domain: 'production', channel: manifest.channel, sequence: 1,
 				manifestSha256: sha256(bytes), archiveSha256: manifest.archiveSha256 },
-			fingerprint: await measureBundleRuntime(releaseRoot), manifestBase64: bytes.toString('base64'),
+			fingerprint, manifestBase64: bytes.toString('base64'),
 			signatureBase64: signed(trusted.privateKey),
 		});
 		await verifyManagedBundleManifest(proof, manifest.commit, stateRoot);
@@ -55,6 +57,10 @@ test('installed trust rejects a self-signed proof and recovery selects only the 
 		assert.equal((await pinnedRecovery(journal, context)).runtime, runtime);
 		writeFileSync(runtime, 'modified runtime');
 		await assert.rejects(pinnedRecovery(journal, context), /does not match/);
+		const altered = { ...proof, fingerprint: await measureBundleRuntime(releaseRoot) };
+		journal.active.activation.bundleProof = altered;
+		await assert.rejects(pinnedRecovery(journal, context), /does not match/);
+		await assert.rejects(verifyManagedBundleManifest(altered, manifest.commit, stateRoot), /identity changed/);
 	} finally { rmSync(dir, { recursive: true, force: true }); }
 });
 

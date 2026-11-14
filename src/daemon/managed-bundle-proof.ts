@@ -50,7 +50,8 @@ export async function verifyManagedBundleManifest(proof: ManagedBundleProof, rel
 		|| !verify(null, Buffer.concat([domain, bytes]), key, signature)) throw new Error('pinned bundle manifest changed');
 	const m = JSON.parse(bytes.toString('utf8')) as Record<string, unknown>;
 	if (m.schemaVersion !== 1 || m.commit !== releaseId || m.sequence !== proof.floor.sequence
-		|| m.channel !== proof.floor.channel || m.archiveSha256 !== proof.floor.archiveSha256) throw new Error('pinned bundle identity changed');
+		|| m.channel !== proof.floor.channel || m.archiveSha256 !== proof.floor.archiveSha256
+		|| m.runtimeFingerprint !== proof.fingerprint) throw new Error('pinned bundle identity changed');
 	return m;
 }
 

@@ -40,12 +40,12 @@ function compatibility(value) {
 export function readBundleManifest(bytes) {
 	const m = boundedJson(bytes, 64 * 1024);
 	keys(m, ['schemaVersion', 'channel', 'sequence', 'version', 'commit', 'target', 'minimumMacOS', 'nodeVersion',
-		'archiveName', 'archiveSha256', 'archiveBytes', 'compatibility', 'predecessors'], 'manifest v1 fields');
+		'archiveName', 'archiveSha256', 'archiveBytes', 'runtimeFingerprint', 'compatibility', 'predecessors'], 'manifest v1 fields');
 	requireField(m.schemaVersion === 1 && m.channel === 'macos-arm64-pilot' && positive(m.sequence), 'channel or sequence');
 	requireField(matches(version, m.version) && matches(commit, m.commit), 'version or commit');
 	requireField(m.target === 'darwin-arm64' && matches(macOS, m.minimumMacOS) && m.nodeVersion === '22.22.1', 'target or node runtime');
 	requireField(m.archiveName === `insrc-daemon-${m.version}-darwin-arm64.tar.gz` && matches(sha, m.archiveSha256) &&
-		positive(m.archiveBytes, 2 ** 32), 'archive identity');
+		positive(m.archiveBytes, 2 ** 32) && matches(sha, m.runtimeFingerprint), 'archive or runtime identity');
 	compatibility(m.compatibility);
 	requireField(Array.isArray(m.predecessors) && m.predecessors.length <= 64, 'predecessors');
 	const seen = new Set();

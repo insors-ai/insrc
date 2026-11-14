@@ -54,10 +54,11 @@ Generate two distinct project-owned Ed25519 pairs. Set
 `INSRC_PRODUCTION_KEY` only on the production environment. Set the production
 environment variable `INSRC_QUALIFICATION_PUBLIC_KEY` to the qualification
 SPKI PEM. Keep encrypted offline backups under project control; verify access
-and signer fingerprints before use. To rotate a key, build a new bootstrap
-with the correct public keys and announce its checksum through an authenticated
-project channel before relying on the new key. Keep prior bootstrap keys for
-existing signatures and never reset channel sequences during key rotation.
+and signer fingerprints before use. Key rotation for existing installations
+is deferred: a new bootstrap cannot replace an installed trust anchor.
+Recover a lost signer from the project's encrypted backup. If its key is
+unrecoverable or suspected compromised, pause promotion until a trust
+migration is implemented. Preserve installed trust and release sequences.
 
 Build with `daemon-candidate.yml`, sign the candidate manifest with
 `daemon-qualification-sign.yml`, and run the above checks locally. Dispatch

@@ -22,7 +22,7 @@ test('promotion admits only the approved manifest, archive and local evidence', 
 		const build = { version: '0.2.1-pilot.1', commit: 'a'.repeat(40), target: 'darwin-arm64', minimumMacOS: '15.0',
 			nodeVersion: '22.22.1', archiveName: 'insrc-daemon-0.2.1-pilot.1-darwin-arm64.tar.gz',
 			archiveSha256, archiveBytes: archive.length };
-		const manifest = Buffer.from(JSON.stringify({ ...build, schemaVersion: 1, channel: 'macos-arm64-pilot',
+		const manifest = Buffer.from(JSON.stringify({ ...build, runtimeFingerprint: 'e'.repeat(64), schemaVersion: 1, channel: 'macos-arm64-pilot',
 			sequence: 1, compatibility: { graphSchema: 1, formats: { lance: '1', repoAndIndexQueue: '1', config: '1', workflowAndSession: '1' } },
 			predecessors: [] }));
 		const key = generateKeyPairSync('ed25519');

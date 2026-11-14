@@ -147,6 +147,7 @@ export interface ReviewProgressSource {
 
 abstract class ReviewDelegateBase<D extends ReviewDetails> implements TaskProgressDelegate<D> {
   private lastAccepted: { incarnation: string; sequence: number; measurement: DelegateMeasurement<D>; processAlive: boolean } | undefined;
+  private probeSequence = 0;
   protected constructor(
     protected readonly source: ReviewProgressSource,
     protected readonly identity: ReviewIdentity,
@@ -200,13 +201,14 @@ abstract class ReviewDelegateBase<D extends ReviewDetails> implements TaskProgre
       return null; // never throws
     }
   }
-  /** Liveness only: the last accepted sequence while the live incarnation matches (and the process is alive for code). Never renews activity by reading. */
+  /** Liveness only: a fresh sequence per probe while the live incarnation matches
+   * (and the process is alive for code). Reading never renews anything itself. */
   async ownerActivity(_task: TaskRef): Promise<number | null> {
     try {
       const live = this.source.identity(this.identity.key);
       if (!live || !this.lastAccepted || live.incarnation !== this.lastAccepted.incarnation) return null;
       if (this.requiresAliveProcess && !this.lastAccepted.processAlive) return null;
-      return this.lastAccepted.sequence;
+      return ++this.probeSequence;
     } catch {
       return null;
     }

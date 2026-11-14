@@ -320,7 +320,9 @@ test('code review ownerActivity requires a live incarnation and an alive process
   const entries = new Map([[slot, { live: 'inc-1', progress: codeProgress({}, aliveObs) }]]) as Map<string, { progress?: ReviewWorkerProgress; live?: string }>;
   const delegate = new CodeReviewDelegate(fakeSource(entries), { ...codeIdentity });
   await delegate.progress(task);
-  assert.equal(await delegate.ownerActivity(task), 9, 'alive process reports the last accepted sequence');
+  const firstProbe = await delegate.ownerActivity(task);
+  const secondProbe = await delegate.ownerActivity(task);
+  assert.ok(firstProbe !== null && secondProbe !== null && secondProbe > firstProbe, 'each liveness probe returns a fresh next owner sequence');
   const deadObs = { ...codeProgress().observation as Record<string, unknown>, progress: { phase: 'task_review', task: null, processState: 'exited', lastMeaningfulActivityAt: '2026-11-15T10:00:30.000Z' } };
   entries.get(slot)!.progress = codeProgress({ sequence: 11 }, deadObs);
   await delegate.progress(task);

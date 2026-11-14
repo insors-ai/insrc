@@ -14,3 +14,25 @@ Command shape: `npx tsx --test --test-force-exit --test-concurrency=N '<glob>'`.
 The sweep is **partial**. Live checks: `search-text-live.test.ts` passed with `INSRC_LIVE_TESTS=1`
 (live `search.text` equals `grep`'s count); `redis-etcd-live.test.ts` is written and gated
 (`INSRC_LIVE_TESTS=1` and `INSRC_TEST_REDIS_URL`) but was **not run**: no Redis server was available.
+
+## Live checks, run 2026-11-14
+
+Redis 8.0.5 (Ubuntu package, extracted without root) on port 6344, no persistence.
+
+```
+$ INSRC_LIVE_TESTS=1 INSRC_TEST_REDIS_URL=redis://127.0.0.1:6344 npx tsx --test src/daemon/db/__tests__/redis-etcd-live.test.ts
+✔ a live Redis listing is reported as sampled and incomplete (111.811583ms)
+ℹ tests 1
+ℹ pass 1
+ℹ fail 0
+ℹ skipped 0
+
+$ INSRC_LIVE_TESTS=1 npx tsx --test src/analyze/explore/__tests__/search-text-live.test.ts
+✔ a live search.text over this repository returns the same count as an independent search of the same pattern (504.788871ms)
+ℹ tests 1
+ℹ pass 1
+ℹ fail 0
+ℹ skipped 0
+```
+
+The Redis keys the test seeded were removed (DBSIZE 0 afterwards).

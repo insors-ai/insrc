@@ -5,6 +5,7 @@ import { assertDesignSubjectUnchanged } from './subject.js';
 
 interface WatchHandle {close():void;onError(handler:()=>void):void;}
 export interface DesignSubjectMonitorDeps {
+ readonly check?:typeof assertDesignSubjectUnchanged|undefined;
  readonly interval?:((tick:()=>void,ms:number)=>()=>void)|undefined;
  readonly watch?:((directory:string,event:(kind:string,name:string|null)=>void)=>WatchHandle)|undefined;
 }
@@ -29,7 +30,7 @@ export class DesignSubjectMonitor {
  private queue():void{if(this.stopped||this.queued)return;this.queued=true;queueMicrotask(()=>{this.queued=false;this.check();});}
  private check():void{
   if(this.stopped)return;
-  try{assertDesignSubjectUnchanged(this.subject,this.baseline);}catch(error){this.stop();this.changed(error);return;}
+  try{(this.deps.check??assertDesignSubjectUnchanged)(this.subject,this.baseline);}catch(error){this.stop();this.changed(error);return;}
   for(const [directory,names] of this.directories){
    if(this.watchers.has(directory))continue;
    try{

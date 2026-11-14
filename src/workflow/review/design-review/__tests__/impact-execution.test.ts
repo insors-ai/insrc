@@ -2,12 +2,21 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { appendFileSync } from 'node:fs';
 import { setTimeout as pause } from 'node:timers/promises';
+import { join } from 'node:path';
+import { DesignPreparation } from '../../design-preparation.js';
+import { ReviewPreparationCapacity } from '../../source-session.js';
+import { reviewPreparationLimits } from '../../../../config/review.js';
 import { DesignReviewCoordinator } from '../coordinator.js';
 import { loadDesignCheckpoint, saveDesignCheckpoint } from '../checkpoint.js';
 import { impactFixture } from './impact-fixtures.js';
 import type { LLMProvider, ActivityReviewSessionOpts } from '../../../../shared/types.js';
 import type { DesignUnitAssignment } from '../contracts.js';
 
+function shared(f:ReturnType<typeof impactFixture>){
+ const limits=reviewPreparationLimits(join(f.repo,'missing-config.json'));
+ const preparation=new DesignPreparation({project:f.repo,family:'design',reviewId:'review-1'},2,limits,new ReviewPreparationCapacity(limits.cacheMaxBytes));
+ return {prepare:preparation.prepare,assertSubject:preparation.assertSubject};
+}
 const input=(f:ReturnType<typeof impactFixture>)=>({phase:'start',repo:f.repo,reviewId:'review-1',attempt:2,artifactPath:f.json});
 async function settled(c:DesignReviewCoordinator,f:ReturnType<typeof impactFixture>){for(let i=0;i<500;i++){const v=await c.progress(f.repo,'review-1',2);if(!['pending','running'].includes(v.status))return v;await pause(5);}throw Error('Did not settle');}
 const feedback=(f:ReturnType<typeof impactFixture>,id:string)=>({...structuredClone(f.baseline.completedChunks.find(c=>c.chunkId===id)!),inspectedReferences:[...f.prepared.inventory.units.map(u=>u.id),f.md,f.path]});
@@ -26,14 +35,14 @@ test('native impact persists one plan-selection pair and dispatches only selecte
   }
   const value=chunk?feedback(f,id):{plan:f.plan,impact:f.impact};await opts.onCandidate(value);return value;
  }} as unknown as LLMProvider;
- const c=new DesignReviewCoordinator({provider:()=>({provider,model:'fake-cli (fixture)'}),subjectMonitor:{pollMs:5}});await c.start(input(f));
+ const c=new DesignReviewCoordinator({...shared(f),provider:()=>({provider,model:'fake-cli (fixture)'}),subjectMonitor:{interval:(tick)=>{const timer=setInterval(tick,5);return()=>clearInterval(timer);}}});await c.start(input(f));
  assert.equal((await settled(c,f)).status,'invalidated');assert.deepEqual(calls,['impact','edit','final']);
  const cp=await loadDesignCheckpoint(f.repo,'review-1');assert.deepEqual(cp!.attempts[0],f.baseline);assert.equal(cp!.attempts[1]!.unitSummaries![0]!.phase,'impact');
 });
 
 test('controller impact uses the same schema and validator with fenced exchange and durable exact replay',async t=>{
  const f=impactFixture(t,'daemon');await seed(f);const abort=new AbortController(),owner={id:'trusted',signal:abort.signal};
- const c=new DesignReviewCoordinator({provider:()=>{throw Error('Controller cannot construct provider');}});await c.start(input(f),{owner});
+ const c=new DesignReviewCoordinator({...shared(f),provider:()=>{throw Error('Controller cannot construct provider');}});await c.start(input(f),{owner});
  async function assignment(){for(let i=0;i<200;i++){const v=await c.exchange({phase:'assignment',repo:f.repo,reviewId:'review-1',attempt:2},owner) as {assignment:DesignUnitAssignment|null};if(v.assignment)return v.assignment;await pause(5);}throw Error('No assignment');}
  const a=await assignment();assert.equal(a.kind,'impact');assert.match(a.prompt,/indirect effects/);assert.ok(!a.prompt.includes('The feature works'));
  const req={...input(f),phase:'impact',executionId:a.executionId,sequence:1,plan:f.plan,impact:f.impact};delete (req as Partial<typeof req>).artifactPath;
@@ -50,7 +59,7 @@ test('controller impact uses the same schema and validator with fenced exchange 
 test('impact acceptance save failure preserves prior bytes and dispatches no selected chunk',async t=>{
  const f=impactFixture(t);await seed(f);let calls=0;
  const provider={capabilities:{reviewActivity:true},runReviewSession:async(_p:string,_s:unknown,opts:ActivityReviewSessionOpts)=>{calls++;const value={plan:f.plan,impact:f.impact};await opts.onCandidate(value);return value;}} as unknown as LLMProvider;
- const c=new DesignReviewCoordinator({provider:()=>({provider,model:'fake (fixture)'}),save:async(repo,cp)=>{if(cp.attempts[1]?.plan)throw Error('Injected atomic pair save failure');await saveDesignCheckpoint(repo,cp);}});
+ const c=new DesignReviewCoordinator({...shared(f),provider:()=>({provider,model:'fake (fixture)'}),save:async(repo,cp)=>{if(cp.attempts[1]?.plan)throw Error('Injected atomic pair save failure');await saveDesignCheckpoint(repo,cp);}});
  await c.start(input(f));assert.equal((await settled(c,f)).status,'failed');assert.equal(calls,1);
  const cp=await loadDesignCheckpoint(f.repo,'review-1');assert.deepEqual(cp!.attempts[0],f.baseline);assert.equal(cp!.attempts[1]!.plan,undefined);assert.equal(cp!.attempts[1]!.impact,undefined);
 });

@@ -14,6 +14,9 @@ import { setTimeout as pause } from 'node:timers/promises';
 import type { LLMProvider, ActivityReviewSessionOpts } from '../../../../shared/types.js';
 import type { DesignUnitAssignment } from '../contracts.js';
 import { DESIGN_LIMITS } from '../contracts.js';
+import { DesignPreparation } from '../../design-preparation.js';
+import { ReviewPreparationCapacity } from '../../source-session.js';
+import { reviewPreparationLimits } from '../../../../config/review.js';
 import { prepareDesignSubject, assertDesignSubjectUnchanged } from '../subject.js';
 
 const hash='aaaaaaaaaaaaaaaa',other='bbbbbbbbbbbbbbbb',time='2026-11-03T00:00:00.000Z';
@@ -35,28 +38,34 @@ function fixture(t: {after: (fn:()=>void)=>void}) {
  return {repo,put};
 }
 
+function preparationFor(repo: string, attempt = 1) {
+ const limits = reviewPreparationLimits(join(repo, 'missing-config.json'));
+ return new DesignPreparation({ project: repo, family: 'design', reviewId: 'review-1' }, attempt, limits, new ReviewPreparationCapacity(limits.cacheMaxBytes));
+}
+function prepareSharedDesign(repo: string, path: string) { return preparationFor(repo).prepare(repo, path); }
+
 test('workflow matrix resolves Epic designs, standalone LLD and ISSUE LLD without future artifacts',t=>{
  const f=fixture(t);const def=f.put('DEF',{problem:'A problem',stories:[{id:'s1',title:'Story'}]});
- assert.equal(prepareDesignSubject(f.repo,def.json).subject.workflow.requiredReferences.length,0);
- const hld=f.put('HLD');assert.deepEqual(prepareDesignSubject(f.repo,hld.md).subject.workflow.requiredReferences.map(r=>r.role),['definition']);
+ assert.equal(prepareSharedDesign(f.repo,def.json).subject.workflow.requiredReferences.length,0);
+ const hld=f.put('HLD');assert.deepEqual(prepareSharedDesign(f.repo,hld.md).subject.workflow.requiredReferences.map(r=>r.role),['definition']);
  const lld=f.put('LLD',{}, {standalone:false});
- const epic=prepareDesignSubject(f.repo,lld.json);assert.equal(epic.subject.workflow.kind,'epic');
+ const epic=prepareSharedDesign(f.repo,lld.json);assert.equal(epic.subject.workflow.kind,'epic');
  assert.deepEqual(epic.subject.workflow.requiredReferences.map(r=>r.role),['definition','hld']);
  assert.ok(epic.inventory.units.some(u=>u.selector.startsWith('document:line:')));
  const standalone=fixture(t);const root=standalone.put('LLD',{summary:'Feature scope'},{standalone:true});
- const s=prepareDesignSubject(standalone.repo,root.json);assert.equal(s.subject.workflow.kind,'standalone');assert.equal(s.subject.workflow.requiredReferences.length,0);
+ const s=prepareSharedDesign(standalone.repo,root.json);assert.equal(s.subject.workflow.kind,'standalone');assert.equal(s.subject.workflow.requiredReferences.length,0);
  assert.ok(s.subject.workflow.notApplicableRoles.includes('HLD'));
  // Older LLDs can lack the placement flag; canonical LLD root still supplies placement.
  const raw=JSON.parse(readFileSync(root.json,'utf8'));delete raw.meta.standalone;writeFileSync(root.json,JSON.stringify(raw));
- assert.equal(prepareDesignSubject(standalone.repo,root.json).subject.workflow.kind,'standalone');
+ assert.equal(prepareSharedDesign(standalone.repo,root.json).subject.workflow.kind,'standalone');
  const issue=fixture(t);issue.put('ISSUE',{reproduction:'Fails',rootCause:'Cause',fixIntent:'Fix'},{standalone:true,magnitude:'sized'});
  const fix=issue.put('LLD',{summary:'Fix scope'},{standalone:true,sizeClass:'bugfix'});
- const i=prepareDesignSubject(issue.repo,fix.md);assert.equal(i.subject.workflow.kind,'issue');
+ const i=prepareSharedDesign(issue.repo,fix.md);assert.equal(i.subject.workflow.kind,'issue');
  assert.deepEqual(i.subject.workflow.requiredReferences.map(r=>r.role),['originating_issue']);
  assert.ok(i.subject.workflow.notApplicableRoles.includes('HLD'));
  for(const kind of ['ISSUE','SPEC'] as const) {
   const p=fixture(t).put(kind);
-  assert.throws(()=>prepareDesignSubject(dirname(dirname(dirname(p.json))),p.json),{code:'design_review_not_applicable'});
+  assert.throws(()=>prepareSharedDesign(dirname(dirname(dirname(p.json))),p.json),{code:'design_review_not_applicable'});
  }
 });
 
@@ -106,9 +115,10 @@ test('native and controller correction reviews preserve Epic standalone and ISSU
    return{chunkId,status:'passed',summary:'Deterministic workflow qualification, no hosted model',findings:[],inspectedReferences:[...units,root.md,path],limitations:[],advice:[],...(a.number>1&&chunkId==='final'?{findingDecisions:[]}:{})};
   }
   const provider={capabilities:{reviewActivity:true},runReviewSession:async(prompt:string,_schema:unknown,opts:ActivityReviewSessionOpts)=>{nativeCalls++;assert.equal(author,'controller');const match=prompt.match(/Chunk assignment: (.+)\n/),chunk=match?JSON.parse(match[1]):undefined,value=output(chunk?'chunk':prompt.includes('Impact preparation for attempt')?'impact':'planning',chunk?.id);await opts.onCandidate(value);return value;}} as unknown as LLMProvider;
-  const c=new DesignReviewCoordinator({provider:()=>({provider,model:'fake workflow fixture'})}),abort=new AbortController(),owner={id:'trusted',signal:abort.signal};
+  let preparation=preparationFor(f.repo);
+  const c=new DesignReviewCoordinator({prepare:(...args)=>preparation.prepare(...args),assertSubject:(...args)=>preparation.assertSubject(...args),provider:()=>({provider,model:'fake workflow fixture'})}),abort=new AbortController(),owner={id:'trusted',signal:abort.signal};
   for(const attempt of [1,2]){
-   if(attempt===2)writeFileSync(root.md,readFileSync(root.md,'utf8')+'\nCorrected document');
+   if(attempt===2){writeFileSync(root.md,readFileSync(root.md,'utf8')+'\nCorrected document');preparation=preparationFor(f.repo,attempt);}
    await c.start({phase:'start',repo:f.repo,reviewId:'review-1',attempt,artifactPath:root.json},author==='daemon'?{owner}:{});
    let completed=false;
    for(let i=0;i<500;i++){
@@ -123,4 +133,17 @@ test('native and controller correction reviews preserve Epic standalone and ISSU
   }
   assert.equal(nativeCalls,author==='controller'?6:0);abort.abort();
  }
+});
+
+
+test('shared design preparation invalidates required ancestry and ignores unrelated files', t => {
+ const f=fixture(t);f.put('DEF',{stories:[{id:'s1'}]});const hld=f.put('HLD');const lld=f.put('LLD',{}, {standalone:false});
+ const preparation=preparationFor(f.repo), initial=preparation.prepare(f.repo,lld.json);
+ writeFileSync(join(f.repo,'unrelated.txt'),'Unrelated work');
+ preparation.assertSubject(initial.subject,initial.baseline);
+ writeFileSync(hld.md,readFileSync(hld.md,'utf8')+'\nRequired contract changed');
+ assert.throws(()=>preparation.assertSubject(initial.subject,initial.baseline),{code:'artifact_changed'});
+ assert.throws(()=>preparation.prepare(f.repo,lld.json));
+ const refreshed=preparationFor(f.repo,2).prepare(f.repo,lld.json);
+ assert.deepEqual(refreshed.subject,initial.subject);
 });

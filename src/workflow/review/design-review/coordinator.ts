@@ -41,6 +41,7 @@ export interface DesignCoordinatorDeps {
  readonly capacity?:typeof assertDesignDispatchCapacity;
  readonly provider?:(subject:DesignReviewSubject)=>DesignProvider;
  readonly prepare?:typeof prepareDesignSubject;
+ readonly assertSubject?:typeof assertDesignSubjectUnchanged;
  readonly save?:typeof saveDesignCheckpoint;
  readonly load?:typeof loadDesignCheckpoint;
  readonly activity?:ReviewActivityMonitorDeps|undefined;
@@ -114,7 +115,7 @@ export class DesignReviewCoordinator {
   const job:DesignJob={checkpoint,tracker,abort:new AbortController(),serial:Promise.resolve(),done:Promise.resolve(),closed:false,owner:subject.reviewer==='controller'?context.owner:undefined,reservedExecutionId,
    providerFactory:context.provider??(()=>{const descriptor=this.deps.provider?.(subject);requireDesign(descriptor,'missing_provider','Review provider unavailable');return descriptor;})};
   this.jobs.set(key,job);
-  job.subjectMonitor=new DesignSubjectMonitor(subject,currentDesignAttempt(checkpoint).baseline,error=>this.invalidate(job,error),this.deps.subjectMonitor);
+  job.subjectMonitor=new DesignSubjectMonitor(subject,currentDesignAttempt(checkpoint).baseline,error=>this.invalidate(job,error),{...this.deps.subjectMonitor,...(this.deps.assertSubject?{check:this.deps.assertSubject}:{})});
   if(job.owner){
    job.disconnect=()=>{const error=new DesignReviewError('controller_disconnected','Reviewing controller disconnected');job.abort.abort(error);job.controller?.reject(error);for(const [id,replay] of this.replays)if(replay.owner.id===job.owner!.id)this.replays.delete(id);};
    job.owner.signal.addEventListener('abort',job.disconnect,{once:true});if(job.owner.signal.aborted)job.disconnect();
@@ -176,7 +177,7 @@ export class DesignReviewCoordinator {
    checkpoint.attempts.push(attempt);
   }else{
    requireDesign(['pending','running','interrupted','paused'].includes(source.status),'review_conflict','Attempt is not resumable');
-   try{assertDesignSubjectUnchanged(saved.subject,source.baseline);}catch(error){
+   try{(this.deps.assertSubject??assertDesignSubjectUnchanged)(saved.subject,source.baseline);}catch(error){
     const summary=error instanceof Error?error.message:'Reviewed artifact changed';source.status='invalidated';source.failure={code:'artifact_changed',summary};source.finishedAt=new Date().toISOString();
     source.recovery={attempt:source.number,status:'invalidated',reason:'artifact_changed',completedChunkIds:source.completedChunks.map(c=>c.chunkId),requiresUserInput:true};
     source.progress={...source.progress,status:'invalidated',phase:'complete',requiresUserInput:true};
@@ -300,13 +301,13 @@ export class DesignReviewCoordinator {
  }
  private commit(job:DesignJob,mutate:(attempt:DesignAttempt)=>void,kind:'execution'|'failure'='execution'):Promise<void>{
   const work=job.serial.catch(()=>{}).then(async()=>{
-   if(kind==='execution'){if(job.storageError)throw job.storageError;if(job.abort.signal.aborted)throw job.abort.signal.reason;try{assertDesignSubjectUnchanged(job.checkpoint.subject,currentDesignAttempt(job.checkpoint).baseline,job.ownedPublication);}catch(error){this.invalidate(job,error);throw error;}}
+   if(kind==='execution'){if(job.storageError)throw job.storageError;if(job.abort.signal.aborted)throw job.abort.signal.reason;try{(this.deps.assertSubject??assertDesignSubjectUnchanged)(job.checkpoint.subject,currentDesignAttempt(job.checkpoint).baseline,job.ownedPublication);}catch(error){this.invalidate(job,error);throw error;}}
    const next=structuredClone(job.checkpoint),attempt=currentDesignAttempt(next);mutate(attempt);job.tracker.coverage(attempt);attempt.progress=job.tracker.snapshot();
    if(kind==='execution'&&attempt.current?.executionId!==currentDesignAttempt(job.checkpoint).current?.executionId&&attempt.current){this.deps.preflight?.(next);(this.deps.capacity??assertDesignDispatchCapacity)(next);}
    try{await(this.deps.save??saveDesignCheckpoint)(next.project,next);}catch(error){if(error instanceof DesignReviewError)throw error;throw new DesignReviewPersistenceError(error instanceof Error?error.message:'Checkpoint save failed');}
    job.checkpoint=next;
    if(kind==='execution'){
-    try{assertDesignSubjectUnchanged(next.subject,attempt.baseline,job.ownedPublication);}catch(error){this.invalidate(job,error);throw error;}
+    try{(this.deps.assertSubject??assertDesignSubjectUnchanged)(next.subject,attempt.baseline,job.ownedPublication);}catch(error){this.invalidate(job,error);throw error;}
     if(job.abort.signal.aborted)throw job.abort.signal.reason;
    }
   });job.serial=work;return work;
@@ -324,7 +325,7 @@ export class DesignReviewCoordinator {
   for(;;){
    try{return await this.unitExecution(job,provider,chunk);}catch(error){
     if(job.storageError)throw job.storageError;if(job.abort.signal.aborted)throw job.abort.signal.reason;
-    assertDesignSubjectUnchanged(job.checkpoint.subject,currentDesignAttempt(job.checkpoint).baseline);
+    (this.deps.assertSubject??assertDesignSubjectUnchanged)(job.checkpoint.subject,currentDesignAttempt(job.checkpoint).baseline);
     const failure=designTechnicalFailure(error);if(!failure)throw error;
     const controller=job.controller;if(controller){controller.retired=true;controller.monitor.stop();}
     this.stopProgress(job);
@@ -345,7 +346,7 @@ export class DesignReviewCoordinator {
  private async unitExecution(job:DesignJob,provider:LLMProvider|undefined,chunk?:DesignChunk):Promise<unknown>{
   (this.deps.capacity??assertDesignDispatchCapacity)(job.checkpoint);
   const checkpoint=job.checkpoint,attempt=currentDesignAttempt(checkpoint),path=designCheckpointPath(checkpoint.project,checkpoint.reviewId);
-  assertDesignSubjectUnchanged(checkpoint.subject,attempt.baseline);
+  (this.deps.assertSubject??assertDesignSubjectUnchanged)(checkpoint.subject,attempt.baseline);
   const preparationKind=attempt.preparationKind??'planning',impactUnit=!chunk&&preparationKind==='impact';
   job.tracker.unit(chunk?'chunk_review':preparationKind,chunk?.id,attempt.completedChunks.length,selectedDesignChunks(attempt).length);
   const reserved=job.reservedExecutionId;job.reservedExecutionId=undefined;
@@ -379,7 +380,7 @@ export class DesignReviewCoordinator {
     onActivity:event=>{if(!job.closed&&!unitAbort.signal.aborted&&currentDesignAttempt(job.checkpoint).current?.executionId===assignment.executionId&&monitor.observe(event)&&job.tracker.activity(event))this.scheduleProgress(job);},
     onCandidate:async input=>{if(job.closed||unitAbort.signal.aborted||currentDesignAttempt(job.checkpoint).current?.executionId!==assignment.executionId)return{accepted:false};try{validate(input);return{accepted:true};}catch(error){candidateError=error;throw error;}}});
    if(job.storageError)throw job.storageError;if(candidateError)throw candidateError;if(inactivityError)throw inactivityError;if(job.abort.signal.aborted)throw job.abort.signal.reason;
-   assertDesignSubjectUnchanged(checkpoint.subject,attempt.baseline);
+   (this.deps.assertSubject??assertDesignSubjectUnchanged)(checkpoint.subject,attempt.baseline);
    return validate(value);
   }catch(error){throw job.storageError??candidateError??inactivityError??error;}
   finally{monitor.stop();this.stopProgress(job);unitAbort.abort();job.abort.signal.removeEventListener('abort',stop);if(job.unitAbort===unitAbort)job.unitAbort=undefined;}
@@ -388,7 +389,7 @@ export class DesignReviewCoordinator {
   const unit=job.controller;if(!unit)return;unit.monitor.stop();unit.accept();job.controller=undefined;
  }
  private checkControllerSubject(job:DesignJob):void{
-  try{assertDesignSubjectUnchanged(job.checkpoint.subject,currentDesignAttempt(job.checkpoint).baseline);}
+  try{(this.deps.assertSubject??assertDesignSubjectUnchanged)(job.checkpoint.subject,currentDesignAttempt(job.checkpoint).baseline);}
   catch(error){this.invalidate(job,error);throw error;}
  }
  /** Only a connection identity supplied by the IPC host grants reviewer authority. */
@@ -450,18 +451,18 @@ export class DesignReviewCoordinator {
     const candidate=await this.unit(job,provider);
     const impact=currentDesignAttempt(job.checkpoint).preparationKind==='impact'?(candidate as {plan:DesignChunkPlan;impact:DesignImpactAssessment}).impact:undefined;
     plan=impact?(candidate as {plan:DesignChunkPlan}).plan:candidate as DesignChunkPlan;
-    assertDesignSubjectUnchanged(job.checkpoint.subject,currentDesignAttempt(job.checkpoint).baseline);
+    (this.deps.assertSubject??assertDesignSubjectUnchanged)(job.checkpoint.subject,currentDesignAttempt(job.checkpoint).baseline);
     job.tracker.phase('persisting',0,plan.chunks.length);const accepted=plan;
     await this.commit(job,a=>{a.plan=accepted;if(impact)a.impact=impact;sealDesignUnit(a);delete a.current;});this.acceptController(job);
    }
    for(;;){
     const chunk=nextDesignUnit(currentDesignAttempt(job.checkpoint))?.chunk;if(!chunk)break;
     const result=await this.unit(job,provider,chunk) as DesignChunkResult;
-    assertDesignSubjectUnchanged(job.checkpoint.subject,currentDesignAttempt(job.checkpoint).baseline);
+    (this.deps.assertSubject??assertDesignSubjectUnchanged)(job.checkpoint.subject,currentDesignAttempt(job.checkpoint).baseline);
     job.tracker.phase('persisting',currentDesignAttempt(job.checkpoint).completedChunks.length+1,selectedDesignChunks(currentDesignAttempt(job.checkpoint)).length);
     await this.commit(job,a=>{a.completedChunks.push(result);sealDesignUnit(a);delete a.current;});this.acceptController(job);
    }
-   const checkpoint=job.checkpoint,attempt=currentDesignAttempt(checkpoint);assertDesignSubjectUnchanged(checkpoint.subject,attempt.baseline);
+   const checkpoint=job.checkpoint,attempt=currentDesignAttempt(checkpoint);(this.deps.assertSubject??assertDesignSubjectUnchanged)(checkpoint.subject,attempt.baseline);
    const report=consolidateDesignReview(checkpoint.reviewId,attempt.number,checkpoint.subject,attempt.baseline.contentIdentity,plan,attempt.completedChunks,attempt.impact?{impact:attempt.impact,attempts:checkpoint.attempts}:undefined);
    job.tracker.status(report.status);
    await this.commit(job,a=>{a.status=report.status;a.report=report;a.finishedAt=new Date().toISOString();const action=[...(a.actions??[])].reverse().find(x=>x.userDecision?.action==='retry_failed_unit'&&!x.outcome);if(action)action.outcome={code:'completed',summary:'Saved review results consolidated'};delete a.current;if(this.deps.publish)a.publication={reviewId:checkpoint.reviewId,attempt:a.number,state:'pending'};});

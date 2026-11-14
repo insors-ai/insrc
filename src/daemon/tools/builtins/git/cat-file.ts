@@ -40,6 +40,7 @@ export const gitCatFileTool = {
     stdoutLimit: Type.Optional(Type.Number({ description: `Byte budget of everything git prints, for the whole call (default ${DEFAULT_STDOUT_LIMIT}). Past it the read is cut and fails.`, minimum: 1 })),
     stderrLimit: Type.Optional(Type.Number({ description: `Byte budget of git's diagnostics (default ${DEFAULT_STDERR_LIMIT}). Past it the process is killed and the call fails.`, minimum: 1 })),
     isolated: Type.Optional(Type.Boolean({ description: 'Run in a fresh environment with the read-only arguments (default true).' })),
+    metadataOnly: Type.Optional(Type.Boolean({ description: 'Return framed object type/size metadata for rev or revs without reading bodies.' })),
     timeoutMs: Type.Optional(Type.Integer({ minimum: 1, maximum: MAX_TIMEOUT_MS, description: `A shorter limit for this read, in milliseconds (1 to ${MAX_TIMEOUT_MS}; it can only lower the fixed ${MAX_TIMEOUT_MS} ms limit).` })),
   }, { additionalProperties: false }),
   outputSchema: GitCatFileDataSchema,
@@ -64,7 +65,9 @@ export const gitCatFileTool = {
     const maxBytes = typeof input['maxBytes'] === 'number' ? Math.floor(input['maxBytes']) : DEFAULT_MAX_BYTES;
     const stdoutLimit = typeof input['stdoutLimit'] === 'number' ? Math.floor(input['stdoutLimit']) : DEFAULT_STDOUT_LIMIT;
     const stderrLimit = typeof input['stderrLimit'] === 'number' ? Math.floor(input['stderrLimit']) : DEFAULT_STDERR_LIMIT;
-    const mode = exists || typeSize ? '--batch-check' : '--batch';
+    const metadataOnly = input['metadataOnly'] === true;
+    if (metadataOnly && (exists || typeSize)) return rejectInput('git_cat_file', 'metadataOnly cannot be combined with exists/type/size');
+    const mode = exists || typeSize || metadataOnly ? '--batch-check' : '--batch';
     const requested = input['timeoutMs'];
     if (requested !== undefined && (typeof requested !== 'number' || !Number.isInteger(requested) || requested < 1 || requested > MAX_TIMEOUT_MS)) {
       return rejectInput('git_cat_file', `timeoutMs must be an integer from 1 to ${MAX_TIMEOUT_MS}`);
@@ -88,7 +91,7 @@ export const gitCatFileTool = {
     const out = Buffer.from(res.stdout);
     let data: GitCatFileData;
     try {
-      data = mode === '--batch-check' ? checkAnswer(out, revs[0]!, exists) : { objects: readObjects(out, revs, maxBytes, encoding) };
+      data = metadataOnly ? { objects: readMetadata(out, revs) } : mode === '--batch-check' ? checkAnswer(out, revs[0]!, exists) : { objects: readObjects(out, revs, maxBytes, encoding) };
     } catch (err) {
       if (!(err instanceof CatFileError)) { throw err; }
       return withFailure({ output: `[git_cat_file] failed: ${err.message}`, format: 'text', success: false, error: err.message }, 'rejected', out.subarray(0, 4000).toString('latin1'));
@@ -98,6 +101,18 @@ export const gitCatFileTool = {
 } satisfies TypedTool;
 
 class CatFileError extends Error {}
+
+function readMetadata(out: Buffer, revs: readonly string[]) {
+ const lines = out.toString('utf8').split('\n');
+ if (lines.pop() !== '' || lines.length !== revs.length) throw new CatFileError('Object metadata framing mismatch');
+ return revs.map((rev, i) => {
+  const line = lines[i]!;
+  if (line === `${rev} missing`) return { rev, exists: false };
+  const match = /^([0-9a-f]{40}(?:[0-9a-f]{24})?) (\w+) (\d+)$/.exec(line);
+  if (!match || !Number.isSafeInteger(Number(match[3]))) throw new CatFileError('Invalid object metadata');
+  return { rev, exists: true, sha: match[1]!, type: match[2]!, size: Number(match[3]) };
+ });
+}
 
 /** `cat-file --batch-check` for one rev: "<sha> <type> <size>" or "<rev> missing". */
 function checkAnswer(out: Buffer, rev: string, existsOnly: boolean): GitCatFileData {

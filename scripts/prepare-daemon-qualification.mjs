@@ -1,8 +1,10 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { createPrivateKey, sign } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
 import { manifestSigningBytes, readBundleManifest, readCandidateOrigin, sha256 } from './daemon-bundle-metadata.mjs';
 import { stageVerifiedBundle } from './stage-daemon-bundle.mjs';
 
@@ -31,6 +33,10 @@ try {
 } finally { await rm(staging, { recursive: true, force: true }); }
 const bytes = encode({ ...draft, runtimeFingerprint: fingerprint });
 readBundleManifest(bytes);
+if (process.argv[6] === '--check-live' || process.env.GITHUB_ACTIONS === 'true') {
+	execFileSync('/bin/bash', [fileURLToPath(new URL('./check-daemon-release-policy.sh', import.meta.url)), 'daemon-pilot-qualification'],
+		{ stdio: ['ignore', 'ignore', 'inherit'] });
+}
 const key = createPrivateKey(process.env.INSRC_QUALIFICATION_KEY ?? '');
 if (key.asymmetricKeyType !== 'ed25519') throw new Error('qualification signer is not Ed25519');
 await writeFile(join(directory, 'manifest.json'), bytes, { flag: 'wx' });

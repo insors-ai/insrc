@@ -1,5 +1,6 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { createHash, createPrivateKey, sign } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { createReadStream } from 'node:fs';
 import { stat, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
@@ -47,6 +48,10 @@ export async function checkPromotion({ recordDir, artifactDir, repository, archi
 async function main([recordDir, artifactDir, repository, archiveSha256]) {
 	const { bytes, manifest } = await checkPromotion({ recordDir, artifactDir, repository, archiveSha256,
 		qualificationKey: process.env.INSRC_QUALIFICATION_PUBLIC_KEY ?? '' });
+	if (process.env.GITHUB_ACTIONS === 'true') {
+		execFileSync('/bin/bash', [fileURLToPath(new URL('./check-daemon-release-policy.sh', import.meta.url)), 'daemon-pilot-production'],
+			{ stdio: ['ignore', 'ignore', 'inherit'] });
+	}
 	const key = createPrivateKey(process.env.INSRC_PRODUCTION_KEY ?? '');
 	if (key.asymmetricKeyType !== 'ed25519') throw new Error('production signer is not Ed25519');
 	const signature = sign(null, manifestSigningBytes(bytes, 'production'), key);

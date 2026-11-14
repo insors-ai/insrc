@@ -38,10 +38,12 @@ jobs:
           printf '%s' "$COMPATIBILITY" > "$RUNNER_TEMP/compatibility.json"
       - name: Sign qualification manifest
         env:
+          GH_REPO: ${{ github.repository }}
+          INSRC_RELEASE_POLICY_READ_TOKEN: ${{ secrets.INSRC_RELEASE_POLICY_READ_TOKEN }}
           COMMIT: ${{ inputs.commit }}
           SEQUENCE: ${{ inputs.sequence }}
           INSRC_QUALIFICATION_KEY: ${{ secrets.INSRC_QUALIFICATION_KEY }}
-        run: node scripts/prepare-daemon-qualification.mjs "$RUNNER_TEMP/candidate" "$COMMIT" "$SEQUENCE" "$RUNNER_TEMP/compatibility.json"
+        run: node scripts/prepare-daemon-qualification.mjs "$RUNNER_TEMP/candidate" "$COMMIT" "$SEQUENCE" "$RUNNER_TEMP/compatibility.json" --check-live
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: qualification-${{ github.run_id }}-${{ github.run_attempt }}

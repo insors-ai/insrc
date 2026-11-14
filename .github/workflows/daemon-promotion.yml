@@ -66,6 +66,7 @@ jobs:
           DIGEST: ${{ inputs.archive_sha256 }}
           INSRC_QUALIFICATION_PUBLIC_KEY: ${{ vars.INSRC_QUALIFICATION_PUBLIC_KEY }}
           INSRC_PRODUCTION_KEY: ${{ secrets.INSRC_PRODUCTION_KEY }}
+          INSRC_RELEASE_POLICY_READ_TOKEN: ${{ secrets.INSRC_RELEASE_POLICY_READ_TOKEN }}
         run: |
           [[ "$(git -C release-control rev-parse HEAD)" == "$CONTROL" ]]
           record="$PWD/release-control/qualification"
@@ -82,11 +83,19 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          INSRC_RELEASE_POLICY_READ_TOKEN: ${{ secrets.INSRC_RELEASE_POLICY_READ_TOKEN }}
         run: |
           tag=$(jq -er .tag "$RUNNER_TEMP/promotion.json")
           commit=$(jq -er .commit "$RUNNER_TEMP/promotion.json")
           archive=$(jq -er .archive "$RUNNER_TEMP/promotion.json")
-          gh api "repos/$GH_REPO/git/refs" -f ref="refs/tags/$tag" -f sha="$commit" --method POST >/dev/null
-          gh release create "$tag" --target "$commit" --draft --prerelease --title "$tag" --notes "Opt-in macOS arm64 daemon pilot."
-          gh release upload "$tag" "$RUNNER_TEMP/candidate/$archive" "$RUNNER_TEMP/candidate/manifest.json" "$RUNNER_TEMP/candidate/manifest.production.sig"
-          gh release edit "$tag" --draft=false
+          trap 'rm -f "$RUNNER_TEMP/candidate/manifest.production.sig"' EXIT
+          publish() {
+            bash scripts/check-daemon-release-policy.sh daemon-pilot-production
+            "$@"
+          }
+          publish gh api "repos/$GH_REPO/git/refs" -f ref="refs/tags/$tag" -f sha="$commit" --method POST >/dev/null
+          publish gh release create "$tag" --verify-tag --draft --prerelease --title "$tag" --notes "Opt-in macOS arm64 daemon pilot."
+          for asset in "$archive" manifest.json manifest.production.sig; do
+            publish gh release upload "$tag" "$RUNNER_TEMP/candidate/$asset"
+          done
+          publish gh release edit "$tag" --draft=false

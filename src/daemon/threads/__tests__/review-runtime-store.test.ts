@@ -68,7 +68,7 @@ test('uncertain compact open save prevents spawn and retains the exact fence', a
  assert.throws(() => f.store.publishProgress(f.handle, { progress: f.runtime.progress }), /fenced/);
 });
 
-test('runtime initialization and missing or replaced proof never recreate an empty guard', async t => {
+test('runtime initialization and missing proof never recreate an empty guard', async t => {
  const f = await setup(t);
  await assert.rejects(f.store.initialize(f.runtime), /already exists/);
  await unlink(f.path);
@@ -80,6 +80,25 @@ test('runtime initialization and missing or replaced proof never recreate an emp
  g.store.publishProgress(g.handle, { progress: g.runtime.progress });
  await assert.rejects(g.store.flushProgress(g.handle), /ENOENT/);
  await assert.rejects(readFile(reviewRuntimePath(g.key)), /ENOENT/);
+});
+
+test('interrupted initialization retains inactive proof and external replacement fences the writer', async t => {
+ const f = await setup(t);
+ const key = { ...f.key, reviewId: 'interrupted-init' };
+ const store = new ReviewRuntimeStore(async (path, bytes) => {
+  await writeCheckpoint(path, bytes);
+  throw new CheckpointSaveError('uncertain', new Error('lost initialization acknowledgment'));
+ });
+ await assert.rejects(store.initialize({ ...f.runtime, key }), /uncertain/);
+ const retained = JSON.parse(await readFile(reviewRuntimePath(key), 'utf8'));
+ assert.equal(retained.state, 'initializing'); assert.deepEqual(retained.resourceGuard.openLeases, []);
+ await assert.rejects(new ReviewRuntimeStore().initialize({ ...f.runtime, key }), /already exists/);
+ await f.store.activate(f.handle);
+ const replaced = await f.read(); replaced.sequence++;
+ await writeFile(reviewRuntimePath(f.key), JSON.stringify(replaced));
+ f.store.publishProgress(f.handle, { progress: f.runtime.progress });
+ await assert.rejects(f.store.flushProgress(f.handle), /replaced outside owner/);
+ assert.throws(() => f.store.publishProgress(f.handle, { progress: f.runtime.progress }), /fenced/);
 });
 
 test('runtime closure requires exact host disposal and cannot be supplied by a progress update', async t => {

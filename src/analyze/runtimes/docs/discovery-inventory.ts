@@ -44,7 +44,6 @@ import { buildCompleteness } from '../../completeness.js';
 import type { PartlyReadItem, SkippedItem } from '../../completeness.js';
 import { DOC_INDEX_RULE } from '../../explore/completeness-facts.js';
 import { createItemMeasurer, summarisedFrom } from '../../explore/item-measure.js';
-import { SUMMARISER_BODY_CHARS } from '../../summariser/driver.js';
 import { countedSkip } from './family-summarise.js';
 
 const TEMPLATE_ID = 'docs.discovery.inventory';
@@ -130,7 +129,7 @@ export const docsDiscoveryInventoryRuntime: TemplateRuntime = {
 					hasSummary = true;
 					// The entry's title, status and counts come from the summary, and
 					// the summariser reads the first part of a long document.
-					const cut = await summarisedFrom(measurer, e, SUMMARISER_BODY_CHARS);
+					const cut = await summarisedFrom(measurer, e);
 					if (cut !== undefined) partlyRead.push({ ...cut, what: label });
 				} else {
 					summariesPending += 1;

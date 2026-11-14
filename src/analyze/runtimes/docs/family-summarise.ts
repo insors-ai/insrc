@@ -34,7 +34,6 @@ import { buildCompleteness } from '../../completeness.js';
 import type { PartlyReadItem, SkippedItem } from '../../completeness.js';
 import { DOC_INDEX_RULE } from '../../explore/completeness-facts.js';
 import { createItemMeasurer, summarisedFrom } from '../../explore/item-measure.js';
-import { SUMMARISER_BODY_CHARS } from '../../summariser/driver.js';
 import { inferDocFamily } from '../../summariser/family.js';
 
 import { graphRepoOf, inAreaOf, resolveTaskScope } from '../shared/task-scope.js';
@@ -176,7 +175,7 @@ export const docsFamilySummariseRuntime: TemplateRuntime = {
 			}
 			// The summariser reads the first part of a long document.
 			if (entity !== null) {
-				const cut = await summarisedFrom(measurer, entity, SUMMARISER_BODY_CHARS);
+				const cut = await summarisedFrom(measurer, entity);
 				if (cut !== undefined) partlyRead.push(cut);
 			}
 

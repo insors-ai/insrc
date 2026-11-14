@@ -42,15 +42,11 @@ import { assembleLiveProjectContext } from '../../context/live-project-context.j
 import type { LiveProjectContextReport } from '../../context/live-project-context.js';
 import { createItemMeasurer, summarisedFrom } from '../../explore/item-measure.js';
 import type { ItemMeasurer } from '../../explore/item-measure.js';
-import { SUMMARISER_BODY_CHARS } from '../../summariser/driver.js';
 import type { Completeness, PartlyReadItem, ReachedLimit, SkippedItem } from '../../completeness.js';
 import type { TemplateExecuteArgs } from '../../executor/types.js';
 import { graphCompleteness, reachedLimit } from '../../explore/completeness-facts.js';
 import { errorMessage } from '../../explore/lookup-failed.js';
 import { constraintsForTopic } from './adherence-topic-constraints.js';
-
-/** How many decisions and constraints the check asks the project context for. */
-const PROJECT_CONTEXT_LIMIT = 500;
 
 import { familyOfTemplate, graphRepoOf, resolveTaskScope } from './task-scope.js';
 
@@ -69,6 +65,8 @@ export interface AdherenceExcerpt {
 	readonly body:      string;
 	readonly lineStart: number;
 	readonly lineEnd:   number;
+	/** Set when the entity's file could not be confirmed to hold it: the excerpt is its stored body, and it is not covered. */
+	readonly notCovered?: PartlyReadItem | undefined;
 }
 
 export interface ConstraintInput {
@@ -271,14 +269,10 @@ async function runAdherenceWithContext(args: AdherenceRunArgs, admitted?: LLMPro
 	const limited: ReachedLimit[] = [...sourceLimits];
 	if (excerpts.length >= maxExcerpts) limited.push(reachedLimit('source excerpts', maxExcerpts, 'source', null));
 
-	// Each excerpt is the first part of an entity's stored body. Say so when the
-	// entity is longer than what the model is shown.
+	// Each excerpt is the entity's whole content, read from its file. An entity the
+	// file could not be confirmed to hold is shown from its stored body and reported.
 	for (const x of excerpts) {
-		if (x.entityId === undefined) continue;
-		const entity = await getEntity(db, x.entityId);
-		if (entity === null) continue;
-		const cut = await measurer.partlyRead(`${x.file}:${x.lineStart} ${x.name}`, entity, x.body.length);
-		if (cut !== undefined) partlyRead.push(cut);
+		if (x.notCovered !== undefined) partlyRead.push(x.notCovered);
 	}
 
 	const cfg = execution?.mode === 'session-memory' ? undefined : loadAnalyzeConfig();
@@ -531,17 +525,12 @@ async function hydrateFromConstraintIds(
 	// with their citations pre-computed. This avoids per-id lookups
 	// against getDocSummary + entity hydration.
 	const report: LiveProjectContextReport = {};
+	// No limit: a constraint of a requested document is never left out for a count.
 	const ctx = await assembleLiveProjectContext(db, repoPath, {
-		maxDecisions:   PROJECT_CONTEXT_LIMIT,
-		maxConstraints: PROJECT_CONTEXT_LIMIT,
+		maxDecisions:   Number.POSITIVE_INFINITY,
+		maxConstraints: Number.POSITIVE_INFINITY,
 		report,
 	});
-	// The assembler stops at its limit. A constraint of a requested document
-	// that lies past it would be missing here without a word.
-	for (const l of report.limitsReached ?? []) {
-		if (l.what !== 'constraints') continue;
-		facts.limited.push(reachedLimit('project constraints', l.limit, 'source', l.found));
-	}
 	const idSet = new Set(ids);
 	const out: ConstraintInput[] = [];
 	// Fetch entity metadata (for `file` + `heading`) on demand, cached
@@ -557,7 +546,7 @@ async function hydrateFromConstraintIds(
 			// The constraints come from the document's SUMMARY, and a summary of a
 			// long document rests on its first part.
 			if (entity !== null) {
-				const cut = await summarisedFrom(facts.measurer, entity, SUMMARISER_BODY_CHARS);
+				const cut = await summarisedFrom(facts.measurer, entity);
 				if (cut !== undefined) facts.partlyRead.push(cut);
 			}
 		}

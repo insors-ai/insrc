@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url';
 import { artifactParser } from '../../indexer/parser/artifact.js';
 import type { Entity } from '../../shared/types.js';
 import { INDEXER_CUT_MARKER, indexerFileHash, measureItem, partlyReadEntry } from '../item-length.js';
-import { SUMMARISER_BODY_CHARS, _buildMessagesForTest } from '../summariser/driver.js';
+import { _buildMessagesForTest } from '../summariser/driver.js';
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 
@@ -178,17 +178,14 @@ test('indexerFileHash is the hash the indexer records on a file entity', () => {
 	assert.equal(indexerFileHash('abc'), 'ba7816bf8f01cfea');
 });
 
-test('the summariser reads its cut from the exported constant and no file under src/indexer or src/db changes', () => {
-	assert.equal(SUMMARISER_BODY_CHARS, 8_192);
-
-	// Behaviour unchanged: the model is given exactly the first 8,192 characters of the stored body.
-	const body = 'a'.repeat(8_192) + 'ZZZ-past-the-cut' + 'b'.repeat(10_000);
-	const entity = { kind: 'document', file: '/r/docs/a.md', body } as unknown as Entity;
-	const messages = _buildMessagesForTest({ promptContent: 'SYSTEM', entity, family: 'docs', identifierHints: [] });
+test('the summariser is given the whole body it is passed and no file under src/indexer or src/db changes', () => {
+	// The model is given exactly the body the summariser read, with no cut of its own.
+	const body = 'a'.repeat(8_192) + 'ZZZ-past-the-old-cut' + 'b'.repeat(10_000);
+	const entity = { kind: 'document', file: '/r/docs/a.md', body: '' } as unknown as Entity;
+	const messages = _buildMessagesForTest({ promptContent: 'SYSTEM', entity, body, family: 'docs', identifierHints: [] });
 	const user = messages.find(m => m.role === 'user')?.content;
 	assert.equal(typeof user, 'string');
-	assert.ok((user as string).includes('a'.repeat(8_192) + '\n```'), 'the first 8,192 characters, then the closing fence');
-	assert.equal((user as string).includes('ZZZ-past-the-cut'), false);
+	assert.ok((user as string).includes(body + '\n```'), 'the whole body, then the closing fence');
 
 	// Measuring stores nothing: the module can only read a file. It imports no
 	// store and no indexer code, and nothing that writes.

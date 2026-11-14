@@ -43,17 +43,16 @@ export interface ItemMeasurer {
 
 /**
  * The `partlyRead` entry for a document whose SUMMARY is being used. The
- * summariser gives the model the first `summariserCut` characters of the
- * stored body, so a longer document was summarised from that much of it.
- * Undefined when the summary rests on the whole document.
+ * summariser reads the document whole from its file, so a summary rests on the
+ * whole document; but a document whose file cannot be confirmed to hold it was
+ * summarised from its stored body, and is reported as not covered, with the
+ * reason. Undefined when the summary rests on the whole document.
  */
-export function summarisedFrom(
-	measurer:      ItemMeasurer,
-	entity:        StoredItem,
-	summariserCut: number,
+export async function summarisedFrom(
+	measurer: ItemMeasurer,
+	entity:   StoredItem,
 ): Promise<PartlyReadItem | undefined> {
-	const stored = entity.body.endsWith(INDEXER_CUT_MARKER) ? entity.body.length - INDEXER_CUT_MARKER.length : entity.body.length;
-	return measurer.partlyRead(entity.file, entity, Math.min(summariserCut, stored));
+	return (await readItemWhole(measurer, entity.file, entity)).notCovered;
 }
 
 /**

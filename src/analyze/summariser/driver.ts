@@ -29,6 +29,7 @@ import { fileURLToPath } from 'node:url';
 
 import { loadAnalyzeConfig } from '../../config/analyze.js';
 import { buildSummariserProvider } from '../context/shaper-provider.js';
+import { createItemMeasurer, readItemWhole } from '../explore/item-measure.js';
 import type { DbClient } from '../../db/client.js';
 import {
 	getDocSummary,
@@ -61,7 +62,6 @@ const SUMMARISER_PROMPT_REL = 'prompts/analyze/doc-summariser.system.md';
  * summary therefore rests on at most this many characters of its document;
  * the plan tasks that read summaries report a longer document as partly read.
  */
-export const SUMMARISER_BODY_CHARS = 8_192;
 
 // ---------------------------------------------------------------------------
 // Typed errors
@@ -191,14 +191,18 @@ export async function summariseDoc(args: SummariseDocArgs): Promise<SummariseDoc
 		return { ok: false, skipped: 'not-a-doc' };
 	}
 
-	const body = entity.body ?? '';
-	if (body.trim().length === 0) {
+	const stored = entity.body ?? '';
+	if (stored.trim().length === 0) {
 		return { ok: false, skipped: 'body-empty' };
 	}
+	// The model is shown the whole document, read from its file; a document the file cannot confirm is
+	// summarised from its stored body. The hash stays that of the stored body: it says which stored row
+	// the summary belongs to, and the write checks it against that row.
+	const { body } = await readItemWhole(createItemMeasurer(db), entity.file, entity);
 
 	const cfg = loadAnalyzeConfig();
 	const modelId = cfg.summariserModel;
-	const contentHash = sha256(body);
+	const contentHash = sha256(stored);
 
 	// Skip-if-unchanged: same body + same model = same summary.
 	const existing = await getDocSummary(db, entity.id);
@@ -217,6 +221,7 @@ export async function summariseDoc(args: SummariseDocArgs): Promise<SummariseDoc
 	const messages = buildMessages({
 		promptContent,
 		entity,
+		body,
 		family,
 		identifierHints: args.identifierHints ?? [],
 	});
@@ -309,10 +314,12 @@ export async function summariseDoc(args: SummariseDocArgs): Promise<SummariseDoc
 function buildMessages(args: {
 	promptContent:    string;
 	entity:           Entity;
+	/** The document's whole content. */
+	body:             string;
 	family:           DocFamily;
 	identifierHints:  readonly string[];
 }): LLMMessage[] {
-	const { promptContent, entity, family, identifierHints } = args;
+	const { promptContent, entity, body, family, identifierHints } = args;
 
 	const hintsBlock = identifierHints.length > 0
 		? '\n\nWorkspace identifier hints (for `relatedEntities` grounding):\n' +
@@ -326,7 +333,7 @@ function buildMessages(args: {
 		'\n' +
 		'Doc body:\n' +
 		'```\n' +
-		entity.body?.slice(0, SUMMARISER_BODY_CHARS) + '\n' +
+		body + '\n' +
 		'```\n' +
 		hintsBlock +
 		'\n\n' +

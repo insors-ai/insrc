@@ -19,7 +19,6 @@ export {
 	summariseDoc,
 	DocSummariserPromptMissingError,
 	DOC_SUMMARISER_PROMPT_PATH,
-	SUMMARISER_BODY_CHARS,
 } from './driver.js';
 export type {
 	SummariseDocArgs,

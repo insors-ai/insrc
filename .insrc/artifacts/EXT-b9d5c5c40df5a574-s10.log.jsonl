@@ -1,0 +1,1 @@
+363	{"artifactId":"EXT-b9d5c5c40df5a574-s10","entry":{"id":"34e7a337d380455b80927d90a0a2a017","actor":{"id":"insrc:approval","kind":"system","properties":{}},"timestamp":"2026-11-14T09:01:19.480Z","operation":"approve","revision":{"number":1,"contentHash":"a5a972eb66fb507309803c865fcc8656725aae0f7e8ba329e07af781d5084cac"},"status":{"from":"draft","to":"approved"}}}

@@ -36,11 +36,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 2,
-        "contentHash": "727dbdb3d9ad6129b653eb99b3663a816af37f9859c5ae57c8436abcab2724c7",
-        "at": "2026-11-14T07:53:33.162Z",
+        "number": 4,
+        "contentHash": "5412282c9454b1f8cef6ae45976cb3a952bcba0d1b0856074ea074d91cafedd0",
+        "at": "2026-11-14T09:02:33.565Z",
         "by": {
           "id": "agent:controller",
           "kind": "agent",
@@ -82,7 +82,7 @@
         }
       }
     },
-    "revision": 2,
+    "revision": 4,
     "tracker": {
       "adapter": "github",
       "epicStatus": "open",
@@ -826,6 +826,52 @@
           "s3",
           "s7"
         ]
+      },
+      {
+        "id": "s10",
+        "title": "A running analysis can be cancelled, and the tool loop has no turn limit",
+        "userValue": "As someone running or relying on an analysis, I can stop one that is running and get what it found so far, and no analysis is cut short by a fixed number of turns, because a running analysis can always be stopped by its caller instead.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "an analysis or lookup that is running, on either path a request can take through the analyzer",
+            "when": "its caller cancels it",
+            "then": "it stops at its next safe point, makes no further model or tool call for that request, and is reported as cancelled, neither failed nor complete, with the findings gathered so far kept",
+            "operationalizes": []
+          },
+          {
+            "id": "ac2",
+            "given": "any way a request can reach a tool loop (the three context requests, the plan request and the classify request)",
+            "when": "its caller cancels it",
+            "then": "the loop for that request stops, and no other running request is affected",
+            "operationalizes": []
+          },
+          {
+            "id": "ac3",
+            "given": "a cancel request that names a run that does not exist or has already finished",
+            "when": "it is received",
+            "then": "it is refused with a reason that says so and changes nothing",
+            "operationalizes": []
+          },
+          {
+            "id": "ac4",
+            "given": "cancellation works on every path that reaches a tool loop",
+            "when": "the tool loop's turn limit is removed",
+            "then": "a loop ends only by finishing, by failing for a reason it reports, or by being cancelled, and reaching a number of turns is no longer a way for it to end or to fail",
+            "operationalizes": []
+          },
+          {
+            "id": "ac5",
+            "given": "a configuration that still holds the retired turn-limit setting",
+            "when": "it is loaded",
+            "then": "the setting is ignored and reported as retired in the way other retired settings are, the load does not fail, and no prompt, documentation page or client declaration still states a turn limit",
+            "operationalizes": []
+          }
+        ],
+        "dependsOn": [
+          "s4"
+        ],
+        "sizeEstimate": "L"
       }
     ],
     "openQuestions": [

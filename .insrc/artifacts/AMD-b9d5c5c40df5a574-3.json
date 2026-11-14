@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "store-2e53cefd-3ef0-42ad-8bef-bd7ea2d93ed8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T08:54:34.979Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "rejected",
+      "revision": {
+        "number": 1,
+        "contentHash": "8e38b73ece730cd90a51dc75aa4021009635b004e29a5fa7b17706cfdb130a64",
+        "at": "2026-11-14T08:54:34.979Z",
+        "by": {
+          "id": "insrc:define",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "id": "AMD-b9d5c5c40df5a574-3",
+    "epicSlug": "make-insrc-analysis-complete-used-right",
+    "hldBaseRunId": "wf-1791349476498-tih4l4",
+    "amendment": {
+      "type": "storyBoundary.addStory",
+      "storyId": "s10",
+      "internal": "Private implementation of s10: A running analysis can be cancelled, and the tool loop has no turn limit"
+    },
+    "rationale": "Extends Epic `make-insrc-analysis-complete-used-right` (EPIC-b9d5c5c40df5a574): split out of Story s4, building on DEF/HLD docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4 and the lookup code in src/analyze/explore (freeform-probe.ts, executor.ts).",
+    "proposedBy": {
+      "workflow": "define",
+      "runId": "wf-1794646437398-34ryhc",
+      "storyId": "s10",
+      "stepId": "scope.assess"
+    },
+    "proposedAt": "2026-11-14T08:54:34.976Z"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/HLD.md",
+      "quotedText": "Building cancellation"
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/DEF.md"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/analyze/explore/freeform-probe.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/analyze/explore/executor.ts"
+    }
+  ]
+}

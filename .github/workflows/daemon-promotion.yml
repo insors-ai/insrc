@@ -23,20 +23,23 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - name: Check selected release control revision and protected publish environment
         env:
           GH_TOKEN: ${{ secrets.INSRC_RELEASE_POLICY_READ_TOKEN }}
+          INSRC_RELEASE_POLICY_READ_TOKEN: ${{ secrets.INSRC_RELEASE_POLICY_READ_TOKEN }}
           GH_REPO: ${{ github.repository }}
           CONTROL: ${{ inputs.control_commit }}
           DIGEST: ${{ inputs.archive_sha256 }}
         run: |
-          [[ "$CONTROL" =~ ^[0-9a-f]{40}$ && "$DIGEST" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$CONTROL" =~ ^[0-9a-f]{40}$ && "$DIGEST" =~ ^[0-9a-f]{64}$ ]] || exit 1
+          bash scripts/check-daemon-release-policy.sh daemon-pilot-production
           gh api "repos/$GH_REPO/branches/daemon-release-control/protection" --jq \
             '.required_pull_request_reviews | .require_code_owner_reviews and .dismiss_stale_reviews and (.required_approving_review_count >= 1)' | grep -qx true
           gh api "repos/$GH_REPO/compare/$CONTROL...daemon-release-control" --jq \
             '.status == "ahead" or .status == "identical"' | grep -qx true
-          gh api "repos/$GH_REPO/environments/daemon-pilot-production" --jq \
-            '.protection_rules | any(.type == "required_reviewers" and .prevent_self_review == true and (.reviewers | length > 0))' | grep -qx true
           printf 'Approved control commit: %s\nArchive SHA-256: %s\n' "$CONTROL" "$DIGEST" >> "$GITHUB_STEP_SUMMARY"
   publish:
     needs: prepare
@@ -68,7 +71,7 @@ jobs:
           INSRC_PRODUCTION_KEY: ${{ secrets.INSRC_PRODUCTION_KEY }}
           INSRC_RELEASE_POLICY_READ_TOKEN: ${{ secrets.INSRC_RELEASE_POLICY_READ_TOKEN }}
         run: |
-          [[ "$(git -C release-control rev-parse HEAD)" == "$CONTROL" ]]
+          [[ "$(git -C release-control rev-parse HEAD)" == "$CONTROL" ]] || exit 1
           record="$PWD/release-control/qualification"
           identity=$(node --input-type=module -e '
             import { readBoundedRegular } from "./scripts/verify-daemon-bundle.mjs";

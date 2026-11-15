@@ -11,6 +11,8 @@ import { withoutReviewResourceGuard } from '../resource-audit.js';
 import { decodeStoredDesignCheckpoint } from './admission-checkpoint.js';
 import { ReviewRuntimeReferenceSchema, PreparedContextReferenceSchema } from '../../../shared/review-preparation.js';
 import { PublicationProofSchema, validatePublicationProof } from '../publication-proof.js';
+import { HistoricalPreparationMigrationSchema } from '../preparation-checkpoint-contract.js';
+import type { DesignPreparationCheckpoint } from '../preparation-checkpoint-contract.js';
 export { DesignPublicationSchema } from './contracts.js';
 export type { DesignPublication } from './contracts.js';
 
@@ -40,7 +42,8 @@ const AdmissionPermanentDesignReviewSchema = Type.Object({
 }, { additionalProperties: false });
 const PreparationPermanentDesignReviewSchema = Type.Object({
  ...AdmissionPermanentDesignReviewSchema.properties, schemaVersion: Type.Literal(3),
- preparation: Type.Object({ runtime: ReviewRuntimeReferenceSchema, context: PreparedContextReferenceSchema, proof: PublicationProofSchema }, { additionalProperties: false }),
+ preparation: Type.Object({ runtime: ReviewRuntimeReferenceSchema, context: PreparedContextReferenceSchema, proof: PublicationProofSchema,
+  migration: Type.Optional(HistoricalPreparationMigrationSchema) }, { additionalProperties: false }),
 }, { additionalProperties: false });
 export const PermanentDesignReviewSchema = Type.Union([LegacyPermanentDesignReviewSchema, AdmissionPermanentDesignReviewSchema, PreparationPermanentDesignReviewSchema]);
 export type PermanentDesignReview = Static<typeof PermanentDesignReviewSchema>;
@@ -48,6 +51,12 @@ export function storedDesignCheckpointFromRecord(record: PermanentDesignReview):
  const common = { reviewId: record.reviewId, project: record.project, artifactId: record.artifactId, subject: record.subject };
  if (record.schemaVersion === 1) return { ...common, schemaVersion: 1, submitted: record.submitted, attempts: record.attempts };
  return { ...common, schemaVersion: 2, ...(record.submitted ? { submitted: record.submitted } : {}), attempts: [...record.attempts, ...record.admissionFailures].sort((a,b)=>a.number-b.number) };
+}
+/** Reconstruct every field bound by the permanent preparation proof. This is
+ * also used after temporary checkpoints have been removed. */
+export function preparedDesignCheckpointFromRecord(record: Extract<PermanentDesignReview, { schemaVersion: 3 }>): DesignPreparationCheckpoint {
+ return { ...storedDesignCheckpointFromRecord(record), schemaVersion: 3, runtime: record.preparation.runtime, context: record.preparation.context,
+  ...(record.preparation.migration ? { migration: record.preparation.migration } : {}) } as DesignPreparationCheckpoint;
 }
 
 /** Canonical keys are handled by the existing artifact hash. Only observer/owner state is excluded.
@@ -111,7 +120,7 @@ export function validatePermanentDesignReview(input: unknown, expected: { projec
  }
  requireDesign(record.preservationDigest === designPreservationDigest(checkpoint), 'invalid_review_history', 'Permanent attempt preservation digest does not match');
  if (record.schemaVersion === 3) {
-  validatePublicationProof(record.preparation.proof, { ...checkpoint, schemaVersion: 3, runtime: record.preparation.runtime, context: record.preparation.context },
+  validatePublicationProof(record.preparation.proof, preparedDesignCheckpointFromRecord(record),
    { project: record.project, family: 'design', reviewId: record.reviewId });
  }
  return record;

@@ -24,6 +24,7 @@ import { nextLifecycle } from '../../artifact-core/lifecycle.js';
 import { buildArtifactId } from '../../storage.js';
 import type { ReviewRuntime } from '../../../shared/review-preparation.js';
 import type { ReviewCleanupTarget } from '../cleanup-owner.js';
+import { upgradePreparationHistory } from '../preparation-migration.js';
 
 export async function runtime(source: ReadyContextReceipt, history: PreparationHistory) {
  const store = new ReviewRuntimeStore(), state: ReviewRuntime = { schemaVersion: 1, key: source.key, attempt: source.attempt,
@@ -40,15 +41,23 @@ export async function runtime(source: ReadyContextReceipt, history: PreparationH
 }
 
 type Hooks = { after(fn: () => void | Promise<void>): void };
-export async function publishedCleanupFixture(family: 'code' | 'design', t: Hooks) {
+function migrate(history: PreparationHistory, source: ReadyContextReceipt): PreparationHistory {
+ const { runtime: ref, context: _context, ...old } = history;
+ const historical = { ...old, schemaVersion: 2, attempts: old.attempts.map(a => ({ ...a, resourceGuard: { daemonInstance: 'historical-epoch', openLeases: [] } })) };
+ return upgradePreparationHistory(historical, source.key, { schemaVersion: 1, key: source.key, attempt: source.attempt,
+  runtimeId: ref.runtimeId, daemonEpoch: 'epoch', workerIncarnation: 'worker', sequence: 0, checkpointBinding: { inputDigest: ref.inputDigest, semanticSequence: 0 },
+  state: 'initializing', resourceGuard: { daemonInstance: 'epoch', openLeases: [] }, progress: { completedUnits: 0, totalUnits: null, observedAt: new Date().toISOString(), lastMeaningfulActivityAt: null } });
+}
+export async function publishedCleanupFixture(family: 'code' | 'design', t: Hooks, options: { migrated?: boolean } = {}) {
  const actor = { id: 'person:test', kind: 'person' as const, properties: {} };
  if (family === 'code') {
   const f = await fixture(true), key = { project: f.repo, family, reviewId: 'publication' };
   const limits = reviewPreparationLimits(join(f.repo, 'missing.json')), capacity = new ReviewPreparationCapacity(limits.cacheMaxBytes);
   const cold = await CodePreparation.create(key, f.deps.sources, limits, capacity);
   const admitted = await cold.prepare(f.repo, key.reviewId, 1, undefined, 'daemon', cold.sources, { operation: 'resume', epicHash: hash }), source = await cold.seal(admitted);
-  const done = { ...f.checkpoint(), schemaVersion: 3 as const, runtime: { runtimeId: 'code-runtime', inputDigest: source.inputDigest } };
-  const initial = structuredClone(done); initial.attempts[0]!['review-response'].tasks = []; delete initial.attempts[0]!.header.completedAt;
+  const done: import('../preparation-checkpoint.js').CodePreparationCheckpoint = { ...f.checkpoint(), schemaVersion: 3 as const, runtime: { runtimeId: 'code-runtime', inputDigest: source.inputDigest } };
+  let initial = structuredClone(done); const initialAttempt = initial.attempts[0]!; if (!('review-response' in initialAttempt)) throw Error('Qualified fixture required'); initialAttempt['review-response'].tasks = []; delete initialAttempt.header.completedAt;
+  if (options.migrated) { initial = migrate(initial, source) as typeof initial; done.migration = initial.migration; }
   const host = await runtime(source, initial); t.after(() => { host.store.release(host.handle); f.cleanup(); });
   const validate = codeHistoryFeedback(new Map([[1, admitted.prepared]]), cold.sources, async () => ({ publication: { artifactId: `CR-${hash}-s1`, preservationDigest: codeReviewPreservationDigest(await readTaskReviewHistory(f.repo, hash, 's1')) } }));
   const history = await HistoryBindingSession.open(source, initial, { authorize: async () => source, validate, limits, capacity, invalidateSource: async e => { throw e; } });
@@ -64,8 +73,9 @@ export async function publishedCleanupFixture(family: 'code' | 'design', t: Hook
  const f = impactFixture(t), key = { project: f.repo, family, reviewId: 'review-1' };
  const limits = reviewPreparationLimits(join(f.repo, 'missing.json')), capacity = new ReviewPreparationCapacity(limits.cacheMaxBytes);
  const preparation = new DesignPreparation(key, 1, limits, capacity, f.checkpoint.submitted); preparation.prepare(f.repo, f.json); const source = await preparation.seal();
- const done = { ...f.checkpoint, schemaVersion: 3 as const, attempts: [f.baseline], runtime: { runtimeId: 'design-runtime', inputDigest: source.inputDigest } };
- const initial = structuredClone(done); initial.attempts[0]!.status = 'running'; initial.attempts[0]!.completedChunks = []; delete initial.attempts[0]!.report;
+ const done: import('../preparation-checkpoint.js').DesignPreparationCheckpoint = { ...f.checkpoint, schemaVersion: 3 as const, attempts: [f.baseline], runtime: { runtimeId: 'design-runtime', inputDigest: source.inputDigest } };
+ let initial = structuredClone(done); const initialAttempt = initial.attempts[0]!; if (!('baseline' in initialAttempt)) throw Error('Qualified fixture required'); initialAttempt.status = 'running'; initialAttempt.completedChunks = []; delete initialAttempt.report;
+ if (options.migrated) { initial = migrate(initial, source) as typeof initial; done.migration = initial.migration; }
  const host = await runtime(source, initial); t.after(() => host.store.release(host.handle));
  const lifecycle = createRepoLifecycle(f.repo); await recordDesignAdmission({ ...f.checkpoint, attempts: [f.baseline] });
  const validate = designHistoryFeedback(async () => {
@@ -75,7 +85,7 @@ export async function publishedCleanupFixture(family: 'code' | 'design', t: Hook
  const history = await HistoryBindingSession.open(source, initial, { authorize: async () => source, validate, limits, capacity, invalidateSource: async e => { throw e; } });
  await host.accept(history.latest()); await host.accept(await history.accept(done));
  const current = JSON.parse(await readFile(reviewWorkerCheckpoint(key), 'utf8')) as typeof done;
- current.attempts[0]!.publication = await publishDesignReview(current, { preparation: { authorize: checkpoint => host.authorize(checkpoint, history.latest()) } });
+ const currentAttempt = current.attempts[0]!; if (!('baseline' in currentAttempt)) throw Error('Qualified fixture required'); currentAttempt.publication = await publishDesignReview(current, { preparation: { authorize: checkpoint => host.authorize(checkpoint, history.latest()) } });
  await host.accept(await history.accept(current));
  await lifecycle.store.updateAndLog(f.id, actor, head => ({ next: { ...head, lifecycle: nextLifecycle(head, 'approve', actor, new Date().toISOString()) }, options: { operation: 'approve' } }));
  const target: ReviewCleanupTarget = { project: f.repo, family, artifactId: f.id };

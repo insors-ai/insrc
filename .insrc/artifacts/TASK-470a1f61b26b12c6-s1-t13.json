@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d96302ff-9bc8-4479-8ac2-a1a53fc461f1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T12:17:34.290Z",
+    "epicCreatedAt": "2026-11-14T08:55:28.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "470a1f61b26b12c6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Qualify failure, concurrency and scope equivalence",
+      "parent": {
+        "entityId": "STORY-470a1f61b26b12c6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-470a1f61b26b12c6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-470a1f61b26b12c6-s1-t12",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 3,
+        "contentHash": "2b767b1efca9b201837f53a21e39a9bfd69cbcfbc4e69a55b3b3c434507ddcd9",
+        "at": "2026-11-14T14:53:03.912Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T12:17:34.292Z"
+      }
+    },
+    "revision": 3
+  },
+  "body": {
+    "title": "Qualify failure, concurrency and scope equivalence",
+    "summary": "Run both-family production fixtures covering all route matrices, source equivalence, tampering, write windows, native disposal, cancellation and cleanup/migration crashes.",
+    "size": "L",
+    "order": 13,
+    "acceptanceChecks": [
+      "Two independent review sessions remain isolated; full-history writes/native command=0; all mandatory source/test coverage preserved; no user socket/DB or hosted quota used.",
+      "Run and record this task's focused validation before advancing; cross-cutting qualification does not replace these checks.",
+      "Through actual registered production review routes, prove native resource and progress writes perform zero full-history mutations for both code and design reviews.",
+      "Repeat all t7/t8 route, alias, merge/rename/delete witness, exact-selected-span and latest-subject invariants through actual production defaults for both families."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Full disposable production two-session matrix through public routes and both families, all crash/tamper/native-loss cases, complete scope equivalence and bounded runtime writes."
+      }
+    ],
+    "planTaskId": "t13"
+  },
+  "citations": []
+}

@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4cc2de4e-c1c4-483b-9650-817d0d613ea9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T12:17:34.258Z",
+    "epicCreatedAt": "2026-11-14T08:55:28.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "470a1f61b26b12c6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement reserved disk-backed source sessions",
+      "parent": {
+        "entityId": "STORY-470a1f61b26b12c6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-470a1f61b26b12c6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-470a1f61b26b12c6-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "98b429ecb7ac0d4f94ba823bcbcd579ef11f354a1a5ccef90c1838793204b9cf",
+        "at": "2026-11-14T12:17:34.259Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T12:17:34.260Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement reserved disk-backed source sessions",
+    "summary": "Extend RegistryReviewSources with exact query coalescing, existing cat-file batching, verified staging/index and per-project capacity reservations.",
+    "size": "L",
+    "order": 4,
+    "acceptanceChecks": [
+      "Zero duplicate physical queries across historical/current consumers, including above-memory workload; logical per-packet budgets unchanged; pinned disk exhaustion fails before batch.",
+      "Run and record this task's focused validation before advancing; cross-cutting qualification does not replace these checks."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Proposed source-session tests: batching/framing/hash equivalence, per-packet budgets, above-memory disk retention, aggregate reservation exhaustion and zero duplicate queries."
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

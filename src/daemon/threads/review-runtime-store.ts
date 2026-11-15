@@ -23,6 +23,9 @@ class RuntimeOperationRefused extends Error {}
 interface Owner { handle: ReviewRuntimeHandle; current: ReviewRuntime; stamp: string; fenced: boolean; }
 type Progress = Pick<ReviewRuntime, 'progress' | 'preparation'>;
 const lanes = new Map<string, Promise<void>>();
+// A second store instance must not adopt an initializing file still owned by
+// this daemon. Disk existence is proof to reconcile, not an ownership token.
+const ownedPaths = new Map<string, ReviewRuntimeHandle>();
 function serial<T>(path: string, work: () => Promise<T>): Promise<T> {
  const result = (lanes.get(path) ?? Promise.resolve()).catch(() => {}).then(work);
  const tail = result.then(() => {}, () => {}); lanes.set(path, tail);
@@ -70,12 +73,33 @@ export class ReviewRuntimeStore {
   if (value.state !== 'initializing' || value.sequence !== 0) throw new Error('Runtime initialization required');
   const path = reviewRuntimePath(value.key);
   return serial(path, async () => {
+   if (ownedPaths.has(path)) throw new Error('Runtime already exists with a live owner; explicit recovery required');
    await safeParents(value.key);
    try { await lstat(path); throw new Error('Runtime already exists; explicit recovery required'); }
    catch (e) { if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e; }
    const bytes = JSON.stringify(value) + '\n'; await this.write(path, bytes);
    const handle = Object.freeze({ key: Object.freeze({ ...value.key }), runtimeId: value.runtimeId });
-   this.owners.set(handle, { handle, current: value, stamp: hash(bytes), fenced: false }); return handle;
+   this.owners.set(handle, { handle, current: value, stamp: hash(bytes), fenced: false }); ownedPaths.set(path, handle); return handle;
+  });
+ }
+ /** Explicit recovery of the initialize/bind/activate crash window only.
+  * Main's exact inactive-review fence must cover this entire call. No active,
+  * interrupted or terminal runtime can enter through this narrow transition. */
+ async recoverInitialization(input: ReviewRuntime, assertInactive: () => Promise<void>): Promise<ReviewRuntimeHandle> {
+  const value = structuredClone(decodeReviewRuntime(input, input.key)), path = reviewRuntimePath(value.key);
+  if (value.state !== 'initializing' || value.sequence !== 0) throw new Error('Initialization recovery requires a fresh inactive owner');
+  return serial(path, async () => {
+   if (ownedPaths.has(path)) throw new Error('Runtime still has a live owner');
+   await safeParents(value.key); await assertInactive();
+   const raw = await bounded(path, REVIEW_RUNTIME_MAX_BYTES), previous = decodeReviewRuntime(JSON.parse(raw), value.key);
+   if (previous.state !== 'initializing' || previous.sequence !== 0 || previous.runtimeId !== value.runtimeId
+    || previous.attempt !== value.attempt || !same(previous.checkpointBinding, value.checkpointBinding)
+    || previous.cancellation || value.cancellation) throw new Error('Runtime is outside the initialization recovery window');
+   await assertInactive();
+   if (await bounded(path, REVIEW_RUNTIME_MAX_BYTES) !== raw) throw new Error('Initialization proof changed during recovery');
+   const bytes = JSON.stringify(value) + '\n'; await this.write(path, bytes);
+   const handle = Object.freeze({ key: Object.freeze({ ...value.key }), runtimeId: value.runtimeId });
+   this.owners.set(handle, { handle, current: value, stamp: hash(bytes), fenced: false }); ownedPaths.set(path, handle); return handle;
   });
  }
  private owner(handle: ReviewRuntimeHandle): Owner {
@@ -212,5 +236,6 @@ export class ReviewRuntimeStore {
   const owner = this.owners.get(handle); if (!owner) return;
   clearTimeout(this.timers.get(handle)); this.timers.delete(handle); this.pending.delete(handle);
   owner.fenced = true; this.owners.delete(handle);
+  const path = reviewRuntimePath(handle.key); if (ownedPaths.get(path) === handle) ownedPaths.delete(path);
  }
 }

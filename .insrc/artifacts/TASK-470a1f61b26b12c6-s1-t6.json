@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-02f39a5b-01e7-49eb-9c23-9dbe12136f05",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T12:17:34.263Z",
+    "epicCreatedAt": "2026-11-14T08:55:28.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "470a1f61b26b12c6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement successor history validation and result commits",
+      "parent": {
+        "entityId": "STORY-470a1f61b26b12c6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-470a1f61b26b12c6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-470a1f61b26b12c6-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "44ccbf1e288b2dc9ccdeb657af0bb4f4c68ff9c2904f3ee8e54ea47bc2bda704",
+        "at": "2026-11-14T12:17:34.263Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T12:17:34.265Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement successor history validation and result commits",
+    "summary": "Separate stable source generation from immutable validated feedback/history bindings; validate deltas, attribution/origins and newly referenced evidence.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "Normal feedback and publication bookkeeping never rebuild unchanged sources; changed earlier history invalidates descendants; committed feedback reconciles runtime without model rerun.",
+      "Run and record this task's focused validation before advancing; cross-cutting qualification does not replace these checks."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Proposed history binding tests: successive task/chunk feedback and new evidence, old-history tamper, checkpoint/runtime crash reconciliation and no source/model rerun."
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

@@ -25,6 +25,7 @@ import { designTechnicalFailure, recordDesignFailure, finishDirectedExecution } 
 import { DesignSubjectMonitor } from './subject-monitor.js';
 import type { DesignSubjectMonitorDeps } from './subject-monitor.js';
 import { createDesignActivityMonitor } from './activity-monitor.js';
+import { preparationPersistence } from '../preparation-persistence.js';
 
 import { assertDesignDispatchCapacity } from './capacity.js';
 import type { DesignPublication } from './contracts.js';
@@ -313,12 +314,27 @@ export class DesignReviewCoordinator {
   });job.serial=work;return work;
  }
  private stopProgress(job:DesignJob):void{if(job.progressTimer)clearTimeout(job.progressTimer);job.progressTimer=undefined;}
+ private observeProgress(job:DesignJob,sequence?:number):Promise<void>{
+  const owner=preparationPersistence(designCheckpointPath(job.checkpoint.project,job.checkpoint.reviewId));
+  if(!owner)return this.commit(job,a=>{if(sequence!==undefined&&a.current)a.current.sequence=sequence;});
+  const work=job.serial.catch(()=>{}).then(async()=>{
+   if(job.storageError)throw job.storageError;
+   if(job.abort.signal.aborted)throw job.abort.signal.reason;
+   this.checkControllerSubject(job);
+   const attempt=currentDesignAttempt(job.checkpoint),current=attempt.current?{...attempt.current}:null;
+   if(sequence!==undefined){requireDesign(current,'stale_execution','No current progress execution');current.sequence=sequence;}
+   job.tracker.coverage(attempt);const progress=job.tracker.snapshot();
+   await owner.observe({family:'design',attempt:attempt.number,progress,current});
+   attempt.progress=progress;if(current)attempt.current=current;
+   this.checkControllerSubject(job);
+  });job.serial=work;return work;
+ }
  private scheduleProgress(job:DesignJob):void{
   if(job.closed||job.progressTimer||job.progressWritePending)return;
   job.progressTimer=setTimeout(()=>{
    job.progressTimer=undefined;if(job.closed)return;
    job.progressWritePending=true;
-   void this.commit(job,()=>{}).catch(error=>{job.storageError=error;job.abort.abort(error);}).finally(()=>{job.progressWritePending=false;});
+   void this.observeProgress(job).catch(error=>{job.storageError=error;job.abort.abort(error);}).finally(()=>{job.progressWritePending=false;});
   },250);job.progressTimer.unref();
  }
  private async unit(job:DesignJob,provider:LLMProvider|undefined,chunk?:DesignChunk):Promise<unknown>{
@@ -421,7 +437,7 @@ export class DesignReviewCoordinator {
   if(request.phase==='activity'){
    requireDesign(unit.monitor.observe(request.event),'invalid_activity','Invalid or duplicate activity event');
    unit.sequence=request.sequence;job.tracker.activity(request.event);
-   const completion=this.commit(job,a=>{if(a.current)a.current.sequence=request.sequence;});
+   const completion=this.observeProgress(job,request.sequence);
    this.replays.set(`${key}\0${request.executionId}\0${request.sequence}`,{owner,signature,completion});
    try{await completion;}catch(error){job.storageError=error;job.abort.abort(error);unit.reject(error);throw error;}return{accepted:true};
   }

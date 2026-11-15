@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-64fb12e0-a30a-414f-be19-ed0ed5df8be0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T12:17:34.283Z",
+    "epicCreatedAt": "2026-11-14T08:55:28.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "470a1f61b26b12c6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement resumable cleanup claims for both families",
+      "parent": {
+        "entityId": "STORY-470a1f61b26b12c6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-470a1f61b26b12c6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-470a1f61b26b12c6-s1-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-470a1f61b26b12c6-s1-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c5cb4694fa999a294c1f357c33318c50b677cf1ddb389f79e872273318b74ba4",
+        "at": "2026-11-14T12:17:34.283Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T12:17:34.284Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement resumable cleanup claims for both families",
+    "summary": "Extend existing design private-claim pattern to exact multi-file cleanup; preserve closed audit/permanent proof, sync claim before destructive deletes, delete claim last.",
+    "size": "L",
+    "order": 11,
+    "acceptanceChecks": [
+      "Crash after each deletion resumes cleanup-only without Git/model calls; missing runtime without claim stays fenced; current approval and file identities rechecked; unrelated files retained.",
+      "Run and record this task's focused validation before advancing; cross-cutting qualification does not replace these checks."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Extend both-family cleanup tests: fault every claim/rename/unlink/fsync boundary; cleanup retry after runtime/checkpoint removal, approval/file mismatch and arbitrary missing-runtime refusal."
+      }
+    ],
+    "planTaskId": "t11"
+  },
+  "citations": []
+}

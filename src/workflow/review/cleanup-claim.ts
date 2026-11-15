@@ -173,14 +173,23 @@ async function executePreparedCleanup(target: ReviewCleanupTarget, key: ReviewKe
     const raw = entry.outcome?.data as { kind?: unknown; key?: unknown } | undefined;
     if (raw?.kind !== 'review-cleanup-claim' || !same(raw.key, key)) return false;
     const data = claimAudit(raw, key);
+    if (data.claimId !== entry.id) throw new Error('Permanent cleanup claim identity mismatch');
+    const captured = log.find(e => e.id === capturedId(entry.id));
+    if (captured && !same(captured.outcome?.data, { kind: 'review-cleanup-claimed', schemaVersion: 1, key, claimId: entry.id, claimDigest: data.claimDigest })) throw new Error('Unsupported or changed cleanup capture receipt');
     return data.runtimeId === first.proof.runtime.runtimeId && data.attempt === first.proof.runtime.attempt
      && data.closedAuditDigest === closedAuditDigest(first.proof, closedRuntime(data.runtime, key, first)) && data.approvalRevision === first.approvalRevision && same(data.permanent, first.permanent)
-     && log.some(captured => captured.id === capturedId(entry.id) && (captured.outcome?.data as { claimDigest?: unknown } | undefined)?.claimDigest === data.claimDigest);
+     && !!captured;
    });
-   if (receipt && !await cleanupStat(reviewWorkerCheckpoint(key)) && !await cleanupStat(reviewRuntimePath(key)) && !await cleanupStat(contextRoot(key))) {
+   if (receipt) {
+    // Claim deletion is LAST. A captured receipt plus an empty private claim
+    // directory proves its originals were removed, even when public names now
+    // hold unrelated replacements. Never parse or reclaim those replacements.
     for (const path of pins.files) await sync(path);
     for (const parent of new Set(pins.files.map(dirname))) await sync(parent);
-    await physical('rmdir.claim', directory, () => rmdir(directory)); await sync(dirname(directory)); await deps.onDeleted?.(key.reviewId); return result;
+    await physical('rmdir.claim', directory, async () => { await deps.assertIdle(); await pins.check(); await rmdir(directory); }); await sync(dirname(directory));
+    const replacements = [];
+    for (const kind of ['context', 'runtime', 'checkpoint'] as const) if (await cleanupStat(original(key, kind))) replacements.push(original(key, kind));
+    result.retained.push(...replacements); if (!replacements.length) await deps.onDeleted?.(key.reviewId); return result;
    }
    const checkpoint = await cleanupBytes(reviewWorkerCheckpoint(key), reviewJsonLimit());
    const decoded = decodePreparationCheckpoint(JSON.parse(checkpoint.bytes.toString('utf8')), key);

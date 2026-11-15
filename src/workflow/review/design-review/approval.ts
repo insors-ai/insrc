@@ -12,6 +12,7 @@ import { contentHash } from '../../artifact-core/lifecycle.js';
 import { prepareDesignSubject, readDesignFile } from './subject.js';
 import { designPreservationDigest, designWorkflowDigest, validatePermanentDesignReview } from './history.js';
 import { loadPreparationCheckpoint } from '../preparation-checkpoint.js';
+import { preparationSemanticHistory } from '../preparation-semantic-history.js';
 import { isDesignAdmission } from './contracts.js';
 import type { DesignReviewCheckpoint } from './contracts.js';
 import { designArtifactActive } from './fence.js';
@@ -92,7 +93,7 @@ export async function requireCurrentDesignApproval(projectInput:string,head:Arti
  const checkpointRaw = loaded?.checkpoint;
  requireDesign(!checkpointRaw || 'artifactId' in checkpointRaw, 'foreign_review', 'Foreign approval checkpoint');
  const cp = checkpointRaw && 'artifactId' in checkpointRaw ? loaded!.format === 'current'
-  ? (({ runtime: _r, context: _c, ...history }) => ({ ...history, schemaVersion: 2 as const }))(checkpointRaw as import('../preparation-checkpoint.js').DesignPreparationCheckpoint)
+  ? preparationSemanticHistory(checkpointRaw as import('../preparation-checkpoint.js').DesignPreparationCheckpoint)
   : checkpointRaw as import('./contracts.js').StoredDesignCheckpoint : undefined;
  if(cp){const a=cp.attempts.at(-1)!;if(isDesignAdmission(a)||a.number!==record.applicableAttempt||a.status!=='passed'||a.publication?.state!=='complete'||a.publication.artifactHistoryEntryId!==entry!.id||designPreservationDigest(cp)!==record.preservationDigest)reject('latest review work is unfinished or not preserved');}
  return {expectedHeadHash:hash,expectedDocument:{path:prepared.subject.documentPath,hash:record.binding.documentDigest}};

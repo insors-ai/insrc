@@ -13,6 +13,60 @@ import type { ReviewRuntime } from '../../../shared/review-preparation.js';
 import { fixture } from '../../../workflow/code-review/task-review/__tests__/publication-fixture.js';
 import { writeCheckpoint, CheckpointSaveError } from '../../../workflow/code-review/task-review/checkpoint.js';
 
+test('cold qualification acknowledges an accepted result prefix at sequence zero without replaying work', async t => {
+ const f = await setup(t); await f.store.activate(f.handle);
+ const history = await readFile(f.path);
+ let verified = 0;
+ const receipt = {
+  key: f.key, attempt: 1, runtimeId: f.runtime.runtimeId, inputDigest: f.runtime.checkpointBinding.inputDigest,
+  checkpointDigest: 'd'.repeat(64), completedUnits: 3,
+  binding: { schemaVersion: 1 as const, key: f.key, attempt: 1, generationId: 'a'.repeat(64),
+   priorBindingDigest: null, semanticSequence: 0, historyPrefixDigest: 'b'.repeat(64),
+   evidenceManifestDigest: 'c'.repeat(64), bindingDigest: 'e'.repeat(64) },
+ };
+ await f.store.acceptHistory(f.handle, receipt, async () => { verified++; });
+ const retained = await f.read();
+ assert.equal(verified, 1);
+ assert.equal(retained.progress.completedUnits, 3);
+ assert.deepEqual(retained.committedResultBoundary, { semanticSequence: 0, historyBindingDigest: receipt.binding.bindingDigest });
+ await f.store.acceptHistory(f.handle, receipt, async () => { verified++; });
+ assert.equal(verified, 2, 'even a replay is checked against current durable history');
+ assert.equal((await f.read()).progress.completedUnits, 3);
+ assert.deepEqual(await readFile(f.path), history, 'acknowledgment leaves accepted family history untouched');
+});
+
+test('explicit initialization recovery adopts only the exact inactive crash window and never a live owner', async t => {
+ const f = await setup(t), second = new ReviewRuntimeStore();
+ const replacement = { ...f.runtime, daemonEpoch: 'epoch-restarted', workerIncarnation: 'worker-restarted', resourceGuard: { daemonInstance: 'epoch-restarted', openLeases: [] } };
+ let fences = 0;
+ await assert.rejects(second.recoverInitialization(replacement, async () => { fences++; }), /live owner/);
+ assert.equal(fences, 0);
+ f.store.release(f.handle);
+ await assert.rejects(second.recoverInitialization({ ...replacement, runtimeId: 'foreign' }, async () => { fences++; }), /outside/);
+ const recovered = await second.recoverInitialization(replacement, async () => { fences++; });
+ t.after(() => second.release(recovered));
+ assert.equal(second.snapshot(recovered).state, 'initializing');
+ assert.equal(second.snapshot(recovered).daemonEpoch, 'epoch-restarted');
+ await second.activate(recovered);
+ assert.equal(second.snapshot(recovered).state, 'active');
+ second.release(recovered);
+ await assert.rejects(new ReviewRuntimeStore().recoverInitialization(replacement, async () => {}), /outside/);
+ assert.equal((await f.read()).state, 'active', 'a refusal never recreates empty initialization');
+});
+
+test('initialization recovery retains missing changed and uncertain proof instead of guessing ownership', async t => {
+ const f = await setup(t); f.store.release(f.handle);
+ const old = await readFile(reviewRuntimePath(f.key), 'utf8');
+ let calls = 0;
+ await assert.rejects(new ReviewRuntimeStore().recoverInitialization(f.runtime, async () => {
+  if (++calls === 2) await writeFile(reviewRuntimePath(f.key), old + ' ');
+ }), /proof changed/);
+ assert.equal(await readFile(reviewRuntimePath(f.key), 'utf8'), old + ' ');
+ await unlink(reviewRuntimePath(f.key));
+ await assert.rejects(new ReviewRuntimeStore().recoverInitialization(f.runtime, async () => {}), /ENOENT/);
+ await assert.rejects(readFile(reviewRuntimePath(f.key)), /ENOENT/);
+});
+
 async function setup(t: { after: (fn: () => void | Promise<void>) => void }, failOpen = false) {
  const f = await fixture(); t.after(() => f.cleanup());
  const key = { project: f.repo, family: 'code' as const, reviewId: 'compact-runtime' };

@@ -37,14 +37,16 @@ export interface HistoryBindingDeps {
  write?: typeof writeReviewBytes | undefined;
 }
 const digest = (bytes: string) => createHash('sha256').update(bytes).digest('hex');
-function snapshot(cp: PreparationHistory): unknown {
+export function preparationHistorySnapshot(cp: PreparationHistory): unknown {
  const { runtime: _runtime, context: _context, schemaVersion: _version, attempts, ...root } = cp;
  return { ...root, attempts: attempts.map(a => {
   const { progress: _progress, ...rest } = a;
   if ('header' in rest) { const header: Record<string, unknown> = { ...rest.header }; delete header['activeTaskId']; return { ...rest, header }; }
-  return rest;
+  const { current: _current, ...meaningful } = rest as typeof rest & { current?: unknown };
+  return meaningful;
  }) };
 }
+const snapshot = preparationHistorySnapshot;
 function attemptOf(cp: PreparationHistory): number { const last = cp.attempts.at(-1)!; return 'header' in last ? last.header.attempt : last.number; }
 function completed(cp: PreparationHistory): number { const last = cp.attempts.at(-1)!; return 'review-response' in last ? last['review-response'].tasks.length : 'completedChunks' in last ? last.completedChunks.length : 0; }
 function current(input: unknown, source: ReadyContextReceipt): PreparationHistory {

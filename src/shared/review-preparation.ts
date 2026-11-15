@@ -36,7 +36,9 @@ export const ReviewRuntimeSchema = object({
  preparation: Type.Optional(ReviewPreparationProgressSchema),
  progress: object({ completedUnits: count, totalUnits: Type.Union([count, Type.Null()]), observedAt: stamp, lastMeaningfulActivityAt: Type.Union([stamp, Type.Null()]) }),
  cancellation: Type.Optional(object({ actionId: id, reason: Type.String({ minLength: 1, maxLength: 2048 }), requestedAt: stamp, operationState: ReviewOperationStateSchema })),
- committedResultBoundary: Type.Optional(object({ semanticSequence: positive, historyBindingDigest: digest })),
+ // A cold qualification can acknowledge an already accepted result prefix at
+ // the initial binding (sequence zero); completion is still host-verified.
+ committedResultBoundary: Type.Optional(object({ semanticSequence: count, historyBindingDigest: digest })),
  publicationBoundary: Type.Optional(object({ semanticSequence: positive, preservationDigest: digest, artifactId: id })),
 });
 export type ReviewRuntime = Static<typeof ReviewRuntimeSchema>;

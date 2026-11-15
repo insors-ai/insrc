@@ -1,0 +1,143 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1794646407755-r4fn2g",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T08:55:28.320Z",
+    "epicCreatedAt": "2026-11-14T08:55:28.320Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 120565,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "470a1f61b26b12c6",
+    "epicSlug": "rework-review-preparation-context-lifecycle-end",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2dc179bc787c6520504709e2bcda024a341a42c72fe02082017738ec84d425bb",
+        "at": "2026-11-14T08:55:28.329Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T09:02:27.211Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "parentRef": {
+      "epicHash": "470a1f61b26b12c6",
+      "slug": "EPIC-470a1f61b26b12c6"
+    }
+  },
+  "body": {
+    "title": "Rework review preparation and context lifecycle end to end",
+    "reproduction": "1. Submit whole-story review worker-isolation-e4af6312-whole-story attempt4 for BUILD-e4af63128c7cbec2-s1 with committed packet design/review-worker-isolation-e4af6312.packet.json:171 distinct files across40 selected origin commits, source pin059411264eff73ca871a39ebe8406bead4389cf1 and three saved earlier attempts. 2. Observe scope_preparation from2026-11-14T06:56:56Z until cancellation at approximately08:01Z, with zero task assessments and progress sequence0 despite more than10700 native operations. 3. On a stopped-review copy, reconstruct each submitted packet read-only:13031 source queries,5052 distinct,7979 duplicates(61.2%),78.06seconds without worker lease persistence. The second packet repeats all3129 first-packet source queries. Five disposable-copy measurements of the2083189-byte checkpoint give49.39ms median full durable update, including validation, serialization and synchronization. These are isolated measurements, not a complete live-hour timing attribution. Expected: complete and correct context preparation with bounded work and visible progress, responsive cancellation and explicit failure/recovery; history growth must not multiply unchanged source qualification or large-history writes per native operation. No model assessment should be reported until it actually starts. The canceled checkpoint remains preserved with a recovery fence; no automatic resume is authorized.",
+    "rootCause": "prepareReviewAdmission reconstructs each saved attempt using prepareReviewPacket, then prepares the current packet. prepareReviewPacket creates its own bounded source cache, so verified immutable queries are discarded between packet reconstructions. Publication reconstructs saved/current scope again; cleanup calls full admission qualification. Separately, runReviewWorker routes lease open/close through updateReviewWorkerResource and the family-wide checkpoint writers: even a small lease mutation reads and validates the whole history, serializes the complete checkpoint, writes a replacement, synchronizes the file, renames and synchronizes the directory. Preparation has no meaningful operation-level progress even though this expensive native work is active. Immutable source evidence, mutable workflow authority/freshness and hot operational metadata lack a coherent lifecycle-wide preparation boundary. The live slowdown was measured for code review; design review uses different latest-content preparation and shared operational persistence, so its behavior must be assessed independently rather than assuming the same Git-query defect.",
+    "fixIntent": "Correct preparation/context building as one holistic, prerequisite change to the existing review lifecycle. Produce an LLD and build plan covering submission/admission, task/chunk context delivery, re-review and resume, publication, approval and cleanup for both families, with an explicit matrix for story/task scope and epic/standalone/issue routes. Establish when immutable evidence is qualified, how prepared context is identified, safely reused and invalidated, which current author/route/content/approval checks must rerun, and how source work is bounded and scheduled without duplicate reconstruction. Design durable persistence so hot lease/progress transitions do not scale with immutable history size; specify ownership, atomicity, crash recovery, compaction/retention and historical-format handling where applicable. Include concurrent reviews, effective targeted cancellation through a supported interface, resource fencing and honest incremental preparation progress. Preserve code's pinned revision/selected-change scope and design's latest-artifact capture/change invalidation, all existing provenance/coverage/independence/human approval guarantees and existing worker/coordinator responsibilities. Define and measure stage-specific performance/operation-count/write-amplification budgets using the171-file/four-attempt workload and growing-history, cold/warm, concurrent and failure cases; require evidence equivalence and full native-pipeline timings rather than microbenchmark-only claims. A local memoization patch, increased timeout, reduced scope, skipped validation or new trust/activation machinery alone does not satisfy this fix. Prioritize this before resuming the unfinished worker-isolation BUILD; do not silently restart or rewrite the stopped attempt. Storage layout, cache lifetime and batching strategy are design decisions to resolve in the LLD, not predetermined by this issue."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/admission.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/packet.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/publication.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/cleanup.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/checkpoint.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/subject.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/checkpoint.ts"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/daemon/threads/review-worker-resources.ts"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/daemon/threads/review-worker-runtime.ts"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/daemon/threads/review-workers.ts"
+    },
+    {
+      "id": "c11",
+      "kind": "doc",
+      "ref": "/tmp/review-preparation-profile.json"
+    },
+    {
+      "id": "c12",
+      "kind": "doc",
+      "ref": "/tmp/profile-review-admission.mts"
+    },
+    {
+      "id": "c13",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/BUILD-e4af63128c7cbec2-s1.json"
+    },
+    {
+      "id": "c14",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/LLD-e4af63128c7cbec2-s1.json"
+    },
+    {
+      "id": "c15",
+      "kind": "stakeholder",
+      "ref": "User instruction,2026-11-14: preparation/context building must be fixed first with a holistic design, not a short-term correction."
+    }
+  ]
+}

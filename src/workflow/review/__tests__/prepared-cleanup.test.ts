@@ -18,6 +18,20 @@ import { startWorker } from '../../../daemon/threads/workers.js';
 const absent = async (path: string) => { await assert.rejects(access(path), { code: 'ENOENT' }); };
 
 for (const family of ['code', 'design'] as const) {
+ test(`migrated ${family} history passes feedback publication and cleanup with its complete migration proof`, async t => {
+  const f = await publishedCleanupFixture(family, t, { migrated: true });
+  const permanent = await authorizePreparedCleanup(f.target, f.key, f.store);
+  assert.equal(permanent.history.migration?.guards.length, 1);
+  assert.equal(permanent.history.migration?.sourceVersion, 2);
+  let sources = 0, models = 0;
+  for (const name of ['commit', 'file', 'objects', 'objectInventory'] as const) t.mock.method(RegistryReviewSources.prototype, name, async () => { sources++; throw Error('No source reconstruction'); });
+  t.mock.method(CliProvider.prototype, 'runReviewSession', async () => { models++; throw Error('No model replay'); });
+  const result = await cleanupPreparedReview(f.target, f.key, { store: f.store, contexts: async () => [f.source], assertIdle: async () => {} });
+  assert.deepEqual(result.errors, []);
+  await absent(reviewWorkerCheckpoint(f.key));
+  assert.deepEqual((await authorizePreparedCleanup(f.target, f.key, f.store)).history.migration, permanent.history.migration);
+  assert.equal(sources, 0); assert.equal(models, 0);
+ });
  test(`prepared ${family} cleanup preserves permanent evidence and deletes exact private claims without Git or model calls`, async t => {
   const f = await publishedCleanupFixture(family, t), permanent = await authorizePreparedCleanup(f.target, f.key, f.store), closedRuntime = JSON.parse(await readFile(reviewRuntimePath(f.key), 'utf8'));
   let sourceCalls = 0, modelCalls = 0, released = 0, historyReads = 0;
@@ -81,6 +95,30 @@ for (const family of ['code', 'design'] as const) {
   } });
   assert.match(changed.errors.join(), /changed|replaced/); assert.equal(await readFile(join(preparedCleanupDirectory(g.key), 'runtime.json'), 'utf8'), 'changed private runtime');
   assert.ok((await readdir(preparedCleanupDirectory(g.key))).includes('claim.json'));
+ });
+
+ test(`prepared ${family} cleanup finishes final-claim crash recovery while retaining all public replacements`, async t => {
+  const f = await publishedCleanupFixture(family, t), directory = preparedCleanupDirectory(f.key), checkpoint = reviewWorkerCheckpoint(f.key), runtime = reviewRuntimePath(f.key), context = contextRoot(f.key);
+  let replaced = false, released = 0;
+  const interrupted = await cleanupPreparedReview(f.target, f.key, { store: f.store, contexts: async () => [f.source], assertIdle: async () => {}, onDeleted: () => { released++; }, boundary: async (stage, path) => {
+   if (!replaced && stage === 'rename.after' && path === join(directory, 'checkpoint.json')) {
+    replaced = true; await writeFile(checkpoint, 'unrelated public checkpoint'); await writeFile(runtime, 'unrelated public runtime');
+    await mkdir(context); await writeFile(join(context, 'user-notes.txt'), 'unrelated public context');
+   }
+   if (stage === 'unlink.claim.after') throw Error('Crash after final claim deletion');
+  } });
+  assert.ok(replaced); assert.match(interrupted.errors.join(), /Crash after final claim/); await absent(join(directory, 'claim.json'));
+  let qualifications = 0, sources = 0, models = 0;
+  for (const name of ['commit', 'file', 'objectInventory', 'objects'] as const) t.mock.method(RegistryReviewSources.prototype, name, async () => { sources++; throw Error('No source reconstruction'); });
+  t.mock.method(CliProvider.prototype, 'runReviewSession', async () => { models++; throw Error('No model during final cleanup recovery'); });
+  for (let replay = 0; replay < 2; replay++) {
+   const result = await cleanupPreparedReview(f.target, f.key, { store: f.store, contexts: async () => { qualifications++; throw Error('Public replacements are not review input'); }, assertIdle: async () => {}, onDeleted: () => { released++; } });
+   assert.deepEqual(result.errors, []); assert.deepEqual([...result.retained].sort(), [checkpoint, runtime, context].sort());
+   await absent(directory);
+  }
+  assert.equal(await readFile(checkpoint, 'utf8'), 'unrelated public checkpoint'); assert.equal(await readFile(runtime, 'utf8'), 'unrelated public runtime');
+  assert.equal(await readFile(join(context, 'user-notes.txt'), 'utf8'), 'unrelated public context');
+  assert.equal(released, 0); assert.equal(qualifications, 0); assert.equal(sources, 0); assert.equal(models, 0);
  });
 
  test(`prepared ${family} cleanup rechecks approval at deletion and rejects edited claim paths or digests`, async t => {

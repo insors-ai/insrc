@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-dcd459d2-90be-4ed1-ad0f-b4eb207abce8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T12:17:34.251Z",
+    "epicCreatedAt": "2026-11-14T08:55:28.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "470a1f61b26b12c6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Retain workload fixture and establish managed baseline",
+      "parent": {
+        "entityId": "STORY-470a1f61b26b12c6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-470a1f61b26b12c6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ccaee99f364d928828668754626442850136d56aefa86784b5ae4d21aabb44b4",
+        "at": "2026-11-14T12:17:34.251Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T12:17:34.253Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Retain workload fixture and establish managed baseline",
+    "summary": "Capture the 171-file/four-attempt descriptor and baseline using disposable registered projects, real managed Git/native paths and deterministic model stubs.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Reproducible fixture preserves exact selected scope, histories and origins; records host/load, source-query and persistence metrics without touching stopped attempt4.",
+      "Run and record this task's focused validation before advancing; cross-cutting qualification does not replace these checks."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Proposed retained-fixture baseline: real managed Git, exact171-file/four-attempt scope and operation/write counters; deterministic provider not called before ready."
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

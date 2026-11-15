@@ -15,6 +15,7 @@ import type { PermanentDesignReview } from './history.js';
 import { requireDesign, DesignReviewError, isDesignAdmission } from './contracts.js';
 import type { DesignReviewCheckpoint, DesignPublication, StoredDesignCheckpoint } from './contracts.js';
 import { persistReviewResourceAudit } from '../resource-audit.js';
+import { preparationSemanticHistory } from '../preparation-semantic-history.js';
 import { decodeArtifactHead } from '../../artifact-core/decode.js';
 import { decodePreparationCheckpoint } from '../preparation-checkpoint.js';
 import type { DesignPreparationCheckpoint } from '../preparation-checkpoint.js';
@@ -58,7 +59,7 @@ export async function publishDesignReview(submitted:StoredDesignCheckpoint | Des
  const decoded = decodePreparationCheckpoint(submitted, { project: submitted.project, family: 'design', reviewId: submitted.reviewId });
  const preparation = decoded.format === 'current' ? decoded.checkpoint as DesignPreparationCheckpoint : undefined;
  requireDesign(!preparation || deps.preparation, 'publication_incomplete', 'Version-3 publication requires private preparation authority');
- const input: StoredDesignCheckpoint = preparation ? (({ runtime: _r, context: _c, ...rest }) => ({ ...rest, schemaVersion: 2 as const }))(preparation) : submitted as StoredDesignCheckpoint;
+ const input: StoredDesignCheckpoint = preparation ? preparationSemanticHistory(preparation) : submitted as StoredDesignCheckpoint;
  const cp=qualifiedDesignProjection(input);
  requireDesign(cp&&input.attempts.at(-1)?.number===cp.attempts.at(-1)?.number&&!isDesignAdmission(input.attempts.at(-1)!),'publication_incomplete','Unverified admission has no consolidated report');
  const store=deps.store??createRepoLifecycle(cp.project).store,attempt=cp.attempts.at(-1)!;
@@ -114,7 +115,7 @@ export async function publishDesignReview(submitted:StoredDesignCheckpoint | Des
      attempts:input.attempts.filter(a=>!isDesignAdmission(a)).map(a=>{const clean=normalized.attempts.find(n=>n.number===a.number)!;return{...a,...clean};}),
      admissionFailures:input.attempts.filter(isDesignAdmission).map(a=>({...a,progress:{...a.progress,freshness:'stored' as const,sequence:0}}))};
   const record: PermanentDesignReview = preparation && proof
-   ? { ...historicalRecord, schemaVersion: 3, admissionFailures: input.attempts.filter(isDesignAdmission), preparation: { runtime: preparation.runtime, context: preparation.context!, proof } }
+   ? { ...historicalRecord, schemaVersion: 3, admissionFailures: input.attempts.filter(isDesignAdmission), preparation: { runtime: preparation.runtime, context: preparation.context!, proof, ...(preparation.migration ? { migration: preparation.migration } : {}) } }
    : historicalRecord;
   validatePermanentDesignReview(record,{project:cp.project,artifactId:cp.artifactId});
   const verdict=attempt.report!.status==='passed'?'pass':'block',at=attempt.finishedAt??attempt.startedAt;

@@ -193,7 +193,7 @@ export class TaskReviewCoordinator {
    const cancellation=new AbortController();
    let tail:Promise<unknown>=Promise.resolve();
    const serial=<T>(work:()=>Promise<T>):Promise<T>=>{const result=tail.then(work);tail=result.catch(()=>{});return result;};
-   const progress=new ReviewProgressPersistence(entry,tracker,{serial,save:()=>save(path,checkpoint)});
+   const progress=new ReviewProgressPersistence(entry,tracker,{serial,save:()=>save(path,checkpoint),checkpointPath:path});
    if(active)active.persistence=progress;
    let durable:TaskReviewResult|undefined, persistenceError:unknown, inactive:ReviewInactivityError|undefined;
    let rejectExpiry!:(error:unknown)=>void;

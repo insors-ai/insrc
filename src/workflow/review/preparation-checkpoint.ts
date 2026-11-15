@@ -1,35 +1,36 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
-import { Type } from '@sinclair/typebox';
+export { CodePreparationCheckpointSchema, DesignPreparationCheckpointSchema, HistoricalPreparationMigrationSchema } from './preparation-checkpoint-contract.js';
+export type { CodePreparationCheckpoint, DesignPreparationCheckpoint } from './preparation-checkpoint-contract.js';
+import { CodePreparationCheckpointSchema, DesignPreparationCheckpointSchema } from './preparation-checkpoint-contract.js';
+import type { CodePreparationCheckpoint, DesignPreparationCheckpoint } from './preparation-checkpoint-contract.js';
 import { constants } from 'node:fs';
-import { open } from 'node:fs/promises';
+import type { BigIntStats } from 'node:fs';
+import { open, lstat } from 'node:fs/promises';
 import { reviewWorkerCheckpoint } from '../../daemon/threads/review-worker-contract.js';
-import type { Static } from '@sinclair/typebox';
 import { Value } from '@sinclair/typebox/value';
 import { reviewJsonLimit } from '../../config/review.js';
-import { ReviewRuntimeReferenceSchema, PreparedContextReferenceSchema } from '../../shared/review-preparation.js';
 import type { ReviewKey } from '../../shared/review-resources.js';
-import { ReviewKeySchema } from '../../shared/review-resources.js';
-import { AdmissionCheckpointSchema, CodeAdmissionAttemptSchema, QualifiedAttemptSchema } from '../code-review/task-review/contracts.js';
+import { ReviewKeySchema, validateReviewResourceGuard } from '../../shared/review-resources.js';
 import { decodeStoredCheckpoint } from '../code-review/task-review/admission-checkpoint.js';
-import { DesignAdmissionCheckpointSchema, DesignAdmissionAttemptSchema, ResourceDesignAttemptSchema } from './design-review/contracts.js';
 import { decodeStoredDesignCheckpoint } from './design-review/admission-checkpoint.js';
-
-const refs = { schemaVersion: Type.Literal(3), runtime: ReviewRuntimeReferenceSchema, context: Type.Optional(PreparedContextReferenceSchema) };
-const withoutGuard = <T extends typeof CodeAdmissionAttemptSchema | typeof QualifiedAttemptSchema | typeof DesignAdmissionAttemptSchema | typeof ResourceDesignAttemptSchema>(s: T) => Type.Omit(s, ['resourceGuard']);
-export const CodePreparationCheckpointSchema = Type.Object({
- ...AdmissionCheckpointSchema.properties, ...refs,
- attempts: Type.Array(Type.Union([withoutGuard(CodeAdmissionAttemptSchema), withoutGuard(QualifiedAttemptSchema)]), { minItems: 1 }),
-}, { additionalProperties: false });
-export const DesignPreparationCheckpointSchema = Type.Object({
- ...DesignAdmissionCheckpointSchema.properties, ...refs,
- attempts: Type.Array(Type.Union([withoutGuard(DesignAdmissionAttemptSchema), withoutGuard(ResourceDesignAttemptSchema)]), { minItems: 1 }),
-}, { additionalProperties: false });
-export type CodePreparationCheckpoint = Static<typeof CodePreparationCheckpointSchema>;
-export type DesignPreparationCheckpoint = Static<typeof DesignPreparationCheckpointSchema>;
 
 /** Read-only observation for permanent approval/cleanup. A stored context
  * reference never grants execution or cache authority. */
 export async function loadPreparationCheckpoint(key: ReviewKey): Promise<ReturnType<typeof decodePreparationCheckpoint> | undefined> {
+ return (await loadPreparationCheckpointSnapshot(key))?.value;
+}
+const fileStamp = (st: BigIntStats): string => `${st.dev}:${st.ino}:${st.size}:${st.mtimeNs}:${st.ctimeNs}`;
+/** Cheap observation only: never establishes trust in unvalidated bytes. */
+export async function preparationCheckpointStamp(key: ReviewKey): Promise<string | undefined> {
+ try {
+  const st = await lstat(reviewWorkerCheckpoint(key), { bigint: true });
+  if (!st.isFile() || st.isSymbolicLink()) throw new Error('Invalid preparation history file');
+  return fileStamp(st);
+ } catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined; throw error; }
+}
+/** The stamp returned belongs to the exact descriptor whose bytes were
+ * validated, not a subsequent path lookup that could adopt a replacement. */
+export async function loadPreparationCheckpointSnapshot(key: ReviewKey): Promise<{ value: ReturnType<typeof decodePreparationCheckpoint>; stamp: string } | undefined> {
  let file;
  try { file = await open(reviewWorkerCheckpoint(key), constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK); }
  catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined; throw error; }
@@ -40,7 +41,9 @@ export async function loadPreparationCheckpoint(key: ReviewKey): Promise<ReturnT
   while (offset < bytes.length) { const read = await file.read(bytes, offset, bytes.length - offset, null); if (!read.bytesRead) break; offset += read.bytesRead; }
   const after = await file.stat({ bigint: true });
   if (BigInt(offset) !== before.size || before.size !== after.size || before.mtimeNs !== after.mtimeNs || before.ctimeNs !== after.ctimeNs) throw new Error('Preparation checkpoint changed while reading');
-  return decodePreparationCheckpoint(JSON.parse(bytes.subarray(0, offset).toString('utf8')), key);
+  const value = decodePreparationCheckpoint(JSON.parse(bytes.subarray(0, offset).toString('utf8')), key), stamp = fileStamp(after);
+  if (await preparationCheckpointStamp(key) !== stamp) throw new Error('Preparation checkpoint replaced during validated read');
+  return { value, stamp };
  } finally { await file.close(); }
 }
 
@@ -54,9 +57,20 @@ export function decodePreparationCheckpoint(input: unknown, key: ReviewKey) {
  const current = version === 3;
  if (![1, 2, 3].includes(version)) throw new Error('Unsupported preparation checkpoint version');
  if (current && !Value.Check(key.family === 'code' ? CodePreparationCheckpointSchema : DesignPreparationCheckpointSchema, input)) throw new Error('Invalid version-3 checkpoint');
- const { runtime: _runtime, context: _context, ...history } = input as Record<string, unknown>;
+ const { runtime: _runtime, context: _context, migration: _migration, ...history } = input as Record<string, unknown>;
  const legacyInput = current ? { ...history, schemaVersion: 2 } : input;
  const decoded = key.family === 'code' ? decodeStoredCheckpoint(legacyInput) : decodeStoredDesignCheckpoint(legacyInput);
  if (decoded.project !== key.project || decoded.reviewId !== key.reviewId) throw new Error('Foreign preparation checkpoint');
+ if (current) {
+  const migration = (input as CodePreparationCheckpoint | DesignPreparationCheckpoint).migration;
+  if (migration) {
+   const seen = new Set<number>();
+   for (const row of migration.guards) {
+    validateReviewResourceGuard(row.guard, key);
+    if (seen.has(row.attempt) || row.attempt > decoded.attempts.length || row.guard.openLeases.length) throw new Error('Invalid historical migration guard audit');
+    seen.add(row.attempt);
+   }
+  }
+ }
  return current ? { format: 'current' as const, checkpoint: input as CodePreparationCheckpoint | DesignPreparationCheckpoint } : { format: 'historical' as const, checkpoint: decoded };
 }

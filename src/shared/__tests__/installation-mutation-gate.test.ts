@@ -66,19 +66,22 @@ for (const trust of [
 	} }, next.floor);
 	const candidateGeneration = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 	const restoredGeneration = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
-	for (const [step, intent, receipt] of [
-		['candidate-start', candidate.releaseId, JSON.stringify({ state: 'running', generation: candidateGeneration })],
-		['rollback-candidate-stop', candidateGeneration, JSON.stringify({
-			state: 'exited', generation: candidateGeneration, exit: { kind: 'failed', code: null, signal: 9 },
-		})],
-		['rollback-candidate-job', candidate.releaseId, JSON.stringify({ absent: true })],
-		['rollback-start', release, restoredGeneration],
-	] as const) {
-		await gate.recordIntent(update, step, intent);
-		await gate.recordReceipt(update, step, receipt);
-	}
-	await gate.publishOutcome(update, 'rolled-back', 'kept pinned predecessor');
-	await gate.release(update);
+	const recordRollback = async (reservation: typeof update, candidateState: 'running' | 'exited') => {
+		for (const [step, intent, receipt] of [
+			['candidate-start', candidate.releaseId, JSON.stringify({ state: candidateState, generation: candidateGeneration })],
+			['rollback-candidate-stop', candidateGeneration, JSON.stringify({
+				state: 'exited', generation: candidateGeneration, exit: { kind: 'failed', code: null, signal: 9 },
+			})],
+			['rollback-candidate-job', candidate.releaseId, JSON.stringify({ absent: true })],
+			['rollback-start', release, restoredGeneration],
+		] as const) {
+			await gate.recordIntent(reservation, step, intent);
+			await gate.recordReceipt(reservation, step, receipt);
+		}
+		await gate.publishOutcome(reservation, 'rolled-back', 'kept pinned predecessor');
+		await gate.release(reservation);
+	};
+	await recordRollback(update, 'running');
 	const state = await gate.read();
 	assert.deepEqual(state.installedBundle, { releaseRoot: installation.releaseRoot, proof });
 	assert.deepEqual(state.daemonBundleFloors, [next.floor]);
@@ -97,7 +100,8 @@ for (const trust of [
 	} }, different.floor), /replay or replace/);
 	const retry = await gate.reserve(request, next.floor);
 	assert.deepEqual((await gate.read()).daemonBundleFloors, [next.floor]);
-	await gate.cancelUnstartedUpdate(retry);
+	await recordRollback(retry, 'exited');
+	assert.equal((await gate.read()).outcome?.developmentRollback, undefined);
 });
 
 async function rejects(code: SupervisorErrorCode, result: Promise<unknown>): Promise<void> {

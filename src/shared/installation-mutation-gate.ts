@@ -340,7 +340,8 @@ function observeDevelopmentRollback(
 	let removal: unknown;
 	try { start = JSON.parse(started.receipt); stop = JSON.parse(stopped.receipt); removal = JSON.parse(removed.receipt); }
 	catch { return undefined; }
-	if (!object(start) || !object(stop) || stop.state !== 'exited' || start.generation !== stop.generation ||
+	if (!object(start) || start.state !== 'running' || !object(stop) || stop.state !== 'exited' ||
+		start.generation !== stop.generation ||
 		stopped.intent !== start.generation || !object(removal) || removal.absent !== true ||
 		!object(stop.exit) || (stop.exit.kind !== 'forced' && stop.exit.kind !== 'failed') ||
 		stop.exit.code !== null || typeof stop.exit.signal !== 'number' || !Number.isSafeInteger(stop.exit.signal) ||

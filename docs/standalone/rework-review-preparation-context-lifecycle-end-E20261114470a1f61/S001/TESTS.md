@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 380 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 397 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -665,3 +665,39 @@ Run at 2026-11-15T15:28:21.764Z on commit `23a3b373a`. Tests check: **passed**. 
 | `src/workflow/review/__tests__/projection-lines.test.ts` | 0 | 4 | 0.5 s |  |
 | `src/workflow/review/__tests__/source-session.test.ts` | 0 | 16 | 2.9 s |  |
 | `src/workflow/review/__tests__/staged-packet-construction.test.ts` | 0 | 3 | 11.3 s |  |
+
+## t17
+
+Run at 2026-11-15T16:05:25.470Z on commit `3129f64b2`. Tests check: **passed**. 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: Bounded execution and mandatory coverage traversal for code/design task/story routes: no skipped modules, prompt/provider transport copies charged, borrow invalidation/cancellation and no premature provider dispatch.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | selected-code windows match the original prompt blocks for Unicode BOM CRLF overlap and final newlines | `src/workflow/review/__tests__/selected-code-window.test.ts` |
+| pass | selected-code traversal handles a source above memory without hydrating its unselected body | `src/workflow/review/__tests__/selected-code-window.test.ts` |
+| pass | design path policy and transport stay borrowed until canceled CLI consumption settles | `src/workflow/review/__tests__/staged-task-execution.test.ts` |
+| pass | revoked input refuses provider dispatch and assembly pressure refuses before invoking a builder | `src/workflow/review/__tests__/staged-task-execution.test.ts` |
+| pass | transport pressure and foreign-generation prompts refuse before CLI dispatch | `src/workflow/review/__tests__/staged-task-execution.test.ts` |
+| pass | coverage cancellation retains the active leaf until its consumer returns | `src/workflow/review/__tests__/staged-task-execution.test.ts` |
+| pass | assessment evidence probes release owned committed bodies after reference resolution | `src/workflow/review/__tests__/staged-task-execution.test.ts` |
+| pass | bounded design DEF HLD LLD policies preserve latest-path scope across epic standalone and issue routes | `src/workflow/review/__tests__/staged-design-execution.test.ts` |
+| pass | selected code: exact pinned after blocks reach assessment and references reach attribution without prior or surrounding source | `src/workflow/code-review/task-review/__tests__/selected-code.test.ts` |
+| pass | deletion markers select exact reviewed-version boundaries without removed text | `src/workflow/code-review/task-review/__tests__/selected-code.test.ts` |
+| pass | immutable historical before/after packets remain resumable but cannot be submitted as new attempts | `src/workflow/code-review/task-review/__tests__/selected-code.test.ts` |
+| pass | selected code preserves Unicode and missing final newline for an added file | `src/workflow/code-review/task-review/__tests__/selected-code.test.ts` |
+| pass | review evidence policy: body-only logic, missing graph/run evidence and unused test-helper coverage | `src/workflow/code-review/task-review/__tests__/policy.test.ts` |
+| pass | review quality policy: target-language conventions, encapsulation/readability/naming and approved/native framework fallback | `src/workflow/code-review/task-review/__tests__/policy.test.ts` |
+| pass | review policy parity: common prompt/result classification across supported routes without coding/build-validation changes | `src/workflow/code-review/task-review/__tests__/policy.test.ts` |
+| pass | bounded story execution preserves all selected modules and mandatory coverage with charged CLI copies | `src/workflow/review/__tests__/staged-task-execution.test.ts` |
+| pass | bounded task execution preserves all selected modules and mandatory coverage with charged CLI copies | `src/workflow/review/__tests__/staged-task-execution.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/code-review/task-review/__tests__/policy.test.ts` | 0 | 3 | 3.5 s |  |
+| `src/workflow/code-review/task-review/__tests__/selected-code.test.ts` | 0 | 4 | 1.3 s |  |
+| `src/workflow/review/__tests__/selected-code-window.test.ts` | 0 | 2 | 0.7 s |  |
+| `src/workflow/review/__tests__/staged-design-execution.test.ts` | 0 | 1 | 0.9 s |  |
+| `src/workflow/review/__tests__/staged-task-execution.test.ts` | 0 | 7 | 3.7 s |  |

@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 33,
-        "contentHash": "3779f32e6005e1163ccafd61552dd64c5ac65b35ee96467f8ee00748b5bbae37",
-        "at": "2026-11-15T15:28:21.857Z",
+        "number": 34,
+        "contentHash": "f00ab28275f4b1a2ac17f98b4cdf363afb927f8ee4bc407256cd7002e401fe7a",
+        "at": "2026-11-15T16:05:25.583Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "470a1f61b26b12c6",
     "storyId": "s1",
     "createdAt": "2026-11-14T12:24:52.408Z",
-    "updatedAt": "2026-11-15T15:28:21.764Z",
+    "updatedAt": "2026-11-15T16:05:25.470Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-14T08:55:28.320Z",
     "epicSlug": "rework-review-preparation-context-lifecycle-end",
-    "revision": 33
+    "revision": 34
   },
   "body": {
     "tasks": [
@@ -6665,6 +6665,222 @@
               },
               {
                 "title": "a packet larger than memory stages selected source bodies under one shared cap without binary JSON",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t17",
+        "commit": "3129f64b2",
+        "ranAt": "2026-11-15T16:05:25.470Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Bounded execution and mandatory coverage traversal for code/design task/story routes: no skipped modules, prompt/provider transport copies charged, borrow invalidation/cancellation and no premature provider dispatch.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/selected-code-window.test.ts",
+                "title": "selected-code windows match the original prompt blocks for Unicode BOM CRLF overlap and final newlines",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/selected-code-window.test.ts",
+                "title": "selected-code traversal handles a source above memory without hydrating its unselected body",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/staged-task-execution.test.ts",
+                "title": "design path policy and transport stay borrowed until canceled CLI consumption settles",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/staged-task-execution.test.ts",
+                "title": "revoked input refuses provider dispatch and assembly pressure refuses before invoking a builder",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/staged-task-execution.test.ts",
+                "title": "transport pressure and foreign-generation prompts refuse before CLI dispatch",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/staged-task-execution.test.ts",
+                "title": "coverage cancellation retains the active leaf until its consumer returns",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/staged-task-execution.test.ts",
+                "title": "assessment evidence probes release owned committed bodies after reference resolution",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/staged-design-execution.test.ts",
+                "title": "bounded design DEF HLD LLD policies preserve latest-path scope across epic standalone and issue routes",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/selected-code.test.ts",
+                "title": "selected code: exact pinned after blocks reach assessment and references reach attribution without prior or surrounding source",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/selected-code.test.ts",
+                "title": "deletion markers select exact reviewed-version boundaries without removed text",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/selected-code.test.ts",
+                "title": "immutable historical before/after packets remain resumable but cannot be submitted as new attempts",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/selected-code.test.ts",
+                "title": "selected code preserves Unicode and missing final newline for an added file",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/policy.test.ts",
+                "title": "review evidence policy: body-only logic, missing graph/run evidence and unused test-helper coverage",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/policy.test.ts",
+                "title": "review quality policy: target-language conventions, encapsulation/readability/naming and approved/native framework fallback",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/policy.test.ts",
+                "title": "review policy parity: common prompt/result classification across supported routes without coding/build-validation changes",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/staged-task-execution.test.ts",
+                "title": "bounded story execution preserves all selected modules and mandatory coverage with charged CLI copies",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/staged-task-execution.test.ts",
+                "title": "bounded task execution preserves all selected modules and mandatory coverage with charged CLI copies",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/policy.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3501,
+            "titles": [
+              {
+                "title": "review evidence policy: body-only logic, missing graph/run evidence and unused test-helper coverage",
+                "result": "pass"
+              },
+              {
+                "title": "review quality policy: target-language conventions, encapsulation/readability/naming and approved/native framework fallback",
+                "result": "pass"
+              },
+              {
+                "title": "review policy parity: common prompt/result classification across supported routes without coding/build-validation changes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/selected-code.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1344,
+            "titles": [
+              {
+                "title": "selected code: exact pinned after blocks reach assessment and references reach attribution without prior or surrounding source",
+                "result": "pass"
+              },
+              {
+                "title": "deletion markers select exact reviewed-version boundaries without removed text",
+                "result": "pass"
+              },
+              {
+                "title": "immutable historical before/after packets remain resumable but cannot be submitted as new attempts",
+                "result": "pass"
+              },
+              {
+                "title": "selected code preserves Unicode and missing final newline for an added file",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/selected-code-window.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 681,
+            "titles": [
+              {
+                "title": "selected-code windows match the original prompt blocks for Unicode BOM CRLF overlap and final newlines",
+                "result": "pass"
+              },
+              {
+                "title": "selected-code traversal handles a source above memory without hydrating its unselected body",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/staged-design-execution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 893,
+            "titles": [
+              {
+                "title": "bounded design DEF HLD LLD policies preserve latest-path scope across epic standalone and issue routes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/staged-task-execution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3717,
+            "titles": [
+              {
+                "title": "bounded task execution preserves all selected modules and mandatory coverage with charged CLI copies",
+                "result": "pass"
+              },
+              {
+                "title": "bounded story execution preserves all selected modules and mandatory coverage with charged CLI copies",
+                "result": "pass"
+              },
+              {
+                "title": "design path policy and transport stay borrowed until canceled CLI consumption settles",
+                "result": "pass"
+              },
+              {
+                "title": "revoked input refuses provider dispatch and assembly pressure refuses before invoking a builder",
+                "result": "pass"
+              },
+              {
+                "title": "transport pressure and foreign-generation prompts refuse before CLI dispatch",
+                "result": "pass"
+              },
+              {
+                "title": "coverage cancellation retains the active leaf until its consumer returns",
+                "result": "pass"
+              },
+              {
+                "title": "assessment evidence probes release owned committed bodies after reference resolution",
                 "result": "pass"
               }
             ],

@@ -133,9 +133,9 @@ export class PreparedViewWriter {
   private readonly limits: ReviewPreparationLimits, private readonly capacity: SourceCapacity,
   readonly directory: string, private readonly root: string, private readonly generation: string,
   private readonly stamp: { dev: bigint; ino: bigint }, private readonly session: ReviewSourceSession | undefined,
-  private readonly signal: AbortSignal | undefined) {}
+  private readonly signal: AbortSignal | undefined, private readonly lifecycleOnly = false) {}
  static async create(identity: PreparedSourceIdentity, limits: ReviewPreparationLimits, capacity: SourceCapacity,
-  memory: ReviewMemoryBudget, session?: ReviewSourceSession, signal?: AbortSignal): Promise<PreparedViewWriter> {
+  memory: ReviewMemoryBudget, session?: ReviewSourceSession, signal?: AbortSignal, lifecycleOnly = false): Promise<PreparedViewWriter> {
   sourceGeneration(identity);
   if (memory.limit !== limits.memoryMaxBytes || Object.values(limits).some(n => !Number.isSafeInteger(n) || n < 1)) throw new Error('Unbound staged memory limits');
   if (session && (preparationDigest(session.key) !== preparationDigest(identity.key) || session.workingMemory !== memory)) throw new Error('Foreign source session or memory owner');
@@ -143,7 +143,7 @@ export class PreparedViewWriter {
   const root = await preparedContextParents(identity.key), generation = sha(`${sourceGeneration(identity)}:${randomUUID()}`), directory = join(root, `prepare-${randomUUID()}`);
   await mkdir(directory, { mode: 0o700 });
   const st = await lstat(directory, { bigint: true });
-  return new PreparedViewWriter(structuredClone(identity), memory, { ...limits }, capacity, directory, root, generation, { dev: st.dev, ino: st.ino }, session, signal);
+  return new PreparedViewWriter(structuredClone(identity), memory, { ...limits }, capacity, directory, root, generation, { dev: st.dev, ino: st.ino }, session, signal, lifecycleOnly);
  }
  private active(): void { this.signal?.throwIfAborted(); if (this.state !== 'writing' || this.disposing) throw new Error('Staged writer unavailable'); }
  private async checkDirectory(): Promise<void> {
@@ -353,7 +353,8 @@ export class PreparedViewWriter {
    if (this.metadataWindows.size) throw new Error('Construction metadata windows remain borrowed');
    const ready = join(this.root, this.generation);
    try {
-    if (!this.views.length || this.identity.key.family === 'code' && !this.session) throw new Error('Complete staged views/source session required');
+    if (!this.views.length || this.identity.key.family === 'code' && !this.session && !this.lifecycleOnly) throw new Error('Complete staged views/source session required');
+    if (this.lifecycleOnly && (this.session || this.identity.validatorVersion !== 2 || this.views.some(view => view.kind !== 'view'))) throw new Error('Invalid lifecycle-only staged context');
     if (this.session) {
      const inventory = await this.session.evidence();
      try { for (const evidence of inventory) {

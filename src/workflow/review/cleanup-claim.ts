@@ -19,6 +19,7 @@ import { contextRoot, preparationDigest } from './prepared-context.js';
 import { ownedCleanupContext } from './cleanup-context-ownership.js';
 import type { CleanupContextOwner } from './cleanup-context-ownership.js';
 import { decodePreparationCheckpoint } from './preparation-checkpoint.js';
+import { lifecycleReceipt, readPreparationHistoryBinding, verifyStagedLifecycleHistory } from './history-binding.js';
 import type { PreparationHistory } from './history-binding.js';
 import { publicationEvidenceDigest } from './publication-proof.js';
 import { authorizePreparedCleanup, pinPreparedCleanupAuthority } from './cleanup-authorization.js';
@@ -197,6 +198,9 @@ async function executePreparedCleanup(target: ReviewCleanupTarget, key: ReviewKe
    const history = decoded.checkpoint as PreparationHistory, last = history.attempts.at(-1)!;
    const published = 'review-response' in last ? last['review-response'].crPublication === 'complete' : 'publication' in last && last.publication?.state === 'complete';
    if (!published || !history.context || publicationEvidenceDigest(history) !== first.proof.evidenceDigest || history.runtime.runtimeId !== first.proof.runtime.runtimeId) throw new Error('Latest review is unpublished or not completely preserved');
+   const historyBinding = await readPreparationHistoryBinding(key, history.context.historyBindingDigest);
+   if (historyBinding.generationId !== history.context.generationId || historyBinding.bindingDigest !== history.context.historyBindingDigest) throw new Error('Cleanup history binding changed');
+   await verifyStagedLifecycleHistory(lifecycleReceipt(key, historyBinding.attempt, historyBinding, 'cleanup-staged-history'), history, async () => { await deps.assertIdle(); await pins.check(); });
    const runtimeFile = await cleanupBytes(reviewRuntimePath(key), REVIEW_RUNTIME_MAX_BYTES), runtime = decodeReviewRuntime(JSON.parse(runtimeFile.bytes.toString('utf8')), key);
    if (runtime.state !== 'terminal' || runtime.cancellation || runtime.resourceGuard.openLeases.length || runtime.runtimeId !== history.runtime.runtimeId
     || runtime.attempt !== first.proof.runtime.attempt || runtime.checkpointBinding.inputDigest !== history.runtime.inputDigest

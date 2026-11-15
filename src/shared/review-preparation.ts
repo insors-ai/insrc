@@ -83,7 +83,10 @@ export function decodeStagedContextManifest(input: unknown, key: ReviewKey, maxB
 export const HistoryBindingSchema = object({
  schemaVersion: Type.Literal(1), key: ReviewKeySchema, attempt: positive,
  generationId: digest, priorBindingDigest: Type.Union([digest, Type.Null()]),
- semanticSequence: count, historyPrefixDigest: digest, evidenceManifestDigest: digest, bindingDigest: digest,
+ semanticSequence: count, historyPrefixDigest: digest, evidenceManifestDigest: digest,
+ lifecycle: Type.Optional(object({ generationId: digest, identityDigest: digest, inputDigest: digest,
+  sourceIdentity: digest, validatorVersion: positive, manifestDigest: digest, storedBytes: count })),
+ bindingDigest: digest,
 });
 export type HistoryBinding = Static<typeof HistoryBindingSchema>;
 export const PreparedContextReferenceSchema = binding;

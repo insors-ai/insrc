@@ -30,6 +30,16 @@ export async function ownedCleanupContext(key: ReviewKey, receipts: readonly Cle
  const allow = (path: string, digest: string | null) => {
   const prior = allowed.get(path); if (allowed.has(path) && prior !== digest) throw new Error('Conflicting owned context bytes'); allowed.set(path, digest);
  };
+ const allowLifecycle = async (binding: ReturnType<typeof decodeHistoryBinding>) => {
+  const lifecycle = binding.lifecycle; if (!lifecycle) throw new Error('History binding has no staged lifecycle owner');
+  const raw = await cleanupBytes(join(root, lifecycle.generationId, 'manifest.json'), reviewJsonLimit()), manifest = contextManifest(JSON.parse(raw.bytes.toString('utf8')), key);
+  if (manifest.generationId !== lifecycle.generationId || manifest.attempt !== binding.attempt || manifest.manifestDigest !== lifecycle.manifestDigest
+   || manifest.identityDigest !== lifecycle.identityDigest || manifest.inputDigest !== lifecycle.inputDigest || manifest.sourceIdentity !== lifecycle.sourceIdentity
+   || manifest.validatorVersion !== lifecycle.validatorVersion || manifest.byteTotals.stored + raw.bytes.length !== lifecycle.storedBytes
+   || manifest.manifestDigest !== preparationDigest({ ...manifest, manifestDigest: '' })) throw new Error('Staged lifecycle manifest differs from history binding');
+  allow(lifecycle.generationId, null); allow(`${lifecycle.generationId}/manifest.json`, bytesDigest(raw.bytes));
+  for (const object of manifest.objects) allow(`${lifecycle.generationId}/${object.contentDigest}.data`, object.contentDigest);
+ };
  for (const source of receipts) {
   if (!same(source.key, key) || !Number.isSafeInteger(source.attempt) || source.attempt < 1 || !/^[a-f0-9]{64}$/.test(source.generationId)
    || !/^[a-f0-9]{64}$/.test(source.manifestDigest) || owners.has(source.generationId)) throw new Error('Foreign or duplicate private context owner');
@@ -49,6 +59,7 @@ export async function ownedCleanupContext(key: ReviewKey, receipts: readonly Cle
   const owner = owners.get(binding.generationId);
   if (!owner || binding.attempt !== owner.attempt || binding.bindingDigest !== id || preparationDigest({ ...binding, bindingDigest: '' }) !== id) throw new Error('History binding has no private context owner');
   allow('history-bindings', null); allow(`history-bindings/${id}.json`, bytesDigest(raw.bytes));
+  await allowLifecycle(binding);
   if (binding.priorBindingDigest) bindings.push(binding.priorBindingDigest);
   let head = binding.evidenceManifestDigest; const chain = new Set<string>();
   while (head !== owner.manifestDigest && !evidence.has(`${owner.generationId}:${head}`)) {
@@ -88,6 +99,18 @@ export async function permanentCleanupContexts(key: ReviewKey, heads: readonly s
   const manifest = contextManifest(JSON.parse(bytes.bytes.toString('utf8')), key);
   if (manifest.generationId !== binding.generationId || manifest.attempt !== binding.attempt || manifest.manifestDigest !== preparationDigest({ ...manifest, manifestDigest: '' })) throw new Error('Permanent cleanup source manifest changed');
   const owner: CleanupContextOwner = { key, attempt: binding.attempt, generationId: binding.generationId, manifestDigest: manifest.manifestDigest };
+  if (binding.lifecycle) {
+   const lifecycleBytes = await cleanupBytes(join(root, binding.lifecycle.generationId, 'manifest.json'), reviewJsonLimit());
+   const lifecycleManifest = contextManifest(JSON.parse(lifecycleBytes.bytes.toString('utf8')), key);
+   if (lifecycleManifest.generationId !== binding.lifecycle.generationId || lifecycleManifest.attempt !== binding.attempt
+    || lifecycleManifest.manifestDigest !== binding.lifecycle.manifestDigest || lifecycleManifest.identityDigest !== binding.lifecycle.identityDigest
+    || lifecycleManifest.inputDigest !== binding.lifecycle.inputDigest || lifecycleManifest.sourceIdentity !== binding.lifecycle.sourceIdentity
+    || lifecycleManifest.validatorVersion !== binding.lifecycle.validatorVersion || lifecycleManifest.byteTotals.stored + lifecycleBytes.bytes.length !== binding.lifecycle.storedBytes
+    || lifecycleManifest.manifestDigest !== preparationDigest({ ...lifecycleManifest, manifestDigest: '' })) throw new Error('Permanent staged lifecycle manifest changed');
+   // The immutable history binding owns this lifecycle generation. It is
+   // authenticated above and followed again by ownedCleanupContext; it is not
+   // a source-capability receipt and must not enter the v1 source-owner set.
+  }
   let evidence = binding.evidenceManifestDigest; const chain = new Set<string>();
   while (evidence !== owner.manifestDigest) {
    if (chain.has(evidence) || chain.size >= 10000) throw new Error('Invalid permanent cleanup evidence lineage'); chain.add(evidence);

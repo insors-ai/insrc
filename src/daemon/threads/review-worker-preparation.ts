@@ -279,6 +279,8 @@ export class ReviewWorkerPreparation {
  async authorizePublication(): Promise<PublicationProof> {
   await this.preparePublication();
   if (!this.access) throw new Error('Publication borrow missing');
+  const cp=await this.history.canonical();if(!cp||!this.binding)throw new Error('Publication history binding missing');
+  await this.binding.verifyLifecycle(cp);
   const proof = await this.client.publication(this.access, this.binding!.latest()); this.terminal = true; return proof;
  }
  async savePublication(cp: PreparationHistory): Promise<void> { await this.history.write(preparationSemanticHistory(cp)); }

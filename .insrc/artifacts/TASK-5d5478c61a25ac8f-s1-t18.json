@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-171775a2-9568-45ac-a795-1859a51ba8d7",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-13T08:27:50.849Z",
+    "epicCreatedAt": "2026-11-11T16:00:50.440Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5d5478c61a25ac8f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Gate signed-source release promotion",
+      "parent": {
+        "entityId": "STORY-5d5478c61a25ac8f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-5d5478c61a25ac8f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 4"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t14",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t17",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "221dd112827be7d9c29ae33b98f7023cbc9a8dd32358d45e4698b06129ffd15c",
+        "at": "2026-11-13T08:27:50.849Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-13T08:27:50.863Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Gate signed-source release promotion",
+    "summary": "Verify the exact proposed source head and require real source-built qualification results before signing and promotion. Produce the same packaged verifier for the installer, VS Code and JetBrains. Implement and exercise the gate with fixture evidence. Actual promotion consumes the evidence produced in t8.",
+    "size": "M",
+    "order": 12,
+    "acceptanceChecks": [
+      "Missing or mismatched test evidence blocks promotion. Validate the precise tag and head through the normal fetch route and use the same public verifier configuration in each distribution. Exercise with a disposable signing key."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Promotion requires passing source-built evidence for the exact signed head"
+      },
+      {
+        "level": "integration",
+        "name": "Published installer and both IDEs embed the same trusted verifier"
+      }
+    ],
+    "planTaskId": "t18"
+  },
+  "citations": []
+}

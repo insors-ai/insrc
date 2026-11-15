@@ -72,6 +72,7 @@ resolve_node() {
 		if [ -x "$INSRC_NODE_BIN" ]; then abspath "$INSRC_NODE_BIN"; return 0; fi
 		return 1
 	fi
+	if [ -x "$DAEMON_ROOT/tools/node" ]; then abspath "$DAEMON_ROOT/tools/node"; return 0; fi
 	if command -v node >/dev/null 2>&1; then abspath "$(command -v node)"; return 0; fi
 	local dir
 	if [ -n "${INSRC_NODE_LOCATIONS+x}" ]; then

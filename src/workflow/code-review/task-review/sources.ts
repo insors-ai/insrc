@@ -25,6 +25,11 @@ export interface ReviewSources {
   * listed has the same entry at `path` as each of its parents. */
  pathChanges(from: string, to: string, path: string): Promise<readonly string[]>;
 }
+/** A path-history listing must name full lowercase-hex OIDs of the range's own length; anything else is a source error. */
+export function requireListedShas(shas: readonly string[], from: string, to: string): readonly string[] {
+ requireReview(shas.every(sha => /^[0-9a-f]+$/.test(sha) && sha.length === from.length && sha.length === to.length && (sha.length === 40 || sha.length === 64)), 'source', 'Unexpected Git path history entry');
+ return shas;
+}
 export interface ChangedRange { readonly before?: readonly [number, number]; readonly after?: readonly [number, number]; readonly deletionAt?: number; }
 /** Hunk counts can include unchanged lines (diff.interHunkContext); retain only +/- runs. */
 function changedRuns(section: string): readonly ChangedRange[] {
@@ -121,9 +126,7 @@ export class RegistryReviewSources implements BatchReviewSources {
   const result = await callTool(gitPathHistoryTool, { cwd: this.deps.repoPath, rev: `${from}..${to}`, path, fullHistory: true }, this.deps);
   requireReview(result.success, 'source', result.success ? '' : result.error.message);
   requireReview('commits' in result.data && Array.isArray(result.data.commits), 'source', 'Expected Git path history');
-  const shas = result.data.commits.map(c => c.sha);
-  requireReview(shas.every(sha => /^[0-9a-f]+$/.test(sha) && sha.length === from.length && sha.length === to.length && (sha.length === 40 || sha.length === 64)), 'source', 'Unexpected Git path history entry');
-  return shas;
+  return requireListedShas(result.data.commits.map(c => c.sha), from, to);
  }
  async changedRanges(commit: string, parent: string | null, paths: readonly string[]): Promise<readonly ChangedRange[]> {
   if (parent !== null && paths.length === 2 && paths[0] !== paths[1]) {

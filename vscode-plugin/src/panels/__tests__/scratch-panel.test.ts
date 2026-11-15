@@ -35,6 +35,8 @@ const ROOT = '/root/scratches';
 class FakePanel implements PanelHandle {
   html = '';
   reveals = 0;
+  /** The preserveFocus argument of each reveal call (undefined = default reveal). */
+  readonly revealFlags: Array<boolean | undefined> = [];
   disposed = false;
   title: string;
   readonly posted: unknown[] = [];
@@ -44,10 +46,16 @@ class FakePanel implements PanelHandle {
     this.title = title;
   }
   setHtml(html: string): void { this.html = html; }
-  reveal(): void { this.reveals += 1; }
+  reveal(preserveFocus?: boolean | undefined): void { this.reveals += 1; this.revealFlags.push(preserveFocus); }
   onDidDispose(listener: () => void): void { this.disposeListeners.push(listener); }
   onMessage(listener: (message: unknown) => void): void { this.messageListeners.push(listener); }
-  postMessage(message: unknown): void { this.posted.push(message); }
+  /** Delivery behavior is controllable: `delivery` is the resolved value, or 'reject' to simulate a disposed panel. */
+  delivery: boolean | 'reject' = true;
+  postMessage(message: unknown): Promise<boolean> {
+    this.posted.push(message);
+    if (this.delivery === 'reject') return Promise.reject(new Error('disposed'));
+    return Promise.resolve(this.delivery);
+  }
   dispose(): void { this.disposed = true; for (const l of [...this.disposeListeners]) l(); }
   userClose(): void { for (const l of [...this.disposeListeners]) l(); }
   injectMessage(message: unknown): void { for (const l of [...this.messageListeners]) l(message); }
@@ -188,6 +196,10 @@ test('scratch-panel.test.ts: empty list renders a hint row; create-or-reveal reu
   assert.equal(h.panels.length, 1, 'create-or-reveal reuses the single instance');
   assert.equal(again, first);
   assert.ok(h.panels[0]!.reveals >= 2, 'the second open revealed the cached panel');
+  // ISSUE-3183af2a defect 1: a FRESH create reveals with focus PRESERVED (the user stays in
+  // the chat they clicked from); the re-reveal of an existing panel uses the default reveal.
+  assert.deepEqual(h.panels[0]!.revealFlags[0], true, 'the first (create) reveal preserves focus');
+  assert.deepEqual(h.panels[0]!.revealFlags[1], undefined, 'the cached re-reveal is the default reveal');
   // Error row when the store fails.
   h.fake.failOn = (c) => (c.op === 'readdir' ? Object.assign(new Error('EACCES'), { code: 'EACCES' }) : undefined);
   await h.controller.refreshBrowse();
@@ -220,6 +232,7 @@ test('scratch-panel.test.ts: document viewType insrc.scratchpad renders content 
   assert.ok(handle !== undefined);
   const panel = h.panels[0]!;
   assert.equal(panel.viewType, SCRATCHPAD_VIEW_TYPE);
+  assert.deepEqual(panel.revealFlags, [true], 'ISSUE-3183af2a: the fresh document reveal preserves focus (no focus steal from the chat popup)');
   // The static body holds an empty <pre>; content arrives as a push.
   assert.ok(panel.html.includes('<pre id="insrc-scratchdoc" class="scratch-doc"></pre>'), 'the doc element starts empty');
   assert.ok(!panel.html.includes('not markup</b>'), 'content is NOT baked into the HTML');
@@ -498,6 +511,71 @@ test('scratch-panel.test.ts: a STALE scratch-ready (generation tag from a supers
   assert.ok(!contentsOf(panel).includes('content A'), 'the late A read was dropped');
 });
 
+test('scratch-panel.test.ts: ISSUE-3183af2a — a FRESH scratch-new open (no cached panel) posts content for its generation AND retains a replay copy until its own scratch-ready, so content arriving before the webview listener installs is delivered by the ready replay exactly once end-to-end', async () => {
+  const contentsOf = (panel: FakePanel): string[] =>
+    panel.posted.filter((m) => (m as { payload?: { type?: string } }).payload?.type === 'scratch-content')
+      .map((m) => (m as { payload: { text: string } }).payload.text);
+  const h = harness();
+  await seed(h, 'fresh.md', 'fresh content', 1);
+  // Gate the read so the panel exists and content posting happens AFTER setHtml, i.e. the
+  // realistic scratch-new sequence: create -> openDocument (panel created + revealed) -> read.
+  const c = h.controller;
+  const handle = await c.openDocument('fresh.md');
+  assert.ok(handle !== undefined, 'the fresh open created the document panel');
+  const panel = h.panels.at(-1)!;
+  // The read resolved pre-ready: content posted once, replay copy retained.
+  await new Promise((r) => setTimeout(r, 10));
+  assert.deepEqual(contentsOf(panel), ['fresh content'], 'the pre-ready content posted once');
+  // The webview's own ready (generation 1) replays the retained copy exactly once...
+  panel.injectMessage({ v: 1, payload: { type: 'scratch-ready', gen: 1 } });
+  await new Promise((r) => setTimeout(r, 10));
+  assert.deepEqual(contentsOf(panel), ['fresh content', 'fresh content'], 'the ready replays the retained copy (the webview was not listening yet)');
+  // ...and the replay copy is consumed: a duplicate ready re-posts nothing, and a LATER read
+  // (content re-read after ready) posts directly without being retained.
+  panel.injectMessage({ v: 1, payload: { type: 'scratch-ready', gen: 1 } });
+  await new Promise((r) => setTimeout(r, 10));
+  assert.deepEqual(contentsOf(panel).length, 2, 'a duplicate ready re-posts nothing');
+});
+
+test('scratch-panel.test.ts: ISSUE-3183af2a CR-MED — wrap() behaviorally logs a dropped post for BOTH delivery outcomes: false (not ready / disposed) and a rejection (disposed panel); a delivered post logs nothing', async () => {
+  const h = harness();
+  await seed(h, 'drop.md', 'D', 1);
+  const wrapped = await h.controller.openDocument('drop.md');
+  assert.ok(wrapped !== undefined, 'the open returned the wrapped handle');
+  const panel = h.panels.at(-1)!;
+  h.warns.length = 0;
+  // Delivered post: no warning.
+  panel.delivery = true;
+  wrapped!.postMessage({ v: 1, payload: { type: 'scratch-content', text: 'x' } });
+  await new Promise((r) => setTimeout(r, 10));
+  assert.deepEqual(h.warns, [], 'a delivered post logs nothing');
+  // False delivery: warned once, and the post still went out (recorded by the fake).
+  h.warns.length = 0;
+  panel.delivery = false;
+  const postedBefore = panel.posted.length;
+  wrapped!.postMessage({ v: 1, payload: { type: 'scratch-content', text: 'y' } });
+  await new Promise((r) => setTimeout(r, 10));
+  assert.equal(panel.posted.length, postedBefore + 1, 'the post itself still went out');
+  assert.equal(h.warns.length, 1, 'a false delivery logs exactly one warning');
+  assert.match(h.warns[0]!, /not delivered \(webview not ready or disposed\)/, 'the false-delivery warning names the dropped message');
+  // Rejected post (disposed panel): warned with the rejection wording.
+  h.warns.length = 0;
+  panel.delivery = 'reject';
+  wrapped!.postMessage({ v: 1, payload: { type: 'scratch-content', text: 'z' } });
+  await new Promise((r) => setTimeout(r, 10));
+  assert.equal(h.warns.length, 1, 'a rejected post logs exactly one warning');
+  assert.match(h.warns[0]!, /rejected \(panel disposed\)/, 'the rejection warning names the dropped message');
+  // A synchronous throw is logged too, and never propagates to the caller.
+  h.warns.length = 0;
+  panel.delivery = true;
+  const orig = panel.postMessage.bind(panel);
+  panel.postMessage = (m: unknown): Promise<boolean> => { orig(m); throw new Error('sync boom'); };
+  assert.doesNotThrow(() => wrapped!.postMessage({ v: 1, payload: { type: 'scratch-content', text: 'w' } }), 'a synchronous throw is contained');
+  await new Promise((r) => setTimeout(r, 10));
+  assert.equal(h.warns.length, 1, 'a synchronous throw logs one warning');
+  assert.match(h.warns[0]!, /threw synchronously/, 'the sync-throw warning is distinct');
+});
+
 test('scratch-panel.test.ts: a FAILED row-initiated delete re-renders the browse table WITH the delete error row (the undeleted scratch stays visible but the failure is surfaced, not logged away)', async () => {
   const h = harness();
   await seed(h, 'keep.md', 'K', 1);
@@ -553,6 +631,46 @@ test('scratch-panel.test.ts: a FAILED delete keeps the open document open (the s
   await new Promise((r) => setTimeout(r, 20));
   assert.ok(!h.fake.files.has(`${ROOT}/keep.md`), 'the file is gone after the successful delete');
   assert.ok(doc.disposed, 'the open document is disposed after a successful delete');
+});
+
+test('scratch-panel.test.ts: a FAILED delete does NOT invalidate an IN-FLIGHT read of the still-existing scratchpad (epoch is bumped only after a successful delete — CR attempt-10 t5 MED)', async () => {
+  const h = harness();
+  await seed(h, 'keep.md', 'K', 1);
+  await h.controller.openBrowse();
+  const browse = h.panels[0]!;
+  // Block the read so the delete lands while it is in flight.
+  const origRead = h.store.readScratch.bind(h.store);
+  let releaseRead: () => void = () => undefined;
+  const readGate = new Promise<void>((r) => { releaseRead = r; });
+  h.store.readScratch = async (id: string) => {
+    const out = await origRead(id);
+    if (id === 'keep.md') await readGate;
+    return out;
+  };
+  const openP = h.controller.openDocument('keep.md');
+  await new Promise((r) => setTimeout(r, 5)); // let the read start and block
+  // Fail the delete at unlink (EPERM) while the read is in flight.
+  const origUnlink = h.fake.fs.unlink.bind(h.fake.fs);
+  h.fake.fs.unlink = async (p: string) => {
+    if (p.endsWith('keep.md')) { const e = new Error('EPERM: operation not permitted'); (e as NodeJS.ErrnoException).code = 'EPERM'; throw e; }
+    return origUnlink(p);
+  };
+  browse.injectMessage({ v: 1, payload: { type: 'scratch-delete', id: 'keep.md' } });
+  await new Promise((r) => setTimeout(r, 20));
+  assert.ok(h.fake.files.has(`${ROOT}/keep.md`), 'the file is still present after the failed delete');
+  // Release the in-flight read: the failed delete must NOT have bumped the epoch,
+  // so the read's content is delivered, not dropped as stale.
+  releaseRead();
+  const doc = (await openP) !== undefined ? h.panels.find((p) => p !== browse)! : undefined;
+  assert.ok(doc, 'the document panel opened');
+  const docContents = doc!.posted.filter((m) => (m as { payload?: { type?: string } }).payload?.type === 'scratch-content')
+    .map((m) => (m as { payload: { text: string } }).payload.text);
+  assert.ok(docContents.includes('K'), 'the in-flight read is NOT dropped after a failed delete (epoch unchanged)');
+  // A subsequent SUCCESSFUL delete does invalidate: a new open after it gets ENOENT.
+  h.fake.fs.unlink = origUnlink;
+  browse.injectMessage({ v: 1, payload: { type: 'scratch-delete', id: 'keep.md' } });
+  await new Promise((r) => setTimeout(r, 20));
+  assert.ok(!h.fake.files.has(`${ROOT}/keep.md`), 'the file is gone after the successful delete');
 });
 
 test('scratch-panel.test.ts: stale ENOENT, deleting a non-displayed document, delete invalidates pending opens of the deleted id, closing/reopening the document panel during an outstanding read (dispose invalidates the generation, late read dropped)', async () => {

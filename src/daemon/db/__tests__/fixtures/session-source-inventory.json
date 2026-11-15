@@ -40562,11 +40562,15 @@
         [
           "serialization",
           "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
         ]
       ],
-      "siteCount": 9,
-      "sitesDigest": "1e76f9e8d1bca54fbfa5eaa6ed73d04dfbb97a4de1a8a5911019391a8fc9a145",
-      "sourceDigest": "19551e711eae2e9d58c82cf9fd45026d88331c0f8c0704115e2b4a2c7c259f6f"
+      "siteCount": 10,
+      "sitesDigest": "673c2c6d99c3c1a8f11ce59987544d410ea452135a0ffa1f637b005bb0ed4437",
+      "sourceDigest": "4437cdb90e90a5cea3eee30cf036715e213ce6e0071b7581e2466809b9c62759"
     },
     "src/workflow/code-review/task-review/publication.ts": {
       "classification": "forbidden-session-service",
@@ -40736,7 +40740,7 @@
       ],
       "siteCount": 4,
       "sitesDigest": "4d589ed76011180b408082c9060aba1be58978af5e9b6d97eba47d9efca92793",
-      "sourceDigest": "822c6e176fc056a45c36ce9bace0e1fc8dc8657dbf85eccaec4f2701536473ea"
+      "sourceDigest": "e149b4575d97902b7252a995c5f90b8e2d9d919265401e4caafcc74d8a3a7406"
     },
     "src/workflow/config/github-store.ts": {
       "classification": "forbidden-session-service",
@@ -41169,7 +41173,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "a43a371ca3832b8c60ffe519c846336b83f2a2e7b27047d8d9d04af786442e39",
-      "sourceDigest": "6feb0a9f4b23d426ef39ab554a5e0bfe20ed68d0c6713e1b23307402f292addf"
+      "sourceDigest": "9764523d4f1c2a80c00f73ca54bc56e91d90a94b29f7e18f505429a5cdf09303"
     },
     "src/workflow/convert/stamps.ts": {
       "classification": "forbidden-session-service",

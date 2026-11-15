@@ -16,6 +16,7 @@ import {
 } from '../shared/managed-daemon-installation.js';
 import type { ManagedInstallation } from '../shared/managed-daemon-installation.js';
 import { verifyStagedReleasePin } from './managed-release-staging.js';
+import { verifyManagedBundleProof } from './managed-bundle-proof.js';
 
 function conflict(message: string): never {
 	throw new SupervisorLifecycleError('ownership-conflict', message);
@@ -63,6 +64,7 @@ export async function activateFreshManagedDaemon(activation: FreshActivation): P
 	const { installation, startChild } = activation;
 	const gate = new InstallationMutationGate(installation.stateRoot);
 	await verifyManagedReleaseRuntime(installation);
+	if (activation.bundleProof !== undefined) await verifyManagedBundleProof(installation, activation.bundleProof);
 	const owner = await readDarwinIncarnation(process.pid);
 	const journal = await gate.read();
 	let reservation: Active;
@@ -70,7 +72,7 @@ export async function activateFreshManagedDaemon(activation: FreshActivation): P
 		if (await readInstallationSelector(installation.stateRoot) !== undefined
 			|| await inspectManagedJob(installation) !== undefined) conflict('fresh activation requires an unused installation');
 		await requireQuiescentInstallation(installation);
-		const active = await gate.reserve({ kind: 'start', owner, activation });
+		const active = await gate.reserve({ kind: 'start', owner, activation }, activation.bundleProof?.floor);
 		if (active.kind !== 'start') conflict('unexpected fresh activation reservation');
 		reservation = active;
 	} else {
@@ -78,8 +80,10 @@ export async function activateFreshManagedDaemon(activation: FreshActivation): P
 		if (previous.kind !== 'start' || !isDeepStrictEqual(previous.activation, activation)) {
 			conflict('another installation operation owns this root');
 		}
-		await verifyStagedReleasePin({ root: installation.releaseRoot, runtime: installation.runtime,
-			commit: installation.releaseId, fingerprint: activation.fingerprint });
+		if (activation.bundleProof === undefined) {
+			await verifyStagedReleasePin({ root: installation.releaseRoot, runtime: installation.runtime,
+				commit: installation.releaseId, fingerprint: activation.fingerprint });
+		}
 		await gate.claimRecovery(previous.id, owner, async () => {
 			await verifyFreshSelectorOwnership(installation, previous.id);
 			const job = await inspectManagedJob(installation);

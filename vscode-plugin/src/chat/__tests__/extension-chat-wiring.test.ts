@@ -490,6 +490,19 @@ test('extension-chat-wiring.test.ts: extension.ts constructs createScratchStore 
   // The scratch-host module itself is vscode-free.
   const host = read(join(HERE, '..', 'scratch-host.ts'));
   assert.doesNotMatch(host, /from ['"]vscode['"]/, 'scratch-host.ts imports nothing from vscode');
+  // ISSUE-3183af2a: the scratch panel factory's postMessage adapter no longer swallows a
+  // dropped post — a false delivery result or a rejection is logged via panelLog, and the
+  // delivery promise is RETURNED so the panels controller's wrap() can log at its boundary too.
+  assert.match(b, /return panel\.webview\.postMessage\(message\)\.then\(\s*\(delivered\)/, 'the scratch factory checks the postMessage delivery result and returns the promise');
+  assert.match(b, /delivered === false\)\s*panelLog\.warn\(/, 'an undelivered post (webview not ready / disposed) is logged, not silent');
+  assert.match(b, /\(\)\s*=>\s*\{\s*\n?\s*panelLog\.warn\([\s\S]*?return false;/, 'a rejected post (disposed panel) is logged and resolves false, not silent');
+  // The controller's own wrap() logs drops through the injected logger (behavioral test in
+  // scratch-panel.test.ts); here we pin the source wiring so a regression is caught.
+  const sp = read(join(HERE, '..', '..', 'panels', 'scratch-panels.ts'));
+  assert.match(sp, /return Promise\.resolve\(panel\.postMessage\(m\)\)\.then\(/, 'wrap() consumes the delivery promise');
+  assert.match(sp, /delivered === false\)\s*log\.warn\(/, 'wrap() logs a false delivery via the injected logger');
+  assert.match(sp, /\(\)\s*=>\s*\{\s*\n?\s*log\.warn\(/, 'wrap() logs a rejection via the injected logger');
+  assert.match(sp, /catch \(err\) \{\s*\n?\s*log\.warn\([\s\S]*?threw synchronously/, 'wrap() contains and logs a synchronous throw');
 });
 
 test('extension-chat-wiring.test.ts: scratch-new title acquisition end-to-end — prompt cancelled -> no create + unchanged list; prompt answered -> create + list refresh + document open', async () => {
@@ -556,6 +569,35 @@ test('extension-chat-wiring.test.ts: scratch-new with a FAILING create still re-
   const recovered = chat.posted.filter((m) => m.type === 'scratch-list');
   assert.equal(recovered.length, 1, 'the recovered create re-sends the list');
   assert.ok(!('error' in (recovered[0] as object)), 'the recovered list carries no error field');
+});
+
+test('extension-chat-wiring.test.ts: ISSUE-3183af2a defect 1 — a FAILING browse refresh does NOT skip opening the new document; a failed open is logged, not silent', async () => {
+  const store = fakeStore();
+  const panels = fakePanels();
+  const chat = fakeChat();
+  const warns: string[] = [];
+  const host = createScratchHost({ store, panels, chat, promptTitle: async () => 'My Pad', logger: { warn: (m) => { warns.push(m); } } });
+  // refreshBrowse rejects: the create still opens its document — opening is the point of the intent.
+  const origRefresh = panels.refreshBrowse;
+  panels.refreshBrowse = async () => { panels.calls.push('refreshBrowse'); throw new Error('browse refresh exploded'); };
+  // openDocument fails (panel factory error): returns undefined.
+  panels.openDocument = async (id: string) => { panels.calls.push(`openDocument:${id}`); return undefined; };
+  host.onMessage({ type: 'scratch-new' });
+  await flush();
+  assert.deepEqual(store.created, ['My Pad'], 'the scratchpad was created');
+  assert.deepEqual(panels.calls, ['refreshBrowse', 'openDocument:My Pad.md'], 'the document open is attempted even though the browse refresh failed');
+  assert.ok(warns.some((w) => /browse refresh failed after create/.test(w)), 'the refresh failure is logged');
+  assert.ok(warns.some((w) => /created My Pad\.md but its document panel did not open/.test(w)), 'the failed open is visible in the log instead of silent');
+  assert.equal(chat.posted.filter((m) => m.type === 'scratch-list').length, 1, 'the list is still re-sent');
+  // Recovery: refreshBrowse succeeds again, openDocument returns a handle -> no warnings at all.
+  chat.posted.length = 0; panels.calls.length = 0; warns.length = 0;
+  panels.refreshBrowse = origRefresh;
+  panels.openDocument = async (id: string) => { panels.calls.push(`openDocument:${id}`); return { id } as never; };
+  host.onMessage({ type: 'scratch-new' });
+  await flush();
+  assert.deepEqual(panels.calls, ['refreshBrowse', 'openDocument:My Pad.md']);
+  assert.deepEqual(warns, [], 'a clean refresh + successful open logs nothing');
+  assert.equal(chat.posted.filter((m) => m.type === 'scratch-list').length, 1, 'the list is re-sent on the clean path too');
 });
 
 test('extension-chat-wiring.test.ts: scratch-delete with a FAILING delete still re-sends the list but WITH the delete error field; the panels are still closed/refreshed; a later successful delete clears it (t7 delete-failure surfacing)', async () => {
@@ -669,19 +711,20 @@ test('extension-chat-wiring.test.ts: scratch-list error field renders the unavai
       promptTitle: async () => undefined,
     });
     const lblOf = (c: BodyStub): string => (c.querySelector('.lbl') as BodyStub | null)?.textContent ?? '';
-    const labels = (): string[] => menu.children.map(lblOf);
+    const labels = (): string[] => menu.children.slice(1).map(lblOf);
     fire(v.el('insrc-scratch'), 'click');
     assert.deepEqual(ofType(v, 'scratch-open-menu'), [{ type: 'scratch-open-menu' }], 'the status-bar scratch button posts scratch-open-menu into the host router');
     renderStore.failList = true;
     renderHost.onMessage({ type: 'scratch-open-menu' });
     await flush();
-    assert.equal(labels().length, 1, 'the failure renders exactly one row');
-    assert.match(labels()[0]!, /^scratchpads unavailable: .*EACCES/, 'the real menu renders the unavailable error row');
+    assert.equal(menu.children.length, 1, 'the failure renders exactly one row (no action strip on error)');
+    assert.match(lblOf(menu.children[0]!), /^scratchpads unavailable: .*EACCES/, 'the real menu renders the unavailable error row');
     assert.equal(menu.children[0]!.attrs['aria-disabled'], 'true', 'the error row is disabled in the real render');
     renderStore.failList = false;
     renderHost.onMessage({ type: 'scratch-open-menu' });
     await flush();
-    assert.deepEqual(labels(), ['20260113-090000-late', 'New scratchpad', 'Browse all'], 'a later success re-renders the recovered entries in the real menu');
+    assert.match(menu.children[0]!.className, /scratchacts/, 'a later success re-renders the icon action strip on top');
+    assert.deepEqual(labels(), ['20260113-090000-late'], 'a later success re-renders the recovered entries in the real menu');
   }
   // Panel-factory failure: the REAL controller returns undefined, logs a warning, and the
   // next open retries and succeeds (the ac-mapped coverage the wiring suite must carry).

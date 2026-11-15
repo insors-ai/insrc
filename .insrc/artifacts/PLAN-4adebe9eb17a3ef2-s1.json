@@ -1,0 +1,239 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1794665269838-sjn6iz",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-14T14:08:22.507Z",
+    "epicCreatedAt": "2026-11-14T13:09:02.500Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 32381,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4adebe9eb17a3ef2",
+    "epicSlug": "separate-daemon-development-release-build-lanes",
+    "storyId": "s1",
+    "lldRunId": "wf-1794663683617-c2huez",
+    "lldEffectiveHash": "b1d6f6a0370aad5bf1e37380ad77e651d970a8b7dd4114715d65a5a377230992",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a826c39797f82d17e5309678200fde095109d219c3fc5b61d03f41af8607f6c4",
+        "at": "2026-11-14T14:08:22.601Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T14:09:24.162Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "444a7188185caf7103c6bfa15dafa525d93d447f"
+  },
+  "body": {
+    "summary": {
+      "prose": "Separate unsigned v2 build artifacts from protected main release candidates, and keep testing and qualification local.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Implement branch and readiness admission",
+        "summary": "Update the build workflow and candidate packager to derive branch/lane from the dispatch ref and emit run-attempt metadata. Keep main default off.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Protected and ready main builds a release candidate; unsigned v2 builds a development candidate even when release readiness is off.",
+          "Unsupported refs, incorrect dispatch SHA and missing main readiness fail before a job. No signing credentials or hosted tests are available to the v2 job."
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Local branch routing and candidate metadata"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Bind the exact candidate origin",
+        "summary": "Verify GitHub attempt and artifact identity from both signing workflows, make the signed manifest and qualification record carry identical origin data, and reject pre-policy or cross-attempt records.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Only successful exact main attempts and matching immutable artifacts are eligible.",
+          "Promotion rejects wrong repository, branch, workflow, SHA, run, attempt, artifact, expiration or payload digest, including byte-identical reruns."
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Exact attempt and signed archive provenance"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Enforce signing policy and live shutdown",
+        "summary": "Enforce main-only environment configuration and live readiness after approvals, before signing, and before each publish write. Preserve the two-key model and existing exact-archive checks.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Both environment policies require main-only refs, designated reviewers and no self-approval/bypass. Missing or unverifiable live policy aborts.",
+          "Disabling readiness while awaiting approval or after signing refuses the next operation; v2 and tags never reach signing."
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Local environment policy and live disable checks"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Document and verify staged rollout",
+        "summary": "Document the narrow default-branch workflow landing, operator setup and shutdown/reconciliation. Verify unsigned v2 can build before main release activation.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Runbook defers enabling main until packaging/installer, branch protection and environment configuration are verified.",
+          "Local end-to-end fixtures prove pre-test signing, evidence approval, byte-preserving promotion, and cancellation guidance. No release is dispatched during implementation."
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Local staged rollout and release sequence"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "New local workflow policy fixture: main protected builds a release candidate, main unprotected refuses, v2 creates an unsigned development artifact, and all other refs refuse",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "New mocked GitHub API integration: main run plus matching artifact succeeds; v2 origin, mismatched run branch and artifact branch, wrong repository/workflow/commit/run ID or expired artifact all refuse before download or signing",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "New workflow wiring check: both qualification-sign and promotion enforce main provenance independently, dev jobs have no signing environment, and no Actions test commands are added",
+        "coveredByTaskIds": [
+          "t1",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "New local sequence coverage: qualification signature precedes verified test install; failed or absent local record blocks production signing; valid approved evidence admits the identical manifest/archive",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "New local GitHub policy fixtures: enforce exact main branch-only rules and reject a tag rule, extra branch rule, missing reviewers, self-approval, bypass, unavailable policy and v2 environment access",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "New mocked API test: failed attempt 1 plus successful attempt 2; reject attempt 1 and cross-attempt artifact substitution, accept only successful matching attempt",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "New local job-admission tests: missing or false readiness blocks main build before runner and both signing workflows, but v2 development still builds",
+        "coveredByTaskIds": [
+          "t1",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "New test: two successful main attempts with the same commit and archive bytes; substitute attempt or artifact ID and assert promotion rejects the valid signature for the wrong identity",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "New test: readiness is true at scheduling and false after approval, or becomes false after signing; deny signing or the next publish mutation, respectively. Missing/read-failed live settings also fail closed.",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/standalone/separate-daemon-development-release-build-lanes-E202611144adebe9e/S001/LLD.md:34"
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "docs/standalone/separate-daemon-development-release-build-lanes-E202611144adebe9e/S001/LLD.md:54"
+    },
+    {
+      "id": "c3",
+      "kind": "doc",
+      "ref": "docs/standalone/separate-daemon-development-release-build-lanes-E202611144adebe9e/S001/LLD.md:87"
+    },
+    {
+      "id": "c4",
+      "kind": "doc",
+      "ref": "docs/standalone/separate-daemon-development-release-build-lanes-E202611144adebe9e/S001/LLD.md:160"
+    }
+  ]
+}

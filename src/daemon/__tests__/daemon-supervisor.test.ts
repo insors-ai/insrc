@@ -102,6 +102,15 @@ async function ready(child: FakeChild, id: string): Promise<void> {
 	await nextTurn();
 }
 
+test('launch revalidates the pinned runtime after request admission and before spawn', async () => {
+	const f = fake({
+		verifyLaunch: async () => { throw new Error('pinned runtime changed after controller preflight'); },
+	});
+	const result = await f.call('start', null);
+	assert.equal(result.ok, false);
+	assert.equal(f.children.length, 0);
+});
+
 test('Monotonic deadline, repeated requests and grace versus forced outcome', async () => {
 	const f = fake();
 	const first = success(await f.call('start', null)).generation!;

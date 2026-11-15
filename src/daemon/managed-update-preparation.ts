@@ -15,11 +15,14 @@ import type { ManagedInstallation } from '../shared/managed-daemon-installation.
 import { checkUpdateSource, readUpdateSource } from '../shared/update-source.js';
 import type { UpdateSource } from '../shared/update-source.js';
 import { discoverLegacyLaunch } from './legacy-cutover-admission.js';
-import { managedReleaseGit as git, stageManagedRelease, verifyStagedReleasePin } from './managed-release-staging.js';
+import { captureManagedReleasePin, managedReleaseGit as git, stageManagedRelease, verifyStagedReleasePin } from './managed-release-staging.js';
 import { readVerifiedSourceRelease } from '../shared/managed-source-release.js';
 import type { VerifiedSourceRelease } from '../shared/managed-source-release.js';
 import { completeLegacyMigration, completeManagedUpdate } from './managed-update-recovery.js';
 import { readTaggedReleaseCompatibility } from './release-compatibility.js';
+import { readReleaseCompatibility, requireQualifiedReleasePair } from './release-compatibility.js';
+import { verifyManagedBundleManifest, verifyManagedBundleProof } from './managed-bundle-proof.js';
+import type { ManagedBundleProof } from './managed-bundle-proof.js';
 
 type Update = Extract<MutationReservation, { kind: 'update' }>;
 type Source = { readonly repoUrl: string; readonly branch: string };
@@ -200,4 +203,87 @@ export async function prepareLegacyUpgrade(root: string, checkout: string, overr
 	if (reservation.kind !== 'update') throw new Error('expected legacy upgrade reservation');
 	return completeLegacyMigration(gate, reservation, { prior, candidate: prepared.candidate, compatibility: prepared.compatibility,
 		sourceRelease: { ...prepared.sourceRelease, launchProfile: profile } });
+}
+
+/** The independently authenticated bootstrap has already staged this exact candidate. */
+export async function prepareBundleLegacyUpgrade(candidate: ManagedInstallation, proof: ManagedBundleProof, checkout: string, priorRuntime: string) {
+	const root = candidate.stateRoot;
+	if (await readInstallationSelector(root) !== undefined) throw new Error('pilot clone migration requires a legacy installation without a selector');
+	await verifyManagedBundleProof(candidate, proof);
+	const manifest = await verifyManagedBundleManifest(proof, candidate.releaseId, root);
+	const source = await captureManagedReleasePin(await realpath(checkout), priorRuntime);
+	const predecessors = manifest.predecessors as Array<{ kind: string; commit: string; compatibility: object;
+		launchProfiles: string[]; crashConsistentReopening: boolean }>;
+	const exact = predecessors.find(item => item.kind === 'source' && item.commit === source.commit && item.crashConsistentReopening);
+	if (exact === undefined) throw new Error('bundle does not qualify this clone predecessor');
+	const priorProfile = readReleaseCompatibility({ ...exact.compatibility, version: 1, startup: 'rollback-compatible', releaseId: source.commit });
+	const declared = await readFile(join(source.root, 'out/release-compatibility.json'), 'utf8')
+		.catch(error => { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; });
+	if (declared !== undefined && !isDeepStrictEqual(readReleaseCompatibility(JSON.parse(declared)), priorProfile)) {
+		throw new Error('installed compatibility differs from the signed predecessor declaration');
+	}
+	const candidateProfile = readReleaseCompatibility({ ...(manifest.compatibility as object), version: 1,
+		startup: 'rollback-compatible', releaseId: candidate.releaseId });
+	const compatibility = requireQualifiedReleasePair(priorProfile, candidateProfile, [{ prior: priorProfile, candidate: candidateProfile }]);
+	const prior: ManagedInstallation = { ...candidate, releaseRoot: source.root, releaseId: source.commit, runtime: source.runtime, enabled: false };
+	const route = await discoverLegacyLaunch(prior, { ...candidate, enabled: false });
+	const profile = route.legacy === undefined ? (route.wasRunning ? 'legacy-direct' : 'legacy-stopped')
+		: route.legacy.job.program === '/bin/bash' ? 'legacy-shell-job' : 'legacy-node-job';
+	if (!exact.launchProfiles.includes(profile)) throw new Error('bundle does not qualify the incumbent launch profile');
+	const gate = new InstallationMutationGate(root);
+	const bundleProof = { priorSourceFingerprint: source.fingerprint, candidate: proof };
+	const reservation = await gate.reserve({ kind: 'update', owner: await readDarwinIncarnation(process.pid), predecessor: {
+		...route, priorRelease: prior.releaseId, candidateRelease: candidate.releaseId, priorCommit: source.commit,
+		generation: null, pins: { prior, candidate }, selectorAbsent: true, bundleProof,
+	} }, proof.floor);
+	if (reservation.kind !== 'update') throw new Error('expected bundle migration reservation');
+	return completeLegacyMigration(gate, reservation, { prior, candidate, compatibility, bundleProof });
+}
+
+export async function prepareInstalledBundleUpgrade(candidate: ManagedInstallation, proof: ManagedBundleProof) {
+	const root = candidate.stateRoot;
+	const prior = await readManagedInstallation(root);
+	const gate = new InstallationMutationGate(root);
+	const installed = (await gate.read()).installedBundle;
+	if (prior === undefined || installed?.releaseRoot !== prior.releaseRoot || installed.proof.floor.domain !== proof.floor.domain) {
+		throw new Error('installed bundle identity or trust domain does not match');
+	}
+	await verifyManagedBundleProof(prior, installed.proof);
+	await verifyManagedBundleProof(candidate, proof);
+	const manifest = await verifyManagedBundleManifest(proof, candidate.releaseId, root);
+	const previousManifest = await verifyManagedBundleManifest(installed.proof, prior.releaseId, root);
+	const predecessors = manifest.predecessors as Array<{ kind: string; commit: string; manifestSha256: string;
+		compatibility: object; launchProfiles: string[]; crashConsistentReopening: boolean }>;
+	const exact = predecessors.find(item => item.kind === 'bundle' && item.commit === prior.releaseId &&
+		item.manifestSha256 === installed.proof.floor.manifestSha256 && item.crashConsistentReopening && item.launchProfiles.includes('managed'));
+	if (exact === undefined) throw new Error('candidate does not qualify the installed bundle');
+	const profile = (value: object, releaseId: string) =>
+		readReleaseCompatibility({ ...value, version: 1, startup: 'rollback-compatible', releaseId });
+	const priorProfile = profile(previousManifest.compatibility as object, prior.releaseId);
+	if (!isDeepStrictEqual(priorProfile, profile(exact.compatibility, prior.releaseId))) {
+		throw new Error('installed bundle compatibility differs from the signed predecessor declaration');
+	}
+	const candidateProfile = profile(manifest.compatibility as object, candidate.releaseId);
+	const compatibility = requireQualifiedReleasePair(priorProfile, candidateProfile, [{ prior: priorProfile, candidate: candidateProfile }]);
+	const bundleProof = { priorBundle: installed.proof, candidate: proof };
+	const link = await openManagedSupervisorLink(prior);
+	try {
+		const status = accepted(await link.call({ op: 'status', generation: null }));
+		if (!['idle', 'exited', 'running'].includes(status.state)) throw new Error('installed bundle is already changing state');
+		const reservation = await gate.reserve({ kind: 'update', owner: await readDarwinIncarnation(process.pid), predecessor: {
+			priorRelease: prior.releaseId, priorCommit: prior.releaseId, candidateRelease: candidate.releaseId,
+			wasRunning: status.state === 'running', generation: status.generation, pins: { prior, candidate }, bundleProof,
+		} }, proof.floor);
+		if (reservation.kind !== 'update') throw new Error('expected bundle update reservation');
+		try {
+			const pinned = (await gate.read()).installedBundle;
+			if (!isDeepStrictEqual(await readManagedInstallation(root), prior) || !isDeepStrictEqual(pinned, installed)) {
+				throw new Error('installed bundle changed before update admission');
+			}
+		} catch (error) {
+			await gate.cancelUnstartedUpdate(reservation);
+			throw error;
+		}
+		return await completeManagedUpdate(gate, reservation, { prior, candidate, compatibility, bundleProof });
+	} finally { link.close(); }
 }

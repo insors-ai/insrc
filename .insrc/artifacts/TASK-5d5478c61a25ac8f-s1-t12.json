@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-71984314-254a-48ef-b4c8-f41cf4933c23",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-13T05:36:10.131Z",
+    "epicCreatedAt": "2026-11-11T16:00:50.440Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5d5478c61a25ac8f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Authenticate installer and IDE bootstrap",
+      "parent": {
+        "entityId": "STORY-5d5478c61a25ac8f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-5d5478c61a25ac8f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "withdrawn",
+      "revision": {
+        "number": 1,
+        "contentHash": "94ffb0fa532bb865081f05b9f08536b8910db2e017aa8236c6d330e4e7170a45",
+        "at": "2026-11-13T05:36:10.131Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-13T05:36:10.138Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Authenticate installer and IDE bootstrap",
+    "summary": "Run the trusted first-stage verifier before candidate-controlled execution.",
+    "size": "M",
+    "order": 11,
+    "acceptanceChecks": [
+      "Shell and both IDE installer routes refuse missing or invalid authorization before bridge checkout, npm scripts or bridge execution. Preserve existing fresh and Linux behavior."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Invalid or missing authorization prevents bootstrap checkout execution, npm scripts and bridge invocation"
+      }
+    ],
+    "planTaskId": "t12"
+  },
+  "citations": []
+}

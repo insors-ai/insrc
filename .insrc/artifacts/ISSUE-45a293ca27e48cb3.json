@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1794667404479-d77fui",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-14T14:44:19.991Z",
+    "epicCreatedAt": "2026-11-14T14:44:19.991Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 55509,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "45a293ca27e48cb3",
+    "epicSlug": "chat-queue-stays-blocked-behind-reclaimed",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "099d8761c01e12da91de7811cc021ad0924f865863ede49d46bb243a5572254e",
+        "at": "2026-11-14T14:44:20.008Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Chat queue stays blocked behind a reclaimed turn that the chat shows as idle and cannot stop",
+    "reproduction": "1. In the VS Code dev chat, send a message whose turn keeps the claude CLI running for a long time. Observed 2026-11-14: the agent kept arming background tasks (a placeholder Monitor, then a test sweep that hung), and each task notification continued the same CLI turn.\n2. Reload or close the window while that turn runs. The extension host exits, and the claude CLI is left running as an orphan whose parent is pid 1.\n3. Open the chat again in the same window.\n\nObserved: the new window reclaims the queue lease and follows the orphaned CLI. The chat shows the session idle and Stop does not end that turn. Every later message in the repository stays queued. Message 983 stayed `processing` from 13:07 to 14:37 UTC and was only released when the CLI (pid 94176) was killed by hand.\n\nExpected: the chat shows that the turn is still running, including while it waits on background tasks; Stop ends it; and a reclaimed turn whose CLI makes no progress does not block the queue indefinitely.",
+    "rootCause": "The queue worker treats a lease as held for as long as the turn's CLI process is alive, and nothing else bounds it.\n\n- `holderGone` counts a lease as abandoned only when both the window's process and the CLI are dead.\n- On dispose, the worker keeps a lease whose CLI is still running.\n- After a reload, `applyLeaseRules` reclaims a same-window lease whose CLI is alive. `followReclaimed` then only refreshes its heartbeat until the CLI exits. It never checks whether the CLI is still producing output, so the takeover timeout never applies.\n\nThe reclaim lives only in the queue worker; the chat panel does not use it. The panel's running state and its Stop control (`cancel-turn`) work from the panel's own turn runtime (`rt.turns`, `session.liveTurn`), which a reloaded window has not rebuilt for a CLI it did not spawn. The panel therefore shows idle, and Stop has no process to stop. An orphaned CLI that never ends its turn holds the queue for the whole repository until it is killed outside VS Code.",
+    "fixIntent": "- While the window holds or follows a session's turn, including a turn reclaimed after a reload, the chat shows that turn as running, including when the CLI is only waiting on background tasks.\n- Stop works on a reclaimed turn. It ends the CLI process that holds the lease and releases the lease, so the next queued message runs.\n- A reclaimed turn whose CLI shows no progress for a bounded time no longer holds the queue forever. The user is told, and the queue can move on.\n- Turns whose CLI is still making progress after a reload keep today's behaviour: they are followed, not killed."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-queue-worker.ts:315-316",
+      "quotedText": "const holderGone = (l: RepoLease): boolean => !deps.isAlive(l.pid, l.pidStartedAt) && !cliAlive(l);"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-queue-worker.ts:338-344",
+      "quotedText": "reclaimed the lease of message ${lease.seq} after a reload: its CLI (pid ${lease.cliPid}) is still running"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-queue-worker.ts:359-371",
+      "quotedText": "A reclaimed lease runs a turn this window did not start. Keep it fresh while the CLI lives"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-queue-worker.ts:453-460",
+      "quotedText": "A turn whose CLI has already exited is finished now; one still running keeps the lease"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-queue-worker.ts:350",
+      "quotedText": "if (at - lease.heartbeatAt < LEASE_TAKEOVER_MS || !holderGone(lease)) return;"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:3365-3404",
+      "quotedText": "case 'cancel-turn': ... void rt.turns.stop().then((verified) => { if (verified) clearProgress(); });"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:3340-3341",
+      "quotedText": "if (rt !== undefined && (rt.turns.busy() || rt.startingTurns > 0 || rt.queued !== undefined)) postRunning(rt);"
+    },
+    {
+      "id": "c8",
+      "kind": "stakeholder",
+      "ref": "user report 2026-11-14",
+      "quotedText": "chat says idle but messages are getting queued"
+    }
+  ]
+}

@@ -44,8 +44,9 @@ class FakePanel implements PanelHandle {
   onMessage(listener: (message: unknown) => void): void {
     this.messageListener = listener;
   }
-  postMessage(message: unknown): void {
+  postMessage(message: unknown): Promise<boolean> {
     this.posted.push(message);
+    return Promise.resolve(true);
   }
   dispose(): void {
     this.disposed = true;

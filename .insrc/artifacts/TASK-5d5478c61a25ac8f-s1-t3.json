@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-25bcddcb-a769-4a4e-b407-43a9dc28806f",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T17:01:18.324Z",
+    "epicCreatedAt": "2026-11-11T16:00:50.440Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5d5478c61a25ac8f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Identify and fence legacy launch routes",
+      "parent": {
+        "entityId": "STORY-5d5478c61a25ac8f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-5d5478c61a25ac8f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 4"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e257fa3835cfa53373beae83c99ad4ae30fa6bc1a31a644cc454e8c269e51fa4",
+        "at": "2026-11-11T17:01:18.325Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T17:01:18.332Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Identify and fence legacy launch routes",
+    "summary": "Discover a qualified predecessor and isolate the canonical launcher before cutover.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Verified direct, passive job, temporary recovery job and stopped predecessors carry exact pins and compatible journal variants.",
+      "An already-running legacy helper, foreign job, unknown path or descriptor conflict refuses cutover before shutdown. The journaled dispatcher exchange can be resumed or reversed."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Predecessor variants and backward decoding"
+      },
+      {
+        "level": "integration",
+        "name": "Old shell/helper concurrent with canonical launcher exchange and old child attempting to open stores"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

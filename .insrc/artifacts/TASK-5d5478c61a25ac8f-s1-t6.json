@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-02e5e650-1ca1-4170-b1b8-33902f72b3b5",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T17:01:18.372Z",
+    "epicCreatedAt": "2026-11-11T16:00:50.440Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5d5478c61a25ac8f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Wire running and stopped daemon updates",
+      "parent": {
+        "entityId": "STORY-5d5478c61a25ac8f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-5d5478c61a25ac8f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 4"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "813b08b667a29836b6eb6efaa8bbbddda38cb52f262ef40a908406e1bc470885",
+        "at": "2026-11-11T17:01:18.372Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T17:01:18.382Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire running and stopped daemon updates",
+    "summary": "Connect shell, TUI and the daemon update endpoint to shared staging and migration.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "Running managed update returns a bounded acknowledgement before detached fetch, install or build. Slow preparation can exceed both current deadlines without dropping an admitted update or shutting down the predecessor early.",
+      "Stopped managed update works without daemon IPC and leaves the replacement stopped. The legacy first-upgrade entry stages the bridge before calling old shutdown.",
+      "An unconfirmed acknowledgement cancels bounded admission before preparation or shutdown. Once acknowledged, the detached helper owns preparation and outcome even if the client disconnects."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Running managed update IPC and stopped local managed update"
+      },
+      {
+        "level": "integration",
+        "name": "Managed update acknowledges before slow preparation and survives client disconnect"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

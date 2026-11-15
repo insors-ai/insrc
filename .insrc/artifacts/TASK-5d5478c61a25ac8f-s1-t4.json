@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8a7f7905-c411-4642-b573-3063a9edf8ae",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T17:01:18.338Z",
+    "epicCreatedAt": "2026-11-11T16:00:50.440Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5d5478c61a25ac8f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Transfer the run-file guard without a gap",
+      "parent": {
+        "entityId": "STORY-5d5478c61a25ac8f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-5d5478c61a25ac8f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 4"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "dc931af837e8e3acb9cf321d89abd1fa372132a50b0c5e9b9a285f91e7dc0c1a",
+        "at": "2026-11-11T17:01:18.339Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T17:01:18.347Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Transfer the run-file guard without a gap",
+    "summary": "Define authenticated transfer, receipts, and recovery across exact predecessor exit and supervisor startup.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "The old process exits with independent incarnation evidence. Graceful, broker-denied and unknown outcomes are distinguished only with correlated evidence.",
+      "The supervisor adopts the exact guard without releasing it in between. Old handles cannot mutate it. Crashes before and after transfer are recoverable, including an idle candidate and legacy rollback.",
+      "The transfer binds both incarnations to a durable receipt and proves the former owner cannot use its stale handle."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Graceful, broker-denied and unknown drain evidence"
+      },
+      {
+        "level": "integration",
+        "name": "Guard adoption binds exact identities and recovers on either side of transfer"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

@@ -222,10 +222,30 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
 
   const wrap = (panel: PanelHandle): ScratchPanelHandle => ({
     setHtml: (h) => panel.setHtml(h),
-    reveal: () => panel.reveal(),
+    reveal: (preserveFocus?: boolean | undefined) => panel.reveal(preserveFocus),
     onDidDispose: (l) => panel.onDidDispose(l),
     onMessage: (l) => panel.onMessage(l),
-    postMessage: (m) => panel.postMessage(m),
+    // ISSUE-3183af2a: surface a dropped post instead of swallowing it. The factory
+    // adapter already logs false/rejection via panelLog; the controller logs through its
+    // own injected logger so the drop is visible whichever boundary drops it. Best-effort:
+    // a logging failure must never break the caller's post.
+    postMessage: (m) => {
+      try {
+        return Promise.resolve(panel.postMessage(m)).then(
+          (delivered) => {
+            if (delivered === false) log.warn('insrc: a scratchpad webview postMessage was not delivered (webview not ready or disposed) — the message was dropped');
+            return delivered;
+          },
+          () => {
+            log.warn('insrc: a scratchpad webview postMessage rejected (panel disposed) — the message was dropped');
+            return false;
+          },
+        );
+      } catch (err) {
+        log.warn(`insrc: a scratchpad webview postMessage threw synchronously — the message was dropped — ${String(err)}`);
+        return Promise.resolve(false);
+      }
+    },
     dispose: () => panel.dispose(),
     setTitle: (title) => (deps.setPanelTitle ?? (() => {}))(panel, title),
   });
@@ -249,7 +269,10 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
       const panel = wrap(deps.panels({ viewType, title }));
       panel.onDidDispose(onDispose);
       onCreate(panel);
-      panel.reveal();
+      // Reveal with focus preserved: the singleton is created for a user action
+      // (e.g. scratch-new from the chat popup), and stealing focus to the new tab
+      // makes the action look like a no-op in the panel the user is interacting with.
+      panel.reveal(true);
       setCurrent(panel);
       return panel;
     } catch (err) {
@@ -274,7 +297,6 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
   };
 
   const deleteAndRefresh = async (id: string): Promise<void> => {
-    invalidateId(id);
     let deleteError: string | undefined;
     try {
       await deps.store.deleteScratch(id);
@@ -284,9 +306,14 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
       deleteError = `delete failed: ${String(err)}`;
       log.warn(`[scratches] delete failed for ${id}: ${String(err)}`);
     }
-    // Close the open document ONLY after a successful delete. On failure the
-    // scratchpad still exists, so its document must stay open.
-    if (deleteError === undefined) closeDocumentIfShowing(id);
+    // Invalidate the id's read epoch ONLY after a successful delete: a failed delete
+    // leaves the scratchpad file in place, so invalidating up front would drop an
+    // in-flight read of a still-existing document. Close the open document ONLY after
+    // a successful delete too — on failure the document must stay open.
+    if (deleteError === undefined) {
+      invalidateId(id);
+      closeDocumentIfShowing(id);
+    }
     if (browseHandle !== undefined) await renderBrowse(browseHandle, deleteError);
   };
 

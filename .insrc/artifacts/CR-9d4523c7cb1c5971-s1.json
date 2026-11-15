@@ -1,0 +1,1064 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "store-1a32875d-2893-4889-a7f9-be18ac9afa57",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-13T05:33:20.980Z",
+    "epicCreatedAt": "2026-11-12T19:54:27.239Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 2,
+    "epicHash": "9d4523c7cb1c5971",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicSlug": "daemon-ctl-sh-fails-node-command",
+    "standalone": true,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 2,
+        "contentHash": "83dce2b98d67c8eb76ae83fa2a0052b12eff6b0aecd390ecaf1f403beaad2f89",
+        "at": "2026-11-13T05:55:28.452Z",
+        "by": {
+          "id": "insrc:code-review",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 2
+  },
+  "body": {
+    "kind": "code-review",
+    "format": "task-based",
+    "storyId": "s1",
+    "status": "passed",
+    "reviews": [
+      {
+        "reviewId": "cr-9d4523c7-s1-r1d",
+        "attempt": 1,
+        "storyId": "s1",
+        "taskId": "s1",
+        "reviewer": "daemon",
+        "status": "changes_requested",
+        "finalScopeIdentity": "89d83bac017f002725873389d2975cf4b5850053afe43a8b482f4d6f4e11d788",
+        "attributionIdentity": "ec26f859023b3637aeba1d3d9246ab06ba159424379514a7a483284776951ba0",
+        "taskScopeIdentities": [
+          {
+            "taskId": "s1",
+            "identity": "e2c131dbc191229661b197e97dae83c66ec84505b68136642a60fab903564a35"
+          }
+        ],
+        "scope": {
+          "reviewRevision": "a6ab1afcdb71659e977c98effa859f4e604662fe",
+          "finalScope": {
+            "revision": "a6ab1afcdb71659e977c98effa859f4e604662fe",
+            "identity": "89d83bac017f002725873389d2975cf4b5850053afe43a8b482f4d6f4e11d788",
+            "entries": [
+              {
+                "originChangeIndex": 0,
+                "path": "scripts/daemon-ctl.sh",
+                "blobOid": "0e3a5e570aa81567f6fe383c4ec56da737591062",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      41,
+                      48
+                    ]
+                  },
+                  {
+                    "after": [
+                      57,
+                      93
+                    ]
+                  },
+                  {
+                    "after": [
+                      242,
+                      242
+                    ]
+                  },
+                  {
+                    "after": [
+                      257,
+                      257
+                    ]
+                  },
+                  {
+                    "after": [
+                      280,
+                      280
+                    ]
+                  },
+                  {
+                    "after": [
+                      282,
+                      282
+                    ]
+                  },
+                  {
+                    "after": [
+                      312,
+                      312
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 1,
+                "path": "src/daemon/__tests__/daemon-ctl-node-path.test.ts",
+                "blobOid": "4fd6eee0ade95945a74ba5e8dee6b0cb3fffc461",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      206
+                    ]
+                  }
+                ]
+              }
+            ],
+            "dispositions": [
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    41,
+                    48
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      41,
+                      48
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    57,
+                    93
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      57,
+                      93
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    242,
+                    242
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      242,
+                      242
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    257,
+                    257
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      257,
+                      257
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    280,
+                    280
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      280,
+                      280
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 5
+                },
+                "sourcePart": {
+                  "after": [
+                    282,
+                    282
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      282,
+                      282
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 6
+                },
+                "sourcePart": {
+                  "after": [
+                    312,
+                    312
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      312,
+                      312
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    1,
+                    206
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      1,
+                      206
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              }
+            ],
+            "selectedTaskIds": [
+              "s1"
+            ],
+            "testCount": 1,
+            "attributionIdentity": "ec26f859023b3637aeba1d3d9246ab06ba159424379514a7a483284776951ba0",
+            "attributionState": "accepted",
+            "tasks": [
+              {
+                "taskId": "s1",
+                "changeIndexes": [
+                  0,
+                  1
+                ],
+                "testIndexes": [
+                  0
+                ],
+                "decision": {
+                  "action": "initial"
+                },
+                "identity": "e2c131dbc191229661b197e97dae83c66ec84505b68136642a60fab903564a35"
+              }
+            ]
+          },
+          "storyId": "s1",
+          "taskId": "s1",
+          "documents": {
+            "issue": {
+              "path": "docs/standalone/daemon-ctl-sh-fails-node-command-E202611129d4523c7/ISSUE.md",
+              "commit": "c249074026b8fad12105ce5fb9854935d6a72ae4"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "a6ab1afcdb71659e977c98effa859f4e604662fe",
+              "parent": "7f835b056f6c4e29c2b06b9f0284cc06035bbfda",
+              "files": [
+                {
+                  "path": "scripts/daemon-ctl.sh",
+                  "segments": [
+                    {
+                      "after": [
+                        41,
+                        48
+                      ]
+                    },
+                    {
+                      "after": [
+                        57,
+                        93
+                      ]
+                    },
+                    {
+                      "after": [
+                        242,
+                        242
+                      ]
+                    },
+                    {
+                      "after": [
+                        257,
+                        257
+                      ]
+                    },
+                    {
+                      "after": [
+                        280,
+                        280
+                      ]
+                    },
+                    {
+                      "after": [
+                        282,
+                        282
+                      ]
+                    },
+                    {
+                      "after": [
+                        312,
+                        312
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/daemon/__tests__/daemon-ctl-node-path.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        206
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "s1",
+            "status": "changes_requested",
+            "summary": "Completed inspection of both submitted files, the pinned issue, acceptance requirements, and relevant test assertions. All four call sites use NODE_BIN, but runtime resolution has two path-handling defects and the tests do not guarantee a node-free PATH.",
+            "findings": [
+              {
+                "severity": "MED",
+                "location": "scripts/daemon-ctl.sh:61-64",
+                "message": "Convert the selected runtime to an absolute path before pinning it.",
+                "rationale": "An executable relative override such as ./tools/node passes validation and is returned unchanged. Likewise, command -v can return tools/node for a relative PATH entry. stop_managed_daemon can execute that path from the caller's directory, but spawn_daemon changes to DAEMON_ROOT before executing it, causing startup to fail or select a different executable. This violates the explicit absolute-path requirement. Add a regression with differing caller and daemon directories.",
+                "evidenceReferences": [
+                  "a6ab1afcdb71659e977c98effa859f4e604662fe:scripts/daemon-ctl.sh",
+                  "c249074026b8fad12105ce5fb9854935d6a72ae4:docs/standalone/daemon-ctl-sh-fails-node-command-E202611129d4523c7/ISSUE.md",
+                  "a6ab1afcdb71659e977c98effa859f4e604662fe:src/daemon/__tests__/daemon-ctl-node-path.test.ts"
+                ]
+              },
+              {
+                "severity": "MED",
+                "location": "scripts/daemon-ctl.sh:86",
+                "message": "Preserve internal whitespace in the recorded runtime path.",
+                "rationale": "The substitution removes every whitespace character, so a recorded executable such as /Applications/Node Tools/bin/node becomes /Applications/NodeTools/bin/node. When earlier resolution candidates are unavailable, a valid recorded runtime therefore produces exit 2. Read the path without deleting internal spaces and add a recorded-runtime regression using a directory containing spaces.",
+                "evidenceReferences": [
+                  "a6ab1afcdb71659e977c98effa859f4e604662fe:scripts/daemon-ctl.sh",
+                  "a6ab1afcdb71659e977c98effa859f4e604662fe:src/daemon/__tests__/daemon-ctl-node-path.test.ts"
+                ]
+              },
+              {
+                "severity": "MED",
+                "location": "src/daemon/__tests__/daemon-ctl-node-path.test.ts:28",
+                "message": "Construct a genuinely node-free test PATH instead of assuming system directories lack Node.",
+                "rationale": "GUI_PATH includes /usr/bin and /bin, which can contain Node on supported Linux installations. There, the no-runtime test resolves the system Node and fails its exit-2 assertion; the recorded-runtime and well-known-location tests can execute system Node instead of exercising their intended branches. Build a controlled tools directory containing the required shell utilities but no node.",
+                "evidenceReferences": [
+                  "a6ab1afcdb71659e977c98effa859f4e604662fe:src/daemon/__tests__/daemon-ctl-node-path.test.ts"
+                ]
+              },
+              {
+                "severity": "LOW",
+                "location": "src/daemon/__tests__/daemon-ctl-node-path.test.ts:191-203",
+                "message": "Assert stopping the running fixture through daemon-ctl.sh.",
+                "rationale": "The acceptance check requests node-free start and stop coverage. The stop test only handles an absent daemon, while the startup test ends with process.kill(SIGKILL). Neither asserts that the script stops a running daemon under the node-free environment. Extend the lifecycle test to invoke stop and assert process/socket cleanup.",
+                "evidenceReferences": [
+                  "a6ab1afcdb71659e977c98effa859f4e604662fe:src/daemon/__tests__/daemon-ctl-node-path.test.ts",
+                  "c249074026b8fad12105ce5fb9854935d6a72ae4:docs/standalone/daemon-ctl-sh-fails-node-command-E202611129d4523c7/ISSUE.md"
+                ]
+              }
+            ],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Inspected every new test body and assertion, plus existing script-update, macOS routing, and Linux lifecycle coverage. The seven new cases assert explicit override resolution, recorded fallback, PATH preference, missing-runtime exit, absent-daemon stop, invalid override, and startup/status through a location override. Missing relative-path, whitespace-path, and running-daemon stop assertions are identified above. Existing Linux lifecycle assertions cover running stop with an ordinary inherited PATH; macOS routing uses a Node shim and does not establish node-free supervised lifecycle behavior. Naming follows local shell conventions such as DAEMON_ROOT, STOP_WAIT_SECS, spawn_daemon and socket_status; no material separation-of-concerns or wire-compatibility issue was found.",
+              "evidenceReferences": [
+                "a6ab1afcdb71659e977c98effa859f4e604662fe:src/daemon/__tests__/daemon-ctl-node-path.test.ts",
+                "a6ab1afcdb71659e977c98effa859f4e604662fe:src/daemon/__tests__/daemon-ctl-source.test.ts",
+                "a6ab1afcdb71659e977c98effa859f4e604662fe:src/daemon/__tests__/macos-upgrade-routing.test.ts",
+                "a6ab1afcdb71659e977c98effa859f4e604662fe:src/daemon/__tests__/linux-installed-lifecycle.test.ts",
+                "a6ab1afcdb71659e977c98effa859f4e604662fe:src/daemon/__tests__/fixtures/linux-installed-lifecycle.sh"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: No tests, integration checks, typecheck, or build were run during this review.",
+              "Optional execution: The builder reports seven passing tests, a live status check, and a passing typecheck for a6ab1afcdb71659e977c98effa859f4e604662fe. These are reported results, not reviewer executions; the cited TESTS.md is absent from that commit, so the report was not independently corroborated."
+            ],
+            "inspectedReferences": [
+              "c249074026b8fad12105ce5fb9854935d6a72ae4:docs/standalone/daemon-ctl-sh-fails-node-command-E202611129d4523c7/ISSUE.md",
+              "a6ab1afcdb71659e977c98effa859f4e604662fe:scripts/daemon-ctl.sh",
+              "a6ab1afcdb71659e977c98effa859f4e604662fe:src/daemon/__tests__/daemon-ctl-node-path.test.ts",
+              "a6ab1afcdb71659e977c98effa859f4e604662fe:scripts/insrc-daemon-install.sh",
+              "a6ab1afcdb71659e977c98effa859f4e604662fe:src/daemon/__tests__/daemon-ctl-source.test.ts",
+              "a6ab1afcdb71659e977c98effa859f4e604662fe:src/daemon/__tests__/macos-upgrade-routing.test.ts",
+              "a6ab1afcdb71659e977c98effa859f4e604662fe:src/daemon/__tests__/linux-installed-lifecycle.test.ts",
+              "a6ab1afcdb71659e977c98effa859f4e604662fe:src/daemon/__tests__/fixtures/linux-installed-lifecycle.sh"
+            ],
+            "executedTests": []
+          }
+        ],
+        "summary": "1 selected task assessment(s): changes_requested.",
+        "completedAt": "2026-11-13T05:33:20.689Z"
+      },
+      {
+        "reassessmentSummary": "Both selected changes and all nine supplied regression tests belong to the single BUILD-derived review task s1.",
+        "reviewId": "cr-9d4523c7-s1-r1d",
+        "attempt": 2,
+        "storyId": "s1",
+        "taskId": "s1",
+        "reviewer": "daemon",
+        "status": "passed",
+        "finalScopeIdentity": "443e5db2c73f7da91a980d6b60097076a4d757e4ea7cd42e605829520397dbac",
+        "attributionIdentity": "4aedd5906b88b655ff6891f3d14f947eb49e40dee55b988076583b8044ca85fc",
+        "taskScopeIdentities": [
+          {
+            "taskId": "s1",
+            "identity": "bef3cb18b6cd3014f53ca5ee749b6ddd29a8f5f5a0a7a37c77bf26505cdd68b1"
+          }
+        ],
+        "scope": {
+          "reviewRevision": "281165d544d8d960843b64db72fafc50a3b7aab0",
+          "finalScope": {
+            "revision": "281165d544d8d960843b64db72fafc50a3b7aab0",
+            "identity": "443e5db2c73f7da91a980d6b60097076a4d757e4ea7cd42e605829520397dbac",
+            "entries": [
+              {
+                "originChangeIndex": 0,
+                "path": "src/daemon/__tests__/daemon-ctl-node-path.test.ts",
+                "blobOid": "f25dd9e4000e0e062a3105c1140f5f6b8440e375",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      21,
+                      21
+                    ]
+                  },
+                  {
+                    "after": [
+                      43,
+                      46
+                    ]
+                  },
+                  {
+                    "after": [
+                      124,
+                      124
+                    ]
+                  },
+                  {
+                    "after": [
+                      126,
+                      134
+                    ]
+                  },
+                  {
+                    "after": [
+                      136,
+                      141
+                    ]
+                  },
+                  {
+                    "after": [
+                      143,
+                      146
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 1,
+                "path": "src/daemon/__tests__/daemon-ctl-node-path.test.ts",
+                "blobOid": "f25dd9e4000e0e062a3105c1140f5f6b8440e375",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      225,
+                      225
+                    ]
+                  },
+                  {
+                    "after": [
+                      230,
+                      231
+                    ]
+                  },
+                  {
+                    "after": [
+                      250,
+                      257
+                    ]
+                  },
+                  {
+                    "after": [
+                      260,
+                      260
+                    ]
+                  },
+                  {
+                    "after": [
+                      263,
+                      264
+                    ]
+                  }
+                ]
+              }
+            ],
+            "dispositions": [
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    21,
+                    21
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      21,
+                      21
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    43,
+                    46
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      43,
+                      46
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    124,
+                    124
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      124,
+                      124
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    126,
+                    134
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      126,
+                      134
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    136,
+                    141
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      136,
+                      141
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 5
+                },
+                "sourcePart": {
+                  "after": [
+                    143,
+                    146
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      143,
+                      146
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 6
+                },
+                "sourcePart": {
+                  "after": [
+                    249,
+                    253
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 1,
+                    "segmentIndex": 2
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 7
+                },
+                "sourcePart": {
+                  "after": [
+                    258,
+                    258
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 1,
+                    "segmentIndex": 4
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    225,
+                    225
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      225,
+                      225
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    230,
+                    231
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      230,
+                      231
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    250,
+                    257
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      250,
+                      257
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    260,
+                    260
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      260,
+                      260
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    263,
+                    264
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      263,
+                      264
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              }
+            ],
+            "selectedTaskIds": [
+              "s1"
+            ],
+            "testCount": 1,
+            "attributionIdentity": "4aedd5906b88b655ff6891f3d14f947eb49e40dee55b988076583b8044ca85fc",
+            "attributionState": "accepted",
+            "tasks": [
+              {
+                "taskId": "s1",
+                "changeIndexes": [
+                  0,
+                  1
+                ],
+                "testIndexes": [
+                  0
+                ],
+                "decision": {
+                  "action": "reassess",
+                  "reason": "Reassess because the selected changes revise relative-runtime regression coverage, the node-free fixture, and running-daemon lifecycle assertions following attempt 1. All supplied tests verify runtime resolution or lifecycle compatibility for s1, including unchanged regression cases. Test attribution does not expand the selected source-change scope."
+                },
+                "identity": "bef3cb18b6cd3014f53ca5ee749b6ddd29a8f5f5a0a7a37c77bf26505cdd68b1"
+              }
+            ]
+          },
+          "storyId": "s1",
+          "taskId": "s1",
+          "documents": {
+            "issue": {
+              "path": "docs/standalone/daemon-ctl-sh-fails-node-command-E202611129d4523c7/ISSUE.md",
+              "commit": "c249074026b8fad12105ce5fb9854935d6a72ae4"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "adfd31ed567eddf8e7ed86ffc18a4acd01731bf5",
+              "parent": "07ba2927e26c82d4709f9d69112709e72c7ab390",
+              "files": [
+                {
+                  "path": "src/daemon/__tests__/daemon-ctl-node-path.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        21,
+                        21
+                      ]
+                    },
+                    {
+                      "after": [
+                        43,
+                        46
+                      ]
+                    },
+                    {
+                      "after": [
+                        124,
+                        124
+                      ]
+                    },
+                    {
+                      "after": [
+                        126,
+                        134
+                      ]
+                    },
+                    {
+                      "after": [
+                        136,
+                        141
+                      ]
+                    },
+                    {
+                      "after": [
+                        143,
+                        146
+                      ]
+                    },
+                    {
+                      "after": [
+                        249,
+                        253
+                      ]
+                    },
+                    {
+                      "after": [
+                        258,
+                        258
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "281165d544d8d960843b64db72fafc50a3b7aab0",
+              "parent": "2da97642ebdf5e89464fec8e93a2c05c0773a68b",
+              "files": [
+                {
+                  "path": "src/daemon/__tests__/daemon-ctl-node-path.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        225,
+                        225
+                      ]
+                    },
+                    {
+                      "after": [
+                        230,
+                        231
+                      ]
+                    },
+                    {
+                      "after": [
+                        250,
+                        257
+                      ]
+                    },
+                    {
+                      "after": [
+                        260,
+                        260
+                      ]
+                    },
+                    {
+                      "after": [
+                        263,
+                        264
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "s1",
+            "status": "passed",
+            "summary": "Completed inspection of all selected changes, pinned requirements, script context, and relevant test assertions. The revised relative-path and controlled-PATH checks address the earlier defects. One nonblocking coverage gap remains.",
+            "findings": [
+              {
+                "severity": "LOW",
+                "location": "src/daemon/__tests__/daemon-ctl-node-path.test.ts:263-264",
+                "message": "The lifecycle assertion proves helper execution but does not verify a clean stop.",
+                "rationale": "Any helper exception produces 'daemon lifecycle refused' and exit 4, which these assertions accept on every platform. The test therefore passes when the daemon remains running, and finally kills it without asserting process or socket cleanup. Retain this helper-execution check, but add successful stop and cleanup assertions on a supported execution route; distinguish a known capability restriction from arbitrary helper failures.",
+                "evidenceReferences": [
+                  "281165d544d8d960843b64db72fafc50a3b7aab0:src/daemon/__tests__/daemon-ctl-node-path.test.ts",
+                  "281165d544d8d960843b64db72fafc50a3b7aab0:src/bin/insrc-daemon-control.ts",
+                  "c249074026b8fad12105ce5fb9854935d6a72ae4:docs/standalone/daemon-ctl-sh-fails-node-command-E202611129d4523c7/ISSUE.md"
+                ]
+              }
+            ],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Inspected all nine test bodies and assertions, every selected segment, and relevant existing lifecycle tests. Coverage demonstrates override resolution, absolute relative-override pinning, recorded-runtime fallback and whitespace handling, PATH availability, missing-runtime failure, invalid-override failure, absent-daemon stop, startup, status, and running-stop helper execution under a controlled node-free PATH. Script inspection confirms the required candidate order and quoted NODE_BIN use at all four call sites. The relative-path harness directly asserts the pin; it does not execute spawn with that relative override. Clean running-daemon shutdown remains unasserted in the node-free suite, as reported above. Existing Linux coverage asserts socket removal with an inherited PATH and a stand-in control helper. Local naming examples include fixture, ctl, guiEnv, SCRIPT, and fakeDaemonEntry; the selected changes preserve those conventions and introduce no public or wire changes or material ownership/encapsulation issues.",
+              "evidenceReferences": [
+                "281165d544d8d960843b64db72fafc50a3b7aab0:src/daemon/__tests__/daemon-ctl-node-path.test.ts",
+                "281165d544d8d960843b64db72fafc50a3b7aab0:scripts/daemon-ctl.sh",
+                "281165d544d8d960843b64db72fafc50a3b7aab0:src/daemon/__tests__/daemon-ctl-source.test.ts",
+                "281165d544d8d960843b64db72fafc50a3b7aab0:src/daemon/__tests__/macos-upgrade-routing.test.ts",
+                "281165d544d8d960843b64db72fafc50a3b7aab0:src/daemon/__tests__/linux-installed-lifecycle.test.ts",
+                "281165d544d8d960843b64db72fafc50a3b7aab0:src/daemon/__tests__/fixtures/linux-installed-lifecycle.sh",
+                "c249074026b8fad12105ce5fb9854935d6a72ae4:docs/standalone/daemon-ctl-sh-fails-node-command-E202611129d4523c7/ISSUE.md"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: No tests, integration checks, typecheck, or build were run during this review.",
+              "Optional execution: The builder reports nine passing tests at 281165d544d8d960843b64db72fafc50a3b7aab0 and a successful validation/typecheck. These are builder-reported results; their logs were not independently inspected."
+            ],
+            "inspectedReferences": [
+              "c249074026b8fad12105ce5fb9854935d6a72ae4:docs/standalone/daemon-ctl-sh-fails-node-command-E202611129d4523c7/ISSUE.md",
+              "adfd31ed567eddf8e7ed86ffc18a4acd01731bf5:src/daemon/__tests__/daemon-ctl-node-path.test.ts",
+              "281165d544d8d960843b64db72fafc50a3b7aab0:src/daemon/__tests__/daemon-ctl-node-path.test.ts",
+              "281165d544d8d960843b64db72fafc50a3b7aab0:scripts/daemon-ctl.sh",
+              "281165d544d8d960843b64db72fafc50a3b7aab0:src/bin/insrc-daemon-control.ts",
+              "281165d544d8d960843b64db72fafc50a3b7aab0:src/daemon/__tests__/daemon-ctl-source.test.ts",
+              "281165d544d8d960843b64db72fafc50a3b7aab0:src/daemon/__tests__/macos-upgrade-routing.test.ts",
+              "281165d544d8d960843b64db72fafc50a3b7aab0:src/daemon/__tests__/linux-installed-lifecycle.test.ts",
+              "281165d544d8d960843b64db72fafc50a3b7aab0:src/daemon/__tests__/fixtures/linux-installed-lifecycle.sh"
+            ],
+            "executedTests": []
+          }
+        ],
+        "summary": "1 selected task assessment(s): passed.",
+        "completedAt": "2026-11-13T05:55:27.473Z"
+      }
+    ]
+  },
+  "citations": []
+}

@@ -21,6 +21,7 @@ import { standaloneStoryContext } from '../runners/design-story/standalone.js';
 import { augmentStandaloneParams } from '../../daemon/steps/workflow-step/phases/start.js';
 import { handleBuildStep } from '../../daemon/steps/build-step/handler.js';
 import './helpers/converted-repos.js';
+import { seedIssue } from './helpers/approved-issue.js';
 
 test('a new standalone workflow with no storyId produces s1 and passes the strict id check', async () => {
 	// the start phase fills the story and the hash for a standalone run
@@ -39,11 +40,12 @@ test('a new standalone workflow with no storyId produces s1 and passes the stric
 	// the build step defaults the same way: a Trivial build with no storyId writes BUILD-<hash>-s1
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-standalone-s1-'));
 	try {
+		seedIssue(dir, hash);   // a no-design build lands under its approved ISSUE
 		const out = await handleBuildStep({
 			phase: 'implement',
 			target: 'standalone',
 			repo: dir,
-			standalone: { standalone: true, sizeClass: 'trivial', focus: 'Fix a typo in the status log line' },
+			standalone: { standalone: true, epicHash: hash, sizeClass: 'trivial', focus: 'Fix a typo in the status log line' },
 		});
 		assert.ok(out);
 		const files = readdirSync(join(dir, '.insrc', 'artifacts'));

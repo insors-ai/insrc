@@ -43,6 +43,7 @@ import { stampOtherPartyReview } from '../../../../workflow/__tests__/helpers/ot
 import { seedSidecarRules } from '../../../../workflow/artifact-core/__tests__/seed-rules.js';
 import { approveTarget } from '../../../../workflow/__tests__/helpers/approve.js';
 import '../../../../workflow/__tests__/helpers/converted-repos.js';
+import { seedIssue } from '../../../../workflow/__tests__/helpers/approved-issue.js';
 
 /** The judge's structured verdict, with the fields a test does not care about filled in. */
 function judgeVerdict(over: Record<string, unknown>): Record<string, unknown> {
@@ -355,6 +356,12 @@ test('T36 (plan-driven): implement writes NO BUILD record, and a batch approval 
 const SMALL = { standalone: true as const, epicHash: HASH, storyId: 's1', sizeClass: 'small' };
 const TRIVIAL = { standalone: true as const, epicHash: HASH, storyId: 's1', sizeClass: 'trivial', focus: 'Add a flag.' };
 
+/** The approved ISSUE a Trivial build runs under (Story c5b49ff953a9a295/s1). Committed, so the tree is clean. */
+function seedTrivialIssue(fx: Fx): void {
+	seedIssue(fx.repo, HASH, { createdAt: CREATED_AT });
+	fx.git('add', '-A'); fx.git('commit', '-qm', 'the approved ISSUE');
+}
+
 function seedStandaloneLld(fx: Fx): void {
 	writeArtifact(fx, lldArtifactId(HASH, 's1'), {
 		meta: {
@@ -389,6 +396,7 @@ test('T36 (Small route): implement stamps and writes NO BUILD record; a batch ap
 test('Trivial route: the first implement stamps HEAD and writes its task-less record; a second implement keeps the stamp', async () => {
 	const fx = mkGit();
 	try {
+		seedTrivialIssue(fx);
 		const first = out(await handleBuildStep({ phase: 'implement', target: 's1', repo: fx.repo, standalone: TRIVIAL }));
 		assert.equal(first['next'], 'implement');
 		const start = fx.git('rev-parse', 'HEAD');
@@ -414,6 +422,7 @@ test('Trivial route: the first implement stamps HEAD and writes its task-less re
 test('Trivial route: validate runs the test files touched since the build-start stamp, though a later commit is HEAD (ISSUE-91640defac1b5816)', async () => {
 	const fx = mkGit();
 	try {
+		seedTrivialIssue(fx);
 		assert.equal(out(await handleBuildStep({ phase: 'implement', target: 's1', repo: fx.repo, standalone: TRIVIAL }))['next'], 'implement');
 		mkdirSync(join(fx.repo, '__tests__'), { recursive: true });
 		work(fx, '__tests__/flag.test.ts', 'source-only', 's1');
@@ -452,7 +461,7 @@ test('fail-open: a stamp that cannot be written leaves the implement result unch
 	for (const standalone of [SMALL, TRIVIAL]) {
 		const fx = mkGit();
 		try {
-			if (standalone === SMALL) seedStandaloneLld(fx);
+			if (standalone === SMALL) seedStandaloneLld(fx); else seedTrivialIssue(fx);
 			block(fx);
 			const blocked = out(await handleBuildStep({ phase: 'implement', target: 's1', repo: fx.repo, standalone }));
 			assert.equal(blocked['next'], 'implement', `${standalone.sizeClass}: not refused or failed`);
@@ -493,6 +502,7 @@ test('T37: the completion writer excludes a COMMITTED build-start file — exact
 test('T38: no resolvable base and a clean tree -> validate writes an EMPTY change log (no substituted range)', async () => {
 	const fx = mkGit();
 	try {
+		seedTrivialIssue(fx);
 		work(fx, 'unrelated.ts', 'everything');
 		assert.equal((await resolveStoryRangeBase(fx.repo, HASH, 's1')), undefined, 'fixture precondition: no stamp, no upstream artifact');
 		_setBuildValidateProviderForTests({ async runReviewSession<T>() { return judgeVerdict({ taskId: 's1', passed: true }) as T; } });

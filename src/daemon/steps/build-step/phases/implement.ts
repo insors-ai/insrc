@@ -27,10 +27,7 @@ import { renderResolvedDecisions } from '../../../../workflow/questions.js';
 import { admitBuild, admitStandaloneBuild } from '../../../../workflow/runners/build/admission.js';
 import { stampBuildStart } from '../../../../workflow/runners/build/range-base.js';
 import { mergeInProgress } from '../../../../workflow/runners/build/story-commits.js';
-import {
-	persistStandaloneBuildRecord,
-	standaloneEpicHashFromFocus,
-} from '../../../../workflow/runners/build/standalone-record.js';
+import { persistStandaloneBuildRecord } from '../../../../workflow/runners/build/standalone-record.js';
 import { roundWriterFor } from '../../../lifecycle-registry.js';
 import { runTaskCommentSync } from '../../../tracker-sync-comments.js';
 import { assertMayBuild, settleBeforeBuild } from '../../../../workflow/team/author-gate.js';
@@ -123,8 +120,8 @@ async function noteBuildStart(repoPath: string, epicHash: string, storyId: strin
 }
 
 /** The no-plan standalone implement path. Small implements the approved
- *  standalone LLD directly; Trivial implements the scope statement and persists
- *  a standalone BUILD tracking record (its only ledger entry). */
+ *  standalone LLD directly; Trivial implements the scope statement under its
+ *  approved ISSUE (the head) and persists a standalone BUILD record. */
 async function handleStandaloneImplement(
 	repoPath: string,
 	ctx:      BuildStandaloneContext,
@@ -137,11 +134,14 @@ async function handleStandaloneImplement(
 		return err('no-scope', `insrc_build_step[implement]: a standalone trivial build requires \`standalone.focus\` (the scope statement).`);
 	}
 
-	// Identity: Small must carry the approved-LLD identity; Trivial derives a
-	// stable hash from its scope when none is provided.
-	const epicHash = ctx.epicHash ?? (producesLld ? undefined : standaloneEpicHashFromFocus(focus));
+	// Identity: Small carries the approved-LLD identity; a no-design build
+	// (Trivial / small bugfix) carries its approved ISSUE's hash. No identity is
+	// ever minted from the focus: that left the work item without a head.
+	const epicHash = ctx.epicHash;
 	if (epicHash === undefined) {
-		return err('no-identity', `insrc_build_step[implement]: a standalone Small build requires \`standalone.epicHash\` + \`storyId\` (the approved LLD identity).`);
+		return err('no-identity', producesLld
+			? `insrc_build_step[implement]: a standalone Small build requires \`standalone.epicHash\` + \`storyId\` (the approved LLD identity).`
+			: `insrc_build_step[implement]: a build with no design requires \`standalone.epicHash\`, the hash of its approved ISSUE. Run the \`issue\` workflow first (triage routes trivial work there).`);
 	}
 	const storyId = ctx.storyId ?? 's1';
 	await settleBeforeBuild(repoPath, { epicHash, storyId });   // signoff of the LLD this follows, settled first

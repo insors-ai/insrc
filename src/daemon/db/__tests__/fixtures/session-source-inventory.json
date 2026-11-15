@@ -16852,7 +16852,7 @@
       ],
       "siteCount": 9,
       "sitesDigest": "1e7bb14fd48ad72e07dbee82ecc94b42aeacf12a4b222be1eb1e6428180fcd68",
-      "sourceDigest": "0639f50d41bfb155f6927acc409d442852585ddd39f973b29aaea6ef75734260"
+      "sourceDigest": "a3c227ff847d6283694817ea3dc53f4e9478686d66e4c9c52d0863b2c21b33cc"
     },
     "src/daemon/steps/build-step/phases/validate.ts": {
       "classification": "forbidden-session-workflow",
@@ -16909,7 +16909,7 @@
       ],
       "siteCount": 12,
       "sitesDigest": "d278d3078697af076fb5b96944ca16da323a69f9f748b1e111f1a5dedee1d298",
-      "sourceDigest": "17f4b19cb5d500e55f1b157fe60e0b626be6a356ebaa5ae8a7efd0c2e14b51d3"
+      "sourceDigest": "40bacf758237e875551ebbef2b1f4c0038105badacd4b46877b3387eaee1c319"
     },
     "src/daemon/steps/build-step/render.ts": {
       "classification": "forbidden-session-workflow",
@@ -43097,12 +43097,20 @@
       "sites": [
         [
           "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
           "JSON.stringify"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
         ]
       ],
-      "siteCount": 1,
-      "sitesDigest": "97b79a31587e07786852a7d17e4ef4600988fcc280b12944bca4d322da013f60",
-      "sourceDigest": "a3b3f1aeb22d547baf91c41e58929c90c0805d06c8ab871c1db888199a3c71bb"
+      "siteCount": 3,
+      "sitesDigest": "a8742f53aa4384ca9a0cee227d8e80910091be3e9e779ff9a9f9cb5522de75c9",
+      "sourceDigest": "8abe9b0d07edb11073d67d24bb6f73c0f69f1ea0dcf540b9e713aa577c21baf3"
     },
     "src/workflow/runners/build/changed-files.ts": {
       "classification": "forbidden-session-service",

@@ -1,0 +1,845 @@
+{
+ "reviewRevision": "88f2014e50ffdee7ec9325aa0b56e662108db8e5",
+ "storyId": "s3",
+ "functionalSummary": "Whole-story independent code review for Story s3 of epic 206db3426ffd4428 (show long-running task progress in chat, issue #177): review-originated task progress. t1 adds a read-only ReviewWorkers.progressOf accessor; t2 defines sc5 design/code review details, validators and pure mappings; t3 implements the DesignReviewDelegate/CodeReviewDelegate with never-throw progress, heartbeat handling and unverified-incarnation holds; t4 composes one AllTaskDetails progress runtime and registers the review producers; t5 binds observed review attempts to coordinator tasks at admission through the launchReview seam (option b), consume-only, never slowing admission; t6 signals accepted review publications through the producer port and records terminal owner evidence (completed/failed/interrupted, never the review verdict) at sequence+1 in one swallowed fire-and-forget step; t7 verifies non-interference (unobserved reviews keep the pre-s3 projection) and records the t5 pre-check outcome in the LLD. All 19 commits are exact origins bearing the Insrc-Story trailer; reviewRevision pins the final source at HEAD 88f2014e5. Documents: epic-route story+lld+plan artifacts of this epic/story. Tests: the daemon gate ran each task's named tests (TESTS-206db3426ffd4428-s3); locally the signal suite is 6/6 and all task-progress/threads suites pass; tsc --noEmit clean.",
+ "documents": {
+  "story": {
+   "path": ".insrc/artifacts/STORY-206db3426ffd4428-s3.json",
+   "commit": "88f2014e50ffdee7ec9325aa0b56e662108db8e5"
+  },
+  "lld": {
+   "path": ".insrc/artifacts/LLD-206db3426ffd4428-s3.json",
+   "commit": "88f2014e50ffdee7ec9325aa0b56e662108db8e5"
+  },
+  "plan": {
+   "path": ".insrc/artifacts/PLAN-206db3426ffd4428-s3.json",
+   "commit": "88f2014e50ffdee7ec9325aa0b56e662108db8e5"
+  }
+ },
+ "reviewSet": [
+  {
+   "commit": "f5c3b8c06c84e6f543c9a98458eb555d96c22735",
+   "parent": "0fff13fa02b6b7cb92be218c1e2660862245ae65",
+   "files": [
+    {
+     "path": "src/daemon/threads/__tests__/review-workers-progress-of.test.ts",
+     "segments": [
+      {
+       "after": [
+        1,
+        87
+       ]
+      }
+     ]
+    },
+    {
+     "path": "src/daemon/threads/review-workers.ts",
+     "segments": [
+      {
+       "after": [
+        370,
+        383
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "commit": "3ae39342380366b08fad8f8f7dc958c463585ee1",
+   "parent": "f5c3b8c06c84e6f543c9a98458eb555d96c22735",
+   "files": [
+    {
+     "path": "src/daemon/task-progress/__tests__/review-measurements.test.ts",
+     "segments": [
+      {
+       "after": [
+        1,
+        144
+       ]
+      }
+     ]
+    },
+    {
+     "path": "src/daemon/task-progress/review-measurements.ts",
+     "segments": [
+      {
+       "after": [
+        1,
+        138
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "commit": "462bbbf6f9d09b0ffe6df692ce613ba2c4a8fd07",
+   "parent": "3ae39342380366b08fad8f8f7dc958c463585ee1",
+   "files": [
+    {
+     "path": "src/daemon/task-progress/__tests__/review-measurements.test.ts",
+     "segments": [
+      {
+       "after": [
+        125,
+        133
+       ]
+      }
+     ]
+    },
+    {
+     "path": "src/daemon/task-progress/review-measurements.ts",
+     "segments": [
+      {
+       "after": [
+        69,
+        75
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "commit": "cef9a61e827edebff5874c9619ad4d2b02fd2dc6",
+   "parent": "462bbbf6f9d09b0ffe6df692ce613ba2c4a8fd07",
+   "files": [
+    {
+     "path": "src/daemon/task-progress/__tests__/review-measurements.test.ts",
+     "segments": [
+      {
+       "after": [
+        2,
+        13
+       ]
+      },
+      {
+       "after": [
+        147,
+        240
+       ]
+      }
+     ]
+    },
+    {
+     "path": "src/daemon/task-progress/review-measurements.ts",
+     "segments": [
+      {
+       "after": [
+        3,
+        12
+       ]
+      },
+      {
+       "after": [
+        138,
+        199
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "commit": "210c714a97e86f9e8e5936f32c4993c28d479eba",
+   "parent": "cef9a61e827edebff5874c9619ad4d2b02fd2dc6",
+   "files": [
+    {
+     "path": "src/daemon/task-progress/__tests__/review-measurements.test.ts",
+     "segments": [
+      {
+       "after": [
+        190,
+        196
+       ]
+      },
+      {
+       "after": [
+        201,
+        207
+       ]
+      },
+      {
+       "after": [
+        223,
+        242
+       ]
+      },
+      {
+       "after": [
+        251,
+        269
+       ]
+      }
+     ]
+    },
+    {
+     "path": "src/daemon/task-progress/review-measurements.ts",
+     "segments": [
+      {
+       "after": [
+        146,
+        162
+       ]
+      },
+      {
+       "after": [
+        165,
+        207
+       ]
+      },
+      {
+       "after": [
+        210,
+        216
+       ]
+      },
+      {
+       "after": [
+        218,
+        230
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "commit": "48db331e88a219dfb390f7791a4e16dcc7fb26dc",
+   "parent": "210c714a97e86f9e8e5936f32c4993c28d479eba",
+   "files": [
+    {
+     "path": "src/daemon/task-progress/__tests__/review-measurements.test.ts",
+     "segments": [
+      {
+       "after": [
+        203,
+        220
+       ]
+      },
+      {
+       "after": [
+        241,
+        253
+       ]
+      }
+     ]
+    },
+    {
+     "path": "src/daemon/task-progress/review-measurements.ts",
+     "segments": [
+      {
+       "after": [
+        176,
+        202
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "commit": "f586b827bbbb6a67f0fefefe2a44762ef3485777",
+   "parent": "48db331e88a219dfb390f7791a4e16dcc7fb26dc",
+   "files": [
+    {
+     "path": "src/daemon/task-progress/__tests__/review-measurements.test.ts",
+     "segments": [
+      {
+       "after": [
+        1,
+        16
+       ]
+      },
+      {
+       "after": [
+        203,
+        217
+       ]
+      },
+      {
+       "after": [
+        269,
+        316
+       ]
+      }
+     ]
+    },
+    {
+     "path": "src/daemon/task-progress/review-measurements.ts",
+     "segments": [
+      {
+       "after": [
+        183,
+        196
+       ]
+      },
+      {
+       "after": [
+        224,
+        229
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "commit": "d973d76d1065f6cd98ece904fed192954fb65917",
+   "parent": "f586b827bbbb6a67f0fefefe2a44762ef3485777",
+   "files": [
+    {
+     "path": "src/daemon/task-progress/__tests__/review-measurements.test.ts",
+     "segments": [
+      {
+       "after": [
+        320,
+        328
+       ]
+      }
+     ]
+    },
+    {
+     "path": "src/daemon/task-progress/review-measurements.ts",
+     "segments": [
+      {
+       "after": [
+        147,
+        153
+       ]
+      },
+      {
+       "after": [
+        201,
+        214
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "commit": "47a976f239c8e5e63c3b944309109ac526436ad7",
+   "parent": "d973d76d1065f6cd98ece904fed192954fb65917",
+   "files": [
+    {
+     "path": "src/daemon/task-progress/review-measurements.ts",
+     "segments": [
+      {
+       "after": [
+        148,
+        154
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "commit": "e22e803c8def433d3eb2bc20915da7ef7fdea30f",
+   "parent": "47a976f239c8e5e63c3b944309109ac526436ad7",
+   "files": [
+    {
+     "path": "src/daemon/handler-runtime.ts",
+     "segments": [
+      {
+       "after": [
+        29,
+        35
+       ]
+      },
+      {
+       "after": [
+        144,
+        150
+       ]
+      }
+     ]
+    },
+    {
+     "path": "src/daemon/index.ts",
+     "segments": [
+      {
+       "after": [
+        21,
+        30
+       ]
+      },
+      {
+       "after": [
+        500,
+        516
+       ]
+      }
+     ]
+    },
+    {
+     "path": "src/daemon/task-progress/__tests__/review-producers.test.ts",
+     "segments": [
+      {
+       "after": [
+        1,
+        211
+       ]
+      }
+     ]
+    },
+    {
+     "path": "src/daemon/task-progress/executor-measurements.ts",
+     "segments": [
+      {
+       "after": [
+        5,
+        12
+       ]
+      }
+     ]
+    },
+    {
+     "path": "src/daemon/task-progress/executor-relay.ts",
+     "segments": [
+      {
+       "after": [
+        12,
+        18
+       ]
+      },
+      {
+       "after": [
+        40,
+        48
+       ]
+      }
+     ]
+    },
+    {
+     "path": "src/daemon/task-progress/review-measurements.ts",
+     "segments": [
+      {
+       "after": [
+        7,
+        15
+       ]
+      },
+      {
+       "after": [
+        43,
+        62
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "commit": "f4c37ecaef87bd4c83a083383d8f21ef6c72e728",
+   "parent": "e22e803c8def433d3eb2bc20915da7ef7fdea30f",
+   "files": [
+    {
+     "path": "src/daemon/task-progress/__tests__/review-producers.test.ts",
+     "segments": [
+      {
+       "after": [
+        84,
+        90
+       ]
+      },
+      {
+       "after": [
+        107,
+        113
+       ]
+      },
+      {
+       "after": [
+        146,
+        152
+       ]
+      },
+      {
+       "after": [
+        156,
+        162
+       ]
+      },
+      {
+       "after": [
+        196,
+        202
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "commit": "0a9b1458c78cf13640b95a5f6c4248151ec22471",
+   "parent": "03bb150f85d39e0ed3ba6d51c55c63c9a486eda8",
+   "files": [
+    {
+     "path": "src/daemon/index.ts",
+     "segments": [
+      {
+       "after": [
+        24,
+        30
+       ]
+      },
+      {
+       "after": [
+        417,
+        429
+       ]
+      }
+     ]
+    },
+    {
+     "path": "src/daemon/review-service.ts",
+     "segments": [
+      {
+       "after": [
+        35,
+        42
+       ]
+      },
+      {
+       "after": [
+        61,
+        67
+       ]
+      }
+     ]
+    },
+    {
+     "path": "src/daemon/task-progress/access.ts",
+     "segments": [
+      {
+       "after": [
+        170,
+        189
+       ]
+      }
+     ]
+    },
+    {
+     "path": "src/daemon/task-progress/review-measurements.ts",
+     "segments": [
+      {
+       "after": [
+        9,
+        18
+       ]
+      },
+      {
+       "after": [
+        165,
+        219
+       ]
+      }
+     ]
+    },
+    {
+     "path": "src/daemon/threads/__tests__/helpers/review-stub-worker.ts",
+     "segments": [
+      {
+       "after": [
+        1,
+        21
+       ]
+      }
+     ]
+    },
+    {
+     "path": "src/daemon/threads/__tests__/review-task-binding.test.ts",
+     "segments": [
+      {
+       "after": [
+        1,
+        166
+       ]
+      }
+     ]
+    },
+    {
+     "path": "src/daemon/threads/review-workers.ts",
+     "segments": [
+      {
+       "after": [
+        48,
+        55
+       ]
+      },
+      {
+       "after": [
+        87,
+        94
+       ]
+      },
+      {
+       "after": [
+        183,
+        195
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "commit": "b77e6a60d52f56da5aebf1fe130848ca02ed2a33",
+   "parent": "0a9b1458c78cf13640b95a5f6c4248151ec22471",
+   "files": [
+    {
+     "path": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/S003/BUILD.md",
+     "segments": [
+      {
+       "after": [
+        1,
+        45
+       ]
+      }
+     ]
+    },
+    {
+     "path": "src/daemon/threads/__tests__/review-task-binding.test.ts",
+     "segments": [
+      {
+       "after": [
+        141,
+        154
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "commit": "86b1389a5bbeb4cf883cf8f3668f4be7151f5195",
+   "parent": "b77e6a60d52f56da5aebf1fe130848ca02ed2a33",
+   "files": [
+    {
+     "path": "src/daemon/threads/__tests__/review-task-binding.test.ts",
+     "segments": [
+      {
+       "after": [
+        66,
+        80
+       ]
+      },
+      {
+       "after": [
+        100,
+        106
+       ]
+      },
+      {
+       "after": [
+        176,
+        193
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "commit": "1a8623af75937b2f2685edd02f367fc351998700",
+   "parent": "86b1389a5bbeb4cf883cf8f3668f4be7151f5195",
+   "files": [
+    {
+     "path": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/S003/BUILD.md",
+     "segments": [
+      {
+       "after": [
+        2,
+        14
+       ]
+      },
+      {
+       "after": [
+        26,
+        45
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "commit": "049aefd38ec6361862583b9c32132432ed453a94",
+   "parent": "3bba96b2c9591004116e4ca761390fc047a90ebc",
+   "files": [
+    {
+     "path": "src/daemon/task-progress/review-measurements.ts",
+     "segments": [
+      {
+       "after": [
+        10,
+        16
+       ]
+      },
+      {
+       "after": [
+        170,
+        177
+       ]
+      },
+      {
+       "after": [
+        188,
+        210
+       ]
+      },
+      {
+       "after": [
+        218,
+        248
+       ]
+      }
+     ]
+    },
+    {
+     "path": "src/daemon/threads/__tests__/helpers/review-stub-worker.ts",
+     "segments": [
+      {
+       "after": [
+        3,
+        14
+       ]
+      },
+      {
+       "after": [
+        21,
+        26
+       ]
+      }
+     ]
+    },
+    {
+     "path": "src/daemon/threads/__tests__/review-task-signal.test.ts",
+     "segments": [
+      {
+       "after": [
+        1,
+        223
+       ]
+      }
+     ]
+    },
+    {
+     "path": "src/daemon/threads/review-workers.ts",
+     "segments": [
+      {
+       "after": [
+        45,
+        51
+       ]
+      },
+      {
+       "after": [
+        472,
+        493
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "commit": "587de73a3325a2027e7290fd8c049a387152b89f",
+   "parent": "049aefd38ec6361862583b9c32132432ed453a94",
+   "files": [
+    {
+     "path": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/S003/LLD.md",
+     "segments": [
+      {
+       "after": [
+        374,
+        384
+       ]
+      }
+     ]
+    },
+    {
+     "path": "src/daemon/threads/__tests__/review-task-signal.test.ts",
+     "segments": [
+      {
+       "after": [
+        221,
+        249
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "tests": [
+  {
+   "file": "src/daemon/threads/__tests__/review-task-signal.test.ts",
+   "cases": [
+    "an observed review's task progress changes as publications are accepted",
+    "terminal evidence follows the owner's terminal phase and never the review verdict",
+    "a coordinator error is swallowed without altering acceptProgress, the board publication or reclaim",
+    "snapshot after interruption shows interrupted or stale, then a newer incarnation is verified",
+    "a delayed publication from the earlier incarnation does not overwrite the newer snapshot",
+    "the normalized projection of an unobserved review is unchanged"
+   ],
+   "command": "npx tsx --test src/daemon/threads/__tests__/review-task-signal.test.ts",
+   "result": "pass",
+   "executionDetails": "Daemon validate gate for s3/t7 at 587de73a3: 6/6 pass, exit 0, 1093ms; recorded in TESTS-206db3426ffd4428-s3.",
+   "evidenceReferences": [
+    "88f2014e5:.insrc/artifacts/TESTS-206db3426ffd4428-s3.json"
+   ]
+  },
+  {
+   "file": "src/daemon/threads/__tests__/review-task-binding.test.ts",
+   "cases": [
+    "bindReviewTask admits an observed review and returns its binding"
+   ],
+   "command": "npx tsx --test src/daemon/threads/__tests__/review-task-binding.test.ts",
+   "result": "pass",
+   "executionDetails": "Gate-validated at s3/t5 (0a9b1458c); 3/3 pass locally 2026-11-15.",
+   "evidenceReferences": [
+    "88f2014e5:.insrc/artifacts/TESTS-206db3426ffd4428-s3.json"
+   ]
+  },
+  {
+   "file": "src/daemon/task-progress/__tests__/review-measurements.test.ts",
+   "cases": [
+    "design and code review detail validators and mappings"
+   ],
+   "command": "npx tsx --test src/daemon/task-progress/__tests__/review-measurements.test.ts",
+   "result": "pass",
+   "executionDetails": "Gate-validated t2-t4; 13/13 pass locally 2026-11-15.",
+   "evidenceReferences": [
+    "88f2014e5:.insrc/artifacts/TESTS-206db3426ffd4428-s3.json"
+   ]
+  },
+  {
+   "file": "src/daemon/task-progress/__tests__/review-producers.test.ts",
+   "cases": [
+    "review producer registration and binding"
+   ],
+   "command": "npx tsx --test src/daemon/task-progress/__tests__/review-producers.test.ts",
+   "result": "pass",
+   "executionDetails": "Gate-validated at s3/t4; 5/5 pass locally 2026-11-15.",
+   "evidenceReferences": [
+    "88f2014e5:.insrc/artifacts/TESTS-206db3426ffd4428-s3.json"
+   ]
+  },
+  {
+   "file": "src/daemon/threads/__tests__/review-workers-progress-of.test.ts",
+   "cases": [
+    "progressOf read-only accessor tests"
+   ],
+   "command": "npx tsx --test src/daemon/threads/__tests__/review-workers-progress-of.test.ts",
+   "result": "pass",
+   "executionDetails": "Gate-validated at s3/t1; 2/2 pass locally 2026-11-15.",
+   "evidenceReferences": [
+    "88f2014e5:.insrc/artifacts/TESTS-206db3426ffd4428-s3.json"
+   ]
+  }
+ ]
+}

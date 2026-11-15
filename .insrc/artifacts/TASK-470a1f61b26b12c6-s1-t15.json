@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3503775a-1911-40e6-81ad-87bd04d90ba6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-15T13:12:53.932Z",
+    "epicCreatedAt": "2026-11-14T08:55:28.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "470a1f61b26b12c6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Stage typed packet descriptors with bounded memory ownership",
+      "parent": {
+        "entityId": "STORY-470a1f61b26b12c6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-470a1f61b26b12c6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 4"
+        },
+        {
+          "entityId": "TASK-470a1f61b26b12c6-s1-t13",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ee87cb29cd784787a688d2b7326047500e1790ed7699976de653a495a6c0c2b0",
+        "at": "2026-11-15T13:12:53.932Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-15T13:12:53.938Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Stage typed packet descriptors with bounded memory ownership",
+    "summary": "Extend the existing prepared-context codec/store with proposed typed packet/task/file descriptor indexes, bounded leaf/window access and explicit release; unify live-memory charging with source staging and host disk reservations. Add derived encoding version checks without changing pinned history or CRs.",
+    "size": "L",
+    "order": 14,
+    "acceptanceChecks": [
+      "Document and implement descriptor lookup, bounded window acquisition/release and cancellation ownership in existing review-context modules; no new DB or eager compatibility path.",
+      "Reserve before allocation for shared binary buffers, UTF-16 strings, metadata/index shards and encoder/decoder scratch; release only after final owner. Staged immutable leaves retain complete content/digests and aggregate disk reservation.",
+      "Round-trip byte arrays, Unicode, null/undefined and ordered descriptor references; reject unknown/old derived encodings and foreign/tampered objects before use. Partial generation never grants readiness; unchanged64MiB memory/256MiBcache/4MiBbatch defaults.",
+      "Run and record this task's focused validation before advancing; no intermediate adapter completion authorizes deployment or resumes the stopped review."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Typed staged descriptor/leaf codec and shared memory accounting: byte/Unicode/null/order round-trip, shard/version/tamper rejection, reserve-before-allocation and exact window release."
+      },
+      {
+        "level": "integration",
+        "name": "Staged view capacity ownership: aggregate disk reservations, partial sealing, borrowed-window cancellation and two-session memory/disk pressure retain complete evidence."
+      }
+    ],
+    "planTaskId": "t15"
+  },
+  "citations": []
+}

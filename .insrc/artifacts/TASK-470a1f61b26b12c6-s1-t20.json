@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d1e3c4f3-d1ed-4998-b4cb-4bd5ec2edff5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-15T13:12:53.991Z",
+    "epicCreatedAt": "2026-11-14T08:55:28.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "470a1f61b26b12c6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Qualify the complete staged-view production cutover",
+      "parent": {
+        "entityId": "STORY-470a1f61b26b12c6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-470a1f61b26b12c6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 4"
+        },
+        {
+          "entityId": "TASK-470a1f61b26b12c6-s1-t18",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-470a1f61b26b12c6-s1-t19",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "78c53c5fafb4632f33eac3d091e313e7f69038d89995a417e93165477d4cec2d",
+        "at": "2026-11-15T13:12:53.991Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-15T13:12:53.997Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Qualify the complete staged-view production cutover",
+    "summary": "Wire the revised writer and every lifecycle consumer together in the actual production defaults, then run focused bounded-view correctness/capacity/crash and source-free package regressions before retained T14 timing qualification.",
+    "size": "L",
+    "order": 19,
+    "acceptanceChecks": [
+      "Both families and all epic/standalone/issue/task/story/document routes use the new store; no eager packet Map or aggregate whole-view reader remains reachable through production preparation/execution/publication/recovery/cleanup.",
+      "Instrumented actual-source managed fixture proves combined memory reservation bound, zero repeated physical queries, unchanged projection/history/permanent results, runtime<=256KiB and zero full-checkpoint writes/native command.",
+      "Two-session memory/disk contention, borrowed-window cancellation, tampered shards/leaves, version rejection and crash windows retain existing native/cleanup authority; full scope cannot be replaced by small synthetic tests.",
+      "npm build and source-free package smoke pass with code/design daemon/controller paths. These regressions do not substitute for T14's full coldx3/warm/history-growth/concurrent performance gates.",
+      "Run and record this task's focused validation before advancing; no intermediate adapter completion authorizes deployment or resumes the stopped review.",
+      "Verify persisted plan/build scheduling follows explicit order/dependencies: next runnable corrective task t15 and final qualification t14 only after t20; preserve exact t1-t13 definitions/test mappings and passed BUILD/TESTS entries."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Actual production staged-view cutover matrix for both families and all workflow routes: combined memory high-water, complete scope/history equality, zero duplicate queries/full-history hot writes, cancellation/tamper/crash fences and task-order preservation."
+      },
+      {
+        "level": "integration",
+        "name": "Source-free compiled package code/design daemon/controller smoke plus backend build after bounded-view cutover; retained full T14 workload remains an independent final gate."
+      }
+    ],
+    "planTaskId": "t20"
+  },
+  "citations": []
+}

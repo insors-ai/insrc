@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-082faf91-26b2-4fa2-a356-2d1189da1d1b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-15T13:12:53.956Z",
+    "epicCreatedAt": "2026-11-14T08:55:28.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "470a1f61b26b12c6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Use bounded views in execution and mandatory coverage assessment",
+      "parent": {
+        "entityId": "STORY-470a1f61b26b12c6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-470a1f61b26b12c6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 4"
+        },
+        {
+          "entityId": "TASK-470a1f61b26b12c6-s1-t16",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e679cf6a8def3b786735891f679e745403d8d94dfa4a54f9deb8efd6dd507a69",
+        "at": "2026-11-15T13:12:53.956Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-15T13:12:53.961Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Use bounded views in execution and mandatory coverage assessment",
+    "summary": "Convert code/design assessment adapters, selected-code extraction, prompt assembly and test-coverage readers to bounded task/file windows under current private generation borrows.",
+    "size": "L",
+    "order": 16,
+    "acceptanceChecks": [
+      "Complete submitted review scope and mandatory test-coverage assessment remain identical for task/whole-story routes; no module omitted because of size. Test execution remains optional, scope and coverage do not.",
+      "Final prompt assembly, serialization and provider transport copies are included in memory reservations/high-water instrumentation; do not hide whole-task/whole-packet hydration behind a lazy accessor.",
+      "Borrow/release/cancel rules hold through provider/native consumption; no source/provider use from unqualified or revoked descriptors. Keep existing model capability and CLI provider path; design prompts use current paths, not copied artifacts.",
+      "Run and record this task's focused validation before advancing; no intermediate adapter completion authorizes deployment or resumes the stopped review."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Bounded execution and mandatory coverage traversal for code/design task/story routes: no skipped modules, prompt/provider transport copies charged, borrow invalidation/cancellation and no premature provider dispatch."
+      }
+    ],
+    "planTaskId": "t17"
+  },
+  "citations": []
+}

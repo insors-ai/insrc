@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 29,
-        "contentHash": "ab2e14f22f098022261e635d8ea6eb8476d84e6b20e24adcc52d51792436ffa8",
-        "at": "2026-11-15T09:57:52.111Z",
+        "number": 32,
+        "contentHash": "2cbdb8391a5ce1f66c98398fa3791db184fc1cb498306d698a7175e074e19319",
+        "at": "2026-11-15T14:08:45.247Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "470a1f61b26b12c6",
     "storyId": "s1",
     "createdAt": "2026-11-14T12:24:52.408Z",
-    "updatedAt": "2026-11-15T09:57:51.957Z",
+    "updatedAt": "2026-11-15T14:08:45.034Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-14T08:55:28.320Z",
     "epicSlug": "rework-review-preparation-context-lifecycle-end",
-    "revision": 29
+    "revision": 32
   },
   "body": {
     "tasks": [
@@ -5457,6 +5457,495 @@
               },
               {
                 "title": "shared design preparation invalidates required ancestry and ignores unrelated files",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t15",
+        "commit": "6a8437b69",
+        "ranAt": "2026-11-15T14:08:45.034Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Typed staged descriptor/leaf codec and shared memory accounting: byte/Unicode/null/order round-trip, shard/version/tamper rejection, reserve-before-allocation and exact window release.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "memory leases count shared backing buffers once and reserve before allocation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "cache eviction releases every shared slab reference before refusing a new reservation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "reserved source and reader allocations remain single-charged across codec borrows",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "allocation happens only after its reservation and refusal performs no allocation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "small node text and manifest encoders never allocate pooled string buffers",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "typed staged descriptors round trip bytes Unicode null undefined and ordered sharded containers",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "incremental entries stage complete content above working memory without retaining payloads",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "descriptor references are private to their reader and kind lookup is enforced",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "old or unknown derived encodings are rejected without issuing a descriptor",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "tampered staged leaf fails digest verification and revokes its reader",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "cancellation revokes window access but holds its charge until actual release",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "two staged writers cannot exceed aggregate project disk reservation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "partial seal retains bounded recovery evidence and never emits readiness",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "invalid streamed entry order and canceled construction preserve evidence for explicit disposal",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "tampered index shards cannot return unverified child references",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "pending reader authorization keeps metadata owned until the operation ends",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "explicit writer disposal fences an in-flight entry producer before removing files",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Staged view capacity ownership: aggregate disk reservations, partial sealing, borrowed-window cancellation and two-session memory/disk pressure retain complete evidence.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "memory leases count shared backing buffers once and reserve before allocation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "cache eviction releases every shared slab reference before refusing a new reservation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "reserved source and reader allocations remain single-charged across codec borrows",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "allocation happens only after its reservation and refusal performs no allocation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "small node text and manifest encoders never allocate pooled string buffers",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "typed staged descriptors round trip bytes Unicode null undefined and ordered sharded containers",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "incremental entries stage complete content above working memory without retaining payloads",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "descriptor references are private to their reader and kind lookup is enforced",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "old or unknown derived encodings are rejected without issuing a descriptor",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "tampered staged leaf fails digest verification and revokes its reader",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "cancellation revokes window access but holds its charge until actual release",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "two staged writers cannot exceed aggregate project disk reservation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "partial seal retains bounded recovery evidence and never emits readiness",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "invalid streamed entry order and canceled construction preserve evidence for explicit disposal",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "tampered index shards cannot return unverified child references",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "pending reader authorization keeps metadata owned until the operation ends",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "explicit writer disposal fences an in-flight entry producer before removing files",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "staged views share source cache memory and retain exact source queries without refetch",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "source evidence windows prevent disposal until the exact consumer releases ownership",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "decoded source results retain their charge until explicit consumer release",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "session close retains decoded result charges while a caller can still use them",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "source body memory exhaustion refuses before invoking the body provider",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "source session batches verified Git objects and shares immutable queries without bypassing logical budgets",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "source session retains evidence above memory capacity and never refetches evicted data",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "shared project reservations refuse body fetch before capacity exhaustion and transfer batches atomically",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "staged corruption and source errors fence the session instead of implicitly retrying Git",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "a source failure is recorded once and requires a fresh preparation session",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "preparation configuration is discoverable bounded and rejects malformed values",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "replaced staging directory is retained with its capacity until exact ownership is restored",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "two source sessions share project capacity without overlapping identities or duplicate fetches",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "historical and current packet qualification share sources while preserving exact projection",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-context-registry.test.ts",
+                "title": "qualified context becomes ready atomically and survives warm phase handoff without source reconstruction",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-context-registry.test.ts",
+                "title": "cold daemon receipts and tampered prepared objects cannot authorize reuse",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-context-registry.test.ts",
+                "title": "design context uses complete validator output and refreshes latest target authority",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-context-registry.test.ts",
+                "title": "partial context writes never emit a ready receipt and retain bounded recovery evidence",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-context-registry.test.ts",
+                "title": "real reclaimed execution worker hands complete context to a distinct publication worker",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-context-registry.test.ts",
+                "title": "matching context acquisitions coalesce qualification and refresh authority before every borrow",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-context-registry.test.ts",
+                "title": "an immutable manifest replacement revokes an active borrow and fresh generations preserve source identity",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-context-registry.test.ts",
+                "title": "central context serialization preserves binary text undefined and tag-shaped artifact data",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/review-context-registry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2440,
+            "titles": [
+              {
+                "title": "qualified context becomes ready atomically and survives warm phase handoff without source reconstruction",
+                "result": "pass"
+              },
+              {
+                "title": "cold daemon receipts and tampered prepared objects cannot authorize reuse",
+                "result": "pass"
+              },
+              {
+                "title": "design context uses complete validator output and refreshes latest target authority",
+                "result": "pass"
+              },
+              {
+                "title": "partial context writes never emit a ready receipt and retain bounded recovery evidence",
+                "result": "pass"
+              },
+              {
+                "title": "real reclaimed execution worker hands complete context to a distinct publication worker",
+                "result": "pass"
+              },
+              {
+                "title": "matching context acquisitions coalesce qualification and refresh authority before every borrow",
+                "result": "pass"
+              },
+              {
+                "title": "an immutable manifest replacement revokes an active borrow and fresh generations preserve source identity",
+                "result": "pass"
+              },
+              {
+                "title": "central context serialization preserves binary text undefined and tag-shaped artifact data",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1937,
+            "titles": [
+              {
+                "title": "memory leases count shared backing buffers once and reserve before allocation",
+                "result": "pass"
+              },
+              {
+                "title": "cache eviction releases every shared slab reference before refusing a new reservation",
+                "result": "pass"
+              },
+              {
+                "title": "reserved source and reader allocations remain single-charged across codec borrows",
+                "result": "pass"
+              },
+              {
+                "title": "allocation happens only after its reservation and refusal performs no allocation",
+                "result": "pass"
+              },
+              {
+                "title": "small node text and manifest encoders never allocate pooled string buffers",
+                "result": "pass"
+              },
+              {
+                "title": "typed staged descriptors round trip bytes Unicode null undefined and ordered sharded containers",
+                "result": "pass"
+              },
+              {
+                "title": "incremental entries stage complete content above working memory without retaining payloads",
+                "result": "pass"
+              },
+              {
+                "title": "descriptor references are private to their reader and kind lookup is enforced",
+                "result": "pass"
+              },
+              {
+                "title": "old or unknown derived encodings are rejected without issuing a descriptor",
+                "result": "pass"
+              },
+              {
+                "title": "tampered staged leaf fails digest verification and revokes its reader",
+                "result": "pass"
+              },
+              {
+                "title": "cancellation revokes window access but holds its charge until actual release",
+                "result": "pass"
+              },
+              {
+                "title": "two staged writers cannot exceed aggregate project disk reservation",
+                "result": "pass"
+              },
+              {
+                "title": "partial seal retains bounded recovery evidence and never emits readiness",
+                "result": "pass"
+              },
+              {
+                "title": "invalid streamed entry order and canceled construction preserve evidence for explicit disposal",
+                "result": "pass"
+              },
+              {
+                "title": "tampered index shards cannot return unverified child references",
+                "result": "pass"
+              },
+              {
+                "title": "pending reader authorization keeps metadata owned until the operation ends",
+                "result": "pass"
+              },
+              {
+                "title": "explicit writer disposal fences an in-flight entry producer before removing files",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/source-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2249,
+            "titles": [
+              {
+                "title": "staged views share source cache memory and retain exact source queries without refetch",
+                "result": "pass"
+              },
+              {
+                "title": "source evidence windows prevent disposal until the exact consumer releases ownership",
+                "result": "pass"
+              },
+              {
+                "title": "decoded source results retain their charge until explicit consumer release",
+                "result": "pass"
+              },
+              {
+                "title": "session close retains decoded result charges while a caller can still use them",
+                "result": "pass"
+              },
+              {
+                "title": "source body memory exhaustion refuses before invoking the body provider",
+                "result": "pass"
+              },
+              {
+                "title": "source session batches verified Git objects and shares immutable queries without bypassing logical budgets",
+                "result": "pass"
+              },
+              {
+                "title": "source session retains evidence above memory capacity and never refetches evicted data",
+                "result": "pass"
+              },
+              {
+                "title": "shared project reservations refuse body fetch before capacity exhaustion and transfer batches atomically",
+                "result": "pass"
+              },
+              {
+                "title": "staged corruption and source errors fence the session instead of implicitly retrying Git",
+                "result": "pass"
+              },
+              {
+                "title": "a source failure is recorded once and requires a fresh preparation session",
+                "result": "pass"
+              },
+              {
+                "title": "preparation configuration is discoverable bounded and rejects malformed values",
+                "result": "pass"
+              },
+              {
+                "title": "replaced staging directory is retained with its capacity until exact ownership is restored",
+                "result": "pass"
+              },
+              {
+                "title": "two source sessions share project capacity without overlapping identities or duplicate fetches",
+                "result": "pass"
+              },
+              {
+                "title": "historical and current packet qualification share sources while preserving exact projection",
                 "result": "pass"
               }
             ],

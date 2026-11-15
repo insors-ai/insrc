@@ -9,14 +9,14 @@
 import type { ScratchFs, ScratchFsHandle } from '../scratch-store.js';
 
 export interface ScratchFsCall {
-  readonly op: 'mkdir' | 'readdir' | 'lstat' | 'writeFile' | 'writeFileExclusive' | 'link' | 'unlink' | 'open' | 'read' | 'fstat' | 'close' | 'rename';
+  readonly op: 'mkdir' | 'readdir' | 'lstat' | 'writeFile' | 'writeFileExclusive' | 'link' | 'unlink' | 'open' | 'read' | 'fstat' | 'close';
   readonly path: string;
-  /** link/rename: the destination. */
+  /** link: the destination. */
   readonly to?: string;
 }
 
 /** Operations that mutate the filesystem. */
-const MUTATIONS: ReadonlySet<ScratchFsCall['op']> = new Set(['mkdir', 'writeFile', 'writeFileExclusive', 'link', 'unlink', 'rename']);
+const MUTATIONS: ReadonlySet<ScratchFsCall['op']> = new Set(['mkdir', 'writeFile', 'writeFileExclusive', 'link', 'unlink']);
 
 export interface FakeScratchFs {
   readonly fs: ScratchFs;
@@ -162,23 +162,6 @@ export function fakeScratchFs(): FakeScratchFs {
       kinds.delete(path);
       mtimes.delete(path);
       inos.delete(path);
-    },
-    rename: async (from, to) => {
-      const err = record({ op: 'rename', path: from, to });
-      const data = files.get(from);
-      if (data === undefined) throw enoent(from);
-      if (err !== undefined) throw err;
-      // Atomic move: the source name disappears and the destination gets the source's
-      // inode (a rename replaces whatever was at `to` — modeled as a put).
-      files.delete(from);
-      kinds.delete(from);
-      mtimes.delete(from);
-      files.set(to, data);
-      kinds.set(to, 'file');
-      mtimes.set(to, fake.clock);
-      mtimes.set(parent(to), fake.clock);
-      inos.set(to, inos.get(from) ?? 0);
-      inos.delete(from);
     },
     open: async (path) => {
       const err = record({ op: 'open', path });

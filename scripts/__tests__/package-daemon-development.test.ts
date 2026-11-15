@@ -82,6 +82,12 @@ test('local development packaging pins a configured ref and measures candidate b
 		await writeFile(join(candidate.checkout, 'source'), 'dirty');
 		assert.throws(() => requireCleanDevelopmentCheckout(candidate.checkout, commit), /dirty/);
 		await assert.rejects(fetchDevelopmentCheckout(policy, ref, unrelated, await fresh()), /unreachable/);
+		await assert.rejects(fetchDevelopmentCheckout(policy, ref, '0'.repeat(40), await fresh()), /unreachable/);
+		const deletedRef = 'refs/heads/preview/deleted';
+		git('branch', 'preview/deleted', tip);
+		git('branch', '-D', 'preview/deleted');
+		await assert.rejects(fetchDevelopmentCheckout({ ...policy, developmentRefs: [ref, deletedRef] },
+			deletedRef, commit, await fresh()), /git.*fetch/s);
 		await assert.rejects(fetchDevelopmentCheckout(policy, 'refs/heads/unrelated', unrelated, await fresh()), /not approved/);
 		await assert.rejects(fetchDevelopmentCheckout(policy, 'refs/tags/preview', commit, await fresh()), /full branch ref/);
 

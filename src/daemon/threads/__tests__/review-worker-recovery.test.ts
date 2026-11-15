@@ -38,7 +38,8 @@ const fs=require('node:fs'),path=require('node:path');let input='';process.stdin
   process.stdout.write(JSON.stringify({type:'system',subtype:'fixture-padding',padding:'x'.repeat(200000)})+'\\n');
   process.stdout.write(JSON.stringify({type:'assistant',message:{content:[{type:'tool_use',id:'out',name:'StructuredOutput',input:JSON.parse(fs.readFileSync(p.reply,'utf8'))}]}})+'\\n');
  }
- setInterval(()=>{},1000);
+ const activity=path.join(process.cwd(),'activity-'+p.reviewId);
+ setInterval(()=>{if(fs.existsSync(activity)){fs.unlinkSync(activity);process.stdout.write(JSON.stringify({type:'assistant',message:{content:[{type:'tool_use',id:'fixture-read',name:'Read',input:{file_path:'source.js'}}]}})+'\\n');}},10);
 });`;
  await writeFile(join(bin,'claude'),executable);await chmod(join(bin,'claude'),0o755);
  const config=join(code.repo,'production-daemon.json'),socket=join(code.repo,'native.sock');
@@ -85,13 +86,18 @@ const fs=require('node:fs'),path=require('node:path');let input='';process.stdin
   await writeFile(join(repo,'hold-'+loss.reviewId),'owned fixture worker-loss barrier');
   await peer.call(method+'.start',loss);await until(async()=> (await spawns(repo)).some(s=>s.reviewId===loss.reviewId));
   const child=(await spawns(repo)).find(s=>s.reviewId===loss.reviewId)!;survivors.set(child.pid,repo);
+  const key={project:repo,family,reviewId:loss.reviewId};
+  const runtimeBefore=JSON.parse(await readFile(reviewRuntimePath(key),'utf8'));
   const historyPath=join(repo,'.insrc/tmp',family+'-review',loss.reviewId+'.json'),beforeHistory=await readFile(historyPath),beforeStamp=await stat(historyPath,{bigint:true});
-  const runtimeBefore=JSON.parse(await readFile(reviewRuntimePath({project:repo,family,reviewId:loss.reviewId}),'utf8'));
+  await writeFile(join(repo,'activity-'+loss.reviewId),'Emit a real streamed tool-start event');
+  let runtimeAfter:any;
+  await until(async()=>{runtimeAfter=JSON.parse(await readFile(reviewRuntimePath(key),'utf8'));return runtimeAfter.sequence>runtimeBefore.sequence&&runtimeAfter.progress.lastMeaningfulActivityAt!==null&&runtimeAfter.progress.lastMeaningfulActivityAt!==runtimeBefore.progress.lastMeaningfulActivityAt;});
   for(let i=0;i<10;i++)await peer.call(method+'.progress',loss);
   assert.deepEqual(await readFile(historyPath),beforeHistory);
-  const afterStamp=await stat(historyPath,{bigint:true});assert.equal(afterStamp.ino,beforeStamp.ino);assert.equal(afterStamp.mtimeNs,beforeStamp.mtimeNs,'progress and native activity do not rewrite full history');
-  const runtimeAfter=JSON.parse(await readFile(reviewRuntimePath({project:repo,family,reviewId:loss.reviewId}),'utf8'));
-  assert.ok(runtimeAfter.sequence>=runtimeBefore.sequence);assert.ok(Buffer.byteLength(JSON.stringify(runtimeAfter))<=256*1024);
+  const afterStamp=await stat(historyPath,{bigint:true});assert.equal(afterStamp.ino,beforeStamp.ino);assert.equal(afterStamp.mtimeNs,beforeStamp.mtimeNs,'an actual durable activity update does not rewrite full history');
+  assert.ok(runtimeAfter.sequence>runtimeBefore.sequence);assert.notEqual(runtimeAfter.progress.lastMeaningfulActivityAt,runtimeBefore.progress.lastMeaningfulActivityAt);
+  assert.deepEqual(runtimeAfter.resourceGuard.openLeases,runtimeBefore.resourceGuard.openLeases,'activity proof is not a native lease mutation');
+  assert.ok(Buffer.byteLength(JSON.stringify(runtimeAfter))<=256*1024);
 
   await peer.call('fixture.terminate',{reviewId:loss.reviewId});
   await until(async()=>{try{process.kill(child.pid,0);return false;}catch(error){if((error as NodeJS.ErrnoException).code==='ESRCH')return true;throw error;}});

@@ -242,6 +242,7 @@ for (const family of ['code', 'design'] as const) test(`production ${family} pub
  const request = { repo: initial.repo, reviewId: initial.reviewId, attempt: 1 };
  if (family === 'design') {
   await assert.rejects(peer.call('designReview.recover', { ...request, actionId: 'forbidden-assessment-resume', operation: 'resume' }), /Completed review|observation-only/);
+  await assert.rejects(peer.call('designReview.recover', { ...request, actionId: 'forbidden-reviewer-direction', operation: 'retry_publication', userDecision: { action: 'retry_failed_unit', reason: 'Publication cannot accept reviewer direction', recordedAt: new Date().toISOString() } }), /decision|publication|dispatch/i);
   await peer.call('designReview.recover', { ...request, actionId: 'publication-only-retry', operation: 'retry_publication' });
   await until(async () => { const p = await peer.call('designReview.progress', request); if (p.publication?.error) throw Error(JSON.stringify(p)); return p.publication?.state === 'complete' && p.publication.actions?.some((a: {actionId: string}) => a.actionId === 'publication-only-retry'); });
   await peer.call('designReview.recover', { ...request, actionId: 'publication-only-retry', operation: 'retry_publication' });

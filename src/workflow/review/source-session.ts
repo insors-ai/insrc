@@ -11,6 +11,8 @@ import { reviewPath } from '../code-review/task-review/contracts.js';
 import type { BatchReviewSources, ReviewSources, ReviewObjectRequest, PinnedBlob, ChangedRange } from '../code-review/task-review/sources.js';
 import type { ReviewPreparationLimits } from '../../config/review.js';
 import { writeReviewBytes } from '../code-review/task-review/checkpoint.js';
+import { ReviewMemoryBudget } from './preparation-memory.js';
+import type { MemoryLease } from './preparation-memory.js';
 
 /** Main-owned implementation, injected through the private preparation service
  * when workers are wired. One instance accounts every session in a project. */
@@ -84,6 +86,10 @@ export class ReviewSourceSession implements ReviewSources {
  private readonly entries = new Map<string, Entry>();
  private readonly queriesByDigest = new Map<string, string>();
  private readonly memory = new Map<string, Buffer>();
+ private readonly memoryLeases = new Map<string, MemoryLease>();
+ private readonly metadataLeases: MemoryLease[] = [];
+ private readonly evidenceBorrows = new Set<() => void>();
+ private readonly removeEvictor: () => void;
  private readonly tokens = new Set<string>();
  private memoryBytes = 0;
  private metadataBytes = 0;
@@ -94,8 +100,10 @@ export class ReviewSourceSession implements ReviewSources {
  private observer: ((metrics: ReturnType<ReviewSourceSession['snapshot']>) => Promise<void>) | undefined;
  private observed = '';
  private readonly metrics = { logicalQueries: 0, logicalCompleted: 0, physicalQueries: 0, physicalCompleted: 0, cacheHits: 0, diskHits: 0, objectInventoryBatches: 0, objectReadBatches: 0, storedBytes: 0 };
- private constructor(readonly directory: string, readonly key: Readonly<ReviewKey>, private readonly source: BatchReviewSources, private readonly limits: ReviewPreparationLimits, private readonly capacity: SourceCapacity, private readonly identity: { dev: bigint; ino: bigint }) {}
- static async create(key: ReviewKey, source: BatchReviewSources, limits: ReviewPreparationLimits, capacity: SourceCapacity): Promise<ReviewSourceSession> {
+ private constructor(readonly directory: string, readonly key: Readonly<ReviewKey>, private readonly source: BatchReviewSources, private readonly limits: ReviewPreparationLimits, private readonly capacity: SourceCapacity, private readonly identity: { dev: bigint; ino: bigint }, readonly workingMemory: ReviewMemoryBudget) {
+  this.removeEvictor = workingMemory.onEvict(() => this.evictMemory());
+ }
+ static async create(key: ReviewKey, source: BatchReviewSources, limits: ReviewPreparationLimits, capacity: SourceCapacity, memory = new ReviewMemoryBudget(limits.memoryMaxBytes)): Promise<ReviewSourceSession> {
   if (!Value.Check(ReviewKeySchema, key)) throw new Error('Invalid source session identity');
   const project = key.project;
   if (await realpath(project) !== project || Object.values(limits).some(n => !Number.isSafeInteger(n) || n < 1)) throw new Error('Invalid source session bounds/project');
@@ -106,7 +114,8 @@ export class ReviewSourceSession implements ReviewSources {
    const st = await lstat(directory); if (!st.isDirectory() || st.isSymbolicLink() || await realpath(directory) !== directory) throw new Error('Unsafe source session directory');
   }
   const identity = await lstat(directory, { bigint: true });
-  return new ReviewSourceSession(directory, Object.freeze({ ...key }), source, { ...limits }, capacity, { dev: identity.dev, ino: identity.ino });
+  if (memory.limit !== limits.memoryMaxBytes) throw new Error('Source memory owner has different bound');
+  return new ReviewSourceSession(directory, Object.freeze({ ...key }), source, { ...limits }, capacity, { dev: identity.dev, ino: identity.ino }, memory);
  }
  private enqueue<T>(work: () => Promise<T>): Promise<T> {
   if (this.closing || this.closed) return Promise.reject(new Error('Source session closed'));
@@ -126,13 +135,26 @@ export class ReviewSourceSession implements ReviewSources {
   if (Buffer.byteLength(key) > 8192) throw new Error('Source query identity exceeds bound'); return key;
  }
  private keep(key: string, bytes: Buffer): void {
+  this.memoryLeases.get(key)?.release(); this.memoryLeases.delete(key);
   this.memory.delete(key);
   // Account returned decode as well as the cached wire representation.
   const budget = this.limits.memoryMaxBytes - this.metadataBytes - bytes.length;
   while (this.memoryBytes + bytes.length > budget && this.memory.size) {
-   const first = this.memory.keys().next().value!; this.memoryBytes -= this.memory.get(first)!.length; this.memory.delete(first);
+   this.evictMemory();
   }
-  if (this.memoryBytes + bytes.length <= budget) { this.memory.set(key, bytes); this.memoryBytes += bytes.length; }
+  if (this.memoryBytes + bytes.length <= budget) {
+   // Cache ownership is optional; pinned disk evidence is never evicted. Other
+   // consumers share this budget and can evict these unborrowed wire bytes.
+   let lease: MemoryLease;
+   try { lease = this.workingMemory.buffer(bytes, 'source wire cache'); }
+   catch (error) { if (error instanceof Error && error.message.startsWith('Preparation memory capacity exhausted')) return; throw error; }
+   this.memory.set(key, bytes); this.memoryLeases.set(key, lease); this.memoryBytes += bytes.length;
+  }
+ }
+ private evictMemory(): boolean {
+  const key = this.memory.keys().next().value; if (key === undefined) return false;
+  this.memoryBytes -= this.memory.get(key)!.length; this.memory.delete(key);
+  this.memoryLeases.get(key)?.release(); this.memoryLeases.delete(key); return true;
  }
  private async load(method: Method, key: string, entry: Entry): Promise<unknown> {
   let bytes = this.memory.get(key);
@@ -145,7 +167,7 @@ export class ReviewSourceSession implements ReviewSources {
     while (offset < bytes.length) { const n = await file.read(bytes, offset, bytes.length - offset, null); if (!n.bytesRead) break; offset += n.bytesRead; }
     if (offset !== st.size) throw new Error('Staged source changed'); bytes = bytes.subarray(0, offset);
    } finally { await file.close(); }
-  } else { this.memory.delete(key); this.memoryBytes -= bytes.length; }
+  } else { this.memory.delete(key); this.memoryBytes -= bytes.length; this.memoryLeases.get(key)?.release(); this.memoryLeases.delete(key); }
   if (sha(bytes) !== entry.digest) throw new Error('Staged source integrity mismatch');
   this.keep(key, bytes); return decode(method, bytes);
  }
@@ -160,6 +182,7 @@ export class ReviewSourceSession implements ReviewSources {
   const index = await open(join(this.directory, 'queries.jsonl'), constants.O_WRONLY | constants.O_APPEND | constants.O_CREAT | constants.O_NOFOLLOW, 0o600);
   try { await index.writeFile(line); await index.sync(); } finally { await index.close(); }
   const directory = await open(this.directory, 'r'); try { await directory.sync(); } finally { await directory.close(); }
+  this.metadataLeases.push(this.workingMemory.reserve(metadata, 'source query metadata'));
   this.entries.set(key, entry); this.queriesByDigest.set(sha(key), key); this.metadataBytes += metadata; this.metrics.storedBytes += bytes.length + Buffer.byteLength(line);
   await this.capacity.commit(token, bytes.length + Buffer.byteLength(line));
   this.keep(key, bytes);
@@ -245,7 +268,7 @@ export class ReviewSourceSession implements ReviewSources {
   this.observer = observer;
   return () => { if (this.observer === observer) this.observer = undefined; };
  }
- snapshot() { return { ...this.metrics, memoryBytes: this.memoryBytes + this.metadataBytes }; }
+ snapshot() { return { ...this.metrics, memoryBytes: this.memoryBytes + this.metadataBytes, workingMemory: this.workingMemory.snapshot() }; }
  evidence(): Promise<readonly { queryDigest: string; contentDigest: string; bytes: number }[]> {
   return this.enqueue(async () => [...this.entries].map(([query, entry]) => ({ queryDigest: sha(query), contentDigest: entry.digest, bytes: entry.bytes })));
  }
@@ -257,14 +280,44 @@ export class ReviewSourceSession implements ReviewSources {
    if (sha(bytes) !== entry.digest) throw new Error('Evidence encoding mismatch'); return bytes;
   });
  }
+ /** Codec transfer of already encoded evidence: no decode/base64/re-encode
+  * amplification. The same allocation is charged once across source and view
+  * owners, and close cannot discard a still-borrowed source session. */
+ borrowEvidence(queryDigest: string): Promise<{ readonly bytes: Uint8Array; release(): void }> {
+  return this.enqueue(async () => {
+   const key = this.queriesByDigest.get(queryDigest), entry = key && this.entries.get(key);
+   if (!entry) throw new Error('Unknown session evidence');
+   const file = await open(join(this.directory, entry.name), constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+   let failedCloseRelease: (() => void) | undefined;
+   try {
+    const st = await file.stat(); if (!st.isFile() || st.size !== entry.bytes) throw new Error('Invalid staged evidence size');
+    const allocation = this.workingMemory.allocate(entry.bytes + 1, 'source evidence window');
+    try {
+     let offset = 0;
+     while (offset < allocation.bytes.length) { const n = await file.read(allocation.bytes, offset, allocation.bytes.length - offset, null); if (!n.bytesRead) break; offset += n.bytesRead; }
+     const bytes = allocation.bytes.subarray(0, offset);
+     if (offset !== entry.bytes || sha(Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength)) !== entry.digest) throw new Error('Staged evidence integrity mismatch');
+     let active = true;
+     const release = () => { if (active) { active = false; allocation.lease.release(); this.evidenceBorrows.delete(release); } };
+     failedCloseRelease = release;
+     this.evidenceBorrows.add(release);
+     return { get bytes() { if (!active) throw new Error('Source evidence window released'); return bytes; }, release };
+    } catch (error) { allocation.lease.release(); throw error; }
+   } finally { try { await file.close(); } catch (error) { failedCloseRelease?.(); throw error; } }
+  });
+ }
  async close(): Promise<void> {
   if (this.closed) return; this.closing = true; await this.tail;
+  if (this.evidenceBorrows.size) throw new Error('Source evidence windows remain borrowed');
   // The owning worker must dispose its native readers before calling close.
   // Deletion failure deliberately retains all reservations and evidence.
   const identity = await lstat(this.directory, { bigint: true });
   if (!identity.isDirectory() || identity.isSymbolicLink() || identity.dev !== this.identity.dev || identity.ino !== this.identity.ino) throw new Error('Source staging directory replaced; retain capacity/evidence');
   await rm(this.directory, { recursive: true });
   for (const token of this.tokens) await this.capacity.release(token);
-  this.tokens.clear(); this.entries.clear(); this.queriesByDigest.clear(); this.memory.clear(); this.memoryBytes = 0; this.metadataBytes = 0; this.closed = true;
+  this.tokens.clear(); this.entries.clear(); this.queriesByDigest.clear();
+  while (this.evictMemory()) { /* release only source-owned unborrowed cache */ }
+  for (const lease of this.metadataLeases) lease.release(); this.metadataLeases.length = 0; this.removeEvictor();
+  this.memoryBytes = 0; this.metadataBytes = 0; this.closed = true;
  }
 }

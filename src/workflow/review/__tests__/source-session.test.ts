@@ -9,6 +9,9 @@ import { ProjectionBudget, boundedProjectionSources } from '../../code-review/ta
 import { ReviewSourceSession, ReviewPreparationCapacity } from '../source-session.js';
 import { reviewPreparationLimits } from '../../../config/review.js';
 import { prepareReviewPacket } from '../../code-review/task-review/packet.js';
+import { PreparedViewWriter, PreparedViewReader } from '../prepared-views.js';
+import { preparationDigest, contextRoot } from '../prepared-context.js';
+import { reviewSourceQueryDigest } from '../source-session.js';
 
 const defaults = () => reviewPreparationLimits('/tmp/insrc-nonexistent-test-preparation-config');
 async function setup(t: { after: (fn: () => void | Promise<void>) => void }) {
@@ -23,6 +26,40 @@ async function setup(t: { after: (fn: () => void | Promise<void>) => void }) {
  };
  return { f, source, calls, create: async (limits: ReturnType<typeof defaults>, capacity: ReviewPreparationCapacity) => { const session = await ReviewSourceSession.create({ project: f.repo, family: 'code', reviewId: 'session-test' }, source, limits, capacity); sessions.push(session); return session; } };
 }
+
+test('staged views share source cache memory and retain exact source queries without refetch', async t => {
+ const f = await setup(t), limits = defaults(), capacity = new ReviewPreparationCapacity(limits.cacheMaxBytes);
+ const session = await f.create(limits, capacity), commit = f.f.packet.reviewRevision!;
+ const expected = await session.file(commit, 'source.js'), physical = session.snapshot().physicalQueries;
+ assert.ok(session.snapshot().memoryBytes > 0);
+ const held = session.workingMemory.reserve(limits.memoryMaxBytes - 4000, 'consumer window');
+ assert.ok(session.snapshot().memoryBytes < 4000, 'consumer pressure evicts only the unborrowed source wire cache');
+ held.release();
+ const d = preparationDigest('source-binding');
+ const writer = await PreparedViewWriter.create({ key: session.key, attempt: 1, inputDigest: d, validatorVersion: 1, routeDigest: d, sourceIdentity: d, scopeDigest: d, testDocumentDigest: d }, limits, capacity, session.workingMemory, session);
+ await writer.add('packet', 'packet', { commit, path: 'source.js' }); const receipt = await writer.seal();
+ const reader = await PreparedViewReader.open(receipt, limits, session.workingMemory, async () => {}, async error => { throw error; });
+ const ref = await reader.source(reviewSourceQueryDigest('file', [commit, 'source.js'])), parts: Buffer[] = [];
+ for await (const window of reader.chunks(ref)) { parts.push(Buffer.from(window.value)); window.release(); }
+ const restored = JSON.parse(Buffer.concat(parts).toString('utf8'));
+ assert.equal(restored.oid, expected!.oid); assert.deepEqual(Buffer.from(restored.base64, 'base64'), Buffer.from(expected!.bytes));
+ assert.equal(session.snapshot().physicalQueries, physical);
+ reader.close(); await session.close();
+ assert.equal(session.workingMemory.snapshot().bytes, 0);
+ await rm(join(contextRoot(session.key), receipt.generationId), { recursive: true }); await capacity.release(receipt.capacityToken);
+ assert.equal(capacity.bytes, 0);
+});
+
+test('source evidence windows prevent disposal until the exact consumer releases ownership', async t => {
+ const f = await setup(t), limits = defaults(), capacity = new ReviewPreparationCapacity(limits.cacheMaxBytes);
+ const session = await f.create(limits, capacity), commit = f.f.packet.reviewRevision!;
+ await session.file(commit, 'source.js');
+ const window = await session.borrowEvidence(reviewSourceQueryDigest('file', [commit, 'source.js']));
+ await assert.rejects(session.close(), /windows remain borrowed/);
+ assert.ok(capacity.bytes > 0); assert.ok(window.bytes.length > 0);
+ window.release(); window.release(); assert.throws(() => window.bytes, /released/);
+ await session.close(); assert.equal(capacity.bytes, 0); assert.equal(session.workingMemory.snapshot().bytes, 0);
+});
 
 test('source session batches verified Git objects and shares immutable queries without bypassing logical budgets', async t => {
  const f = await setup(t), limits = defaults(), capacity = new ReviewPreparationCapacity(limits.cacheMaxBytes);

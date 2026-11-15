@@ -42,7 +42,7 @@ export interface ScratchEntry {
 export interface ScratchFs {
   mkdir(path: string): Promise<void>;
   readdir(path: string): Promise<string[]>;
-  lstat(path: string): Promise<{ readonly isFile: boolean; readonly isSymbolicLink: boolean; readonly size: number; readonly mtimeMs: number }>;
+  lstat(path: string): Promise<{ readonly isFile: boolean; readonly isSymbolicLink: boolean; readonly size: number; readonly mtimeMs: number; readonly ino: number }>;
   writeFile(path: string, data: Uint8Array): Promise<void>;
   /**
    * Exclusive, no-follow write for the update path: creates `path` ONLY when it
@@ -58,7 +58,7 @@ export interface ScratchFs {
 
 export interface ScratchFsHandle {
   read(): Promise<{ bytes: Uint8Array; bytesRead: number }>;
-  stat(): Promise<{ readonly isFile: boolean; readonly size: number; readonly mtimeMs: number }>;
+  stat(): Promise<{ readonly isFile: boolean; readonly size: number; readonly mtimeMs: number; readonly ino: number }>;
   close(): Promise<void>;
 }
 
@@ -73,7 +73,7 @@ export const nodeScratchFs: ScratchFs = {
   },
   lstat: async (p) => {
     const s = await lstat(p);
-    return { isFile: s.isFile(), isSymbolicLink: s.isSymbolicLink(), size: s.size, mtimeMs: s.mtimeMs };
+    return { isFile: s.isFile(), isSymbolicLink: s.isSymbolicLink(), size: s.size, mtimeMs: s.mtimeMs, ino: s.ino };
   },
   writeFile: (p, data) => writeFile(p, data),
   writeFileExclusive: async (p, data) => {
@@ -99,7 +99,7 @@ export const nodeScratchFs: ScratchFs = {
       },
       stat: async () => {
         const s = await h.stat();
-        return { isFile: s.isFile(), size: s.size, mtimeMs: s.mtimeMs };
+        return { isFile: s.isFile(), size: s.size, mtimeMs: s.mtimeMs, ino: s.ino };
       },
       close: () => h.close(),
     };
@@ -359,7 +359,8 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
     if (!st.isFile || st.isSymbolicLink) throw new ScratchRefused(`'${id}' is not a regular file and is refused`);
 
     // Exclusive no-follow temp write: O_CREAT|O_EXCL|O_NOFOLLOW — an occupied or
-    // symlinked temp name fails with EEXIST/ELOOP instead of being followed.
+    // symlinked temp name fails with EEXIST/ELOOP instead of being followed. On
+    // failure the temp was never created by us, so it is left strictly alone.
     const temp = join(root, `.tmp-${process.pid}-${randomBytes(6).toString('hex')}`);
     const content = Buffer.from(text, 'utf8');
     const unlinkTemp = async (): Promise<void> => {
@@ -368,17 +369,36 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
     try {
       await fs.writeFileExclusive(temp, content);
     } catch (e) {
-      await unlinkTemp();
       const code = errCode(e);
-      if (code === 'EEXIST' || code === 'ELOOP') throw new ScratchStoreError(`scratchpad update refused: temp name is occupied (${String(e)})`);
+      if (code === 'EEXIST' || code === 'ELOOP') {
+        // The exclusive create never happened: the entry at the temp name is NOT
+        // ours — leave it strictly alone (it may be a pre-existing file or symlink).
+        throw new ScratchStoreError(`scratchpad update refused: temp name is occupied (${String(e)})`);
+      }
+      // The create succeeded but the write failed (e.g. ENOSPC leaves a partial temp
+      // this call created): clean up the temp we own.
+      await unlinkTemp();
       throw storeError(e);
     }
 
     // No-clobber publish: unlink(destination) + link(temp, destination) + unlink(temp).
     // Never rename — rename would clobber a destination created after the probe above.
+    // Each attempt re-validates the destination (lstat), then re-opens it O_NOFOLLOW and
+    // fstats the SAME fd and only unlinks when that fd's inode is the one just lstat'd —
+    // a symlink or replacement swapped in between is refused, never removed.
     for (let attempt = 0; ; attempt++) {
-      // Re-open the destination O_NOFOLLOW and fstat the SAME fd before unlinking,
-      // so a symlink swapped in after the lstat is never removed.
+      let st2;
+      try {
+        st2 = await fs.lstat(path);
+      } catch (e) {
+        await unlinkTemp();
+        if (errCode(e) === 'ENOENT') throw new ScratchNotFound(`'${id}' disappeared before the save`);
+        throw storeError(e);
+      }
+      if (!st2.isFile || st2.isSymbolicLink) {
+        await unlinkTemp();
+        throw new ScratchRefused(`'${id}' is not a regular file and is refused`);
+      }
       let handle;
       try {
         handle = await fs.open(path);
@@ -394,19 +414,17 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
         try {
           fst = await handle.stat();
         } catch (e) {
-          await unlinkTemp();
           if (errCode(e) === 'ENOENT') throw new ScratchNotFound(`'${id}' disappeared before the save`);
           throw storeError(e);
         }
-        if (!fst.isFile) {
-          await unlinkTemp();
-          throw new ScratchRefused(`'${id}' is not a regular file and is refused`);
+        if (!fst.isFile || fst.ino !== st2.ino) {
+          throw new ScratchRefused(`'${id}' changed between validation and unlink and is refused`);
         }
       } finally {
         try { await handle.close(); } catch { /* closing the probe fd is best-effort */ }
       }
 
-      // The destination is confirmed present: unlink it, then link the temp over the name.
+      // The re-validated inode is confirmed on the fd: unlink it, then link the temp over the name.
       try {
         await fs.unlink(path);
       } catch (e) {
@@ -421,10 +439,13 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
         await fs.link(temp, path);
       } catch (e) {
         if (errCode(e) === 'EEXIST' && attempt + 1 < PUBLISH_ATTEMPTS) {
-          // The destination was recreated between our unlink and link: re-validate
-          // (the loop's open+fstat above) and retry the unlink+link pair.
+          // The destination was recreated between our unlink and link: the next attempt
+          // re-validates it (lstat + O_NOFOLLOW fstat inode check) before unlinking again.
           continue;
         }
+        // Publish failure after the destination unlink: the name may briefly be absent
+        // (ENOENT window inherent to unlink+link, never a partial write), the temp is
+        // cleaned up, and the caller sees a store error — no partial content is exposed.
         await unlinkTemp();
         throw storeError(e);
       }

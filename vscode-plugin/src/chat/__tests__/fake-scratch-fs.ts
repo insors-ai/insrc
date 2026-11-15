@@ -26,6 +26,8 @@ export interface FakeScratchFs {
   /** path -> kind: 'file' | 'dir' | 'symlink'. */
   readonly kinds: Map<string, 'file' | 'dir' | 'symlink'>;
   readonly mtimes: Map<string, number>;
+  /** path -> inode number (fresh per created/linked entry, so swaps change it). */
+  readonly inos: Map<string, number>;
   readonly calls: ScratchFsCall[];
   /** path -> the path a symlink points to (kind must be 'symlink'). */
   readonly linkTargets: Map<string, string>;
@@ -52,6 +54,8 @@ export function fakeScratchFs(): FakeScratchFs {
   const dirs = new Set<string>();
   const kinds = new Map<string, 'file' | 'dir' | 'symlink'>();
   const mtimes = new Map<string, number>();
+  const inos = new Map<string, number>();
+  let nextIno = 1;
   const linkTargets = new Map<string, string>();
   const calls: ScratchFsCall[] = [];
   const fake: FakeScratchFs = {
@@ -59,6 +63,7 @@ export function fakeScratchFs(): FakeScratchFs {
     dirs,
     kinds,
     mtimes,
+    inos,
     linkTargets,
     calls,
     failOn: undefined,
@@ -76,18 +81,19 @@ export function fakeScratchFs(): FakeScratchFs {
     if (dirs.has(p)) return 'dir';
     return kinds.get(p);
   };
-  const lstatOf = (p: string): { isFile: boolean; isSymbolicLink: boolean; size: number; mtimeMs: number } | undefined => {
+  const lstatOf = (p: string): { isFile: boolean; isSymbolicLink: boolean; size: number; mtimeMs: number; ino: number } | undefined => {
     const k = kindOf(p);
     if (k === undefined) return undefined;
-    if (k === 'symlink') return { isFile: false, isSymbolicLink: true, size: 0, mtimeMs: mtimes.get(p) ?? 0 };
-    if (k === 'dir') return { isFile: false, isSymbolicLink: false, size: 0, mtimeMs: mtimes.get(p) ?? 0 };
-    return { isFile: true, isSymbolicLink: false, size: (files.get(p) ?? new Uint8Array()).length, mtimeMs: mtimes.get(p) ?? 0 };
+    if (k === 'symlink') return { isFile: false, isSymbolicLink: true, size: 0, mtimeMs: mtimes.get(p) ?? 0, ino: inos.get(p) ?? 0 };
+    if (k === 'dir') return { isFile: false, isSymbolicLink: false, size: 0, mtimeMs: mtimes.get(p) ?? 0, ino: inos.get(p) ?? 0 };
+    return { isFile: true, isSymbolicLink: false, size: (files.get(p) ?? new Uint8Array()).length, mtimeMs: mtimes.get(p) ?? 0, ino: inos.get(p) ?? 0 };
   };
   const put = (path: string, data: Uint8Array): void => {
     files.set(path, data);
     kinds.set(path, 'file');
     mtimes.set(path, fake.clock);
     mtimes.set(parent(path), fake.clock);
+    if (inos.get(path) === undefined) inos.set(path, nextIno++);
   };
   const fs: ScratchFs = {
     mkdir: async (path) => {
@@ -97,6 +103,7 @@ export function fakeScratchFs(): FakeScratchFs {
         dirs.add(p);
         kinds.set(p, 'dir');
         mtimes.set(p, fake.clock);
+        if (inos.get(p) === undefined) inos.set(p, nextIno++);
       }
     },
     readdir: async (path) => {
@@ -144,6 +151,8 @@ export function fakeScratchFs(): FakeScratchFs {
       if (files.has(to) || dirs.has(to) || kinds.has(to)) throw eexist(to);
       if (err !== undefined) throw err;
       put(to, data);
+      // A hard link shares the source's inode: the destination reports the source's ino.
+      inos.set(to, inos.get(from) ?? 0);
     },
     unlink: async (path) => {
       const err = record({ op: 'unlink', path });
@@ -152,6 +161,7 @@ export function fakeScratchFs(): FakeScratchFs {
       files.delete(path);
       kinds.delete(path);
       mtimes.delete(path);
+      inos.delete(path);
     },
     open: async (path) => {
       const err = record({ op: 'open', path });
@@ -172,7 +182,7 @@ export function fakeScratchFs(): FakeScratchFs {
           stat: async () => {
             const e = record({ op: 'fstat', path });
             if (e !== undefined) throw e;
-            return { isFile: false, size: 0, mtimeMs: mtimes.get(path) ?? 0 };
+            return { isFile: false, size: 0, mtimeMs: mtimes.get(path) ?? 0, ino: inos.get(path) ?? 0 };
           },
           close: async () => {
             record({ op: 'close', path });
@@ -200,7 +210,7 @@ export function fakeScratchFs(): FakeScratchFs {
           if (e !== undefined) throw e;
           const st = lstatOf(path);
           if (st === undefined) throw enoent(path);
-          return { isFile: st.isFile, size: st.size, mtimeMs: st.mtimeMs };
+          return { isFile: st.isFile, size: st.size, mtimeMs: st.mtimeMs, ino: st.ino };
         },
         close: async () => {
           record({ op: 'close', path });

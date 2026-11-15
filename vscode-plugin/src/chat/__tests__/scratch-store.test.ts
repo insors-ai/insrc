@@ -42,6 +42,8 @@ const seed = (fake: ReturnType<typeof fakeScratchFs>, name: string, content: str
   fake.files.set(path, Buffer.from(content, 'utf8'));
   fake.kinds.set(path, 'file');
   fake.mtimes.set(path, mtime);
+  // A fresh inode per seeded entry: a swap-in afterwards reports a different ino.
+  if (fake.inos.get(path) === undefined) fake.inos.set(path, 9_000 + fake.files.size);
 };
 
 test('scratch-store.test.ts: listScratches returns entries sorted by mtime desc with id/name/mtime/size (ENOENT->[], non-.md skipped, limit cap, ties id asc)', async () => {
@@ -406,28 +408,38 @@ test('scratch-store.test.ts: updateScratch happy path writes full text and repla
   // Missing file at save time -> ScratchNotFound.
   await assert.rejects(store.updateScratch('20260101-000000-gone.md', 'x'), (e: unknown) => e instanceof ScratchNotFound);
 
-  // Temp path occupied by a symlink -> exclusive create ELOOP, nothing written outside root.
+  // Temp path occupied by a symlink -> exclusive create ELOOP, nothing written outside root,
+  // and the occupied temp entry is left strictly alone (we did not create it).
   seed(fake, '20260101-000001-b.md', 'keep', 20);
   const realWrite = fake.fs.writeFileExclusive;
   fake.fs.writeFileExclusive = async (p, data) => {
     fake.kinds.set(p, 'symlink');
     fake.linkTargets.set(p, '/etc/passwd');
+    fake.inos.set(p, 777);
     await realWrite(p, data); // the fake then throws ELOOP for the symlink
     return undefined;
   };
+  const markOcc = fake.calls.length;
   await assert.rejects(store.updateScratch('20260101-000001-b.md', 'evil'), (e: unknown) => e instanceof ScratchStoreError);
   assert.equal(Buffer.from(fake.files.get(`${ROOT}/20260101-000001-b.md`) ?? []).toString('utf8'), 'keep', 'destination untouched');
+  assert.equal(fake.kinds.get(fake.calls.slice(markOcc).find((c) => c.op === 'writeFileExclusive')?.path ?? ''), 'symlink', 'occupied temp entry left untouched, never unlinked');
+  assert.equal(fake.calls.slice(markOcc).some((c) => c.op === 'unlink'), false, 'no unlink at all after the occupied-temp refusal');
   fake.fs.writeFileExclusive = realWrite;
 
-  // Temp path occupied by an existing regular file -> EEXIST, same refusal.
+  // Temp path occupied by an existing regular file -> EEXIST, same refusal, occupier intact.
   fake.fs.writeFileExclusive = async (p, data) => {
     fake.files.set(p, Buffer.from('occupier'));
     fake.kinds.set(p, 'file');
+    fake.inos.set(p, 778);
     await realWrite(p, data); // fake throws EEXIST for the existing entry
     return undefined;
   };
+  const markOcc2 = fake.calls.length;
   await assert.rejects(store.updateScratch('20260101-000001-b.md', 'evil2'), (e: unknown) => e instanceof ScratchStoreError);
   assert.equal(Buffer.from(fake.files.get(`${ROOT}/20260101-000001-b.md`) ?? []).toString('utf8'), 'keep', 'destination untouched');
+  const occPath = fake.calls.slice(markOcc2).find((c) => c.op === 'writeFileExclusive')?.path ?? '';
+  assert.equal(Buffer.from(fake.files.get(occPath) ?? []).toString('utf8'), 'occupier', 'occupier intact');
+  assert.equal(fake.calls.slice(markOcc2).some((c) => c.op === 'unlink'), false, 'no unlink after the EEXIST refusal');
   fake.fs.writeFileExclusive = realWrite;
 
   // Temp write failure (ENOSPC) -> ScratchStoreError, destination unchanged, temp unlinked.
@@ -444,24 +456,42 @@ test('scratch-store.test.ts: updateScratch happy path writes full text and repla
   await assert.rejects(store.updateScratch('20260101-000001-b.md', 'gone'), (e: unknown) => e instanceof ScratchNotFound);
   fake.failOn = undefined;
 
-  // link() EEXIST race (destination recreated between unlink and link) -> bounded retry succeeds.
+  // link() EEXIST race (destination recreated between unlink and link) -> bounded retry:
+  // the next attempt re-validates the recreated entry (lstat + O_NOFOLLOW open + fstat
+  // inode equality) and publishes over it — update replaces by name, the recreated
+  // entry was a regular file inside the root, so replacing it is the update semantic.
   seed(fake, '20260101-000002-c.md', 'orig', 30);
   let linkAttempts = 0;
   const realLink = fake.fs.link;
-  let recreate = true;
   fake.fs.link = async (from, to) => {
-    if (recreate && to.endsWith('20260101-000002-c.md') && linkAttempts++ === 0) {
+    if (to.endsWith('20260101-000002-c.md') && linkAttempts++ === 0) {
       // A concurrent actor recreated the destination after our unlink.
-      seed(fake, '20260101-000002-c.md', 'recreated', 31);
+      fake.files.set(`${ROOT}/20260101-000002-c.md`, Buffer.from('recreated', 'utf8'));
+      fake.kinds.set(`${ROOT}/20260101-000002-c.md`, 'file');
+      fake.mtimes.set(`${ROOT}/20260101-000002-c.md`, 31);
+      fake.inos.set(`${ROOT}/20260101-000002-c.md`, 555000);
       throw eexist(to);
     }
     return realLink(from, to);
   };
   await store.updateScratch('20260101-000002-c.md', 'won the retry');
-  assert.equal(linkAttempts, 2, 'first link EEXIST, retry published');
+  assert.equal(linkAttempts, 2, 'first link EEXIST, retry re-validated and published');
   assert.equal(Buffer.from(fake.files.get(`${ROOT}/20260101-000002-c.md`) ?? []).toString('utf8'), 'won the retry');
   fake.fs.link = realLink;
-  void recreate;
+
+  // Destination swapped for a different regular file between validation and unlink:
+  // the re-open fstat reports a different inode -> ScratchRefused, swap target untouched.
+  seed(fake, '20260101-000003-d.md', 'original', 40);
+  fake.failOn = (c) => {
+    if (c.op === 'open' && c.path.endsWith('20260101-000003-d.md')) {
+      fake.files.set(`${ROOT}/20260101-000003-d.md`, Buffer.from('swapped', 'utf8'));
+      fake.inos.set(`${ROOT}/20260101-000003-d.md`, 424242);
+    }
+    return undefined;
+  };
+  await assert.rejects(store.updateScratch('20260101-000003-d.md', 'new'), (e: unknown) => e instanceof ScratchRefused);
+  fake.failOn = undefined;
+  assert.equal(Buffer.from(fake.files.get(`${ROOT}/20260101-000003-d.md`) ?? []).toString('utf8'), 'swapped', 'swapped-in file left untouched');
 });
 
 test('scratch-store.test.ts: updateScratch bumps mtime so listScratches reflects the save', async () => {

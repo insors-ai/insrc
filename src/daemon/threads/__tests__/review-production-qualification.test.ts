@@ -27,6 +27,7 @@ import { decodeStoredDesignCheckpoint } from '../../../workflow/review/design-re
 
 async function packets(path: string) {
  const cp = JSON.parse(await readFile(path, 'utf8')), key = { project: cp.project, family: 'code' as const, reviewId: cp.reviewId };
+ assert.ok(cp.context, `missing prepared context: ${JSON.stringify(cp)}`);
  const manifest = JSON.parse(await readFile(join(contextRoot(key), cp.context.generationId, 'manifest.json'), 'utf8'));
  const limits=reviewPreparationLimits(join(cp.project, 'no-config.json'));
  const reader = await PreparedViewReader.open({ key:manifest.key,attempt:manifest.attempt,generationId:manifest.generationId,identityDigest:manifest.identityDigest,inputDigest:manifest.inputDigest,sourceIdentity:manifest.sourceIdentity,validatorVersion:manifest.validatorVersion,manifestDigest:manifest.manifestDigest,storedBytes:manifest.byteTotals.stored,capacityToken:'inspection-only' }, limits, new ReviewMemoryBudget(limits.memoryMaxBytes), async () => {}, async error => { throw error; });

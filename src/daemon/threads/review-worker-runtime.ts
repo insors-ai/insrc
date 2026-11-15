@@ -68,6 +68,11 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
   const rawSources=new RegistryReviewSources({repoPath:init.review.key.project,sessionId:`review:${init.review.key.reviewId}`,requestId:0,send:()=>{}});
   const adapter=deps.code?.sources;
   const preparation=await ReviewWorkerPreparation.open(init.review,init.preparation,adapter?{commit:(...a)=>adapter.commit(...a),file:(...a)=>adapter.file(...a),isAncestor:(...a)=>adapter.isAncestor(...a),changedRanges:(...a)=>adapter.changedRanges(...a),pathChanges:(...a)=>adapter.pathChanges(...a),objectInventory:(...a)=>rawSources.objectInventory(...a),objects:(...a)=>rawSources.objects(...a)}:rawSources,preboot?.client);
+  // The lightweight preboot has already activated main's compact runtime,
+  // but the full preparation owner must still enter its active state before
+  // any semantic save. Otherwise accepted feedback bypasses source/history
+  // binding and publication later has no private borrow to authorize it.
+  if(preboot)await preparation.activate(true);
   await preparation.run(async()=>{
   const router=()=>createRoleRouter({clientDefault:familyForClient(init.review.route?.client),cliTimeoutMs:900000});
   const provider=()=>router().resolveProviderForRole('review',loadAnalyzeConfig(),init.review.key.project).provider;

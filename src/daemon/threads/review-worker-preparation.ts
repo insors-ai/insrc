@@ -116,10 +116,11 @@ export class ReviewWorkerPreparation {
   return owner;
  }
  run<T>(work: () => T): T { return withPreparationPersistence(this.history, work); }
- async activate(): Promise<void> {
+ async activate(runtimeAlreadyActive = false): Promise<void> {
   // Even a semantically unchanged warm handoff must physically bind the new runtime.
   const saved = await this.history.read(); if (saved) await this.history.write(saved);
-  await this.client.activate(); this.active = true;
+  if (!runtimeAlreadyActive) await this.client.activate();
+  this.active = true;
  }
  private async borrow(): Promise<void> {
   if (this.receipt) return;

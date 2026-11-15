@@ -19,10 +19,43 @@ import { reviewProgressPublication } from './review-progress.js';
 import type { ReviewProgressPublication } from './review-progress.js';
 import { observeStoredDesignCheckpoint } from '../../workflow/review/design-review/progress.js';
 import { loadStoredDesignCheckpoint } from '../../workflow/review/design-review/checkpoint.js';
+import { preparationSemanticHistory } from '../../workflow/review/preparation-semantic-history.js';
+import { preparationPersistence, withPreparationPersistence } from '../../workflow/review/preparation-persistence.js';
+import type { PreparationPersistence } from '../../workflow/review/preparation-persistence.js';
+import type { CodePreparationCheckpoint,DesignPreparationCheckpoint } from '../../workflow/review/preparation-checkpoint.js';
+
+/** Existing format-3 history is already fenced by main before a replacement
+ * worker starts. This temporary owner lets the lightweight preboot append only
+ * validated semantic admission metadata while retaining every operational
+ * reference. The full preparation owner adopts the result immediately after
+ * runtime rebinding. */
+function admissionPersistence(input:CodePreparationCheckpoint|DesignPreparationCheckpoint,key:ReviewBootstrapInput['key']):PreparationPersistence{
+ let current=structuredClone(input);
+ return{
+  path:reviewWorkerCheckpoint(key),
+  read:async()=>preparationSemanticHistory(current),
+  write:async value=>{
+   if(!value||typeof value!=='object'||Array.isArray(value)||Reflect.has(value,'runtime')||Reflect.has(value,'context')||Reflect.has(value,'migration')||Reflect.get(value,'schemaVersion')===3)throw new Error('Admission persistence accepts semantic history only');
+   const {schemaVersion:_version,...semantic}=structuredClone(value as Record<string,unknown>);
+   const candidate={...semantic,schemaVersion:3,runtime:current.runtime,...(current.context?{context:current.context}:{}),...(current.migration?{migration:current.migration}:{})};
+   const checked=decodePreparationCheckpoint(candidate,key);if(checked.format!=='current')throw new Error('Admission persistence must retain current history');
+   await writeReviewBytes(reviewWorkerCheckpoint(key),JSON.stringify(checked.checkpoint)+'\n',reviewJsonLimit());current=structuredClone(checked.checkpoint);
+  },
+  observe:async()=>{throw new Error('Admission persistence cannot accept execution observations');},
+ };
+}
 
 /** Only bounded input/history persistence: no Git, artifact qualification or
  * model dispatch. Family execution/recovery adapters consume this in t9/t10. */
 export async function persistReviewWorkerAdmission(input:ReviewBootstrapInput):Promise<ReviewAdmissionReceipt>{
+ // The legacy/migration assembly admits from inside the full preparation
+ // owner. Reuse that authority instead of installing the preboot-only shim.
+ if(preparationPersistence(reviewWorkerCheckpoint(input.key)))return persistReviewWorkerAdmissionOwned(input);
+ const loaded=await loadPreparationCheckpoint(input.key);
+ if(loaded?.format==='current')return withPreparationPersistence(admissionPersistence(loaded.checkpoint,input.key),()=>persistReviewWorkerAdmissionOwned(input));
+ return persistReviewWorkerAdmissionOwned(input);
+}
+async function persistReviewWorkerAdmissionOwned(input:ReviewBootstrapInput):Promise<ReviewAdmissionReceipt>{
  const path=reviewWorkerCheckpoint(input.key),now=new Date().toISOString();
  if(input.key.family==='code'){
   const parsed=parsePacket(input.submitted);if(!parsed.reviewRevision)throw new Error('Explicit review revision required');

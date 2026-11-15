@@ -46,7 +46,8 @@ export const SCRATCHPAD_VIEW_TYPE = 'insrc.scratchpad';
  * host answers with the same gen so a stale reply can be ignored.
  */
 export type ScratchDocWebviewToHost =
-  | { readonly type: 'scratch-save'; readonly id: string; readonly gen: number; readonly text: string };
+  | { readonly type: 'scratch-save'; readonly id: string; readonly gen: number; readonly text: string }
+  | { readonly type: 'scratch-dirty'; readonly id: string; readonly gen: number; readonly dirty: boolean };
 
 /** Host -> document webview. */
 export type ScratchDocHostToWebview =
@@ -54,6 +55,7 @@ export type ScratchDocHostToWebview =
 
 export const SCRATCH_DOC_WEBVIEW_TO_HOST_TYPES = [
   'scratch-save',
+  'scratch-dirty',
 ] as const;
 
 export const SCRATCH_DOC_HOST_TO_WEBVIEW_TYPES = [
@@ -97,6 +99,8 @@ export interface ScratchPanelsDeps {
   readonly onSendToChat?: ((text: string) => void) | undefined;
   /** Save a document view's edit (document-channel 'scratch-save' {id, gen, text}). */
   readonly onScratchSave?: ((id: string, gen: number, text: string) => void) | undefined;
+  /** The document view became dirty/clean (document-channel 'scratch-dirty' {id, gen, dirty}). */
+  readonly onScratchDirty?: ((id: string, gen: number, dirty: boolean) => void) | undefined;
 }
 
 export interface ScratchPanels {
@@ -236,7 +240,7 @@ export function documentBootstrap(gen: number, id: string): string {
     // generation tag lets the host ignore a ready from a superseded page load.
     `var pending=null;` +
     `function showErr(msg){if(!errEl&&wrap){errEl=document.createElement('div');errEl.className='scratch-doc-error';errEl.setAttribute('role','alert');wrap.appendChild(errEl);}if(errEl)errEl.textContent=msg;}` +
-    `function setDirty(d){dirty=d;if(saveBtn)saveBtn.hidden=!d;}` +
+    `function setDirty(d){dirty=d;if(saveBtn)saveBtn.hidden=!d;vs.postMessage({v:1,payload:{type:'scratch-dirty',id:docId,gen:gen,dirty:d}});}` +
     `window.addEventListener('message',function(e){var m=e.data&&e.data.payload;if(!m)return;` +
     `if(m.type==='scratch-content'&&typeof m.text==='string'){if(doc)doc.value=m.text;else pending=m.text;setDirty(false);if(errEl)errEl.textContent='';}` +
     `else if(m.type==='scratch-saved'&&m.gen===gen&&m.id===docId){` +
@@ -276,6 +280,7 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
   const nonce = (): string => deps.genNonce?.() ?? 'scratch';
   const sendToChat = deps.onSendToChat ?? (() => {});
   const onScratchSave = deps.onScratchSave ?? (() => {});
+  const onScratchDirty = deps.onScratchDirty ?? (() => {});
   let browseHandle: ScratchPanelHandle | undefined;
   let docHandle: ScratchPanelHandle | undefined;
   let docGeneration = 0;
@@ -449,16 +454,22 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
         panel.onMessage((m) => {
           const env = m as { v?: unknown; payload?: unknown } | null;
           if (env === null || env.v !== 1 || typeof env.payload !== 'object' || env.payload === null) return;
-          const msg = env.payload as { type?: unknown; text?: unknown; gen?: unknown; id?: unknown };
+          const msg = env.payload as { type?: unknown; text?: unknown; gen?: unknown; id?: unknown; dirty?: unknown };
           if (msg.type === 'send-to-chat' && typeof msg.text === 'string') sendToChat(capUtf8(msg.text));
+          else if (msg.type === 'scratch-dirty' && typeof msg.id === 'string' && typeof msg.dirty === 'boolean' && typeof msg.gen === 'number' && Number.isFinite(msg.gen)) {
+            // Dirty-state rides the panel title ('•' suffix), set here on the host:
+            // only the id currently displayed, in the generation that reported, may
+            // change the live title — a stale page load's dirty flag is dropped.
+            if (!disposed && docGeneration === Math.floor(msg.gen) && showingId === msg.id) {
+              try { panel.setTitle(msg.dirty ? `${msg.id} •` : msg.id); } catch { /* best-effort */ }
+              onScratchDirty(msg.id, Math.floor(msg.gen), msg.dirty);
+            } else log.warn(`insrc: a scratch-dirty for ${msg.id} gen ${msg.gen} was dropped (not the live document generation)`);
+          }
           else if (msg.type === 'scratch-save' && typeof msg.id === 'string' && typeof msg.text === 'string' && typeof msg.gen === 'number' && Number.isFinite(msg.gen)) {
             // The save seam is validated against the live document: only the id
             // currently displayed, in the generation that posted, may be saved —
             // a stale page load's save is dropped, never applied to another doc.
             if (!disposed && docGeneration === Math.floor(msg.gen) && showingId === msg.id) {
-              // The dirty marker rides the panel title ('•' suffix); cleared when the
-              // matching ok reply is posted (replySaved below).
-              try { panel.setTitle(`${msg.id} •`); } catch { /* best-effort */ }
               onScratchSave(msg.id, Math.floor(msg.gen), msg.text);
             } else log.warn(`insrc: a scratch-save for ${msg.id} gen ${msg.gen} was dropped (not the live document generation)`);
           }
@@ -545,9 +556,6 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
     if (disposed || docHandle === undefined || docGeneration !== gen) return;
     try {
       docHandle.postMessage({ v: 1, payload: msg });
-      // An ok reply clears the dirty '•' title suffix; a failure leaves it so the
-      // user still sees the unsaved state.
-      if (msg.type === 'scratch-saved' && msg.ok === true && showingId !== undefined) docHandle.setTitle(showingId);
     } catch { /* best-effort */ }
   };
 

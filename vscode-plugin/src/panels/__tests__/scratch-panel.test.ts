@@ -878,16 +878,20 @@ test("scratch-panel.test.ts: 'scratch-save' in SCRATCH_DOC_WEBVIEW_TO_HOST_TYPES
   const h2w = new Set<string>(SCRATCH_DOC_HOST_TO_WEBVIEW_TYPES);
   assert.ok(w2h.has('scratch-save'), "'scratch-save' is webview→host on the document channel");
   assert.ok(!h2w.has('scratch-save'), "'scratch-save' is NOT host→webview");
+  assert.ok(w2h.has('scratch-dirty'), "'scratch-dirty' is webview→host on the document channel");
+  assert.ok(!h2w.has('scratch-dirty'), "'scratch-dirty' is NOT host→webview");
   assert.ok(h2w.has('scratch-saved'), "'scratch-saved' is host→webview on the document channel");
   assert.ok(!w2h.has('scratch-saved'), "'scratch-saved' is NOT webview→host");
-  // Both messages carry gen: the unions' only members expose it.
+  // All messages carry gen: the unions' members expose it.
   const saveType: import('../scratch-panels.js').ScratchDocWebviewToHost = { type: 'scratch-save', id: 'a.md', gen: 3, text: 'x' };
+  const dirtyType: import('../scratch-panels.js').ScratchDocWebviewToHost = { type: 'scratch-dirty', id: 'a.md', gen: 3, dirty: true };
   const savedType: import('../scratch-panels.js').ScratchDocHostToWebview = { type: 'scratch-saved', id: 'a.md', gen: 3, ok: true };
   assert.equal(saveType.gen, 3, 'scratch-save carries gen');
+  assert.equal(dirtyType.gen, 3, 'scratch-dirty carries gen');
   assert.equal(savedType.gen, 3, 'scratch-saved carries gen');
-  // Direction isolation per channel: neither document-channel type appears in the
-  // chat channel's arrays, and the chat channel's arrays are unchanged by t2.
-  for (const t of ['scratch-save', 'scratch-saved'] as const) {
+  // Direction isolation per channel: no document-channel type appears in the
+  // chat channel's arrays, and the chat channel's arrays are unchanged by t2/t3.
+  for (const t of ['scratch-save', 'scratch-dirty', 'scratch-saved'] as const) {
     assert.ok(!WEBVIEW_TO_HOST_TYPES.includes(t as never), `chat WEBVIEW_TO_HOST_TYPES untouched: no ${t}`);
     assert.ok(!HOST_TO_WEBVIEW_TYPES.includes(t as never), `chat HOST_TO_WEBVIEW_TYPES untouched: no ${t}`);
   }
@@ -950,21 +954,30 @@ test('scratch-panel.test.ts: documentBodyHtml emits <textarea id="insrc-scratchd
   assert.ok(src.includes('doc.selectionStart') && src.includes('doc.selectionEnd') && src.includes('doc.value.substring'), 'send-to-chat reads the textarea selection API (selectionStart/selectionEnd over doc.value)');
   assert.ok(!src.includes('selectionchange'), 'the old document-level selectionchange listener is gone (textarea selections do not fire it)');
   assert.ok(!src.includes('getSelection'), 'no window.getSelection — textarea selection is not visible there');
-  // Behavioral: input sets dirty (save button visible); Ctrl/Cmd+S posts scratch-save.
+  // Behavioral: input sets dirty (save button visible AND a scratch-dirty post rides to the host);
+  // Ctrl/Cmd+S posts scratch-save.
   const b = bootstrapHarness(7, 'pad.md');
   b.doc.value = 'edited text';
   assert.equal(b.isSaveHidden(), true, 'clean document: save button hidden');
   b.fire('input');
   assert.equal(b.isSaveHidden(), false, 'input event sets dirty — save button visible');
+  const dirties = (JSON.parse(JSON.stringify(b.sent)) as Array<{ payload: { type: string; id?: string; gen?: number; dirty?: boolean } }>).map((m) => m.payload).filter((p) => p.type === 'scratch-dirty');
+  assert.deepEqual(dirties, [{ type: 'scratch-dirty', id: 'pad.md', gen: 7, dirty: true }], 'input also posts scratch-dirty { id, gen, dirty: true } so the host can set the • title suffix on input');
   b.fire('keydown', { ctrlKey: true, key: 's', preventDefault: () => {} });
   // runInNewContext hands the posted payloads a null prototype — normalize before deepEqual.
   const saves = (JSON.parse(JSON.stringify(b.sent)) as Array<{ payload: { type: string; id?: string; gen?: number; text?: string } }>).map((m) => m.payload).filter((p) => p.type === 'scratch-save');
   assert.deepEqual(saves, [{ type: 'scratch-save', id: 'pad.md', gen: 7, text: 'edited text' }], 'Ctrl+S posts scratch-save { id, gen: docGeneration, text: doc.value }');
   assert.equal(b.isSaveDisabled(), true, 'save button disabled while the save is in flight');
-  // An ok reply with the matching gen clears dirty and re-enables the button.
+  // An ok reply with the matching gen clears dirty (and posts scratch-dirty {dirty:false}),
+  // re-enabling the button.
   b.hostMsg({ type: 'scratch-saved', id: 'pad.md', gen: 7, ok: true });
   assert.equal(b.isSaveHidden(), true, 'scratch-saved ok with matching gen clears dirty — save button hidden again');
   assert.equal(b.isSaveDisabled(), false, 'save button re-enabled after the ok reply');
+  const clearDirty = (JSON.parse(JSON.stringify(b.sent)) as Array<{ payload: { type: string; dirty?: boolean } }>).map((m) => m.payload).filter((p) => p.type === 'scratch-dirty');
+  assert.deepEqual(clearDirty, [
+    { type: 'scratch-dirty', id: 'pad.md', gen: 7, dirty: true },
+    { type: 'scratch-dirty', id: 'pad.md', gen: 7, dirty: false },
+  ], 'the ok reply also posted scratch-dirty {dirty:false} so the host clears the • title');
   // gen-guard: a reply with a stale gen is ignored.
   b.fire('input');
   b.hostMsg({ type: 'scratch-saved', id: 'pad.md', gen: 6, ok: true });
@@ -979,11 +992,14 @@ test('scratch-panel.test.ts: documentBodyHtml emits <textarea id="insrc-scratchd
 });
 
 test('scratch-panel.test.ts behavioral: input event sets dirty (save button visible, title suffix via setTitle), \'scratch-saved\' ok with matching gen clears dirty, ok=false keeps dirty and shows error, stale-gen reply ignored; scratch-content sets textarea .value (not textContent/innerHTML); send-to-chat reads selection from textarea selectionStart/selectionEnd over doc.value and posts capUtf8-capped text', async () => {
-  // Host-side: a scratch-save from the live document generation is routed through
-  // onScratchSave and marks the title dirty; replySaved posts the scratch-saved reply
-  // to the live generation and clears the dirty title on ok.
+  // Host-side: a scratch-dirty from the live document generation sets the '•' title
+  // suffix via onScratchDirty; a scratch-save from the live generation is routed
+  // through onScratchSave; replySaved posts the scratch-saved reply to the live
+  // generation (the webview's ok then clears the dirty state, which posts a
+  // scratch-dirty {dirty:false} that clears the title).
   const h = harness();
   const saves: Array<{ id: string; gen: number; text: string }> = [];
+  const dirties: Array<{ id: string; gen: number; dirty: boolean }> = [];
   const controller = createScratchPanels({
     panels: h.factory,
     store: h.store,
@@ -991,6 +1007,7 @@ test('scratch-panel.test.ts behavioral: input event sets dirty (save button visi
     setPanelTitle: (_p, t) => { h.titles.push(t); },
     onSendToChat: (t) => { h.sentToChat.push(t); },
     onScratchSave: (id, gen, text) => { saves.push({ id, gen, text }); },
+    onScratchDirty: (id, gen, dirty) => { dirties.push({ id, gen, dirty }); },
     logger: { warn: (m) => { h.warns.push(m); } },
   });
   await seed(h, 'pad.md', 'original', 100);
@@ -998,28 +1015,42 @@ test('scratch-panel.test.ts behavioral: input event sets dirty (save button visi
   assert.ok(handle !== undefined);
   const panel = h.panels[0]!;
   assert.ok(h.titles.includes('pad.md'), 'the document open set the plain title');
+  // The webview reports the edit (dirty) for the LIVE generation + showing id:
+  // the host adds the '•' suffix to the panel title.
+  panel.injectMessage({ v: 1, payload: { type: 'scratch-dirty', id: 'pad.md', gen: 1, dirty: true } });
+  await new Promise((r) => setTimeout(r, 10));
+  assert.deepEqual(dirties, [{ id: 'pad.md', gen: 1, dirty: true }], 'the live scratch-dirty was routed to onScratchDirty with exact args');
+  assert.ok(h.titles.includes('pad.md •'), 'input set the dirty • title suffix on input (before any save)');
   // The webview posts a scratch-save for the LIVE generation + showing id.
   panel.injectMessage({ v: 1, payload: { type: 'scratch-save', id: 'pad.md', gen: 1, text: 'edited' } });
   await new Promise((r) => setTimeout(r, 10));
   assert.deepEqual(saves, [{ id: 'pad.md', gen: 1, text: 'edited' }], 'the live scratch-save was routed to onScratchSave with exact args');
-  assert.ok(h.titles.includes('pad.md •'), 'the title carries the dirty • suffix while the save is in flight');
-  // replySaved posts the reply to the live generation and clears the dirty title on ok.
+  assert.ok(!h.titles.slice(h.titles.indexOf('pad.md •')).includes('pad.md • •'), 'the save did not double the dirty suffix');
+  // replySaved posts the reply to the live generation.
   controller.replySaved(1, { type: 'scratch-saved', id: 'pad.md', gen: 1, ok: true });
   await new Promise((r) => setTimeout(r, 10));
   const saved = panel.posted.filter((m) => (m as { payload?: { type?: string } }).payload?.type === 'scratch-saved');
   assert.deepEqual(saved, [{ v: 1, payload: { type: 'scratch-saved', id: 'pad.md', gen: 1, ok: true } }], 'replySaved posted the scratch-saved reply to the document panel');
-  assert.ok(h.titles.at(-1) === 'pad.md', 'the ok reply cleared the dirty title suffix');
+  // The webview's ok clears the dirty state; that posts scratch-dirty {dirty:false},
+  // which clears the title suffix host-side.
+  panel.injectMessage({ v: 1, payload: { type: 'scratch-dirty', id: 'pad.md', gen: 1, dirty: false } });
+  await new Promise((r) => setTimeout(r, 10));
+  assert.ok(h.titles.at(-1) === 'pad.md', 'the ok reply cleared the dirty title suffix (via scratch-dirty dirty:false)');
   // A stale-generation replySaved is dropped (no post).
   const before = panel.posted.length;
   controller.replySaved(99, { type: 'scratch-saved', id: 'pad.md', gen: 99, ok: true });
   await new Promise((r) => setTimeout(r, 10));
   assert.equal(panel.posted.length, before, 'replySaved for a stale generation posts nothing');
-  // A scratch-save for a different id (or stale gen) is dropped with a warn.
+  // A scratch-save for a different id (or stale gen) is dropped with a warn; likewise scratch-dirty.
   panel.injectMessage({ v: 1, payload: { type: 'scratch-save', id: 'other.md', gen: 1, text: 'x' } });
   panel.injectMessage({ v: 1, payload: { type: 'scratch-save', id: 'pad.md', gen: 42, text: 'x' } });
+  panel.injectMessage({ v: 1, payload: { type: 'scratch-dirty', id: 'other.md', gen: 1, dirty: true } });
+  panel.injectMessage({ v: 1, payload: { type: 'scratch-dirty', id: 'pad.md', gen: 42, dirty: true } });
   await new Promise((r) => setTimeout(r, 10));
   assert.equal(saves.length, 1, 'only the live-generation, showing-id save was routed');
+  assert.equal(dirties.length, 2, 'only the live-generation, showing-id dirty flags were routed');
   assert.equal(h.warns.filter((w) => w.includes('scratch-save')).length, 2, 'both dropped saves were logged');
+  assert.equal(h.warns.filter((w) => w.includes('scratch-dirty')).length, 2, 'both dropped dirty flags were logged');
   // Webview behavioral: scratch-content sets doc.value (not textContent/innerHTML),
   // and send-to-chat reads the textarea selection and posts the capUtf8-capped text.
   const b = bootstrapHarness(1, 'pad.md');
@@ -1027,6 +1058,7 @@ test('scratch-panel.test.ts behavioral: input event sets dirty (save button visi
   assert.equal(b.doc.value, 'loaded <b>content</b>', 'scratch-content sets doc.value');
   assert.ok(!allOf(b.doc).some((n) => n.writes.some((w) => w.prop === 'innerHTML' || w.prop === 'textContent')), 'no innerHTML/textContent write for content');
   assert.equal(b.isSaveHidden(), true, 'a host content push is clean (not dirty)');
+  assert.ok((JSON.parse(JSON.stringify(b.sent)) as Array<{ payload: { type: string; dirty?: boolean } }>).map((m) => m.payload).some((p) => p.type === 'scratch-dirty' && p.dirty === false), 'a host content push posts scratch-dirty {dirty:false} (clean)');
   b.doc.value = 'hello selected world';
   b.doc.selectionStart = 6;
   b.doc.selectionEnd = 14;

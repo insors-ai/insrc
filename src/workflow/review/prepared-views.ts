@@ -26,10 +26,81 @@ type ViewNode = ['null'] | ['undefined'] | ['scalar', string | number | boolean]
 type IndexNode = ['items', Entry[]] | ['branch', Child[]];
 type Node = ViewNode | IndexNode;
 
+function decodeNode(n: unknown): Node {
+    if (!Array.isArray(n) || !['null', 'undefined', 'scalar', 'bytes', 'text', 'array', 'object', 'items', 'branch'].includes(n[0])) throw new Error('Invalid staged node tag');
+    if (n[0] === 'null' || n[0] === 'undefined') { if (n.length !== 1) throw new Error('Invalid staged empty node'); }
+    else if (n[0] === 'scalar') { if (n.length !== 2 || !(typeof n[1] === 'string' && n[1].length <= 1024 || typeof n[1] === 'boolean' || typeof n[1] === 'number' && Number.isFinite(n[1]))) throw new Error('Invalid staged scalar'); }
+    else if (n[0] === 'items' || n[0] === 'branch') {
+     if (n.length !== 2 || !Array.isArray(n[1]) || n[1].length < 1 || n[1].length > 16) throw new Error('Invalid staged index shard');
+     for (const row of n[1]) if (!Array.isArray(row) || row.length !== 2 || (n[0] === 'items' ? !(typeof row[0] === 'string' && row[0].length <= 4096 || natural(row[0])) || !digest(row[1]) : !digest(row[0]) || !natural(row[1]))) throw new Error('Invalid staged index entry');
+    } else if (n.length !== 3 || !natural(n[1]) || n[2] !== null && !digest(n[2]) || (n[1] === 0) !== (n[2] === null)) throw new Error('Invalid staged container');
+ return n as Node;
+}
+
 /** References are reader/builder-issued objects, never caller-supplied digests. */
 export interface PreparedValueReference { readonly digest: string; }
 export interface PreparedDescriptor extends PreparedValueReference { readonly id: string; readonly kind: Kind; }
 export interface PreparedWindow<T> { readonly value: T; release(): void; }
+
+interface MetadataAccess {
+ memory: ReviewMemoryBudget;
+ node(digest: string): Promise<PreparedWindow<Node>>;
+ bytes(digest: string): Promise<PreparedWindow<Uint8Array>>;
+ reference(digest: string): PreparedValueReference;
+}
+async function* metadataEntries(access: MetadataAccess, d: string, ancestors = new Set<string>()): AsyncGenerator<Entry> {
+ if (ancestors.size >= 128 || ancestors.has(d)) throw new Error('Cyclic/deep staged metadata index');
+ const node = await access.node(d); ancestors.add(d);
+ try {
+  if (node.value[0] === 'items') { for (const entry of node.value[1]) yield entry; }
+  else if (node.value[0] === 'branch') {
+   for (const [child, expected] of node.value[1]) {
+    let count = 0; for await (const entry of metadataEntries(access, child, ancestors)) { count++; yield entry; }
+    if (count !== expected) throw new Error('Staged metadata branch count mismatch');
+   }
+  } else throw new Error('Expected staged metadata index');
+ } finally { ancestors.delete(d); node.release(); }
+}
+/** Rehydrates metadata only. Binary leaves stay private issued references.
+ * Every reconstructed value remains charged until the returned owner releases. */
+async function metadataValue(access: MetadataAccess, d: string, leases: MemoryLease[], ancestors = new Set<string>()): Promise<unknown> {
+ if (ancestors.size >= 128 || ancestors.has(d)) throw new Error('Cyclic/deep staged metadata');
+ const node = await access.node(d); ancestors.add(d);
+ try {
+  const v = node.value;
+  if (v[0] === 'null') return null;
+  if (v[0] === 'undefined') return undefined;
+  if (v[0] === 'scalar') { leases.push(access.memory.reserve(typeof v[1] === 'string' ? v[1].length * 2 + 64 : 32, 'staged scalar metadata')); return v[1]; }
+  if (v[0] === 'bytes') { leases.push(access.memory.reserve(128, 'staged binary metadata reference')); return access.reference(d); }
+  if (v[0] === 'text') {
+   // Includes accumulated fragments and the final joined string concurrently.
+   leases.push(access.memory.reserve(v[1] * 4 + 256, 'staged text metadata'));
+   const decoder = new TextDecoder('utf8', { fatal: true, ignoreBOM: true }), parts: string[] = [];
+   let bytes = 0, ordinal = 0;
+   if (v[2]) for await (const [key, leaf] of metadataEntries(access, v[2])) {
+    if (key !== ordinal++) throw new Error('Unordered staged metadata text');
+    const chunk = await access.bytes(leaf);
+    try {
+     bytes += chunk.value.length; if (bytes > v[1]) throw new Error('Staged metadata text length mismatch');
+     leases.push(access.memory.reserve(32, 'staged text fragment index')); parts.push(decoder.decode(chunk.value, { stream: true }));
+    } finally { chunk.release(); }
+   }
+   if (bytes !== v[1]) throw new Error('Staged metadata text length mismatch');
+   parts.push(decoder.decode()); return parts.join('');
+  }
+  if (v[0] !== 'array' && v[0] !== 'object') throw new Error('Index is not staged metadata');
+  leases.push(access.memory.reserve(256, 'staged metadata container'));
+  const result: unknown[] | Record<string, unknown> = v[0] === 'array' ? [] : {};
+  let count = 0;
+  if (v[2]) for await (const [key, child] of metadataEntries(access, v[2])) {
+   if ((v[0] === 'array' ? key !== count : typeof key !== 'string' || Object.hasOwn(result, key)) || ++count > v[1]) throw new Error('Invalid staged metadata child');
+   leases.push(access.memory.reserve((typeof key === 'string' ? key.length * 2 : 0) + 96, 'staged metadata child'));
+   Object.defineProperty(result, key, { value: await metadataValue(access, child, leases, ancestors), enumerable: true, configurable: true, writable: true });
+  }
+  if (count !== v[1]) throw new Error('Staged metadata child count mismatch');
+  return result;
+ } finally { ancestors.delete(d); node.release(); }
+}
 
 // Conservative encoding upper bound, without first serializing a large value.
 // Only bounded internal metadata enters this function; payload bytes do not.
@@ -57,6 +128,7 @@ export class PreparedViewWriter {
  private disposing = false;
  private nodes = 0;
  private stored = 0;
+ private readonly metadataWindows = new Set<() => void>();
  private constructor(private readonly identity: PreparedSourceIdentity, readonly memory: ReviewMemoryBudget,
   private readonly limits: ReviewPreparationLimits, private readonly capacity: SourceCapacity,
   readonly directory: string, private readonly root: string, private readonly generation: string,
@@ -83,6 +155,39 @@ export class PreparedViewWriter {
   this.tail = pending.then(() => {}, () => {}); return pending;
  }
  private reference(d: string): PreparedValueReference { const ref = Object.freeze({ digest: d }); this.issued.add(ref); return ref; }
+ private async metadataBytes(d: string): Promise<PreparedWindow<Uint8Array>> {
+  await this.checkDirectory();
+  const size = this.files.get(d); if (size === undefined) throw new Error('Foreign construction metadata');
+  const allocation = this.memory.allocate(size + 1, 'construction metadata read');
+  try {
+   const bytes = await bytesAt(join(this.directory, `${d}.data`), size, { bytes: size, digest: d }, allocation.bytes);
+   await this.checkDirectory(); return { value: bytes, release: () => allocation.lease.release() };
+  } catch (error) { allocation.lease.release(); throw error; }
+ }
+ private async metadataNode(d: string): Promise<PreparedWindow<Node>> {
+  const size = this.files.get(d); if (size === undefined) throw new Error('Foreign construction node');
+  const lease = this.memory.reserve(size * 10 + 1024, 'construction metadata node');
+  try {
+   const raw = await this.metadataBytes(d);
+   try { return { value: decodeNode(JSON.parse(Buffer.from(raw.value.buffer, raw.value.byteOffset, raw.value.byteLength).toString('utf8'))), release: () => lease.release() }; }
+   finally { raw.release(); }
+  } catch (error) { lease.release(); throw error; }
+ }
+ /** An unqualified construction lookup, authorized solely by this live owner.
+  * It cannot publish a receipt or authorize execution from disk. */
+ metadata(ref: PreparedValueReference): Promise<PreparedWindow<unknown>> {
+  return this.enqueue(async () => {
+   if (!this.issued.has(ref)) throw new Error('Unissued construction metadata reference');
+   const leases: MemoryLease[] = [];
+   try {
+    let held = await metadataValue({ memory: this.memory, node: d => this.metadataNode(d), bytes: d => this.metadataBytes(d), reference: d => this.reference(d) }, ref.digest, leases);
+    let released = false;
+    const release = () => { if (!released) { released = true; held = undefined; for (const lease of leases) lease.release(); this.metadataWindows.delete(release); } };
+    this.metadataWindows.add(release); const owner = this;
+    return { get value() { if (released) throw new Error('Construction metadata window released'); owner.active(); return held; }, release };
+   } catch (error) { for (const lease of leases) lease.release(); throw error; }
+  });
+ }
  private async put(bytes: Uint8Array, query?: string): Promise<string> {
   await this.checkDirectory(); const d = sha(bytes), q = query ?? preparationDigest(['staged-content-v2', d]);
   if (!this.files.has(d)) {
@@ -245,6 +350,7 @@ export class PreparedViewWriter {
  }
  seal(): Promise<ReadyContextReceipt> {
   return this.enqueue(async () => {
+   if (this.metadataWindows.size) throw new Error('Construction metadata windows remain borrowed');
    const ready = join(this.root, this.generation);
    try {
     if (!this.views.length || this.identity.key.family === 'code' && !this.session) throw new Error('Complete staged views/source session required');
@@ -297,6 +403,7 @@ export class PreparedViewWriter {
   if (this.state === 'ready') throw new Error('Ready staged context is host-owned');
   if (this.state === 'discarded') return;
   this.disposing = true; await this.tail;
+  if (this.metadataWindows.size) { this.disposing = false; throw new Error('Construction metadata windows remain borrowed'); }
   if ((this.state as string) === 'ready') throw new Error('Ready staged context is host-owned');
   const st = await lstat(this.directory, { bigint: true });
   if (!st.isDirectory() || st.isSymbolicLink() || st.dev !== this.stamp.dev || st.ino !== this.stamp.ino) throw new Error('Staged directory replaced; retain reservations');
@@ -369,14 +476,7 @@ export class PreparedViewReader {
   try {
    const raw = await this.bytes(d);
    try {
-    const n: unknown = JSON.parse(raw.value.toString('utf8'));
-    if (!Array.isArray(n) || !['null', 'undefined', 'scalar', 'bytes', 'text', 'array', 'object', 'items', 'branch'].includes(n[0])) throw new Error('Invalid staged node tag');
-    if (n[0] === 'null' || n[0] === 'undefined') { if (n.length !== 1) throw new Error('Invalid staged empty node'); }
-    else if (n[0] === 'scalar') { if (n.length !== 2 || !(typeof n[1] === 'string' && n[1].length <= 1024 || typeof n[1] === 'boolean' || typeof n[1] === 'number' && Number.isFinite(n[1]))) throw new Error('Invalid staged scalar'); }
-    else if (n[0] === 'items' || n[0] === 'branch') {
-     if (n.length !== 2 || !Array.isArray(n[1]) || n[1].length < 1 || n[1].length > 16) throw new Error('Invalid staged index shard');
-     for (const row of n[1]) if (!Array.isArray(row) || row.length !== 2 || (n[0] === 'items' ? !(typeof row[0] === 'string' && row[0].length <= 4096 || natural(row[0])) || !digest(row[1]) : !digest(row[0]) || !natural(row[1]))) throw new Error('Invalid staged index entry');
-    } else if (n.length !== 3 || !natural(n[1]) || n[2] !== null && !digest(n[2]) || (n[1] === 0) !== (n[2] === null)) throw new Error('Invalid staged container');
+    const n = decodeNode(JSON.parse(raw.value.toString('utf8')));
     return this.window(n as Node, [charge]);
    } finally { raw.release(); }
   } catch (error) { charge.release(); throw error; }
@@ -445,6 +545,16 @@ export class PreparedViewReader {
    if (tag !== 'scalar' && tag !== 'null' && tag !== 'undefined') { n.release(); throw new Error('Traverse staged containers/leaves through children/chunks'); }
    const value = n.value[0] === 'scalar' ? n.value[1] : n.value[0] === 'null' ? null : undefined;
    return this.window(value, [{ release: () => n.release() }]);
+  });
+ }
+ /** Bounded metadata projection; source bodies remain opaque references. */
+ async metadata(ref: PreparedValueReference): Promise<PreparedWindow<unknown>> {
+  return this.guarded(async () => {
+   this.require(ref); const leases: MemoryLease[] = [];
+   try {
+    const value = await metadataValue({ memory: this.memory, node: d => this.node(d), bytes: d => this.bytes(d), reference: d => this.ref(d) }, ref.digest, leases);
+    return this.window(value, leases);
+   } catch (error) { for (const lease of leases) lease.release(); throw error; }
   });
  }
  /** Cancellation revokes use, not ownership: retained windows remain charged

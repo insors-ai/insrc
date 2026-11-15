@@ -8,9 +8,10 @@ import { projectionIdentity } from './projection.js';
 import { normalizeProjectedSegments } from './projection-intervals.js';
 import { attributionIdentity, validateAcceptedBindings, validateSavedAttribution } from './attribution-binding.js';
 import type { PreparedReviewPacket } from './packet.js';
+import type { BlobIdentity } from './sources.js';
 
 /** Caller has independently prepared source objects and restored accepted task identities. */
-export function captureFinalScope(prepared: PreparedReviewPacket, attempt: ReviewAttempt): FinalScopeSnapshot {
+export function captureFinalScope(prepared: PreparedReviewPacket<BlobIdentity>, attempt: ReviewAttempt): FinalScopeSnapshot {
  validateSavedAttribution(attempt);
  const p = prepared.projection, h = attempt.header;
  requireReview(p && h.finalScopeIdentity === p.identity && h.attributionState !== 'pending', 'finalScope', 'Missing verified terminal final scope');

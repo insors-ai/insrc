@@ -6,6 +6,7 @@ import type { ReviewProgress } from './progress.js';
 import { CloneType, Type } from '@sinclair/typebox';
 import type { Static, TSchema } from '@sinclair/typebox';
 import { Value } from '@sinclair/typebox/value';
+import { reviewMetadataJsonBytes } from './json-size.js';
 import { AcceptedTaskAttributionSchema, AttributionFailureSchema } from './final-scope-contracts.js';
 import type { AcceptedTaskAttribution, FinalScopeSnapshot } from './final-scope-contracts.js';
 import { ReviewResourceGuardSchema } from '../../../shared/review-resources.js';
@@ -72,6 +73,14 @@ export function decodeReview<T extends TSchema>(schema: T, input: unknown): Stat
  const errors = [...Value.Errors(schema, value)];
  requireReview(errors.length === 0, errors[0]?.path ?? 'input', errors[0]?.message ?? 'Invalid schema');
  return value as Static<T>;
+}
+/** Validate an already-owned snapshot without cloning the entire history. */
+export function validateReviewSnapshot<T extends TSchema>(schema: T, input: unknown): asserts input is Static<T> {
+ let bytes: number;
+ try { bytes = reviewMetadataJsonBytes(input); } catch { throw new TaskReviewInputError('input', 'Expected bounded JSON'); }
+ requireReview(bytes <= reviewJsonLimit(), 'input', 'JSON exceeds limit');
+ const error = Value.Errors(schema, input).First();
+ requireReview(!error, error?.path ?? 'input', error?.message ?? 'Invalid schema');
 }
 export function reviewPath(path: string): void {
  requireReview(!/[\\\x00-\x1f\x7f:]/.test(path) && !path.startsWith('/') && path.split('/').every(p => p && p !== '.' && p !== '..'), 'path', 'Expected repository-relative literal path');

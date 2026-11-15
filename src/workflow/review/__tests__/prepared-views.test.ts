@@ -36,6 +36,38 @@ async function restore(reader: PreparedViewReader, ref: PreparedValueReference):
  const w = await reader.scalar(ref); try { return w.value; } finally { w.release(); }
 }
 
+test('construction metadata reopens exact values while binary leaves stay issued references', async t => {
+ const f = await setup(t), payload = new Uint8Array(100000), text = '\ufeff漢字🙂\r\n'.repeat(2000);
+ const ref = await f.writer.add('packet', 'packet', { text, nested: [null, undefined, true, { payload }] });
+ const before = f.memory.snapshot().bytes, window = await f.writer.metadata(ref);
+ const value = window.value as { text: string; nested: [null, undefined, boolean, { payload: PreparedValueReference }] };
+ assert.equal(value.text, text); assert.deepEqual(value.nested.slice(0, 3), [null, undefined, true]);
+ assert.equal(value.nested[3].payload instanceof Uint8Array, false);
+ assert.match(value.nested[3].payload.digest, /^[a-f0-9]{64}$/);
+ assert.ok(f.memory.snapshot().bytes > before);
+ await assert.rejects(f.writer.discard(), /windows remain borrowed/);
+ window.release(); window.release(); assert.equal(f.memory.snapshot().bytes, before);
+ assert.throws(() => window.value, /released/);
+ await f.writer.add('reused', 'packet', value.nested[3].payload);
+ const receipt = await f.writer.seal(), reader = await f.open(receipt);
+ const metadata = await reader.metadata(await reader.descriptor('packet'));
+ const readyValue = metadata.value as typeof value;
+ assert.equal(readyValue.text, text);
+ assert.deepEqual(await restore(reader, readyValue.nested[3].payload), payload);
+ assert.throws(() => reader.close(), /borrowed/);
+ metadata.release();
+ assert.deepEqual(await restore(reader, await reader.descriptor('reused')), payload); reader.close();
+});
+
+test('construction metadata rejects forged references and retains charges after fencing until release', async t => {
+ const f = await setup(t), ref = await f.writer.add('packet', 'packet', { text: 'hello' });
+ const window = await f.writer.metadata(ref), charged = f.memory.snapshot().bytes;
+ await assert.rejects(f.writer.metadata({ digest: ref.digest }), /Unissued/);
+ assert.throws(() => window.value, /unavailable/);
+ assert.equal(f.memory.snapshot().bytes, charged);
+ window.release(); await f.writer.discard(); assert.equal(f.memory.snapshot().bytes, 0);
+});
+
 test('memory leases count shared backing buffers once and reserve before allocation', () => {
  const memory = new ReviewMemoryBudget(1024), bytes = new Uint8Array(768);
  const a = memory.buffer(bytes.subarray(0, 4), 'a'), b = memory.buffer(bytes.subarray(4), 'b');

@@ -2,7 +2,7 @@
 import { TextDecoder } from 'node:util';
 import { requireReview } from './contracts.js';
 import type { SelectedChange } from './packet.js';
-import type { ChangedRange, PinnedBlob, ReviewSources } from './sources.js';
+import type { BlobIdentity, ChangedRange, PinnedBlob, ReviewSources } from './sources.js';
 import type { OriginRef, ProjectedEntry, ReviewedSegment } from './final-scope-contracts.js';
 
 /** Not an admitted projection. T3 must verify every replacement against selected
@@ -14,11 +14,31 @@ export interface IntervalDisposition {
  readonly finalSegments: readonly ReviewedSegment[];
  readonly replacementSegments: readonly ReviewedSegment[];
 }
-export interface FileIntervalProjection {
- readonly entry: ProjectedEntry;
+export interface FileIntervalProjection<Blob extends BlobIdentity = PinnedBlob> {
+ readonly entry: ProjectedEntry<Blob>;
  readonly dispositions: readonly IntervalDisposition[];
 }
 interface Run { oldStart: number; oldEnd: number; newStart: number; newEnd: number; }
+export type ProjectionLines = readonly string[] | { readonly length: number; line(index: number): Uint8Array };
+export interface ProjectionAccess<Blob extends BlobIdentity> {
+ size(blob: Blob): number;
+ withLines<T>(before: Blob | null, after: Blob | null, charge: ((bytes: number) => void) | undefined,
+  work: (before: ProjectionLines, after: ProjectionLines) => T | Promise<T>): Promise<T>;
+}
+export function rawBlob(blob: BlobIdentity): PinnedBlob {
+ const bytes: unknown = Reflect.get(blob, 'bytes');
+ requireReview(bytes instanceof Uint8Array, 'source', 'Committed bytes require an explicit bounded blob window');
+ return { oid: blob.oid, bytes };
+}
+export const rawProjectionAccess: ProjectionAccess<BlobIdentity> = {
+ size: blob => rawBlob(blob).bytes.byteLength,
+ async withLines(before, after, charge, work) { return work(lines(before && rawBlob(before), charge), lines(after && rawBlob(after), charge)); },
+};
+function equalLine(before: ProjectionLines, a: number, after: ProjectionLines, b: number): boolean {
+ const x = 'line' in before ? before.line(a) : before[a], y = 'line' in after ? after.line(b) : after[b];
+ if (typeof x === 'string' && typeof y === 'string') return x === y;
+ return x instanceof Uint8Array && y instanceof Uint8Array && Buffer.compare(x, y) === 0;
+}
 const count = (start: number, end: number) => end - start + 1;
 function lines(blob: PinnedBlob | null, charge?: (bytes: number) => void): readonly string[] {
  if (blob === null) return [];
@@ -50,12 +70,12 @@ export function normalizeProjectedSegments(input: readonly ReviewedSegment[]): r
 }
 /** Verify the adapter's zero-context runs against BOTH full committed blobs.
  * No matching/fuzzy relocation is attempted when unchanged gaps disagree. */
-function verifiedRuns(changes: readonly ChangedRange[], before: readonly string[], after: readonly string[]): readonly Run[] {
+function verifiedRuns(changes: readonly ChangedRange[], before: ProjectionLines, after: ProjectionLines): readonly Run[] {
  const runs: Run[] = [];
  let oldCursor = 1, newCursor = 1;
  const unchanged = (oldEnd: number, newEnd: number) => {
   requireReview(oldEnd - oldCursor === newEnd - newCursor && oldEnd >= oldCursor && newEnd >= newCursor, 'scope_conflict', 'Unprovable diff offsets');
-  for (let i = 0; i < oldEnd - oldCursor; i++) requireReview(before[oldCursor - 1 + i] === after[newCursor - 1 + i], 'scope_conflict', 'Diff omitted changed source');
+  for (let i = 0; i < oldEnd - oldCursor; i++) requireReview(equalLine(before, oldCursor - 1 + i, after, newCursor - 1 + i), 'scope_conflict', 'Diff omitted changed source');
  };
  for (const change of changes) {
   requireReview(change.before || change.after, 'scope_conflict', 'Diff run has no changed interval');
@@ -75,7 +95,7 @@ function verifiedRuns(changes: readonly ChangedRange[], before: readonly string[
 
 /** Pure partition, exposed within this private subsystem for deterministic tests. */
 export function projectIntervals(segments: SelectedChange['segments'], originChangeIndex: number,
- before: readonly string[], after: readonly string[], changes: readonly ChangedRange[], fragment?: () => void): readonly IntervalDisposition[] {
+ before: ProjectionLines, after: ProjectionLines, changes: readonly ChangedRange[], fragment?: () => void): readonly IntervalDisposition[] {
  requireReview(segments.length > 0, 'scope_conflict', `Origin change ${originChangeIndex} has no selected segments`);
  const runs = verifiedRuns(changes, before, after), output: IntervalDisposition[] = [];
  for (const [segmentIndex, segment] of segments.entries()) {
@@ -112,11 +132,11 @@ export function projectIntervals(segments: SelectedChange['segments'], originCha
 
 /** T2's committed-blob stage. finalPath must be verified by the T3 lineage
  * caller; this candidate is intentionally not wired into admission on its own. */
-export async function projectFileIntervals(origin: SelectedChange, originChangeIndex: number, revision: string,
- finalPath: string, sources: ReviewSources, budget?: { decode(bytes: number): void; fragment(): void }): Promise<FileIntervalProjection> {
+export async function projectFileIntervals<Blob extends BlobIdentity = PinnedBlob>(origin: SelectedChange<Blob>, originChangeIndex: number, revision: string,
+ finalPath: string, sources: ReviewSources<Blob>, budget?: { decode(bytes: number): void; fragment(): void }, access: ProjectionAccess<Blob> = rawProjectionAccess): Promise<FileIntervalProjection<Blob>> {
  requireReview(origin.segments.length > 0, 'scope_conflict', `Origin change ${originChangeIndex} (${origin.path}) has no selected segments`);
  const final = await sources.file(revision, finalPath);
- const before = lines(origin.after, budget?.decode.bind(budget)), after = lines(final, budget?.decode.bind(budget));
+ return access.withLines(origin.after, final, budget?.decode.bind(budget), async (before, after) => {
  let changes: readonly ChangedRange[];
  if (origin.after?.oid === final?.oid || (origin.after === null && final === null)) changes = [];
  else if (final === null) {
@@ -131,4 +151,5 @@ export async function projectFileIntervals(origin: SelectedChange, originChangeI
  const dispositions = projectIntervals(origin.segments, originChangeIndex, before, after, changes, budget?.fragment.bind(budget));
  const active = normalizeProjectedSegments(dispositions.flatMap(d => d.finalSegments));
  return { entry: { originChangeIndex, commit: revision, path: finalPath, after: final, findingScope: active.length ? 'selected' : 'none', segments: active }, dispositions };
+ });
 }

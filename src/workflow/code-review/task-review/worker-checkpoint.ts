@@ -1,3 +1,4 @@
+import type { ReviewAdmissionPreparer } from './admission.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { isDeepStrictEqual as same } from 'node:util';
 import { decodeReview,CheckpointSchema,isCodeAdmission,requireReview } from './contracts.js';
@@ -40,7 +41,7 @@ export const saveWorkerCodeCheckpoint:typeof import('./checkpoint.js').saveCheck
 };
 /** Reuse the entire normal source/history/route/capacity qualification; only
  * replace its read-only starting history with the preaccepted worker input. */
-export const prepareWorkerCodeAdmission:typeof prepareReviewAdmission=async(project,id,attempt,input,reviewer,sources,context={})=>{
+export const prepareWorkerCodeAdmission:ReviewAdmissionPreparer=async(project,id,attempt,input,reviewer,sources,context={})=>{
  const stored=await loadStoredCheckpoint(checkpointPath(project,id));
  requireReview(stored,'checkpoint','Durable worker admission missing');
  const latest=stored.attempts.at(-1)!;

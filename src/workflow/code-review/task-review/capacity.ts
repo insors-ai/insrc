@@ -8,6 +8,7 @@ import { artifactJsonPath, codeReviewArtifactId } from '../../storage.js';
 import { TaskReviewInputError, reviewJsonLimit, requireReview } from './contracts.js';
 import type { ReviewCheckpoint, TaskReviewResult } from './contracts.js';
 import type { AdmittedReview } from './execution.js';
+import type { BlobIdentity } from './sources.js';
 import { failAttribution, unmappedTaskFailure } from './attribution-failure.js';
 import { taskFailure } from './assessment.js';
 import { completedSummary,failedAttemptSummary } from './summary.js';
@@ -57,12 +58,17 @@ export const CANONICAL_METADATA_RESERVE=64*1024;
 export interface CapacityMeasurement { readonly checkpoint:number; readonly checkpointCompact:number; readonly summary:number; readonly body:number; readonly envelope:number; }
 
 /** Pure qualification; no save, provider, source read or truncation. */
-export function terminalCapacity(review:AdmittedReview,baseline:CapacityBaseline,limit=reviewJsonLimit()):readonly CapacityMeasurement[]{
+export function terminalCapacity(review:AdmittedReview<BlobIdentity>,baseline:CapacityBaseline,limit=reviewJsonLimit()):readonly CapacityMeasurement[]{
  requireReview(limit<=reviewJsonLimit()&&limit>0,'projection_limit','Invalid reduced capacity limit');
  if(!review.prepared.projection)return[];
  const result:CapacityMeasurement[]=[];
  for(const timedOut of [false,true]){
-  const checkpoint:ReviewCheckpoint=structuredClone(review.checkpoint),attempt=checkpoint.attempts.at(-1)!;
+  // Only these two mutable records are changed by the estimate. Historical
+  // attempts and pinned submissions remain immutable shared metadata; cloning
+  // an entire history here multiplies preparation residency for no benefit.
+  const latest=review.checkpoint.attempts.at(-1)!;
+  const attempt={...latest,header:{...latest.header},'review-response':{...latest['review-response']}};
+  const checkpoint:ReviewCheckpoint={...review.checkpoint,attempts:review.checkpoint.attempts.map((entry,index)=>index===review.checkpoint.attempts.length-1?attempt:entry)};
   validateFailureDiagnostics(attempt);
   // Replace ONLY latest mutable fields in this private estimate with their full
   // schema upper bounds below. Actual records/diagnostics are never modified.
@@ -104,12 +110,12 @@ export function terminalCapacity(review:AdmittedReview,baseline:CapacityBaseline
  }
  return result;
 }
-export function qualifyReviewCapacity(review:AdmittedReview):void{if(review.capacity)terminalCapacity(review,review.capacity);}
+export function qualifyReviewCapacity(review:AdmittedReview<BlobIdentity>):void{if(review.capacity)terminalCapacity(review,review.capacity);}
 
 /** Refuse an entire oversize result; retain a truthful fixed failure, never a truncated pass. */
-export function capacityCheckedResult(review:AdmittedReview,result:TaskReviewResult):TaskReviewResult {
+export function capacityCheckedResult(review:AdmittedReview<BlobIdentity>,result:TaskReviewResult):TaskReviewResult {
  if(!review.capacity)return result;
- const candidate=(value:TaskReviewResult):AdmittedReview=>{
+ const candidate=(value:TaskReviewResult):AdmittedReview<BlobIdentity>=>{
   const attempt={...review.attempt,'review-response':{...review.attempt['review-response'],tasks:[...review.attempt['review-response'].tasks,value]}};
   return{...review,attempt,checkpoint:{...review.checkpoint,attempts:review.checkpoint.attempts.map(a=>a===review.attempt?attempt:a)}};
  };

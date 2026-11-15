@@ -12,6 +12,68 @@ import { prepareReviewPacket } from '../../code-review/task-review/packet.js';
 import { PreparedViewWriter, PreparedViewReader } from '../prepared-views.js';
 import { preparationDigest, contextRoot } from '../prepared-context.js';
 import { reviewSourceQueryDigest } from '../source-session.js';
+import { StagedPacketSources } from '../staged-packet-sources.js';
+import { StagedPacketConstruction } from '../staged-packet-construction.js';
+
+test('staged packet construction reopens repeated history metadata without rebuilding source qualification', async t => {
+ const f = await setup(t), limits = defaults(), capacity = new ReviewPreparationCapacity(limits.cacheMaxBytes);
+ const session = await f.create(limits, capacity), d = preparationDigest('staged-history');
+ const writer = await PreparedViewWriter.create({ key: session.key, attempt: 1, inputDigest: d, validatorVersion: 2, routeDigest: d, sourceIdentity: d, scopeDigest: d, testDocumentDigest: d }, limits, capacity, session.workingMemory, session);
+ const adapter = new StagedPacketSources(session, writer), construction = new StagedPacketConstruction(adapter, writer);
+ try {
+  const first = await construction.preparePacket(f.f.packet, adapter, true);
+  const identity = first.projection?.identity, tasks = first.tasks, documents = first.documents;
+  await construction.release(first);
+  const physical = session.snapshot().physicalQueries;
+  for (let attempt = 0; attempt < 4; attempt++) {
+   const logical = session.snapshot().logicalQueries;
+   const prepared = await construction.preparePacket(f.f.packet, adapter, true);
+   assert.equal(prepared.projection?.identity, identity);
+   assert.deepEqual(prepared.tasks, tasks); assert.deepEqual(prepared.documents, documents);
+   assert.equal(session.snapshot().logicalQueries, logical, 'metadata reuse does not reconstruct Git qualification');
+   const blob = prepared.originChanges[0]!.after; assert.ok(blob);
+   assert.ok(await adapter.text(blob), 'reopened metadata resolves only to its canonical source descriptor');
+   await construction.release(prepared);
+  }
+  assert.equal(session.snapshot().physicalQueries, physical);
+  assert.match(construction.identity(), /^[a-f0-9]{64}$/);
+ } finally { construction.close(); await writer.discard(); }
+ await session.close(); assert.equal(session.workingMemory.snapshot().bytes, 0); assert.equal(capacity.bytes, 0);
+});
+
+test('staged packet source windows preserve packet qualification and reopen blobs without physical queries', async t => {
+ const f = await setup(t), limits = defaults(), capacity = new ReviewPreparationCapacity(limits.cacheMaxBytes);
+ const session = await f.create(limits, capacity), d = preparationDigest('bounded-packet');
+ const writer = await PreparedViewWriter.create({ key: session.key, attempt: 1, inputDigest: d, validatorVersion: 2, routeDigest: d, sourceIdentity: d, scopeDigest: d, testDocumentDigest: d }, limits, capacity, session.workingMemory, session);
+ const adapter = new StagedPacketSources(session, writer);
+ try {
+  adapter.beginPacket();
+  const prepared = await prepareReviewPacket(f.f.packet, adapter, false, undefined, undefined, adapter);
+  const oracle = await prepareReviewPacket(f.f.packet, f.source);
+  assert.deepEqual(prepared.tasks, oracle.tasks);
+  assert.deepEqual(prepared.documents, oracle.documents);
+  assert.deepEqual(prepared.packet, oracle.packet);
+  assert.equal(prepared.projection?.identity, oracle.projection?.identity);
+  const blob = await adapter.file(f.f.packet.reviewRevision!, 'source.js'); assert.ok(blob);
+  assert.equal('bytes' in blob, false, 'packet retains a staged descriptor only');
+  const physical = session.snapshot().physicalQueries;
+  const text = await adapter.text(blob);
+  await adapter.withLines(blob, blob, undefined, (a, b) => assert.equal(a.length, b.length));
+  assert.equal(await adapter.text(blob), text);
+  assert.equal(session.snapshot().physicalQueries, physical);
+  assert.throws(() => adapter.close(), /active/);
+  await writer.add('qualified-packet', 'packet', prepared);
+  adapter.endPacket();
+  assert.throws(() => adapter.size(blob), /active/);
+  adapter.beginPacket();
+  assert.equal(await adapter.file(blob.commit, blob.path), blob);
+  await assert.rejects(adapter.text({ ...blob }), /Foreign/);
+  adapter.endPacket(); adapter.close();
+ } finally { adapter.close(); await writer.discard(); }
+ await session.close();
+ assert.equal(session.workingMemory.snapshot().bytes, 0);
+ assert.equal(capacity.bytes, 0);
+});
 
 const defaults = () => reviewPreparationLimits('/tmp/insrc-nonexistent-test-preparation-config');
 async function setup(t: { after: (fn: () => void | Promise<void>) => void }) {

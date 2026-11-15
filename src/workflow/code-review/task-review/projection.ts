@@ -2,37 +2,53 @@
 import { createHash } from 'node:crypto';
 import { reviewJsonLimit, requireReview } from './contracts.js';
 import type { SelectedChange } from './packet.js';
-import type { ChangedRange, PinnedBlob, ReviewSources } from './sources.js';
+import type { BlobIdentity, ChangedRange, PinnedBlob, ReviewSources } from './sources.js';
 import type { OriginDisposition, OriginRef, ReviewProjection, ReviewedSegment } from './final-scope-contracts.js';
-import { projectFileIntervals } from './projection-intervals.js';
+import { projectFileIntervals, rawProjectionAccess } from './projection-intervals.js';
+
+import type { ProjectionAccess } from './projection-intervals.js';
+import { metadataJsonBound } from '../../review/preparation-memory.js';
+import type { MemoryLease, ReviewMemoryBudget } from '../../review/preparation-memory.js';
 
 const LIMITS = { reads: 10000, fragments: 100000, bytes: 64 * 1024 * 1024, snapshot: 0 };
+export interface ProjectionUsage { readonly reads: number; readonly fragments: number; readonly bytes: number; readonly metadataBytes: number; }
 /** Reduction-only limits support exact boundary qualification, never wider admission. */
 export class ProjectionBudget {
  private readonly limits: typeof LIMITS;
  private reads = 0; private fragments = 0; private bytes = 0; private metadataBytes = 0;
- constructor(limits: Partial<typeof LIMITS> = {}) {
+ private readonly charges: MemoryLease[] = [];
+ private readonly cacheKeys = new Set<string>();
+ constructor(limits: Partial<typeof LIMITS> = {}, private readonly memory?: ReviewMemoryBudget) {
   const configured = { ...LIMITS, snapshot: reviewJsonLimit() };
   this.limits = { ...configured, ...limits };
   for (const key of Object.keys(LIMITS) as (keyof typeof LIMITS)[]) requireReview(Number.isSafeInteger(this.limits[key]) && this.limits[key] >= 0 && this.limits[key] <= configured[key], 'projection_limit', 'Invalid projection budget');
  }
  read(): void { requireReview(++this.reads <= this.limits.reads, 'projection_limit', 'Projection object/diff read limit'); }
- fragment(): void { requireReview(++this.fragments <= this.limits.fragments, 'projection_limit', 'Projection fragment limit'); }
+ fragment(): void { requireReview(++this.fragments <= this.limits.fragments, 'projection_limit', 'Projection fragment limit'); if (this.memory) this.charges.push(this.memory.reserve(1024, 'projection fragment metadata')); }
  decode(bytes: number): void { this.bytes += bytes; requireReview(this.bytes <= this.limits.bytes, 'projection_limit', 'Projection decoded byte limit'); }
- snapshot(value: unknown): void { requireReview(Buffer.byteLength(JSON.stringify(value)) <= this.limits.snapshot, 'projection_limit', 'Projection snapshot limit'); }
- metadata(value: unknown): void { this.metadataBytes += Buffer.byteLength(JSON.stringify(value)); requireReview(this.metadataBytes <= this.limits.snapshot, 'projection_limit', 'Projection metadata limit'); }
+ snapshot(value: unknown): void { this.measure(value, 'projection snapshot', () => requireReview(Buffer.byteLength(JSON.stringify(value)) <= this.limits.snapshot, 'projection_limit', 'Projection snapshot limit')); }
+ metadata(value: unknown): void { this.measure(value, 'projection metadata encoding', () => { this.metadataBytes += Buffer.byteLength(JSON.stringify(value)); requireReview(this.metadataBytes <= this.limits.snapshot, 'projection_limit', 'Projection metadata limit'); }); }
+ measure<T>(value: unknown, stage: string, work: () => T): T { const lease = this.memory?.reserve(metadataJsonBound(value) * 3 + 512, stage); try { return work(); } finally { lease?.release(); } }
+ key(method: string, args: readonly unknown[]): string { return this.measure(args, 'projection query key', () => { const key = JSON.stringify([method, ...args]); if (this.memory && !this.cacheKeys.has(key)) { this.charges.push(this.memory.reserve(key.length * 2 + 256, 'projection query index')); this.cacheKeys.add(key); } return key; }); }
+ close(): void { for (const charge of this.charges) charge.release(); this.charges.length = 0; this.cacheKeys.clear(); }
+ usage(): ProjectionUsage { return { reads: this.reads, fragments: this.fragments, bytes: this.bytes, metadataBytes: this.metadataBytes }; }
+ verifyUsage(usage: ProjectionUsage): void {
+  requireReview(Object.values(usage).every(value => Number.isSafeInteger(value) && value >= 0)
+   && usage.reads <= this.limits.reads && usage.fragments <= this.limits.fragments && usage.bytes <= this.limits.bytes && usage.metadataBytes <= this.limits.snapshot,
+  'projection_limit', 'Cached packet exceeds logical projection budget');
+ }
 }
 /** All callers await these reads serially; cache only successfully verified reads. */
-const sourceBudgets = new WeakMap<ReviewSources, ProjectionBudget>();
-export function boundedProjectionSources(source: ReviewSources, budget: ProjectionBudget): ReviewSources {
+const sourceBudgets = new WeakMap<object, ProjectionBudget>();
+export function boundedProjectionSources<Blob extends BlobIdentity = PinnedBlob>(source: ReviewSources<Blob>, budget: ProjectionBudget, access: ProjectionAccess<Blob> = rawProjectionAccess): ReviewSources<Blob> {
  if (sourceBudgets.get(source) === budget) return source;
- const commits = new Map<string, readonly string[]>(), files = new Map<string, PinnedBlob | null>(), diffs = new Map<string, readonly ChangedRange[]>(), ancestors = new Map<string, boolean>(), histories = new Map<string, readonly string[]>();
- const wrapped: ReviewSources = {
-  async commit(oid, field) { if (commits.has(oid)) return commits.get(oid)!; budget.read(); const value = await source.commit(oid, field); commits.set(oid, value); return value; },
-  async file(commit, path) { const key = JSON.stringify([commit, path]); if (files.has(key)) return files.get(key)!; budget.read(); const value = await source.file(commit, path); if (value) budget.decode(value.bytes.byteLength); files.set(key, value); return value; },
-  async changedRanges(commit, parent, paths) { const key = JSON.stringify([commit, parent, paths]); if (diffs.has(key)) return diffs.get(key)!; budget.read(); const value = await source.changedRanges(commit, parent, paths); diffs.set(key, value); return value; },
-  async isAncestor(a, b) { const key = JSON.stringify([a, b]); if (ancestors.has(key)) return ancestors.get(key)!; budget.read(); const value = await source.isAncestor(a, b); ancestors.set(key, value); return value; },
-  async pathChanges(from, to, path) { const key = JSON.stringify([from, to, path]); if (histories.has(key)) return histories.get(key)!; budget.read(); const value = await source.pathChanges(from, to, path); histories.set(key, value); return value; },
+ const commits = new Map<string, readonly string[]>(), files = new Map<string, Blob | null>(), diffs = new Map<string, readonly ChangedRange[]>(), ancestors = new Map<string, boolean>(), histories = new Map<string, readonly string[]>();
+ const wrapped: ReviewSources<Blob> = {
+  async commit(oid, field) { budget.key('commit', [oid]); if (commits.has(oid)) return commits.get(oid)!; budget.read(); const value = await source.commit(oid, field); commits.set(oid, value); return value; },
+  async file(commit, path) { const key = budget.key('file', [commit, path]); if (files.has(key)) return files.get(key)!; budget.read(); const value = await source.file(commit, path); if (value) budget.decode(access.size(value)); files.set(key, value); return value; },
+  async changedRanges(commit, parent, paths) { const key = budget.key('changedRanges', [commit, parent, paths]); if (diffs.has(key)) return diffs.get(key)!; budget.read(); const value = await source.changedRanges(commit, parent, paths); diffs.set(key, value); return value; },
+  async isAncestor(a, b) { const key = budget.key('isAncestor', [a, b]); if (ancestors.has(key)) return ancestors.get(key)!; budget.read(); const value = await source.isAncestor(a, b); ancestors.set(key, value); return value; },
+  async pathChanges(from, to, path) { const key = budget.key('pathChanges', [from, to, path]); if (histories.has(key)) return histories.get(key)!; budget.read(); const value = await source.pathChanges(from, to, path); histories.set(key, value); return value; },
  };
  sourceBudgets.set(wrapped, budget); return wrapped;
 }
@@ -53,7 +69,7 @@ function intersects(a: ReviewedSegment, b: ReviewedSegment): boolean {
  * full-history listing of commits that changed the path names every edge to check;
  * commits that leave the path untouched cost nothing. Selected move boundaries start
  * a new leg. */
-async function pathContinuity(path: string, from: string, to: string, origins: readonly SelectedChange[], sources: ReviewSources): Promise<void> {
+async function pathContinuity<Blob extends BlobIdentity>(path: string, from: string, to: string, origins: readonly SelectedChange<Blob>[], sources: ReviewSources<Blob>): Promise<void> {
  if (from === to) return;
  for (const commit of await sources.pathChanges(from, to, path)) {
   if (!await sources.isAncestor(from, commit)) continue;
@@ -64,18 +80,18 @@ async function pathContinuity(path: string, from: string, to: string, origins: r
   }
  }
 }
-async function finalPath(origin: SelectedChange, origins: readonly SelectedChange[], revision: string, sources: ReviewSources): Promise<string> {
+async function finalPath<Blob extends BlobIdentity>(origin: SelectedChange<Blob>, origins: readonly SelectedChange<Blob>[], revision: string, sources: ReviewSources<Blob>): Promise<string> {
  let path = origin.path, commit = origin.commit;
  const visited = new Set<string>();
  while (true) {
-  const moves: SelectedChange[] = [], keys = new Set<string>();
+  const moves: SelectedChange<Blob>[] = [], keys = new Set<string>();
   for (const candidate of origins) {
    const key = JSON.stringify([candidate.commit, candidate.previousPath, candidate.path]);
    if (candidate.previousPath === candidate.path || candidate.previousPath !== path || candidate.commit === commit || keys.has(key) || visited.has(key)) continue;
    if (await sources.isAncestor(commit, candidate.commit) && await sources.isAncestor(candidate.commit, revision)) { moves.push(candidate); keys.add(key); }
   }
   if (!moves.length) { await pathContinuity(path, commit, revision, origins, sources); return path; }
-  const first: SelectedChange[] = [];
+  const first: SelectedChange<Blob>[] = [];
   for (const move of moves) {
    let preceded = false;
    for (const other of moves) if (other !== move && other.commit !== move.commit && await sources.isAncestor(other.commit, move.commit)) { preceded = true; break; }
@@ -94,7 +110,7 @@ async function finalPath(origin: SelectedChange, origins: readonly SelectedChang
 export function projectionIdentity(revision: string, reviewSet: unknown, entries: readonly { originChangeIndex: number; path: string; blobOid: string | null; findingScope: 'selected' | 'none'; segments: readonly ReviewedSegment[] }[], dispositions: readonly OriginDisposition[]): string {
  return createHash('sha256').update(JSON.stringify({ revision, reviewSet, entries, dispositions })).digest('hex');
 }
-export async function validateProjectionWitnesses(origins: readonly SelectedChange[], dispositions: readonly OriginDisposition[], sources: ReviewSources): Promise<void> {
+export async function validateProjectionWitnesses<Blob extends BlobIdentity>(origins: readonly SelectedChange<Blob>[], dispositions: readonly OriginDisposition[], sources: ReviewSources<Blob>): Promise<void> {
  for (const d of dispositions) {
   const origin = origins[d.source.changeIndex];
   requireReview(origin && origin.segments[d.source.segmentIndex], 'scope_conflict', 'Unknown source origin');
@@ -105,14 +121,14 @@ export async function validateProjectionWitnesses(origins: readonly SelectedChan
   }
  }
 }
-export async function projectReviewScope(origins: readonly SelectedChange[], revision: string, source: ReviewSources, budget = new ProjectionBudget()): Promise<ReviewProjection> {
+export async function projectReviewScope<Blob extends BlobIdentity = PinnedBlob>(origins: readonly SelectedChange<Blob>[], revision: string, source: ReviewSources<Blob>, budget = new ProjectionBudget(), access: ProjectionAccess<Blob> = rawProjectionAccess): Promise<ReviewProjection<Blob>> {
  requireReview(origins.length > 0 && origins.length <= 10000, 'scope_conflict', 'Invalid origin count');
- const sources = boundedProjectionSources(source, budget);
+ const sources = boundedProjectionSources(source, budget, access);
  await sources.commit(revision, 'reviewRevision');
  for (const origin of origins) { await sources.commit(origin.commit); requireReview(await sources.isAncestor(origin.commit, revision), 'reviewRevision.ancestry', 'Origin is not an ancestor of final revision'); }
  const files = [];
  for (const [index, origin] of origins.entries()) {
-  const file = await projectFileIntervals(origin, index, revision, await finalPath(origin, origins, revision, sources), sources, budget);
+  const file = await projectFileIntervals(origin, index, revision, await finalPath(origin, origins, revision, sources), sources, budget, access);
   const e = file.entry;
   budget.metadata({ originChangeIndex: e.originChangeIndex, path: e.path, blobOid: e.after?.oid ?? null, findingScope: e.findingScope, segments: e.segments });
   files.push(file);
@@ -140,7 +156,7 @@ export async function projectReviewScope(origins: readonly SelectedChange[], rev
  const entries = files.map(f => f.entry), metadata = entries.map(e => ({ originChangeIndex: e.originChangeIndex, path: e.path, blobOid: e.after?.oid ?? null, findingScope: e.findingScope, segments: e.segments }));
  // Recreate immutable original review-set identities in stable file-selection order.
  const identities = origins.map(o => ({ commit: o.commit, parent: o.parent, path: o.path, previousPath: o.previousPath, segments: o.segments }));
- const identity = projectionIdentity(revision, identities, metadata, dispositions);
+ const identity = budget.measure({ revision, identities, metadata, dispositions }, 'projection identity encoding', () => projectionIdentity(revision, identities, metadata, dispositions));
  budget.snapshot({ revision, identities, entries: metadata, dispositions, identity });
  return { revision, entries, dispositions, identity };
 }

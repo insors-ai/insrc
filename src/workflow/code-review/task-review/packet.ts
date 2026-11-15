@@ -7,46 +7,63 @@ import { validateAgainstSchema } from '../../../agent/providers/structured-outpu
 import { validatePlanRows } from '../../tasks/pure.js';
 import { parsePacket, requireReview } from './contracts.js';
 import type { CommittedDocument, ReviewPacket, StoredDerived, SubmittedTestDetail } from './contracts.js';
-import type { PinnedBlob, ReviewSources } from './sources.js';
+import type { BlobIdentity, PinnedBlob, ReviewSources } from './sources.js';
 import { DOCUMENT_ROLES, requiredDocumentRoles } from './route.js';
 import type { DocumentRole, StoryRoute } from './route.js';
 import type { EffectiveTaskChange, ReviewProjection } from './final-scope-contracts.js';
 import { projectReviewScope, ProjectionBudget, boundedProjectionSources } from './projection.js';
+import { rawBlob, rawProjectionAccess } from './projection-intervals.js';
+import type { ProjectionAccess } from './projection-intervals.js';
+import type { ReviewMemoryBudget } from '../../review/preparation-memory.js';
 
 const utf8 = (blob: PinnedBlob): string => new TextDecoder('utf-8', { fatal: true }).decode(blob.bytes);
-export interface SelectedChange {
+export interface SelectedChange<Blob extends BlobIdentity = PinnedBlob> {
  readonly commit: string; readonly parent: string | null; readonly path: string; readonly previousPath: string;
  readonly segments: ReviewPacket['reviewSet'][number]['files'][number]['segments'];
- readonly before: PinnedBlob | null; readonly after: PinnedBlob | null; readonly limitations: readonly string[];
+ readonly before: Blob | null; readonly after: Blob | null; readonly limitations: readonly string[];
 }
-export interface PreparedReviewPacket {
- readonly epicHash: string; readonly packet: ReviewPacket; readonly changes: readonly ReviewChange[]; readonly tasks: readonly PlanTask[];
- readonly originChanges: readonly SelectedChange[];
- readonly projection?: ReviewProjection | undefined;
+export interface PreparedReviewPacket<Blob extends BlobIdentity = PinnedBlob> {
+ readonly epicHash: string; readonly packet: ReviewPacket; readonly changes: readonly ReviewChange<Blob>[]; readonly tasks: readonly PlanTask[];
+ readonly originChanges: readonly SelectedChange<Blob>[];
+ readonly projection?: ReviewProjection<Blob> | undefined;
  readonly finalTestBlobs?: readonly (string | null)[] | undefined;
  readonly documents: Readonly<Partial<Record<DocumentRole, string>>>;
  readonly derived?: StoredDerived | undefined;
 }
-export type ReviewChange = SelectedChange | EffectiveTaskChange;
-export function originalChange(change: ReviewChange): SelectedChange { return 'origin' in change ? change.origin : change; }
-function head(text: string): Record<string, unknown> {
+export type ReviewChange<Blob extends BlobIdentity = PinnedBlob> = SelectedChange<Blob> | EffectiveTaskChange<Blob>;
+export function originalChange<Blob extends BlobIdentity>(change: ReviewChange<Blob>): SelectedChange<Blob> { return 'origin' in change ? change.origin : change; }
+export interface ReviewPacketAccess<Blob extends BlobIdentity> extends ProjectionAccess<Blob> {
+ readonly memory?: ReviewMemoryBudget | undefined;
+ text(blob: Blob): Promise<string>;
+ parseJson(text: string): unknown;
+ lineCount(blob: Blob): Promise<number>;
+ trackBudget?(budget: ProjectionBudget): void;
+}
+export const rawPacketAccess: ReviewPacketAccess<BlobIdentity> = {
+ ...rawProjectionAccess,
+ async text(blob) { return utf8(rawBlob(blob)); },
+ parseJson: text => JSON.parse(text),
+ async lineCount(blob) { try { const text = utf8(rawBlob(blob)); requireReview(!text.includes('\0'), 'segments', 'Binary source has no textual ranges'); return text.length ? text.split('\n').length - Number(text.endsWith('\n')) : 0; } catch { throw new Error('Selected text cannot be decoded; use a non-textual selection instead'); } },
+};
+export type PacketPreparer<Blob extends BlobIdentity = PinnedBlob> = (input: unknown, sources: ReviewSources<Blob>, historical?: boolean, route?: StoryRoute, stored?: StoredDerived) => Promise<PreparedReviewPacket<Blob>>;
+function head(text: string, parse: (text: string) => unknown): Record<string, unknown> {
  let value: unknown;
- try { value = JSON.parse(text); } catch { requireReview(false, 'documents', 'Malformed committed artifact JSON'); }
+ try { value = parse(text); } catch (error) { if (!(error instanceof SyntaxError)) throw error; requireReview(false, 'documents', 'Malformed committed artifact JSON'); }
  requireReview(value && typeof value === 'object' && !Array.isArray(value), 'documents', 'Expected committed artifact object');
  return value as Record<string, unknown>;
 }
 /** Load committed document text; Markdown may reference its canonical JSON at the SAME commit. */
-async function document(ref: CommittedDocument, sources: ReviewSources): Promise<{ text: string; head: Record<string, unknown> }> {
+async function document<Blob extends BlobIdentity>(ref: CommittedDocument, sources: ReviewSources<Blob>, access: ReviewPacketAccess<Blob>): Promise<{ text: string; head: Record<string, unknown> }> {
  await sources.commit(ref.commit);
  const blob = await sources.file(ref.commit, ref.path);
  requireReview(blob, 'documents', `Missing committed document ${ref.path}`);
- const text = utf8(blob);
- if (ref.path.endsWith('.json')) return { text, head: head(text) };
+ const text = await access.text(blob);
+ if (ref.path.endsWith('.json')) return { text, head: head(text, access.parseJson.bind(access)) };
  const id = /^<!-- insrc:artifact ([A-Z]+-[0-9a-f]{16}(?:-s\d+)?) -->/m.exec(text)?.[1];
  requireReview(id, 'documents', 'Markdown must identify its committed canonical artifact');
  const canonical = await sources.file(ref.commit, `.insrc/artifacts/${id}.json`);
  requireReview(canonical, 'documents', 'Commit the referenced canonical artifact JSON with its document');
- return { text, head: head(utf8(canonical)) };
+ return { text, head: head(await access.text(canonical), access.parseJson.bind(access)) };
 }
 type LoadedDocument = { text: string; head: Record<string, unknown> };
 const WORKFLOW_OF: Readonly<Record<DocumentRole, string>> = { story: 'define', lld: 'design.story', plan: 'plan', issue: 'issue' };
@@ -55,11 +72,11 @@ const WORKFLOW_OF: Readonly<Record<DocumentRole, string>> = { story: 'define', l
  * A stored review is re-read (`historical`) without its route; a standalone Story with a Plan pinned only the LLD and
  * Plan at admission (see requiredDocumentRoles), so there the story document is optional and checked only when pinned.
  */
-async function pinnedTriple(packet: ReviewPacket, sources: ReviewSources, historical: boolean) {
+async function pinnedTriple<Blob extends BlobIdentity>(packet: ReviewPacket, sources: ReviewSources<Blob>, historical: boolean, access: ReviewPacketAccess<Blob>) {
  const { story: storyRef, lld: lldRef, plan: planRef } = packet.documents;
  requireReview(lldRef && planRef && (storyRef || historical), 'documents', 'Expected story, lld and plan documents');
- const docs: Partial<Record<'story' | 'lld' | 'plan', LoadedDocument>> = { lld: await document(lldRef, sources), plan: await document(planRef, sources) };
- if (storyRef) docs.story = await document(storyRef, sources);
+ const docs: Partial<Record<'story' | 'lld' | 'plan', LoadedDocument>> = { lld: await document(lldRef, sources, access), plan: await document(planRef, sources, access) };
+ if (storyRef) docs.story = await document(storyRef, sources, access);
  const plan = docs.plan!.head, meta = plan['meta'] as Record<string, unknown> | undefined;
  requireReview(meta && typeof meta['epicHash'] === 'string' && /^s\d+$/.test(String(meta['storyId'])), 'documents.plan', 'Expected a canonical story Plan');
  const storyId = String(meta['storyId']), hash = String(meta['epicHash']);
@@ -79,14 +96,14 @@ async function pinnedTriple(packet: ReviewPacket, sources: ReviewSources, histor
 }
 const list = (roles: readonly string[]): string => roles.length ? roles.join(', ') : 'none';
 /** Exactly the documents the Story's route produced, each a committed canonical artifact of this epic and story. */
-async function routedDocuments(packet: ReviewPacket, route: StoryRoute, sources: ReviewSources) {
+async function routedDocuments<Blob extends BlobIdentity>(packet: ReviewPacket, route: StoryRoute, sources: ReviewSources<Blob>, access: ReviewPacketAccess<Blob>) {
  const { epicHash: hash, storyId } = route;
  requireReview(packet.storyId === storyId || packet.storyId === `STORY-${hash}-${storyId}`, 'storyId', 'Packet belongs to another story');
  const required = requiredDocumentRoles(route), supplied = DOCUMENT_ROLES.filter(role => packet.documents[role] !== undefined);
  requireReview(required.length === supplied.length && required.every(role => supplied.includes(role)), 'documents', `Expected the documents ${list(required)} for this Story's route, got ${list(supplied)}`);
  const docs: Partial<Record<DocumentRole, LoadedDocument>> = {};
  for (const role of supplied) {
-  const doc = await document(packet.documents[role]!, sources);
+  const doc = await document(packet.documents[role]!, sources, access);
   const m = doc.head['meta'] as Record<string, unknown> | undefined;
   requireReview(m?.['workflow'] === WORKFLOW_OF[role], `documents.${role}`, `Expected a ${WORKFLOW_OF[role]} artifact`);
   requireReview(m[role === 'issue' ? 'issueHash' : 'epicHash'] === hash, `documents.${role}`, 'Document belongs to another epic');
@@ -119,15 +136,15 @@ function derivedUnit(route: StoryRoute, docs: Partial<Record<DocumentRole, Loade
  return { id, title, summary: focus ?? title, size: files <= 2 ? 'S' : files <= 8 ? 'M' : 'L', order: 1, dependsOn: [], acceptanceChecks: checks, derivedFrom: [], tests: [] };
 }
 /** Re-reading a stored review of a route without a Plan: the pinned documents must still load, and the epic and unit come from what admission kept. */
-async function storedDocuments(packet: ReviewPacket, stored: StoredDerived, sources: ReviewSources) {
+async function storedDocuments<Blob extends BlobIdentity>(packet: ReviewPacket, stored: StoredDerived, sources: ReviewSources<Blob>, access: ReviewPacketAccess<Blob>) {
  const docs: Partial<Record<DocumentRole, LoadedDocument>> = {};
- for (const role of DOCUMENT_ROLES) if (packet.documents[role]) docs[role] = await document(packet.documents[role]!, sources);
+ for (const role of DOCUMENT_ROLES) if (packet.documents[role]) docs[role] = await document(packet.documents[role]!, sources, access);
  return { docs, hash: stored.epicHash };
 }
-export async function prepareReviewPacket(input: unknown, sources: ReviewSources, historical = false, route?: StoryRoute, stored?: StoredDerived): Promise<PreparedReviewPacket> {
+export async function prepareReviewPacket<Blob extends BlobIdentity = PinnedBlob>(input: unknown, sources: ReviewSources<Blob>, historical = false, route?: StoryRoute, stored?: StoredDerived, access: ReviewPacketAccess<Blob> = rawPacketAccess): Promise<PreparedReviewPacket<Blob>> {
  const packet = parsePacket(input, historical);
- const budget = packet.reviewRevision ? new ProjectionBudget() : undefined;
- if (budget) sources = boundedProjectionSources(sources, budget);
+ const budget = packet.reviewRevision ? new ProjectionBudget({}, access.memory) : undefined;
+ if (budget) { if (access.memory && !access.trackBudget) throw new Error('Bounded packet preparation needs an explicit budget owner'); access.trackBudget?.(budget); sources = boundedProjectionSources(sources, budget, access); }
  if (packet.reviewRevision !== undefined) {
   await sources.commit(packet.reviewRevision, 'reviewRevision');
   for (const pointer of packet.reviewSet) {
@@ -135,7 +152,7 @@ export async function prepareReviewPacket(input: unknown, sources: ReviewSources
    requireReview(await sources.isAncestor(pointer.commit, packet.reviewRevision), 'reviewRevision.ancestry', 'Origin is not an ancestor of the final revision');
   }
  }
- const { docs, hash } = route ? await routedDocuments(packet, route, sources) : stored ? await storedDocuments(packet, stored, sources) : await pinnedTriple(packet, sources, historical);
+ const { docs, hash } = route ? await routedDocuments(packet, route, sources, access) : stored ? await storedDocuments(packet, stored, sources, access) : await pinnedTriple(packet, sources, historical, access);
  const plan = docs.plan?.head;
  let tasks: PlanTask[] = [];
  if (plan) {
@@ -152,7 +169,7 @@ export async function prepareReviewPacket(input: unknown, sources: ReviewSources
   requireReview(issues.length === 0 && tasks.length > 0, 'documents.plan', issues.join('; ') || 'No Plan tasks');
   requireReview(!packet.taskId || tasks.some(t => t.id === packet.taskId), 'taskId', 'Task is not in the committed Plan');
  }
- const changes: SelectedChange[] = [];
+ const changes: SelectedChange<Blob>[] = [];
  for (const pointer of packet.reviewSet) {
   const parents = await sources.commit(pointer.commit);
   requireReview(pointer.parent === null ? parents.length === 0 : parents.includes(pointer.parent), 'parent', 'Explicit parent is not a parent of the referenced commit');
@@ -180,9 +197,7 @@ export async function prepareReviewPacket(input: unknown, sources: ReviewSources
      const selected = segment[side]; if (!selected) continue;
      const blob = side === 'before' ? before : after;
      requireReview(blob, 'segments', 'Selected side is absent');
-     let lines: number;
-     try { const text = utf8(blob); requireReview(!text.includes('\0'), 'segments', 'Binary source has no textual ranges'); lines = text.length ? text.split('\n').length - Number(text.endsWith('\n')) : 0; }
-     catch { throw new Error('Selected text cannot be decoded; use a non-textual selection instead'); }
+     const lines = await access.lineCount(blob);
      requireReview(selected[1] <= lines, 'segments', 'Selected range exceeds committed source');
     }
    }
@@ -205,14 +220,14 @@ export async function prepareReviewPacket(input: unknown, sources: ReviewSources
   for (const revision of revisions) if (await sources.file(revision, test.file)) { found = true; break; }
   requireReview(found, 'tests', 'Test file is absent from the supplied committed source');
  }
- const projection = packet.reviewRevision ? await projectReviewScope(changes, packet.reviewRevision, sources, budget) : undefined;
- const effective: readonly ReviewChange[] = projection ? projection.entries.map(entry => ({ ...entry, origin: changes[entry.originChangeIndex]! })) : changes;
+ const projection = packet.reviewRevision ? await projectReviewScope(changes, packet.reviewRevision, sources, budget, access) : undefined;
+ const effective: readonly ReviewChange<Blob>[] = projection ? projection.entries.map(entry => ({ ...entry, origin: changes[entry.originChangeIndex]! })) : changes;
  return { epicHash: hash, packet, changes: effective, originChanges: changes, ...(projection ? { projection, finalTestBlobs } : {}), tasks, ...(derived ? { derived } : {}), documents: Object.fromEntries(Object.entries(docs).map(([role, doc]) => [role, doc.text])) as Partial<Record<DocumentRole, string>> };
 }
 /** Internal derivation output, not additional submitter input or a model-facing persistence protocol. */
 export interface TaskAttribution { taskId: string; changeIndexes: readonly number[]; testIndexes: readonly number[]; }
-export interface TaskAssignment { readonly taskId: string; readonly size: PlanTask['size']; readonly timeoutMs: number; readonly changes: readonly ReviewChange[]; readonly tests: readonly SubmittedTestDetail[]; readonly acceptanceChecks: readonly string[]; readonly reassessment?: { readonly action: 'reassess' | 'reuse'; readonly reason: string; readonly sourceAttempt?: number | undefined } | undefined; }
-export function deriveTaskAssignments(prepared: PreparedReviewPacket, attribution: readonly TaskAttribution[]): readonly TaskAssignment[] {
+export interface TaskAssignment<Blob extends BlobIdentity = PinnedBlob> { readonly taskId: string; readonly size: PlanTask['size']; readonly timeoutMs: number; readonly changes: readonly ReviewChange<Blob>[]; readonly tests: readonly SubmittedTestDetail[]; readonly acceptanceChecks: readonly string[]; readonly reassessment?: { readonly action: 'reassess' | 'reuse'; readonly reason: string; readonly sourceAttempt?: number | undefined } | undefined; }
+export function deriveTaskAssignments<Blob extends BlobIdentity>(prepared: PreparedReviewPacket<Blob>, attribution: readonly TaskAttribution[]): readonly TaskAssignment<Blob>[] {
  const selected = prepared.tasks.filter(t => !prepared.packet.taskId || t.id === prepared.packet.taskId).sort((a, b) => a.order - b.order);
  requireReview(attribution.length === selected.length && new Set(attribution.map(a => a.taskId)).size === selected.length, 'attribution', 'Every applicable task needs exactly one derived scope');
  const covered = new Set<number>(), assignedTests = new Set<number>();

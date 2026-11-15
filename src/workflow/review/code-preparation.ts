@@ -1,3 +1,4 @@
+import type { ReviewAdmissionPreparer } from '../code-review/task-review/admission.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { isDeepStrictEqual as same } from 'node:util';
 import type { ReviewPreparationLimits } from '../../config/review.js';
@@ -6,7 +7,7 @@ import { prepareReviewAdmission } from '../code-review/task-review/admission.js'
 import type { ReviewAdmissionContext } from '../code-review/task-review/admission.js';
 import { prepareWorkerCodeAdmission } from '../code-review/task-review/worker-checkpoint.js';
 import { prepareReviewPacket } from '../code-review/task-review/packet.js';
-import type { PreparedReviewPacket } from '../code-review/task-review/packet.js';
+import type { PreparedReviewPacket, PacketPreparer } from '../code-review/task-review/packet.js';
 import type { AdmittedReview } from '../code-review/task-review/execution.js';
 import type { ReviewSources, BatchReviewSources } from '../code-review/task-review/sources.js';
 import { ReviewSourceSession } from './source-session.js';
@@ -46,7 +47,7 @@ export class CodePreparation {
   }
   return result;
  }
- private readonly packet: typeof prepareReviewPacket = async (input, sources, historical = false, route, stored) => {
+ private readonly packet: PacketPreparer = async (input, sources, historical = false, route, stored) => {
   if (this.failed) throw new Error('Code preparation owner fenced');
   const id = preparationDigest([input, historical, route, stored]);
   const cached = this.packets.get(id);
@@ -60,7 +61,7 @@ export class CodePreparation {
   return prepared;
  };
  /** Same signature used by both task/story coordinators and worker recovery. */
- readonly prepare: typeof prepareReviewAdmission = (project, id, attempt, input, reviewer, _sources, context = {}) => {
+ readonly prepare: ReviewAdmissionPreparer = (project, id, attempt, input, reviewer, _sources, context = {}) => {
   const work = this.tail.then(async () => {
    if (this.failed || this.sealed || project !== this.key.project || id !== this.key.reviewId || this.reader && attempt !== this.reader.receipt.attempt) throw new Error('Code preparation unavailable or foreign');
    try { return await prepareReviewAdmission(project, id, attempt, input, reviewer, this.sources, { ...context, preparePacket: this.packet }); }
@@ -77,7 +78,7 @@ export class CodePreparation {
  /** Used by the durable-admission adapter without a second preparation path. */
  context(context: ReviewAdmissionContext = {}): ReviewAdmissionContext { return { ...context, preparePacket: this.packet }; }
  /** Publication reads the same qualified historical views as recovery. */
- readonly publicationPacket: typeof prepareReviewPacket = (...args) => this.packet(...args);
+ readonly publicationPacket: PacketPreparer = (...args) => this.packet(...args);
  async seal(review: AdmittedReview): Promise<ReadyContextReceipt> {
   await this.tail;
   if (this.failed || this.sealed || !this.session || review.checkpoint.project !== this.key.project || review.checkpoint.reviewId !== this.key.reviewId

@@ -69,13 +69,16 @@ export function normalizeTaskResult(input: unknown, scope: TaskResultScope): Tas
 }
 
 /** Source attempts are local to one review history. Strictly decreasing ordinals also rule out cycles. */
-export function validateResultOrigins(history: readonly { attempt: number; reviewer: ReviewerParty; tasks: readonly TaskReviewResult[]; origins?: readonly TaskResultOrigin[] | undefined }[]): void {
+interface ResultOriginHistoryEntry { readonly attempt: number; readonly reviewer: ReviewerParty; readonly tasks: readonly TaskReviewResult[]; readonly origins?: readonly TaskResultOrigin[] | undefined; }
+/** A re-iterable view avoids copying a whole historical feedback inventory. */
+export function validateResultOrigins(history: Iterable<ResultOriginHistoryEntry>): void {
  for (const entry of history) {
   const seen = new Set<string>();
   for (const origin of entry.origins ?? []) {
    requireReview(!seen.has(origin.taskId), 'origins', 'Duplicate task origin'); seen.add(origin.taskId);
    requireReview(origin.sourceAttempt < entry.attempt, 'origins', 'Origin must reference an earlier attempt');
-   const source = history.find(candidate => candidate.attempt === origin.sourceAttempt);
+   let source: ResultOriginHistoryEntry | undefined;
+   for (const candidate of history) if (candidate.attempt === origin.sourceAttempt) { source = candidate; break; }
    const result = entry.tasks.find(task => task.taskId === origin.taskId), prior = source?.tasks.find(task => task.taskId === origin.taskId);
    requireReview(source && source.reviewer === entry.reviewer && result && prior && isDeepStrictEqual(result, prior), 'origins', 'Origin is missing, foreign-party or changes the saved result');
   }

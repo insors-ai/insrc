@@ -1,3 +1,4 @@
+import type { PacketPreparer } from './packet.js';
 import { requireCapacityBaseline } from './capacity.js';
 import type { CapacityBaseline } from './capacity.js';
 import { completedSummary,failedAttemptSummary } from './summary.js';
@@ -28,7 +29,7 @@ import { restoreAcceptedAssignments, validateSavedAttribution } from './attribut
 import { captureFinalScope } from './final-scope-history.js';
 
 export interface PublicationDeps { readonly baseline?:CapacityBaseline; readonly sources:ReviewSources; readonly through:RoundWriter; readonly save?:typeof saveCheckpoint; readonly saveStored?:typeof saveStoredCheckpoint; readonly renderWrite?:typeof writeAtomic;
- readonly preparation?: (QualifiedPublication & { preparePacket: typeof prepareReviewPacket; save(checkpoint: CodePreparationCheckpoint): Promise<void> }) | undefined;
+ readonly preparation?: (QualifiedPublication & { preparePacket: PacketPreparer; save(checkpoint: CodePreparationCheckpoint): Promise<void> }) | undefined;
 }
 
 /** No reviewer invocation: project completed task feedback through the canonical queued store. */

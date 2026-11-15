@@ -8,17 +8,18 @@ import { gitPathHistoryTool } from '../../../daemon/tools/builtins/git/path-hist
 import type { ToolDeps } from '../../../daemon/tools/types.js';
 import { requireReview, reviewPath } from './contracts.js';
 
-export interface PinnedBlob { readonly bytes: Uint8Array; readonly oid: string; }
+export interface BlobIdentity { readonly oid: string; }
+export interface PinnedBlob extends BlobIdentity { readonly bytes: Uint8Array; }
 export interface ReviewObjectRequest { readonly commit: string; readonly path?: string | undefined; }
 export interface ReviewObjectInfo { readonly exists: boolean; readonly bytes: number; }
 export interface BatchReviewSources extends ReviewSources {
  objectInventory(requests: readonly ReviewObjectRequest[]): Promise<readonly ReviewObjectInfo[]>;
  objects(requests: readonly ReviewObjectRequest[]): Promise<readonly (PinnedBlob | null)[]>;
 }
-export interface ReviewSources {
+export interface ReviewSources<Blob extends BlobIdentity = PinnedBlob> {
  commit(oid: string, field?: string): Promise<readonly string[]>;
  isAncestor(origin: string, revision: string): Promise<boolean>;
- file(commit: string, path: string): Promise<PinnedBlob | null>;
+ file(commit: string, path: string): Promise<Blob | null>;
  changedRanges(commit: string, parent: string | null, paths: readonly string[]): Promise<readonly ChangedRange[]>;
  /** Every commit reachable from `to` and not from `from` whose entry at `path` differs
   * from at least one parent (full, unsimplified history, merges included). A commit not

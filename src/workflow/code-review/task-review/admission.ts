@@ -6,13 +6,13 @@ import { readFile, realpath } from 'node:fs/promises';
 import { isDeepStrictEqual } from 'node:util';
 import { artifactJsonPath, buildArtifactId, codeReviewArtifactId } from '../../storage.js';
 import { reviewedBuildFingerprint } from '../build-freshness.js';
-import { decodeReview, CheckpointSchema, requireReview, ReviewRequestSchema, SavedReviewRequestSchema, reviewPath, parsePacket } from './contracts.js';
+import { decodeReview, validateReviewSnapshot, CheckpointSchema, requireReview, ReviewRequestSchema, SavedReviewRequestSchema, reviewPath, parsePacket } from './contracts.js';
 import type { ReviewAttempt, ReviewerParty, ReviewOperation, ReviewCheckpoint, CodeAdmissionAttempt } from './contracts.js';
 import { checkpointPath, loadCheckpoint } from './checkpoint.js';
 import { prepareReviewPacket } from './packet.js';
 import { readStoryRoute } from './route-source.js';
-import type { PreparedReviewPacket } from './packet.js';
-import type { ReviewSources } from './sources.js';
+import type { PreparedReviewPacket, PacketPreparer } from './packet.js';
+import type { BlobIdentity, PinnedBlob, ReviewSources } from './sources.js';
 import type { AdmittedReview } from './execution.js';
 import { aggregateTaskStatus, validateTaskResult, validateResultOrigins } from './results.js';
 import { resultReferences, validateTaskBody } from './record.js';
@@ -26,7 +26,7 @@ export function canonicalReviewStory(story: string, hash: string): string {
 }
 
 /** Read and validate admission without writing or starting a provider. The coordinator owns reservation and save. */
-export interface ReviewAdmissionContext {
+export interface ReviewAdmissionContext<Blob extends BlobIdentity = PinnedBlob> {
  readonly operation?:ReviewOperation|undefined;
  readonly epicHash?:string|undefined;
  /** Internal worker handoff, after discriminating the full stored checkpoint.
@@ -34,14 +34,20 @@ export interface ReviewAdmissionContext {
  readonly accepted?:{readonly admission:CodeAdmissionAttempt;readonly prior:ReviewCheckpoint|undefined;readonly historyLength:number}|undefined;
  readonly qualifiedHistory?:ReviewCheckpoint|undefined;
  /** Private worker adapter; never a wire field or submitter-provided scope. */
- readonly preparePacket?: typeof prepareReviewPacket | undefined;
+ readonly preparePacket?: PacketPreparer<Blob> | undefined;
+ /** Private construction owner: stage and release each fully validated history
+  * window; only the latest resumed packet remains live for the returned unit. */
+ readonly afterHistoricalPacket?: ((prepared: PreparedReviewPacket<Blob>, entry: ReviewAttempt, retainedForResume: boolean) => Promise<void>) | undefined;
+ readonly retainTaskInputs?: ((attempt: number, inputs: ReadonlyMap<string, TaskInputFingerprint>) => Promise<void>) | undefined;
 }
-export async function prepareReviewAdmission(project: string, reviewId: string, attempt: number, input: unknown,
- reviewer: ReviewerParty, sources: ReviewSources, context: ReviewAdmissionContext = {}): Promise<AdmittedReview> {
- const preparePacket = context.preparePacket ?? prepareReviewPacket;
+export type ReviewAdmissionPreparer<Blob extends BlobIdentity = PinnedBlob> = (project: string, reviewId: string, attempt: number, input: unknown,
+ reviewer: ReviewerParty, sources: ReviewSources<Blob>, context?: ReviewAdmissionContext<Blob>) => Promise<AdmittedReview<Blob>>;
+export async function prepareReviewAdmission<Blob extends BlobIdentity = PinnedBlob>(project: string, reviewId: string, attempt: number, input: unknown,
+ reviewer: ReviewerParty, sources: ReviewSources<Blob>, context: ReviewAdmissionContext<Blob> = {}): Promise<AdmittedReview<Blob>> {
+ const preparePacket: PacketPreparer<Blob> = context.preparePacket ?? prepareReviewPacket;
  const request = decodeReview(context.operation === 'resume' ? SavedReviewRequestSchema : ReviewRequestSchema, { reviewId, attempt, ...(input !== undefined ? { packet: input } : {}), ...(context.operation !== undefined ? { operation: context.operation } : {}) });
  const operation = request.operation ?? 'start';
- const capacity=async(review:AdmittedReview):Promise<AdmittedReview>=>{if(review.prepared.projection&&review.attempt['review-response'].crPublication!=='complete'){review.capacity=await readCapacityBaseline(review.checkpoint.project,review.prepared.epicHash,review.checkpoint.storyId);qualifyReviewCapacity(review);}return review;};
+ const capacity=async(review:AdmittedReview<Blob>):Promise<AdmittedReview<Blob>>=>{if(review.prepared.projection&&review.attempt['review-response'].crPublication!=='complete'){review.capacity=await readCapacityBaseline(review.checkpoint.project,review.prepared.epicHash,review.checkpoint.storyId);qualifyReviewCapacity(review);}return review;};
  // Refuse invalid fresh selections before re-reading any saved source history.
  // Resume still decodes its immutable packet under historical rules below.
  if (operation === 'start' && request.packet !== undefined) parsePacket(request.packet);
@@ -51,7 +57,8 @@ export async function prepareReviewAdmission(project: string, reviewId: string, 
   const accepted=context.accepted.admission;
   requireReview(operation==='start'&&accepted.header.attempt===attempt&&accepted.header.reviewer===reviewer&&['pending','running'].includes(accepted.header.status)&&isDeepStrictEqual(accepted.submitted,request.packet),'admission','Pinned worker admission mismatch');
  }
- let priorPrepared: PreparedReviewPacket | undefined;
+ let priorPrepared: PreparedReviewPacket<Blob> | undefined;
+ let priorEpic: string | undefined;
  const priorTaskInputs=new Map<number,ReadonlyMap<string,TaskInputFingerprint>>();
  if (saved) {
   requireReview(saved.project === canonical && saved.reviewId === reviewId, 'checkpoint', 'Checkpoint identity mismatch');
@@ -62,8 +69,8 @@ export async function prepareReviewAdmission(project: string, reviewId: string, 
    const prepared = await preparePacket(entry.submitted, sources, true, undefined, entry.header.derived);
    requireReview(!entry.submitted.reviewRevision || entry.header.finalScopeIdentity === prepared.projection?.identity, 'attribution', 'Saved final scope does not match pinned source');
    const boundAssignments = await restoreAcceptedAssignments({ path, checkpoint: saved, attempt: entry, prepared, priorTaskInputs });
-   if(boundAssignments)priorTaskInputs.set(entry.header.attempt,new Map(boundAssignments.map(a=>[a.taskId,taskInputFingerprint(prepared,a)])));
-   requireReview(!priorPrepared || priorPrepared.epicHash === prepared.epicHash, 'scope', 'Attempt belongs to another epic');
+   if(boundAssignments) { const fingerprints = new Map(boundAssignments.map(a=>[a.taskId,taskInputFingerprint(prepared,a)])); await context.retainTaskInputs?.(entry.header.attempt, fingerprints); priorTaskInputs.set(entry.header.attempt,fingerprints); }
+   requireReview(priorEpic === undefined || priorEpic === prepared.epicHash, 'scope', 'Attempt belongs to another epic');
    requireReview(canonicalReviewStory(saved.storyId, prepared.epicHash) === canonicalReviewStory(prepared.packet.storyId, prepared.epicHash) && saved.taskId === prepared.packet.taskId, 'scope', 'Attempt belongs to another story/task');
    const selected = prepared.tasks.filter(task => !saved.taskId || task.id === saved.taskId).map(task => task.id);
    requireReview(new Set(entry.header.selectedTaskIds).size === selected.length && isDeepStrictEqual([...entry.header.selectedTaskIds].sort(), [...selected].sort()), 'tasks', 'Saved selected tasks disagree with pinned Plan');
@@ -91,9 +98,12 @@ export async function prepareReviewAdmission(project: string, reviewId: string, 
      && summary.buildFingerprint === entry.header.buildFingerprint && isDeepStrictEqual(summary.scope, scope) && isDeepStrictEqual(summary.tasks, results)
      && isDeepStrictEqual(summary.origins, entry['review-response'].origins), 'publication', 'Published CR disagrees with pinned attempt');
    }
-   priorPrepared = prepared;
+   priorEpic = prepared.epicHash;
+   const retainedForResume = operation === 'resume' && index === saved.attempts.length - 1;
+   if (retainedForResume) priorPrepared = prepared;
+   await context.afterHistoricalPacket?.(prepared, entry, retainedForResume);
   }
-  validateResultOrigins(saved.attempts.map(entry => ({ attempt: entry.header.attempt, reviewer: entry.header.reviewer, tasks: entry['review-response'].tasks, origins: entry['review-response'].origins })));
+  validateResultOrigins({ *[Symbol.iterator]() { for (const entry of saved.attempts) yield { attempt: entry.header.attempt, reviewer: entry.header.reviewer, tasks: entry['review-response'].tasks, origins: entry['review-response'].origins }; } });
  }
  const latest = saved?.attempts.at(-1);
  if (operation === 'resume') {
@@ -113,7 +123,7 @@ export async function prepareReviewAdmission(project: string, reviewId: string, 
  const route = context.epicHash ? await readStoryRoute(canonical, context.epicHash, canonicalReviewStory(request.packet.storyId, context.epicHash)) : undefined;
  const prepared = await preparePacket(request.packet, sources, false, route);
  requireReview(!context.epicHash || context.epicHash === prepared.epicHash, 'epicHash', 'Pinned Plan belongs to another review subject');
- if (saved && priorPrepared) requireReview(prepared.epicHash === priorPrepared.epicHash && canonicalReviewStory(prepared.packet.storyId, prepared.epicHash) === canonicalReviewStory(saved.storyId, prepared.epicHash) && prepared.packet.taskId === saved.taskId, 'scope', 'New attempt changes review subject');
+ if (saved && priorEpic) requireReview(prepared.epicHash === priorEpic && canonicalReviewStory(prepared.packet.storyId, prepared.epicHash) === canonicalReviewStory(saved.storyId, prepared.epicHash) && prepared.packet.taskId === saved.taskId, 'scope', 'New attempt changes review subject');
  const entry: ReviewAttempt = { header: { attempt, reviewer, status: 'pending', createdAt: context.accepted?.admission.header.createdAt??new Date().toISOString(), selectedTaskIds: prepared.tasks.filter(task => !prepared.packet.taskId || task.id === prepared.packet.taskId).map(task => task.id), ...(prepared.derived ? { derived: prepared.derived } : {}) }, submitted: prepared.packet,
   'review-response': { summary: 'Review admitted; CR publication pending.', tasks: [], crPublication: 'pending' } };
  if (prepared.projection) { entry.header.finalScopeIdentity = prepared.projection.identity; entry.header.attributionState = 'pending'; }
@@ -123,6 +133,6 @@ export async function prepareReviewAdmission(project: string, reviewId: string, 
  }
  const checkpoint = saved ? { ...saved, attempts: [...saved.attempts, entry] } : { schemaVersion: 1 as const, reviewId, project: canonical, storyId: prepared.packet.storyId, ...(prepared.packet.taskId ? { taskId: prepared.packet.taskId } : {}), attempts: [entry] };
  // Include the appended input in the existing whole-checkpoint bound before any caller can save it.
- decodeReview(CheckpointSchema, checkpoint);
+ validateReviewSnapshot(CheckpointSchema, checkpoint);
  return capacity({ path, checkpoint, attempt: entry, prepared, priorTaskInputs });
 }

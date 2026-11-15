@@ -5,6 +5,21 @@
 export interface MemoryLease { release(): void; }
 export interface MemoryReservation extends MemoryLease { resize(bytes: number, stage: string): void; }
 export interface MemoryAllocation { readonly bytes: Uint8Array; readonly lease: MemoryLease; }
+/** Metadata only. Calling this on a source body is a programming error, not a
+ * reason to expand bytes into numeric JSON properties. */
+export function metadataJsonBound(value: unknown): number {
+ if (value === null || value === undefined) return 4;
+ if (typeof value === 'boolean') return 5;
+ if (typeof value === 'number') return 32;
+ if (typeof value === 'string') return value.length * 6 + 2;
+ if (value instanceof Uint8Array) throw new Error('Binary payload cannot be serialized as preparation metadata');
+ let bytes = 2;
+ if (Array.isArray(value)) { for (const item of value) bytes += metadataJsonBound(item) + 1; }
+ else if (value && typeof value === 'object') { for (const key in value) if (Object.hasOwn(value, key)) bytes += metadataJsonBound(key) + metadataJsonBound(Reflect.get(value, key)) + 2; }
+ else throw new Error('Unsupported preparation metadata');
+ if (!Number.isSafeInteger(bytes)) throw new Error('Preparation metadata size exceeds representation');
+ return bytes;
+}
 export class ReviewMemoryBudget {
  private used = 0;
  private peak = 0;

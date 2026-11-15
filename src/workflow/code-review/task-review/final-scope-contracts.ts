@@ -2,7 +2,7 @@
 import { Type } from '@sinclair/typebox';
 import type { Static, TSchema } from '@sinclair/typebox';
 import type { SelectedChange } from './packet.js';
-import type { PinnedBlob } from './sources.js';
+import type { BlobIdentity, PinnedBlob } from './sources.js';
 
 const object = <T extends Record<string, TSchema>>(fields: T) => Type.Object(fields, { additionalProperties: false });
 const text = Type.String({ minLength: 1, maxLength: 65536 });
@@ -24,15 +24,15 @@ export const OriginDispositionSchema = object({ source: OriginRefSchema, sourceP
  replacementWitnesses: Type.Array(OriginRefSchema, { maxItems: 10000 }),
 });
 export type OriginDisposition = Static<typeof OriginDispositionSchema>;
-export interface ProjectedEntry {
+export interface ProjectedEntry<Blob extends BlobIdentity = PinnedBlob> {
  readonly originChangeIndex: number; readonly commit: string; readonly path: string;
- readonly after: PinnedBlob | null; readonly findingScope: 'selected' | 'none'; readonly segments: readonly ReviewedSegment[];
+ readonly after: Blob | null; readonly findingScope: 'selected' | 'none'; readonly segments: readonly ReviewedSegment[];
 }
-export interface ReviewProjection {
- readonly revision: string; readonly entries: readonly ProjectedEntry[];
+export interface ReviewProjection<Blob extends BlobIdentity = PinnedBlob> {
+ readonly revision: string; readonly entries: readonly ProjectedEntry<Blob>[];
  readonly dispositions: readonly OriginDisposition[]; readonly identity: string;
 }
-export interface EffectiveTaskChange extends ProjectedEntry { readonly origin: SelectedChange; }
+export interface EffectiveTaskChange<Blob extends BlobIdentity = PinnedBlob> extends ProjectedEntry<Blob> { readonly origin: SelectedChange<Blob>; }
 export const AcceptedDecisionSchema = Type.Union([
  object({ action: Type.Literal('initial') }),
  object({ action: Type.Literal('reassess'), reason: text }),

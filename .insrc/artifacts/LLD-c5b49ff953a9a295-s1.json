@@ -49,6 +49,13 @@
         "choice": "Backfill: a one-off repair writes an ISSUE (kind 'change') for each of the 16 existing headless trivial builds from its BUILD's request text (focus and triage rationale), under the BUILD's own hash, approved by the migration actor with the reason recorded, then completes each Story through the existing completion walk.",
         "rationale": "User decision 2026-11-15: chose the backfill alternative over leaving the 16 builds headless.",
         "resolvedAt": "2026-11-15T06:02:16.513Z"
+      },
+      "q7af2d70d": {
+        "question": "ts1: The Story carries no acceptance criteria of its own; ac1-ac5 are the five fix-intent points of ISSUE-c5b49ff953a9a295.",
+        "status": "resolved",
+        "choice": "Accept ac1-ac5 as the five fix-intent points of ISSUE-c5b49ff953a9a295, plus ac6 for the backfill.",
+        "rationale": "The standalone Story has no acceptance criteria of its own; the ISSUE's fix intent is the spec.",
+        "resolvedAt": "2026-11-15T06:02:30.011Z"
       }
     }
   },

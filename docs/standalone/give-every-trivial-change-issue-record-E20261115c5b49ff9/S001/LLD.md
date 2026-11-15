@@ -286,6 +286,8 @@ requireEpicAnchor (or the creation context) falls back to the work item's BUILD 
 
 - `q7aeab4c0` — q1: The 16 existing headless trivial builds. Recommended: leave them and record the decision, because a backfilled ISSUE would be system-written after the fact, not a person-reviewed trace. Alternative: a one-off repair that writes a kind 'change' ISSUE from each BUILD's focus under its own hash, approved by the migration actor, then completes each Story.
   - **resolved**: Backfill: a one-off repair writes an ISSUE (kind 'change') for each of the 16 existing headless trivial builds from its BUILD's request text (focus and triage rationale), under the BUILD's own hash, approved by the migration actor with the reason recorded, then completes each Story through the existing completion walk. — User decision 2026-11-15: chose the backfill alternative over leaving the 16 builds headless. _(2026-11-15T06:02:16.513Z)_
+- `q7af2d70d` — ts1: The Story carries no acceptance criteria of its own; ac1-ac5 are the five fix-intent points of ISSUE-c5b49ff953a9a295.
+  - **resolved**: Accept ac1-ac5 as the five fix-intent points of ISSUE-c5b49ff953a9a295, plus ac6 for the backfill. — The standalone Story has no acceptance criteria of its own; the ISSUE's fix intent is the spec. _(2026-11-15T06:02:30.011Z)_
 
 ## Citations
 

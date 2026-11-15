@@ -53,36 +53,21 @@ export function readScopeRef(args: TemplateExecuteArgs, templateLabel: string): 
 // Filesystem walking
 // ---------------------------------------------------------------------------
 
-/** Hard cap on files inspected per runtime call. Plans never need
- *  the entire filesystem; this is a backstop against runaway walks. */
-export const DEFAULT_FILE_CAP = 5000;
-
 /**
  * The completeness record of a runtime built on `walkFiles`: `returned` items
- * came out of the files the walk yielded. A walk that stopped at its cap is a
- * limit on what the result was built FROM; the walk's own exclusions are
- * stated as its rule.
+ * came out of the files the walk yielded, every one of them. The walk's own
+ * exclusions are stated as its rule.
  */
 export function fileWalkCompleteness(
 	returned:  number,
-	truncated: boolean,
 	extra: {
 		readonly limited?: readonly ReachedLimit[] | undefined;
 		readonly skipped?: readonly SkippedItem[] | undefined;
-		readonly cap?:     number | undefined;
 	} = {},
 ): Completeness {
-	const cap = extra.cap ?? DEFAULT_FILE_CAP;
-	const limited: ReachedLimit[] = [...(extra.limited ?? [])];
-	if (truncated) {
-		limited.push({
-			what: 'files walked', limit: cap, scope: 'source',
-			reason: `the file walk stops at ${cap} files; files beyond that were not inspected`,
-		});
-	}
 	return buildCompleteness({
 		returned,
-		limited,
+		...(extra.limited !== undefined && extra.limited.length > 0 ? { limited: extra.limited } : {}),
 		...(extra.skipped !== undefined ? { skipped: extra.skipped } : {}),
 		basis:     'filesystem',
 		basisNote: `Not walked, by rule: symbolic links, and anything the repository's ignore rules exclude (its .gitignore files, the clone's exclude file and the global gitignore; a file git tracks is always walked), generated or minified files, and the .git and .insrc directories.`,
@@ -116,14 +101,14 @@ function enclosingRepo(dir: string): string {
  * followed. What the repository's FileFilter excludes is not walked
  * (Epic c2ba6fa6 s6): the same rule the indexer uses.
  *
- * Stops + flags `truncated=true` after `cap` files; a null cap walks to the
- * end, with `truncated` false. A directory below the
+ * With a `cap`, stops + flags `truncated=true` after that many files; with none (the
+ * default) the walk goes to the end, with `truncated` false. A directory below the
  * root that cannot be read is returned in `unreadable`; a root that cannot
  * be read throws. The caller puts both in its completeness record.
  */
 export async function walkFiles(
 	root: string,
-	capArg: number | null = DEFAULT_FILE_CAP,
+	capArg: number | null = null,
 ): Promise<{ files: readonly WalkedFile[]; truncated: boolean; unreadable: readonly SkippedItem[] }> {
 	// null: no cap, the walk goes to the end. Only the request measure asks for it.
 	const cap = capArg ?? Infinity;

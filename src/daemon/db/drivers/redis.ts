@@ -188,7 +188,7 @@ export class RedisDriver implements KvDriver {
 		const namespaces: KvNamespace[] = sorted.map(([name, approxCount]) => ({
 			name, kind: 'prefix', approxCount,
 		}));
-		return { namespaces, truncated: scanned >= samplePool && cursor !== '0', supported: true };
+		return { namespaces, truncated: scanned >= samplePool && cursor !== '0', supported: true, sampled: true };
 	}
 
 	async describeNamespace(name: string, opts?: { readonly sampleSize?: number }): Promise<KvNamespaceDescription> {

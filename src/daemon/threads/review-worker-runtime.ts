@@ -24,8 +24,7 @@ import { registerBuiltinTemplates } from '../../analyze/planner/templates/bootst
 import { registerBuiltinRuntimes } from '../../analyze/runtimes/bootstrap.js';
 import { isLiveStoreOwnerDeclared } from '../../db/graph/store.js';
 import { getToolSettings } from '../tools/config.js';
-import { updateReviewWorkerResource } from './review-worker-resources.js';
-import type { ReviewProcessReservation, ConfirmedReviewLeaseClosure } from '../../shared/review-native.js';
+import { ReviewWorkerPreparation } from './review-worker-preparation.js';
 import { isDeepStrictEqual } from 'node:util';
 import { CodeReviewWorker } from '../../workflow/code-review/task-review/worker-admission.js';
 import type { TaskReviewDeps } from '../../workflow/code-review/task-review/coordinator.js';
@@ -33,14 +32,13 @@ import { updateStoredCodeCheckpoint,loadStoredCheckpoint,checkpointPath } from '
 import { isCodeAdmission } from '../../workflow/code-review/task-review/contracts.js';
 import { DesignReviewWorker } from '../../workflow/review/design-review/worker-admission.js';
 import type { DesignCoordinatorDeps } from '../../workflow/review/design-review/coordinator.js';
-import { loadStoredDesignCheckpoint,qualifiedDesignProjection } from '../../workflow/review/design-review/checkpoint.js';
+import { loadStoredDesignCheckpoint } from '../../workflow/review/design-review/checkpoint.js';
 import { isDesignAdmission } from '../../workflow/review/design-review/contracts.js';
 import { reviewProgressPublication } from './review-progress.js';
 import { requireClosedReviewResources } from '../../workflow/review/resource-recovery.js';
 import { publishTaskCheckpoint } from '../../workflow/code-review/task-review/publication.js';
 import { publishDesignReview } from '../../workflow/review/design-review/publication.js';
 import { roundWriterFor } from '../lifecycle-registry.js';
-import { saveWorkerCodeCheckpoint } from '../../workflow/code-review/task-review/worker-checkpoint.js';
 import { recordDesignAdmission } from '../../workflow/review/design-review/approval.js';
 import { familyForClient } from '../model-registry.js';
 
@@ -60,22 +58,31 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
  registerBuiltinTools();registerBuiltinTemplates();registerBuiltinRuntimes();
  const transport=new ReviewWorkerNativeTransport(init.nativePort,init.review);
  const controllerLifetime=new AbortController();
+ if(!init.preparation)throw new Error('Private review preparation bootstrap required');
  await withReviewNativeTransport(transport,async()=>{
+  const rawSources=new RegistryReviewSources({repoPath:init.review.key.project,sessionId:`review:${init.review.key.reviewId}`,requestId:0,send:()=>{}});
+  const adapter=deps.code?.sources;
+  const preparation=await ReviewWorkerPreparation.open(init.review,init.preparation,adapter?{commit:(...a)=>adapter.commit(...a),file:(...a)=>adapter.file(...a),isAncestor:(...a)=>adapter.isAncestor(...a),changedRanges:(...a)=>adapter.changedRanges(...a),pathChanges:(...a)=>adapter.pathChanges(...a),objectInventory:(...a)=>rawSources.objectInventory(...a),objects:(...a)=>rawSources.objects(...a)}:rawSources);
+  await preparation.run(async()=>{
   const router=()=>createRoleRouter({clientDefault:familyForClient(init.review.route?.client),cliTimeoutMs:900000});
   const provider=()=>router().resolveProviderForRole('review',loadAnalyzeConfig(),init.review.key.project).provider;
-  const sources=deps.code?.sources??new RegistryReviewSources({repoPath:init.review.key.project,sessionId:`review:${init.review.key.reviewId}`,requestId:0,send:()=>{}});
-  const publishCode=(project:string,id:string,hash:string,baseline?:import('../../workflow/code-review/task-review/capacity.js').CapacityBaseline)=>publishTaskCheckpoint(project,hash,id,{sources,through:roundWriterFor(project,{id:'insrc:code-review',kind:'system',properties:{}}),save:saveWorkerCodeCheckpoint,saveStored:async(path,candidate)=>{await updateStoredCodeCheckpoint(path,current=>{
-   if(!current||current.attempts.length!==candidate.attempts.length)throw new Error('Publication checkpoint changed');
-   return{...candidate,schemaVersion:2,attempts:candidate.attempts.map(a=>{const guard=current.attempts.find(c=>c.header.attempt===a.header.attempt)?.resourceGuard;return guard?{...a,resourceGuard:guard}:a;})};
-  });},...(baseline?{baseline}:{})});
-  const code=init.review.key.family==='code'?new CodeReviewWorker(init.review,deps.code??{sources,provider,publish:publishCode},init.review.epicHash):undefined;
-  const publishDesign:typeof publishDesignReview=async input=>{
-   const stored=await loadStoredDesignCheckpoint(input.project,input.reviewId);
-   if(!stored||!isDeepStrictEqual(qualifiedDesignProjection(stored),input))throw new Error('Publication projection no longer matches the durable design evidence');
-   return publishDesignReview(stored);
+  const sources=preparation.sources;
+  const publishCode=async(project:string,id:string,hash:string,baseline?:import('../../workflow/code-review/task-review/capacity.js').CapacityBaseline)=>{await preparation.preparePublication();return publishTaskCheckpoint(project,hash,id,{
+   sources,through:roundWriterFor(project,{id:'insrc:code-review',kind:'system',properties:{}}),
+   preparation:{authorize:()=>preparation.authorizePublication(),preparePacket:(...args)=>preparation.publicationPacket(...args),save:cp=>preparation.savePublication(cp)},
+   ...(baseline?{baseline}:{})});};
+  const code=init.review.key.family==='code'?new CodeReviewWorker(init.review,{...deps.code,sources,provider:deps.code?.provider??provider,publish:publishCode,prepare:preparation.prepareCode},init.review.epicHash):undefined;
+  const publishDesign:typeof publishDesignReview=async()=>{
+   await preparation.preparePublication();
+   const cp=await preparation.history.canonical();
+   if(!cp||'storyId'in cp)throw new Error('Canonical design history required');
+   return publishDesignReview(cp,{preparation:{authorize:()=>preparation.authorizePublication()}});
   };
-  const design=init.review.key.family==='design'?new DesignReviewWorker(init.review,deps.design?{...deps.design,publish:init.review.maintenance?publishDesign:deps.design.publish??publishDesign}:{admit:recordDesignAdmission,publish:publishDesign,provider:()=>{const resolved=router().resolveProviderForRole('review',loadAnalyzeConfig(),init.review.key.project);return{provider:resolved.provider,model:resolved.resolution.model};}}):undefined;
+  const design=init.review.key.family==='design'?new DesignReviewWorker(init.review,{...deps.design,prepare:preparation.prepareDesign,assertSubject:preparation.assertDesign,admit:deps.design?.admit??recordDesignAdmission,publish:publishDesign,provider:deps.design?.provider??(()=>{const resolved=router().resolveProviderForRole('review',loadAnalyzeConfig(),init.review.key.project);return{provider:resolved.provider,model:resolved.resolution.model};})}):undefined;
   const coordinator=code?.coordinator??design!.coordinator;
+  let designReady:Promise<void>|undefined;
+  const ensureDesign=()=>designReady??=preparation.initializeDesign(deps.design?.prepare);
+  let cachedPublication:import('./review-progress.js').ReviewProgressPublication|undefined;
   let progressSequence=0,publishing=false,maintenanceWork=false,publishingStored=false,lastProgressStamp:string|undefined,observationAttempt=init.review.attempt;
   const snapshot=async()=>{
    const observation=code?await code.progress():await design!.progress();
@@ -86,7 +93,17 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
     if(code){Object.assign(observation,{status:'running',executionState:'active',crPublication:'pending'});if('progress'in observation&&observation.progress)Object.assign(observation.progress,{phase:'cr_publication',observedAt:new Date().toISOString()});}
     else Object.assign(observation,{status:'running',phase:'publishing',observedAt:new Date().toISOString(),requiresUserInput:false});
    }
-   return reviewProgressPublication({...init.review,attempt:observationAttempt},++progressSequence,observation);
+   return cachedPublication=reviewProgressPublication({...init.review,attempt:observationAttempt},++progressSequence,observation);
+  };
+  preparation.onObservation=update=>{
+   const old=cachedPublication;if(!old||'admission'in old.observation&&old.observation.admission)return;
+   try{
+    const observation=update.family==='code'&&'reviewId'in old.observation?{...old.observation,progress:update.progress}:
+     update.family==='design'&&'status'in update.progress?{...old.observation,...update.progress}:undefined;
+    if(!observation)return;
+    cachedPublication=reviewProgressPublication({...init.review,attempt:observationAttempt},++progressSequence,observation as import('./review-progress.js').ReviewObservation);
+    parentPort!.postMessage(cachedPublication);
+   }catch{/* A semantic transition is published from its committed checkpoint. */}
   };
   const publish=async()=>{if(publishing)return;publishing=true;try{const file=await stat(reviewWorkerCheckpoint(init.review.key),{bigint:true});const stamp=`${file.ino}:${file.mtimeNs}:${file.ctimeNs}:${file.size}`;if(stamp===lastProgressStamp)return;parentPort!.postMessage(await snapshot());lastProgressStamp=stamp;}catch{/* Preserve the last validated snapshot; no fabricated completion. */}finally{publishing=false;}};
   const identity=(raw:unknown):Record<string,unknown>=>{
@@ -112,11 +129,17 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
     parentPort!.postMessage(await snapshot());
     const {project,reviewId}=init.review.key;
     if(code){if(!init.review.epicHash)throw new Error('Stored code publication requires its epic scope');return await publishCode(project,reviewId,init.review.epicHash);}
-    return await design!.coordinator.recover({phase:'recover',repo:project,reviewId,attempt:init.review.attempt,actionId:p['actionId'],operation:'retry_publication'});
+    await ensureDesign();
+    const result=await design!.coordinator.recover({phase:'recover',repo:project,reviewId,attempt:init.review.attempt,actionId:p['actionId'],operation:'retry_publication'});
+    const saved=await preparation.history.canonical(),last=saved?.attempts.at(-1);
+    // A replayed action can return before calling the publisher. This new
+    // phase still needs its own closed, acknowledged proof for later cleanup.
+    if(last&&'publication'in last&&last.publication?.state==='complete')await preparation.authorizePublication();
+    return result;
     }catch(error){
      if(code)await updateStoredCodeCheckpoint(reviewWorkerCheckpoint(init.review.key),current=>{
       const last=current?.attempts.at(-1);if(!current||!last||isCodeAdmission(last)||last.header.status==='failed')return current!;
-      last['review-response'].crPublication='pending';last['review-response'].error=(error instanceof Error?error.message:String(error)).slice(0,2048);return current;
+      last['review-response'].crPublication='pending';last['review-response'].error=`CR publication failed: ${error instanceof Error?error.message:String(error)}`.slice(0,2048);return current;
      });
      throw error;
     }finally{maintenanceWork=false;publishingStored=false;try{parentPort!.postMessage(await snapshot());}catch{/* Preserve durable publication failure if observation cannot be refreshed. */}}
@@ -150,7 +173,7 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
    },
    'review.worker.recover':async(raw,context)=>{
     const p=identity(raw);if(!design||!context?.reviewOwnerNonce)throw new Error('Trusted design recovery required');
-    const result=await design.recover(p['request'],init.review.reviewer==='controller'?{id:context.reviewOwnerNonce,signal:controllerLifetime.signal}:undefined);observationAttempt=result.attempt;return result;
+    await ensureDesign();const result=await design.recover(p['request'],init.review.reviewer==='controller'?{id:context.reviewOwnerNonce,signal:controllerLifetime.signal}:undefined);observationAttempt=result.attempt;return result;
    },
    'review.worker.execute':async(raw,context)=>{
     if(init.review.maintenance)throw new Error('Stored-evidence worker cannot execute a reviewer');
@@ -161,6 +184,7 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
     const owner=init.review.reviewer==='controller'?{id:context.reviewOwnerNonce,signal:controllerLifetime.signal}:undefined;
     if(code){if(p['operation']==='resume')await code.assertResume();code.execute(owner,p['operation'] as 'start'|'resume');}
     else{
+     await ensureDesign();
      if(init.review.submitted&&typeof init.review.submitted==='object'&&Reflect.get(init.review.submitted,'phase')==='recover'){const result=await design!.recover(init.review.submitted,owner);observationAttempt=result.attempt;return result;}
      if(p['operation']!=='start')throw new Error('Design recovery requires its typed recovery action');design!.execute(owner);
     }
@@ -195,8 +219,6 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
     await updateStoredCodeCheckpoint(path,current=>{const last=current?.attempts.at(-1);if(!last||last.header.attempt!==init.review.attempt||last.header.reviewer!==init.review.reviewer||!isDeepStrictEqual(last.submitted,init.review.submitted))throw new Error('Conflicting saved review admission');return current!;});
     return{kind:'review-admission-saved',key:init.review.key,incarnation:init.review.incarnation,attempt:init.review.attempt,checkpointPath:path};
    },
-   'review.worker.resource.open':async(raw:unknown)=>{const p=identity(raw);return updateReviewWorkerResource(init.review,'open',p['reservation'] as ReviewProcessReservation);},
-   'review.worker.resource.close':async(raw:unknown)=>{const p=identity(raw);return updateReviewWorkerResource(init.review,'close',p['reservation'] as ReviewProcessReservation,p['closure'] as ConfirmedReviewLeaseClosure);},
    'review.worker.describe':async(raw:unknown)=>{identity(raw);return{key:init.review.key,incarnation:init.review.incarnation,threadId,coordinator:coordinator.constructor.name,nativeBound:!!reviewNativeTransport(),storeOwnerDeclared:isLiveStoreOwnerDeclared(),shellTimeoutMs:getToolSettings().shell.defaultTimeoutMs};},
    'review.worker.progress':async(raw:unknown)=>{
     const params=identity(raw),attempt=params['attempt'];if(!Number.isSafeInteger(attempt)||Number(attempt)<1)throw new Error('Invalid review attempt');
@@ -222,9 +244,8 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
    throw new Error('Unknown native bootstrap probe');
   };
   const dispatch=directDispatch(handlers);
-  serveRequests(parentPort!,(request,deliver)=>withReviewNativeTransport(transport,()=>dispatch(request,deliver)));
+  serveRequests(parentPort!,(request,deliver)=>withReviewNativeTransport(transport,()=>preparation.run(()=>dispatch(request,deliver))));
   parentPort!.postMessage('worker-ready');
-  await requireClosedReviewResources(init.review.key);
   let receipt;
   if(init.review.maintenance){
    const cp=code?await loadStoredCheckpoint(reviewWorkerCheckpoint(init.review.key)):await loadStoredDesignCheckpoint(init.review.key.project,init.review.key.reviewId);
@@ -232,7 +253,9 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
    if(!cp||attempt!==init.review.attempt)throw new Error('Stored review attempt does not match maintenance request');
    receipt={kind:'review-admission-saved' as const,key:init.review.key,incarnation:init.review.incarnation,attempt:init.review.attempt,checkpointPath:reviewWorkerCheckpoint(init.review.key)};
   }else receipt=await persistReviewWorkerAdmission(init.review);
+  await preparation.activate();
   parentPort!.postMessage({...receipt,progress:await snapshot()});
   setInterval(()=>{void publish();},500).unref();
+  });
  });
 }

@@ -359,3 +359,66 @@ test("the plan's and the run's tasksFailed and the daemon's response carry the c
 		purgeRunForTests(runId);
 	}
 });
+
+test('the answer names sampled, failed and uncovered sources and is complete only where its evidence supports it', async () => {
+	const SAMPLED = buildCompleteness({
+		returned: 2, basis: 'data-source',
+		skipped: [{ what: 'namespaces outside the listing', reason: 'the store has no namespaces; they are derived from a sample of its keys, which are not scanned in full' }],
+		basisNote: "The namespaces are derived from a sample of the store's keys, which are not scanned in full, so others may exist.",
+	});
+	const UNCOVERED = buildCompleteness({
+		returned: 1, basis: 'doc-index',
+		partlyRead: [{ what: 'docs/guide.md § Refund rules', readChars: 120, totalChars: null, totalNote: 'the file changed since it was indexed' }],
+	});
+	_resetRuntimeRegistryForTests();
+	registerTemplateRuntime(runtime('demo.sampled', { namespaces: ['svc'] }, SAMPLED));
+	registerTemplateRuntime(runtime('demo.uncovered', { sections: ['Refund rules'] }, UNCOVERED));
+	registerTemplateRuntime({ templateId: 'demo.broken', execute: async () => { throw new Error('the search ran past its deadline'); } });
+	registerTemplateRuntime(runtime('demo.whole', { other: 1 }, WHOLE));
+	registerTemplateRuntime(runtime('demo.aggregate', { report: FINAL }, aggregateReportCompleteness()));
+
+	const tree = node(plan([
+		task({ taskId: 't01', template: 'demo.sampled', produces: ['namespaces'] }),
+		task({ taskId: 't02', template: 'demo.uncovered', produces: ['sections'] }),
+		task({ taskId: 't03', template: 'demo.broken', produces: ['hits'] }),
+		task({ taskId: 't04', template: 'demo.whole', produces: ['other'] }),
+		task({ taskId: 't05', template: 'demo.aggregate', produces: ['report'], consumes: ['namespaces', 'sections', 'other'] }),
+	]));
+	const runId = uniqueRunId('sampled-failed-uncovered');
+	try {
+		const executed = await runExecutor({ tree, intent: INTENT, runId });
+		const { report } = concludeRun(tree, executed, CONTEXT_WHOLE);
+
+		// Not complete: the sample and the uncovered section are named as incomplete, the failed search as failed, and the
+		// whole source is named nowhere.
+		assert.equal(report.completeness.complete, false);
+		assert.deepEqual(report.completeness.incomplete.map(n => n.sourceId), ['t01', 't02']);
+		assert.match(report.completeness.incomplete[0]!.reason, /sample of its keys/, 'the sampled source says it is a sample');
+		assert.match(report.completeness.incomplete[1]!.reason, /docs\/guide\.md § Refund rules|file changed since it was indexed/, 'the uncovered section is named with its reason');
+		assert.deepEqual(report.completeness.failed.map(n => n.sourceId), ['t03']);
+		assert.match(report.completeness.failed[0]!.reason, /ran past its deadline/);
+		assert.equal(report.completeness.incomplete.concat(report.completeness.failed).some(n => n.sourceId === 't04'), false, 'a whole source is not named');
+		// No source is described as having stopped at a count: no limit is reached anywhere.
+		assert.equal(report.completeness.incomplete.some(n => /limit of/.test(n.reason)), false);
+		assert.match(renderCompletenessLine(report), /^Incomplete: 2 incomplete: t01 — .*\| t02 — .*1 failed: t03 — /);
+		assert.deepEqual(report.completeness.basisNotes?.filter(n => /sample of the store's keys/.test(n)).length, 1, 'the sample note is carried once');
+	} finally {
+		purgeAllTaskOutputs(runId);
+	}
+
+	// Without the sampled, uncovered and failed sources, the same run is complete: only the evidence decides.
+	_resetRuntimeRegistryForTests();
+	registerTemplateRuntime(runtime('demo.whole', { other: 1 }, WHOLE));
+	registerTemplateRuntime(runtime('demo.aggregate', { report: FINAL }, aggregateReportCompleteness()));
+	const wholeTree = node(plan([
+		task({ taskId: 't01', template: 'demo.whole', produces: ['other'] }),
+		task({ taskId: 't02', template: 'demo.aggregate', produces: ['report'], consumes: ['other'] }),
+	]));
+	const wholeRun = uniqueRunId('whole-only');
+	try {
+		const done = concludeRun(wholeTree, await runExecutor({ tree: wholeTree, intent: INTENT, runId: wholeRun }), CONTEXT_WHOLE);
+		assert.equal(done.report.completeness.complete, true);
+	} finally {
+		purgeAllTaskOutputs(wholeRun);
+	}
+});

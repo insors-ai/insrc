@@ -2,6 +2,7 @@
 import { Type } from '@sinclair/typebox';
 import type { Static } from '@sinclair/typebox';
 import { Value } from '@sinclair/typebox/value';
+import { ReviewPreparationProgressSchema, ReviewOperationStateSchema } from './review-preparation.js';
 const text=Type.String({minLength:1,maxLength:256}),count=Type.Integer({minimum:0,maximum:Number.MAX_SAFE_INTEGER});
 /** Bounded display/observation data only; never findings, commands or authority. */
 export const ReviewWorkerStatusSchema=Type.Object({
@@ -13,10 +14,17 @@ export const ReviewWorkerStatusSchema=Type.Object({
  error:Type.Optional(Type.Object({code:text,summary:Type.String({minLength:1,maxLength:2048})},{additionalProperties:false}))},{additionalProperties:false})),
  task:Type.Optional(Type.Union([Type.Null(),Type.Object({id:text,name:Type.String({maxLength:256}),position:count,total:count},{additionalProperties:false})])),
  executionId:Type.Optional(text),
+ preparation:Type.Optional(ReviewPreparationProgressSchema),operationState:Type.Optional(ReviewOperationStateSchema),
 },{additionalProperties:false});
 export type ReviewWorkerStatus=Static<typeof ReviewWorkerStatusSchema>;
-export function isReviewWorkerStatus(value:unknown):value is ReviewWorkerStatus{return Value.Check(ReviewWorkerStatusSchema,value)&&Number.isFinite(Date.parse(value.observedAt))&&value.completed<=value.total;}
+export function isReviewWorkerStatus(value:unknown):value is ReviewWorkerStatus{return Value.Check(ReviewWorkerStatusSchema,value)&&Number.isFinite(Date.parse(value.observedAt))&&value.completed<=value.total&&(value.preparation?.total===null||value.preparation?.total===undefined||value.preparation.logicalCompleted<=value.preparation.total);}
 export function reviewProgressLabel(value:ReviewWorkerStatus):string{
+ if(value.operationState==='cancelling')return 'Cancelling review';
+ if(value.operationState==='stopped')return 'Review stopped';
+ if(value.operationState==='resource_fenced')return 'Review stopped; resource clearance required';
+ if(value.preparation&&['pending','running'].includes(value.status)){
+  const p=value.preparation;return `Preparing review: ${p.stage.replaceAll('_',' ')} (${p.logicalCompleted}${p.total===null?'':`/${p.total}`})`;
+ }
  if(value.admission)return value.admission.state==='failed'?`Technical admission failure: ${value.admission.error?.summary??'Review preparation failed'}`:value.admission.state==='interrupted'?'Review preparation interrupted':'Preparing review';
  if(value.status==='failed')return 'Review failed';
  if(value.status==='interrupted')return 'Review interrupted';

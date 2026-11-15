@@ -5,6 +5,8 @@ import type { AnalyzeRunEvent } from '../../analyze/orchestrator/types.js';
 import { ProgressId, ProgressSequence, progressObject } from '../../shared/task-progress.js';
 import type { ProgressKind } from '../../shared/task-progress.js';
 import type { WorkflowProgress } from '../workflow-rpc.js';
+import type { ProducerPort } from './coordinator.js';
+
 import type { ProgressCoordinator } from './coordinator.js';
 
 const workflowStage = Type.Union([

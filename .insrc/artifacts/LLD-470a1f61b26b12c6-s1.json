@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1794655838217-bnsgsk",
+    "runId": "wf-1794738660757-dh2adn",
     "repoPath": "/home/subho/work/dev/insors/insrc",
-    "createdAt": "2026-11-14T11:34:19.508Z",
+    "createdAt": "2026-11-15T10:36:58.303Z",
     "epicCreatedAt": "2026-11-14T08:55:28.320Z",
     "attribution": {
       "outputs": [
@@ -15,14 +15,14 @@
         }
       ]
     },
-    "elapsedMs": 212014,
+    "elapsedMs": 352716,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "470a1f61b26b12c6",
     "epicSlug": "rework-review-preparation-context-lifecycle-end",
     "storyId": "s1",
-    "hldBaseRunId": "wf-1794655838217-bnsgsk",
-    "hldEffectiveHash": "f2e6e79848fc9ec8472d242ac26a60c8142ba34fd26a89c363a73453d43c16fe",
+    "hldBaseRunId": "wf-1794738660757-dh2adn",
+    "hldEffectiveHash": "c990be2b3102c4689ac10509c7511de8fa68638f5b91f1d164c5a2fe23486811",
     "hldAmendmentsApplied": [],
     "storyTitle": "Rework review preparation and context lifecycle end to end",
     "standalone": true,
@@ -31,9 +31,9 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 3,
-        "contentHash": "dab21a2695410f2612c729dbdbfdf21453540c93adbfd01f58134e7d41db6cd0",
-        "at": "2026-11-14T11:34:22.710Z",
+        "number": 4,
+        "contentHash": "e8ef19d741844acdad653a2960d7a19660bbd2e056e103353cac2692ce2698c6",
+        "at": "2026-11-15T10:37:00.330Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -41,31 +41,55 @@
         }
       },
       "signoffs": [],
+      "review": {
+        "revision": 4,
+        "reviewer": {
+          "id": "agent:design-review-daemon",
+          "kind": "agent",
+          "properties": {
+            "party": "daemon"
+          }
+        },
+        "party": "daemon",
+        "verdict": "block",
+        "counts": {
+          "HIGH": 0,
+          "MED": 0,
+          "LOW": 0
+        },
+        "at": "2026-11-15T10:50:09.553Z",
+        "report": {
+          "entityId": "LLD-470a1f61b26b12c6-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "fcc899dc8b617568e31bc7bbf74ea9840e921ecbddf98973aa09fd71171ec19c"
+        }
+      },
       "approval": {
-        "revision": 3,
+        "revision": 4,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-14T12:06:32.694Z",
+        "at": "2026-11-15T13:02:02.423Z",
         "override": {
-          "reason": "User explicitly approved revision 3 with override for unavailable independent design review: the broken preparation pipeline is the subject of this correction. Authorized self-review identified three MED findings; all corrected and focused self-review found no further HIGH/MED. Notes in /tmp/insrc-holistic-preparation-lld-self-review-round2.md. Performance remains unproven until implementation."
+          "reason": "User explicitly approved revision4 after presentation of complete independent six-chunk review with0 HIGH/MED/LOW findings and incomplete verification only: workflow analysis outputs were not resolvable during review and browser host unavailable for actual diagram rendering. Source/contracts assessed; analyzer evidence retained /tmp/review-preparation-analysis-470a1f61.json, measurements /tmp/insrc-review-performance-cold.json. Accept these stated verification limits and proceed to PLAN revision; no implementation/performance/deployment qualification is implied."
         }
       }
     },
-    "revision": 3,
     "envelope": {
       "description": "",
       "references": [],
       "attachments": []
     },
-    "rangeBase": "b26a1d66c21fff2e069ab3665e3f264995771dca"
+    "revision": 4,
+    "rangeBase": "f1cde2996ac939ba83e8307e8b31578d6ac1da2c"
   },
   "body": {
     "summary": {
       "audience": "technical",
-      "prose": "Preparation becomes one lifecycle-wide responsibility for both code and design review. Complete qualified context is reused under a private daemon-owned generation, while author, workflow and artifact freshness remain independently checked. Pinned input/feedback history stays in the review checkpoint; bounded live process/progress state moves out of the large history file, removing per-command rewrite amplification. Cold recovery, cancellation and publication use the same authority and durability rules as normal execution."
+      "prose": "Preparation becomes one lifecycle-wide responsibility for both code and design review. Complete qualified context is reused under a private daemon-owned generation, while author, workflow and artifact freshness remain independently checked. Pinned input/feedback history stays in the review checkpoint; bounded live process/progress state moves out of the large history file, removing per-command rewrite amplification. Cold recovery, cancellation and publication use the same authority and durability rules as normal execution. The T14 revision makes prepared views bounded during construction and every lifecycle read: complete packets and history are staged as immutable descriptors and leaves rather than retained or decoded together. The existing memory/disk limits and full-workload release gates remain unchanged."
     },
     "hldContextSlice": {
       "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
@@ -760,6 +784,36 @@
           "src/workflow/code-review/task-review/publication.ts",
           "src/workflow/review/design-review/publication.ts"
         ]
+      },
+      {
+        "entity": "Bounded prepared packet views and working-set ownership (revision)",
+        "change": "invariant-change",
+        "details": "Replace CodePreparation's eager Map<string,PreparedReviewPacket> payloads and whole 'code-packets' view with a bounded digest index and staged per-packet/task/file metadata plus content-addressed text/binary leaves in the existing review-context generation. One generation owns many packet descriptors; one descriptor identifies exactly one submitted/historical/route/derived tuple; task descriptors reference every selected change and exact provenance witness, tests and document refs without copying leaf payloads. Leaves can be referenced by many descriptors; generation owns immutable leaf lifetime, phase borrows pin generation until disposal. No reference crosses a generation's digest allowlist. Disk alone remains non-authoritative. Descriptor order, explicit null/undefined, array order, Unicode, Uint8Array and exact source OIDs survive round-trip. Hash canonical metadata with digest references, never JSON numeric-array encodings of payloads. No eager aggregate packets/inputs/clone just to derive source/scope/test identities: fold ordered descriptors incrementally with explicit domain/version and verify the same logical inputs. No changed selection, generic HEAD scope, history prefix or result omission. Stage each qualified validation window before retaining the next; validate current/historical packets and all feedback/origins in sequence. Pure final-scope/projection validators consume pinned source handles and bounded windows, retaining only bounded indexes/lineage metadata; after/before blobs and replacement/merge witnesses stay staged and are opened as required. Before/after provenance witnesses are not added to reviewer prompt scope. Execution/prompt/test coverage/publication/recovery consume task/file windows and release before the next; whole-story scope is traversed completely, not sampled. Do not implement a lazy wrapper that later materializes an oversized task or packet. Code and design readers share bounded codec/accounting. Existing small caller shape may be adapted but there is one qualified implementation and no unbounded compatibility fallback. memoryMaxBytes remains64MiB by default and bounds charged preparation buffers/decoded leaves/strings/indexes/descriptors/active consumer allocations together per phase; binary byteLength once per shared backing allocation, text conservative UTF-16 plus encoding/transient copies, bounded metadata overhead, reserve before allocate/read/clone/parse. Include writer/decoder scratch and concurrent source/consumer reservations; evict only unborrowed decoded data, keep reserved disk evidence. Release charges after last owner/reference, not while views remain reachable. Reject genuinely unrepresentable atomic units before allocation with a pointed capacity error; do not raise caps or drop content. Report memory high-water charged bytes versus actual heap/external/RSS separately; RSS is diagnostic, not falsely described as the configured whole-process cap. Streaming encoder/decoder chunks and descriptor index shards stay within batchMaxBytes and memoryMaxBytes. Reserve new disk objects before writes through existing host aggregate capacity, dedup content once; context sealing promotes/reuses staged leaves instead of copying the entire history twice. Manifest/index schemas explicitly version changed encoding; old derived generations are disposable and cold-requalified with exact history/native recovery gates, never accepted by an older decoder. No checkpoint/CR schema bump merely for derived storage. Per-view hashes, structural limits/depth/count checks, safe paths, atomic stage-to-ready, partial-write cleanup, no source/model side effects before proof, receipt/epoch checks and cleanup claims remain normative.",
+        "callSites": [
+          "src/workflow/review/code-preparation.ts",
+          "src/workflow/review/prepared-context.ts",
+          "src/workflow/review/source-session.ts",
+          "src/workflow/code-review/task-review/packet.ts",
+          "src/workflow/code-review/task-review/projection.ts",
+          "src/workflow/code-review/task-review/admission.ts",
+          "src/workflow/code-review/task-review/worker-checkpoint.ts",
+          "src/workflow/code-review/task-review/execution.ts",
+          "src/workflow/code-review/task-review/publication.ts",
+          "src/workflow/review/history-binding.ts",
+          "src/workflow/review/history-evidence.ts",
+          "src/daemon/threads/review-worker-preparation.ts"
+        ]
+      },
+      {
+        "entity": "Measured admission latency and durable acknowledgement (revision)",
+        "change": "invariant-change",
+        "details": "The2831ms observed admission exceeds2s but does not establish cause. Instrument monotonic segments for public request parsing/registration, stored guard inventory, route/author scope, worker startup, checkpoint/runtime bind, activation and acknowledgement; capture cold/warm overhead separately. Keep exact current owner/author/input fencing and durable input+active runtime before ack. Source acquisition/projection/history qualification occurs asynchronously in the dedicated registered review worker after ack, never the main daemon or chat-session thread; unavoidable pre-ack recovery checks use existing registered metadata workers and bounded DTOs. Optimize the measured slow segment with equivalent checks; no provisional success response, skipped guard checks, duplicate worker, detached unowned work or deferred durability. Pre-ack cancel races retain exact attempt/action ownership. Re-run supported-host controlled admission/cancel<=2s and progress-gap<=2s under two independent reviews. If the preserved bound cannot be met, report and stop rather than widen it.",
+        "callSites": [
+          "src/daemon/review-service.ts",
+          "src/daemon/threads/review-workers.ts",
+          "src/daemon/threads/review-worker-bootstrap.ts",
+          "src/daemon/threads/review-runtime-store.ts"
+        ]
       }
     ],
     "interactionWithShared": [],
@@ -897,6 +951,13 @@
           "response": "Validate current approval, permanent preservation and closed audit; finish only claimed deletions. Missing runtime without this cleanup-only proof remains fenced. Retain changed/foreign files.",
           "userImpact": "Explicit cleanup retry completes without source or model requalification.",
           "recoverable": true
+        },
+        {
+          "scenario": "Prepared-view construction or consumer window exceeds memory/disk reservation",
+          "detection": "Account source cache, descriptors, decoded leaves, strings and transient copies before allocation; verify staged content/digests and borrowed ownership at every window.",
+          "response": "Release unborrowed decoded data or split the semantic traversal without dropping witnesses; retain complete staged evidence. If an atomic unit cannot be bounded, fail with stage/chargedBytes/limit before allocation. Partial generation never becomes ready; canceled/fenced consumers release exact reservations only after disposal.",
+          "userImpact": "Pointed capacity failure instead of large JSON allocation or false complete scope; no provider call before readiness.",
+          "recoverable": true
         }
       ],
       "edgeCases": [
@@ -955,6 +1016,14 @@
         {
           "input": "Working set exceeds memory but fits reserved disk capacity.",
           "expected": "Evict decoded memory only, reopen verified staged results with zero duplicate physical source queries; insufficient pinned disk capacity fails before next batch."
+        },
+        {
+          "input": "One packet's JSON.stringify numeric-byte expansion exceeds64MiB while valid staged content fits reserved disk; four attempts share most evidence.",
+          "expected": "Binary content is encoded once as bytes, staged before further work, and traversed by bounded windows. Cold/warm/history/publication never hydrate all packets or all leaves. All selected scope and history checks execute; staged byte growth and charged memory are measured independently."
+        },
+        {
+          "input": "Admission takes2831ms on the controlled host.",
+          "expected": "Attribute time by monotonic admission segment, correct the measured cause and retain durable input/runtime activation before ack; do not assume Git/model work caused delay or relax2s gate."
         }
       ],
       "invariantsToPreserve": [
@@ -993,6 +1062,10 @@
         {
           "text": "Approved ISSUE-470a1f61b26b12c6 takes priority; no review restart or implementation approval is implied by issue approval.",
           "source": "c5"
+        },
+        {
+          "text": "Full171-file/four-attempt workload and64MiB memory,256MiB cache,4MiB batch defaults remain; no JSON expansion estimate substitutes for actual budget ownership or permission to remove a guard.",
+          "source": "c44"
         }
       ]
     },
@@ -1091,6 +1164,22 @@
           "fixturesNeeded": [
             "Recorded post-deployment smoke evidence; not a pre-BUILD-approval deployment prerequisite."
           ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Close the measured T14 prepared-view and admission gaps before re-running release qualification.",
+          "subjects": [
+            "Single-packet payload and four-attempt history larger than decoded memory budget but within reserved disk qualify with exact original scope/provenance/tests/feedback and zero repeated physical reads; both cold and warm publication/recovery consume bounded windows.",
+            "Instrument reserve-before-allocation and ownership high-water across source acquisition, projection/witness validation, packet descriptor staging, seal, reader, prompt/test-coverage traversal and publication; binary/text/metadata/transient copies included. No full-packet JSON stringify or whole-history view/clone reachable in production.",
+            "Versioned descriptor/index round-trip for Unicode, byte arrays, null/undefined, ordered scope, rename/deletion/replacement/merge/binary; missing/sharded/tampered digest or borrow revocation fails before use. Old derived encoding triggers explicit cold requalification, never old decoder acceptance.",
+            "Memory and aggregate disk pressure with two sessions, cancellation while window borrowed, interrupted stage/seal/promote/reopen/cleanup retain correct leases and reservations; no pinned eviction or duplicate evidence.",
+            "Monotonic admission segment traces distinguish request/guard/scope/startup/binding/activation; durable input/runtime acknowledgement, failure/cancel races and independent sessions retain exact authority while meeting<=2s on controlled host.",
+            "Re-run complete retained171-file/four-attempt coldx3/warm/history1,4,max gates with existing bounds and no hosted models; report charged-memory high-water, stagedbytes, heap/external/RSS, all stage durations and writer/query counters. A failed run blocks release; do not replace scope or raise limits."
+          ],
+          "fixturesNeeded": [
+            "Extend src/daemon/threads/__tests__/review-preparation-performance.test.ts and src/daemon/threads/__tests__/helpers/review-performance-worker.ts.",
+            "Extend existing prepared-context/source-session/code-preparation tests under src/workflow/review/__tests__/ and production-route tests under src/daemon/threads/__tests__/. New test paths in the plan remain explicitly proposed."
+          ]
         }
       ],
       "acceptanceMapping": [
@@ -1113,7 +1202,8 @@
           "provingTests": [
             "Counting source plan proves physical duplicate count0 across historical/current inputs; batched Git verifies identical object/projection witnesses.",
             "Budget hits, batch splitting, per-object oversize and missing refs fail precisely without omitted scope;1/4/max supported history scaling.",
-            "Memory-pressure/disk-reservation and interleaved-session retention fixtures."
+            "Memory-pressure/disk-reservation and interleaved-session retention fixtures.",
+            "Construction, staged packet inventory and every warm/cold lifecycle consumer obey the combined memory reservation high-water; no aggregate hydration."
           ]
         },
         {
@@ -1134,7 +1224,8 @@
           "criterionId": "ac6",
           "provingTests": [
             "Preparation counters change only with actual work; totals remain null until known and zero assessed tasks is not shown as completion.",
-            "Controlled native workload observation gap and admit/cancel acknowledgement<=2s; lost observers/storage show stale/unavailable honestly."
+            "Controlled native workload observation gap and admit/cancel acknowledgement<=2s; lost observers/storage show stale/unavailable honestly.",
+            "Admission per-segment trace and durable-ack race matrix with controlled<=2s acknowledgements."
           ]
         },
         {
@@ -1155,8 +1246,8 @@
       ]
     },
     "migration": {
-      "stateBefore": "As established by s1.analyzeBundles[0]-[2], code admission/publication/cleanup reconstruct historical source packets, design preparation captures latest target/ancestry, and native resource mutations use full family checkpoint writers. Existing stored code/design formats include qualified v1 and admission-aware v2 with embedded guards; permanent CR capability readers distinguish supported history versions. Progress stays at scope_preparation while source work executes. s1.analyzeBundles[3] records the actual stopped attempt4 and measured overhead. That stopped checkpoint and all other review histories must remain intact.",
-      "stateAfter": "New executions use one preparation/context lifecycle and new family checkpoint format3, bounded RuntimeV1 and derived PreparedContextManifestV1. The main host owns compact runtime writes and private current-epoch qualification receipts; immutable files alone grant no trust. Existing coordinators, complete pinned input/response history, code scope proof, latest-design invalidation, process-intent durability and human approval remain. Supported old formats are read-only inputs to explicit migration/qualification, not another execution engine. Permanent publication uses explicit new code CR4/design CR3 capability records when new runtime audit/binding data is present; old completed records remain unchanged. Stable source qualification is separate from successor history bindings; per-session disk staging retains verified queries under memory pressure; durable CleanupClaimV1 permits cleanup-only crash reconciliation.",
+      "stateBefore": "As established by s1.analyzeBundles[0]-[2], code admission/publication/cleanup reconstruct historical source packets, design preparation captures latest target/ancestry, and native resource mutations use full family checkpoint writers. Existing stored code/design formats include qualified v1 and admission-aware v2 with embedded guards; permanent CR capability readers distinguish supported history versions. Progress stays at scope_preparation while source work executes. s1.analyzeBundles[3] records the actual stopped attempt4 and measured overhead. That stopped checkpoint and all other review histories must remain intact. Revision baseline: t1-t13 implementation and passing focused records exist; t14 failed the retained production workload before provider readiness at98328304 estimated packet bytes with64MiB cap and2831ms admission. Compact native durability and source dedup passed their observed checks; this is not full qualification.",
+      "stateAfter": "New executions use one preparation/context lifecycle and new family checkpoint format3, bounded RuntimeV1 and a versioned derived PreparedContextManifest whose new staged packet/index encoding is distinguished from the former eager-view encoding. The main host owns compact runtime writes and private current-epoch qualification receipts; immutable files alone grant no trust. Existing coordinators, complete pinned input/response history, code scope proof, latest-design invalidation, process-intent durability and human approval remain. Supported old formats are read-only inputs to explicit migration/qualification, not another execution engine. Permanent publication uses explicit new code CR4/design CR3 capability records when new runtime audit/binding data is present; old completed records remain unchanged. Stable source qualification is separate from successor history bindings; per-session disk staging retains verified queries under memory pressure; durable CleanupClaimV1 permits cleanup-only crash reconciliation. Prepared descriptors and leaves are staged during construction and consumed in bounded windows throughout lifecycle; existing source/history/runtime authority is unchanged. Revision does not reset completed task records or turn their prior evidence into proof of new behavior.",
       "migrationSteps": [
         {
           "order": 1,
@@ -1175,96 +1266,88 @@
         },
         {
           "order": 4,
-          "action": "Qualify exact scope equivalence and all failure/route matrices, then the managed native cold/warm/history-growth/concurrent performance gates. Complete the required independent code review and human BUILD approval before publishing. A failed performance or correctness gate blocks returning to worker-isolation qualification.",
+          "action": "Before final performance qualification, extend the same approved LLD/PLAN with sequenced corrective tasks for bounded typed codec/index storage, incremental projection/packet consumers, all lifecycle reads, admission attribution/correction and regression tests. Preserve t1-t13 ids/history; keep t14 qualification incomplete until corrections pass. No production implementation before revised artifacts are reviewed/presented and explicitly approved.",
           "rollbackable": true
         },
         {
           "order": 5,
-          "action": "Coordinate other active reviews and retain their checkpoints before the explicit approved daemon update/restart. Update daemon and required MCP/IPC/IDE DTO readers together and reconnect consumers; advertise supported new preparation/runtime/cancel capabilities. This needs a coordinated restart and does not promise zero downtime or in-flight completion.",
+          "action": "Cut over prepared-view writer and every cold/warm consumer together in isolated fixtures. Explicitly version the changed derived manifest/index encoding. Reject old derived views as qualification; retain history/runtime and exact unresolved leases and require normal cold requalification under existing authority. Do not transform pinned checkpoint inputs/results or permanent CRs, add an old eager fallback, trust persisted hashes after restart or erase an active borrow. Remove only proven inactive disposable generations under existing cleanup/capacity rules.",
           "rollbackable": true
         },
         {
           "order": 6,
-          "action": "On explicit use of a supported old inactive review, acquire its exact owner/target fence, validate old input/history and all embedded resource guards, create an initializing RuntimeV1, commit the upgraded format3 reference preserving submitted/results/actions byte values, then activate only a proven common binding. Preserve original migration evidence until successful completion/cleanup. Any unresolved old/native guard or uncertain write blocks activation and requires existing explicit resource recovery; never replace it with an empty guard. No automatic bulk rewrite of completed permanent CRs.",
+          "action": "Qualify exact scope equivalence and all failure/route matrices, then the managed native cold/warm/history-growth/concurrent performance gates. Complete the required independent code review and human BUILD approval before publishing. A failed performance or correctness gate blocks returning to worker-isolation qualification.",
           "rollbackable": true
         },
         {
           "order": 7,
-          "action": "At cold daemon startup invalidate private qualification receipts. Treat retained manifests as untrusted hints; first authorized phase reconstructs/qualifies required immutable evidence once through the bounded source session and refreshes current authority/content. Reconcile a committed result/publication boundary from preserved checkpoint/CR evidence without invoking a model solely for bookkeeping. No automatic resume or new attempt.",
+          "action": "Coordinate other active reviews and retain their checkpoints before the explicit approved daemon update/restart. Update daemon and required MCP/IPC/IDE DTO readers together and reconnect consumers; advertise supported new preparation/runtime/cancel capabilities. This needs a coordinated restart and does not promise zero downtime or in-flight completion.",
           "rollbackable": true
         },
         {
           "order": 8,
-          "action": "Perform post-deployment controlled code/design smoke: preparation progress, cancel one review while another proceeds, resource fence/recovery, publication and approved cleanup. Then explicitly resolve the stopped worker-isolation review's retained guard through supported recovery and obtain the user decision to retrigger the appropriate attempt; do not count its canceled run as a completed review. If code/input changed, submit a newly committed packet and new pinned attempt; never mutate canceled attempt4. This fix's approval does not automatically complete the older BUILD.",
+          "action": "On explicit use of a supported old inactive review, acquire its exact owner/target fence, validate old input/history and all embedded resource guards, create an initializing RuntimeV1, commit the upgraded format3 reference preserving submitted/results/actions byte values, then activate only a proven common binding. Preserve original migration evidence until successful completion/cleanup. Any unresolved old/native guard or uncertain write blocks activation and requires existing explicit resource recovery; never replace it with an empty guard. No automatic bulk rewrite of completed permanent CRs.",
           "rollbackable": true
         },
         {
           "order": 9,
+          "action": "At cold daemon startup invalidate private qualification receipts. Treat retained manifests as untrusted hints; first authorized phase reconstructs/qualifies required immutable evidence once through the bounded source session and refreshes current authority/content. Reconcile a committed result/publication boundary from preserved checkpoint/CR evidence without invoking a model solely for bookkeeping. No automatic resume or new attempt.",
+          "rollbackable": true
+        },
+        {
+          "order": 10,
+          "action": "Perform post-deployment controlled code/design smoke: preparation progress, cancel one review while another proceeds, resource fence/recovery, publication and approved cleanup. Then explicitly resolve the stopped worker-isolation review's retained guard through supported recovery and obtain the user decision to retrigger the appropriate attempt; do not count its canceled run as a completed review. If code/input changed, submit a newly committed packet and new pinned attempt; never mutate canceled attempt4. This fix's approval does not automatically complete the older BUILD.",
+          "rollbackable": true
+        },
+        {
+          "order": 11,
           "action": "Rollback before new-format emission can restore the previous binary. After format3/runtime/new-CR records exist, do not run old-only readers or reverse-transform live records: roll forward or use a state-preserving rollback build that retains new readers and leaves incomplete reviews explicitly interrupted. Permanent approved history is never rewritten as rollback; deleting unborrowed derived cache is safe but may require cold requalification.",
           "rollbackable": false
         }
       ],
-      "backwardCompat": "Historical supported checkpoint/CR data stays readable and immutable unless an explicit inactive-checkpoint migration is required for new execution. New code/design cancel phases and optional preparation progress fields are additive for discovery-capable consumers; required new storage/runtime authority must be understood end to end. Unknown required format/capability fails clearly, never masquerades as an empty guard or older engine. Maintain aligned supported VS Code/JetBrains IPC DTOs and MCP schemas; no deprecated insrc-ide requirement. Keep full per-attempt packets and accepted feedback exactly; aliases and old action/publication history are not normalized away. No new trust keys, compatibility flags or parallel legacy execution path. A raw persisted manifest/hash is not a cross-restart qualification credential. Once new runtime/CR formats are emitted, old-only reader rollback is unsupported.",
+      "backwardCompat": "Historical supported checkpoint/CR data stays readable and immutable unless an explicit inactive-checkpoint migration is required for new execution. New code/design cancel phases and optional preparation progress fields are additive for discovery-capable consumers; required new storage/runtime authority must be understood end to end. Unknown required format/capability fails clearly, never masquerades as an empty guard or older engine. Maintain aligned supported VS Code/JetBrains IPC DTOs and MCP schemas; no deprecated insrc-ide requirement. Keep full per-attempt packets and accepted feedback exactly; aliases and old action/publication history are not normalized away. No new trust keys, compatibility flags or parallel legacy execution path. A raw persisted manifest/hash is not a cross-restart qualification credential. Once new runtime/CR formats are emitted, old-only reader rollback is unsupported. This revision changes disposable prepared-view encoding only: no extra checkpoint/CR schema change solely for staging. Old eager derived views cannot be read as the new format; compatible history/runtime readers remain required for explicit cold recovery.",
       "zeroDowntime": false,
       "dataRewriteRequired": true
     },
     "alternativesConsidered": [
       {
         "id": "a1",
-        "name": "Operation-scoped context with compact runtime state",
-        "oneLineSummary": "A unified preparation API builds reusable context for one lifecycle operation, with separate small durable process/progress state.",
-        "approach": "Reuse current source/projection/coordinator interfaces behind one preparation contract for admission, resume, assessment, publication and cleanup. Each operation owns its verified immutable query set and bounded batched source reads; mutable authority is checked independently. Full submitted input and feedback remain in the per-attempt checkpoint, while leases and progress use a small versioned runtime record. No prepared evidence survives operation ownership.",
+        "name": "Bounded prepared-view staging in the existing context store",
+        "oneLineSummary": "Stream packet metadata and content-addressed leaves to the existing reserved context files; access only the current task or validation window.",
+        "approach": "Reuse existing typed-byte content codec, private qualification receipt, source staging and host capacity reservation. Replace eager packet inventory/whole-view loading with digest-indexed metadata and demand-loaded bounded task/file windows across preparation, history verification, execution, publication and recovery. Admission timing is traced and expensive derivation stays in registered worker paths; acknowledgement never grants qualified authority.",
         "pros": [
-          "Smallest storage change; retains full cold verification and existing checkpoint content.",
-          "Removes per-native-command large-history writes and duplication within one preparation call."
+          "Smallest coherent extension preserving current lifecycle and complete scope",
+          "Binary/text content deduplicates without JSON numeric-array expansion",
+          "Cold and warm consumers obey the same working-set bound"
         ],
         "cons": [
-          "Publication, cleanup and re-review repeatedly rebuild equivalent immutable evidence after ownership ends.",
-          "Fails the desired lifecycle-wide reuse goal as histories grow; only a comparison baseline, not the proposed fix."
+          "All eager consumers must be converted together",
+          "Transient projection/clone/serialization allocations need explicit budget ownership and tests"
         ],
-        "costEstimate": "M",
-        "reasonRejected": "Minimal comparison baseline, but central lifecycle-wide reuse remains partial."
+        "costEstimate": "M"
       },
       {
         "id": "a2",
-        "name": "Qualified context with separate history and runtime state",
-        "oneLineSummary": "Separate immutable prepared evidence, pinned review history and compact operational state, with one preparation contract across the complete lifecycle.",
-        "approach": "Reuse current review workers, coordinators, source/projection validators and native process ownership. A single context interface exposes complete qualified code scope or latest-design subject through an opaque generation-bound handle. Large derived bytes are immutable and bounded; the main daemon retains only compact private qualification receipts so subsequent authorized phase owners can reuse them after an execution worker is reclaimed. Full input/response history remains in the existing project checkpoint. A small durable runtime record owns live leases, cancellation and progress. Fresh author/route/content/approval checks remain separate from immutable reuse. Source queries are planned across history/current input and batched within existing isolation guarantees. Cold daemon restart invalidates private receipts and performs one bounded qualification from authoritative inputs; disk cache is never self-authenticating.",
+        "name": "Dedicated disk-backed packet database",
+        "oneLineSummary": "Store packets and leaf references in a separate embedded transactional database.",
+        "approach": "Introduce a worker-local persistent database and typed records for packet indexes, scoped leaves and bounded cursor queries, retaining existing host qualification and generation identities.",
         "pros": [
-          "Smallest option that addresses context reuse, repeated history qualification, write amplification, progress and targeted cancellation together.",
-          "No new database, trust key, judging engine or activation switch; preserves existing per-review workers and project-owned history.",
-          "Supports all lifecycle phases without holding terminal execution workers or treating cached context as cached approval.",
-          "Makes warm/cold validity, stale authority and operational crash recovery explicit."
+          "Native bounded cursors and indexed retrieval",
+          "Transactional record boundaries"
         ],
         "cons": [
-          "Requires coherent generation and retention rules across immutable files, checkpoints, runtime state and ephemeral daemon receipts.",
-          "Cold qualification remains necessary; correctness-preserving batching and resource recovery need explicit tests."
-        ],
-        "costEstimate": "L"
-      },
-      {
-        "id": "a3",
-        "name": "Unified append-only review event store",
-        "oneLineSummary": "Persist submissions, context, feedback, leases and progress as typed events, with checkpoint and runtime views derived from the event stream.",
-        "approach": "Replace hot whole-checkpoint mutation with an append-only project review event contract. The visible per-attempt checkpoint becomes a derived view; immutable context is referenced by generation, and recovery reconstructs current ownership and phase from events. Existing source/freshness validators and judges remain consumers of the rebuilt state. Publication and approval bind to explicit event sequence boundaries.",
-        "pros": [
-          "One ordered persistence model can express input, prepared context, native intent and completion consistently.",
-          "Fine-grained writes avoid history-size amplification and preserve a detailed recovery history."
-        ],
-        "cons": [
-          "Reworks more of the existing checkpoint contract than the defect requires.",
-          "Adds replay, compaction, derived-view freshness and torn-tail semantics across every current reader and approval gate.",
-          "Larger migration and recovery surface without a demonstrated need for full event history of successful Git operations."
+          "Adds storage dependency/lifecycle/migration and packaging complexity alongside an existing adequate context store",
+          "Does not by itself fix eager projection or admission work"
         ],
         "costEstimate": "L",
-        "reasonRejected": "More persistent event-store and recovery complexity than the reproduced defect requires."
+        "reasonRejected": "Duplicates existing immutable context store and adds storage/migration complexity while still requiring bounded consumer conversion."
       }
     ],
-    "chosenAlternative": "a2",
+    "chosenAlternative": "a1",
     "openQuestions": [],
     "sequenceDefinition": {
       "id": "review-preparation-order",
-      "narrative": "The cold path makes input admission, native intent durability, context readiness and committed feedback distinct boundaries. Warm reuse skips source reconstruction only with a current private qualification receipt plus fresh authority checks; cancellation can fence the host/native owner at any phase and never invents rollback of a committed result.",
+      "narrative": "The cold path makes input admission, native intent durability, context readiness and committed feedback distinct boundaries. Warm reuse skips source reconstruction only with a current private qualification receipt plus fresh authority checks; cancellation can fence the host/native owner at any phase and never invents rollback of a committed result. Revised packet staging occurs as each semantic validation window completes; no whole packet inventory is hydrated on readiness or warm borrow.",
       "participants": [
         {
           "id": "controller",
@@ -1395,6 +1478,13 @@
           "label": "Deliver bounded source result",
           "description": "Worker verifies complete scope/objects/projection.",
           "kind": "return"
+        },
+        {
+          "from": "worker",
+          "to": "files",
+          "label": "Stage bounded packet/task descriptors and leaves",
+          "description": "Charge all live buffers/indexes/scratch before allocation; release each validation window, retain complete staged evidence under aggregate disk reservation.",
+          "kind": "call"
         },
         {
           "from": "worker",
@@ -1537,7 +1627,7 @@
         {
           "id": "context",
           "label": "Immutable context bytes",
-          "description": "Stable verified source generation, separately versioned history bindings and retained query staging under aggregate capacity accounting."
+          "description": "Stable verified source generation, separately versioned history bindings and retained query staging under aggregate capacity accounting. Includes digest-indexed staged packet descriptors and typed leaves; bounded writer and consumer windows, no eager inventory."
         },
         {
           "id": "lifecycle",
@@ -1637,27 +1727,23 @@
   "citations": [
     {
       "id": "c1",
-      "kind": "step-output",
-      "ref": "s1.analyzeBundles[0]",
-      "quotedText": "Completed workflow-scope analyze pass locates prepareReviewAdmission, prepareReviewPacket, prepareDesignSubject, assertDesignSubjectUnchanged, both checkpoint writers, both publishers and cleanup functions. Graph reports22 packet callers including admission/publication and7 design-subject callers including publication/approval. Text search additionally confirms worker-checkpoint adapters and cleanup calling admission; graph coverage is incomplete. Code source is pinned; design subject reads canonical artifact/document, ancestry and current author, then checks subject fingerprints."
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/admission.ts"
     },
     {
       "id": "c2",
-      "kind": "step-output",
-      "ref": "s1.analyzeBundles[1]",
-      "quotedText": "Native-scope analyze pass locates ReviewWorkers, ReviewNativeHost, ReviewProcessLeases, runReviewWorker and updateReviewWorkerResource; graph connects runtime to resource updater. Source confirms open-intent persistence before native spawn and confirmed-disposal before closure. Each code lease update invokes the serialized full-checkpoint writer. Current review APIs have no public cancel operation; targeted attempt4 stop used existing closeEntry via a temporary debugger, not another review or a daemon restart. That operational workaround is not a proposed production interface."
+      "kind": "code",
+      "ref": "src/daemon/threads/review-workers.ts"
     },
     {
       "id": "c3",
-      "kind": "step-output",
-      "ref": "s1.analyzeBundles[2]",
-      "quotedText": "Third analyze pass locates PreparedReviewPacket, ReviewSources, StoredReviewCheckpoint, DesignReviewCheckpoint, PreparedDesignSubject, both coordinators and ReviewProgressTracker. data-model.trace resolves checkpoint type aliases without fields; direct schema reads confirm code stored v1/v2 and design qualified v1 plus admission-aware storage, pinned input, per-attempt history and resource guards. Broad test lookup was off-topic/truncated; targeted file discovery identified projection/lineage/route tests, atomic checkpoint outcomes, worker isolation/recovery/publication/cleanup and design subject-monitor tests. Current code progress starts sequence0 in scope_preparation; preparation precedes task activity tracking."
+      "kind": "code",
+      "ref": "src/workflow/review/preparation-checkpoint.ts"
     },
     {
       "id": "c4",
       "kind": "step-output",
-      "ref": "s1.analyzeBundles[3]",
-      "quotedText": "Approved ISSUE-470a1f61b26b12c6 is the defect authority. Packet has171 distinct files across40 selected commits. Four packet reconstructions issue13031 physical source queries,5052 distinct,7979duplicates(61.2%),78.06s outside worker durability. Five disposable-copy2MB checkpoint updates show49.39ms median; these are not a complete attribution of live elapsed time. Attempt4 was stopped after over an hour before assessment, preserving checkpoint/recovery fence. Existing worker-isolation BUILD-e4af63128c7cbec2-s1 remains incomplete; this correction takes priority and may not silently resume it."
+      "ref": "s1.analyzeBundles[1]"
     },
     {
       "id": "c5",
@@ -1853,6 +1939,26 @@
       "id": "c43",
       "kind": "doc",
       "ref": "/tmp/profile-review-admission.mts"
+    },
+    {
+      "id": "c44",
+      "kind": "step-output",
+      "ref": "s1.analyzeBundles[1]"
+    },
+    {
+      "id": "c45",
+      "kind": "step-output",
+      "ref": "s1.analyzeBundles[0]"
+    },
+    {
+      "id": "c46",
+      "kind": "code",
+      "ref": "src/workflow/review/code-preparation.ts"
+    },
+    {
+      "id": "c47",
+      "kind": "code",
+      "ref": "src/workflow/review/prepared-context.ts"
     }
   ]
 }

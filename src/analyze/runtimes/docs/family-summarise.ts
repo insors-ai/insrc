@@ -34,7 +34,6 @@ import { buildCompleteness } from '../../completeness.js';
 import type { PartlyReadItem, SkippedItem } from '../../completeness.js';
 import { DOC_INDEX_RULE } from '../../explore/completeness-facts.js';
 import { createItemMeasurer, summarisedFrom } from '../../explore/item-measure.js';
-import { SUMMARISER_BODY_CHARS } from '../../summariser/driver.js';
 import { inferDocFamily } from '../../summariser/family.js';
 
 import { graphRepoOf, inAreaOf, resolveTaskScope } from '../shared/task-scope.js';
@@ -112,9 +111,6 @@ async function unsummarised(
 	return [...files];
 }
 
-/** How many subjects the roll-up names. */
-const TOP_SUBJECTS = 20;
-
 export const docsFamilySummariseRuntime: TemplateRuntime = {
 	templateId: TEMPLATE_ID,
 
@@ -176,7 +172,7 @@ export const docsFamilySummariseRuntime: TemplateRuntime = {
 			}
 			// The summariser reads the first part of a long document.
 			if (entity !== null) {
-				const cut = await summarisedFrom(measurer, entity, SUMMARISER_BODY_CHARS);
+				const cut = await summarisedFrom(measurer, entity);
 				if (cut !== undefined) partlyRead.push(cut);
 			}
 
@@ -214,7 +210,6 @@ export const docsFamilySummariseRuntime: TemplateRuntime = {
 
 		const topSubjects: FamilySubjectRollup[] = Array.from(subjectCounts.entries())
 			.sort((a, b) => b[1] - a[1])
-			.slice(0, TOP_SUBJECTS)
 			.map(([subject, docCount]) => ({ subject, docCount }));
 
 		const output: FamilySummaryOutput = {
@@ -248,10 +243,6 @@ export const docsFamilySummariseRuntime: TemplateRuntime = {
 					...countedSkip(await unsummarised(db, repoPath, familyKey, summarisedIds, inArea), 'they have no summary yet, so they are not in this roll-up'),
 				],
 				basisNote: DOC_INDEX_RULE,
-				// The subject roll-up is a second list, cut to its own length.
-				limited:  subjectCounts.size > TOP_SUBJECTS
-					? [{ what: 'top subjects', limit: TOP_SUBJECTS, scope: 'per-group', reason: `${subjectCounts.size} subjects were found and ${TOP_SUBJECTS} are kept` }]
-					: [],
 				basis:    'doc-index',
 			}),
 		};

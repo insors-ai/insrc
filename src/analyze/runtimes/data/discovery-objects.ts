@@ -52,14 +52,10 @@ import {
 	resolveDataScope,
 } from './_shared.js';
 import { buildCompleteness } from '../../completeness.js';
-import type { ReachedLimit } from '../../completeness.js';
+import type { SkippedItem } from '../../completeness.js';
 
 const TEMPLATE_ID = 'data.discovery.objects';
 const log = getLogger('analyze:runtimes:data:discovery-objects');
-
-/** File-listing cap. Plans never need >200 files; keeps the
- *  prompt envelope finite. */
-const FILE_LIST_LIMIT = 200;
 
 interface ObjectRecord {
 	readonly kind:   string;
@@ -70,11 +66,16 @@ interface ObjectRecord {
 	readonly schema?: string;
 }
 
-/** The limit a driver reached on its own listing; `listed` is how many it returned. */
-function driverCut(what: string, listed: number): ReachedLimit {
+/**
+ * A listing that is not the whole: a store that derives its namespaces from a sample of its keys (Redis, etcd),
+ * or a driver that stopped early. It is reported as sampled and incomplete, never as a limit.
+ */
+function sampleSkip(what: string, sampled: boolean): SkippedItem {
 	return {
-		what, limit: listed, scope: 'source',
-		reason: `the driver stopped its listing at ${listed} ${what}; how many more exist is not known`,
+		what:   `${what} outside the listing`,
+		reason: sampled
+			? `the store has no ${what}; they are derived from a sample of its keys, which are not scanned in full`
+			: `the driver stopped before the end of its listing of ${what}`,
 	};
 }
 
@@ -93,8 +94,8 @@ export const dataDiscoveryObjectsRuntime: TemplateRuntime = {
 
 
 			const objects: ObjectRecord[] = [];
-			// A listing the driver or the file walk cut short, for the completeness record.
-			const limited: ReachedLimit[] = [];
+			// A listing that is only a sample, or that the driver stopped, for the completeness record.
+			const skipped: SkippedItem[] = [];
 			switch (driver.family) {
 				case 'rdbms': {
 					const r = driver as RdbmsDriver;
@@ -103,7 +104,8 @@ export const dataDiscoveryObjectsRuntime: TemplateRuntime = {
 							`${TEMPLATE_ID}: driver '${driver.kind}' does not support listTables`,
 						);
 					}
-					const listing = await r.listTables();
+					// The driver's complete listing: every table, with no limit.
+					const listing = await r.listTables({ complete: true });
 					for (const t of listing.tables) {
 						objects.push({
 							kind:   'table',
@@ -111,8 +113,7 @@ export const dataDiscoveryObjectsRuntime: TemplateRuntime = {
 							...(t.schema !== undefined ? { schema: t.schema } : {}),
 						});
 					}
-					// The driver's own cut flag: it stopped at its default limit.
-					if (listing.truncated) limited.push(driverCut('tables', listing.tables.length));
+					if (listing.truncated) skipped.push(sampleSkip('tables', false));
 					break;
 				}
 				case 'kv': {
@@ -122,11 +123,12 @@ export const dataDiscoveryObjectsRuntime: TemplateRuntime = {
 							`${TEMPLATE_ID}: driver '${driver.kind}' does not support listNamespaces`,
 						);
 					}
-					const listing = await k.listNamespaces();
+					// Every namespace where the store has them to list; a store that derives them from a key sample stays a sample.
+					const listing = await k.listNamespaces({ complete: true });
 					for (const ns of listing.namespaces) {
 						objects.push({ kind: 'namespace', name: ns.name });
 					}
-					if (listing.truncated) limited.push(driverCut('namespaces', listing.namespaces.length));
+					if (listing.truncated || listing.sampled === true) skipped.push(sampleSkip('namespaces', listing.sampled === true));
 					break;
 				}
 				case 'file': {
@@ -141,7 +143,6 @@ export const dataDiscoveryObjectsRuntime: TemplateRuntime = {
 					}
 					const result = await listFilesForConnection(resolve(repoPath, path), {
 						recursive: config.publicConfig['recursive'] === true,
-						limit:     FILE_LIST_LIMIT,
 					});
 					for (const f of result.files) {
 						objects.push({
@@ -150,13 +151,6 @@ export const dataDiscoveryObjectsRuntime: TemplateRuntime = {
 							size:  f.size,
 							mtime: f.mtime,
 						});
-					}
-					if (result.truncated) {
-						limited.push({
-							what: 'files', limit: FILE_LIST_LIMIT, scope: 'source',
-							reason: `the file listing stops at ${FILE_LIST_LIMIT} files; how many more the connection holds is not known`,
-						});
-						captureAnalysisDiagnostics(log, args.connectionExecution).emit('warn', () => [{ runId: args.runId, taskId: args.task.taskId, connectionId, limit: FILE_LIST_LIMIT }, 'file listing truncated; raise FILE_LIST_LIMIT if downstream needs the full set']);
 					}
 					void (driver as FileDriver);
 					break;
@@ -189,7 +183,7 @@ export const dataDiscoveryObjectsRuntime: TemplateRuntime = {
 
 			return {
 				outputs: new Map<string, unknown>([['objects', filtered]]),
-				completeness: buildCompleteness({ returned: filtered.length, limited, basis: 'data-source' }),
+				completeness: buildCompleteness({ returned: filtered.length, skipped, basis: 'data-source' }),
 			};
 		});
 	},

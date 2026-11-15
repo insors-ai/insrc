@@ -24,33 +24,52 @@ import type { ItemMeasure, MeasuredEntity } from '../item-length.js';
 export type StoredItem = MeasuredEntity & { readonly repo: string };
 
 export interface ItemMeasurer {
-	/** The item's full length from its file, and whether the indexer cut the stored body. */
+	/**
+	 * The item's full length and its full content from its file, and whether the indexer cut the stored body.
+	 * `content` is absent when the file could not be confirmed to hold the item (`reason` says why).
+	 */
 	measure(entity: StoredItem): Promise<ItemMeasure>;
 	/**
 	 * The `partlyRead` entry for an item of whose stored body `readChars`
 	 * characters were used, or undefined when nothing shows the item is
 	 * longer than that. It IS longer when the stored body is longer than
 	 * what was used, when the indexer cut the stored body, or when the file
-	 * shows a greater length. A file that changed since it was indexed
-	 * establishes no length; the entry then carries a null total, and is
-	 * made only when one of the first two holds.
+	 * shows a greater length. An item whose file could not be confirmed to
+	 * hold it (changed, missing, unreadable or unhashed) is never presented
+	 * as read: its entry is always made, with a null total and the reason.
 	 */
 	partlyRead(what: string, entity: StoredItem, readChars: number): Promise<PartlyReadItem | undefined>;
 }
 
 /**
  * The `partlyRead` entry for a document whose SUMMARY is being used. The
- * summariser gives the model the first `summariserCut` characters of the
- * stored body, so a longer document was summarised from that much of it.
- * Undefined when the summary rests on the whole document.
+ * summariser reads the document whole from its file, so a summary rests on the
+ * whole document; but a document whose file cannot be confirmed to hold it was
+ * summarised from its stored body, and is reported as not covered, with the
+ * reason. Undefined when the summary rests on the whole document.
  */
-export function summarisedFrom(
-	measurer:      ItemMeasurer,
-	entity:        StoredItem,
-	summariserCut: number,
+export async function summarisedFrom(
+	measurer: ItemMeasurer,
+	entity:   StoredItem,
 ): Promise<PartlyReadItem | undefined> {
-	const stored = entity.body.endsWith(INDEXER_CUT_MARKER) ? entity.body.length - INDEXER_CUT_MARKER.length : entity.body.length;
-	return measurer.partlyRead(entity.file, entity, Math.min(summariserCut, stored));
+	return (await readItemWhole(measurer, entity.file, entity)).notCovered;
+}
+
+/**
+ * The item's whole content, for a lookup that reads it. The content comes from
+ * the item's file when the file still holds it. An item the file cannot confirm
+ * is read from its stored body, and the entry says it is not covered, with the
+ * reason; it is never presented as read.
+ */
+export async function readItemWhole(
+	measurer: ItemMeasurer,
+	what:     string,
+	entity:   StoredItem,
+): Promise<{ readonly body: string; readonly notCovered?: PartlyReadItem }> {
+	const m = await measurer.measure(entity);
+	if (m.content !== undefined) return { body: m.content };
+	const body = entity.body ?? '';
+	return { body, notCovered: partlyReadEntry(what, body.length, m) };
 }
 
 /** One measurer per lookup run. `entities`, when the lookup already holds the repo's entities, saves the graph reads. */
@@ -80,7 +99,8 @@ export function createItemMeasurer(db: DbClient, entities?: readonly Entity[]): 
 		measure,
 		async partlyRead(what, entity, readChars) {
 			const m = await measure(entity);
-			const longer = readChars < m.storedChars || m.cutByIndexer
+			const unconfirmed = m.content === undefined;
+			const longer = unconfirmed || readChars < m.storedChars || m.cutByIndexer
 				|| (m.totalChars !== null && m.totalChars > readChars);
 			return longer ? partlyReadEntry(what, readChars, m) : undefined;
 		},

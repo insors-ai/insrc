@@ -163,7 +163,7 @@ export const infraInventoryDockerRuntime: TemplateRuntime = {
 		captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{ runId: args.runId, taskId: args.task.taskId, repoPath, dockerfiles: dockerfiles.length, composeFiles: composeFiles.length, truncated }, 'infra.inventory.docker: enumerated']);
 		return {
 			outputs: new Map<string, unknown>([['docker-inventory', inventory]]),
-			completeness: fileWalkCompleteness(dockerfiles.length + composeFiles.length, truncated, { skipped }),
+			completeness: fileWalkCompleteness(dockerfiles.length + composeFiles.length, { skipped }),
 		};
 	},
 };

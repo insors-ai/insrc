@@ -1,0 +1,949 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1794677964987-aaux10",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T17:44:16.307Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "claude-sonnet-5-5"
+        }
+      ]
+    },
+    "elapsedMs": 282623,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-11-09T06:00:04.355Z",
+    "epicHash": "206db3426ffd4428",
+    "epicSlug": "show-long-running-task-progress-chat",
+    "storyId": "s3",
+    "hldBaseRunId": "wf-1794211533808-ghbhlu",
+    "hldEffectiveHash": "48a6a5468b45d758c2f607734dcbfdf65a0d1476d8c409eeed1ac09aa037dec9",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Report design and code review milestones",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6ab344c4641aa870f83fcc762c061c56b0e1ad47b830b40d9f98cdac6ab1fbcf",
+        "at": "2026-11-14T17:44:18.520Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T17:58:22.121Z",
+        "override": {
+          "reason": "Controller self-review of LLD s3 (two passes; source corrected to ReviewWorkers.progressOf); daemon design review unavailable."
+        }
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "questionResolutions": {
+      "q52d7a4a9": {
+        "question": "Retries and follow-up work are not published by either review engine today, so ac1's 'retries and discovered follow-up work' is only partly met: both are reported as null. Accept null now, or add a separate Story that makes the engines publish those counters (a4 was rejected because it changes review execution, which the DEF's first non-goal excludes)?",
+        "status": "resolved",
+        "choice": "Accept null for this Story",
+        "rationale": "User approved planning with null retries/follow-up; whether to track a separate engine-counter Story is left to the user.",
+        "resolvedAt": "2026-11-14T18:02:58.080Z"
+      },
+      "q70227ac1": {
+        "question": "Coordinator typing versus the HLD: the HLD says 'a shared daemon coordinator', but a1 as designed uses a second typed coordinator so s2's ExecutorDetails stays untouched. Should the plan widen the one coordinator's details union (a2, edits s2's executor-measurements.ts) or keep two coordinators and have s5/s6 read both?",
+        "status": "resolved",
+        "choice": "a1: Two typed coordinators",
+        "rationale": "User approved planning with a second typed coordinator; widening s2's union (a2) is the recorded fallback.",
+        "resolvedAt": "2026-11-14T18:04:05.007Z"
+      },
+      "q9cc2552d": {
+        "question": "Who binds a review identity (project, family, reviewId, attempt) to a TaskRef and mints the ProducerAuthorization at review start? sc1 and the HLD put owner binding and registration in s1; s3 should only supply the review identity and delegates. Confirm this stays consume-only, or raise an HLD back-flow, before the plan.",
+        "status": "resolved",
+        "choice": "Keep s3 consume-only",
+        "rationale": "User approved: s1 owns binding and authorization; plan checks early whether s1 exposes a hook.",
+        "resolvedAt": "2026-11-14T18:05:03.405Z"
+      },
+      "q26e40d27": {
+        "question": "Source of review progress: the status board carries only the display projection, so the delegates read ReviewWorkers.progressOf, a new read-only accessor in src/daemon/threads/review-workers.ts. That is the daemon's review-worker hosting class, not a review engine; confirm it is acceptable under the DEF non-goal on changes to review execution.",
+        "status": "resolved",
+        "choice": "Accept the read-only accessor",
+        "rationale": "User approved folding ReviewWorkers.progressOf into the first task.",
+        "resolvedAt": "2026-11-14T18:05:50.891Z"
+      },
+      "q146b4276": {
+        "question": "Verify that the invariant citations c1 and c2 map to the task-progress contract bundle and the review progress bundle respectively (s8 ep3 ambiguous).",
+        "status": "resolved",
+        "choice": "Explicit citation mapping",
+        "rationale": "Verified: LLD c1 is the coordinator.ts task-progress bundle and c2 is the review-progress.ts bundle.",
+        "resolvedAt": "2026-11-14T18:06:25.911Z"
+      },
+      "qbf5b41bd": {
+        "question": "Error 'type' values for the delegates are 'none thrown' and 'null result' (behaviours, not error classes); decide whether a named outcome type is wanted (s8 cd3 partial).",
+        "status": "deferred",
+        "rationale": "Minor naming choice not decided by the user; defaults to behavioural descriptions.",
+        "resolvedAt": "2026-11-14T18:06:42.470Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "Adds two read-only delegates that turn the progress design reviews and committed task code reviews already publish into the shared task-progress contract. A participant sees the active phase and unit, how many chunks or tasks are done, retained design coverage kept apart from fresh chunks, and whether code-review publication is pending or complete. Retries and follow-up work are reported only when an engine reports them; today they are unknown. Review execution, results, retries and publication are not changed.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Use executor delegates with a shared daemon coordinator. Preserve legacy workflow and analyze IPC frames and existing execution authority. The coordinator feeds a typed VS Code adapter, request-scoped MCP notifications and one optional fallback observation schedule.",
+      "ownedContracts": [
+        {
+          "id": "sc5",
+          "name": "Review measurements",
+          "purpose": "Observe canonical design and task-review progress rather than infer from output. Separate retained review coverage from fresh chunks, initial units from follow-up work, and publication from review assessment. A code-review implementation exposes task counts or other verified units that its executor can actually report.",
+          "interfaceSketch": "interface DesignReviewDetails {\n  readonly kind: 'design-review';\n  readonly target: string;\n  readonly checks: MeasuredCount | null;\n  readonly freshChunks: MeasuredCount | null;\n  readonly retainedChunks: number | null;\n  readonly retries: number | null;\n}\ninterface CodeReviewDetails {\n  readonly kind: 'code-review';\n  readonly target: string;\n  readonly initial: MeasuredCount | null;\n  readonly followUp: MeasuredCount | null;\n  readonly retries: number | null;\n  readonly publication: 'pending' | 'complete' | 'failed' | 'unknown';\n}",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s5",
+            "s6"
+          ],
+          "assumptions": [
+            "c3",
+            "c7"
+          ]
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Task identity and delegate observation",
+          "purpose": "One verified owner binds each task attempt to one project and originating invocation. An insrc chat may own many invocations, and an invocation may launch many tasks. Each task has one current attempt, with at most one active owner epoch. External host, daemon session and extension chat identities are optional distinct bindings, never inferred from one another. Both delivery paths use this delegate snapshot. The foundation is parameterized by producer-owned detail types, so it has no type dependency on later stories.",
+          "interfaceSketch": "interface TaskRef {\n  readonly projectId: string;\n  readonly invocationId: string;\n  readonly taskId: string;\n  readonly attempt: number;\n}\ninterface TaskOwnerFence {\n  readonly ownerId: string;\n  readonly ownerEpoch: string;\n  readonly ownerSequence: number;\n}\ninterface TaskOrigin {\n  readonly extensionChatId?: string;\n  readonly daemonSessionId?: string;\n  readonly nativeSessionId?: string;\n  readonly turnId?: string;\n}\ntype ProgressKind = 'workflow' | 'analysis' | 'design-review' | 'code-review' | 'test';\ninterface MeasuredCount {\n  readonly unit: string;\n  readonly completed: number;\n  readonly total: number | null;\n}\ninterface DelegateMeasurement<Details extends { readonly kind: ProgressKind }> {\n  readonly task: TaskRef;\n  readonly owner: TaskOwnerFence;\n  readonly kind: ProgressKind;\n  readonly measuredAt: string;\n  readonly meaningfulRevision: number;\n  readonly lastMeaningfulAt: string | null;\n  readonly phase: string;\n  readonly activeUnit: string | null;\n  readonly counts: readonly MeasuredCount[];\n  readonly milestones: readonly string[];\n  readonly controls: readonly ('cancel')[];\n  readonly details: Details;\n}\ninterface TaskProgressDelegate<Details extends { readonly kind: ProgressKind }> {\n  progress(task: TaskRef): Promise<DelegateMeasurement<Details> | null>;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6"
+          ],
+          "assumptions": [
+            "c3",
+            "c4",
+            "c5",
+            "c7"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "Scoped snapshots, subscriptions and observation control",
+          "purpose": "The daemon authorizes every operation against server-verified caller/project/origin bindings, including logs and controls. A read yields a compact snapshot, meaningful-change indicator and revision cursor. Observer loss, executor state and session retention are independent. The shared coordinator arbitrates one optional fallback schedule per task, independent of all native subscriptions. Owner credentials, internal session identifiers and fencing fields remain server-side. A structured fallback lease governs the scheduler, without granting execution authority.",
+          "interfaceSketch": "type TaskState = 'queued' | 'running' | 'waiting' | 'paused' | 'completed' | 'failed' | 'cancelled' | 'interrupted' | 'unknown';\ntype ProgressFreshness = 'live' | 'stale' | 'unavailable';\ntype DeliveredMeasurement<Details extends { readonly kind: ProgressKind }> = Omit<DelegateMeasurement<Details>, 'owner'>;\ninterface ProgressSnapshot<Details extends { readonly kind: ProgressKind }> {\n  readonly task: TaskRef;\n  readonly cursor: string;\n  readonly state: TaskState;\n  readonly freshness: ProgressFreshness;\n  readonly measurement: DeliveredMeasurement<Details> | null;\n  readonly lastOwnerActivityAt: string | null;\n  readonly workerHealth: 'alive' | 'lost' | 'unknown';\n  readonly cancellation: 'none' | 'pending';\n  readonly resultRef?: string;\n}\ninterface ObservationReply<Details extends { readonly kind: ProgressKind }> {\n  readonly snapshot: ProgressSnapshot<Details>;\n  readonly disposition: 'changed' | 'unchanged' | 'resync';\n  readonly schedule: 'native' | 'scheduled' | 'suspended' | 'stopped';\n  readonly nextPollNotBefore?: string;\n}\ninterface ObservationControl {\n  readonly task: TaskRef;\n  readonly action: 'stop-observation' | 'cancel-execution';\n  readonly requestId: string;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6"
+          ],
+          "assumptions": [
+            "c3",
+            "c6",
+            "c7"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "Execution-owned activity and chat retention",
+          "purpose": "One current owned attempt may hold at most one active association for its originating insrc conversation. Each chat may have many associations. The coordinator renews through verified executor activity, and the actual session owner consumes the lease or a runtime renewal. View closure does not release a retained conversation. Removing a conversation releases only its association and retains project-scoped authorized task results.",
+          "interfaceSketch": "interface TaskActivityLease {\n  readonly task: TaskRef;\n  readonly origin: TaskOrigin;\n  readonly fence: TaskOwnerFence;\n  readonly renewedAt: string;\n  readonly expiresAt: string;\n}\ninterface ChatTaskRetention {\n  readonly originatingChatId: string;\n  readonly retainedTasks: readonly { task: TaskRef; expiresAt: string }[];\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c3"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s3",
+        "owns": [
+          "sc5"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3"
+        ],
+        "internal": "Own DesignReviewDelegate and CodeReviewDelegate and mappings from checkpoint progress and execution ownership. Review results, admission, retries and publication remain under the existing engines."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "depends": [],
+          "internal": "Own daemon coordination, verified registration, cursors, normalization, scoped read/subscribe/control, durable state, owner fencing and fallback schedule arbitration. Keep storage, fencing and expiry implementation private."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "Own adapters for existing workflow and analyze producer signals and terminal/owner evidence. Existing stream shape and command semantics remain compatible."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc6"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "Own TestDelegate and managed reporter interpretation, including suite/case identity, provisional counts and abnormal exit. Keep test orchestration and exit semantics unchanged."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Own typed VS Code reader and transcript row, current status projection and bindings to the session owner. Render durable snapshots by origin across turns and multiple windows without executing or polling models."
+        },
+        {
+          "storyId": "s6",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Own MCP adapter, capability qualification, explicit opt-in disclosure and connection to the coordinator's fallback lease. No vendor-specific process changes or assumptions about session identity."
+        }
+      ],
+      "rolloutPhase": "Phase B — executor measurement adapters",
+      "nonFunctional": {
+        "performance": "Proposed caps for qualification are one coalesced active snapshot per second per task, 8 KiB per snapshot, 32 retained meaningful milestones, 16 queued observer updates and a reserved terminal state. Enforce per-project limits of 128 tracked active observations and 1,024 retained terminal observations, plus a global disk budget of 128 MiB. Exceeding observation capacity must report degradation without refusing, cancelling or slowing work. Terminal updates bypass normal coalescing. Reserve the observation terminal slot and bounded storage on admission. Evict only older terminal entries by policy, and refuse new observation with a capacity state when no reservation is possible. Do not evict active owners to admit new observations.",
+        "security": "Authenticate observations via existing daemon caller identity and verify project, conversation/invocation and task attempt before returning any snapshot, detail or control. Opaque cursors and task IDs do not grant authorization. Persist and expose sanitized structured measurements only. Detailed logs remain authorized, bounded references. No direct database access in MCP or VS Code.",
+        "observability": "Measure emitted and coalesced progress, cursor gaps, scheduler degradation, stale source age, rejected owner fences and retention transitions separately. Qualify each producer end to end, verify zero extra model invocations for native paths, and live-qualify CLI token, rendering, background lifetime and scheduling per version/session. Never log raw prompts, output or credentials as progress.",
+        "durability": "Use daemon-owned atomic per-task snapshots on local storage, with bounded milestone records and terminal result pointers. Persist terminal state before delivery. Refresh verified owner activity every 30 seconds with a 120-second lease, qualifying the margin against the actual session owner's idle threshold. After daemon restart recover persisted observations before accepting new owner events. Hold stale owner retention at most through its bounded grace and show interrupted or unknown until authority is reverified. Terminal retention is seven days subject to bounded capacity, after which separately available executor results remain authoritative. For executors without durable result history, expiry is explicit and is never rendered as a success, cancellation or new execution."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "DesignReviewDelegate",
+          "signature": "class DesignReviewDelegate implements TaskProgressDelegate<DesignReviewDetails>",
+          "parameters": [],
+          "returns": {
+            "type": "TaskProgressDelegate<DesignReviewDetails>",
+            "meaning": "A delegate for one design-review attempt that answers progress() from the latest validated ReviewProgressPublication of family 'design' held by ReviewWorkers (src/daemon/threads/review-workers.ts), read through ReviewWorkers.progressOf for the attempt's review identity."
+          },
+          "errors": [
+            {
+              "type": "none thrown",
+              "condition": "A missing, foreign-attempt or invalid publication makes progress() return null, which the coordinator reports as unavailable."
+            }
+          ],
+          "preconditions": [
+            "The task's invocation is bound to one design review identity (project, reviewId, attempt) by the verified owner at registration.",
+            "The delegate was registered through ProducerPort.register with a daemon-minted ProducerAuthorization."
+          ],
+          "postconditions": [
+            "progress() never returns a count the publication did not carry; retries is null.",
+            "A publication whose attempt or incarnation is older than the one already observed is ignored.",
+            "Reading progress does not renew owner activity or change meaningfulRevision unless a meaningful field changed."
+          ]
+        },
+        {
+          "name": "DesignReviewDelegate.progress",
+          "signature": "progress(task: TaskRef, signal?: AbortSignal): Promise<DelegateMeasurement<DesignReviewDetails> | null>",
+          "parameters": [
+            {
+              "name": "task",
+              "type": "TaskRef",
+              "purpose": "The attempt to measure.",
+              "optional": false
+            },
+            {
+              "name": "signal",
+              "type": "AbortSignal",
+              "purpose": "Stops the read when the coordinator abandons it.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "DelegateMeasurement<DesignReviewDetails> | null",
+            "meaning": "Phase from planning | impact | chunk_review | complete; activeUnit from the active chunk id; counts for chunks; details per DesignReviewDetails."
+          },
+          "errors": [
+            {
+              "type": "null result",
+              "condition": "No verified publication exists for the task's review identity."
+            }
+          ],
+          "preconditions": [
+            "task is the delegate's registered attempt."
+          ],
+          "postconditions": [
+            "counts hold reviewed chunks against selected chunks as unit 'chunks'; retained coverage is carried only in details.retainedChunks.",
+            "Terminal review statuses are not reported as running."
+          ]
+        },
+        {
+          "name": "DesignReviewDelegate.ownerActivity",
+          "signature": "ownerActivity(task: TaskRef, signal: AbortSignal): Promise<number | null>",
+          "parameters": [
+            {
+              "name": "task",
+              "type": "TaskRef",
+              "purpose": "The attempt whose owner is probed.",
+              "optional": false
+            },
+            {
+              "name": "signal",
+              "type": "AbortSignal",
+              "purpose": "Aborts the probe.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "number | null",
+            "meaning": "The next owner sequence when the publishing review incarnation is verified current by comparing the ReviewWorkers entry incarnation (ReviewWorkers.identity) with the incarnation of the last accepted publication, else null."
+          },
+          "errors": [
+            {
+              "type": "null result",
+              "condition": "The incarnation changed, the worker is gone, or no publication has been observed."
+            }
+          ],
+          "preconditions": [
+            "A publication has been observed for this attempt."
+          ],
+          "postconditions": [
+            "A heartbeat or session-start only renews liveness and never increments counts."
+          ]
+        },
+        {
+          "name": "CodeReviewDelegate",
+          "signature": "class CodeReviewDelegate implements TaskProgressDelegate<CodeReviewDetails>",
+          "parameters": [],
+          "returns": {
+            "type": "TaskProgressDelegate<CodeReviewDetails>",
+            "meaning": "A delegate for one committed task code-review attempt that answers progress() from the latest validated ReviewProgressPublication of family 'code' held by ReviewWorkers (src/daemon/threads/review-workers.ts), read through ReviewWorkers.progressOf."
+          },
+          "errors": [
+            {
+              "type": "none thrown",
+              "condition": "A missing, foreign-attempt or invalid publication makes progress() return null."
+            }
+          ],
+          "preconditions": [
+            "The task's invocation is bound to one code review identity (project, reviewId, attempt) at registration.",
+            "Registered through ProducerPort.register with a daemon-minted ProducerAuthorization."
+          ],
+          "postconditions": [
+            "initial counts tasks completed against total; followUp and retries are null.",
+            "publication maps crPublication pending | complete and failed review status to 'failed'; otherwise 'unknown'."
+          ]
+        },
+        {
+          "name": "CodeReviewDelegate.progress",
+          "signature": "progress(task: TaskRef, signal?: AbortSignal): Promise<DelegateMeasurement<CodeReviewDetails> | null>",
+          "parameters": [
+            {
+              "name": "task",
+              "type": "TaskRef",
+              "purpose": "The attempt to measure.",
+              "optional": false
+            },
+            {
+              "name": "signal",
+              "type": "AbortSignal",
+              "purpose": "Stops the read.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "DelegateMeasurement<CodeReviewDetails> | null",
+            "meaning": "Phase from the ReviewProgress phase set; activeUnit from the current task name; counts for tasks; details per CodeReviewDetails."
+          },
+          "errors": [
+            {
+              "type": "null result",
+              "condition": "No verified publication for the review identity."
+            }
+          ],
+          "preconditions": [
+            "task is the delegate's registered attempt."
+          ],
+          "postconditions": [
+            "lastMeaningfulAt follows lastMeaningfulActivityAt, so a quiet but alive worker reports health without a revision change."
+          ]
+        },
+        {
+          "name": "CodeReviewDelegate.ownerActivity",
+          "signature": "ownerActivity(task: TaskRef, signal: AbortSignal): Promise<number | null>",
+          "parameters": [
+            {
+              "name": "task",
+              "type": "TaskRef",
+              "purpose": "The attempt whose owner is probed.",
+              "optional": false
+            },
+            {
+              "name": "signal",
+              "type": "AbortSignal",
+              "purpose": "Aborts the probe.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "number | null",
+            "meaning": "The next owner sequence when the executing review is verified alive (observation processState alive and the ReviewWorkers entry incarnation unchanged), else null."
+          },
+          "errors": [
+            {
+              "type": "null result",
+              "condition": "processState is exited or unknown, or the executionId changed."
+            }
+          ],
+          "preconditions": [
+            "A publication has been observed for this attempt."
+          ],
+          "postconditions": [
+            "Does not renew activity from observer reads alone."
+          ]
+        },
+        {
+          "name": "ReviewWorkers.progressOf",
+          "signature": "progressOf(key: ReviewKey): ReviewWorkerProgress | undefined",
+          "parameters": [
+            {
+              "name": "key",
+              "type": "ReviewKey",
+              "purpose": "The review identity (project, family, reviewId) bound to the task at registration.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ReviewWorkerProgress | undefined",
+            "meaning": "A frozen structured clone of the entry's last accepted progress: incarnation, attempt, sequence, phase, completed, total, observation (the full ReviewObservation) and display. Undefined when no entry exists or the entry is closing."
+          },
+          "errors": [
+            {
+              "type": "undefined result",
+              "condition": "No entry for the key, the entry is closing, or nothing has been accepted yet."
+            }
+          ],
+          "preconditions": [
+            "Called on the main thread that owns the review workers; delegates never reach a worker thread."
+          ],
+          "postconditions": [
+            "Read-only: it neither advances sequence, renews any activity grace, nor posts to a worker.",
+            "It returns only what acceptPublication and acceptProgress already validated; it adds no new write path."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "DesignReviewDetails",
+        "change": "new",
+        "details": "sc5 details for kind 'design-review': target (artifact id), checks (MeasuredCount|null), freshChunks (reviewed against selected chunks, unit 'chunks'), retainedChunks (coverageProgress.retainedChunks, number|null), retries (null: the design engine publishes no retry count). Cardinality: one DesignReviewDetails per design-review task attempt; a task attempt maps to exactly one design review attempt and is read-only over it.",
+        "schemaDiff": "interface DesignReviewDetails { readonly kind: 'design-review'; readonly target: string; readonly checks: MeasuredCount | null; readonly freshChunks: MeasuredCount | null; readonly retainedChunks: number | null; readonly retries: number | null }",
+        "callSites": [
+          "src/workflow/review/design-review/progress.ts",
+          "src/daemon/threads/review-progress.ts",
+          "src/shared/task-progress.ts"
+        ]
+      },
+      {
+        "entity": "CodeReviewDetails",
+        "change": "new",
+        "details": "sc5 details for kind 'code-review': target (BUILD or CR artifact id), initial (tasks completed against total, unit 'tasks'), followUp (null: ReviewProgress has no follow-up count), retries (null), publication (pending | complete from crPublication, failed when review status is failed, else unknown). Cardinality: one CodeReviewDetails per code-review task attempt, mapped to one review execution.",
+        "schemaDiff": "interface CodeReviewDetails { readonly kind: 'code-review'; readonly target: string; readonly initial: MeasuredCount | null; readonly followUp: MeasuredCount | null; readonly retries: number | null; readonly publication: 'pending' | 'complete' | 'failed' | 'unknown' }",
+        "callSites": [
+          "src/workflow/code-review/task-review/progress.ts",
+          "src/workflow/code-review/task-review/progress-view.ts",
+          "src/daemon/threads/review-progress.ts",
+          "src/shared/task-progress.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc5",
+        "role": "implements",
+        "howDetails": "Defines DesignReviewDetails and CodeReviewDetails exactly as sketched, with validators, and the two delegates that produce them. Fields the engines do not report are null, never inferred."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Implements TaskProgressDelegate parameterized by its own details type and registers each delegate through the coordinator's registerProducer/ProducerPort.register with a daemon-minted authorization."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Snapshots, cursors, freshness and the cancel-vs-stop controls come from the coordinator; delegates expose no cancel, so controls stay empty for reviews."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "ownerActivity feeds the coordinator's lease renewal. Retention association and expiry stay with s1."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "No publication exists for the task's review identity (worker not started, no ReviewWorkers entry for the key, or review already cleaned up).",
+          "detection": "ReviewWorkers.progressOf(key) returns undefined, or the entry has no observation yet, or the result fails isReviewWorkerStatus / the family decoder.",
+          "response": "progress() returns null; the coordinator reports freshness 'unavailable'. No count is invented and no state is changed.",
+          "userImpact": "The observer sees the review as unavailable rather than a wrong number.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A publication for a different review identity or attempt is returned for the task (foreign identity).",
+          "detection": "The publication's key.project, key.family, key.reviewId or attempt differs from the identity bound at registration; reviewProgressPublication already throws 'Foreign ... progress identity' for the same mismatch.",
+          "response": "The delegate discards it and returns null; it never maps the foreign values.",
+          "userImpact": "No cross-review leakage; the observer sees unavailable until the right publication arrives.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A delayed publication from an earlier review incarnation or execution arrives after a newer one (interrupt then resume).",
+          "detection": "Comparing publication.incarnation and publication.sequence (and executionId for code review) with the last accepted pair held by the delegate.",
+          "response": "The older publication is ignored; the last accepted values stay authoritative and ownerActivity returns null for a changed incarnation until it is reverified.",
+          "userImpact": "Progress never moves backwards after a resume; the task shows interrupted or unknown until the new owner is verified.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A publication claims reviewed work while admission is unverified.",
+          "detection": "reviewProgressPublication already throws for an admission with reviewed counts; the delegate also checks admission.validation === 'unverified' with completed > 0.",
+          "response": "The delegate returns null for that sample and keeps the previous accepted measurement.",
+          "userImpact": "A review that failed admission is not shown as partly done.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Counts are inconsistent (completed greater than total, or retained plus selected chunks not equal to planned).",
+          "detection": "isReviewWorkerStatus requires completed <= total; designCoverageProgress requires planned = selected + retained and reviewed <= selected and throws otherwise.",
+          "response": "The sample is dropped (null) and the inconsistency is counted in observability under 'invalid source', not shown as a count.",
+          "userImpact": "No impossible progress such as 5/3 is displayed.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The progress source cannot be read (the ReviewWorkers entry is closing or removed while the delegate reads).",
+          "detection": "ReviewWorkers.progressOf returns undefined for a previously observed key, or the abort signal fires.",
+          "response": "progress() returns null and never throws into the coordinator; ownerActivity returns null so the coordinator marks the owner stale after its grace.",
+          "userImpact": "The task shows stale or unknown, never completed or cancelled because of a read failure.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A review ends terminally (passed, changes_requested, incomplete, failed, interrupted, invalidated) between two samples.",
+          "detection": "The publication status is a terminal value or phase 'complete' / 'interrupted' / 'error'.",
+          "response": "The delegate reports the terminal phase from the engine unchanged and leaves lifecycle recording to the owner evidence path; it never maps a review verdict onto a task success or failure.",
+          "userImpact": "Findings and verdicts stay in the review report; progress shows only that the work is no longer running.",
+          "recoverable": false
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Design review with retained coverage from an earlier attempt (retainedChunks > 0) and zero fresh chunks selected.",
+          "expected": "checks and freshChunks report 0 of 0 chunks; retainedChunks carries the retained count separately; the review is not shown as having reviewed fresh work."
+        },
+        {
+          "input": "Code review before the first task starts (total tasks 0, phase scope_preparation).",
+          "expected": "initial is null or 0 of 0 with unit 'tasks', activeUnit is null, phase is scope_preparation."
+        },
+        {
+          "input": "Quiet code-review worker: heartbeat events only for several minutes.",
+          "expected": "processState stays alive and ownerActivity renews, but counts, meaningfulRevision and lastMeaningfulAt do not change."
+        },
+        {
+          "input": "Code review with all tasks complete and crPublication still pending.",
+          "expected": "initial shows total of total tasks, publication is 'pending', and the phase is cr_publication; completion is not implied."
+        },
+        {
+          "input": "Task name longer than 256 characters or containing control characters.",
+          "expected": "The name is already cleaned and truncated by ReviewProgressTracker; the delegate also bounds activeUnit to the progress label limit and drops control characters."
+        },
+        {
+          "input": "Several reviews run at once for the same project.",
+          "expected": "Each task attempt binds one review identity, so measurements never mix; ReviewWorkers.progressOf is read per key."
+        },
+        {
+          "input": "A design review advances to a new attempt (acceptPublication resets the entry progress when raw.attempt is the pending attempt).",
+          "expected": "The delegate sees a new attempt in the publication; the earlier attempt stays authoritative for its own task attempt and the new attempt reports as a new task attempt rather than overwriting it."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Heartbeat and session-start events are liveness only and never increment progress counts or lastMeaningfulActivityAt.",
+          "source": "c2"
+        },
+        {
+          "text": "Observing or polling progress never renews the owner's grace period; only the native or controller activity monitor does.",
+          "source": "c2"
+        },
+        {
+          "text": "Review progress publication is a bounded display projection and carries no findings, commands or authority; review results, admission, retries and publication stay under the review engines.",
+          "source": "c2"
+        },
+        {
+          "text": "Unverified admission cannot claim reviewed work or a passing result.",
+          "source": "c2"
+        },
+        {
+          "text": "Delegates implement TaskProgressDelegate and the coordinator, not the delegate, decides snapshots, cursors, freshness and lifecycle; unknown measurements stay null.",
+          "source": "c1"
+        },
+        {
+          "text": "The coordinator registers one producer per kind, so a second registration of the same kind is refused.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the pure mapping from a review publication to sc5 details, including every null and unknown field, without a coordinator.",
+          "subjects": [
+            "DesignReviewDelegate.progress maps phase, active chunk, reviewed against selected chunks and retained coverage",
+            "CodeReviewDelegate.progress maps phase, active task, completed against total tasks and publication state",
+            "retries and followUp are null for both kinds",
+            "foreign identity, invalid counts and unverified admission yield null",
+            "stale incarnation or sequence is ignored",
+            "heartbeat-only samples leave counts and meaningfulRevision unchanged"
+          ],
+          "fixturesNeeded": [
+            "a ReviewProgressPublication builder for family design and family code",
+            "a fixed clock"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove registration with a real ProgressCoordinator and store, owner activity renewal, interruption and resume, and that review results are untouched.",
+          "subjects": [
+            "register both delegates through registerProducer and ProducerPort.register with a minted authorization",
+            "snapshot after interruption shows interrupted/stale, then a newer incarnation is verified",
+            "a delayed publication from the earlier incarnation does not overwrite the newer snapshot",
+            "reading progress does not renew owner activity",
+            "second registration of the same kind is refused",
+            "ReviewWorkers.progressOf returns a clone of the last accepted progress and undefined for a closing or unknown key"
+          ],
+          "fixturesNeeded": [
+            "temporary progress store directory",
+            "a ReviewWorkers test double exposing progressOf and identity with controllable incarnation and sequence"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Keep the review details compatible with the s1 delegate contract and the producers the review engines already feed.",
+          "subjects": [
+            "DesignReviewDetails and CodeReviewDetails pass the bounded measurement schema and stay under 8 KiB",
+            "mapped publications round-trip through reviewProgressPublication without changing it"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "src/daemon/task-progress/__tests__/review-measurements.test.ts: design review reports active chunk, reviewed against selected chunks and retained coverage separately",
+            "src/daemon/task-progress/__tests__/review-measurements.test.ts: code review reports active task, completed against total tasks and publication state",
+            "src/daemon/task-progress/__tests__/review-measurements.test.ts: retries and follow-up stay null when the engine reports none",
+            "src/daemon/task-progress/__tests__/review-measurements.test.ts: heartbeat-only samples keep counts and meaningful revision unchanged"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "src/daemon/task-progress/__tests__/review-measurements.test.ts: a delayed publication from an earlier incarnation does not replace the newer measurement",
+            "src/daemon/task-progress/__tests__/review-measurements.test.ts: an interrupted review reads as interrupted until the new incarnation is verified",
+            "src/daemon/task-progress/__tests__/review-measurements.test.ts: observing progress leaves review results, publication and approval unchanged",
+            "src/daemon/threads/__tests__/review-workers-progress-of.test.ts: progressOf is read-only and never advances sequence or renews grace"
+          ]
+        }
+      ],
+      "testFramework": "node:test run through tsx (npx tsx --test), test files in __tests__ directories next to the code, named *.test.ts"
+    },
+    "migration": {
+      "stateBefore": "Design and code reviews already compute bounded progress (DesignProgressTracker, ReviewProgressTracker) and publish it from review worker threads; the main-thread ReviewWorkers class validates each publication (acceptPublication, acceptProgress) and keeps the latest per review key, including incarnation, sequence and the full observation. The status board receives only the display projection (ReviewWorkerStatus), which lacks incarnation, sequence, retained chunks, the active chunk, publication state and process liveness. The shared task-progress coordinator registers only the workflow and analysis producers (registerExecutorProducers); validateExecutorDetails rejects the design-review and code-review kinds, although ProgressKind already names them. No review attempt is a coordinator task today.",
+      "stateAfter": "A review attempt is also a coordinator task with kind design-review or code-review. DesignReviewDelegate and CodeReviewDelegate read the existing publication and report sc5 details through the shared snapshot, cursor and freshness model. Review engines, checkpoints, results, publication and approval gates are unchanged. Retries and follow-up are reported as unknown until an engine publishes them.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the review details types, their bounded validators and the two delegates in a new module beside the task-progress code, and add the read-only ReviewWorkers.progressOf accessor in src/daemon/threads/review-workers.ts; nothing registers them yet.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Register one design-review and one code-review producer with the coordinator that hosts the review kinds, using the daemon-minted authorization, but start no task until a review attempt is bound; the choice between a second typed coordinator and a widened details union is settled in the plan as an open question.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "At review start, bind the review identity (project, family, reviewId, attempt) to a task attempt and register its delegate; at review end, record the owner's terminal evidence without deriving it from the review verdict.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Add tests, run the review and task-progress suites, and verify that review results, checkpoints and publications are byte-for-byte unchanged for an unobserved review.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "ReviewWorkers gains one read-only method and no existing method changes. No public API, IPC frame, checkpoint schema or review result changes. Reviews that nobody observes behave exactly as today, because registration only reads the existing publication. ProgressKind already contains the two kinds, so stored progress records stay readable; the only new stored values are review details under those kinds.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Pull delegates over the existing review publication, own coordinator typing",
+        "oneLineSummary": "Two thin delegates project the already-published review observations into sc5 details and register through their own typed producer, leaving s2's executor union untouched.",
+        "approach": "Add a review-measurements module under src/daemon/task-progress that defines DesignReviewDetails and CodeReviewDetails (sc5) with typebox validators, plus DesignReviewDelegate and CodeReviewDelegate implementing TaskProgressDelegate. Each delegate's progress(task) reads the latest ReviewProgressPublication for the review identity (project, family, reviewId, attempt) from the main-thread ReviewWorkers class through a new read-only accessor (ReviewWorkers.progressOf in src/daemon/threads/review-workers.ts), which holds the latest validated ReviewProgressPublication per review key; the status board is not used because it carries only the display projection and maps it: code review phase/task/completedTasks/totalTasks/crPublication to initial count, activeUnit and publication; design review phase/completedChunks/totalChunks/activeChunkId/coverageProgress to checks, freshChunks and retainedChunks. Fields the engines do not report (retries, followUp) are null, never inferred. ownerActivity maps the publication's incarnation/sequence and process liveness to the owner fence; heartbeat-only liveness never changes meaningfulRevision. A second ProgressCoordinator typed on the review details union registers both producers, so ExecutorDetails and validateExecutorDetails in s2's file stay unchanged. No change to review engines.",
+        "pros": [
+          "Smallest change that meets ac1/ac2 from verified fields",
+          "No edit to s2-built files or to review execution, admission, retries or publication",
+          "Reads the already-validated bounded publication held on the main thread, so no checkpoint scans and no message to a busy review worker",
+          "Unknown stays unknown, as k3 requires"
+        ],
+        "cons": [
+          "Two coordinator instances means two details unions; s5/s6 must consume a combined view",
+          "retries and followUp are always null until an engine reports them, so ac1's follow-up work is only partly shown",
+          "Adds one read-only accessor to ReviewWorkers; pull cadence follows the coordinator's sampling, not each state change"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Widen the s2 executor union",
+        "oneLineSummary": "Extend ExecutorDetails and validateExecutorDetails with the two review kinds and register review producers in registerExecutorProducers on the single shared coordinator.",
+        "approach": "Edit src/daemon/task-progress/executor-measurements.ts so ExecutorDetails becomes WorkflowDetails | AnalysisDetails | DesignReviewDetails | CodeReviewDetails, extend validateExecutorDetails to accept the two review kinds, and add design-review and code-review entries to registerExecutorProducers. Delegates and the mapping from review publications are as in a1.",
+        "pros": [
+          "One coordinator and one details union, simplest for readers and s5/s6",
+          "Producer registration stays in one place"
+        ],
+        "cons": [
+          "Edits an s2-owned file and the relay's ExecutorProgressKind assumptions, crossing the s2 boundary",
+          "Couples review kinds to a request-scoped executor relay that review workers do not use",
+          "Risks regressions in workflow and analysis tests s2 just stabilised"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Equivalent behavior to a1 but crosses the s2 boundary the HLD forbids silently crossing (partial on sc1 and k2); kept as the fallback if consumers cannot take two details unions."
+      },
+      {
+        "id": "a3",
+        "name": "Push relay from review workers",
+        "oneLineSummary": "Review worker threads push each accepted progress change to the coordinator through a fenced port, like the executor relay.",
+        "approach": "Add a ReviewProgressRelay that the review worker publication path calls on every accepted ReviewProgressPublication, forwarding a fenced event (incarnation, sequence) to the coordinator over a dedicated channel. Delegates answer progress() from the latest pushed value and supply owner evidence from the push stream, so every meaningful change is observed immediately and delayed events from a prior incarnation are rejected at the relay.",
+        "pros": [
+          "Event-driven, with a precise owner fence per incarnation",
+          "Strong handling of delayed events after interruption or resume (ac2)"
+        ],
+        "cons": [
+          "New thread-to-main channel and failure modes in review workers",
+          "Touches the review worker publication path, closer to the non-goal on review execution",
+          "Larger test surface and a heavier build than the Story's size M"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "L-sized, adds a new thread-to-main channel and touches review execution, which the epic excludes; only justified if a1's pull cadence proves too coarse."
+      },
+      {
+        "id": "a4",
+        "name": "Extend engine progress schemas for retries and follow-up",
+        "oneLineSummary": "Add retry and follow-up counters to ReviewProgress and DesignReviewProgress so sc5 can report every field.",
+        "approach": "Add retries and followUp counters to ReviewProgress (task-review/progress.ts) and DesignReviewProgress, populated by the existing engines when they retry a chunk or discover follow-up work, then project them through the delegates of a1.",
+        "pros": [
+          "Fully reports the sc5 fields and ac1's follow-up work",
+          "Single source of truth in the engines"
+        ],
+        "cons": [
+          "Changes review engines and checkpoint schemas, which the epic lists as a non-goal",
+          "Needs checkpoint schema versioning and migration of stored checkpoints",
+          "Not needed to meet the Story if unknown fields are reported as null"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Violates the DEF's non-goal on changing review execution (k2) and needs checkpoint schema versioning; the missing counters are better tracked as a separate follow-up Story."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "Retries and follow-up work are not published by either review engine today, so ac1's 'retries and discovered follow-up work' is only partly met: both are reported as null. Accept null now, or add a separate Story that makes the engines publish those counters (a4 was rejected because it changes review execution, which the DEF's first non-goal excludes)?",
+      "Coordinator typing versus the HLD: the HLD says 'a shared daemon coordinator', but a1 as designed uses a second typed coordinator so s2's ExecutorDetails stays untouched. Should the plan widen the one coordinator's details union (a2, edits s2's executor-measurements.ts) or keep two coordinators and have s5/s6 read both?",
+      "Who binds a review identity (project, family, reviewId, attempt) to a TaskRef and mints the ProducerAuthorization at review start? sc1 and the HLD put owner binding and registration in s1; s3 should only supply the review identity and delegates. Confirm this stays consume-only, or raise an HLD back-flow, before the plan.",
+      "Verify that the invariant citations c1 and c2 map to the task-progress contract bundle and the review progress bundle respectively (s8 ep3 ambiguous).",
+      "Error 'type' values for the delegates are 'none thrown' and 'null result' (behaviours, not error classes); decide whether a named outcome type is wanted (s8 cd3 partial).",
+      "Source of review progress: the status board carries only the display projection, so the delegates read ReviewWorkers.progressOf, a new read-only accessor in src/daemon/threads/review-workers.ts. That is the daemon's review-worker hosting class, not a review engine; confirm it is acceptable under the DEF non-goal on changes to review execution."
+    ],
+    "sequenceDefinition": {
+      "id": "s3-review-progress-flow",
+      "narrative": "Shows how a review worker's published progress, kept by ReviewWorkers, reaches a coordinator snapshot, and why a delayed publication from an earlier incarnation cannot overwrite a newer one.",
+      "participants": [
+        {
+          "id": "worker",
+          "label": "Review worker",
+          "description": "Design or code review worker thread that computes and publishes bounded progress."
+        },
+        {
+          "id": "board",
+          "label": "ReviewWorkers (main thread)",
+          "description": "Main-thread class that validates each worker publication and keeps the latest per review key: incarnation, sequence, observation and display."
+        },
+        {
+          "id": "delegate",
+          "label": "Review delegate",
+          "description": "DesignReviewDelegate or CodeReviewDelegate: reads the publication and maps it to sc5 details."
+        },
+        {
+          "id": "coordinator",
+          "label": "ProgressCoordinator",
+          "description": "s1 coordinator that normalizes, fences, stores and serves snapshots."
+        },
+        {
+          "id": "observer",
+          "label": "Observer",
+          "description": "An authorized reader (VS Code or MCP) of the task snapshot."
+        }
+      ],
+      "messages": [
+        {
+          "from": "worker",
+          "to": "board",
+          "label": "publish ReviewProgressPublication (incarnation, sequence)",
+          "kind": "call",
+          "description": "The existing publication path, validated by ReviewWorkers.acceptPublication; unchanged by this Story."
+        },
+        {
+          "from": "coordinator",
+          "to": "delegate",
+          "label": "progress(task)",
+          "kind": "call",
+          "description": "Coordinator asks the registered delegate for the current measurement."
+        },
+        {
+          "from": "delegate",
+          "to": "board",
+          "label": "progressOf(key)",
+          "kind": "call",
+          "description": "Read-only accessor returning a clone of the last accepted progress; no checkpoint scan and no message to a busy worker."
+        },
+        {
+          "from": "board",
+          "to": "delegate",
+          "label": "ReviewWorkerProgress or undefined",
+          "kind": "return",
+          "description": "A missing entry, foreign identity or invalid observation leads to a null measurement."
+        },
+        {
+          "from": "delegate",
+          "to": "coordinator",
+          "label": "DelegateMeasurement or null",
+          "kind": "return",
+          "description": "Unreported fields (retries, follow-up) are null."
+        },
+        {
+          "from": "worker",
+          "to": "board",
+          "label": "resume: publish with newer incarnation",
+          "kind": "call",
+          "description": "After an interruption the resumed review publishes a new incarnation."
+        },
+        {
+          "from": "delegate",
+          "to": "delegate",
+          "label": "ignore delayed publication from earlier incarnation",
+          "kind": "recurse",
+          "description": "Compares incarnation and sequence with the last accepted pair; older values are dropped."
+        },
+        {
+          "from": "observer",
+          "to": "coordinator",
+          "label": "read snapshot",
+          "kind": "call",
+          "description": "Receives the latest verified snapshot; interrupted or stale until the new owner is verified."
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/S003/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "src/daemon/task-progress/coordinator.ts",
+      "quotedText": "ProgressCoordinator is generic over a details union D and registers a producer per kind with registerProducer(kind, projectDetails)"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "src/daemon/threads/review-progress.ts",
+      "quotedText": "reviewProgressPublication(input, sequence, observation) validates family identity, rejects unverified admission claiming reviewed work"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "src/daemon/task-progress/__tests__/executor-relay.test.ts",
+      "quotedText": "Tests use node:test run through tsx."
+    },
+    {
+      "id": "c4",
+      "kind": "step-output",
+      "ref": "s3 alternatives.judge winner a1"
+    },
+    {
+      "id": "c5",
+      "kind": "doc",
+      "ref": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/DEF.md",
+      "quotedText": "Changes to review execution, workflow stages, approval gates or model providers"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/daemon/threads/review-workers.ts:337",
+      "quotedText": "private acceptPublication(source:Worker,raw:ReviewProgressPublication):boolean{"
+    }
+  ]
+}

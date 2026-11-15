@@ -29,7 +29,7 @@ import { gateHandlers, gateRepoCall } from './repo-call-gate.js';
 /** The methods gated inside their own handlers (the approval family): the table-wide wrapper leaves them alone. */
 const APPROVAL_FAMILY: ReadonlySet<string> = new Set(['workflow.approve', 'workflow.approvePipeline']);
 import { listRepos, addRepo, removeRepo, repoContainingCwd, InvalidRepoPathError, validateRepoPath } from '../db/repos.js';
-import type { ExecutorDetails } from './task-progress/executor-measurements.js';
+import type { AllTaskDetails } from './task-progress/review-measurements.js';
 import { createProgressRoutes } from './task-progress/rpc.js';
 import type { ProgressRuntime } from './task-progress/rpc.js';
 import { deleteEntitiesForRepo, findEntitiesByFile, getEntity } from '../db/entities.js';
@@ -147,7 +147,7 @@ export interface RuntimeIndexer {
 
 export interface HandlerRuntimeDeps {
  readonly reviewThreads?:(()=>NonNullable<DaemonStatus['threads']>)|undefined;
-  readonly progressRuntime?: (() => Promise<ProgressRuntime<ExecutorDetails>>) | undefined;
+  readonly progressRuntime?: (() => Promise<ProgressRuntime<AllTaskDetails>>) | undefined;
  readonly stepCallHandler?: StreamHandler | undefined;
 	/** Test seam: the registered repositories' paths (default: the registry in `db`). */
 	readonly registeredRepos?: (() => Promise<ReadonlySet<string>>) | undefined;
@@ -697,6 +697,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// verdict (ac2); on ok, grounding is structured entity summaries, never
 		// raw file text (ac3, k6).
 		'designReview.start': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('start', params, context),
+		'designReview.cancel': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('cancel', params, context),
 		'designReview.progress': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('progress', params, context),
 		'designReview.assignment': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('assignment', params, context),
 		'designReview.plan': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('plan', params, context),
@@ -706,6 +707,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		'designReview.recover': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('recover', params, context),
 		'designReview.failure': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('failure', params, context),
 		'codeReview.task.cleanup': async params => (await import('./task-review-rpc.js')).cleanupApprovedTaskReviews(params),
+		'codeReview.task.cancel': async (params,context) => (await import('./task-review-rpc.js')).cancelTaskReview(params,context),
 		'codeReview.task.progress': async (params,context) => (await import('./task-review-rpc.js')).readTaskReviewProgress(params,context),
 		'codeReview.task.publish': async (params,context) => (await import('./task-review-rpc.js')).publishStoredTaskReview(params,context),
 		'codeReview.task.start': async (params, context) => (await import('./task-review-rpc.js')).startTaskReview(params, context),

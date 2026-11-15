@@ -52,20 +52,13 @@ import type {
 } from './types.js';
 import { buildCompleteness } from '../completeness.js';
 import type { ReachedLimit, SkippedItem } from '../completeness.js';
-import { carriedCompleteness, GRAPH_BASIS_NOTE, reachedLimit } from './completeness-facts.js';
+import { carriedCompleteness, GRAPH_BASIS_NOTE } from './completeness-facts.js';
 import type { CarriedCompletenessFacts } from './completeness-facts.js';
 import { errorMessage, LookupFailedError } from './lookup-failed.js';
 
 const log = getLogger('analyze:explore:capability-reuse-check');
 
 const PROMPT_REL = 'prompts/analyze/capability.reuse-check.system.md';
-
-// ---------------------------------------------------------------------------
-// Configuration
-// ---------------------------------------------------------------------------
-
-const DEFAULT_LIMIT = 5;
-const MAX_LIMIT     = 12;
 
 // ---------------------------------------------------------------------------
 // Structured-output schema
@@ -100,7 +93,6 @@ export const CAPABILITY_VERDICTS_SCHEMA: StructuredSchema = {
 
 interface CapabilityReuseCheckParams {
 	readonly capability: string;
-	readonly limit?:     number;
 }
 
 function parseParams(exp: Exploration): CapabilityReuseCheckParams {
@@ -111,10 +103,7 @@ function parseParams(exp: Exploration): CapabilityReuseCheckParams {
 	if (capability.length === 0) {
 		throw new Error('capability.reuse-check: params.capability is required (non-empty string)');
 	}
-	const limit = typeof p['limit'] === 'number' && p['limit']! > 0
-		? Math.min(MAX_LIMIT, Math.floor(p['limit'] as number))
-		: DEFAULT_LIMIT;
-	return { capability, limit };
+	return { capability };
 }
 
 // ---------------------------------------------------------------------------
@@ -162,7 +151,7 @@ export async function runCapabilityReuseCheck(
 			prepared.prepared.profiles.map(p => ({
 				source:  p.path,
 				content: p.profile !== undefined
-					? `candidate module, not judged; exports: ${p.profile.exports.slice(0, 8).join(', ') || '(none)'}`
+					? `candidate module, not judged; exports: ${p.profile.exports.join(', ') || '(none)'}`
 					: 'candidate module, not judged; its profile could not be read',
 			})),
 			{ cause: err },
@@ -227,7 +216,6 @@ export async function prepareCapabilityReuseCheck(
 ): Promise<CapabilityReuseCheckPrepareResult> {
 	const params = parseParams(exp);
 	const capability = params.capability;
-	const limit = params.limit ?? DEFAULT_LIMIT;
 
 	// (1) concept.resolve for module candidates.
 	const conceptExp: Exploration = {
@@ -236,7 +224,6 @@ export async function prepareCapabilityReuseCheck(
 		purpose: `capability.reuse-check inner concept.resolve for "${capability}"`,
 		params: {
 			query:        capability,
-			limit:        Math.max(limit * 2, 10),
 			includeKinds: ['dir', 'file'],
 		},
 	};
@@ -264,7 +251,7 @@ export async function prepareCapabilityReuseCheck(
 	const subject = named !== undefined
 		? { path: named.path, kind: named.kind === 'dir' ? 'dir' as const : 'file' as const, score: 1, entityId: named.kind === 'symbol' ? named.entityId : undefined }
 		: undefined;
-	const others = pickTopDistinct(subject === undefined ? concept.hits : concept.hits.filter(h => h.path !== subject.path), subject === undefined ? limit : Math.max(limit - 1, 0));
+	const others = pickDistinct(subject === undefined ? concept.hits : concept.hits.filter(h => h.path !== subject.path));
 	const topHits: Array<{ path: string; kind: string; score: number; entityId?: string | undefined }> = subject === undefined ? others : [subject, ...others];
 
 	// (2) module.profile each candidate serially.
@@ -297,13 +284,8 @@ export async function prepareCapabilityReuseCheck(
 		}
 	}
 
-	// Candidates: the inner search may have cut its matches, and only `limit` of them are checked.
-	// The inner search's own limits bound what the candidates were drawn from.
+	// Every distinct candidate the inner search found is checked. Its own limits, if it reached any, bound what they were drawn from.
 	const limited: ReachedLimit[] = (concept.completeness.limited ?? []).map(l => ({ ...l, scope: 'source' as const }));
-	const distinctHits = new Set([...concept.hits.map(h => h.path), ...(subject !== undefined ? [subject.path] : [])]).size;
-	if (distinctHits > topHits.length) {
-		limited.push(reachedLimit('candidate modules', limit, 'overall', distinctHits));
-	}
 
 	const promptContent = loadPromptFile();
 	const messages = buildMessages(promptContent, capability, profiles);
@@ -350,7 +332,7 @@ export function finalizeCapabilityReuseCheck(
 		const evidenceEntities = p.entityId !== undefined
 			? (p.symbolName !== undefined ? [p.symbolName] : [])
 			: p.profile !== undefined
-				? p.profile.exports.slice(0, 5)
+				? p.profile.exports
 				: [];
 		return {
 			path:             p.path,
@@ -414,9 +396,9 @@ function buildMessages(
 		const prof = p.profile;
 		const exports = p.entityId !== undefined
 			? (p.symbolName ?? p.entityId)
-			: prof !== undefined ? prof.exports.slice(0, 8).join(', ') : '(unavailable)';
-		const subdirs = prof !== undefined ? prof.subdirs.slice(0, 8).join(', ') : '(unavailable)';
-		const files   = prof !== undefined ? prof.filesInDir.slice(0, 8).map(f => f.file).join(', ') : '(unavailable)';
+			: prof !== undefined ? prof.exports.join(', ') : '(unavailable)';
+		const subdirs = prof !== undefined ? prof.subdirs.join(', ') : '(unavailable)';
+		const files   = prof !== undefined ? prof.filesInDir.map(f => f.file).join(', ') : '(unavailable)';
 		const subjectNote = p.namedByRequest !== true ? '' : p.entityId !== undefined
 			? `   subject: the request named this one symbol (${p.symbolName ?? p.entityId}); the files and exports below describe its whole file and are context only\n`
 			: `   subject: the request named this area; judge it first, whatever its score\n`;
@@ -463,12 +445,10 @@ function resolveRelativeToInsrcRoot(relativePath: string): string {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function pickTopDistinct<T extends { path: string; kind: string; score: number }>(
+function pickDistinct<T extends { path: string; kind: string; score: number }>(
 	hits: readonly T[],
-	limit: number,
 ): T[] {
 	const chosen: T[] = [];
-	if (limit <= 0) return chosen;
 	const seen = new Set<string>();
 	// Prefer dir hits over file hits for the same directory prefix.
 	const sorted = [...hits].sort((a, b) => {
@@ -479,7 +459,6 @@ function pickTopDistinct<T extends { path: string; kind: string; score: number }
 		if (seen.has(h.path)) continue;
 		seen.add(h.path);
 		chosen.push(h);
-		if (chosen.length >= limit) break;
 	}
 	return chosen;
 }

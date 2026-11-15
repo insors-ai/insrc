@@ -6,9 +6,15 @@ import { gitMergeBaseTool } from '../../../daemon/tools/builtins/git/merge-base.
 import { gitDiffTool } from '../../../daemon/tools/builtins/git/diff.js';
 import { gitPathHistoryTool } from '../../../daemon/tools/builtins/git/path-history.js';
 import type { ToolDeps } from '../../../daemon/tools/types.js';
-import { requireReview } from './contracts.js';
+import { requireReview, reviewPath } from './contracts.js';
 
 export interface PinnedBlob { readonly bytes: Uint8Array; readonly oid: string; }
+export interface ReviewObjectRequest { readonly commit: string; readonly path?: string | undefined; }
+export interface ReviewObjectInfo { readonly exists: boolean; readonly bytes: number; }
+export interface BatchReviewSources extends ReviewSources {
+ objectInventory(requests: readonly ReviewObjectRequest[]): Promise<readonly ReviewObjectInfo[]>;
+ objects(requests: readonly ReviewObjectRequest[]): Promise<readonly (PinnedBlob | null)[]>;
+}
 export interface ReviewSources {
  commit(oid: string, field?: string): Promise<readonly string[]>;
  isAncestor(origin: string, revision: string): Promise<boolean>;
@@ -51,8 +57,46 @@ function changedRuns(section: string): readonly ChangedRange[] {
  return ranges;
 }
 /** Existing typed tools retain daemon execution authority and isolated object reads. */
-export class RegistryReviewSources implements ReviewSources {
+export class RegistryReviewSources implements BatchReviewSources {
  constructor(private readonly deps: ToolDeps) {}
+ private objectRequests(requests: readonly ReviewObjectRequest[]): void {
+  requireReview(requests.length > 0 && requests.length <= 256, 'source', 'Expected bounded object request batch');
+  for (const r of requests) {
+   requireReview(/^([a-f0-9]{40}|[a-f0-9]{64})$/.test(r.commit), 'source', 'Expected pinned object ID');
+   if (r.path !== undefined) reviewPath(r.path);
+  }
+ }
+ async objectInventory(requests: readonly ReviewObjectRequest[]): Promise<readonly ReviewObjectInfo[]> {
+  this.objectRequests(requests);
+  const revs = requests.map(r => r.path === undefined ? r.commit : `${r.commit}:${r.path}`);
+  const result = await callTool(gitCatFileTool, { cwd: this.deps.repoPath, revs, metadataOnly: true, isolated: true }, this.deps);
+  requireReview(result.success && 'objects' in result.data && result.data.objects.length === requests.length, 'source', 'Incomplete object inventory');
+  if (!result.success || !('objects' in result.data)) throw new Error('Unreachable inventory');
+  return result.data.objects.map((o, i) => {
+   requireReview(o.rev === revs[i], 'source', 'Inventory order mismatch');
+   if (!o.exists) return { exists: false, bytes: 0 };
+   requireReview(o.type === (requests[i]!.path === undefined ? 'commit' : 'blob') && o.size !== undefined && o.size <= 4 * 1024 * 1024, 'source', 'Unsupported or oversized object');
+   if (requests[i]!.path === undefined) requireReview(o.sha === requests[i]!.commit, 'source', 'Commit inventory identity mismatch');
+   return { exists: true, bytes: o.size };
+  });
+ }
+ async objects(requests: readonly ReviewObjectRequest[]): Promise<readonly (PinnedBlob | null)[]> {
+  this.objectRequests(requests);
+  const revs = requests.map(r => r.path === undefined ? r.commit : `${r.commit}:${r.path}`);
+  const result = await callTool(gitCatFileTool, { cwd: this.deps.repoPath, revs, encoding: 'base64', isolated: true }, this.deps);
+  requireReview(result.success && 'objects' in result.data && result.data.objects.length === requests.length, 'source', 'Incomplete object batch');
+  if (!result.success || !('objects' in result.data)) throw new Error('Unreachable object batch');
+  return result.data.objects.map((o, i) => {
+   requireReview(o.rev === revs[i], 'source', 'Object batch order mismatch');
+   if (!o.exists) return null;
+   const expected = requests[i]!.path === undefined ? 'commit' : 'blob';
+   requireReview(o.type === expected && o.sha && o.contentBase64 !== undefined, 'source', 'Incomplete object batch member');
+   const bytes = Buffer.from(o.contentBase64, 'base64');
+   const digest = createHash(o.sha.length === 40 ? 'sha1' : 'sha256').update(`${expected} ${bytes.length}\0`).update(bytes).digest('hex');
+   requireReview(digest === o.sha && bytes.length === o.size && (expected !== 'commit' || o.sha === requests[i]!.commit), 'source', 'Object batch integrity mismatch');
+   return { bytes, oid: o.sha };
+  });
+ }
  private async object(rev: string, expected: 'commit' | 'blob', field = 'source'): Promise<PinnedBlob | null> {
   const result = await callTool(gitCatFileTool, { cwd: this.deps.repoPath, rev, encoding: 'base64', isolated: true }, this.deps);
   requireReview(result.success, 'source', result.success ? '' : result.error.message);

@@ -102,6 +102,7 @@ const TABLE: readonly (readonly [string, MethodClass, boolean])[] = [
 	['codeReview.grounding', 'session', false],
 	['designReview.start', 'session', false],
 	['designReview.progress', 'session', false],
+	['designReview.cancel', 'session', false],
 	['designReview.assignment', 'session', false],
 	['designReview.plan', 'session', false],
 	['designReview.impact', 'session', false],
@@ -112,6 +113,7 @@ const TABLE: readonly (readonly [string, MethodClass, boolean])[] = [
 	['codeReview.task.cleanup', 'session', false],
 	['codeReview.task.start', 'session', false],
 	['codeReview.task.progress', 'session', false],
+	['codeReview.task.cancel', 'session', false],
 	['codeReview.task.publish', 'session', false],
 	['codeReview.task.assignment', 'session', false],
 	['codeReview.task.scope', 'session', false],
@@ -389,12 +391,12 @@ export const MAIN_DAEMON_CONNECTION_METHODS:ReadonlySet<string>=new Set([
 
 /** Task review state and trusted controller lifetimes have one main-daemon owner. */
 export const MAIN_DAEMON_TASK_REVIEW_METHODS: ReadonlySet<string> = new Set([
- 'codeReview.task.cleanup', 'codeReview.task.start', 'codeReview.task.progress', 'codeReview.task.publish',
+ 'codeReview.task.cancel', 'codeReview.task.cleanup', 'codeReview.task.start', 'codeReview.task.progress', 'codeReview.task.publish',
  'codeReview.task.assignment', 'codeReview.task.scope', 'codeReview.task.result', 'codeReview.task.activity',
 ]);
 
 /** Design review execution and trusted connection authority are main-daemon owned. */
 export const MAIN_DAEMON_DESIGN_REVIEW_METHODS:ReadonlySet<string>=new Set([
- 'designReview.start','designReview.progress','designReview.assignment','designReview.plan','designReview.impact','designReview.activity','designReview.result',
+ 'designReview.cancel','designReview.start','designReview.progress','designReview.assignment','designReview.plan','designReview.impact','designReview.activity','designReview.result',
  'designReview.recover','designReview.failure',
 ]);

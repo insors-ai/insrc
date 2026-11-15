@@ -38,7 +38,8 @@ export async function completeReview(review:AdmittedReview,deps:ReviewPersistenc
  if(deps.publish){
   try{
    await deps.publish(review.checkpoint.project,review.checkpoint.reviewId,review.prepared.epicHash,review.capacity);
-   const stored=JSON.parse(await readFile(review.path,'utf8')) as ReviewCheckpoint;
+   const stored=await(deps.read??loadCheckpoint)(review.path);
+   if(!stored)throw new Error('Published checkpoint missing');
    review.checkpoint=stored;review.attempt=stored.attempts.at(-1)!;
   }catch(error){if(entry.progress)entry.progress={...entry.progress,phase:'error',processState:'unknown',activeToolCount:0};entry['review-response'].error=`CR publication failed: ${error instanceof Error?error.message:String(error)}`;await persistReview(review,deps);}
  }else{if(entry.progress)entry.progress={...entry.progress,phase:'complete',processState:'unknown',activeToolCount:0,completedTasks:entry['review-response'].tasks.length};entry.header.status=aggregateTaskStatus(entry['review-response'].tasks);await persistReview(review,deps);}

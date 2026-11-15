@@ -176,17 +176,15 @@ export async function runAggregator(args: RunAggregatorArgs): Promise<AggregateR
 // Parts
 // ---------------------------------------------------------------------------
 
-const SUMMARY_CAP = 2_000;
-
 /** The upstream outputs as blocks of evidence, in the order they are rendered. */
 function upstreamBlocksOf(map: ReadonlyMap<string, readonly UpstreamOutput[]>): readonly EvidenceBlock[] {
 	return Array.from(map.keys()).filter(name => (map.get(name) ?? []).length > 0).sort()
 		.flatMap(name => (map.get(name) ?? []).flatMap(o => upstreamBlocks({ taskId: o.taskId, template: o.template, params: o.params, value: o.value })));
 }
 
-/** A combine reply holds one summary, capped like a part's so a staged combine stays inside its call. */
+/** A combine reply holds one summary. */
 export const AGGREGATE_COMBINE_SCHEMA: StructuredSchema = {
-	type: 'object', additionalProperties: false, required: ['summary'], properties: { summary: { type: 'string', minLength: 20, maxLength: 2_000 } },
+	type: 'object', additionalProperties: false, required: ['summary'], properties: { summary: { type: 'string', minLength: 20 } },
 } as unknown as StructuredSchema;
 
 /**
@@ -199,16 +197,15 @@ function aggregateAdapter(promptContent: string, args: RunAggregatorArgs): PartA
 	const absent = renderAbsentSection(args.absentInputs, args.upstreamOutputs);
 	const focus = args.focus !== undefined && args.focus.length > 0 ? `\nFocus: ${args.focus}\n` : '';
 	const head = `Target: ${args.target}\nScope:  ${args.scope}\n${focus}\n`;
-	const partSchema = structuredClone(AGGREGATE_LLM_SCHEMA) as unknown as { properties: { summary: Record<string, unknown> } };
-	partSchema.properties.summary = { ...partSchema.properties.summary, maxLength: SUMMARY_CAP };
+	const partSchema = structuredClone(AGGREGATE_LLM_SCHEMA);
 	return {
-		partSchema: partSchema as unknown as StructuredSchema,
+		partSchema,
 		combineSchema: AGGREGATE_COMBINE_SCHEMA,
 		renderPart: (part) => [
 			{ role: 'system', content: system },
 			{ role: 'user', content: head + `Upstream task outputs of this part (${part.id}); the report is written in parts and this is one of them:\n\n`
 				+ part.sections.map(renderSection).join('\n\n') + absent + '\n\n'
-				+ `Compose the aggregate report for THIS PART only. Respond with ONLY the JSON object matching the schema; keep summary under ${SUMMARY_CAP} characters.` },
+				+ `Compose the aggregate report for THIS PART only. Respond with ONLY the JSON object matching the schema.` },
 		],
 		renderCombine: (summaries) => [
 			{ role: 'system', content: system },
@@ -216,7 +213,7 @@ function aggregateAdapter(promptContent: string, args: RunAggregatorArgs): PartA
 				+ absent + '\n\nWrite the executive summary of the whole report as JSON {summary}. The findings are assembled from the parts; do not write them.' },
 		],
 		summaryOf: r => r.summary, summaryOfCombine: c => c.summary,
-		mergeRounds: rs => ({ summary: rs.map(r => r.summary).join(' ').slice(0, SUMMARY_CAP), findings: rs.flatMap(r => r.findings) }),
+		mergeRounds: rs => ({ summary: rs.map(r => r.summary).join(' '), findings: rs.flatMap(r => r.findings) }),
 	};
 }
 

@@ -38,6 +38,11 @@ export interface ItemMeasure {
 	readonly storedChars:  number;
 	/** The stored body is shorter than the item: the indexer cut it. */
 	readonly cutByIndexer: boolean;
+	/**
+	 * The item's full text, read from its file at the stored pointer. Set only when `totalChars` is established, so
+	 * its length is `totalChars`; absent when the file could not be confirmed to hold the item (`reason` says why).
+	 */
+	readonly content?: string | undefined;
 }
 
 export interface MeasureItemOptions {
@@ -88,12 +93,13 @@ export function measureItem(entity: MeasuredEntity, opts: MeasureItemOptions): I
 		return unknown('the file changed since it was indexed');
 	}
 
-	const totalChars = WHOLE_FILE_KINDS.has(entity.kind)
-		? source.length
-		: source.split('\n').slice(entity.startLine - 1, entity.endLine).join('\n').length;
+	const content = WHOLE_FILE_KINDS.has(entity.kind)
+		? source
+		: source.split('\n').slice(entity.startLine - 1, entity.endLine).join('\n');
+	const totalChars = content.length;
 
 	// An empty stored body (the artifact parser's file entity) is nothing stored, not a cut.
-	return { totalChars, storedChars, cutByIndexer: hasMarker || (storedChars > 0 && totalChars > storedChars) };
+	return { totalChars, storedChars, cutByIndexer: hasMarker || (storedChars > 0 && totalChars > storedChars), content };
 }
 
 /** The `partlyRead` entry for an item of which `readChars` characters were read. */

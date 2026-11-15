@@ -1,4 +1,6 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
+import { Value } from '@sinclair/typebox/value';
+import { ReviewCancellationRequestSchema } from '../shared/review-preparation.js';
 import { isMainThread } from 'node:worker_threads';
 import type { Worker } from 'node:worker_threads';
 import { realpath } from 'node:fs/promises';
@@ -33,6 +35,8 @@ export interface ProductionReviewDeps{
  readonly track:(worker:Worker,name:string)=>void;
  /** Real-worker fixture seam; production uses the ordinary compiled entry. */
  readonly start?:typeof startReviewWorkerBootstrap;
+ /** s3: binds an admitted review attempt to a task-progress task (the one runtime). */
+ readonly bindTask?:((key:ReviewKey,attempt:number,context:TrustedRpcContext)=>Promise<import('./task-progress/review-measurements.js').ReviewTaskBinding|undefined>)|undefined;
 }
 let installed:ProductionReviews|undefined;
 export function installProductionReviews(service:ProductionReviews):void{
@@ -57,7 +61,7 @@ export class ProductionReviews{
     await this.registered(key.project);if(!scope)throw new Error('Registered review scope required');
     if(command.kind==='cli')this.currentReviewer(key.project,scope.subject,scope.reviewer);
     await authorizeReviewNative(key,command,scope.reviewer,signal,receipt);
-   },track:(w,name)=>{this.tracked.add(w);w.once('exit',()=>this.tracked.delete(w));deps.track(w,name);},...(deps.start?{start:deps.start}:{})});
+   },track:(w,name)=>{this.tracked.add(w);w.once('exit',()=>this.tracked.delete(w));deps.track(w,name);},...(deps.start?{start:deps.start}:{}),...(deps.bindTask?{bindTask:deps.bindTask}:{})});
   this.resources=this.registry.resourceRecovery(approvalBroker,async(key,rows,knownScope)=>{
    const scope=knownScope??await this.scope(key),id=key.family==='code'?scope.subject.replace(/^BUILD-/,'CR-'):scope.subject;
    await persistReviewResourceAudit(lifecycleFor(key.project).store,id,key,rows);
@@ -116,6 +120,12 @@ export class ProductionReviews{
    const answer=await this.resources.clear(key,p['resourceRecovery'] as {reason:string;leaseIds?:string[]},context,scope);
    return{...answer,guidance:'Resource clearance never starts review work. Submit a separate explicit resume/recover, or the next attempt after a failed attempt.'};
   }
+  // A sequence-zero initializing runtime cannot have admitted native work.
+  // The explicit submission continues only through the exact fenced
+  // initialize/bind recovery, which rechecks input and archived predecessor.
+  const {loadReviewRuntime}=await import('./threads/review-runtime-store.js');
+  const initializing=await loadReviewRuntime(key);
+  if(initializing?.state==='initializing'&&initializing.sequence===0&&!initializing.resourceGuard.openLeases.length&&initializing.attempt===p['attempt'])return undefined;
   const state=await this.resources.inspect(key,context,scope);
   if(state.remaining)return{status:'resource_recovery_required',remaining:state.remaining,reviewId:key.reviewId,guardDigest:state.digest,guidance:'Verify the prior resources have ended, then request resourceRecovery with a reason and optional exact leaseIds through the existing local approval broker. Clearance alone will not resume.'};
   return undefined;
@@ -137,8 +147,17 @@ export class ProductionReviews{
   await this.registry.execute(ack,ctx,resume?'resume':'start');
   return{reviewId:key.reviewId,attempt,reviewer:scope.reviewer,status:'pending',path:ack.checkpointPath,checkpointPath:ack.checkpointPath,crPublication:'pending',completedTaskIds:[],pendingTaskIds:[],admission:{validation:'unverified'}};
  }
+ async codeCancel(raw:unknown,trusted?:TrustedRpcContext):Promise<unknown>{
+  const {p,key,attempt}=await this.request(raw,'code');
+  const {epicHash:_epic,phase,...fields}=p;
+  if(phase!==undefined&&phase!=='cancel')throw new Error('Invalid cancellation phase');
+  const input={...fields,repo:key.project,phase:'cancel'};
+  if(!Value.Check(ReviewCancellationRequestSchema,input))throw new Error('Invalid cancellation request');
+  return this.registry.cancel(key,attempt,`cancel-${attempt}`,input.reason,this.context(trusted));
+ }
  async codeProgress(raw:unknown,trusted?:TrustedRpcContext):Promise<unknown>{
   const {p,key,attempt}=await this.request(raw,'code');
+  if(this.registry.hasCancellation(key,attempt))return this.registry.cancellationProgress(key,attempt,this.context(trusted));
   if(this.registry.identity(key)&&this.registry.cachedProgress(key)?.attempt===attempt)return this.registry.progress(key,this.context(trusted));
   return this.registry.storedProgress(key,attempt,{...(typeof p['epicHash']==='string'?{epicHash:p['epicHash']}:{}),...(typeof p['storyId']==='string'?{storyId:p['storyId']}:{})});
  }
@@ -159,9 +178,14 @@ export class ProductionReviews{
  }
  async design(raw:unknown,trusted?:TrustedRpcContext,client?:'claude'|'codex'|'vibe'):Promise<unknown>{
   const {p,key,attempt}=await this.request(raw,'design');
+  if(p['phase']==='cancel'){
+   const request={...p,repo:key.project};if(!Value.Check(ReviewCancellationRequestSchema,request))throw new Error('Invalid cancellation request');
+   return this.registry.cancel(key,attempt,`cancel-${attempt}`,request.reason,this.context(trusted));
+  }
   const {resourceRecovery:_clear,...fields}=p,request=parseDesignRequest({...fields,repo:key.project});
   requireReview(p['resourceRecovery']===undefined||request.phase==='recover','resourceRecovery','Clear resources through explicit recover only');
   if(request.phase==='progress'){
+   if(this.registry.hasCancellation(key,attempt))return this.registry.cancellationProgress(key,attempt,this.context(trusted));
    const options={...(request.artifactPath?{artifactPath:request.artifactPath}:{}),...(request.includeResult!==undefined?{includeResult:request.includeResult}:{}),...(request.afterCompletedChunk!==undefined?{afterCompletedChunk:request.afterCompletedChunk}:{})};
    if(this.registry.identity(key)&&this.registry.cachedProgress(key)?.attempt===attempt){
     const live=await this.registry.progress(key,this.context(trusted)) as DesignObservation;if(!request.includeResult)return live;
@@ -180,9 +204,11 @@ export class ProductionReviews{
    const path=request.phase==='start'?request.artifactPath:stored?.artifactPath;if(!path)throw new Error('Stored design artifact locator missing');
    const route={artifactPath:path,...(client?{client}:{})};
    const scope=await this.scope(key,ctx,{key,attempt,actionId:'lookup',submitted:request,route});
-   const ack=await this.registry.admit({key,attempt,actionId:request.phase==='recover'?request.actionId:`start-${attempt}`,submitted:request,route},ctx);
+   if(request.phase==='recover'&&request.operation==='retry_publication')return this.registry.publishStored({key,attempt,actionId:request.actionId,submitted:request,route},ctx);
+   const targetAttempt=request.phase==='recover'&&request.operation==='restart_full'?attempt+1:attempt;
+   const ack=await this.registry.admit({key,attempt:targetAttempt,actionId:request.phase==='recover'?request.actionId:`start-${attempt}`,submitted:request,route},ctx);
    await this.registry.execute(ack,ctx);
-   return{accepted:true,reviewId:key.reviewId,attempt,reviewer:scope.reviewer,status:'pending',checkpointPath:ack.checkpointPath,admission:{validation:'unverified'}};
+   return{accepted:true,reviewId:key.reviewId,attempt:targetAttempt,reviewer:scope.reviewer,status:'pending',checkpointPath:ack.checkpointPath,admission:{validation:'unverified'}};
   }
   const identity=this.registry.identity(key);if(!identity)throw new Error('Design owner unavailable; explicitly recover first');
   const scope=await this.scope(key);if(request.phase!=='activity')this.currentReviewer(key.project,scope.subject,'controller');

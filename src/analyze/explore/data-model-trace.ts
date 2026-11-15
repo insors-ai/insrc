@@ -37,8 +37,7 @@ import type {
 	Exploration,
 	ExplorationRunnerContext,
 } from './types.js';
-import type { ReachedLimit } from '../completeness.js';
-import { graphCompleteness, reachedLimit } from './completeness-facts.js';
+import { graphCompleteness } from './completeness-facts.js';
 
 const log = getLogger('analyze:explore:data-model-trace');
 
@@ -47,9 +46,6 @@ const log = getLogger('analyze:explore:data-model-trace');
 // ---------------------------------------------------------------------------
 
 const TARGET_KINDS: readonly EntityKind[] = ['class', 'interface', 'type'];
-const MAX_TARGETS      = 4;
-const MAX_FIELDS       = 12;
-const MAX_TOP_CALLERS  = 6;
 
 // ---------------------------------------------------------------------------
 // Params
@@ -85,7 +81,8 @@ export async function runDataModelTrace(
 		await findEntitiesByName(
 			db,
 			[params.entityName],
-			{ repo: ctx.repoPath, kinds: TARGET_KINDS },
+			// No limit: the name index returns 50 unless told otherwise.
+			{ repo: ctx.repoPath, kinds: TARGET_KINDS, limit: Number.POSITIVE_INFINITY },
 		)
 	)
 		.filter(e => e.artifact !== true)
@@ -93,7 +90,7 @@ export async function runDataModelTrace(
 		// twin of the source doesn't resolve alongside the authored
 		// definition.
 		.filter(e => ctx.ignoreFilter.isIncluded(e.file));
-	const targets = allTargets.slice(0, MAX_TARGETS);
+	const targets = allTargets;
 
 	if (targets.length === 0) {
 		captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{ runId: ctx.runId, entityName: params.entityName }, 'data-model.trace: no target resolved']);
@@ -110,9 +107,6 @@ export async function runDataModelTrace(
 	// (2) Walk each target.
 	const nodes: DataModelNode[] = [];
 	const noGraphNode: Entity[] = [];
-	// The largest count any ONE target had, for the two limits applied to each target.
-	let mostFields  = 0;
-	let mostCallers = 0;
 	for (const t of targets) {
 		const u64 = await entityU64ForId(t.id);
 		if (u64 === undefined) { noGraphNode.push(t); continue; }
@@ -138,10 +132,7 @@ export async function runDataModelTrace(
 		});
 
 		const fieldLike = fieldEnts.filter(e => isFieldLike(e.kind));
-		mostFields  = Math.max(mostFields, fieldLike.length);
-		mostCallers = Math.max(mostCallers, callers.length);
 		const fields: DataModelField[] = fieldLike
-			.slice(0, MAX_FIELDS)
 			.map(e => ({
 				name: e.name,
 				...(e.signature !== undefined && e.signature.length > 0 ? { type: e.signature } : {}),
@@ -164,7 +155,7 @@ export async function runDataModelTrace(
 				name:     e.name,
 				file:     e.file,
 			})),
-			topCallers: callers.slice(0, MAX_TOP_CALLERS).map(e => ({
+			topCallers: callers.map(e => ({
 				entityId: e.id,
 				name:     e.name,
 				file:     e.file,
@@ -180,29 +171,12 @@ export async function runDataModelTrace(
 			nodes:      nodes.length,
 	}, 'data-model.trace: complete']);
 
-	// One limit on the targets, and two applied to EACH target.
-	const limited: ReachedLimit[] = [];
-	if (allTargets.length > MAX_TARGETS) limited.push(reachedLimit('targets', MAX_TARGETS, 'overall', allTargets.length));
-	if (mostFields > MAX_FIELDS) {
-		limited.push({
-			what: 'fields per target', limit: MAX_FIELDS, scope: 'per-group',
-			reason: `a target has ${mostFields} fields and ${MAX_FIELDS} are kept for each`,
-		});
-	}
-	if (mostCallers > MAX_TOP_CALLERS) {
-		limited.push({
-			what: 'callers per target', limit: MAX_TOP_CALLERS, scope: 'per-group',
-			reason: `a target has ${mostCallers} callers and ${MAX_TOP_CALLERS} are kept for each`,
-		});
-	}
-
 	return {
 		type:         'data-model.trace',
 		completeness: graphCompleteness({
 			repoCompleteness: ctx.repoCompleteness,
 			returned: nodes.length,
 			found:    allTargets.length,
-			limited,
 			skipped:  noGraphNode.map(e => ({
 				what:   `${e.name} (${e.file}:${e.startLine})`,
 				reason: 'the type has no node in the stored graph, so its fields and callers were not read',

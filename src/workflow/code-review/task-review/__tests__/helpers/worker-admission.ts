@@ -22,7 +22,7 @@ await runReviewWorker(init,{code:{sources:{
  commit:async oid=>{entered=true;await gate;return actual.commit(oid);},
  file:(...args)=>actual.file(...args),isAncestor:(...args)=>actual.isAncestor(...args),changedRanges:(...args)=>actual.changedRanges(...args),pathChanges:(...args)=>actual.pathChanges(...args),
 },provider:()=>({capabilities:{reviewActivity:true},runReviewSession:async(prompt:string,_schema:unknown,_options:ReviewSessionOpts)=>{
- calls++;const stored=await loadStoredCheckpoint(`${init.review.key.project}/.insrc/tmp/code-review/${init.review.key.reviewId}.json`);
+ calls++;if(workerData.fixtureBarrier)Atomics.add(new Int32Array(workerData.fixtureBarrier as SharedArrayBuffer),5,1);const stored=await loadStoredCheckpoint(`${init.review.key.project}/.insrc/tmp/code-review/${init.review.key.reviewId}.json`);
  qualifiedBeforeProvider&&=!!stored&&!isCodeAdmission(stored.attempts.at(-1)!);
  if(!qualifiedBeforeProvider)throw new Error('Provider dispatched before qualified persistence');
  if(workerData.fixtureHoldProvider)await providerGate;

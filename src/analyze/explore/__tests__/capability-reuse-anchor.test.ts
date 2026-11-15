@@ -164,22 +164,24 @@ test('an empty named area is checked on both execution modes and its completenes
 	}
 });
 
-test('a limit of one leaves the named subject as the only candidate on both execution modes, although a child matches the words better', async () => {
+test('a limit a plan still passes is ignored: the named subject is checked first and every child that matches follows, on both execution modes', async () => {
 	const dir = file('src', 'pay');
 	const scope = await scopeOf('module', dir);
-	const limited = { id: 'e1', type: 'capability.reuse-check', purpose: 'p', params: { capability: 'refund', limit: 1 } } as Exploration;
+	const ignored = { id: 'e1', type: 'capability.reuse-check', purpose: 'p', params: { capability: 'refund', limit: 1 } } as Exploration;
 
 	const model = recordingModel();
-	const oneShot = await runCapabilityReuseCheck(limited, ctxFor(scope), model.provider);
-	assert.deepEqual(oneShot.candidates.map(c => c.path), [dir], 'one-shot: only the named module is checked');
+	const oneShot = await runCapabilityReuseCheck(ignored, ctxFor(scope), model.provider);
+	assert.equal(oneShot.candidates[0]?.path, dir, 'one-shot: the named module comes first');
+	assert.ok(oneShot.candidates.length > 1, 'one-shot: the child that matches the words is checked too');
 
 	const narrow = getNarrowRunner('capability.reuse-check');
 	assert.ok(narrow !== undefined);
-	const prepared = await narrow.prepare(limited, ctxFor(scope)) as Awaited<ReturnType<typeof prepareCapabilityReuseCheck>>;
+	const prepared = await narrow.prepare(ignored, ctxFor(scope)) as Awaited<ReturnType<typeof prepareCapabilityReuseCheck>>;
 	assert.equal(prepared.kind, 'narrow-llm');
 	if (prepared.kind !== 'narrow-llm') return;
-	assert.deepEqual(prepared.prepared.profiles.map(p => p.path), [dir], 'multi-turn: only the named module is profiled');
-	assert.equal([...prepared.userTurn.matchAll(/path: (\S+)/g)].length, 1, 'and only it is put to the model');
-	// the cut is stated, not silent
-	assert.match(JSON.stringify(oneShot.completeness), /candidate modules/);
+	assert.equal(prepared.prepared.profiles[0]?.path, dir, 'multi-turn: the named module is profiled first');
+	assert.equal(prepared.prepared.profiles.length, oneShot.candidates.length, 'and both modes check the same candidates');
+	assert.equal([...prepared.userTurn.matchAll(/path: (\S+)/g)].length, prepared.prepared.profiles.length, 'all of them are put to the model');
+	// no cut is made, so none is stated
+	assert.doesNotMatch(JSON.stringify(oneShot.completeness), /candidate modules/);
 });

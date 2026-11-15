@@ -34,7 +34,7 @@ import { _setDataPoolSourceForTest } from '../data/_shared.js';
 import { DATA_RUNTIMES } from '../data/index.js';
 import { DOCS_RUNTIMES } from '../docs/index.js';
 import { GENERIC_RUNTIMES } from '../generic/index.js';
-import { DEFAULT_FILE_CAP, fileWalkCompleteness } from '../infra/_shared.js';
+import { fileWalkCompleteness } from '../infra/_shared.js';
 import { INFRA_RUNTIMES } from '../infra/index.js';
 
 const NOW = '2026-10-08T10:00:00.000Z';
@@ -252,63 +252,51 @@ test('the fixture gives the inventories and listings something to return', async
 // The infra inventories and the file walk's cap
 // ---------------------------------------------------------------------------
 
-test('no output of the five infra inventories has a `truncated` field; a walk that stops at its cap is a limit in the record', async () => {
+test('no output of the five infra inventories has a `truncated` field, and a walk goes past the former cap of 5,000 files with no limit in the record', async () => {
 	const inventories = INFRA_RUNTIMES.filter(r => r.templateId.startsWith('infra.inventory.'));
 	assert.equal(inventories.length, 5);
 	for (const runtime of inventories) {
 		const result = await run(runtime, rowFor(runtime.templateId));
 		const [output] = [...result.outputs.values()] as Record<string, unknown>[];
 		assert.equal('truncated' in output!, false, `${runtime.templateId}: the output has no truncated field`);
-		assert.equal(result.completeness.limited, undefined, `${runtime.templateId}: the walk did not reach its cap`);
+		assert.equal(result.completeness.limited, undefined, `${runtime.templateId}: no limit is reached`);
 		assert.match(result.completeness.basisNote ?? '', /^Not walked, by rule: symbolic links, and anything the repository's ignore rules exclude/);
 	}
 
-	// The record every one of them builds, for a walk that stopped at its cap.
-	const cut = fileWalkCompleteness(12, true);
-	assert.equal(cut.complete, false);
-	assert.deepEqual(cut.limited, [{
-		what: 'files walked', limit: DEFAULT_FILE_CAP, scope: 'source',
-		reason: `the file walk stops at ${DEFAULT_FILE_CAP} files; files beyond that were not inspected`,
-	}]);
-	assert.equal(cut.total, null);
-	assert.equal(fileWalkCompleteness(12, false).complete, true);
+	// The record every one of them builds: every file was walked, so it is complete.
+	assert.equal(fileWalkCompleteness(12).complete, true);
+	assert.equal(fileWalkCompleteness(12).limited, undefined);
 
-	// And a runtime really takes that path when its walk stops: a repository with more files than the cap.
+	// A repository with more files than the former cap is walked to the end and its Dockerfile is found.
 	const big = join(dir, 'big');
 	mkdirSync(big);
-	for (let i = 0; i < DEFAULT_FILE_CAP + 5; i++) writeFileSync(join(big, `f${String(i).padStart(5, '0')}.txt`), '');
+	for (let i = 0; i < 5_005; i++) writeFileSync(join(big, `f${String(i).padStart(5, '0')}.txt`), '');
 	writeFileSync(join(big, 'Dockerfile'), 'FROM node:22\n');
 	const docker = INFRA_RUNTIMES.find(r => r.templateId === 'infra.inventory.docker')!;
 	const a = args('infra.inventory.docker', { scopeRef: { kind: 'repo', value: big } });
 	const walked = await run(docker, { ...a, intent: { ...a.intent, scopeRef: { kind: 'repo', value: big } } });
-	assert.equal(walked.completeness.limited?.[0]?.what, 'files walked');
-	assert.equal(walked.completeness.complete, false);
+	assert.equal(walked.completeness.limited, undefined);
+	assert.equal(walked.completeness.returned, 1);
 });
 
-test('discovery-families reports its per-family sample as a per-group limit and is not rejected by the builder', async () => {
-	// Twelve workflow files: one family with more files than the eight it names.
+test('discovery-families names every file of a family and reports no limit', async () => {
+	// Twelve workflow files: one family with more files than the eight it used to name.
 	for (let i = 0; i < 12; i++) write(`.github/workflows/w${i}.yml`, 'name: w\non: [push]\njobs: {}\n');
 	const families = INFRA_RUNTIMES.find(r => r.templateId === 'infra.discovery.families')!;
 	const result = await run(families, rowFor('infra.discovery.families'));
 	const list = result.outputs.get('families') as { name: string; fileCount: number; sampleFiles: string[] }[];
 	const biggest = [...list].sort((a, b) => b.fileCount - a.fileCount)[0]!;
 	assert.ok(biggest.fileCount >= 13, `a family holds ${biggest.fileCount} files`);
-	assert.equal(biggest.sampleFiles.length, 8, 'the sample is still eight');
-
-	const limit = result.completeness.limited?.find(l => l.what === 'sample files per family');
-	assert.ok(limit, 'the sample is a reached limit');
-	assert.deepEqual([limit.limit, limit.scope], [8, 'per-group']);
-	assert.match(limit.reason, new RegExp(`a family has ${biggest.fileCount} files and 8 are named for each`));
-	// `returned` counts families, which is below the per-family limit's count: no contradiction.
+	assert.equal(biggest.sampleFiles.length, biggest.fileCount, 'every file is named');
+	assert.equal(result.completeness.limited, undefined);
 	assert.equal(result.completeness.returned, list.length);
-	assert.equal(result.completeness.complete, false);
 });
 
 // ---------------------------------------------------------------------------
 // The data runtimes
 // ---------------------------------------------------------------------------
 
-test("the object-listing plan task reads the data driver's cut flag into a limit", async () => {
+test("the object-listing plan task reports a driver that stopped early as skipped, never as a limit", async () => {
 	const objects = DATA_RUNTIMES.find(r => r.templateId === 'data.discovery.objects')!;
 
 	const whole = await run(objects, rowFor('data.discovery.objects'));
@@ -318,12 +306,9 @@ test("the object-listing plan task reads the data driver's cut flag into a limit
 
 	_setDataPoolSourceForTest(standInPool({ truncated: true }));
 	const cut = await run(objects, rowFor('data.discovery.objects'));
-	assert.deepEqual(cut.completeness.limited, [{
-		what: 'tables', limit: 2, scope: 'source',
-		reason: 'the driver stopped its listing at 2 tables; how many more exist is not known',
-	}]);
+	assert.equal(cut.completeness.limited, undefined);
+	assert.deepEqual(cut.completeness.skipped, [{ what: 'tables outside the listing', reason: 'the driver stopped before the end of its listing of tables' }]);
 	assert.equal(cut.completeness.complete, false);
-	assert.equal(cut.completeness.total, null);
 	assert.equal((cut.outputs.get('objects') as unknown[]).length, 2, 'the listing itself is what it was');
 });
 

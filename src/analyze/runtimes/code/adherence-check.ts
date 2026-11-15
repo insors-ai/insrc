@@ -21,6 +21,7 @@ import {
 } from '../../../db/entities.js';
 import type { Entity } from '../../../shared/types.js';
 
+import { createItemMeasurer, readItemWhole, type ItemMeasurer } from '../../explore/item-measure.js';
 import { runAdherenceCheck, type AdherenceExcerpt } from '../shared/adherence.js';
 import type {
 	TemplateExecuteArgs,
@@ -39,6 +40,7 @@ async function hydrateCodeExcerpts(
 	cap:         number,
 ): Promise<readonly AdherenceExcerpt[]> {
 	const db = await getDb();
+	const measurer = createItemMeasurer(db);
 	const out: AdherenceExcerpt[] = [];
 	const subject = codeSubject.trim();
 
@@ -48,7 +50,7 @@ async function hydrateCodeExcerpts(
 		const byFile = await findEntitiesByFile(db, abs);
 		for (const e of byFile) {
 			if (e.artifact === true) continue;
-			out.push(entityToExcerpt(e));
+			out.push(await entityToExcerpt(e, measurer));
 			if (out.length >= cap) return out;
 		}
 		if (out.length > 0) return out;
@@ -61,7 +63,7 @@ async function hydrateCodeExcerpts(
 		for (const e of byName) {
 			if (e.artifact === true) continue;
 			if (e.repo !== repoPath) continue;
-			out.push(entityToExcerpt(e));
+			out.push(await entityToExcerpt(e, measurer));
 			if (out.length >= cap) return out;
 		}
 		if (out.length > 0) return out;
@@ -76,22 +78,25 @@ async function hydrateCodeExcerpts(
 		const body = (e.body ?? '').toLowerCase();
 		if (body.length === 0)   continue;
 		if (body.includes(q)) {
-			out.push(entityToExcerpt(e));
+			out.push(await entityToExcerpt(e, measurer));
 			if (out.length >= cap) break;
 		}
 	}
 	return out;
 }
 
-function entityToExcerpt(e: Entity): AdherenceExcerpt {
+/** The excerpt is the entity's whole content, read from its file; an entity the file cannot confirm is shown from its stored body and not covered. */
+async function entityToExcerpt(e: Entity, measurer: ItemMeasurer): Promise<AdherenceExcerpt> {
+	const { body, notCovered } = await readItemWhole(measurer, `${e.file}:${e.startLine} ${e.name}`, e);
 	return {
 		entityId:  e.id,
 		file:      e.file,
 		kind:      e.kind,
 		name:      e.name,
-		body:      (e.body ?? '').slice(0, 1_200),
+		body,
 		lineStart: e.startLine,
 		lineEnd:   e.endLine,
+		...(notCovered !== undefined ? { notCovered } : {}),
 	};
 }
 

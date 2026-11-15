@@ -16,6 +16,7 @@ import { join } from 'node:path';
 
 import { runShell } from '../../../shell-helper.js';
 import {
+	GrepIncompleteError,
 	NODE_EXCLUDED_BY_RULE,
 	RIPGREP_EXCLUDED_BY_RULE,
 	runGrepSearch,
@@ -276,6 +277,165 @@ test("the search's hits and limits are unchanged for its other callers", async (
 		// A caller that reads only what existed before sees the same five fields with the same meaning.
 		const { pattern, root: r, usedRipgrep, hits, truncated } = capped;
 		assert.deepEqual({ pattern, r, usedRipgrep, n: hits.length, truncated }, { pattern: 'needle', r: root, usedRipgrep: false, n: 5, truncated: true });
+	} finally {
+		cleanup(root);
+	}
+});
+
+// --- complete mode: ripgrep backend --------------------------------------------
+
+/** A stand-in that prints 6,000 hits of 800 characters (about 4.8 MB, past the 4 MiB cap) and then one line of 100,000 characters. */
+function bigRipgrep(dir: string, root: string): string {
+	return standIn(dir, 'rg-big', [
+		`X=$(head -c 800 /dev/zero | tr '\\0' z) awk 'BEGIN { for (i = 1; i <= 6000; i++) print "${root}/a.txt:" i ":needle " ENVIRON["X"] }'`,
+		`X=$(head -c 100000 /dev/zero | tr '\\0' y) awk 'BEGIN { print "${root}/b.txt:1:needle " ENVIRON["X"] }'`,
+	].join('\n'));
+}
+
+test('through the ripgrep backend with complete set, more hits than MAX_LIMIT, a line over MAX_LINE_CHARS and output over RG_MAX_OUTPUT_BYTES are all returned in full, and a search past the 30-second deadline fails with its gathered hits', async () => {
+	const root = tmp();
+	const bin = tmp();
+	try {
+		const r = await runGrepSearch({ pattern: 'needle', root, complete: true, _backend: { rgCommand: bigRipgrep(bin, root) } });
+		assert.equal(r.usedRipgrep, true);
+		assert.equal(r.hits.length, 6001, 'past MAX_LIMIT (5000)');
+		assert.equal(r.truncated, false);
+		assert.equal(r.hits[0]!.text.length, 'needle '.length + 800, 'a line past 500 is whole');
+		assert.equal(r.hits[6000]!.text.length, 'needle '.length + 100_000, 'a line of 100,000 characters is whole');
+		assert.deepEqual([r.hits[6000]!.path, r.hits[6000]!.line], ['b.txt', 1]);
+		assert.deepEqual(r.omitted.shortenedLines, []);
+		assert.equal(r.omitted.outputDiscarded, false, 'output past 4 MiB is kept');
+		assert.equal(r.omitted.perFileLimitReached, false);
+		assert.equal(r.omitted.excludedByRule, RIPGREP_EXCLUDED_BY_RULE);
+
+		// A line split across two reads is one hit, and a last line with no newline is kept.
+		const split = standIn(bin, 'rg-split', `printf '${root}/a.txt:1:nee'\nsleep 0.2\nprintf 'dle one\\n${root}/a.txt:2:needle two'`);
+		const s = await runGrepSearch({ pattern: 'needle', root, complete: true, _backend: { rgCommand: split } });
+		assert.deepEqual(s.hits.map(h => h.text), ['needle one', 'needle two']);
+
+		// Past the deadline the process is stopped and the call fails with what it gathered.
+		const slow = standIn(bin, 'rg-slow-hits', `echo "${root}/a.txt:1:needle one"\necho "${root}/a.txt:2:needle two"\nsleep 30`);
+		await assert.rejects(
+			runGrepSearch({ pattern: 'needle', root, complete: true, _backend: { rgCommand: slow, rgTimeoutMs: 300 } }),
+			(err: unknown) => err instanceof GrepIncompleteError && err.reason === 'timeout' && err.hits.map(h => h.text).join() === 'needle one,needle two',
+		);
+
+		// A record cut short by the stop is not among the gathered hits.
+		const cut = standIn(bin, 'rg-cut', `echo "${root}/a.txt:1:needle one"\nprintf '${root}/a.txt:2:needle tw'\nsleep 30`);
+		await assert.rejects(
+			runGrepSearch({ pattern: 'needle', root, complete: true, _backend: { rgCommand: cut, rgTimeoutMs: 300 } }),
+			(err: unknown) => err instanceof GrepIncompleteError && err.hits.map(h => h.text).join() === 'needle one',
+		);
+
+		// A single file as the root: the search asks for file names, so ripgrep prints one and the hit is kept.
+		const file = join(root, 'one.txt');
+		writeFileSync(file, 'x\n');
+		const named = standIn(bin, 'rg-needs-filename', `case " $* " in *" --with-filename "*) echo "${file}:3:needle here";; *) echo "3:needle here";; esac`);
+		const single = await runGrepSearch({ pattern: 'needle', root: file, complete: true, _backend: { rgCommand: named } });
+		assert.deepEqual(single.hits.map(h => [h.path, h.line, h.text]), [[file, 3, 'needle here']]);
+
+		// A ripgrep that started and failed is the same failure, not a fallback to a partial result.
+		const exit2 = standIn(bin, 'rg-exit2', `echo "${root}/a.txt:1:needle one"\necho "rg: boom" >&2\nexit 2`);
+		await assert.rejects(
+			runGrepSearch({ pattern: 'needle', root, complete: true, _backend: { rgCommand: exit2 } }),
+			(err: unknown) => err instanceof GrepIncompleteError && err.reason === 'exit-code' && /rg: boom/.test(err.message) && err.hits.length === 1,
+		);
+	} finally {
+		cleanup(root);
+		cleanup(bin);
+	}
+});
+
+test('without complete the ripgrep backend still applies MAX_LIMIT, MAX_LINE_CHARS and RG_MAX_OUTPUT_BYTES', async () => {
+	const root = tmp();
+	const bin = tmp();
+	try {
+		const rg = bigRipgrep(bin, root);
+		const limited = await runGrepSearch({ pattern: 'needle', root, limit: 99_999, _backend: { rgCommand: rg } });
+		assert.ok(limited.hits.length <= 5000, 'MAX_LIMIT');
+		assert.ok(limited.hits.every(h => h.text.length <= 500), 'MAX_LINE_CHARS');
+		assert.equal(limited.omitted.outputDiscarded, true, 'RG_MAX_OUTPUT_BYTES');
+	} finally {
+		cleanup(root);
+		cleanup(bin);
+	}
+});
+
+// --- complete mode: Node fallback ------------------------------------------------
+
+test('through the Node fallback with complete set, every hit with its whole line is returned, a file over MAX_FILE_BYTES is searched, the deadline fails with gathered hits and an unreadable file is listed as skipped', { skip: isRoot ? 'permission checks do not apply to root' : false }, async () => {
+	const root = tmp();
+	const lockedFile = join(root, 'secret.txt');
+	try {
+		writeFileSync(join(root, 'many.txt'), Array.from({ length: 5200 }, (_, i) => `needle ${i}`).join('\n') + '\n');
+		const long = 'needle ' + 'x'.repeat(100_000);
+		writeFileSync(join(root, 'long.txt'), `first\n${long}\n`);
+		writeFileSync(join(root, 'huge.txt'), 'needle at the top\n' + 'y'.repeat(2 * 1024 * 1024 + 10));
+		writeFileSync(lockedFile, 'needle in a file nobody may read\n');
+		chmodSync(lockedFile, 0o000);
+
+		const r = await runGrepSearch({ pattern: 'needle', root, complete: true, _backend: NO_RIPGREP });
+		assert.equal(r.usedRipgrep, false);
+		assert.equal(r.hits.length, 5200 + 1 + 1, 'past MAX_LIMIT, with the oversized file searched');
+		assert.equal(r.truncated, false);
+		assert.equal(r.hits.find(h => h.path === 'long.txt')!.text, long, 'the line is whole');
+		assert.ok(r.hits.some(h => h.path === 'huge.txt' && h.text === 'needle at the top'), 'a file over MAX_FILE_BYTES is searched');
+		assert.deepEqual(r.omitted.shortenedLines, []);
+		assert.deepEqual(r.omitted.skippedFiles, [{ path: 'secret.txt', reason: 'unreadable' }], 'the scan went on past the unreadable file');
+		assert.equal(r.omitted.excludedByRule, NODE_EXCLUDED_BY_RULE);
+
+		// Past the deadline (here none is left) the call fails with what it gathered, never a success. The check is made
+		// at every entry, so a tree of directories and unreadable files is stopped as well as one of readable files.
+		await assert.rejects(
+			runGrepSearch({ pattern: 'needle', root, complete: true, _backend: { ...NO_RIPGREP, rgTimeoutMs: 0 } }),
+			(err: unknown) => err instanceof GrepIncompleteError && err.reason === 'timeout' && Array.isArray(err.hits),
+		);
+		// Hits gathered before the deadline are attached. A clock that moves 10 ms a reading, with 35 ms allowed: three of
+		// four files are read, then the fourth entry is past the deadline. With 15 ms allowed, the one file is read and
+		// the check made after the scan still fails it.
+		const timed = tmp();
+		try {
+			for (const n of ['a', 'b', 'c', 'd']) writeFileSync(join(timed, `${n}.txt`), 'needle\n');
+			const clock = (): (() => number) => { let t = -10; return () => (t += 10); };
+			await assert.rejects(
+				runGrepSearch({ pattern: 'needle', root: timed, complete: true, _backend: { ...NO_RIPGREP, rgTimeoutMs: 35, now: clock() } }),
+				(err: unknown) => err instanceof GrepIncompleteError && err.reason === 'timeout' && err.hits.length === 3,
+			);
+			rmSync(join(timed, 'b.txt')); rmSync(join(timed, 'c.txt')); rmSync(join(timed, 'd.txt'));
+			await assert.rejects(
+				runGrepSearch({ pattern: 'needle', root: timed, complete: true, _backend: { ...NO_RIPGREP, rgTimeoutMs: 15, now: clock() } }),
+				(err: unknown) => err instanceof GrepIncompleteError && err.reason === 'timeout' && err.hits.length === 1,
+			);
+		} finally {
+			cleanup(timed);
+		}
+		const bare = tmp();
+		try {
+			mkdirSync(join(bare, 'a'));
+			mkdirSync(join(bare, 'b'));
+			await assert.rejects(
+				runGrepSearch({ pattern: 'needle', root: bare, complete: true, _backend: { ...NO_RIPGREP, rgTimeoutMs: 0 } }),
+				(err: unknown) => err instanceof GrepIncompleteError && err.reason === 'timeout',
+			);
+		} finally {
+			cleanup(bare);
+		}
+	} finally {
+		cleanup(root, [lockedFile]);
+	}
+});
+
+test('without complete the Node fallback behaves exactly as today', async () => {
+	const root = tmp();
+	try {
+		writeFileSync(join(root, 'many.txt'), Array.from({ length: 6000 }, (_, i) => `needle ${i}`).join('\n') + '\n');
+		writeFileSync(join(root, 'long.txt'), `needle ${'x'.repeat(1_800)}\n`);
+		writeFileSync(join(root, 'huge.txt'), 'needle\n' + 'y'.repeat(2 * 1024 * 1024 + 10));
+
+		const r = await runGrepSearch({ pattern: 'needle', root, limit: 99_999, _backend: { ...NO_RIPGREP, rgTimeoutMs: 0 } });
+		assert.ok(r.hits.length <= 5000, 'MAX_LIMIT; and a deadline of 0 does not apply');
+		assert.ok(r.hits.every(h => h.text.length <= 500), 'MAX_LINE_CHARS');
+		assert.ok(r.omitted.skippedFiles.some(f => f.path === 'huge.txt' && f.reason === 'too-large'), 'MAX_FILE_BYTES');
 	} finally {
 		cleanup(root);
 	}

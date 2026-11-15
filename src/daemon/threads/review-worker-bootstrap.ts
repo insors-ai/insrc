@@ -11,6 +11,7 @@ export class ReviewWorkerBootstrapError extends Error{
 }
 export interface ReviewBootstrapDeps{
  readonly fence:ReviewBootstrapFence;
+ readonly preparation?:import('./review-worker-preparation.js').ReviewPreparationBootstrap|undefined;
  readonly start?:typeof startWorker|undefined;
  readonly schedule?:((fn:()=>void,ms:number)=>()=>void)|undefined;
  /** Registry retains the exact review fence until native AND worker reclaim. */
@@ -36,6 +37,7 @@ export interface StartedReviewWorker extends StartedWorker {readonly admission:R
  * cleanup and lock/store reclaim continue under the caller's targeted fence. */
 export function startReviewWorkerBootstrap(services:ThreadServices,review:ReviewBootstrapInput,nativePort:MessagePort,deps:ReviewBootstrapDeps):Promise<StartedReviewWorker>{
  assertReviewIdentity(review);
+ if(!deps.preparation&&!deps.start){nativePort.close();throw new Error('Private review preparation bootstrap required');}
  if(!Number.isSafeInteger(review.attempt)||review.attempt<1)throw new Error('Invalid review attempt');
  review=Object.freeze({...review,key:Object.freeze({...review.key})});
  try{deps.fence.begin(review);}catch(error){nativePort.close();throw error;}
@@ -48,7 +50,7 @@ export function startReviewWorkerBootstrap(services:ThreadServices,review:Review
   const fail=(code:ReviewWorkerBootstrapError['code'],cause?:Error)=>{
    if(finished||closing)return;closing=true;deps.fence.close();cleanup();
    try{deps.onClosing?.(worker,reclaimed);}catch{/* Keep termination and the named failure independent of observer errors. */}
-   nativePort.close();
+   nativePort.close();deps.preparation?.port.close();
    void worker?.terminate().catch(()=>{});
    reject(new ReviewWorkerBootstrapError(code,{key:review.key,incarnation:review.incarnation,attempt:review.attempt},reclaimed,cause));
   };
@@ -63,7 +65,7 @@ export function startReviewWorkerBootstrap(services:ThreadServices,review:Review
   cancelTimer=(deps.schedule??((fn,ms)=>{const timer=setTimeout(fn,ms);return()=>clearTimeout(timer);} ))(()=>fail('review_worker_bootstrap_timeout'),REVIEW_BOOTSTRAP_MS);
   if(closing){reclaim();return;}
   try{
-   const starting=(deps.start??startWorker)(services,'review','review-worker',{workerData:{role:'review',review,nativePort},transferList:[nativePort]},created=>{
+   const starting=(deps.start??startWorker)(services,'review','review-worker',{workerData:{role:'review',review,nativePort,preparation:deps.preparation},transferList:[nativePort,...(deps.preparation?[deps.preparation.port]:[])]},created=>{
     worker=created;worker.on('message',message);worker.once('error',failed);worker.once('exit',failed);
     deps.onCreated?.(worker);
     if(closing)void worker.terminate().catch(()=>{});

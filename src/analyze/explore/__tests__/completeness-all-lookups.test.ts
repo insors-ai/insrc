@@ -18,7 +18,7 @@ import { leasedDataPool } from '../../__tests__/fixtures/leased-data-pool.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
@@ -42,6 +42,7 @@ import type { RepoCompleteness } from '../../../shared/types.js';
 import { readFileSync } from 'node:fs';
 import { runConceptResolve } from '../concept-resolve.js';
 import { runConfigTrace } from '../config-trace.js';
+import { LookupFailedError } from '../lookup-failed.js';
 import { runConventionDetect } from '../convention-detect.js';
 import { runDataModelTrace } from '../data-model-trace.js';
 import { runDbConnectionsList } from '../db-connections-list.js';
@@ -50,12 +51,12 @@ import { runDbTablesList } from '../db-tables-list.js';
 import { finalizeDocConstraintEnumerate, prepareDocConstraintEnumerate } from '../doc-constraint-enumerate.js';
 import { finalizeDocDecisionTrace, prepareDocDecisionTrace } from '../doc-decision-trace.js';
 import { runDocMention } from '../doc-mention.js';
-import { _getRunnersForTest, _overrideNarrowRunnerForTest, _overrideRunnerForTest,  } from '../executor.js';
+import { _getRunnersForTest, _overrideNarrowRunnerForTest, _overrideRunnerForTest, failedOutput } from '../executor.js';
 import { runFreeformProbe } from '../freeform-probe.js';
 import { runImportGraph } from '../import-graph.js';
 import { runManifestsLocate } from '../manifests-locate.js';
 import { runModuleProfile } from '../module-profile.js';
-import { runSearchText } from '../search-text.js';
+import { runCompleteSearch, runSearchText } from '../search-text.js';
 import { runSymbolLocate } from '../symbol-locate.js';
 import { runTestLocate } from '../test-locate.js';
 import type { Exploration, ExplorationOutput, ExplorationRunnerContext, ExplorationType } from '../types.js';
@@ -194,8 +195,8 @@ test.afterEach(async () => {
 // The lookups that need a stand-in
 // ---------------------------------------------------------------------------
 
-async function docConstraints(maxSources?: number): Promise<ExplorationOutput> {
-	const prep = await prepareDocConstraintEnumerate({ subject: 'refund', repoPath: REPO, db: await getDb(), ...(maxSources !== undefined ? { maxSources } : {}) });
+async function docConstraints(): Promise<ExplorationOutput> {
+	const prep = await prepareDocConstraintEnumerate({ subject: 'refund', repoPath: REPO, db: await getDb() });
 	assert.equal(prep.kind, 'narrow-llm');
 	if (prep.kind !== 'narrow-llm') throw new Error('unreachable');
 	const src = prep.prepared.validEntityIds[0]!;
@@ -205,8 +206,8 @@ async function docConstraints(maxSources?: number): Promise<ExplorationOutput> {
 	});
 }
 
-async function docDecisions(maxSources?: number): Promise<ExplorationOutput> {
-	const prep = await prepareDocDecisionTrace({ topic: 'refund', repoPath: REPO, db: await getDb(), ...(maxSources !== undefined ? { maxSources } : {}) });
+async function docDecisions(): Promise<ExplorationOutput> {
+	const prep = await prepareDocDecisionTrace({ topic: 'refund', repoPath: REPO, db: await getDb() });
 	assert.equal(prep.kind, 'narrow-llm');
 	if (prep.kind !== 'narrow-llm') throw new Error('unreachable');
 	const src = prep.prepared.validEntityIds[0]!;
@@ -216,8 +217,8 @@ async function docDecisions(maxSources?: number): Promise<ExplorationOutput> {
 	} as Parameters<typeof finalizeDocDecisionTrace>[1]);
 }
 
-async function capability(limit?: number): Promise<ExplorationOutput> {
-	const prep = await prepareCapabilityReuseCheck(exp('capability.reuse-check', { capability: 'pay charge', ...(limit !== undefined ? { limit } : {}) }), ctx);
+async function capability(): Promise<ExplorationOutput> {
+	const prep = await prepareCapabilityReuseCheck(exp('capability.reuse-check', { capability: 'pay charge' }), ctx);
 	assert.equal(prep.kind, 'narrow-llm');
 	if (prep.kind !== 'narrow-llm') throw new Error('unreachable');
 	return finalizeCapabilityReuseCheck(prep.prepared, {
@@ -309,156 +310,237 @@ test('the fixture gives every lookup something to return, so the table is not a 
 // Count limits, each with its scope
 // ---------------------------------------------------------------------------
 
-test('each lookup that stops at a count reports the limit with its scope', async () => {
-	// symbol.locate: two functions are named chargeCard, one is kept.
-	const sym = await runSymbolLocate(exp('symbol.locate', { names: ['chargeCard'], limit: 1 }), ctx);
-	assert.equal(sym.hits.length, 1);
-	assert.deepEqual(limitOf(sym.completeness, 'symbols'), { what: 'symbols', limit: 1, scope: 'overall', reason: '2 symbols were found and 1 are kept' });
-	assert.equal(sym.completeness.total, 2);
-	assert.equal(sym.completeness.complete, false);
-	// ...and within the limit nothing is reported and the result is complete.
-	const symAll = await runSymbolLocate(exp('symbol.locate', { names: ['chargeCard'] }), ctx);
-	assert.equal(symAll.completeness.limited, undefined);
-	assert.equal(symAll.completeness.complete, true);
-	assert.equal(symAll.completeness.total, 2);
+// ---------------------------------------------------------------------------
+// The graph and symbol lookups return every result
+// ---------------------------------------------------------------------------
 
-	// usage.example: three callers, two kept. The total the old `totalCallers` field held is in the record.
-	const use = await runUsageExample(exp('usage.example', { entityId: seeded['charge']!.id, topK: 2 }), ctx);
-	assert.equal(use.callers.length, 2);
-	assert.equal(limitOf(use.completeness, 'callers').scope, 'overall');
-	assert.equal(use.completeness.total, 3, 'the number the removed `totalCallers` field held');
+/** Seed entities and relations on top of the fixture. */
+async function seed(entities: Entity[], relations: Relation[] = []): Promise<void> {
+	await upsertEntities(await getDb(), entities);
+	if (relations.length > 0) await upsertRelations(await getDb(), relations);
+}
 
-	// usage.example by an ambiguous name: the callers of one definition are read and the other is named as skipped.
-	const amb = await runUsageExample(exp('usage.example', { symbolName: 'chargeCard' }), ctx);
-	assert.equal(amb.completeness.complete, false);
-	assert.match(amb.completeness.skipped![0]!.what, /^1 other entity named chargeCard$/);
+/** A lookup's record states no limit, and says so by listing none. */
+function noLimit(c: Completeness, who: string): void {
+	assert.equal(c.limited, undefined, `${who}: no limited entry`);
+}
 
-	// import.graph: two lists, each cut to topK: a limit on each list, not on their sum.
-	const imp = await runImportGraph(exp('import.graph', { path: join(REPO, 'src/pay'), topK: 1 }), ctx);
-	assert.equal(imp.summary.topImporters.length, 1);
-	assert.equal(imp.summary.topImportees.length, 1);
-	assert.equal(limitOf(imp.completeness, 'importing files').scope, 'per-group');
-	assert.equal(limitOf(imp.completeness, 'imported files').scope, 'per-group');
-	assert.equal(imp.completeness.returned, 2);
-	assert.equal(imp.completeness.total, 4);
-
-	// test.locate: three hits (two test functions and their file), one kept; the rest are still counted.
-	const tst = await runTestLocate(exp('test.locate', { subject: 'chargeCard', topK: 1 }), ctx);
-	assert.equal(tst.hits.length, 1);
-	assert.equal(limitOf(tst.completeness, 'tests').limit, 1);
-	assert.equal(tst.completeness.total, 3);
-
-	// concept.resolve: more candidates match than the one kept.
-	const con = await runConceptResolve(exp('concept.resolve', { query: 'pay charge', limit: 1 }), ctx);
-	assert.equal(con.hits.length, 1);
-	assert.equal(limitOf(con.completeness, 'matches').scope, 'overall');
-	assert.ok(con.completeness.total! > 1);
-	// A limit a plan gives below 1 never makes the lookup fail. Zero and a
-	// negative number are not a limit at all (the default applies); a fraction
-	// floors to zero, and at least one hit is kept.
-	for (const limit of [0, -3]) {
-		const all = await runConceptResolve(exp('concept.resolve', { query: 'pay charge', limit }), ctx);
-		assert.equal(all.hits.length, con.completeness.total, `limit ${limit}`);
-		assert.equal(all.completeness.limited, undefined, `limit ${limit}`);
+test('symbol-locate, test-locate, import-graph, usage-example, concept-resolve, manifests-locate, data-model-trace and convention-detect return every result at, one over and zero versus the former limit with no limited entry', async () => {
+	// symbol.locate: former limit 50. A limit a plan passes is ignored.
+	for (const [n, word] of [[50, 'bulksyma'], [51, 'bulksymb']] as const) {
+		await seed(Array.from({ length: n }, (_, i) => ent('function', word, `src/bulk/${word}${i}.ts`)));
+		const out = await runSymbolLocate(exp('symbol.locate', { names: [word], limit: 3 }), ctx);
+		assert.equal(out.hits.length, n, `symbol.locate with ${n}`);
+		noLimit(out.completeness, `symbol.locate with ${n}`);
+		assert.equal(out.completeness.total, n);
+		assert.equal(out.completeness.complete, true);
 	}
-	const fraction = await runConceptResolve(exp('concept.resolve', { query: 'pay charge', limit: 0.4 }), ctx);
-	assert.equal(fraction.hits.length, 1);
-	assert.equal(limitOf(fraction.completeness, 'matches').limit, 1);
+	const symNone = await runSymbolLocate(exp('symbol.locate', { names: ['nosuchsymbolzz'] }), ctx);
+	assert.deepEqual([symNone.hits.length, symNone.completeness.complete], [0, true]);
+	noLimit(symNone.completeness, 'symbol.locate with 0');
 
-	// manifests.locate: two manifests, one kept; `families` still counts the ones returned.
-	const man = await runManifestsLocate(exp('manifests.locate', { topK: 1 }), ctx);
-	assert.equal(man.hits.length, 1);
-	assert.equal(limitOf(man.completeness, 'manifests').limit, 1);
-	assert.equal(man.completeness.total, 2);
-	assert.equal(Object.values(man.families).reduce((a, b) => a + b, 0), 1);
+	// test.locate: former limit 20. Test functions that name the subject.
+	for (const [n, word] of [[20, 'zzalpha'], [21, 'zzbravo']] as const) {
+		await seed(Array.from({ length: n }, (_, i) => ent('function', `test${word}${i}`, `src/bulk/__tests__/${word.slice(2)}${i}.test.ts`)));
+		const out = await runTestLocate(exp('test.locate', { subject: word, topK: 2 }), ctx);
+		// Only the test functions name the subject (their files do not): exactly n hits, every one returned.
+		assert.equal(out.hits.length, n, `test.locate with ${n}`);
+		noLimit(out.completeness, `test.locate with ${n}`);
+	}
+	const tstNone = await runTestLocate(exp('test.locate', { subject: 'zznothingmatches' }), ctx);
+	assert.equal(tstNone.hits.length, 0);
+	noLimit(tstNone.completeness, 'test.locate with 0');
 
-	// convention.detect: nine bases, eight kept; one base has six subclasses and five are named.
+	// usage.example: former limit 12 callers.
+	for (const [n, word] of [[12, 'zztargeta'], [13, 'zztargetb']] as const) {
+		const target = ent('function', word, `src/bulk/${word}.ts`);
+		const callers = Array.from({ length: n }, (_, i) => ent('function', `${word}Caller${i}`, `src/bulk/${word}c${i}.ts`));
+		await seed([target, ...callers], callers.map(c => edge('CALLS', c, target)));
+		const out = await runUsageExample(exp('usage.example', { entityId: target.id, topK: 2 }), ctx);
+		assert.equal(out.callers.length, n, `usage.example with ${n}`);
+		noLimit(out.completeness, `usage.example with ${n}`);
+		assert.equal(out.completeness.total, n);
+	}
+	const lonely = ent('function', 'zzlonely', 'src/bulk/zzlonely.ts');
+	await seed([lonely]);
+	const useNone = await runUsageExample(exp('usage.example', { entityId: lonely.id }), ctx);
+	assert.equal(useNone.callers.length, 0);
+	noLimit(useNone.completeness, 'usage.example with 0');
+
+	// import.graph: former limit 15 on each of the two lists.
+	for (const [n, word] of [[15, 'zzimpa'], [16, 'zzimpb']] as const) {
+		const inside = ent('file', `${word}.ts`, `src/${word}/${word}.ts`);
+		const importers = Array.from({ length: n }, (_, i) => ent('file', `imp${i}.ts`, `src/${word}out/importer${i}.ts`));
+		const importees = Array.from({ length: n }, (_, i) => ent('file', `dep${i}.ts`, `src/${word}out/dep${i}.ts`));
+		await seed([inside, ...importers, ...importees], [
+			...importers.map(f => edge('IMPORTS', f, inside)),
+			...importees.map(f => edge('IMPORTS', inside, f)),
+		]);
+		const out = await runImportGraph(exp('import.graph', { path: join(REPO, `src/${word}`), topK: 2 }), ctx);
+		assert.equal(out.summary.topImporters.length, n, `import.graph importers with ${n}`);
+		assert.equal(out.summary.topImportees.length, n, `import.graph importees with ${n}`);
+		noLimit(out.completeness, `import.graph with ${n}`);
+	}
+	const alone = ent('file', 'zzalone.ts', 'src/zzalone/zzalone.ts');
+	await seed([alone]);
+	const impNone = await runImportGraph(exp('import.graph', { path: join(REPO, 'src/zzalone') }), ctx);
+	assert.deepEqual([impNone.summary.topImporters.length, impNone.summary.topImportees.length], [0, 0]);
+	noLimit(impNone.completeness, 'import.graph with 0');
+
+	// concept.resolve: former limit 20. Every match is returned, and the record says how many.
+	for (const [n, word] of [[20, 'zzalphacon'], [21, 'qqbravocon']] as const) {
+		await seed(Array.from({ length: n }, (_, i) => ent('function', `${word}${i}`, `src/${word}/f${i}.ts`)));
+		const out = await runConceptResolve(exp('concept.resolve', { query: word, limit: 3 }), ctx);
+		assert.equal(out.hits.length, n, `concept.resolve with ${n}`);
+		assert.equal(out.completeness.total, out.hits.length, 'every match found is returned');
+		noLimit(out.completeness, `concept.resolve with ${n}`);
+	}
+	const conNone = await runConceptResolve(exp('concept.resolve', { query: 'zznoconceptmatch' }), ctx);
+	assert.equal(conNone.hits.length, 0);
+	noLimit(conNone.completeness, 'concept.resolve with 0');
+
+	// manifests.locate: former limit 200. Two manifests are in the fixture already, a Deployment and a Dockerfile; each
+	// size below is its own family (terraform, then CI), so the filter makes the count exactly 200 and exactly 201.
+	assert.equal((await runManifestsLocate(exp('manifests.locate', { topK: 1 }), ctx)).hits.length, 2, 'a topK is ignored');
+	await seed(Array.from({ length: 200 }, (_, i) => ent('document', `m${i}.tf`, `infra/zzmania/m${i}.tf`, { language: 'hcl', artifact: true, body: 'resource "x" "y" {}\n' })));
+	const man200 = await runManifestsLocate(exp('manifests.locate', { families: ['terraform'] }), ctx);
+	assert.equal(man200.hits.length, 200, 'manifests.locate with 200');
+	noLimit(man200.completeness, 'manifests.locate with 200');
+	assert.equal(man200.completeness.total, 200);
+	await seed(Array.from({ length: 201 }, (_, i) => ent('document', `w${i}.yml`, `.github/workflows/w${i}.yml`, { language: 'yaml', artifact: true, body: 'on: push\n' })));
+	const man201 = await runManifestsLocate(exp('manifests.locate', { families: ['ci'] }), ctx);
+	assert.equal(man201.hits.length, 201, 'manifests.locate with 201');
+	noLimit(man201.completeness, 'manifests.locate with 201');
+	assert.equal(man201.completeness.total, 201);
+	const manNone = await runManifestsLocate(exp('manifests.locate', { families: ['helm'] }), ctx);
+	assert.equal(manNone.hits.length, 0);
+	noLimit(manNone.completeness, 'manifests.locate with 0');
+
+	// data-model.trace: former limits 4 targets, 12 fields and 6 callers for each target.
+	for (const [n, word] of [[4, 'ZzTargetsA'], [5, 'ZzTargetsB']] as const) {
+		await seed(Array.from({ length: n }, (_, i) => ent('class', word, `src/models/${word}${i}.ts`)));
+		const out = await runDataModelTrace(exp('data-model.trace', { entityName: word }), ctx);
+		assert.equal(out.nodes.length, n, `data-model.trace targets with ${n}`);
+		noLimit(out.completeness, `data-model.trace targets with ${n}`);
+	}
+	for (const [n, word] of [[12, 'ZzFieldsA'], [13, 'ZzFieldsB']] as const) {
+		const model = ent('class', word, `src/models/${word}.ts`);
+		const fields = Array.from({ length: n }, (_, i) => ent('property' as EntityKind, `${word}f${i}`, `src/models/${word}.ts`, { startLine: 40 + i }));
+		await seed([model, ...fields], fields.map(f => edge('DEFINES', model, f)));
+		const out = await runDataModelTrace(exp('data-model.trace', { entityName: word }), ctx);
+		assert.equal(out.nodes[0]!.fields.length, n, `data-model.trace fields with ${n}`);
+		noLimit(out.completeness, `data-model.trace fields with ${n}`);
+	}
+	for (const [n, word] of [[6, 'ZzCallersA'], [7, 'ZzCallersB']] as const) {
+		const model = ent('class', word, `src/models/${word}.ts`);
+		const callers = Array.from({ length: n }, (_, i) => ent('function', `${word}Caller${i}`, `src/other/${word}c${i}.ts`));
+		await seed([model, ...callers], callers.map(c => edge('CALLS', c, model)));
+		const out = await runDataModelTrace(exp('data-model.trace', { entityName: word }), ctx);
+		assert.equal(out.nodes[0]!.topCallers.length, n, `data-model.trace callers with ${n}`);
+		noLimit(out.completeness, `data-model.trace callers with ${n}`);
+	}
+	const dmNone = await runDataModelTrace(exp('data-model.trace', { entityName: 'ZzNoSuchModel' }), ctx);
+	assert.equal(dmNone.nodes.length, 0);
+	noLimit(dmNone.completeness, 'data-model.trace with 0');
+
+	// convention.detect: former limits 8 base-class idioms and 5 named subclasses for each. The fixture's nine bases,
+	// one with six subclasses, are one over both.
 	const conv = await runConventionDetect(exp('convention.detect', { path: join(REPO, 'src/pay') }), ctx);
-	assert.equal(conv.baseClassIdioms.length, 8);
-	assert.equal(limitOf(conv.completeness, 'base-class idioms').scope, 'overall');
-	assert.equal(conv.completeness.total, 9);
-	const named = limitOf(conv.completeness, 'named subclasses per base');
-	assert.deepEqual([named.limit, named.scope], [5, 'per-group']);
-
-	// doc.mention: the retrieval returns a full page and cannot say how many more match.
-	const men = await runDocMention(exp('doc.mention', { subject: 'refund', limit: 1 }), ctx);
-	assert.equal(men.hits.length, 1);
-	assert.equal(limitOf(men.completeness, 'document sections').scope, 'overall');
-	assert.equal(men.completeness.total, null, 'how many sections exist is not known');
-
-	// The document lookups read at most maxSources sections: a limit on what was READ.
-	// Three constraints come back from one section, and that is not a contradiction.
-	const cons = await docConstraints(1) as { completeness: Completeness; constraints: unknown[] };
-	assert.equal(cons.constraints.length, 3);
-	assert.deepEqual([limitOf(cons.completeness, 'document sections').limit, limitOf(cons.completeness, 'document sections').scope], [1, 'source']);
-	const decs = await docDecisions(1) as { completeness: Completeness };
-	assert.equal(limitOf(decs.completeness, 'document sections').scope, 'source');
-	// With room for every section, neither reports a limit.
-	assert.equal(((await docConstraints()) as { completeness: Completeness }).completeness.limited, undefined);
-
-	// capability.reuse-check: more distinct candidates match than the one checked.
-	const cap = await capability(1) as { completeness: Completeness; candidates: unknown[] };
-	assert.equal(cap.candidates.length, 1);
-	assert.equal(limitOf(cap.completeness, 'candidate modules').limit, 1);
+	assert.equal(conv.baseClassIdioms.length, 9);
+	assert.equal(Math.max(...conv.baseClassIdioms.map(i => i.representativeSubclasses.length)), 6);
+	noLimit(conv.completeness, 'convention.detect over');
+	for (const [n, word] of [[8, 'ZzBasesA'], [5, 'ZzSubsB']] as const) {
+		const dir = `src/zz${word}`;
+		const bases = word === 'ZzBasesA'
+			? Array.from({ length: n }, (_, i) => ent('class', `${word}Base${i}`, `src/lib/${word}${i}.ts`))
+			: [ent('class', `${word}Base`, `src/lib/${word}.ts`)];
+		const subs = word === 'ZzBasesA'
+			? bases.map((_, i) => ent('class', `${word}Sub${i}`, `${dir}/s${i}.ts`))
+			: Array.from({ length: n }, (_, i) => ent('class', `${word}Sub${i}`, `${dir}/s${i}.ts`));
+		await seed([...bases, ...subs], subs.map((sub, i) => edge('INHERITS', sub, bases[word === 'ZzBasesA' ? i : 0]!)));
+		const out = await runConventionDetect(exp('convention.detect', { path: join(REPO, dir) }), ctx);
+		assert.equal(out.baseClassIdioms.length, word === 'ZzBasesA' ? n : 1, `convention.detect with ${n} ${word}`);
+		assert.equal(out.baseClassIdioms[0]!.representativeSubclasses.length, word === 'ZzBasesA' ? 1 : n);
+		noLimit(out.completeness, `convention.detect with ${n} ${word}`);
+	}
+	const convNone = await runConventionDetect(exp('convention.detect', { path: join(REPO, 'src/zznothing') }), ctx);
+	assert.equal(convNone.baseClassIdioms.length, 0);
+	noLimit(convNone.completeness, 'convention.detect with 0');
 });
 
-test('data-model.trace reports its overall limit and both per-target limits', async () => {
-	const out = await runDataModelTrace(exp('data-model.trace', { entityName: 'Model' }), ctx);
-	assert.equal(out.nodes.length, 4, 'five classes are named Model and four are traced');
-	const first = out.nodes.find(n => n.entityId === seeded['model0']!.id)!;
-	assert.equal(first.fields.length, 12, 'thirteen fields, twelve kept');
-	assert.equal(first.topCallers.length, 6, 'seven callers, six kept');
+test('doc-mention, doc.decision.trace and doc.constraint.enumerate return every section at, one over and zero versus the former limits with no limited entry', async () => {
+	// The former limit of all three was 15 sections (doc.mention's default page, and maxSources). Sections that
+	// name a word of their own; no embedding backend runs in a test, so the keyword pass finds them.
+	for (const [n, word] of [[15, 'zzdoca'], [16, 'qqdocb']] as const) {
+		await seed(Array.from({ length: n }, (_, i) => ent('section', `${word}${i}`, `docs/${word}/s${i}.md`, {
+			language: 'markdown', artifact: true, body: `## ${word}${i}\n\nThe ${word} rule MUST hold. We decided on ${word}.\n`.repeat(1) + 'detail. '.repeat(400),
+		})));
+		const men = await runDocMention(exp('doc.mention', { subject: word, limit: 2, previewChars: 10 }), ctx);
+		assert.equal(men.hits.length, n, `doc.mention with ${n}`);
+		noLimit(men.completeness, `doc.mention with ${n}`);
+		assert.ok(men.hits.every(h => (h.preview ?? '').length > 10), 'a previewChars is ignored: each hit carries its whole stored body');
 
-	assert.deepEqual(limitOf(out.completeness, 'targets'), { what: 'targets', limit: 4, scope: 'overall', reason: '5 targets were found and 4 are kept' });
-	assert.deepEqual(limitOf(out.completeness, 'fields per target'), { what: 'fields per target', limit: 12, scope: 'per-group', reason: 'a target has 13 fields and 12 are kept for each' });
-	assert.deepEqual(limitOf(out.completeness, 'callers per target'), { what: 'callers per target', limit: 6, scope: 'per-group', reason: 'a target has 7 callers and 6 are kept for each' });
-	assert.equal(out.completeness.limited!.length, 3);
-	assert.equal(out.completeness.total, 5);
-	assert.equal(out.completeness.complete, false);
+		const cprep = await prepareDocConstraintEnumerate({ subject: word, repoPath: REPO, db: await getDb(), maxSources: 2 } as Parameters<typeof prepareDocConstraintEnumerate>[0]);
+		if (cprep.kind !== 'narrow-llm') throw new Error('sections match');
+		assert.equal(cprep.prepared.retrievedSectionCount, n, `doc.constraint.enumerate with ${n}`);
+		assert.equal(cprep.prepared.validEntityIds.length, n);
+		noLimit(finalizeDocConstraintEnumerate(cprep.prepared, { subject: word, notFoundNote: '', constraints: [] }).completeness, `doc.constraint.enumerate with ${n}`);
+
+		const dprep = await prepareDocDecisionTrace({ topic: word, repoPath: REPO, db: await getDb(), maxSources: 2 } as Parameters<typeof prepareDocDecisionTrace>[0]);
+		if (dprep.kind !== 'narrow-llm') throw new Error('sections match');
+		assert.equal(dprep.prepared.retrievedSectionCount, n, `doc.decision.trace with ${n}`);
+		noLimit(finalizeDocDecisionTrace(dprep.prepared, { topic: word, notFoundNote: '', decisions: [] } as Parameters<typeof finalizeDocDecisionTrace>[1]).completeness, `doc.decision.trace with ${n}`);
+	}
+	const none = 'zznosuchdocword';
+	const menNone = await runDocMention(exp('doc.mention', { subject: none }), ctx);
+	assert.equal(menNone.hits.length, 0);
+	noLimit(menNone.completeness, 'doc.mention with 0');
+	assert.equal((await prepareDocConstraintEnumerate({ subject: none, repoPath: REPO, db: await getDb() })).kind, 'short-circuit');
+	assert.equal((await prepareDocDecisionTrace({ topic: none, repoPath: REPO, db: await getDb() })).kind, 'short-circuit');
 });
 
 // ---------------------------------------------------------------------------
 // The text lookups and the search's omissions
 // ---------------------------------------------------------------------------
 
-test("search.text and config.trace turn the search's omissions into skipped, partlyRead and limited", async () => {
-	// Limit reached: six lines match in files the search reads, three are kept.
-	const cut = await runSearchText(exp('search.text', { pattern: 'needle', topK: 3 }), ctx);
-	assert.equal(cut.hits.length, 3);
-	assert.equal(cut.completeness.complete, false);
-	const hitLimit = limitOf(cut.completeness, 'hits');
-	assert.deepEqual([hitLimit.limit, hitLimit.scope], [3, 'overall']);
-	assert.equal(cut.completeness.total, null, 'the search stopped, so how many lines match is not known');
-	assert.equal(cut.completeness.returned, 3);
+test('search.text and config.trace return every hit with its whole line and no limited entry, and a timed-out search is the failed lookup output with its gathered hits', async () => {
+	// A topK is ignored: all six lines match, the 907-character one whole, and the 2 MB file is searched.
+	const all = await runSearchText(exp('search.text', { pattern: 'needle', topK: 3 }), ctx);
+	assert.equal(all.hits.length, 6);
+	assert.ok(all.hits.some(h => h.text.length === 907), 'the 907-character line is whole');
+	assert.ok(all.hits.some(h => h.file.endsWith('big.bin')), 'a file over 2 MB is searched');
+	assert.equal(all.completeness.limited, undefined);
+	assert.equal(all.completeness.partlyRead, undefined);
+	assert.equal(all.completeness.skipped, undefined);
+	assert.equal(all.completeness.complete, true);
+	assert.equal(all.completeness.total, 6);
+	// What the backend never reads is stated once, whichever backend ran.
+	assert.equal((all.completeness.basisNote ?? '').split('Not searched, by rule:').length, 2);
 
-	// Room for every hit: the long line is a hit, cut to 500, and named with its real length.
-	const all = await runSearchText(exp('search.text', { pattern: 'needle', topK: 50 }), ctx);
-	const longHit = all.hits.find(h => h.text.length === 500);
-	assert.ok(longHit, 'the 907-character line is among the hits, cut to 500');
-	const partly = all.completeness.partlyRead ?? [];
-	assert.deepEqual(partly, [{ what: 'src/pay/charge.ts:4', readChars: 500, totalChars: 907 }]);
-	assert.equal(all.completeness.complete, false, 'a shortened line makes the result incomplete');
-	// What the backend never reads is stated, whichever backend ran.
-	assert.match(all.completeness.basisNote ?? '', /^Not searched, by rule: /);
-	if (all.backend === 'node') {
-		// The Node search skips the file over 2 MB and says so.
-		assert.deepEqual(all.completeness.skipped, [{ what: 'big.bin', reason: 'the file is over the 2 MB size limit' }]);
-	}
-
-	// config.trace goes through the same search and the same record.
 	const cfg = await runConfigTrace(exp('config.trace', { key: 'pay.key', topK: 1 }), ctx);
-	assert.equal(cfg.hits.length, 1);
-	assert.equal(limitOf(cfg.completeness, 'hits').limit, 1);
+	assert.equal(cfg.hits.length, 2);
+	assert.deepEqual(cfg.hits.map(h => h.text).sort(), ['const PAY_KEY = "pay.key";', 'pay.key again'], 'each line is whole');
+	assert.equal(cfg.completeness.limited, undefined);
+	assert.equal(cfg.completeness.complete, true);
 	assert.equal(cfg.completeness.basis, 'text');
-	const cfgAll = await runConfigTrace(exp('config.trace', { key: 'pay.key' }), ctx);
-	assert.equal(cfgAll.hits.length, 2);
-	assert.equal(cfgAll.completeness.limited, undefined, 'both hits fit, so no limit is reported');
-	assert.equal(cfgAll.completeness.partlyRead, undefined);
-	// Within the limit the result is complete, unless the search itself skipped a
-	// file: the Node search skips big.bin for its size, and that is not complete.
-	assert.equal(cfgAll.completeness.complete, cfgAll.completeness.skipped === undefined);
-	if (cfgAll.backend === 'node') {
-		assert.deepEqual(cfgAll.completeness.skipped, [{ what: 'big.bin', reason: 'the file is over the 2 MB size limit' }]);
+
+	// A search that runs past its deadline is the failed lookup, with the hits it gathered.
+	const bin = mkdtempSync(join(tmpdir(), 'insrc-slow-rg-'));
+	try {
+		const rg = join(bin, 'rg');
+		writeFileSync(rg, `#!/bin/sh\necho "${REPO}/src/pay/refund.ts:1:needle in refund"\nsleep 30\n`);
+		chmodSync(rg, 0o755);
+		let caught: unknown;
+		await runCompleteSearch('search.text', { pattern: 'needle', root: REPO, _backend: { rgCommand: rg, rgTimeoutMs: 300 } }).catch(e => { caught = e; });
+		assert.ok(caught instanceof LookupFailedError, 'the search is the failed lookup');
+		// The executor turns it into the failed output: not an empty or a complete result.
+		const failed = failedOutput(exp('search.text', { pattern: 'needle' }), caught);
+		assert.equal(failed.type, 'failed');
+		assert.equal(failed.requested, 'search.text');
+		assert.match(failed.message, /did not finish/);
+		assert.deepEqual(failed.partial, [{ source: "src/pay/refund.ts:1", content: 'needle in refund' }]);
+	} finally {
+		rmSync(bin, { recursive: true, force: true });
 	}
 });
 
@@ -466,17 +548,16 @@ test("search.text and config.trace turn the search's omissions into skipped, par
 // The data lookups
 // ---------------------------------------------------------------------------
 
-test("the table-listing lookup reads the data driver's cut flag into a limit", async () => {
+test("the table-listing lookup reports a driver that stopped early as skipped and a complete one as complete", async () => {
 	const tables = [{ name: 'a', kind: 'table' }, { name: 'b', kind: 'table' }];
 
+	// A driver that stopped before the end of its listing: not complete, and never reported as a limit.
 	const cut = await runDbTablesList(exp('db.tables.list', { connectionId: 'app', limit: 2 }), ctx, standInPool({ tables, truncated: true }));
-	assert.deepEqual(limitOf(cut.completeness, 'tables'), {
-		what: 'tables', limit: 2, scope: 'overall', reason: 'the lookup stops at 2 tables; how many exist is not known',
-	});
-	assert.equal(cut.completeness.total, null);
+	assert.equal(cut.completeness.limited, undefined);
+	assert.deepEqual(cut.completeness.skipped, [{ what: 'namespaces outside the sample', reason: 'the driver stopped before the end of the listing' }]);
 	assert.equal(cut.completeness.complete, false);
 
-	const whole = await runDbTablesList(exp('db.tables.list', { connectionId: 'app', limit: 2 }), ctx, standInPool({ tables, truncated: false }));
+	const whole = await runDbTablesList(exp('db.tables.list', { connectionId: 'app' }), ctx, standInPool({ tables, truncated: false }));
 	assert.equal(whole.completeness.limited, undefined);
 	assert.equal(whole.completeness.complete, true);
 	assert.equal(whole.completeness.total, 2);
@@ -500,6 +581,75 @@ test("the table-listing lookup reads the data driver's cut flag into a limit", a
 	const single = await runDbTablesList(exp('db.tables.list', { connectionId: 'app' }), ctx, fileConn);
 	assert.equal(single.completeness.complete, true);
 	assert.match(single.notFoundNote, /single target/);
+});
+
+/** A connection pool holding one connection served by the given driver. */
+function poolOf(driver: object, family: 'rdbms' | 'kv', kind: string): Parameters<typeof runDbTablesList>[2] {
+	return async root => leasedDataPool(root, [{ id: 'app', kind, family, label: 'app' }], connectionId => {
+		if (connectionId !== 'app') throw new Error(`unknown connection '${connectionId}'`);
+		return driver;
+	});
+}
+
+test("capability-reuse-check, db-tables-list and db-table-describe return every result and a complete driver's table listing has no limited entry", async () => {
+	// capability.reuse-check: former limit 5 (12 at most). Fourteen files match the capability;
+	// every distinct candidate is checked and put to the model, and no cut is stated.
+	await seed(Array.from({ length: 14 }, (_, i) => ent('file', `zzcap${i}.ts`, `src/zzcap/zzcap${i}.ts`)));
+	const prep = await prepareCapabilityReuseCheck(exp('capability.reuse-check', { capability: 'zzcap', limit: 2 }), ctx);
+	assert.equal(prep.kind, 'narrow-llm');
+	if (prep.kind !== 'narrow-llm') throw new Error('unreachable');
+	assert.equal(prep.prepared.profiles.length, 14, 'the fourteen matching files, more than the former 5 and the former 12');
+	assert.equal([...prep.userTurn.matchAll(/path: (\S+)/g)].length, prep.prepared.profiles.length, 'every candidate is put to the model');
+	const cap = finalizeCapabilityReuseCheck(prep.prepared, {
+		verdicts: prep.prepared.profiles.map(p => ({ path: p.path, verdict: 'partial-match' as const, rationale: 'r' })),
+	} as Parameters<typeof finalizeCapabilityReuseCheck>[1], undefined);
+	assert.equal(cap.candidates.length, prep.prepared.profiles.length);
+	noLimit(cap.completeness, 'capability.reuse-check');
+
+	// db.tables.list: a complete driver is asked for its complete listing, with no limit, and 41 tables (one over the
+	// former 40) come back with no limited entry.
+	const asked: unknown[] = [];
+	const rdbms = {
+		family: 'rdbms', kind: 'sqlite',
+		listTables: async (opts?: unknown) => { asked.push(opts); return { target: 'app', tables: Array.from({ length: 41 }, (_, i) => ({ name: `t${i}`, kind: 'table' as const })), truncated: false }; },
+	};
+	const list = await runDbTablesList(exp('db.tables.list', { connectionId: 'app', limit: 5 }), ctx, poolOf(rdbms, 'rdbms', 'sqlite'));
+	assert.equal(list.tables.length, 41);
+	assert.deepEqual(asked, [{ complete: true }], 'the complete mode, and no limit');
+	noLimit(list.completeness, 'db.tables.list');
+	assert.equal(list.completeness.complete, true);
+	const zero = await runDbTablesList(exp('db.tables.list', { connectionId: 'app' }), ctx, poolOf({ ...rdbms, listTables: async () => ({ target: 'app', tables: [], truncated: false }) }, 'rdbms', 'sqlite'));
+	assert.equal(zero.tables.length, 0);
+	noLimit(zero.completeness, 'db.tables.list with 0');
+
+	// A key-value store whose namespaces come from a sample of its keys stays a sample: reported incomplete, not as a limit.
+	const redisLike = {
+		family: 'kv', kind: 'redis',
+		listNamespaces: async (opts?: unknown) => { asked.push(opts); return { namespaces: [{ name: 'svc', kind: 'prefix' as const }], truncated: true, supported: true, sampled: true }; },
+	};
+	asked.length = 0;
+	const sample = await runDbTablesList(exp('db.tables.list', { connectionId: 'app' }), ctx, poolOf(redisLike, 'kv', 'redis'));
+	assert.deepEqual(asked, [{ complete: true }]);
+	assert.equal(sample.completeness.limited, undefined);
+	assert.equal(sample.completeness.complete, false);
+	assert.match(sample.completeness.basisNote ?? '', /sample of the store's keys/);
+	assert.equal(sample.completeness.skipped?.[0]?.what, 'namespaces outside the sample');
+
+	// db.table.describe: a key-value namespace with 20 fields and 12 sample keys (the former cuts were 8 and 5) is
+	// summarised whole.
+	const kv = {
+		family: 'kv', kind: 'mongodb',
+		describeNamespace: async () => ({
+			name: 'orders', kind: 'collection' as const, approxCount: 100, supported: true,
+			sampleKeys: Array.from({ length: 12 }, (_, i) => `key${i}`),
+			fields: Array.from({ length: 20 }, (_, i) => ({ path: `field${i}`, types: ['string'], nullable: false, frequency: 1 })),
+		}),
+	};
+	const desc = await runDbTableDescribe(exp('db.table.describe', { connectionId: 'app', target: 'orders' }), ctx, poolOf(kv, 'kv', 'mongodb'));
+	for (let i = 0; i < 20; i++) assert.ok(desc.shapeSummary.includes(`field${i}:`), `field${i} is in the summary`);
+	for (let i = 0; i < 12; i++) assert.ok(desc.shapeSummary.includes(`key${i}`), `key${i} is in the summary`);
+	noLimit(desc.completeness, 'db.table.describe');
+	assert.equal(desc.completeness.returned, 20);
 });
 
 // ---------------------------------------------------------------------------
@@ -537,16 +687,6 @@ test('every graph-based record carries the coverage note, on the paths that retu
 	assert.equal(records['symbol.locate, no match']!.complete, true);
 	assert.equal(records['capability.reuse-check, model call skipped']!.complete, false);
 	assert.match(records['capability.reuse-check, facts not carried']!.basisNote ?? '', /was not carried from its first step/);
-});
-
-test('a limit below 1 does not make a text lookup fail', async () => {
-	// A topK of 0.5 floors to 0; the search itself runs with at least 1.
-	const out = await runSearchText(exp('search.text', { pattern: 'needle', topK: 0.5 }), ctx);
-	assert.equal(out.hits.length, 1);
-	assert.equal(limitOf(out.completeness, 'hits').limit, 1);
-	const cfg = await runConfigTrace(exp('config.trace', { key: 'pay.key', topK: 0.5 }), ctx);
-	assert.equal(cfg.hits.length, 1);
-	assert.equal(limitOf(cfg.completeness, 'hits').limit, 1);
 });
 
 // ---------------------------------------------------------------------------

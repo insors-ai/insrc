@@ -96,37 +96,17 @@ export function repoIncompleteNote(c: RepoCompleteness): string {
 }
 
 /**
- * The record of a text lookup, from what the search primitive says it left
- * out: files and directories it skipped, matching lines it shortened, the
- * limits it reached and output it dropped. The backend's exclusion rule and
- * a failed ripgrep run go in the basis note.
+ * The record of a text search, which runs in its complete mode: every hit with
+ * its whole line, no file skipped for size, so no limit is reached and no line
+ * is cut. A file the search could not read is skipped with its reason. The
+ * backend's exclusion rule goes in the basis note once, and so does a failed
+ * ripgrep run.
  */
-export function textSearchCompleteness(data: SearchGrepData, limit: number): Completeness {
+export function textSearchCompleteness(data: SearchGrepData): Completeness {
 	const o = data.omitted;
-	const limited: ReachedLimit[] = [];
-	if (data.truncated) {
-		limited.push({
-			what: 'hits', limit, scope: 'overall',
-			reason: `the search stops at ${limit} hits; how many more lines match is not known`,
-		});
-	}
-	if (o.perFileLimitReached) {
-		limited.push({
-			what: 'hits per file', limit, scope: 'per-group',
-			reason: `ripgrep stops at ${limit} matches in each file; a file that reached it may hold more`,
-		});
-	}
 	const skipped: SkippedItem[] = o.skippedFiles.map(f => ({
 		what:   f.path,
-		reason: f.reason === 'too-large' ? 'the file is over the 2 MB size limit' : 'it could not be read',
-	}));
-	if (o.outputDiscarded) {
-		skipped.push({ what: "part of the search's output", reason: "it passed the 4 MB the search keeps and was dropped" });
-	}
-	const partlyRead: PartlyReadItem[] = o.shortenedLines.map(l => ({
-		what:       `${l.path}:${l.line}`,
-		readChars:  Math.min(500, l.totalChars),
-		totalChars: l.totalChars,
+		reason: f.reason === 'too-large' ? 'the file is over the size limit' : 'it could not be read',
 	}));
 	const notes = [`Not searched, by rule: ${o.excludedByRule}.`];
 	if (o.backendFallback !== undefined) {
@@ -134,7 +114,7 @@ export function textSearchCompleteness(data: SearchGrepData, limit: number): Com
 	}
 	return buildCompleteness({
 		returned: data.hits.length,
-		limited, skipped, partlyRead,
+		skipped,
 		basis:     'text',
 		basisNote: notes.join(' '),
 	});

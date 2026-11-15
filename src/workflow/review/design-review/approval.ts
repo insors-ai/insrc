@@ -11,7 +11,8 @@ import type { HeadPayload } from '../../artifact-core/codecs.js';
 import { contentHash } from '../../artifact-core/lifecycle.js';
 import { prepareDesignSubject, readDesignFile } from './subject.js';
 import { designPreservationDigest, designWorkflowDigest, validatePermanentDesignReview } from './history.js';
-import { loadStoredDesignCheckpoint } from './checkpoint.js';
+import { loadPreparationCheckpoint } from '../preparation-checkpoint.js';
+import { preparationSemanticHistory } from '../preparation-semantic-history.js';
 import { isDesignAdmission } from './contracts.js';
 import type { DesignReviewCheckpoint } from './contracts.js';
 import { designArtifactActive } from './fence.js';
@@ -88,7 +89,12 @@ export async function requireCurrentDesignApproval(projectInput:string,head:Arti
  if(entry!.targetHeadHash!==hash||rv!.verdict!=='pass'||(['HIGH','MED','LOW'] as const).some(k=>rv!.counts[k]!==report.counts[k]))reject('reviewed head or compact evidence changed');
  const latest=admissions(log,project,head.id).sort((a,b)=>b.ordinal-a.ordinal)[0];
  if(!latest||latest.reviewId!==record.reviewId||latest.attempt!==record.applicableAttempt||latest.contentIdentity!==record.binding.reviewedContentIdentity)reject('a later or untracked review admission has no applicable completed publication');
- const cp=await loadStoredDesignCheckpoint(project,record.reviewId);
+ const loaded = await loadPreparationCheckpoint({ project, family: 'design', reviewId: record.reviewId });
+ const checkpointRaw = loaded?.checkpoint;
+ requireDesign(!checkpointRaw || 'artifactId' in checkpointRaw, 'foreign_review', 'Foreign approval checkpoint');
+ const cp = checkpointRaw && 'artifactId' in checkpointRaw ? loaded!.format === 'current'
+  ? preparationSemanticHistory(checkpointRaw as import('../preparation-checkpoint.js').DesignPreparationCheckpoint)
+  : checkpointRaw as import('./contracts.js').StoredDesignCheckpoint : undefined;
  if(cp){const a=cp.attempts.at(-1)!;if(isDesignAdmission(a)||a.number!==record.applicableAttempt||a.status!=='passed'||a.publication?.state!=='complete'||a.publication.artifactHistoryEntryId!==entry!.id||designPreservationDigest(cp)!==record.preservationDigest)reject('latest review work is unfinished or not preserved');}
  return {expectedHeadHash:hash,expectedDocument:{path:prepared.subject.documentPath,hash:record.binding.documentDigest}};
 }

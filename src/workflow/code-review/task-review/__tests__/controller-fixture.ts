@@ -35,7 +35,7 @@ export async function channel(path:string){
     if(failed.status==='failed'&&failed.admission?.error)throw Error(`${failed.admission.error.field??'admission'}: ${failed.admission.error.summary}`);
     if(Date.now()>end)throw Error('Controller assignment unavailable');
     await new Promise(resolve=>setTimeout(resolve,10));
-    value=await rawCall<T>('codeReview.task.assignment',{repo:p.repo,reviewId:p.reviewId,attempt:p.attempt});
+    try{value=await rawCall<T>('codeReview.task.assignment',{repo:p.repo,reviewId:p.reviewId,attempt:p.attempt});}catch(error){if(!/owner unavailable/i.test(String(error)))throw error;value=await rawCall<T>('codeReview.task.progress',{repo:p.repo,reviewId:p.reviewId,attempt:p.attempt,epicHash:p.epicHash});}
    }
   }
   const frame=value as Record<string,unknown>;

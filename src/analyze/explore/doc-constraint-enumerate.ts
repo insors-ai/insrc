@@ -46,13 +46,12 @@ import type {
 } from './types.js';
 import { buildCompleteness } from '../completeness.js';
 import type { PartialFinding, PartlyReadItem, SkippedItem } from '../completeness.js';
-import { carriedCompleteness, DOC_INDEX_RULE, reachedLimit, vectorPassSkipped } from './completeness-facts.js';
-import { createItemMeasurer } from './item-measure.js';
+import { carriedCompleteness, DOC_INDEX_RULE, vectorPassSkipped } from './completeness-facts.js';
+import { createItemMeasurer, readItemWhole } from './item-measure.js';
 import { errorMessage, LookupFailedError } from './lookup-failed.js';
 import type { CarriedCompletenessFacts } from './completeness-facts.js';
 
 /** How much of each retrieved section's stored body the model is given. */
-const SECTION_BODY_CHARS = 2_000;
 
 const log = getLogger('analyze:explore:doc-constraint-enumerate');
 
@@ -105,7 +104,6 @@ export interface RunDocConstraintEnumerateArgs {
 	/** The part of the repo to keep to; absent, the whole repo. Forwarded to
 	 *  retrieval, so sections are selected, ranked and counted within it. */
 	readonly area?:       DocsArea | undefined;
-	readonly maxSources?: number;
 	readonly runId?:      string;
 	readonly logContext?: string;
 	/** The model that reads the sections; a test passes a stand-in. */
@@ -127,7 +125,6 @@ export async function runSharedDocConstraintEnumerate(
 		db:         args.db,
 		// Handed over explicitly: prepare is given a new object, built field by field.
 		...(args.area !== undefined ? { area: args.area } : {}),
-		...(args.maxSources !== undefined ? { maxSources: args.maxSources } : {}),
 		...(args.runId !== undefined ? { runId: args.runId } : {}),
 		...(args.logContext !== undefined ? { logContext: args.logContext } : {}),
 	});
@@ -209,9 +206,6 @@ export async function prepareDocConstraintEnumerate(
 	if (subject.length === 0) {
 		throw new Error('doc.constraint.enumerate: subject is required (non-empty string)');
 	}
-	const maxSources = args.maxSources !== undefined
-		? Math.max(1, Math.min(30, args.maxSources))
-		: 15;
 
 	const report: DocsRetrievalReport = {};
 	const sections = await retrieveDocSections({
@@ -220,7 +214,6 @@ export async function prepareDocConstraintEnumerate(
 		query:        subject,
 		closureRepos: [args.repoPath],
 		...(args.area !== undefined ? { area: args.area } : {}),
-		maxResults:   maxSources,
 		kinds:        ['document', 'section'],
 		previewChars: 0,
 	});
@@ -251,16 +244,15 @@ export async function prepareDocConstraintEnumerate(
 			skipped.push({ what: `${s.file} § ${s.heading}`, reason: 'the section is no longer in the index' });
 			continue;
 		}
-		const body = (entity.body ?? '').slice(0, SECTION_BODY_CHARS);
+		// The whole section, from its file; a section the file cannot confirm is reported as not covered.
+		const { body, notCovered } = await readItemWhole(measurer, `${s.file} § ${s.heading}`, entity);
 		hydrated.push({
 			entityId: s.entityId,
 			file:     s.file,
 			heading:  s.heading,
 			body,
 		});
-		// The model reads this much of the section; say so when the section is longer.
-		const cut = await measurer.partlyRead(`${s.file} § ${s.heading}`, entity, body.length);
-		if (cut !== undefined) partlyRead.push(cut);
+		if (notCovered !== undefined) partlyRead.push(notCovered);
 	}
 
 	const promptContent = loadPromptFile();
@@ -279,11 +271,8 @@ export async function prepareDocConstraintEnumerate(
 			retrievedSectionCount: sections.length,
 			validEntityIds:        hydrated.map(h => h.entityId),
 			completenessFacts: {
-				// The retrieval returns at most maxSources sections and does not say how many
-				// matched. The limit is on what was read, not on what is returned from it.
-				limited: sections.length >= maxSources
-					? [reachedLimit('document sections', maxSources, 'source', null)]
-					: [],
+				// Every section the retrieval found is read: no limit is reached.
+				limited: [],
 				skipped,
 				partlyRead,
 			},
@@ -325,7 +314,6 @@ export function finalizeDocConstraintEnumerate(
 
 interface ExplorationParams {
 	readonly subject:     string;
-	readonly maxSources?: number;
 }
 
 function parseExplorationParams(exp: Exploration): ExplorationParams {
@@ -336,7 +324,6 @@ function parseExplorationParams(exp: Exploration): ExplorationParams {
 	}
 	return {
 		subject,
-		...(typeof p['maxSources'] === 'number' ? { maxSources: p['maxSources'] as number } : {}),
 	};
 }
 
@@ -353,7 +340,6 @@ export async function runDocConstraintEnumerate(
 		db,
 		// The area the request named, applied before ranking.
 		...(ctx.scope !== undefined && docsAreaOf(ctx.scope) !== undefined ? { area: docsAreaOf(ctx.scope)! } : {}),
-		...(params.maxSources !== undefined ? { maxSources: params.maxSources } : {}),
 		...(ctx.runId !== undefined ? { runId: ctx.runId } : {}),
 		logContext: 'exploration',
 	});

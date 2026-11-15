@@ -13,6 +13,7 @@ import type { StoredDesignCheckpoint } from './contracts.js';
 import type { ReviewResourceGuard,ReviewAuthorizedClearance } from '../../../shared/review-resources.js';
 import { checkDesignAdmissionEvolution, decodeStoredDesignCheckpoint } from './admission-checkpoint.js';
 import { designActionEvolution,qualifiedDesignAction } from './action-state.js';
+import { preparationPersistence } from '../preparation-persistence.js';
 
 const same=(a:unknown,b:unknown):boolean=>JSON.stringify(a)===JSON.stringify(b);
 function checkUnit(unit:DesignUnitState|DesignUnitSummary):void {
@@ -148,6 +149,8 @@ export async function loadDesignCheckpoint(project: string, reviewId: string): P
 }
 export async function loadStoredDesignCheckpoint(project: string, reviewId: string): Promise<StoredDesignCheckpoint | undefined> {
  const path=designCheckpointPath(project,reviewId);
+ const owner=preparationPersistence(path);
+ if(owner){const input=await owner.read();if(input===undefined)return undefined;const cp=decodeStoredDesignCheckpoint(input);validateStoredDesignIdentity(project,reviewId,cp);return cp;}
  if(!await checkDirectories(project,false))return undefined;
  let file;
  try {file=await fs.open(path,constants.O_RDONLY|constants.O_NOFOLLOW);}
@@ -160,6 +163,7 @@ export async function loadStoredDesignCheckpoint(project: string, reviewId: stri
   requireDesign(size<=stat.size,'checkpoint_changed','Checkpoint changed while reading');
   let parsed:unknown;
   try{parsed=JSON.parse(bytes.subarray(0,size).toString('utf8'));}catch{throw new DesignReviewError('invalid_checkpoint','Checkpoint is not valid JSON');}
+  if((parsed as {schemaVersion?:unknown}).schemaVersion===3){const {decodePreparationCheckpoint}=await import('../preparation-checkpoint.js');const {preparationSemanticHistory}=await import('../preparation-semantic-history.js');const decoded=decodePreparationCheckpoint(parsed,{project,family:'design',reviewId});if(decoded.format!=='current'||'storyId'in decoded.checkpoint)throw new Error('Invalid current design history');parsed=preparationSemanticHistory(decoded.checkpoint);}
   const checkpoint=decodeStoredDesignCheckpoint(parsed);
   validateStoredDesignIdentity(project,reviewId,checkpoint);return checkpoint;
  } finally {await file.close();}
@@ -167,6 +171,8 @@ export async function loadStoredDesignCheckpoint(project: string, reviewId: stri
 /** A failed pre-rename write leaves the previous accepted snapshot intact. No advance may follow a rejected save. */
 export async function saveDesignCheckpoint(project: string, input: DesignReviewCheckpoint): Promise<void> {
  const checkpoint = decodeDesign(DesignCheckpointSchema, input);
+ const owner=preparationPersistence(designCheckpointPath(project,checkpoint.reviewId));
+ if(owner){validateDesignCheckpointIdentity(project,checkpoint.reviewId,checkpoint);return serializeDesignWrite(owner.path,()=>owner.write(checkpoint));}
  return serializeDesignWrite(designCheckpointPath(project, checkpoint.reviewId), () => saveQualifiedDesignCheckpoint(project, checkpoint));
 }
 async function saveQualifiedDesignCheckpoint(project: string, input: DesignReviewCheckpoint): Promise<void> {
@@ -187,6 +193,7 @@ async function saveQualifiedDesignCheckpoint(project: string, input: DesignRevie
  }
 }
 async function writeDesignCheckpointBytes(path: string, raw: string): Promise<void> {
+ const {rejectPreparationDowngrade}=await import('../../code-review/task-review/checkpoint.js');await rejectPreparationDowngrade(path);
  const temporary=`${path}.${randomUUID()}.tmp`;
  let created=false;
  try {
@@ -254,6 +261,8 @@ export function updateStoredDesignCheckpoint(project: string, reviewId: string,
   }
   const raw = JSON.stringify(cp) + '\n';
   requireDesign(Buffer.byteLength(raw) <= DESIGN_LIMITS.checkpointBytes, 'checkpoint_too_large', 'Checkpoint exceeds limit');
+  const owner=preparationPersistence(path);
+  if(owner){await owner.write(cp);return cp;}
   await checkDirectories(project, true);
   try { await writeDesignCheckpointBytes(path, raw); }
   catch (error) { throw new DesignReviewPersistenceError(error instanceof Error ? error.message : 'Checkpoint save failed'); }

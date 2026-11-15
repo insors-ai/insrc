@@ -21,7 +21,7 @@
     "epicHash": "206db3426ffd4428",
     "epicSlug": "show-long-running-task-progress-chat",
     "authoredBy": "controller",
-    "revision": 2,
+    "revision": 3,
     "envelope": {
       "description": "",
       "references": [],
@@ -30,9 +30,9 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 2,
-        "contentHash": "8ebe74dc406131f655417862a731249d2bcf2bcda51dfc81c0448a9e864a5a22",
-        "at": "2026-11-09T06:14:06.455Z",
+        "number": 3,
+        "contentHash": "c6dd209dc3998a6fb182e25d879db46abcb7637792235c19330473bb75d7f45e",
+        "at": "2026-11-13T05:16:46.663Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -65,15 +65,15 @@
         }
       },
       "approval": {
-        "revision": 2,
+        "revision": 3,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-09T07:44:28.217Z",
+        "at": "2026-11-14T17:39:17.303Z",
         "override": {
-          "reason": "Independent review completed all six chunks with zero findings and resolved all four prior findings. The remaining incomplete verification was limited to the reviewer’s GitHub connectivity. Authenticated GitHub checks independently confirmed the predecessor epic #41, stories #42–#44, and successor #146 are open. Reciprocal tracker linkage and disposition are a separate follow-up. User explicitly approved the presented DEF with this override."
+          "reason": "Controller self-review of DEF rev 3 (s7 non-goal narrowed, k1 extended, FR004 added); daemon design review unavailable and its rev-2 review is stale."
         }
       }
     },
@@ -103,8 +103,8 @@
         "rationale": "Initial delivery targets VS Code chat and verified native CLI surfaces."
       },
       {
-        "text": "General job scheduling, arbitrary process attachment or automatic task restart",
-        "rationale": "Initial delegates observe instrumented, authorized executions."
+        "text": "Recurring or scheduled jobs, attaching to pre-existing processes, and automatic restart of a task",
+        "rationale": "Observation covers instrumented, authorized executions. Launching an authorized one-shot command as a daemon-owned task is in scope (s7); scheduling, recurrence, attachment to existing processes and automatic restart stay excluded."
       },
       {
         "text": "Fabricated ETA or progress, raw model output as progress, and universal MCP Tasks support",
@@ -137,7 +137,7 @@
       {
         "id": "k1",
         "type": "contract",
-        "text": "Cover workflow and analyze operations through their supported IPC entry points, design reviews, code reviews and managed test sweeps with a shared authorized task/attempt progress contract.",
+        "text": "Cover workflow and analyze operations through their supported IPC entry points, design reviews, code reviews and managed test sweeps and authorized one-shot commands launched as daemon-owned tasks with a shared authorized task/attempt progress contract.",
         "source": "c1"
       },
       {
@@ -505,6 +505,48 @@
             ]
           }
         ]
+      },
+      {
+        "id": "s7",
+        "title": "Launch a long-running command as a daemon-owned task that outlives the chat turn",
+        "userValue": "A user or agent in a chat can start a long-running command or test run as a daemon-owned task, end the turn, and still see its progress and final result in the originating chat, without the chat's session lock being held by a pending background process.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "A chat launches an authorized long-running command (for example a 40-minute live test run or a test sweep) through the daemon",
+            "when": "The launching turn ends and the chat process exits",
+            "then": "The command keeps running under the daemon, the chat's session lock is released at the turn end, and the next message in the chat is not delayed by the running command.",
+            "operationalizes": []
+          },
+          {
+            "id": "ac2",
+            "given": "A daemon-owned command task was launched from chat A",
+            "when": "The user starts another turn, switches chats or reconnects",
+            "then": "One existing message in chat A shows the task's latest measured state and its terminal result (exit status, a bounded output tail and the log location) without extra model calls, and no event reaches chat B.",
+            "operationalizes": []
+          },
+          {
+            "id": "ac3",
+            "given": "A command is launched as a daemon task",
+            "when": "It is registered",
+            "then": "It runs only inside the registered repository with the caller's authorization, is limited to commands the daemon accepts under its approval policy, and is not an attachment to an arbitrary pre-existing process.",
+            "operationalizes": []
+          },
+          {
+            "id": "ac4",
+            "given": "A daemon-owned command task is running",
+            "when": "The user cancels it or the daemon restarts",
+            "then": "Cancellation stays pending until the daemon verifies the process ended, and after a restart the task is reported as lost or finished rather than shown as still running.",
+            "operationalizes": []
+          },
+          {
+            "id": "ac5",
+            "given": "The epic's non-goals exclude general job scheduling and arbitrary process attachment",
+            "when": "This story is added",
+            "then": "The non-goal is narrowed in the Define to state exactly what stays excluded (scheduling, recurring jobs, attaching to existing processes, automatic restart) while launching an authorized one-shot command as a task is in scope.",
+            "operationalizes": []
+          }
+        ]
       }
     ],
     "openQuestions": [],
@@ -523,6 +565,11 @@
         {
           "id": "E20261109206db342:FR003",
           "statement": "Supported clients show native updates without extra model calls, and users can explicitly enable one-minute fallback observation where supported.",
+          "scope": "doc"
+        },
+        {
+          "id": "E20261109206db342:FR004",
+          "statement": "Users can launch an authorized long-running command as a daemon-owned task, end the turn, and still see its measured progress and terminal result in the originating chat while the chat's session lock is released.",
           "scope": "doc"
         }
       ]

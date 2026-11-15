@@ -10,6 +10,7 @@ import { ReviewWorkers } from '../review-workers.js';
 import type { ReviewWorkerProgress } from '../review-workers.js';
 import { startReviewWorkerBootstrap } from '../review-worker-bootstrap.js';
 import type { StartedReviewWorker } from '../review-worker-bootstrap.js';
+import { loadReviewRuntime } from '../review-runtime-store.js';
 import { reviewWorkerCheckpoint } from '../review-worker-contract.js';
 import { persistReviewWorkerAdmission } from '../review-worker-admission.js';
 import { updateStoredCodeCheckpoint,loadStoredCheckpoint } from '../../../workflow/code-review/task-review/checkpoint.js';
@@ -60,7 +61,7 @@ test('canonical identities own one incarnation and preserve subject and cleanup 
   const s=f.started.get(id)!;await Promise.all([rpc(s,'tool'),rpc(s,'tool')]);
   await rpc(s,'cli');
   const cp=JSON.parse(await readFile(reviewWorkerCheckpoint(s.admission.key),'utf8'));
-  assert.deepEqual(cp.attempts.at(-1).resourceGuard.openLeases,[]);
+  assert.equal(cp.schemaVersion,3);assert.equal(cp.attempts.at(-1).resourceGuard,undefined);assert.deepEqual((await loadReviewRuntime(s.admission.key))!.resourceGuard.openLeases,[]);
  }
  assert.equal(f.authorizations(),6);
  await f.registry.shutdown();
@@ -84,12 +85,12 @@ test('stale owner messages and targeted disconnects cannot mutate another review
  const pending=await f.registry.control({...a,attempt:1,phase:'assignment',actionId:'a',executionId:'e',sequence:1,input:{}},one.context) as {status:string;admission:{validation:string}};
  assert.equal(pending.status,'pending');assert.equal(pending.admission.validation,'unverified');
  const holding=rpc(sa,'hold').catch(()=>undefined);
- await until(async()=>{const cp=JSON.parse(await readFile(reviewWorkerCheckpoint(a.key),'utf8'));return cp.attempts.at(-1).resourceGuard?.openLeases.length===1;});
+ await until(async()=>{const cp=JSON.parse(await readFile(reviewWorkerCheckpoint(a.key),'utf8'));return (await loadReviewRuntime(a.key))?.resourceGuard.openLeases.length===1;});
  one.abort.abort();await holding;await sa.reclaimed;
  assert.ok(await f.registry.progress(b.key,two.context));await rpc(sb,'tool');
  assert.equal(f.registry.acceptProgress(sa.worker,a,{...progress,...a,sequence:2}),false);
  assert.ok((f.registry.cachedProgress(b.key)?.sequence??0)>=progress.sequence);
- const cp=JSON.parse(await readFile(reviewWorkerCheckpoint(a.key),'utf8'));assert.deepEqual(cp.attempts.at(-1).resourceGuard.openLeases,[]);
+ const cp=JSON.parse(await readFile(reviewWorkerCheckpoint(a.key),'utf8'));assert.equal(cp.schemaVersion,3);assert.equal(cp.attempts.at(-1).resourceGuard,undefined);assert.deepEqual((await loadReviewRuntime(a.key))!.resourceGuard.openLeases,[]);
 });
 test('admission replay retains a native intent committed by the writer ahead of it',async t=>{
  const repo=await mkdtemp(join(tmpdir(),'review-intent-replay-'));t.after(()=>rm(repo,{recursive:true,force:true}));

@@ -37,7 +37,7 @@ import type {
 } from './types.js';
 import type { PartlyReadItem, SkippedItem } from '../completeness.js';
 import { INDEXER_CUT_MARKER, partlyReadEntry } from '../item-length.js';
-import { graphCompleteness, reachedLimit } from './completeness-facts.js';
+import { graphCompleteness } from './completeness-facts.js';
 import { createItemMeasurer } from './item-measure.js';
 
 const log = getLogger('analyze:explore:manifests-locate');
@@ -50,14 +50,10 @@ interface ManifestsLocateParams {
 	/** Optional family filter. When omitted, every recognised family
 	 *  is surfaced. */
 	readonly families?: readonly ManifestFamily[];
-	readonly topK?:     number;
 }
 
 /** The kinds of entity that stand for a whole manifest file. */
 const WHOLE_FILE_ENTITY_KINDS: ReadonlySet<string> = new Set(['document', 'config']);
-
-const DEFAULT_TOP_K = 200;
-const MAX_TOP_K     = 1_000;
 
 function parseParams(exp: Exploration): ManifestsLocateParams {
 	const p = exp.params as Record<string, unknown>;
@@ -68,12 +64,8 @@ function parseParams(exp: Exploration): ManifestsLocateParams {
 			|| f === 'docker' || f === 'ci' || f === 'other',
 		) as ManifestFamily[]
 		: undefined;
-	const topK = typeof p['topK'] === 'number' && p['topK']! > 0
-		? Math.min(MAX_TOP_K, Math.floor(p['topK'] as number))
-		: DEFAULT_TOP_K;
 	return {
 		...(families !== undefined && families.length > 0 ? { families } : {}),
-		topK,
 	};
 }
 
@@ -94,9 +86,6 @@ export async function runManifestsLocate(
 		? new Set(params.families)
 		: null;
 
-	const topK = params.topK ?? DEFAULT_TOP_K;
-	// Manifests that pass every filter, counted past the limit as well.
-	let found = 0;
 	const measurer = createItemMeasurer(db, all);
 	const partlyRead: PartlyReadItem[] = [];
 	const skipped: SkippedItem[] = [];
@@ -126,11 +115,6 @@ export async function runManifestsLocate(
 
 		const family = classifyFamily(e.file);
 		if (familyFilter !== null && !familyFilter.has(family)) continue;
-
-		found += 1;
-		// Past the limit a manifest is counted, so the result can say how many
-		// exist; `hits` and `families` describe the ones returned, as before.
-		if (hits.length >= topK) continue;
 
 		familyCounts[family] += 1;
 
@@ -170,8 +154,7 @@ export async function runManifestsLocate(
 		type:      'manifests.locate',
 		completeness: graphCompleteness({
 			returned: hits.length,
-			found,
-			limited:  found > topK ? [reachedLimit('manifests', topK, 'overall', found)] : [],
+			found:    hits.length,
 			partlyRead,
 			skipped,
 		}),

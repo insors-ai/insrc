@@ -39,9 +39,9 @@ test('a prompt that alone does not fit, with nothing to divide, is a typed budge
 	assert.equal(calls, 0);
 });
 
-test('the aggregator combine schema caps a summary like a part summary', () => {
+test('the aggregator combine schema puts no cap on a summary', () => {
 	const schema = AGGREGATE_COMBINE_SCHEMA as unknown as { properties: { summary: { maxLength?: number } } };
-	assert.equal(schema.properties.summary.maxLength, 2_000);
+	assert.equal(schema.properties.summary.maxLength, undefined);
 });
 
 test('distinct files whose names hold the kind separator are both kept; an identical line is still dropped', () => {

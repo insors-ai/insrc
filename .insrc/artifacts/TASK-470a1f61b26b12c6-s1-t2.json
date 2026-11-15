@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d7c78492-1c04-462c-bab7-6cc405528cef",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T12:17:34.254Z",
+    "epicCreatedAt": "2026-11-14T08:55:28.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "470a1f61b26b12c6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Define versioned preparation and operational contracts",
+      "parent": {
+        "entityId": "STORY-470a1f61b26b12c6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-470a1f61b26b12c6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-470a1f61b26b12c6-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "812f1407a007f87bf0b6ff333865ed06e8855574cf1c6a1742819bb0b0f02f04",
+        "at": "2026-11-14T12:17:34.254Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T12:17:34.255Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Define versioned preparation and operational contracts",
+    "summary": "Add proposed exact checkpoint3, RuntimeV1, source manifest, HistoryBindingV1, cleanup claim and private capability types/decoders in existing shared review areas.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Both family and supported historical readers reject unknown/mismatched required formats; runtime <=256KiB and client-forged authority rejected.",
+      "Run and record this task's focused validation before advancing; cross-cutting qualification does not replace these checks."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Proposed exact contracts: supported historical/version3 checkpoint decode, RuntimeV1 bound, manifest/history/cleanup binding identity and forged capabilities."
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

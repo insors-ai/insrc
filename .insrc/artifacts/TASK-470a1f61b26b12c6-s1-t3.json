@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9a5cb978-7fea-4fcc-89b2-74d02a82fe96",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T12:17:34.256Z",
+    "epicCreatedAt": "2026-11-14T08:55:28.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "470a1f61b26b12c6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement compact host runtime durability",
+      "parent": {
+        "entityId": "STORY-470a1f61b26b12c6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-470a1f61b26b12c6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-470a1f61b26b12c6-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "3938e47d19c608c6c6c0b0e0a1086529ec323729a68f99dc56581e455094875d",
+        "at": "2026-11-14T12:52:05.046Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T12:17:34.257Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Implement compact host runtime durability",
+    "summary": "Implement the sole-main-writer compact runtime persistence adapter and verify it through the real ReviewNativeHost/ReviewProcessLeases boundary. Preserve atomic save outcomes and host closure proof. Do not activate production storage before t7-t12 integration and coordinated cutover.",
+    "size": "L",
+    "order": 3,
+    "acceptanceChecks": [
+      "At the compact adapter/native-host boundary: open intent precedes spawn; closure requires confirmed disposal; uncertain writes retain fences; native/progress updates leave full history unchanged. Production public-route wiring is required in t12/t13, not this foundation task.",
+      "Run and record this task's focused validation before advancing; cross-cutting qualification does not replace these checks."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Compact adapter/native-host integration: open-before-spawn, disposal-before-close, uncertain writes, injected initialization interruption, actual proof replacement and zero full-history native/progress updates; production wiring qualified in t12/t13."
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

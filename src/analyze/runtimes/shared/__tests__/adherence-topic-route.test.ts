@@ -132,7 +132,7 @@ async function check(
 	return { ...(result.outputs.get('adherence-report') as Omit<Report, 'completeness'>), completeness: result.completeness as Completeness };
 }
 
-const recordPath = (runId: string, topic = TOPIC, maxSources?: number): string => constraintRecordPathFor(runId, REPO, topic, maxSources);
+const recordPath = (runId: string, topic = TOPIC): string => constraintRecordPathFor(runId, REPO, topic);
 const what = (c: Completeness, field: 'limited' | 'partlyRead' | 'skipped'): string[] => (c[field] ?? []).map(x => x.what);
 
 test.beforeEach(async () => {
@@ -179,7 +179,7 @@ test('a check with a topic judges against the constraints enumerated from the re
 	assert.ok(existsSync(recordPath(runId)));
 });
 
-test('four checks with one topic in one run make one enumeration; a topic that differs only in case or spacing reuses it; a different maxConstraintSources, a different topic or a different run does not', async () => {
+test('four checks with one topic in one run make one enumeration; a topic that differs only in case or spacing reuses it; a different topic or a different run does not', async () => {
 	const runId = uniqueRun('four');
 	const reports: Report[] = [];
 	for (const taskId of ['t12', 't13', 't14', 't15']) {
@@ -197,50 +197,48 @@ test('four checks with one topic in one run make one enumeration; a topic that d
 	assert.equal(enumerations, 1);
 	assert.deepEqual(respelt.constraints, reports[0]!.constraints);
 
-	// Another limit of sections, another topic, another run: one enumeration each.
-	const limited = await check(codeAdherenceCheckRuntime, runId, { constraintTopic: TOPIC, maxConstraintSources: 1 });
-	assert.equal(enumerations, 2);
-	assert.deepEqual([limited.constraints.length, limited.constraintSource], [1, { kind: 'documents', topic: TOPIC, repoPath: REPO, retrievedSectionCount: 1, record: recordPath(runId, TOPIC, 1) }]);
-	await check(codeAdherenceCheckRuntime, runId, { constraintTopic: 'release workflow rules' });
-	assert.equal(enumerations, 3);
-	await check(codeAdherenceCheckRuntime, uniqueRun('four-other'), { constraintTopic: TOPIC });
-	assert.equal(enumerations, 4);
+	// A maxConstraintSources a plan still passes is ignored: the same enumeration, the same record.
+	const ignored = await check(codeAdherenceCheckRuntime, runId, { constraintTopic: TOPIC, maxConstraintSources: 1 });
+	assert.equal(enumerations, 1);
+	assert.deepEqual([ignored.constraints.length, ignored.constraintSource], [2, reports[0]!.constraintSource]);
 
-	// A limit that is not a whole number is left out (the record is the one with no limit); one out of range is held to 1..30.
-	const fractional = await check(codeAdherenceCheckRuntime, runId, { constraintTopic: TOPIC, maxConstraintSources: 2.5 });
-	assert.deepEqual([enumerations, fractional.constraintSource], [4, reports[0]!.constraintSource]);
-	const tooMany = await check(codeAdherenceCheckRuntime, runId, { constraintTopic: TOPIC, maxConstraintSources: 99 });
-	assert.equal((tooMany.constraintSource as { record?: string }).record, recordPath(runId, TOPIC, 30));
+	// Another topic, another run: one enumeration each.
+	await check(codeAdherenceCheckRuntime, runId, { constraintTopic: 'release workflow rules' });
+	assert.equal(enumerations, 2);
+	await check(codeAdherenceCheckRuntime, uniqueRun('four-other'), { constraintTopic: TOPIC });
+	assert.equal(enumerations, 3);
 });
 
-test('the enumeration\'s reached limit, partly read section and skipped search by meaning appear in the completeness record of the check that made it and of a check that read its record', async () => {
-	// Two long sections on one subject; the enumeration is allowed one of them
-	// and reads only its first part. No embedding backend runs in a test, so the
-	// search by meaning is skipped.
+test('the enumeration\'s unconfirmed sections and skipped search by meaning appear in the completeness record of the check that made it and of a check that read its record, and no limit is reached', async () => {
+	// Two long sections on one subject; the enumeration reads both. Their files are not on
+	// disk, so neither can be confirmed and both are reported. No embedding backend runs in
+	// a test, so the search by meaning is skipped.
 	const long = (marker: string): string => `${marker} A rollback of a deploy MUST be announced. ` + 'deploy rollback detail. '.repeat(200);
 	const extra = [section('Rollback A', 'docs/rollback-a.md', long('RB-A')), section('Rollback B', 'docs/rollback-b.md', long('RB-B'))];
 	sections.push(...extra);
 	await upsertEntities(await getDb(), extra);
 
 	const runId = uniqueRun('completeness');
-	const params = { constraintTopic: 'deploy rollback', maxConstraintSources: 1 };
+	const params = { constraintTopic: 'deploy rollback' };
 	const made = await check(codeAdherenceCheckRuntime, runId, params, { taskId: 't01' });
 	const read = await check(codeAdherenceCheckRuntime, runId, params, { taskId: 't02' });
 	assert.equal(enumerations, 1, 'the second check read the record');
 
 	for (const [who, report] of [['the check that enumerated', made], ['the check that read the record', read]] as const) {
 		assert.equal(report.completeness.complete, false, who);
-		assert.deepEqual(what(report.completeness, 'limited'), ['document sections'], who);
-		assert.equal(report.completeness.limited![0]!.limit, 1, who);
-		assert.equal(report.completeness.partlyRead?.length, 1, who);
-		assert.match(report.completeness.partlyRead![0]!.what, /rollback-[ab]\.md/, who);
+		assert.equal(report.completeness.limited, undefined, `${who}: no limit is reached`);
+		// A fixture entity with no recorded file hash is not confirmed, so it is reported too; both sections are the ones under test.
+		const sectionsRead = (report.completeness.partlyRead ?? []).filter(p => /rollback-[ab]\.md/.test(p.what));
+		assert.equal(sectionsRead.length, 2, who);
 		assert.deepEqual(what(report.completeness, 'skipped'), ["the document index's search by meaning"], who);
 	}
 	assert.deepEqual(read.completeness, made.completeness);
 
 	// A check on inline constraints has none of them.
 	const inline = await check(codeAdherenceCheckRuntime, runId, { constraints: [{ constraint: 'x MUST y' }] });
-	assert.deepEqual([inline.completeness.limited, inline.completeness.partlyRead, inline.completeness.skipped], [undefined, undefined, undefined]);
+	// The fixture's code entity has no recorded file hash, so it may be reported as unconfirmed; no document section is.
+	assert.deepEqual([inline.completeness.limited, inline.completeness.skipped], [undefined, undefined]);
+	assert.deepEqual((inline.completeness.partlyRead ?? []).filter(p => /rollback-[ab]\.md/.test(p.what)), []);
 });
 
 test('an inline list or stored-document ids are used alone when given, with a topic also present, and no enumeration is made; an empty inline list beside ids uses the ids, and beside a topic uses the topic', async () => {

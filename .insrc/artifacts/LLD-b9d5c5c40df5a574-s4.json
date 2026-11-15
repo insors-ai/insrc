@@ -59,6 +59,36 @@
       "description": "",
       "references": [],
       "attachments": []
+    },
+    "questionResolutions": {
+      "q9c8db0c8": {
+        "question": "Which of the constants found in the s1 inventory are the Define's sixteen result-count limits and nine content cuts is not established; the plan stage should reconcile the two lists before the tasks are written.",
+        "status": "resolved",
+        "choice": "Map constants to Define requirements",
+        "rationale": "User approved the recommendation 2026-11-14: reconcile the s1 inventory with the Define's sixteen limits and nine cuts, record the mapping before tasks; revise upstream only on a contradiction.",
+        "resolvedAt": "2026-11-14T12:52:24.497Z"
+      },
+      "q2098d8b0": {
+        "question": "The HLD's Story s4 boundary text has a grammar slip from the split with Story s10 ('...cache key is taken. moving the table-listing lookup...'); it should be corrected the next time the HLD is edited.",
+        "status": "resolved",
+        "choice": "Targeted sentence repair",
+        "rationale": "User approved 2026-11-14: correct the grammar slip at the next HLD edit, not now (an edit clears the HLD's approval); smallest change, boundary preserved.",
+        "resolvedAt": "2026-11-14T12:53:19.185Z"
+      },
+      "q0d8408f6": {
+        "question": "Several proving tests named in the test strategy do not exist yet (discovery-objects, doc-constraint-enumerate, adherence-check, db-tables-list, decompose-prompt-limits and redis-etcd-live); the plan stage should create them or map the criteria to existing files.",
+        "status": "resolved",
+        "choice": "Map existing coverage, create gaps",
+        "rationale": "User approved 2026-11-14: map each criterion to existing tests where coverage is adequate and plan new tests only for uncovered criteria.",
+        "resolvedAt": "2026-11-14T12:53:56.544Z"
+      },
+      "qea574444": {
+        "question": "Reading ripgrep output as a stream in complete mode and how a search that runs out of time reports hits already gathered are stated but not detailed; the plan stage should choose the time limit for the analyzer's search.",
+        "status": "resolved",
+        "choice": "Fixed 30-second limit",
+        "rationale": "User approved a fixed 30-second deadline 2026-11-14: stream and parse complete ripgrep records, stop at 30 seconds, return the hits gathered marked incomplete and report the search as failed, never complete.",
+        "resolvedAt": "2026-11-14T12:54:21.326Z"
+      }
     }
   },
   "body": {

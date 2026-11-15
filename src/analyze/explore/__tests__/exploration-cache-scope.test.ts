@@ -23,7 +23,7 @@ const exp = (type: string, params: Record<string, unknown>): Exploration => ({ i
 const key = (e: Exploration, scope: ResolvedScope | undefined): string => hashExplorationParams(cacheExplorationFor(e, scope));
 
 test('the cache key differs per area and per version for the area-aware lookups, a version-2 row is not read and the narrow write uses the executor\'s key function', () => {
-	assert.equal(EXPLORATION_CACHE_VERSION, 3);
+	assert.equal(EXPLORATION_CACHE_VERSION, 4);
 
 	for (const type of AREA_AWARE_TYPES) {
 		const e = exp(type, { query: 'same question', subject: 'same question', topic: 'same question', capability: 'same question' });

@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url';
 import { artifactParser } from '../../indexer/parser/artifact.js';
 import type { Entity } from '../../shared/types.js';
 import { INDEXER_CUT_MARKER, indexerFileHash, measureItem, partlyReadEntry } from '../item-length.js';
-import { SUMMARISER_BODY_CHARS, _buildMessagesForTest } from '../summariser/driver.js';
+import { _buildMessagesForTest } from '../summariser/driver.js';
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 
@@ -131,6 +131,41 @@ test('measureItem does not establish a length for a changed or a missing file (m
 	}
 });
 
+test('measureItem returns the whole content of a whole-file and a line-range item and no content for a changed, missing, unreadable or unhashed file', () => {
+	const ix = indexDoc();
+	try {
+		const big = byName(ix, 'section', 'Big');
+		const whole = { kind: 'document', file: ix.file, startLine: 1, endLine: 1, body: '' } as const;
+
+		// A line-range item (a section) and a whole-file item (a document) both give their full text, and its length is totalChars.
+		const section = measureItem(big, { recordedFileHash: ix.hash });
+		const lines = DOC.split('\n').slice(big.startLine - 1, big.endLine).join('\n');
+		assert.equal(section.content, lines, 'the section is its lines, not the 8,192 stored characters');
+		assert.equal(section.content?.length, section.totalChars);
+		const document = measureItem(whole, { recordedFileHash: ix.hash });
+		assert.equal(document.content, DOC, 'a document is the whole file');
+		assert.equal(document.content?.length, document.totalChars);
+
+		// No hash, a changed file, a removed file and an unreadable file give no content and the reason, and never throw.
+		const noHash = measureItem(big, { recordedFileHash: undefined });
+		assert.equal(noHash.content, undefined);
+		assert.equal(noHash.reason, 'no hash was recorded for the file when it was indexed');
+		const unreadable = measureItem(big, { recordedFileHash: ix.hash, readFile: () => { throw Object.assign(new Error('denied'), { code: 'EACCES' }); } });
+		assert.equal(unreadable.content, undefined);
+		assert.equal(unreadable.reason, 'the file could not be read (EACCES)');
+		writeFileSync(ix.file, `# Title\n\nA new paragraph pushed everything down.\n\n${DOC}`);
+		const changed = measureItem(big, { recordedFileHash: ix.hash });
+		assert.equal(changed.content, undefined);
+		assert.equal(changed.reason, 'the file changed since it was indexed');
+		rmSync(ix.file);
+		const gone = measureItem(big, { recordedFileHash: ix.hash });
+		assert.equal(gone.content, undefined);
+		assert.equal(gone.reason, 'the file no longer exists');
+	} finally {
+		rmSync(ix.dir, { recursive: true, force: true });
+	}
+});
+
 test('indexerFileHash is the hash the indexer records on a file entity', () => {
 	// The indexer's function is private; this module repeats it. If the indexer's
 	// changes, every measure would read "changed since it was indexed".
@@ -143,17 +178,14 @@ test('indexerFileHash is the hash the indexer records on a file entity', () => {
 	assert.equal(indexerFileHash('abc'), 'ba7816bf8f01cfea');
 });
 
-test('the summariser reads its cut from the exported constant and no file under src/indexer or src/db changes', () => {
-	assert.equal(SUMMARISER_BODY_CHARS, 8_192);
-
-	// Behaviour unchanged: the model is given exactly the first 8,192 characters of the stored body.
-	const body = 'a'.repeat(8_192) + 'ZZZ-past-the-cut' + 'b'.repeat(10_000);
-	const entity = { kind: 'document', file: '/r/docs/a.md', body } as unknown as Entity;
-	const messages = _buildMessagesForTest({ promptContent: 'SYSTEM', entity, family: 'docs', identifierHints: [] });
+test('the summariser is given the whole body it is passed and no file under src/indexer or src/db changes', () => {
+	// The model is given exactly the body the summariser read, with no cut of its own.
+	const body = 'a'.repeat(8_192) + 'ZZZ-past-the-old-cut' + 'b'.repeat(10_000);
+	const entity = { kind: 'document', file: '/r/docs/a.md', body: '' } as unknown as Entity;
+	const messages = _buildMessagesForTest({ promptContent: 'SYSTEM', entity, body, family: 'docs', identifierHints: [] });
 	const user = messages.find(m => m.role === 'user')?.content;
 	assert.equal(typeof user, 'string');
-	assert.ok((user as string).includes('a'.repeat(8_192) + '\n```'), 'the first 8,192 characters, then the closing fence');
-	assert.equal((user as string).includes('ZZZ-past-the-cut'), false);
+	assert.ok((user as string).includes(body + '\n```'), 'the whole body, then the closing fence');
 
 	// Measuring stores nothing: the module can only read a file. It imports no
 	// store and no indexer code, and nothing that writes.

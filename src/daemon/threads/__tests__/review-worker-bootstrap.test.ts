@@ -17,6 +17,10 @@ import { getStoreGuard } from '../../../db/store-guard.js';
 import { serveHub,pushToWorker } from '../channel.js';
 import { ReviewWorkerNativeTransport,REVIEW_NATIVE_OP } from '../review-worker-native.js';
 import { withReviewNativeTransport,reviewNativeTransport } from '../../../shared/review-process-bridge.js';
+import { ReviewRuntimeStore } from '../review-runtime-store.js';
+import { ReviewPreparationHost } from '../review-preparation-host.js';
+import { preparationDigest } from '../../../workflow/review/prepared-context.js';
+import { reviewPreparationLimits } from '../../../config/review.js';
 import { ReviewProcessLeases } from '../review-processes.js';
 import { reviewWorkerCheckpoint } from '../review-worker-contract.js';
 
@@ -34,30 +38,29 @@ async function nativeHost(review:ReviewBootstrapInput,port:MessageChannel['port1
  const binary=join(review.key.project,'bootstrap-cli.mjs');
  await writeFile(binary,'#!/usr/bin/env node\nprocess.stdin.resume();process.stdin.on("end",()=>process.stdout.write(JSON.stringify({type:"assistant",message:{content:[{type:"tool_use",id:"out",name:"StructuredOutput",input:{ok:true}}]}})+"\\n"));');await chmod(binary,0o755);
  const path=reviewWorkerCheckpoint(review.key),leases=new ReviewProcessLeases({authorize:(r,c)=>{assert.deepEqual(r.key,review.key);assert.ok([binary,process.execPath].includes(c.command));},verifyIntent:async r=>{
-  const cp=JSON.parse(await readFile(path,'utf8'));assert.ok(cp.attempts.at(-1).resourceGuard.openLeases.some((l:any)=>l.operationId===r.operationId));
+  assert.ok(store.snapshot(handle).resourceGuard.openLeases.some(l=>l.operationId===r.operationId));
  }}),owner=leases.register(review.key,review.incarnation);
- let sequence=0,calls=0,writes=Promise.resolve();const outcomes=new Map(),acks=new Map<string,()=>void>();
+ const store=new ReviewRuntimeStore(),runtime:import('../../../shared/review-preparation.js').ReviewRuntime={schemaVersion:1,key:review.key,attempt:review.attempt,runtimeId:'bootstrap-runtime',daemonEpoch:leases.daemonInstance,workerIncarnation:review.incarnation,sequence:0,checkpointBinding:{inputDigest:preparationDigest(review.key.family==='code'?review.submitted:{artifactPath:'unread-artifact.json',attempt:1}),semanticSequence:0},state:'initializing',resourceGuard:{daemonInstance:leases.daemonInstance,openLeases:[]},progress:{completedUnits:0,totalUnits:null,observedAt:new Date().toISOString(),lastMeaningfulActivityAt:null}};
+ const handle=await store.initialize(runtime),host=new ReviewPreparationHost(store,leases.daemonInstance,async()=>{},async()=>{}),connection=await host.connect({key:review.key,incarnation:review.incarnation,attempt:review.attempt,phase:'execution'},handle);
+ let sequence=0,calls=0;const outcomes=new Map(),acks=new Map<string,()=>void>();
  const number=(r:any)=>Number(r.operationId.split(':').at(-1));
- const mutate=(fn:(cp:any)=>void)=>{const next=writes.then(async()=>{
-  const cp=JSON.parse(await readFile(path,'utf8'));fn(cp);const temp=path+'.fixture';const f=await open(temp,'w',0o600);try{await f.writeFile(JSON.stringify(cp));await f.sync();}finally{await f.close();}await rename(temp,path);const d=await open(join(path,'..'),'r');try{await d.sync();}finally{await d.close();}
- });writes=next.catch(()=>{});return next;};
  const stop=serveHub(port,{
   [REVIEW_NATIVE_OP+'resolveBinary']:()=>binary,
   [REVIEW_NATIVE_OP+'reserve']:(raw:any)=>{calls++;return leases.reserve(owner,++sequence,raw.command);},
-  [REVIEW_NATIVE_OP+'saveOpenIntent']:async(raw:any)=>{const r=raw.reservation;await mutate(cp=>{const a=cp.attempts.at(-1);a.resourceGuard??={daemonInstance:leases.daemonInstance,openLeases:[]};a.resourceGuard.openLeases.push({operationId:r.operationId,workerIncarnation:r.workerIncarnation,kind:r.kind,openedAt:r.openedAt});});return{checkpointPath:path,attempt:review.attempt,operationId:r.operationId,workerIncarnation:r.workerIncarnation,daemonInstance:r.daemonInstance};},
+  [REVIEW_NATIVE_OP+'saveOpenIntent']:async(raw:any)=>store.resource(handle,'open',raw.reservation),
   [REVIEW_NATIVE_OP+'start']:async(raw:any)=>{const outcome=await leases.start(owner,number(raw.reservation),raw.receipt,output=>new Promise<void>(resolve=>{acks.set(`${output.operationId}:${output.sequence}`,resolve);pushToWorker(port,REVIEW_NATIVE_OP+'output',output);})).result;outcomes.set(raw.reservation.operationId,outcome);return outcome;},
   [REVIEW_NATIVE_OP+'outputAck']:(raw:any)=>{assert.equal(raw.error,undefined);const key=`${raw.operationId}:${raw.sequence}`;acks.get(key)?.();acks.delete(key);},
   [REVIEW_NATIVE_OP+'waitStarted']:(raw:any)=>leases.waitStarted(owner,number(raw.reservation)),
   [REVIEW_NATIVE_OP+'write']:(raw:any)=>leases.write(owner,number(raw.reservation),raw.bytes,raw.end),
   [REVIEW_NATIVE_OP+'cancel']:async(raw:any)=>{const outcome=await leases.cancel(owner,number(raw.reservation));outcomes.set(raw.reservation.operationId,outcome);return outcome;},
-  [REVIEW_NATIVE_OP+'saveClosedIntent']:async(raw:any)=>{assert.equal(outcomes.get(raw.reservation.operationId)?.disposal.state,'confirmed');await mutate(cp=>{const a=cp.attempts.at(-1);a.resourceGuard.openLeases=a.resourceGuard.openLeases.filter((l:any)=>l.operationId!==raw.reservation.operationId);});},
+  [REVIEW_NATIVE_OP+'saveClosedIntent']:async(raw:any)=>{const outcome=outcomes.get(raw.reservation.operationId);assert.equal(outcome?.disposal.state,'confirmed');await store.resource(handle,'close',raw.reservation,{reservation:raw.reservation,disposal:outcome.disposal});},
  });
- return{calls:()=>calls,close:async()=>{for(const resolve of acks.values())resolve();acks.clear();await leases.close(owner);if(leases.recheck(owner))leases.release(owner);stop();port.close();}};
+ return{preparation:{port:connection.port,runtime,limits:reviewPreparationLimits()},calls:()=>calls,close:async()=>{for(const resolve of acks.values())resolve();acks.clear();await leases.close(owner);if(leases.recheck(owner))leases.release(owner);stop();port.close();await connection.close();store.release(handle);}};
 }
 async function launch(t:{after:(fn:()=>Promise<void>)=>void},review:ReviewBootstrapInput,deps:Omit<ReviewBootstrapDeps,'fence'>&{fence?:ReviewBootstrapFence}={}){
  const {port1,port2}=new MessageChannel();
  const native=await nativeHost(review,port1);
- const started=await startReviewWorkerBootstrap(services,review,port2,{...deps,fence:deps.fence??new ReviewBootstrapFence(review)});
+ const started=await startReviewWorkerBootstrap(services,review,port2,{...deps,preparation:native.preparation,fence:deps.fence??new ReviewBootstrapFence(review)});
  t.after(async()=>{await started.worker.terminate();await started.reclaimed;started.disconnect();await native.close();});
  return{...started,nativeCalls:native.calls};
 }
@@ -69,7 +72,7 @@ test('real worker joins guards and starts from the registered entrypoint',async 
   const description=await rpc(started,'review.worker.describe',review);
   assert.ok(description.threadId>0);assert.equal(description.nativeBound,true);assert.equal(description.storeOwnerDeclared,true);assert.equal(description.shellTimeoutMs,3210);
   assert.equal(description.coordinator,family==='code'?'TaskReviewCoordinator':'DesignReviewCoordinator');
-  const disk=JSON.parse(await readFile(started.admission.checkpointPath,'utf8'));assert.equal(disk.schemaVersion,2);assert.equal(disk.attempts[0].phase,'admission');assert.equal(disk.attempts[0].validation,'unverified');
+  const disk=JSON.parse(await readFile(started.admission.checkpointPath,'utf8'));assert.equal(disk.schemaVersion,3);assert.equal(disk.attempts[0].phase,'admission');assert.equal(disk.attempts[0].validation,'unverified');
   const progress=await rpc(started,'review.worker.progress',{...review,attempt:1});assert.ok(progress);
   assert.equal(started.fence.state,'ready');
   assert.deepEqual(await rpc(started,'test.review.native',{...review,probe:'role'}),{changed:false,role:'review'});
@@ -108,7 +111,7 @@ test('never-ready and pre-save-hung workers fail within the parent bound and rej
   let error:ReviewWorkerBootstrapError|undefined;
   await assert.rejects(failed,e=>{assert.ok(e instanceof ReviewWorkerBootstrapError);error=e;return e.code==='review_worker_bootstrap_timeout';});
   assert.ok(Date.now()-began<5000);assert.equal(closed,true);assert.equal(ready,beforeSave);
-  assert.equal(fence.state,'closing');const retry=new MessageChannel();assert.throws(()=>startReviewWorkerBootstrap(services,review,retry.port2,{fence}),/fenced/);retry.port1.close();assert.equal(creations,1);
+  assert.equal(fence.state,'closing');const retry=new MessageChannel();assert.throws(()=>startReviewWorkerBootstrap(services,review,retry.port2,{fence}),/fenced|Private review preparation bootstrap required/);retry.port1.close();assert.equal(creations,1);
   worker!.emit('message',{kind:'review-admission-saved',...review,checkpointPath:join(project,'.insrc/tmp/code-review',`${review.key.reviewId}.json`)});
   await assert.rejects(failed,/bootstrap_timeout/);await error!.reclaimed;
   assert.equal(fence.reclaimed,true);assert.equal(fence.state,'closing');

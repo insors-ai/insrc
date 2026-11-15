@@ -11,42 +11,14 @@ import { TaskReviewInputError } from '../contracts.js';
 import type { ReviewPacket } from '../contracts.js';
 import { prepareReviewAdmission } from '../admission.js';
 import { saveCheckpoint } from '../checkpoint.js';
+import { CodePreparation } from '../../../review/code-preparation.js';
+import { reviewPreparationLimits } from '../../../../config/review.js';
+import { ReviewPreparationCapacity } from '../../../review/source-session.js';
+import { PreparedContextReader } from '../../../review/prepared-context.js';
 import { prepareReviewPacket } from '../packet.js';
 
 registerGitTools();
-const ISSUE_ONLY = '1111111111111111', LLD_ONLY = '2222222222222222', PLAN_STORY = '3333333333333333', NO_BUILD = '4444444444444444', BUILD_ONLY = '6666666666666666', DEF_STORY = '7777777777777777';
-const artifact = (name: string) => `.insrc/artifacts/${name}.json`;
-
-/** A repository with four Stories on different routes, their artifacts committed and stored in .insrc/artifacts. */
-function fixture() {
-	const repo = realpathSync(mkdtempSync(join(tmpdir(), 'task-review-route-admission-')));
-	const git = (...args: string[]) => execFileSync('git', ['-C', repo, ...args], { encoding: 'utf8', env: { ...process.env, GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: '/dev/null' } }).trim();
-	git('init', '-q'); git('config', 'user.name', 'Fixture'); git('config', 'user.email', 'fixture@example.test');
-	const put = (path: string, value: unknown) => { mkdirSync(join(repo, path, '..'), { recursive: true }); writeFileSync(join(repo, path), typeof value === 'string' ? value : JSON.stringify(value)); };
-	const build = (hash: string) => put(artifact(`BUILD-${hash}-s1`), { meta: { epicHash: hash, storyId: 's1' }, body: { focus: 'Change the behaviour', tasks: [{ id: 's1', passed: true }] } });
-	const lld = (hash: string) => put(artifact(`LLD-${hash}-s1`), { meta: { epicHash: hash, storyId: 's1', workflow: 'design.story' }, body: {} });
-	put(artifact(`ISSUE-${ISSUE_ONLY}`), { meta: { workflow: 'issue', issueHash: ISSUE_ONLY }, body: { title: 'Defect', fixIntent: 'Fix it' } }); build(ISSUE_ONLY);
-	lld(LLD_ONLY); build(LLD_ONLY);
-	lld(PLAN_STORY); build(PLAN_STORY);
-	const plan = (hash: string) => put(artifact(`PLAN-${hash}-s1`), { meta: { epicHash: hash, storyId: 's1', workflow: 'plan' }, body: { tasks: [{ id: 't1', title: 'T', summary: 'S', size: 'S', order: 1, dependsOn: [], acceptanceChecks: ['Holds'], derivedFrom: ['c1'], tests: [{ level: 'unit', name: 'N' }] }] }, citations: [{ id: 'c1', kind: 'stakeholder', ref: 'Fixture' }] });
-	plan(PLAN_STORY);
-	build(BUILD_ONLY); // a trivial Story: a BUILD and nothing else
-	lld(DEF_STORY); plan(DEF_STORY); build(DEF_STORY); // an epic Story: its epic has a DEF
-	put(artifact(`DEF-${DEF_STORY}`), { meta: { epicHash: DEF_STORY, workflow: 'define' }, body: { stories: [{ id: 's1' }] } });
-	put(artifact(`ISSUE-${NO_BUILD}`), { meta: { workflow: 'issue', issueHash: NO_BUILD }, body: { title: 'Defect', fixIntent: 'Fix it' } });
-	put('src/a.ts', 'first\nsecond\n');
-	git('add', '.'); git('commit', '-qm', 'base'); const base = git('rev-parse', 'HEAD');
-	put('src/a.ts', 'FIRST\nsecond\n');
-	git('add', '.'); git('commit', '-qm', 'change'); const commit = git('rev-parse', 'HEAD');
-	const at = (name: string) => ({ path: artifact(name), commit: base });
-	const packetWith = (documents: ReviewPacket['documents']): ReviewPacket => ({
-		reviewRevision: commit, storyId: 's1', functionalSummary: 'Change behaviour', documents,
-		reviewSet: [{ commit, parent: base, files: [{ path: 'src/a.ts', segments: [{ after: [1, 1] }] }] }], tests: [],
-	});
-	const sources = new RegistryReviewSources({ repoPath: repo, sessionId: 'task-review-route-admission', requestId: 1, send: () => {} });
-	const admit = (packet: ReviewPacket, epicHash: string, id = 'review-1') => prepareReviewAdmission(repo, id, 1, packet, 'daemon', sources, { epicHash });
-	return { repo, at, packetWith, sources, admit, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
-}
+import { routeFixture as fixture, artifact, ISSUE_ONLY, LLD_ONLY, PLAN_STORY, NO_BUILD, BUILD_ONLY, DEF_STORY } from './helpers/route-fixture.js';
 const refused = (promise: Promise<unknown>, message: RegExp) => assert.rejects(promise, (error: unknown) => error instanceof TaskReviewInputError && message.test(error.message));
 
 test('src/workflow/code-review/task-review/__tests__/route-admission.test.ts: admission builds the route from the Story\'s stored artifacts and refuses a packet that does not match it', async () => {
@@ -96,4 +68,65 @@ test('src/workflow/code-review/task-review/__tests__/route-admission.test.ts: re
 		assert.deepEqual(stored.tasks[0]!.acceptanceChecks, ['Fix it']);
 		assert.equal(stored.epicHash, ISSUE_ONLY);
 	} finally { f.cleanup(); }
+});
+
+
+test('shared preparation retains route-qualified views for pinned recovery without native refetch', async () => {
+ const f = fixture();
+ try {
+  const limits = reviewPreparationLimits(join(f.repo, 'missing-config.json')), capacity = new ReviewPreparationCapacity(limits.cacheMaxBytes);
+  const key = { project: f.repo, family: 'code' as const, reviewId: 'shared-recovery' };
+  const preparation = await CodePreparation.create(key, f.sources, limits, capacity);
+  const packet = f.packetWith({ issue: f.at(`ISSUE-${ISSUE_ONLY}`) });
+  const admitted = await preparation.prepare(f.repo, key.reviewId, 1, packet, 'daemon', f.sources, { epicHash: ISSUE_ONLY });
+  await saveCheckpoint(admitted.path, admitted.checkpoint);
+  const expected = await prepareReviewPacket(admitted.attempt.submitted, preparation.sources, true, undefined, admitted.attempt.header.derived);
+  const receipt = await preparation.seal(admitted);
+  await preparation.close();
+  rmSync(join(f.repo, artifact(`ISSUE-${ISSUE_ONLY}`)));
+  const reader = await PreparedContextReader.open(receipt, limits, async () => {}, async error => { throw error; });
+  let nativeCalls = 0;
+  const sources: typeof f.sources = new Proxy(f.sources, { get() { return async () => { nativeCalls++; throw new Error('Native access forbidden on warm recovery'); }; } });
+  const cachedSources = {
+   commit: (oid: string) => reader.query('commit', [oid]),
+   file: (oid: string, path: string) => reader.query('file', [oid, path]),
+   isAncestor: (a: string, b: string) => reader.query('isAncestor', [a, b]),
+   changedRanges: (oid: string, parent: string | null, paths: readonly string[]) => reader.query('changedRanges', [oid, parent, paths]),
+   pathChanges: (a: string, b: string, path: string) => reader.query('pathChanges', [a, b, path]),
+  } as import('../sources.js').ReviewSources;
+  const recovered = await CodePreparation.reuse(key, reader, cachedSources, limits, capacity);
+  const resumed = await recovered.prepare(f.repo, key.reviewId, 1, undefined, 'daemon', sources, { operation: 'resume', epicHash: ISSUE_ONLY });
+  assert.deepEqual(resumed.prepared, structuredClone(expected));
+  const workerResumed = await recovered.workerPrepare(f.repo, key.reviewId, 1, undefined, 'daemon', sources, { operation: 'resume', epicHash: ISSUE_ONLY });
+  assert.deepEqual(workerResumed.prepared, resumed.prepared);
+  assert.equal(nativeCalls, 0);
+  const changed = structuredClone(packet); changed.functionalSummary = 'changed pinned input';
+  await assert.rejects(recovered.prepare(f.repo, key.reviewId, 1, changed, 'daemon', sources, { operation: 'resume', epicHash: ISSUE_ONLY }), /pinned/);
+  await recovered.close();
+ } finally { f.cleanup(); }
+});
+
+
+test('shared preparation preserves task selection and canonical story aliases across every route', async () => {
+ const f = fixture();
+ try {
+  const routes = [
+   { hash: ISSUE_ONLY, documents: { issue: f.at(`ISSUE-${ISSUE_ONLY}`) }, unit: 's1' },
+   { hash: LLD_ONLY, documents: { lld: f.at(`LLD-${LLD_ONLY}-s1`) }, unit: 's1' },
+   { hash: BUILD_ONLY, documents: {}, unit: 's1' },
+   { hash: PLAN_STORY, documents: { lld: f.at(`LLD-${PLAN_STORY}-s1`), plan: f.at(`PLAN-${PLAN_STORY}-s1`) }, unit: 't1' },
+   { hash: DEF_STORY, documents: { story: f.at(`DEF-${DEF_STORY}`), lld: f.at(`LLD-${DEF_STORY}-s1`), plan: f.at(`PLAN-${DEF_STORY}-s1`) }, unit: 't1' },
+  ];
+  let id = 0;
+  for (const route of routes) for (const storyId of ['s1', `STORY-${route.hash}-s1`]) for (const taskId of [undefined, route.unit]) {
+   const packet = { ...f.packetWith(route.documents), storyId, ...(taskId ? { taskId } : {}) };
+   const admitted = await f.admit(packet, route.hash, `route-${id++}`);
+   assert.deepEqual(admitted.attempt.header.selectedTaskIds, [route.unit]);
+   assert.equal(admitted.prepared.packet.storyId, storyId);
+   assert.equal(admitted.prepared.packet.taskId, taskId);
+   assert.deepEqual(admitted.prepared.packet.reviewSet, packet.reviewSet);
+   assert.deepEqual(admitted.prepared.projection!.entries[0]!.segments, [{ after: [1, 1] }]);
+   assert.equal(admitted.prepared.projection!.entries.length, 1);
+  }
+ } finally { f.cleanup(); }
 });

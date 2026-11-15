@@ -55,7 +55,7 @@ export class ControllerTaskReview {
  constructor(private readonly review:AdmittedReview,private readonly owner:ControllerReviewOwner,private readonly deps:ControllerDeps){
   this.lastDurable=structuredClone(review.checkpoint);
   this.progress=new ReviewProgressTracker(deps.now?{now:deps.now,wall:()=>new Date().toISOString()}:undefined,review.attempt.progress);
-  this.progressPersistence=new ReviewProgressPersistence(review.attempt,this.progress,{serial:work=>this.queue(undefined,work),save:async()=>{await persistReview(this.review,this.deps);this.lastDurable=structuredClone(this.review.checkpoint);}});
+  this.progressPersistence=new ReviewProgressPersistence(review.attempt,this.progress,{serial:work=>this.queue(undefined,work),save:async()=>{await persistReview(this.review,this.deps);this.lastDurable=structuredClone(this.review.checkpoint);},checkpointPath:review.path});
   this.done=new Promise(resolve=>{this.resolveDone=resolve;});
   this.selected=review.prepared.tasks.filter(task=>!review.prepared.packet.taskId||task.id===review.prepared.packet.taskId).sort((a,b)=>a.order-b.order);
   const disconnect=()=>{if(this.finished){this.retire(true);return;}void this.queue(undefined,()=>this.stop()).catch(error=>log.warn({error:String(error)},'Controller interruption could not be persisted'));};

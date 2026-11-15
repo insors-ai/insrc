@@ -248,7 +248,6 @@ export const infraInventoryTerraformRuntime: TemplateRuntime = {
 			outputs: new Map<string, unknown>([['tf-inventory', inventory]]),
 			completeness: fileWalkCompleteness(
 				resources.length + dataRefs.length + modules.length + providers.length + variables.length + outputs.length,
-				truncated,
 				{ skipped },
 			),
 		};

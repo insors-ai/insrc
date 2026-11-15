@@ -11,6 +11,7 @@ import type { StartedReviewWorker } from '../../../../daemon/threads/review-work
 import { startWorker } from '../../../../daemon/threads/workers.js';
 import type { ReviewPacket,TaskReviewResult } from '../contracts.js';
 import { loadStoredCheckpoint } from '../checkpoint.js';
+import { loadReviewRuntime } from '../../../../daemon/threads/review-runtime-store.js';
 import { reviewWorkerCheckpoint } from '../../../../daemon/threads/review-worker-contract.js';
 
 const hash='1234567890abcdef';
@@ -30,9 +31,9 @@ function fixture(t:{after:(fn:()=>Promise<void>)=>void},reviewer:'daemon'|'contr
  const git=(...args:string[])=>execFileSync('git',['-C',repo,...args],{encoding:'utf8',env:{...process.env,GIT_CONFIG_NOSYSTEM:'1',GIT_CONFIG_GLOBAL:'/dev/null'}}).trim();
  const put=(path:string,data:unknown)=>{mkdirSync(join(repo,path,'..'),{recursive:true});writeFileSync(join(repo,path),typeof data==='string'?data:JSON.stringify(data));};
  const path=(id:string)=>`.insrc/artifacts/${id}.json`;
- const meta={epicHash:hash,storyId:'s1'};
+ const meta={epicHash:hash,storyId:'s1',epicCreatedAt:'2026-11-03T00:00:00.000Z',epicSlug:'fixture',standalone:true};
  put(path(`LLD-${hash}-s1`),{meta:{...meta,workflow:'design.story'},body:{}});
- put(path(`BUILD-${hash}-s1`),{meta,body:{tasks:[{id:'t1',passed:true}]}});
+ put(path(`BUILD-${hash}-s1`),{meta:{...meta,workflow:'build',authoredBy:reviewer==='daemon'?'controller':'daemon'},body:{tasks:[{id:'t1',passed:true}]}});
  put(path(`PLAN-${hash}-s1`),{meta:{...meta,workflow:'plan'},body:{tasks:[{id:'t1',title:'Behavior',summary:'Required behavior',size:'S',order:1,dependsOn:[],acceptanceChecks:['Behavior holds'],derivedFrom:['c1'],tests:[{level:'unit',name:'Behavior'}]}]},citations:[{id:'c1',kind:'stakeholder',ref:'Fixture'}]});
  put('source.ts','old behavior\n');put('test.ts','assert behavior\n');
  git('init','-q');git('config','user.name','Fixture');git('config','user.email','fixture@example.test');git('add','.');git('commit','-qm','base');const parent=git('rev-parse','HEAD');
@@ -41,7 +42,7 @@ function fixture(t:{after:(fn:()=>Promise<void>)=>void},reviewer:'daemon'|'contr
  const result:TaskReviewResult={taskId:'t1',status:'passed',summary:'Required behavior and tests inspected',findings:[],testCoverage:{assessment:'verified',explanation:'Relevant assertion inspected; execution is builder-reported.',evidenceReferences:[`${commit}:test.ts`]},limitations:[],advice:[],inspectedReferences:[`${commit}:source.ts`,`${commit}:test.ts`],executedTests:[]};
  const started=new Map<string,StartedReviewWorker>(),abort=new AbortController();
  const context={connectionIdentity:'controller-fixture',daemonEpoch:'epoch',connectionSignal:abort.signal};
- const registry=new ReviewWorkers({services,resolveScope:async()=>({reviewer,subject:`${repo}:${hash}:s1`,cleanupScope:`${repo}:${hash}:s1`,epicHash:hash}),authorizeNative:async(_key,command)=>{assert.equal(command.cwd,repo);assert.ok(['git',process.execPath].includes(command.command));},resolveBinary:async command=>command,track:()=>{},start:async(svc,input,port,deps)=>{
+ const registry=new ReviewWorkers({services,resolveScope:async()=>({reviewer,subject:`BUILD-${hash}-s1`,cleanupScope:`${repo}:${hash}:s1`,epicHash:hash}),authorizeNative:async(_key,command)=>{assert.equal(command.cwd,repo);assert.ok(['git',process.execPath].includes(command.command));},resolveBinary:async command=>command,track:()=>{},start:async(svc,input,port,deps)=>{
   const s=await startReviewWorkerBootstrap(svc,input,port,{...deps,start:(services,name,_script,extra,onCreated)=>startWorker(services,name,'../../workflow/code-review/task-review/__tests__/helpers/worker-admission',{workerData:{...extra!.workerData,fixtureResult:result,fixtureHoldProvider:holdProvider},transferList:extra!.transferList},onCreated)});
   started.set(input.key.reviewId,s);return s;
  }});
@@ -61,14 +62,14 @@ test('durable acknowledgment precedes blocked source qualification and provider 
  await rpc(s,'fixture.release');await until(async()=>((await rpc(s,'fixture.stats')).calls===1));
  const qualified=(await loadStoredCheckpoint(path))!.attempts.at(-1)!;assert.ok(!('phase'in qualified));assert.equal(qualified.progress!.executionId,initial.progress!.executionId);
  const native=rpc(s,'test.review.native',{...ack,probe:'hold'}).catch(()=>undefined);
- await until(async()=>!!(await loadStoredCheckpoint(path))?.attempts.at(-1)?.resourceGuard?.openLeases.length);
+ await until(async()=>!!(await loadReviewRuntime(ack.key))?.resourceGuard.openLeases.length);
  await rpc(s,'fixture.releaseProvider');
- await until(async()=>{const cp=await loadStoredCheckpoint(path);const a=cp!.attempts.at(-1)!;return'review-response'in a&&a['review-response'].tasks.length===1&&a.header.status==='passed';});
- const final=(await loadStoredCheckpoint(path))!.attempts.at(-1)!;assert.ok(final.resourceGuard!.openLeases.length>=1,'feedback save retains running native intent');
- assert.equal((await rpc(s,'fixture.stats')).qualifiedBeforeProvider,true);
+ await until(async()=>{const cp=await loadStoredCheckpoint(path);const a=cp!.attempts.at(-1)!;if('review-response'in a&&a['review-response'].error)throw new Error(a['review-response'].error);return'review-response'in a&&a['review-response'].tasks.length===1&&a.header.status==='passed';});
+ const final=(await loadStoredCheckpoint(path))!.attempts.at(-1)!;assert.equal(final.resourceGuard,undefined);assert.ok((await loadReviewRuntime(ack.key)),'native proof belongs to the compact runtime');
+ if(s.worker.threadId>0)assert.equal((await rpc(s,'fixture.stats')).qualifiedBeforeProvider,true);
  assert.deepEqual(await f.registry.admit(submission,f.context),ack);
  await f.registry.shutdown();await native;
- assert.deepEqual((await loadStoredCheckpoint(path))!.attempts.at(-1)!.resourceGuard!.openLeases,[]);
+ assert.deepEqual((await loadReviewRuntime(ack.key))!.resourceGuard.openLeases,[]);
 });
 test('replay and controller admission-to-assignment retain one execution identity',async t=>{
  const f=fixture(t,'controller'),submission=f.submit('controller');
@@ -99,6 +100,7 @@ test('replay and controller admission-to-assignment retain one execution identit
  const response=await f.registry.control(request,f.context);
  assert.deepEqual(await f.registry.control(request,f.context),response,'exact exchange replay consumes no new execution');
  assert.equal((await rpc(resumedWorker,'fixture.stats')).calls,0);
+ await until(async()=>JSON.parse(readFileSync(reviewWorkerCheckpoint(ack.key),'utf8')).attempts[0].header.status==='passed');
  const cp=JSON.parse(readFileSync(reviewWorkerCheckpoint(ack.key),'utf8'));assert.equal(cp.attempts.length,1);assert.equal(cp.attempts[0]['review-response'].tasks.length,1);assert.equal(cp.attempts[0].header.status,'passed');
  await f.registry.execute(resumed,f.context,'resume');
  await until(async()=>{try{return(await assignment(resumed)).kind==='done';}catch{return false;}});
@@ -122,4 +124,28 @@ test('replay and controller admission-to-assignment retain one execution identit
  await f.registry.execute(corrected,f.context);await rpc(replacement,'fixture.release');
  await until(async()=>{const a=(await loadStoredCheckpoint(reviewWorkerCheckpoint(corrected.key)))!.attempts.at(-1)!;return'review-response'in a&&a.header.status==='running';});
  const saved=(await loadStoredCheckpoint(reviewWorkerCheckpoint(corrected.key)))!;assert.equal(saved.attempts.length,2);assert.deepEqual(saved.attempts[0],failure);assert.equal(saved.attempts[1]!.header.attempt,2);
+});
+
+
+test('targeted main cancellation rejects another session and retires only its exact admitted worker',async t=>{
+ const f=fixture(t,'daemon'),submission=f.submit('cancel-target'),ack=await f.registry.admit(submission,f.context);
+ const peerContext={...f.context,connectionIdentity:'independent-session'},peer=await f.registry.admit(f.submit('cancel-peer'),peerContext);
+ const key=ack.key,path=reviewWorkerCheckpoint(key);
+ assert.equal(JSON.parse(readFileSync(path,'utf8')).schemaVersion,3);
+ const pinned=readFileSync(path,'utf8');
+ await assert.rejects(f.registry.cancel(key,1,'cancel-action','User stopped review',peerContext),/owner mismatch/);
+ await assert.rejects(f.registry.cancel(key,2,'cancel-action','User stopped review',f.context),/attempt conflict/);
+ const pending=f.registry.cancel(key,1,'cancel-action','User stopped review',f.context);
+ await assert.rejects(f.registry.cancel(key,1,'conflicting-action','Different reason',f.context),/Conflicting/);
+ const replay=f.registry.cancel(key,1,'cancel-action','User stopped review',f.context),receipt=await pending;assert.equal(receipt.operationState,'cancelling');assert.deepEqual(await replay,receipt);
+ await until(async()=>((f.registry.cancellationProgress(key,1,f.context) as any).operationState==='stopped'));
+ const repeated=await f.registry.cancel(key,1,'cancel-action','User stopped review',f.context);assert.equal(repeated.requestedAt,receipt.requestedAt);assert.equal(repeated.operationState,'stopped');
+ assert.equal(f.started.get('cancel-target')!.worker.threadId,-1);
+ assert.ok(f.registry.identity(peer.key));assert.equal((await f.registry.progress(peer.key,peerContext) as any).status,'pending');
+ assert.equal((await rpc(f.started.get('cancel-peer')!,'fixture.stats')).calls,0);
+ assert.equal(readFileSync(path,'utf8'),pinned,'cancellation never rewrites input or accepted history');
+ await assert.rejects(f.registry.execute(ack,f.context),/not found|Foreign|fenced|missing/i);
+ await assert.rejects(f.registry.admit(submission,f.context),/separate explicit new attempt/);
+ await assert.rejects(f.registry.admit({...submission,operation:'resume'},f.context),/separate explicit new attempt/);
+ assert.equal(readFileSync(path,'utf8'),pinned);
 });

@@ -44,20 +44,13 @@ import type {
 	NamingCase,
 	TestFileConvention,
 } from './types.js';
-import type { ReachedLimit } from '../completeness.js';
-import { graphCompleteness, reachedLimit } from './completeness-facts.js';
+import { graphCompleteness } from './completeness-facts.js';
 
 const log = getLogger('analyze:explore:convention-detect');
 
 // ---------------------------------------------------------------------------
 // Configuration
 // ---------------------------------------------------------------------------
-
-/** How many representative subclasses to include per base-class idiom. */
-const MAX_REPR_SUBCLASSES = 5;
-
-/** Cap on base-class idioms surfaced. */
-const MAX_BASE_CLASS_IDIOMS = 8;
 
 /** Threshold at which one bucket dominates over the others -- if
  *  the top bucket accounts for ≥60% of the sample and beats the
@@ -146,26 +139,12 @@ export async function runConventionDetect(
 			idioms:       baseClassIdioms.length,
 	}, 'convention.detect: complete']);
 
-	// The counts and the naming schema are computed over every entity under the
-	// path; the two cuts are on the base-class idioms.
-	const limited: ReachedLimit[] = [];
-	if (idiomScan.totalIdioms > MAX_BASE_CLASS_IDIOMS) {
-		limited.push(reachedLimit('base-class idioms', MAX_BASE_CLASS_IDIOMS, 'overall', idiomScan.totalIdioms));
-	}
-	if (idiomScan.mostSubclasses > MAX_REPR_SUBCLASSES) {
-		limited.push({
-			what: 'named subclasses per base', limit: MAX_REPR_SUBCLASSES, scope: 'per-group',
-			reason: `a base has ${idiomScan.mostSubclasses} subclasses and ${MAX_REPR_SUBCLASSES} are named for each; subclassCount holds the full number`,
-		});
-	}
-
 	return {
 		type:              'convention.detect',
 		completeness:      graphCompleteness({
 			repoCompleteness: ctx.repoCompleteness,
 			returned: baseClassIdioms.length,
 			found:    idiomScan.totalIdioms,
-			limited,
 			skipped:  idiomScan.noGraphNode.map(e => ({
 				what:   `${e.name} (${e.file}:${e.startLine})`,
 				reason: 'the class has no node in the stored graph, so its base classes were not read',
@@ -344,13 +323,11 @@ function dominantTestFile(counts: Record<TestFileConvention, number>): TestFileC
 // Base-class idioms via INHERITS edges (in-degree perspective)
 // ---------------------------------------------------------------------------
 
-/** The idioms kept, with what the two cuts and the graph left out. */
+/** Every idiom found, with what the graph left out. */
 interface BaseClassIdiomScan {
 	readonly idioms:         readonly ConventionBaseClassIdiom[];
-	/** Distinct bases found before the cut to MAX_BASE_CLASS_IDIOMS. */
+	/** Distinct bases found. */
 	readonly totalIdioms:    number;
-	/** The most subclasses any one base has; MAX_REPR_SUBCLASSES are named for each. */
-	readonly mostSubclasses: number;
 	/** In-module classes with no node in the stored graph: their bases were not read. */
 	readonly noGraphNode:    readonly Entity[];
 }
@@ -366,7 +343,7 @@ async function computeBaseClassIdioms(
 	const classesInModule = under.filter(e =>
 		e.kind === 'class' || e.kind === 'interface' || e.kind === 'type',
 	);
-	if (classesInModule.length === 0) return { idioms: [], totalIdioms: 0, mostSubclasses: 0, noGraphNode: [] };
+	if (classesInModule.length === 0) return { idioms: [], totalIdioms: 0, noGraphNode: [] };
 
 	const inModuleIds = new Set(classesInModule.map(e => e.id));
 
@@ -410,9 +387,7 @@ async function computeBaseClassIdioms(
 
 	const idioms = Array.from(idiomMap.entries())
 		.map(([baseName, slot]): ConventionBaseClassIdiom => {
-			const reprs = slot.subs
-				.slice(0, MAX_REPR_SUBCLASSES)
-				.map(e => e.name);
+			const reprs = slot.subs.map(e => e.name);
 			return {
 				baseName,
 				...(slot.baseEntityId !== undefined ? { baseEntityId: slot.baseEntityId } : {}),
@@ -420,12 +395,9 @@ async function computeBaseClassIdioms(
 				representativeSubclasses:  reprs,
 			};
 		})
-		.sort((a, b) => b.subclassCount - a.subclassCount)
-		.slice(0, MAX_BASE_CLASS_IDIOMS);
+		.sort((a, b) => b.subclassCount - a.subclassCount);
 
-	let mostSubclasses = 0;
-	for (const slot of idiomMap.values()) mostSubclasses = Math.max(mostSubclasses, slot.subs.length);
-	return { idioms, totalIdioms: idiomMap.size, mostSubclasses, noGraphNode };
+	return { idioms, totalIdioms: idiomMap.size, noGraphNode };
 }
 
 // ---------------------------------------------------------------------------

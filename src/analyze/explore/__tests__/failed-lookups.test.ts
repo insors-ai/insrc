@@ -91,6 +91,9 @@ const REMAINING: Record<string, readonly { after: string; cls: ClauseClass }[]> 
 	'doc-decision-trace.ts': [
 		{ after: 'the model call that reads the retrieved sections failed', cls: 'rethrow' },
 	],
+	'search-text.ts': [
+		{ after: 'the search did not finish', cls: 'rethrow' },
+	],
 	'freeform-probe.ts': [
 		{ after: 'if (err instanceof ShaperToolLoopExhausted) {', cls: 'rethrow' },
 	],
@@ -143,12 +146,14 @@ test('the count of catch clauses in the lookup files equals the number of classi
 
 	// The design counted twenty-five. Eleven of them remain; the twelfth row is
 	// the new clause that detects unparsable manifest content for the record; the
-	// thirteenth reports unreadable related document links on the output (s10).
+	// thirteenth reports unreadable related document links on the output (s10); the
+	// fourteenth turns a complete search that ran out of time into the failed lookup
+	// carrying its gathered hits (Story s4).
 	const remaining = Object.values(classified).reduce((a, b) => a + b, 0);
 	const removed = Object.values(REMOVED).reduce((a, b) => a + b, 0);
-	assert.equal(remaining, 13);
+	assert.equal(remaining, 14);
 	assert.equal(removed, 14);
-	assert.equal(remaining - 2 + removed, 25, 'the two clauses added after the design (manifests-locate, doc-relations-attach) aside');
+	assert.equal(remaining - 3 + removed, 25, 'the three clauses added after the design (manifests-locate, doc-relations-attach, search-text) aside');
 	// A removed clause is really gone: those files hold exactly what the table says.
 	for (const f of Object.keys(REMOVED)) assert.equal(counted[f] ?? 0, REMAINING[f]?.length ?? 0, f);
 	// Every row is one of the two classes, and an expected one names its condition.

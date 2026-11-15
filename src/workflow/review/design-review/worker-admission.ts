@@ -49,9 +49,9 @@ export class DesignReviewWorker {
     const recovery=this.recoveryRequest;
     requireDesign(last&&(last.number===current.number||recovery?.operation==='restart_full'&&last.number+1===current.number),'review_conflict','Saved admission attempt changed');
     if(isDesignAdmission(last)){
-     requireDesign(last.reviewer===cp.subject.reviewer&&last.submitted.artifactPath&&resolve(cp.project,last.submitted.artifactPath)===cp.submitted.artifactPath,'foreign_checkpoint','Design admission input is pinned');
+     requireDesign(last.reviewer===cp.subject.reviewer&&(last.submitted.recovery?.operation==='restart_full'&&recovery?.operation==='restart_full'||last.submitted.artifactPath&&resolve(cp.project,last.submitted.artifactPath)===cp.submitted.artifactPath),'foreign_checkpoint','Design admission input is pinned');
      current.startedAt=last.startedAt;
-     if(recovery)current.actions=(last.actions??[]).map(a=>a.actionId===recovery.actionId?{...a,validation:'qualified'}:a);
+     if(recovery&&last.submitted.recovery?.operation!=='restart_full')current.actions=(last.actions??[]).map(a=>a.actionId===recovery.actionId?{...a,validation:'qualified'}:a);
     }
     await deps.admit?.(cp);
    },save:async(project,cp)=>{
@@ -64,10 +64,13 @@ export class DesignReviewWorker {
   });
  }
  async recover(raw:unknown,owner?:DesignControllerOwner){
+  const {loadReviewRuntime}=await import('../../../daemon/threads/review-runtime-store.js');
+  if((await loadReviewRuntime(this.input.key))?.cancellation)throw new Error('Stopped review requires a separate explicit new attempt');
   requireDesign(this.input.subject,'wrong_owner','Registered design subject required');
   if(this.input.reviewer==='controller')requireDesign(owner&&!owner.signal.aborted&&(this.owner===undefined||this.owner===owner.id),'wrong_owner','Trusted reviewing controller required');
   const request=parseDesignRequest(raw);
   requireDesign(request.phase==='recover'&&request.repo===this.input.key.project&&request.reviewId===this.input.key.reviewId,'foreign_checkpoint','Recovery belongs to another review');
+  requireDesign(request.attempt+(request.operation==='restart_full'?1:0)===this.input.attempt,'foreign_checkpoint','Recovery requires the exact separately admitted worker attempt');
   // The coordinator durably records publication.actions before its model-free
   // write. A second attempt.actions entry would change preserved assessment
   // identity merely by replaying publication of the same accepted feedback.
@@ -85,7 +88,7 @@ export class DesignReviewWorker {
     void(async()=>{
      const cp=await loadStoredDesignCheckpoint(this.input.key.project,this.input.key.reviewId),last=cp?.attempts.at(-1);
      requireDesign(last,'missing_checkpoint','Design recovery source missing');
-     if(isDesignAdmission(last)){
+     if(isDesignAdmission(last)&&last.submitted.recovery?.operation!=='restart_full'){
       requireDesign(admitted.request.operation==='resume'&&last.submitted.artifactPath,'review_conflict','Only unchanged admission can resume');
       await this.coordinator.start({phase:'start',repo:this.input.key.project,reviewId:this.input.key.reviewId,attempt:last.number,artifactPath:last.submitted.artifactPath},owner?{owner}:{});
      }else await this.coordinator.recover(admitted.request,owner?{owner}:{});

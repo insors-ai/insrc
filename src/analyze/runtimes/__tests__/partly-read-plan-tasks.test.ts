@@ -31,13 +31,17 @@ import type { RoutingSeamContext } from '../../context/shaper-provider.js';
 import type { PlannedTask, TemplateExecuteArgs, TemplateExecuteResult, TemplateRuntime } from '../../executor/types.js';
 import { createItemMeasurer, summarisedFrom } from '../../explore/item-measure.js';
 import { indexerFileHash } from '../../item-length.js';
-import { SUMMARISER_BODY_CHARS } from '../../summariser/driver.js';
 
 import { codeAdherenceCheckRuntime } from '../code/adherence-check.js';
 import { dataAdherenceCheckRuntime } from '../data/adherence-check.js';
 import { docsDiscoveryInventoryRuntime } from '../docs/discovery-inventory.js';
 import { countedSkip, docsFamilySummariseRuntime } from '../docs/family-summarise.js';
 import { infraAdherenceCheckRuntime } from '../infra/adherence-check.js';
+import { infraDiscoveryFamiliesRuntime } from '../infra/discovery-families.js';
+import { walkFiles } from '../infra/_shared.js';
+import { dataDiscoveryObjectsRuntime } from '../data/discovery-objects.js';
+import { _setDataPoolSourceForTest } from '../data/_shared.js';
+import { AGGREGATE_COMBINE_SCHEMA } from '../shared/aggregator.js';
 
 const NOW = '2026-10-08T10:00:00.000Z';
 
@@ -111,43 +115,6 @@ test.afterEach(async () => {
 });
 
 // ---------------------------------------------------------------------------
-// The adherence checks' 1,200-character cut
-// ---------------------------------------------------------------------------
-
-test('each adherence check reports a body it cut with the kept and full lengths', async () => {
-	// code: a function of 3,000 characters; the model is shown its first 1,200.
-	const fnBody = `export function settleRefund() {\n${'  // settle the refund step by step\n'.repeat(84)}}`;
-	assert.ok(fnBody.length > 3_000);
-	const fn = await indexFunction('src/pay/settle.ts', 'settleRefund', fnBody);
-	const code = await run(codeAdherenceCheckRuntime, args('code.adherence.check', { codeSubject: 'settleRefund', constraints: CONSTRAINTS }));
-	assert.deepEqual(code.completeness.partlyRead, [{ what: `${fn.file}:1 settleRefund`, readChars: 1_200, totalChars: fnBody.length }]);
-	assert.equal(code.completeness.complete, false);
-	assert.equal(code.completeness.basis, 'graph');
-
-	// data: a schema file of 20,000 characters, cut by the indexer at 8,192 and by the check at 1,200.
-	const schema = `model Payment {\n${Array.from({ length: 900 }, (_, i) => `  field${i} String // refund column`).join('\n')}\n}\n`;
-	assert.ok(schema.length > 8_192);
-	await index('prisma/schema.prisma', schema);
-	const data = await run(dataAdherenceCheckRuntime, args('data.adherence.check', { dataSubject: 'refund', constraints: CONSTRAINTS }));
-	const dataCut = (data.completeness.partlyRead ?? []).find(p => p.what.startsWith(join(REPO, 'prisma/schema.prisma')));
-	assert.ok(dataCut, `the schema file is reported; got ${JSON.stringify(data.completeness.partlyRead)}`);
-	assert.deepEqual([dataCut.readChars, dataCut.totalChars], [1_200, schema.length], '1,200 of the file, not of the 8,192 the index stores');
-
-	// infra: a manifest longer than the cut.
-	const manifest = `apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: refund\ndata:\n${Array.from({ length: 200 }, (_, i) => `  key${i}: "refund-${i}"`).join('\n')}\n`;
-	await index('k8s/refund-config.yaml', manifest);
-	const infra = await run(infraAdherenceCheckRuntime, args('infra.adherence.check', { infraSubject: 'refund', constraints: CONSTRAINTS }));
-	const infraCut = (infra.completeness.partlyRead ?? []).find(p => p.what.startsWith(join(REPO, 'k8s/refund-config.yaml')));
-	assert.ok(infraCut);
-	assert.deepEqual([infraCut.readChars, infraCut.totalChars], [1_200, manifest.length]);
-
-	// A body shorter than the cut is shown whole and is not reported.
-	const small = await indexFunction('src/pay/tiny.ts', 'tinyRefund', 'export function tinyRefund() { return 1; }');
-	const whole = await run(codeAdherenceCheckRuntime, args('code.adherence.check', { codeSubject: 'tinyRefund', constraints: CONSTRAINTS }));
-	assert.equal(whole.completeness.partlyRead, undefined, small.file);
-});
-
-// ---------------------------------------------------------------------------
 // The project context
 // ---------------------------------------------------------------------------
 
@@ -173,29 +140,25 @@ test('the project-context assembler reports a limit it reached and the documents
 	assert.deepEqual(Object.keys(ctx).sort(), ['constraints', 'decisions', 'familyBreakdown', 'generatedAt', 'placeholderCount', 'recentActivity', 'repo', 'topSubjects', 'totalCodeEntities', 'totalDocs']);
 
 	// The adherence check takes its constraints from the context by document id.
-	// The long document's summary rests on its first 8,192 characters: reported.
+	// The summariser reads a document whole from its file, so a summary of the long
+	// document rests on all of it: nothing is reported for it.
 	await indexFunction('src/pay/settle.ts', 'settleRefund', 'export function settleRefund() { return 1; }');
 	const viaIds = await run(codeAdherenceCheckRuntime, args('code.adherence.check', { codeSubject: 'settleRefund', constraintIds: [longDoc.id, shortDoc.id] }));
-	const docCut = (viaIds.completeness.partlyRead ?? []).find(p => p.what === join(REPO, 'docs/refunds.md'));
-	assert.ok(docCut, `the long source document is reported; got ${JSON.stringify(viaIds.completeness.partlyRead)}`);
-	assert.equal(docCut.readChars, SUMMARISER_BODY_CHARS);
-	assert.ok(docCut.totalChars !== null && docCut.totalChars > 8_192);
-	assert.equal((viaIds.completeness.partlyRead ?? []).some(p => p.what === join(REPO, 'docs/shipping.md')), false, 'the short document was summarised whole');
-	assert.equal((viaIds.completeness.limited ?? []).some(l => l.what === 'project constraints'), false, 'four constraints are well within the 500 asked for');
+	assert.equal((viaIds.completeness.partlyRead ?? []).some(p => p.what === join(REPO, 'docs/refunds.md') || p.what === join(REPO, 'docs/shipping.md')), false, 'both documents were summarised whole');
+	assert.equal((viaIds.completeness.limited ?? []).some(l => l.what === 'project constraints'), false);
 
-	// More constraints than the 500 the check asks for: the limit is in the record.
+	// More constraints than the 500 the check used to ask for: every one is kept, and no limit is in the record.
 	await writeDocSummary(db, shortDoc.id, REPO, summary('Shipping', { keyConstraints: Array.from({ length: 600 }, (_, i) => `rule ${i}`) }));
-	const overLimit = await run(codeAdherenceCheckRuntime, args('code.adherence.check', { codeSubject: 'settleRefund', constraintIds: [longDoc.id, shortDoc.id] }));
-	const limit = (overLimit.completeness.limited ?? []).find(l => l.what === 'project constraints');
-	assert.deepEqual(limit, { what: 'project constraints', limit: 500, scope: 'source', reason: '603 project constraints were found and 500 are kept' });
-	assert.equal(overLimit.completeness.complete, false);
+	const many = await run(codeAdherenceCheckRuntime, args('code.adherence.check', { codeSubject: 'settleRefund', constraintIds: [longDoc.id, shortDoc.id] }));
+	assert.equal((many.completeness.limited ?? []).some(l => l.what === 'project constraints'), false);
+	assert.equal((many.outputs.get('adherence-report') as { constraints: unknown[] }).constraints.length, 603, 'all 603 constraints are judged against');
 });
 
 // ---------------------------------------------------------------------------
 // The docs plan tasks
 // ---------------------------------------------------------------------------
 
-test("the docs plan tasks report a document longer than the summariser's cut under partlyRead, and a missing summary and a failure placeholder under skipped (mutation: drop the partlyRead entry)", async () => {
+test("the docs plan tasks report a document they could not confirm under partlyRead, and a missing summary and a failure placeholder under skipped (mutation: drop the partlyRead entry)", async () => {
 	const pick = (es: Entity[]): Entity => es.find(e => e.kind === 'section') ?? es.find(e => e.kind === 'document')!;
 	const long    = pick(await index('docs/refunds.md', LONG_DOC));
 	const short   = pick(await index('docs/shipping.md', SHORT_DOC));
@@ -206,17 +169,13 @@ test("the docs plan tasks report a document longer than the summariser's cut und
 	await writeDocSummary(db, short.id, REPO, summary('Shipping'));
 	await writeDocSummary(db, failed.id, REPO, summary('', { errorCode: 'llm-unavailable', summary: '', keyDecisions: [], keyConstraints: [], subjects: [] }));
 
-	const longLabel = `${long.file} § ${long.name}`;
-	const realLength = LONG_DOC.split('\n').slice(long.startLine - 1, long.endLine).join('\n').length;
-	assert.ok(realLength > SUMMARISER_BODY_CHARS, `the long section is ${realLength} characters`);
 
 	// --- docs.family.summarise ---
 	const fam = await run(docsFamilySummariseRuntime, args('docs.family.summarise', { family: 'docs' }));
 	const rollup = fam.outputs.get('family-summary') as { docCount: number; placeholderCount: number };
 	assert.equal(rollup.docCount, 2, 'the two summarised documents are rolled up, as before');
 	assert.equal(rollup.placeholderCount, 1);
-	assert.deepEqual(fam.completeness.partlyRead, [{ what: long.file, readChars: SUMMARISER_BODY_CHARS, totalChars: realLength }],
-		'the long document, the summariser\'s cut and its full length; the short one is not listed');
+	assert.equal(fam.completeness.partlyRead, undefined, 'the long document was summarised whole, so nothing is reported for it');
 	assert.deepEqual(fam.completeness.skipped, [
 		{ what: `1 document: ${failed.file}`, reason: 'summarising failed for them, so they are not in this roll-up' },
 		{ what: `1 document: ${pending.file} § ${pending.name}`, reason: 'they have no summary yet, so they are not in this roll-up' },
@@ -228,7 +187,7 @@ test("the docs plan tasks report a document longer than the summariser's cut und
 	const inv = await run(docsDiscoveryInventoryRuntime, args('docs.discovery.inventory', { scopeRef: { kind: 'repo', value: REPO } }));
 	const invOut = inv.outputs.get('docs-inventory') as { inventory: { file: string; hasSummary: boolean }[]; summariesReady: number };
 	assert.equal(invOut.summariesReady, 2);
-	assert.deepEqual(inv.completeness.partlyRead, [{ what: longLabel, readChars: SUMMARISER_BODY_CHARS, totalChars: realLength }]);
+	assert.equal(inv.completeness.partlyRead, undefined);
 	const skipped = inv.completeness.skipped ?? [];
 	assert.equal(skipped.length, 2);
 	assert.match(skipped[0]!.what, new RegExp(`^1 document: ${failed.file.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
@@ -238,15 +197,62 @@ test("the docs plan tasks report a document longer than the summariser's cut und
 	// Every document is still listed in the inventory itself.
 	assert.ok(invOut.inventory.some(e => e.file === pending.file && e.hasSummary === false));
 
-	// What was read is the summariser's cut even when the index stores more of the
-	// document than that: a stored body of 20,000 characters, summarised from 8,192.
-	const stored20k: Entity = { ...short, id: 'x'.repeat(32), body: 'z'.repeat(20_000) };
-	const cut = await summarisedFrom(createItemMeasurer(db), stored20k, SUMMARISER_BODY_CHARS);
-	assert.equal(cut?.readChars, SUMMARISER_BODY_CHARS);
+	// A document whose file cannot be confirmed to hold it was summarised from its stored body: reported as not covered.
+	const unconfirmed: Entity = { ...short, id: 'x'.repeat(32), file: join(REPO, 'docs/never-indexed.md'), body: 'z'.repeat(20_000) };
+	const cut = await summarisedFrom(createItemMeasurer(db), unconfirmed);
+	assert.equal(cut?.readChars, 20_000);
+	assert.equal(cut?.totalChars, null);
+	assert.equal(await summarisedFrom(createItemMeasurer(db), short), undefined, 'a confirmed document is summarised whole');
 
 	// The entry that names several documents: none when there are none, and every file in it.
 	assert.deepEqual(countedSkip([], 'x'), []);
 	assert.deepEqual(countedSkip(['b.md', 'a.md'], 'why'), [{ what: '2 documents: a.md, b.md', reason: 'why' }]);
+});
+
+test('the data and infra file lists, family samples, subject lists and the aggregator summary return every item', async () => {
+	// data: a file connection of 201 files (the former limit was 200) is listed whole, with no limit in the record.
+	for (let i = 0; i < 201; i++) { mkdirSync(join(REPO, 'data'), { recursive: true }); writeFileSync(join(REPO, 'data', `f${String(i).padStart(3, '0')}.csv`), 'a,b\n1,2\n'); }
+	const filePool = {
+		reload: async () => undefined,
+		safeList: () => [{ key: { repoRoot: REPO, scope: 'saved', id: 'files' }, revision: 'fixture', kind: 'csv', family: 'file', effectiveFamily: 'file', label: 'files', publicConfig: { path: 'data', recursive: false }, credentialPresence: {} }],
+		withConnection: async (_id: string, use: (value: object) => Promise<unknown>) => use({ family: 'file', kind: 'csv' }),
+	};
+	_setDataPoolSourceForTest((async () => filePool) as unknown as Parameters<typeof _setDataPoolSourceForTest>[0]);
+	try {
+		const objects = await run(dataDiscoveryObjectsRuntime, args('data.discovery.objects', { connectionId: 'files' }));
+		assert.equal((objects.outputs.get('objects') as unknown[]).length, 201, 'every file is listed');
+		assert.equal(objects.completeness.limited, undefined);
+		assert.equal(objects.completeness.complete, true);
+	} finally {
+		_setDataPoolSourceForTest(undefined);
+	}
+
+	// infra: a walk of 5,005 files (the former cap was 5,000) reaches the end, and a family names every one of its files.
+	for (let i = 0; i < 5_005; i++) { mkdirSync(join(REPO, 'wide'), { recursive: true }); writeFileSync(join(REPO, 'wide', `f${i}.txt`), ''); }
+	const walked = await walkFiles(join(REPO, 'wide'));
+	assert.deepEqual([walked.files.length, walked.truncated], [5_005, false]);
+	for (let i = 0; i < 12; i++) { mkdirSync(join(REPO, '.github/workflows'), { recursive: true }); writeFileSync(join(REPO, '.github/workflows', `w${i}.yml`), 'name: w\non: [push]\njobs: {}\n'); }
+	const fams = await run(infraDiscoveryFamiliesRuntime, args('infra.discovery.families', { scopeRef: { kind: 'repo', value: REPO } }));
+	const list = fams.outputs.get('families') as { fileCount: number; sampleFiles: string[] }[];
+	assert.ok(list.every(f => f.sampleFiles.length === f.fileCount), 'every family names all its files');
+	assert.ok(list.some(f => f.fileCount >= 12));
+	assert.equal(fams.completeness.limited, undefined);
+
+	// docs: 21 subjects (the former roll-up named 20) are all in the roll-up.
+	const db = await getDb();
+	for (let i = 0; i < 21; i++) {
+		const e = (await index(`docs/s${i}.md`, `# Doc ${i}\n\nSubject ${i}.\n`)).find(x => x.kind === 'section' || x.kind === 'document')!;
+		await writeDocSummary(db, e.id, REPO, summary(`Doc ${i}`, { subjects: [`subject-${i}`] }));
+	}
+	const fam = await run(docsFamilySummariseRuntime, args('docs.family.summarise', { family: 'docs' }));
+	const rollup = fam.outputs.get('family-summary') as { topSubjects: unknown[] };
+	assert.equal(rollup.topSubjects.length, 21);
+	assert.equal(fam.completeness.limited, undefined);
+
+	// aggregator: a summary has no length cap in its schemas.
+	assert.equal(JSON.stringify(AGGREGATE_COMBINE_SCHEMA).includes('maxLength'), false);
+	const source = (await import('node:fs')).readFileSync(new URL('../shared/aggregator.ts', import.meta.url), 'utf8');
+	assert.equal(/SUMMARY_CAP|maxLength|slice\(0, SUMMARY/.test(source), false, 'the aggregator keeps no cap on a summary');
 });
 
 // ---------------------------------------------------------------------------

@@ -14,7 +14,9 @@ import { test } from 'node:test';
 
 import { validateAgainstSchema } from '../../../agent/providers/structured-output.js';
 import { DECOMPOSE_SCHEMA } from '../../context/decomposer.js';
-import { EXPLORATION_PARAMS, explorationParamsSchema } from '../params-schema.js';
+import { hashExplorationParams } from '../../../db/exploration-cache.js';
+import { cacheExplorationFor } from '../exploration-cache-key.js';
+import { EXPLORATION_PARAMS, explorationParamsSchema, withoutLimitParams } from '../params-schema.js';
 import type { ExplorationType } from '../types.js';
 
 /** The exploration types the decomposer offers, read from its own schema. */
@@ -78,3 +80,24 @@ test("every documented params example in the decomposer prompt validates against
 		assert.ok(r.ok, `${type}: ${JSON.stringify(params)} -> ${r.ok ? '' : r.errors.join('; ')}`);
 	}
 });
+
+test('a plan passing each of limit, topK, maxSources and previewChars produces the same cache key as one without', () => {
+	const exp = (type: string, params: Record<string, unknown>): ExplorationOf => ({ id: 'e1', type, purpose: 'p', params }) as ExplorationOf;
+	const withLimits = { limit: 5, topK: 7, maxSources: 9, previewChars: 11 };
+	const cases: [string, Record<string, unknown>][] = [
+		['symbol.locate', { names: ['x'] }], ['search.text', { pattern: 'needle' }], ['doc.mention', { subject: 's' }],
+		['doc.decision.trace', { topic: 't' }], ['db.tables.list', { connectionId: 'c' }], ['manifests.locate', {}],
+		['concept.resolve', { query: 'q' }], ['capability.reuse-check', { capability: 'c' }],
+	];
+	for (const [type, params] of cases) {
+		const plain = hashExplorationParams(cacheExplorationFor(exp(type, params), undefined));
+		for (const [name, value] of Object.entries(withLimits)) {
+			assert.equal(hashExplorationParams(cacheExplorationFor(exp(type, { ...params, [name]: value }), undefined)), plain, `${type}: ${name} does not change the key`);
+		}
+		assert.equal(hashExplorationParams(cacheExplorationFor(exp(type, { ...params, ...withLimits }), undefined)), plain, `${type}: all four together`);
+	}
+	// What the lookup is given has none of them either.
+	assert.deepEqual(withoutLimitParams({ pattern: 'x', ...withLimits }), { pattern: 'x' });
+});
+
+type ExplorationOf = import('../types.js').Exploration;

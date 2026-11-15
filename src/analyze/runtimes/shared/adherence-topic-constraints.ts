@@ -40,7 +40,7 @@ import type { DocConstraintEnumerateOutput } from '../../explore/types.js';
 
 const log = getLogger('analyze:runtimes:shared:adherence-topic-constraints');
 
-export const CONSTRAINT_RECORD_SCHEMA_VERSION = 1;
+export const CONSTRAINT_RECORD_SCHEMA_VERSION = 2;
 
 /** What a record file holds. */
 export interface ConstraintRecord {
@@ -48,7 +48,6 @@ export interface ConstraintRecord {
 	readonly repoPath:         string;
 	/** The topic as the first task that asked wrote it. */
 	readonly topic:            string;
-	readonly maxSources:       number | null;
 	readonly enumeratedAt:     string;
 	/** The task that made the enumeration. */
 	readonly enumeratedByTask: string;
@@ -61,7 +60,6 @@ export interface ConstraintsForTopicArgs {
 	readonly taskId:      string;
 	readonly repoPath:    string;
 	readonly topic:       string;
-	readonly maxSources?: number | undefined;
 	readonly db:          DbClient;
 }
 
@@ -86,18 +84,15 @@ export function normaliseTopic(topic: string): string {
 	return topic.trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
-/**
- * The record's key: the repository, the normalised topic and the number of
- * sections the enumeration may read (which changes what it can find).
- */
-export function constraintRecordKey(repoPath: string, topic: string, maxSources?: number | undefined): string {
-	const parts = [repoPath, normaliseTopic(topic), maxSources === undefined ? '' : String(maxSources)];
+/** The record's key: the repository and the normalised topic. */
+export function constraintRecordKey(repoPath: string, topic: string): string {
+	const parts = [repoPath, normaliseTopic(topic)];
 	return createHash('sha256').update(parts.join('\0')).digest('hex').slice(0, 16);
 }
 
-export function constraintRecordPathFor(runId: string, repoPath: string, topic: string, maxSources?: number | undefined, execution?: ConnectionExecutionContext): string {
+export function constraintRecordPathFor(runId: string, repoPath: string, topic: string, execution?: ConnectionExecutionContext): string {
 	assertNoSessionEmbedding(execution);
-	return PATHS.analyzeConstraintRecord(runId, constraintRecordKey(repoPath, topic, maxSources));
+	return PATHS.analyzeConstraintRecord(runId, constraintRecordKey(repoPath, topic));
 }
 
 /**
@@ -111,7 +106,7 @@ export function constraintRecordPathFor(runId: string, repoPath: string, topic: 
  */
 export async function constraintsForTopic(args: ConstraintsForTopicArgs): Promise<ConstraintsForTopicResult> {
 	assertNoSessionEmbedding(args.connectionExecution);
-	const path = constraintRecordPathFor(args.runId, args.repoPath, args.topic, args.maxSources, args.connectionExecution);
+	const path = constraintRecordPathFor(args.runId, args.repoPath, args.topic, args.connectionExecution);
 	const stored = readRecord(path, args);
 	if (stored !== null) {
 		return { output: stored.output, record: path, reused: true };
@@ -124,14 +119,12 @@ export async function constraintsForTopic(args: ConstraintsForTopicArgs): Promis
 		db:         args.db,
 		runId:      args.runId,
 		logContext: 'adherence check',
-		...(args.maxSources !== undefined ? { maxSources: args.maxSources } : {}),
 	});
 
 	const record: ConstraintRecord = {
 		schemaVersion:    CONSTRAINT_RECORD_SCHEMA_VERSION,
 		repoPath:         args.repoPath,
 		topic:            args.topic,
-		maxSources:       args.maxSources ?? null,
 		enumeratedAt:     new Date().toISOString(),
 		enumeratedByTask: args.taskId,
 		output,
@@ -193,7 +186,6 @@ function notThisRecord(parsed: unknown, args: ConstraintsForTopicArgs): string |
 	if (r['schemaVersion'] !== CONSTRAINT_RECORD_SCHEMA_VERSION) return `its schema version is ${String(r['schemaVersion'])}`;
 	if (r['repoPath'] !== args.repoPath) return 'it is of another repository';
 	if (typeof r['topic'] !== 'string' || normaliseTopic(r['topic']) !== normaliseTopic(args.topic)) return 'it is of another topic';
-	if ((r['maxSources'] ?? null) !== (args.maxSources ?? null)) return 'it was made with another limit of sections';
 	// The enumeration inside must be whole: a check reads its constraints, its
 	// count of sections and its completeness, and must not fail on a part that is missing.
 	const output = r['output'] as Record<string, unknown> | null | undefined;

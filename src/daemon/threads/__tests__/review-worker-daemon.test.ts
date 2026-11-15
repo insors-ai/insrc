@@ -8,13 +8,12 @@ import { startDaemon } from '../../../mcp/__tests__/helpers/mcp-e2e.js';
 import type { RunningDaemon } from '../../../mcp/__tests__/helpers/mcp-e2e.js';
 import { LocalPeer,until,pause } from './helpers/review-clearance-fixture.js';
 import { inspectReviewResources } from '../../../workflow/review/resource-recovery.js';
-import { updateStoredCodeCheckpoint } from '../../../workflow/code-review/task-review/checkpoint.js';
-import { updateStoredDesignCheckpoint } from '../../../workflow/review/design-review/checkpoint.js';
+import { reviewRuntimePath } from '../review-runtime-store.js';
 
 async function ended(pid:number):Promise<boolean>{try{return /\) Z /.test(await readFile(`/proc/${pid}/stat`,'utf8'));}catch(error){if((error as NodeJS.ErrnoException).code==='ENOENT')return true;throw error;}}
 
 test('full daemon entrypoint retains both-family crash fences and failed-attempt recovery through public routes',async t=>{
- const code=await fixture();let cleanDesign=()=>{};const design=designFixture({after:fn=>{cleanDesign=fn;}});
+ const code=await fixture(true);let cleanDesign=()=>{};const design=designFixture({after:fn=>{cleanDesign=fn;}});
  await rm(join(code.repo,'.insrc/tmp/code-review/publication.json'));
  const home=await mkdtemp('/tmp/irw-'),root=join(home,'.insrc'),bin=join(home,'bin');await mkdir(root);await mkdir(bin);
  await writeFile(join(design.repo,'.insrc/schema.json'),'{"version":2}');
@@ -26,8 +25,9 @@ test('full daemon entrypoint retains both-family crash fences and failed-attempt
 const fs=require('node:fs'),path=require('node:path');let prompt='';process.stdin.setEncoding('utf8');process.stdin.on('data',s=>prompt+=s);process.stdin.on('end',()=>{
  const repo=process.cwd(),data=JSON.parse(fs.readFileSync(path.join(repo,'.fixture-result.json'),'utf8')),id=fs.readFileSync(path.join(repo,'.fixture-review'),'utf8'),family=id.startsWith('full-design')?'design':'code';
  const cpPath=path.join(repo,'.insrc/tmp',family+'-review',id+'.json'),cp=JSON.parse(fs.readFileSync(cpPath,'utf8')),a=cp.attempts.at(-1);
- if(a.phase==='admission'||!a.resourceGuard?.openLeases.length)process.exit(91);
- fs.appendFileSync(path.join(repo,'full-spawns.jsonl'),JSON.stringify({pid:process.pid,reviewId:id,leases:a.resourceGuard.openLeases})+'\\n');
+ const runtime=JSON.parse(fs.readFileSync(path.join(repo,'.insrc/tmp/review-runtime',family,id+'.json'),'utf8'));
+ if(a.phase==='admission'||runtime.state!=='active'||!runtime.resourceGuard.openLeases.length)process.exit(91);
+ fs.appendFileSync(path.join(repo,'full-spawns.jsonl'),JSON.stringify({pid:process.pid,reviewId:id,leases:runtime.resourceGuard.openLeases})+'\\n');
  process.stdout.write(JSON.stringify({type:'system',subtype:'init',session_id:'full-'+process.pid})+'\\n');
  if(!fs.existsSync(path.join(repo,'hold-'+id))){
   const args=process.argv.slice(2),schema=JSON.parse(args[args.indexOf('--json-schema')+1]);let result=data.result;
@@ -65,21 +65,14 @@ const fs=require('node:fs'),path=require('node:path');let prompt='';process.stdi
   await until(async()=>{const p=await peer.call(method+'.progress',{...base,attempt:2});if(p.status==='failed')throw Error(JSON.stringify(p));return p.status==='passed';});
   assert.deepEqual(JSON.parse(await readFile(path,'utf8')).attempts[0],old,'failed input and feedback are immutable across explicit new attempts');
   await stop();
-  // Model a closure acknowledgment lost on an older retained attempt. The
-  // current successful successor is deliberately resource-closed; public
-  // recovery must inspect the entire history, not only that successor.
-  const lease={operationId:`retained-first-${family}`,workerIncarnation:'ended-fixture-owner',kind:'cli',openedAt:new Date().toISOString()};
-  if(family==='code')await updateStoredCodeCheckpoint(path,cp=>({...cp!,schemaVersion:2,attempts:cp!.attempts.map((a,i)=>i?a:{...a,resourceGuard:{daemonInstance:'ended-fixture-daemon',openLeases:[lease]}})}));
-  else await updateStoredDesignCheckpoint(repo,id,cp=>({...cp!,schemaVersion:2,attempts:cp!.attempts.map((a,i)=>i?a:{...a,resourceGuard:{daemonInstance:'ended-fixture-daemon',openLeases:[lease]}})}));
-  peer=await start();
-  const retainedResume={...resume,attempt:2},retainedRoute=method+(family==='code'?'.start':'.recover');
-  assert.equal((await peer.call(retainedRoute,retainedResume)).status,'resource_recovery_required');
-  const beforeRetained=(await spawns(repo)).length;peer.subscribe();await pause();
-  const clearRetained=peer.call(retainedRoute,{...retainedResume,resourceRecovery:{reason:'Verified older fixture owner ended',leaseIds:[lease.operationId]}}),retainedApproval=await peer.request();
-  await peer.call('approval.answer',{requestId:retainedApproval.requestId,decision:'approve'});assert.equal((await clearRetained).status,'cleared');
-  assert.equal((await spawns(repo)).length,beforeRetained,'historical clearance is model-free');
-  assert.equal((await peer.call(retainedRoute,{...retainedResume,resourceRecovery:{reason:'Retained receipt replay'}})).status,'already-clear');
-  await stop();peer=await start();
+  // Current-format execution must not recreate empty proof when its compact
+  // runtime disappears. Historical embedded-guard clearance is qualified by
+  // the separate legacy migration fixtures.
+  const runtimePath=reviewRuntimePath({project:repo,family,reviewId:id});
+  await rename(runtimePath,runtimePath+'.retained');peer=await start();
+  const missingProof={...resume,attempt:2};
+  await assert.rejects(peer.call(method+(family==='code'?'.start':'.recover'),missingProof),/runtime|Runtime|proof|review_resources_fenced/);
+  await stop();await rename(runtimePath+'.retained',runtimePath);peer=await start();
   const crashId=`full-${family}-crash`,key={project:repo,family,reviewId:crashId},request={...base,reviewId:crashId};
   await writeFile(join(repo,'.fixture-review'),crashId);await writeFile(join(repo,'hold-'+crashId),'fixture child barrier');
   await peer.call(method+'.start',{...request,...(family==='code'?{packet:code.packet}:{artifactPath:design.json})});

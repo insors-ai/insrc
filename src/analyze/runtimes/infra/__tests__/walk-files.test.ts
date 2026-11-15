@@ -13,9 +13,9 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { DEFAULT_FILE_CAP, walkFiles } from '../_shared.js';
+import { walkFiles } from '../_shared.js';
 
-test('the file walk goes to the end with a null cap and stops at its cap, as before, with a number or with none given', async () => {
+test('the file walk goes to the end with a null cap or none given, and stops at a cap a caller passes', async () => {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-walk-files-'));
 	try {
 		for (const sub of ['a', 'a/deep', 'b', 'node_modules/pkg']) mkdirSync(join(dir, sub), { recursive: true });
@@ -33,11 +33,10 @@ test('the file walk goes to the end with a null cap and stops at its cap, as bef
 		const cut = await walkFiles(dir, 5);
 		assert.deepEqual([cut.files.length, cut.truncated], [5, true]);
 		assert.deepEqual(cut.files, whole.files.slice(0, 5), 'the same files in the same order');
-		// A cap the tree does not reach, and the default: nothing cut.
+		// A cap the tree does not reach, and no cap given: nothing cut.
 		assert.deepEqual([(await walkFiles(dir, 13)).files.length, (await walkFiles(dir, 14)).truncated], [13, false]);
 		const byDefault = await walkFiles(dir);
 		assert.deepEqual([byDefault.files.length, byDefault.truncated], [13, false]);
-		assert.equal(DEFAULT_FILE_CAP, 5000, 'the cap every existing caller walks with');
 
 		// A root that cannot be read still throws, with or without a cap.
 		await assert.rejects(walkFiles(join(dir, 'missing'), null));

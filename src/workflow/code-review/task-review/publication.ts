@@ -4,7 +4,9 @@ import { completedSummary,failedAttemptSummary } from './summary.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { readFile, realpath } from 'node:fs/promises';
 import { isDeepStrictEqual } from 'node:util';
-import { artifactIdMarker, codeReviewArtifactId, codeReviewArtifactPaths, storyRecordFolderArgs, writeAtomic } from '../../storage.js';
+import { artifactIdMarker, artifactJsonPath, buildArtifactId, codeReviewArtifactId, codeReviewArtifactPaths, storyRecordFolderArgs, writeAtomic } from '../../storage.js';
+import { authorPartyOf } from '../../review/party.js';
+import { reviewedBuildFingerprint } from '../build-freshness.js';
 import { emptyLifecycle } from '../../artifact-core/decode.js';
 import type { RoundWriter } from '../../runners/build/round-writer.js';
 import { reviewJsonLimit, requireReview, reviewPath, isCodeAdmission } from './contracts.js';
@@ -16,19 +18,31 @@ import { prepareReviewPacket } from './packet.js';
 import type { ReviewSources } from './sources.js';
 import { validateTaskResult, validateResultOrigins } from './results.js';
 import { checkpointPath, saveCheckpoint, saveStoredCheckpoint } from './checkpoint.js';
-import { mergeTaskSummary, mergeCodeAdmissionFailure, renderTaskReview, resultReferences, validateTaskBody } from './record.js';
+import { mergeTaskSummary, mergeCodeAdmissionFailure, mergePreparationHistory, renderTaskReview, resultReferences, validateTaskBody, taskBodyVersion } from './record.js';
+import { decodePreparationCheckpoint } from '../../review/preparation-checkpoint.js';
+import { preparationSemanticHistory } from '../../review/preparation-semantic-history.js';
+import type { CodePreparationCheckpoint } from '../../review/preparation-checkpoint.js';
+import type { QualifiedPublication } from '../../review/publication-proof.js';
 
 import { restoreAcceptedAssignments, validateSavedAttribution } from './attribution-binding.js';
 import { captureFinalScope } from './final-scope-history.js';
 
-export interface PublicationDeps { readonly baseline?:CapacityBaseline; readonly sources:ReviewSources; readonly through:RoundWriter; readonly save?:typeof saveCheckpoint; readonly saveStored?:typeof saveStoredCheckpoint; readonly renderWrite?:typeof writeAtomic; }
+export interface PublicationDeps { readonly baseline?:CapacityBaseline; readonly sources:ReviewSources; readonly through:RoundWriter; readonly save?:typeof saveCheckpoint; readonly saveStored?:typeof saveStoredCheckpoint; readonly renderWrite?:typeof writeAtomic;
+ readonly preparation?: (QualifiedPublication & { preparePacket: typeof prepareReviewPacket; save(checkpoint: CodePreparationCheckpoint): Promise<void> }) | undefined;
+}
 
 /** No reviewer invocation: project completed task feedback through the canonical queued store. */
 export async function publishTaskCheckpoint(project: string, epicHash:string, reviewId:string, deps:PublicationDeps):Promise<{ path:string; jsonPath:string; status:string }> {
  const canonical = await realpath(project), path = checkpointPath(canonical, reviewId);
- const stored = decodeStoredCheckpoint(JSON.parse(await readFile(path,'utf8')));
+ const decoded = decodePreparationCheckpoint(JSON.parse(await readFile(path,'utf8')), { project: canonical, family: 'code', reviewId });
+ const current = decoded.format === 'current' ? decoded.checkpoint as CodePreparationCheckpoint : undefined;
+ requireReview(!current || deps.preparation, 'publication', 'Version-3 publication requires private preparation authority');
+ const historical = current ? preparationSemanticHistory(current) : decoded.checkpoint;
+ const stored = decodeStoredCheckpoint(historical);
+ const preparePacket = current ? deps.preparation!.preparePacket : prepareReviewPacket;
  requireReview(stored.project === canonical && stored.reviewId === reviewId, 'checkpoint', 'Checkpoint identity mismatch');
  const latest = stored.attempts.at(-1)!;
+ requireReview(!current || !isCodeAdmission(latest), 'publication', 'Unqualified admission cannot use qualified publication proof');
  if (isCodeAdmission(latest)) return publishTechnicalAdmission(canonical, epicHash, stored, latest, deps);
  requireReview(latest.header.status!=='failed'||latest['review-response'].crPublication==='complete','attempt','Failed review requires the next attempt; its pending publication cannot rewrite failed feedback');
  const entries: readonly (ReviewAttempt | CodeAdmissionAttempt)[] = stored.attempts;
@@ -40,13 +54,13 @@ export async function publishTaskCheckpoint(project: string, epicHash:string, re
   requireReview((earlier.header.status==='failed'||earlier['review-response'].crPublication==='complete')&&!['pending','running'].includes(earlier.header.status),'attempt','Earlier attempt must be published');
   validateSavedAttribution(earlier);
   if(earlier.submitted.reviewRevision){
-   const priorPrepared=await prepareReviewPacket(earlier.submitted,deps.sources,true,undefined,earlier.header.derived);
+   const priorPrepared=await preparePacket(earlier.submitted,deps.sources,true,undefined,earlier.header.derived);
    requireReview(priorPrepared.epicHash===epicHash&&canonicalReviewStory(priorPrepared.packet.storyId,epicHash)===canonicalReviewStory(checkpoint.storyId,epicHash)&&priorPrepared.packet.taskId===checkpoint.taskId,'scope','Earlier scope belongs to another subject');
    await restoreAcceptedAssignments({path,checkpoint,attempt:earlier,prepared:priorPrepared});if(earlier.header.attributionState!=='pending')captureFinalScope(priorPrepared,earlier);
   }
  }
  const attempt = checkpoint.attempts.at(-1)!;
- const prepared = await prepareReviewPacket(attempt.submitted, deps.sources, true, undefined, attempt.header.derived);
+ const prepared = await preparePacket(attempt.submitted, deps.sources, true, undefined, attempt.header.derived);
  requireReview(prepared.epicHash === epicHash && canonicalReviewStory(checkpoint.storyId,epicHash) === canonicalReviewStory(prepared.packet.storyId,epicHash) && checkpoint.taskId === prepared.packet.taskId, 'scope', 'Checkpoint belongs to another review subject');
  const expected = prepared.tasks.filter(t=>!prepared.packet.taskId || t.id===prepared.packet.taskId).map(t=>t.id).sort();
  requireReview(isDeepStrictEqual([...attempt.header.selectedTaskIds].sort(),expected) && isDeepStrictEqual(attempt['review-response'].tasks.map(t=>t.taskId).sort(),expected), 'tasks', 'Selected tasks have not all completed');
@@ -65,29 +79,43 @@ export async function publishTaskCheckpoint(project: string, epicHash:string, re
   validateTaskResult(result,{taskId:result.taskId,changes:finalScope?assignments?.find(a=>a.taskId===result.taskId)?.changes??[]:prepared.changes,evidenceReferences:refs});
  }
  const summary=completedSummary(prepared,attempt,reviewId),storyId=summary.storyId;
+ const checkCurrentBuild = async () => {
+  if (!current) return;
+  const build = JSON.parse(await readFile(artifactJsonPath(canonical, buildArtifactId(epicHash, storyId)), 'utf8')) as { meta?: unknown };
+  const author = authorPartyOf(build.meta);
+  requireReview(author !== 'unknown' && author !== attempt.header.reviewer, 'publication', 'Review must be independent of current BUILD author');
+  requireReview(!attempt.header.buildFingerprint || attempt.header.buildFingerprint === reviewedBuildFingerprint(build), 'publication', 'Current BUILD differs from reviewed BUILD');
+ };
+ await checkCurrentBuild();
+ const archive = current ? { checkpoint: structuredClone(current), proof: await deps.preparation!.authorize(current) } : undefined;
  const store=deps.through.store; requireReview(store,'publication','Canonical round-writer store is required');
  const id=codeReviewArtifactId(epicHash,storyId), folder=storyRecordFolderArgs(canonical,epicHash,storyId,{},{kind:'read'});
  const paths=codeReviewArtifactPaths(canonical,epicHash,storyId,folder.epicCreatedAt,folder.workItemKind,folder.epicSlug);
  await auditResources(stored, id, deps);
  try {
   await store.updateAndLog(id,deps.through.actor,async current=>{
+   await checkCurrentBuild();
    let priorExists = false;
    let priorHead:Record<string,unknown>|undefined;
    try {
     const prior = JSON.parse(await readFile(paths.json, 'utf8')) as { meta?: { schemaVersion?: unknown } };
     priorHead=prior as Record<string,unknown>;priorExists = true;
-    requireReview(prior.meta?.schemaVersion === undefined || [1,2,3].includes(prior.meta.schemaVersion as number), 'CR', 'Unsupported prior CR version');
+    requireReview(prior.meta?.schemaVersion === undefined || [1,2,3,4].includes(prior.meta.schemaVersion as number), 'CR', 'Unsupported prior CR version');
+    if ([2,3,4].includes(prior.meta?.schemaVersion as number)) requireReview(prior.meta!.schemaVersion === taskBodyVersion(validateTaskBody(current.payload.body)), 'CR', 'Prior CR capability mismatch');
    } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
    if(deps.baseline)await requireCapacityBaseline(deps.baseline);
    let history: unknown = priorExists ? current.payload.body : undefined;
+   const existingArchives = archive && history ? validateTaskBody(history).preparationHistories : undefined;
+   if (existingArchives) { const { preparationHistories: _archives, ...working } = validateTaskBody(history); history = working; }
    for (const failure of failures) history = mergeCodeAdmissionFailure(history, reviewId, failure);
    for(const earlier of stored.attempts.slice(0,-1))if(!isCodeAdmission(earlier)&&earlier.header.status==='failed'&&earlier['review-response'].crPublication==='pending')history=mergeTaskSummary(history,failedAttemptSummary(earlier,reviewId));
-   const body=mergeTaskSummary(history,summary);
+   const merged=mergeTaskSummary(history,summary),body=archive?mergePreparationHistory({ ...merged, ...(existingArchives ? { preparationHistories: existingArchives } : {}) },archive):merged;
    const envelope={...(priorHead??{meta:{workflow:'code-review',schemaVersion:2}}),body,citations:[]};
    requireReview(Buffer.byteLength(JSON.stringify(envelope,null,2)+'\n')<=reviewJsonLimit(),'projection_limit','Merged CR envelope exceeds storage capacity');
    if(isDeepStrictEqual(body,current.payload.body)) return undefined;
    const {changeLog:_log,...head}=current;
-   return {next:{...head,payload:{body:{...body},citations:[]}},options:{addresses:[],outcome:{result:summary.status,summary:`Task-based review ${reviewId}/${summary.attempt}: ${summary.status}`}}};
+   return {next:{...head,payload:{body:{...body},citations:[]}},options:{addresses:[],outcome:{result:summary.status,summary:`Task-based review ${reviewId}/${summary.attempt}: ${summary.status}`,
+    ...(archive ? { data: { kind: 'prepared-code-review', schemaVersion: 1, reviewId, attempt: summary.attempt, evidenceDigest: archive.proof.evidenceDigest } } : {}) }}};
   },{},()=>({id,description:'',references:[],attachments:[],lifecycle:emptyLifecycle(0),payload:{body:{},citations:[]}}));
   // Render under the SAME queue; concurrent publications cannot leave an older projection last.
   await store.exclusive(id,async()=>{
@@ -99,7 +127,12 @@ export async function publishTaskCheckpoint(project: string, epicHash:string, re
   // Keep the completed feedback summary immutable; publication metadata is separate.
   attempt.header.status=summary.status;
   if(attempt.progress)attempt.progress={...attempt.progress,phase:'complete',processState:'unknown',activeToolCount:0,completedTasks:attempt['review-response'].tasks.length};
-  if (stored.schemaVersion === 2) {
+  if (current) {
+   const target = current.attempts.at(-1)!; Object.assign(target.header, attempt.header);
+   if ('review-response' in target) target['review-response'] = JSON.parse(JSON.stringify(attempt['review-response'])) as typeof target['review-response'];
+   if (attempt.progress) target.progress = attempt.progress;
+   await deps.preparation!.save(current);
+  } else if (stored.schemaVersion === 2) {
    Object.assign(latest.header, attempt.header); latest['review-response'] = attempt['review-response'];
    if (attempt.progress) latest.progress = attempt.progress;
    await (deps.saveStored ?? saveStoredCheckpoint)(path, stored);
@@ -126,7 +159,7 @@ async function publishTechnicalAdmission(project: string, hash: string, cp: Stor
  await store.updateAndLog(id, deps.through.actor, async current => {
   try {
    const prior=JSON.parse(await readFile(paths.json,'utf8')) as {meta?:{schemaVersion?:unknown}};
-   requireReview(prior.meta?.schemaVersion===undefined||[1,2,3].includes(prior.meta.schemaVersion as number),'CR','Unsupported prior CR version');
+   requireReview(prior.meta?.schemaVersion===undefined||[1,2,3,4].includes(prior.meta.schemaVersion as number),'CR','Unsupported prior CR version');
   } catch(error) { if((error as NodeJS.ErrnoException).code!=='ENOENT')throw error; }
   let body: unknown = Object.keys(current.payload.body).length ? current.payload.body : undefined;
   for (const failure of cp.attempts) if (isCodeAdmission(failure)) body = mergeCodeAdmissionFailure(body, cp.reviewId, failure);

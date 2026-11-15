@@ -1,0 +1,624 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1794660870276-07v0ab",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T12:58:30.034Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 234375,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "epicSlug": "make-insrc-analysis-complete-used-right",
+    "storyId": "s4",
+    "lldRunId": "wf-1794653538223-k2ok1z",
+    "lldEffectiveHash": "faa0f59939cefa48308d1443da550f15eb59e172abea6bfec96bf918e3ceac2c",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "55af5050a873710b947c902bd7ec65d9dc18d635271a7c77c4622de23b103617",
+        "at": "2026-11-14T12:58:31.142Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T13:04:35.181Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "21f58f18b972d610c4660d044970bc9e3ec2d3cc"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Building this Story removes every fixed limit and content cut from the analyzer's lookups and plan-task runtimes in small steps: first the item reader and the analyzer-only complete mode of the text search (both backends), then the sites that read items and return results, then the planner prompt and cache version, and last the proof that larger results are handled and the documents and live checks. The work is fourteen tasks, almost all independent starting points that converge on the planner and the proof tasks, and cancellation and the turn limit are left to Story s10."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "ItemMeasure carries the item's content from its file",
+        "summary": "Add the optional content field to ItemMeasure in src/analyze/item-length.ts and have measureItem return the text it already reads when the recorded file hash matches (whole file for a document, file or config entity, the start-to-end line range for any other). When the file is missing, unreadable, changed or has no recorded hash, content stays absent and the reason says why; measureItem still never throws.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "measureItem returns content equal in length to totalChars for a whole-file kind and a line-range kind when the hash matches",
+          "measureItem returns no content and a reason for a changed, missing, unreadable and unhashed file, and never throws"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "item-length.test.ts: measureItem returns the whole content of a whole-file and a line-range item and no content for a changed, missing, unreadable or unhashed file"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "The item measurer returns content and reports unconfirmed items as not covered",
+        "summary": "Make createItemMeasurer's measure(entity) in src/analyze/explore/item-measure.ts return the content with the length, and make partlyRead produce a skipped or partlyRead entry in Story s1's completeness record for an item whose content could not be confirmed, so the analyzer never presents such an item as read.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "measure(entity) returns content for a confirmed item and none for an unconfirmed one",
+          "An unconfirmed item produces a skipped or partlyRead entry with the reason and is not reported as read"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "partly-read.test.ts: measure returns content for a confirmed item and a skipped or partlyRead entry with its reason for an unconfirmed one"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Complete mode for the ripgrep search backend",
+        "summary": "Add the optional complete flag to GrepSearchOptions in src/daemon/tools/builtins/search/grep.ts and implement it for the ripgrep backend: no hit limit, no per-line cut, no output cap, ripgrep output read as a stream and parsed in complete records, the files the backend excludes by rule stated in the result, and a fixed 30-second deadline after which the process is stopped and the call fails with the hits gathered attached and an incomplete status. Without the flag every other caller keeps MAX_LIMIT, MAX_LINE_CHARS and RG_MAX_OUTPUT_BYTES exactly as today.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "With complete set, more hits than MAX_LIMIT, a line over MAX_LINE_CHARS and ripgrep output over RG_MAX_OUTPUT_BYTES are all returned in full through the ripgrep backend",
+          "A ripgrep search that passes the 30-second deadline fails with its gathered hits marked incomplete and is never reported as complete",
+          "Without complete, the limits still apply and the existing grep tests pass unchanged"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c6",
+          "c13"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "grep-omitted.test.ts: through the ripgrep backend with complete set, more hits than MAX_LIMIT, a line over MAX_LINE_CHARS and output over RG_MAX_OUTPUT_BYTES are all returned in full, and a search past the 30-second deadline fails with its gathered hits"
+          },
+          {
+            "level": "integration",
+            "name": "grep-omitted.test.ts: without complete the ripgrep backend still applies MAX_LIMIT, MAX_LINE_CHARS and RG_MAX_OUTPUT_BYTES"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Complete mode for the Node fallback search backend",
+        "summary": "Implement the complete flag for the Node fallback path in runGrepSearch: no hit limit, no per-line cut, no per-file size skip (MAX_FILE_BYTES), the same 30-second deadline with gathered hits attached, the same by-rule exclusions statement, and an unreadable file listed as skipped with its reason while the scan continues. The default path for other callers is untouched.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "With complete set, the Node backend returns every hit with its whole line and searches a file over MAX_FILE_BYTES",
+          "The Node backend passes the same deadline behaviour, and an unreadable file is listed as skipped with its reason",
+          "Without complete, the Node backend behaves exactly as today"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c6",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "grep-omitted.test.ts: through the Node fallback with complete set, every hit with its whole line is returned, a file over MAX_FILE_BYTES is searched, the deadline fails with gathered hits and an unreadable file is listed as skipped"
+          },
+          {
+            "level": "integration",
+            "name": "grep-omitted.test.ts: without complete the Node fallback behaves exactly as today"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "The analyzer's search lookups use the complete mode",
+        "summary": "Make runSearchText in src/analyze/explore/search-text.ts and config-trace.ts call runGrepSearch with the complete flag, ignore any topK, raise a timeout or a search that could not run as the existing failed lookup output carrying the hits gathered, and write each distinct by-rule exclusion once in the completeness record's basisNote with no limited entry for hits, lines or files.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "search.text and config.trace return every hit with its whole line and no limited entry",
+          "A timed-out search is the failed lookup output with its gathered hits, not an empty or complete result"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "completeness-all-lookups.test.ts: search.text and config.trace return every hit with its whole line and no limited entry, and a timed-out search is the failed lookup output with its gathered hits"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "The document lookups and the module profile read items from their file",
+        "summary": "Replace the SECTION_BODY_CHARS slices of doc-constraint-enumerate and doc-decision-trace and the ENTRYPOINT_SCAN_CHARS slices of module-profile (two sites) with reads through measure(entity), so the whole item is used when the file still holds it and an unconfirmable item is reported as not covered.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "A section longer than the former 2,000-character cut is read whole by both document lookups",
+          "A module profile recognises an entry point beyond the former first 4,096 characters, and an unconfirmable file is reported as not covered"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "partly-read.test.ts: doc.constraint.enumerate and doc.decision.trace read a section longer than the former cut whole and report an unconfirmable section as not covered"
+          },
+          {
+            "level": "unit",
+            "name": "module-profile-entrypoint.test.ts: an entry point beyond the former first 4,096 characters is recognised and an unconfirmable file is reported as not covered"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "The adherence checks and the summariser read items from their file",
+        "summary": "Replace the 1,200-character body cut in the code, data and infra adherence checks, the SUMMARISER_BODY_CHARS cut in src/analyze/summariser/driver.ts and the PROJECT_CONTEXT_LIMIT cut in shared/adherence.ts with reads through measure(entity). entityToExcerpt becomes asynchronous in the three adherence checks, which ripples to their callers, so each caller is updated and the existing tests of the three checks must pass. The indexer's stored body and MAX_BODY are unchanged.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "A body over 1,200 characters is read whole in the code, data and infra adherence checks, and the existing tests of the three checks pass after the change",
+          "A document over 8,192 characters is summarised from its whole content, and an unconfirmable item is reported as not covered",
+          "MAX_BODY in src/indexer/parser/artifact.ts and the stored body are unchanged"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c10",
+          "c11"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "adherence-check-body.test.ts: the code, data and infra adherence checks read a body over 1200 characters whole and an unconfirmable item is reported as not covered"
+          },
+          {
+            "level": "unit",
+            "name": "summariser-body.test.ts: a document over 8192 characters is summarised from its whole content"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Graph and symbol lookups return every result",
+        "summary": "Delete the result-count constants and the limit and topK parameters from symbol-locate, test-locate, import-graph, usage-example, concept-resolve, manifests-locate, data-model-trace (MAX_TARGETS, MAX_FIELDS, MAX_TOP_CALLERS) and convention-detect (MAX_REPR_SUBCLASSES, MAX_BASE_CLASS_IDIOMS), so each returns everything it found with a completeness record that has no limited entry.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Each of these lookups returns every result at, one over and zero versus its former limit",
+          "No limited entry appears in their completeness records"
+        ],
+        "derivedFrom": [
+          "c8",
+          "c11"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "completeness-all-lookups.test.ts: symbol-locate, test-locate, import-graph, usage-example, concept-resolve, manifests-locate, data-model-trace and convention-detect return every result at, one over and zero versus the former limit with no limited entry"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "The document lookups return every result",
+        "summary": "Delete the limit and preview limits of doc-mention, the maxSources parameter of doc.decision.trace and doc.constraint.enumerate (in explore/executor.ts and the two lookups) and the result cut in src/analyze/docs-retrieval.ts, so the document lookups return every section they found.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "doc-mention, doc.decision.trace and doc.constraint.enumerate return every section at, one over and zero versus the former limits",
+          "No limited entry appears for sections read or previews"
+        ],
+        "derivedFrom": [
+          "c8",
+          "c11"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "completeness-all-lookups.test.ts: doc-mention, doc.decision.trace and doc.constraint.enumerate return every section at, one over and zero versus the former limits with no limited entry"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "The capability and table lookups return every result",
+        "summary": "Delete the limit and slice cuts of capability-reuse-check (exports, subdirs and files), db-tables-list (asked in the data drivers' complete listing mode) and db-table-describe (KV summary fields and sample keys). A Redis or etcd listing stays a sample reported as sampled and incomplete, and nothing scans a live store's keys.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "capability-reuse-check, db-tables-list and db-table-describe return every result, and a complete driver's table listing has no limited entry",
+          "A Redis or etcd listing is reported as a sample and incomplete, and no key scan of a live store is made"
+        ],
+        "derivedFrom": [
+          "c8",
+          "c11"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "completeness-all-lookups.test.ts: capability-reuse-check, db-tables-list and db-table-describe return every result and a complete driver's table listing has no limited entry"
+          },
+          {
+            "level": "unit",
+            "name": "kv-common.test.ts: a Redis or etcd listing is a sample reported incomplete and no key scan is made"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "The plan-task runtimes return every result",
+        "summary": "Delete FILE_LIST_LIMIT in data/discovery-objects.ts, DEFAULT_FILE_CAP in infra/_shared.ts, SAMPLE_CAP_PER_FAMILY in infra/discovery-families.ts, the TOP_SUBJECTS cut in docs/family-summarise.ts and SUMMARY_CAP in shared/aggregator.ts, and ask the data-driver listings in their complete mode, with their completeness records showing no limited entry.",
+        "size": "M",
+        "order": 11,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "The data and infra file lists, family samples, subject lists and the aggregator summary return every item",
+          "A runtime over a sampled driver reports the sample and not a complete answer"
+        ],
+        "derivedFrom": [
+          "c9",
+          "c11"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "partly-read-plan-tasks.test.ts: the data and infra file lists, family samples, subject lists and the aggregator summary return every item"
+          },
+          {
+            "level": "unit",
+            "name": "dropped-or-failed.test.ts: a runtime over a sampled driver reports the sample and not a complete answer"
+          }
+        ]
+      },
+      {
+        "id": "t12",
+        "title": "The planner stops offering limits and the cache version rises",
+        "summary": "Remove the limit, topK, maxSources and previewChars parameters, their examples and the fan-out bound from the planner catalog and src/prompts/analyze/decompose.system.md; drop any such parameter from a plan in src/analyze/explore/params-schema.ts before a lookup runs and in exploration-cache-key.ts before its cache key is taken; and raise EXPLORATION_CACHE_VERSION from 3 to 4 so a stored version 3 output is treated as absent.",
+        "size": "M",
+        "order": 12,
+        "dependsOn": [
+          "t5",
+          "t8",
+          "t9",
+          "t10"
+        ],
+        "acceptanceChecks": [
+          "The planning prompt and catalog contain no limit, topK, maxSources or previewChars and no fixed result count",
+          "A plan passing each of limit, topK, maxSources and previewChars produces the same cache key as one without, and a stored version 3 output is not served"
+        ],
+        "derivedFrom": [
+          "c7",
+          "c11"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "decompose-prompt-limits.test.ts: the planning prompt and catalog contain no limit, topK, maxSources or previewChars and no fixed result count"
+          },
+          {
+            "level": "unit",
+            "name": "params-schema.test.ts: a plan passing each of limit, topK, maxSources and previewChars produces the same cache key as one without"
+          },
+          {
+            "level": "unit",
+            "name": "cache-area-isolation.test.ts: a stored version 3 output is treated as absent at version 4"
+          }
+        ]
+      },
+      {
+        "id": "t13",
+        "title": "Prove larger results are handled and reported",
+        "summary": "Add integration tests that a lookup result larger than every former limit is divided and combined by Story s3's method with every result processed, and that the answer names sampled, failed and uncovered sources and is not called complete otherwise, extending the partition-combine and run-report tests and the orchestrator code and docs runs.",
+        "size": "M",
+        "order": 13,
+        "dependsOn": [
+          "t6",
+          "t7",
+          "t8",
+          "t9",
+          "t10",
+          "t11",
+          "t12"
+        ],
+        "acceptanceChecks": [
+          "A result larger than the former limits is processed in full through the partitioned handling",
+          "The answer report names sampled, failed and uncovered sources and is complete only where its evidence supports it"
+        ],
+        "derivedFrom": [
+          "c11",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "partition-combine.test.ts: a lookup result larger than every former limit is divided and combined with every result processed"
+          },
+          {
+            "level": "integration",
+            "name": "run-report.test.ts: the answer names sampled, failed and uncovered sources and is complete only where its evidence supports it"
+          }
+        ]
+      },
+      {
+        "id": "t14",
+        "title": "Update the documents and run the live checks and the full sweep",
+        "summary": "Update design/analyze-context-builder.md, design/analyze-plan-builder.md, site/analyze.html and docs/daemon.md so none states a fixed result limit or content cut for the analyzer, add the gated live checks (a live search compared with an independent count, a live Redis listing reported as sampled), and run the full sweep once after the other tasks.",
+        "size": "M",
+        "order": 14,
+        "dependsOn": [
+          "t13"
+        ],
+        "acceptanceChecks": [
+          "A search of the four named documents for the removed constants and parameter names finds no hit that belongs to the analyzer; each hit is removed or shown to belong to another caller",
+          "The live checks are written and gated by INSRC_LIVE_TESTS=1, and the full sweep result is recorded"
+        ],
+        "derivedFrom": [
+          "c11",
+          "c13"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "analyzer-docs-limits.test.ts: the four named documents contain no analyzer limit constant or parameter name"
+          },
+          {
+            "level": "live",
+            "name": "search-text-live.test.ts: a live search.text over this repository returns the same count as an independent search of the same pattern"
+          },
+          {
+            "level": "live",
+            "name": "redis-etcd-live.test.ts: a live Redis listing is reported as sampled and incomplete"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "src/analyze/explore/__tests__/completeness-all-lookups.test.ts (extended: former limit, one more, zero for each lookup in the inventory)",
+        "coveredByTaskIds": [
+          "t8",
+          "t9",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/analyze/runtimes data, infra and shared runtime tests (file list, file cap, sample cap, project context and summary caps)",
+        "coveredByTaskIds": [
+          "t11",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/analyze/explore/__tests__ for doc-mention, db-tables-list, capability-reuse-check, data-model-trace and concept-resolve",
+        "coveredByTaskIds": [
+          "t8",
+          "t9",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/analyze/__tests__/item-length.test.ts (measureItem content: whole-file kind, line-range kind, shifted lines, missing file, unreadable file, no recorded hash)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/analyze/explore/__tests__ for doc-constraint-enumerate and doc-decision-trace section bodies",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "the three adherence-check tests (body longer than 1200 characters)",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/tools/builtins/search/__tests__/grep-omitted.test.ts (complete flag: more hits than MAX_LIMIT, a line over MAX_LINE_CHARS, a file over MAX_FILE_BYTES, ripgrep output over RG_MAX_OUTPUT_BYTES, timeout reported as failed)",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/analyze/explore/__tests__/completeness-all-lookups.test.ts search.text and config.trace cases",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "runGrepSearch without the complete flag keeps today's limits",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/analyze tests that read src/prompts/analyze/decompose.system.md and the planner's catalog for limit, topK, maxSources and previewChars",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/db exploration-cache tests for EXPLORATION_CACHE_VERSION 4 and a stored version 3 output treated as absent",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/analyze/explore/__tests__/cache-area-isolation.test.ts",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/analyze/context/__tests__ partition tests with a lookup result larger than the former limits",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/analyze/orchestrator/__tests__ docs and code runs with a failed and a sampled source",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "a live run of search.text over this repository compared with an independent count of the same pattern",
+        "coveredByTaskIds": [
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "a live Redis listing reported as sampled",
+        "coveredByTaskIds": [
+          "t14",
+          "t10"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 contractDetails measureItem"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 contractDetails createItemMeasurer"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 contractDetails runGrepSearch"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 contractDetails runSearchText"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 dataModelChanges ItemMeasure"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 dataModelChanges GrepSearchOptions"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 dataModelChanges EXPLORATION_CACHE_VERSION"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 dataModelChanges the result-count constants (MAX_TOP_K, DEFAULT_LIMIT)"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 dataModelChanges the plan-task runtime caps (FILE_LIST_LIMIT and its peers)"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 dataModelChanges the content cuts (SECTION_BODY_CHARS and its peers)"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 migration steps 1 to 8 and backward compatibility"
+    },
+    {
+      "id": "c12",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 errorPaths, edge cases and invariants to preserve"
+    },
+    {
+      "id": "c13",
+      "kind": "stakeholder",
+      "ref": "user, 2026-11-14",
+      "quotedText": "yes, resolve all"
+    }
+  ]
+}

@@ -308,3 +308,30 @@ test('dedupe drops only a repeated whole entry: distinct files whose names share
 	assert.equal(infra.structure.split('\n').filter(l => l === 'none').length, 2);
 });
 
+
+test('a lookup result larger than every former limit is divided and combined with every result processed', async () => {
+	// 5,100 hits: more than every former result-count limit (the largest was 5,000). Each is one evidence block.
+	const hits = Array.from({ length: 5_100 }, (_, i) => block(`h${i}`, 60));
+	const run = scripted((prompt, kind) => (kind === 'combine' ? okCombine(prompt) : okPart(prompt)));
+	const result = await runDivided(args(run, hits, 12_000));
+	assert.equal(result.handling.method, 'partitioned');
+	assert.equal(result.handling.notCovered.length, 0, 'nothing is left uncovered');
+	assert.ok(result.combine !== undefined, 'the parts are combined');
+	assert.equal(run.maxInFlight(), 1, 'the parts are processed one after another');
+	// Every hit is in exactly one part prompt.
+	const seen = run.prompts.filter(p => p.startsWith('PART')).flatMap(keysIn);
+	assert.equal(seen.length, 5_100);
+	assert.equal(new Set(seen).size, 5_100, 'each hit once');
+	assert.equal(result.covered.length, result.handling.parts, 'every part has its result');
+	assert.ok(result.handling.parts > 1);
+
+	// One item of 100,000 characters (a former per-line cut was 500, a section cut 2,000) is divided into consecutive
+	// sections and every character of it is read.
+	const whole = 'Q'.repeat(100_000);
+	const one = scripted((prompt, kind) => (kind === 'combine' ? okCombine(prompt) : okPart(prompt)));
+	const item = await runDivided(args(one, [{ key: 'huge', envelope: { file: 'docs/huge.md' }, text: whole }], 12_000));
+	assert.equal(item.handling.notCovered.length, 0);
+	const read = one.prompts.filter(p => p.startsWith('PART')).reduce((n, p) => n + (p.match(/Q/g) ?? []).length, 0);
+	assert.equal(read, 100_000, 'the sections of the item hold all of it, no more and no less');
+	assert.ok(item.handling.parts > 1, 'the item was divided');
+});

@@ -29,6 +29,17 @@
           "revision": 1,
           "at": "2026-11-14T11:17:00.908Z",
           "externalId": "6876464969"
+        },
+        {
+          "target": {
+            "entityId": "PLAN-b9d5c5c40df5a574-s4",
+            "type": "PLAN",
+            "relation": "documents",
+            "fragment": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S004/PLAN.md"
+          },
+          "revision": 1,
+          "at": "2026-11-14T13:07:21.279Z",
+          "externalId": "6877699276"
         }
       ],
       "binding": {

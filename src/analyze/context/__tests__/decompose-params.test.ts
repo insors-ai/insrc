@@ -41,10 +41,10 @@ test('the codex strict copy of DECOMPOSE_SCHEMA contains no object without prope
 
 test("decompose and finalizeDecompose remove null params, so the executor receives today's params", async () => {
 	const reply = plan([
-		{ id: 'e1', type: 'symbol.locate', purpose: 'p', params: { names: ['runReview'], kinds: null, limit: null, matchMode: null } },
-		{ id: 'e2', type: 'search.text', purpose: 'p', params: { pattern: 'X', glob: null, caseInsensitive: null, topK: 5, path: null }, dependsOn: ['e1'] },
+		{ id: 'e1', type: 'symbol.locate', purpose: 'p', params: { names: ['runReview'], kinds: null, matchMode: null } },
+		{ id: 'e2', type: 'search.text', purpose: 'p', params: { pattern: 'X', glob: null, caseInsensitive: null, path: null }, dependsOn: ['e1'] },
 	]);
-	const today = [{ names: ['runReview'] }, { pattern: 'X', topK: 5 }];
+	const today = [{ names: ['runReview'] }, { pattern: 'X' }];
 	const viaDecompose = await decompose({ intent: INTENT, runId: 'r', scope: SCOPE, provider: answering(reply) });
 	assert.deepEqual(viaDecompose.explorations.map(e => e.params), today, 'decompose');
 	assert.deepEqual(finalizeDecompose(reply).explorations.map(e => e.params), today, 'finalizeDecompose');

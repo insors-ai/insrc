@@ -12,6 +12,7 @@ import { artifactJsonPath,buildArtifactId } from '../workflow/storage.js';
 import { lifecycleFor } from './lifecycle-registry.js';
 
 export const startTaskReview=(raw:unknown,trusted?:TrustedRpcContext)=>productionReviews().codeStart(raw,trusted);
+export const cancelTaskReview=(raw:unknown,trusted?:TrustedRpcContext)=>productionReviews().codeCancel(raw,trusted);
 export const readTaskReviewProgress=(raw:unknown,trusted?:TrustedRpcContext)=>productionReviews().codeProgress(raw,trusted);
 export const publishStoredTaskReview=(raw:unknown,trusted?:TrustedRpcContext)=>productionReviews().codePublish(raw,trusted);
 export const exchangeControllerTaskReview=(raw:unknown,trusted:TrustedRpcContext|undefined,phase:'assignment'|'scope'|'result'|'activity')=>productionReviews().codeControl(raw,trusted,phase);

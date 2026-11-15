@@ -1,3 +1,4 @@
+import { REVIEW_RUNTIME_MAX_BYTES } from '../../../shared/review-preparation.js';
 import { checkpointBytes } from './checkpoint.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { readFile } from 'node:fs/promises';
@@ -86,12 +87,17 @@ export function terminalCapacity(review:AdmittedReview,baseline:CapacityBaseline
   const retained=checkpoint.attempts.slice(0,-1).filter(a=>a.header.status==='failed'&&a['review-response'].crPublication==='pending').map(a=>failedAttemptSummary(a,checkpoint.reviewId));
   const kept=[...(prior?.reviews?.filter(r=>r.reviewId!==checkpoint.reviewId||r.attempt!==attempt.header.attempt)??[])];
   for(const failure of retained)if(!kept.some(r=>r.reviewId===failure.reviewId&&r.attempt===failure.attempt))kept.push(failure);
-  const current=kept.length||prior?.admissionFailures?.length?{...prior,kind:'code-review',format:'task-based',storyId:summary.storyId,reviews:kept,status:bodyStatus(kept,prior?.admissionFailures)}:undefined;
+  const {preparationHistories:archives,...priorAssessments}=prior??{};
+  const current=kept.length||prior?.admissionFailures?.length?{...priorAssessments,kind:'code-review',format:'task-based',storyId:summary.storyId,reviews:kept,status:bodyStatus(kept,prior?.admissionFailures)}:undefined;
   const body=mergeTaskSummary(current,summary);
   // Actual envelope/prefix are retained; only missing creation metadata uses reserve.
   const envelope={...(baseline.head??{meta:{workflow:'code-review',schemaVersion:2},citations:[]}),body};
   const serializedCheckpointBytes=Buffer.byteLength(pretty(checkpoint));
-  const measure={checkpoint:serializedCheckpointBytes+TERMINAL_METADATA_RESERVE,checkpointCompact:size(checkpoint)+TERMINAL_METADATA_RESERVE,summary:size(summary)+TERMINAL_METADATA_RESERVE,body:size(body)+TERMINAL_METADATA_RESERVE,envelope:Buffer.byteLength(pretty(envelope))+TERMINAL_METADATA_RESERVE+CANONICAL_METADATA_RESERVE};
+  // The private candidate has no publication proof yet. Measure its complete
+  // history and bounded closed audit separately instead of asking the strict
+  // CR validator to accept an old archive alongside a hypothetical new result.
+  const archiveReserve=Buffer.byteLength(pretty(archives??[]))+serializedCheckpointBytes+TERMINAL_METADATA_RESERVE+REVIEW_RUNTIME_MAX_BYTES+CANONICAL_METADATA_RESERVE;
+  const measure={checkpoint:serializedCheckpointBytes+TERMINAL_METADATA_RESERVE,checkpointCompact:size(checkpoint)+TERMINAL_METADATA_RESERVE,summary:size(summary)+TERMINAL_METADATA_RESERVE,body:size(body)+TERMINAL_METADATA_RESERVE+archiveReserve,envelope:Buffer.byteLength(pretty(envelope))+TERMINAL_METADATA_RESERVE+CANONICAL_METADATA_RESERVE+archiveReserve};
   requireReview(Object.values(measure).every(n=>n<=limit),'projection_limit','Complete terminal review envelopes exceed storage capacity; submit a smaller explicit review unit');
   requireReview(checkpointBytes(checkpoint)===pretty(checkpoint),'projection_limit','Checkpoint serialization disagrees with capacity qualification');
   result.push(measure);

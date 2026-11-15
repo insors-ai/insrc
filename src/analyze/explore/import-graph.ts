@@ -39,17 +39,9 @@ import type {
 	ImportGraphOutput,
 	ImportGraphSummary,
 } from './types.js';
-import type { ReachedLimit } from '../completeness.js';
-import { graphCompleteness, reachedLimit } from './completeness-facts.js';
+import { graphCompleteness } from './completeness-facts.js';
 
 const log = getLogger('analyze:explore:import-graph');
-
-// ---------------------------------------------------------------------------
-// Configuration
-// ---------------------------------------------------------------------------
-
-const DEFAULT_TOP_K = 15;
-const MAX_TOP_K = 60;
 
 // ---------------------------------------------------------------------------
 // Params
@@ -57,7 +49,6 @@ const MAX_TOP_K = 60;
 
 interface ImportGraphParams {
 	readonly path:   string;
-	readonly topK?: number;
 }
 
 function parseParams(exp: Exploration): ImportGraphParams {
@@ -66,10 +57,7 @@ function parseParams(exp: Exploration): ImportGraphParams {
 	if (path.length === 0) {
 		throw new Error(`import.graph: params.path is required`);
 	}
-	const topK = typeof p['topK'] === 'number' && p['topK']! > 0
-		? Math.min(MAX_TOP_K, Math.floor(p['topK'] as number))
-		: DEFAULT_TOP_K;
-	return { path, topK };
+	return { path };
 }
 
 // ---------------------------------------------------------------------------
@@ -80,7 +68,7 @@ export async function runImportGraph(
 	exp: Exploration,
 	ctx: ExplorationRunnerContext,
 ): Promise<ImportGraphOutput> {
-	const { path, topK } = parseParams(exp);
+	const { path } = parseParams(exp);
 
 	const db = await getDb();
 	const allEntities = await listEntitiesForRepo(db, ctx.repoPath);
@@ -181,25 +169,17 @@ export async function runImportGraph(
 		}
 	}
 
-	const k = topK ?? DEFAULT_TOP_K;
 	const topImporters = Array.from(importerCount.entries())
 		.map(([file, edges]) => ({ file, edges, evidence: importerEvidence.get(file) ?? {} }))
-		.sort((a, b) => b.edges - a.edges)
-		.slice(0, k);
+		.sort((a, b) => b.edges - a.edges);
 	const topImportees = Array.from(importeeCount.entries())
 		.map(([file, edges]) => ({ file, edges, evidence: importeeEvidence.get(file) ?? {} }))
-		.sort((a, b) => b.edges - a.edges)
-		.slice(0, k);
+		.sort((a, b) => b.edges - a.edges);
 
-	// Two lists, each cut to the same number: a limit on each, not on their sum.
-	const limited: ReachedLimit[] = [];
-	if (importerCount.size > k) limited.push(reachedLimit('importing files', k, 'per-group', importerCount.size));
-	if (importeeCount.size > k) limited.push(reachedLimit('imported files', k, 'per-group', importeeCount.size));
 	const completeness = graphCompleteness({
 		repoCompleteness: ctx.repoCompleteness,
 		returned: topImporters.length + topImportees.length,
 		found:    importerCount.size + importeeCount.size,
-		limited,
 		skipped:  noGraphNode.map(file => ({ what: file, reason: 'the file has no node in the stored graph, so its imports were not read' })),
 	});
 

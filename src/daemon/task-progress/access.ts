@@ -170,6 +170,20 @@ export class ProgressAccess<D extends Details> {
     return selected;
   }
 
+  /** Daemon-internal launch for a review admission: the review connection carries
+   *  no client-bound origin, so the review identity itself is the origin. Called
+   *  only by the trusted review host; there is no IPC method to mint this port. */
+  async launchReview(path: string, reviewId: string, ownerId: string, context: TrustedRpcContext): Promise<{
+    authorization: ProducerAuthorization;
+  }> {
+    connection(context);
+    const projectId = await this.project(path);
+    connection(context);
+    const invocationId = randomUUID();
+    const authorization = this.mint({ action: 'launch', projectId, invocationId, ownerId, origin: { turnId: reviewId } });
+    return { authorization };
+  }
+
   /** Called by a trusted executor entry point. There is no IPC method to mint this port. */
   async launch(path: string, originId: string, ownerId: string, context: TrustedRpcContext): Promise<{
     authorization: ProducerAuthorization;

@@ -1,11 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { fork,spawn } from 'node:child_process';
-import { writeFile,readFile,chmod,mkdir,rm,readlink } from 'node:fs/promises';
+import { writeFile,readFile,chmod,mkdir,rm,readlink,stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { once } from 'node:events';
 import { clearanceFixture,workerRpc,until,pause } from './helpers/review-clearance-fixture.js';
 import { inspectReviewResources,requireClosedReviewResources } from '../../../workflow/review/resource-recovery.js';
+import { reviewRuntimePath } from '../review-runtime-store.js';
 import { ThreadServices } from '../main-services.js';
 import { ReviewWorkers } from '../review-workers.js';
 import { startReviewWorkerBootstrap } from '../review-worker-bootstrap.js';
@@ -29,14 +30,16 @@ test('crash-boundary owner-loss and cleanup races retain targeted lifecycle guar
  const executable=`#!${process.execPath}
 const fs=require('node:fs'),path=require('node:path');let input='';process.stdin.setEncoding('utf8');process.stdin.on('data',s=>input+=s);process.stdin.on('end',()=>{
  const p=JSON.parse(input),cp=JSON.parse(fs.readFileSync(p.checkpointPath,'utf8')),a=cp.attempts.at(-1);
- if(a.phase==='admission'||!a.resourceGuard?.openLeases.length)process.exit(91);
- fs.appendFileSync(path.join(process.cwd(),'native-spawns.jsonl'),JSON.stringify({pid:process.pid,reviewId:p.reviewId,leases:a.resourceGuard.openLeases,qualified:true,args:process.argv.slice(2)})+'\\n');
+ const runtime=JSON.parse(fs.readFileSync(path.join(process.cwd(),'.insrc/tmp/review-runtime',cp.storyId?'code':'design',p.reviewId+'.json'),'utf8'));
+ if(a.phase==='admission'||runtime.state!=='active'||!runtime.resourceGuard.openLeases.length)process.exit(91);
+ fs.appendFileSync(path.join(process.cwd(),'native-spawns.jsonl'),JSON.stringify({pid:process.pid,reviewId:p.reviewId,leases:runtime.resourceGuard.openLeases,qualified:true,args:process.argv.slice(2)})+'\\n');
  process.stdout.write(JSON.stringify({type:'system',subtype:'init',session_id:'fixture-'+process.pid})+'\\n');
  if(!fs.existsSync(path.join(process.cwd(),'hold-'+p.reviewId))){
   process.stdout.write(JSON.stringify({type:'system',subtype:'fixture-padding',padding:'x'.repeat(200000)})+'\\n');
   process.stdout.write(JSON.stringify({type:'assistant',message:{content:[{type:'tool_use',id:'out',name:'StructuredOutput',input:JSON.parse(fs.readFileSync(p.reply,'utf8'))}]}})+'\\n');
  }
- setInterval(()=>{},1000);
+ const activity=path.join(process.cwd(),'activity-'+p.reviewId);
+ setInterval(()=>{if(fs.existsSync(activity)){fs.unlinkSync(activity);process.stdout.write(JSON.stringify({type:'assistant',message:{content:[{type:'tool_use',id:'fixture-read',name:'Read',input:{file_path:'source.js'}}]}})+'\\n');}},10);
 });`;
  await writeFile(join(bin,'claude'),executable);await chmod(join(bin,'claude'),0o755);
  const config=join(code.repo,'production-daemon.json'),socket=join(code.repo,'native.sock');
@@ -68,12 +71,8 @@ const fs=require('node:fs'),path=require('node:path');let input='';process.stdin
    await assert.rejects(peer.call('fixture.bypass',{reviewId:request.reviewId}),/transport is not installed/);
    await peer.call('fixture.terminate',{reviewId:request.reviewId});
    assert.equal((await spawns(repo)).length,count,'worker death before spawn never starts a native child');
-   const recovery={...base,reviewId:request.reviewId,...(family==='code'?{operation:'resume'}:{phase:'recover',operation:'resume',actionId:'boundary-resume'})};
-   if(boundary==='save'){
-    const route=method+(family==='code'?'.start':'.recover');assert.equal((await peer.call(route,recovery)).status,'resource_recovery_required');
-    peer.subscribe();await pause();const pending=peer.call(route,{...recovery,resourceRecovery:{reason:'Verified fixture operation saved intent but never spawned'}}),approval=await peer.request();
-    await peer.call('approval.answer',{requestId:approval.requestId,decision:'approve'});assert.equal((await pending).status,'cleared');
-   }
+   // A current-epoch host can confirm disposal even if the worker dies
+   // before spawn. Only unresolved native ownership needs operator clearance.
    await requireClosedReviewResources(key);process.kill(sentinel.pid!,0);
   }
   const denied={...base,...submitted,reviewId:`denied-${family}`};
@@ -87,14 +86,24 @@ const fs=require('node:fs'),path=require('node:path');let input='';process.stdin
   await writeFile(join(repo,'hold-'+loss.reviewId),'owned fixture worker-loss barrier');
   await peer.call(method+'.start',loss);await until(async()=> (await spawns(repo)).some(s=>s.reviewId===loss.reviewId));
   const child=(await spawns(repo)).find(s=>s.reviewId===loss.reviewId)!;survivors.set(child.pid,repo);
+  const key={project:repo,family,reviewId:loss.reviewId};
+  const runtimeBefore=JSON.parse(await readFile(reviewRuntimePath(key),'utf8'));
+  const historyPath=join(repo,'.insrc/tmp',family+'-review',loss.reviewId+'.json'),beforeHistory=await readFile(historyPath),beforeStamp=await stat(historyPath,{bigint:true});
+  await writeFile(join(repo,'activity-'+loss.reviewId),'Emit a real streamed tool-start event');
+  let runtimeAfter:any;
+  await until(async()=>{runtimeAfter=JSON.parse(await readFile(reviewRuntimePath(key),'utf8'));return runtimeAfter.sequence>runtimeBefore.sequence&&runtimeAfter.progress.lastMeaningfulActivityAt!==null&&runtimeAfter.progress.lastMeaningfulActivityAt!==runtimeBefore.progress.lastMeaningfulActivityAt;});
+  for(let i=0;i<10;i++)await peer.call(method+'.progress',loss);
+  assert.deepEqual(await readFile(historyPath),beforeHistory);
+  const afterStamp=await stat(historyPath,{bigint:true});assert.equal(afterStamp.ino,beforeStamp.ino);assert.equal(afterStamp.mtimeNs,beforeStamp.mtimeNs,'an actual durable activity update does not rewrite full history');
+  assert.ok(runtimeAfter.sequence>runtimeBefore.sequence);assert.notEqual(runtimeAfter.progress.lastMeaningfulActivityAt,runtimeBefore.progress.lastMeaningfulActivityAt);
+  assert.deepEqual(runtimeAfter.resourceGuard.openLeases,runtimeBefore.resourceGuard.openLeases,'activity proof is not a native lease mutation');
+  assert.ok(Buffer.byteLength(JSON.stringify(runtimeAfter))<=256*1024);
+
   await peer.call('fixture.terminate',{reviewId:loss.reviewId});
   await until(async()=>{try{process.kill(child.pid,0);return false;}catch(error){if((error as NodeJS.ErrnoException).code==='ESRCH')return true;throw error;}});
   survivors.delete(child.pid);
   const resume={...base,reviewId:loss.reviewId,...(family==='code'?{operation:'resume'}:{phase:'recover',operation:'resume',actionId:'worker-loss-resume'})},route=method+(family==='code'?'.start':'.recover');
-  assert.equal((await peer.call(route,resume)).status,'resource_recovery_required','lost writer cannot erase an unresolved closure save');
-  peer.subscribe();await pause();
-  const pending=peer.call(route,{...resume,resourceRecovery:{reason:'Verified host ended exact fixture child after worker loss'}}),request=await peer.request();
-  await peer.call('approval.answer',{requestId:request.requestId,decision:'approve'});assert.equal((await pending).status,'cleared');
+  await requireClosedReviewResources({project:repo,family,reviewId:loss.reviewId});
   assert.equal((await spawns(repo)).filter(s=>s.reviewId===loss.reviewId).length,1);
   await rm(join(repo,'hold-'+loss.reviewId));await peer.call(route,resume);
   await until(async()=>{const p=await peer.call(method+'.progress',loss);if(p.status==='failed')throw Error(JSON.stringify(p));return p.status==='passed';});
@@ -150,6 +159,11 @@ const fs=require('node:fs'),path=require('node:path');let input='';process.stdin
   assert.ok((await spawns(repo)).filter(s=>s.reviewId===id).length>callsBefore);
   await requireClosedReviewResources(key);
  }
+ for(const repo of [code.repo,design.repo]){
+  const proof=(await readFile(join(repo,'native-write-proof.jsonl'),'utf8')).trim().split('\n').map(line=>JSON.parse(line));
+  assert.ok(proof.some(row=>row.kind==='open'));assert.ok(proof.some(row=>row.kind==='close'));
+  for(const row of proof){assert.equal(row.fullHistoryWrites,0);assert.ok(row.runtimeBytes<=256*1024);}
+ }
  for(const repo of [code.repo,design.repo])for(const event of await spawns(repo)){
   assert.equal(event.qualified,true);assert.ok(event.leases.length>0);
   try{process.kill(event.pid,0);assert.fail('Completed fixture native child remains live');}catch(error){if((error as NodeJS.ErrnoException).code!=='ESRCH')throw error;}
@@ -165,7 +179,7 @@ test('legacy interrupted code history retains uncertainty on earlier attempts',a
  // The unrelated terminal successor uses the historical unpinned format;
  // it has no final-scope attribution authority copied from attempt one.
  delete second.submitted.reviewRevision;
- for(const field of ['finalScopeIdentity','attributionState','acceptedAttribution','taskScopeIdentities','attributionIdentity','attributionFailure'] as const)delete second.header[field];
+ for(const field of ['finalScopeIdentity','attributionState','acceptedAttribution','taskScopeIdentities','attributionIdentity','attributionFailure','taskIdentityFormat'] as const)delete second.header[field];
  cp.attempts.push(second);await saveCheckpoint(checkpointPath(f.repo,reviewId),cp);
  const key={project:f.repo,family:'code' as const,reviewId},snapshot=await inspectReviewResources(key);
  assert.equal(snapshot.remaining,1);assert.equal(snapshot.guards[0]!.attempt,1);
@@ -178,14 +192,14 @@ test('shutdown drains host leases before worker reclamation and replacement',asy
  const old=process.env['INSRC_TEST_HOOKS'];process.env['INSRC_TEST_HOOKS']='1';
  const f=await publicationFixture(),started:StartedReviewWorker[]=[];
  const services=new ThreadServices(()=>({startedAt:0,modelState:{status:'ready'},installedCommit:'fixture'}));
- const registry=new ReviewWorkers({services,resolveScope:async()=>({reviewer:'daemon',subject:'fixture',cleanupScope:`${f.repo}:s1`}),authorizeNative:async(_key,c)=>assert.equal(c.command,process.execPath),resolveBinary:async c=>c,track:()=>{},start:async(...args)=>{const s=await startReviewWorkerBootstrap(...args);started.push(s);return s;}});
+ const registry=new ReviewWorkers({services,resolveScope:async()=>({reviewer:'daemon',subject:`BUILD-${hash}-s1`,cleanupScope:`${f.repo}:s1`}),authorizeNative:async(_key,c)=>assert.equal(c.command,process.execPath),resolveBinary:async c=>c,track:()=>{},start:async(...args)=>{const s=await startReviewWorkerBootstrap(...args);started.push(s);return s;}});
  t.after(async()=>{await registry.shutdown();f.cleanup();if(old===undefined)delete process.env['INSRC_TEST_HOOKS'];else process.env['INSRC_TEST_HOOKS']=old;});
  const key={project:f.repo,family:'code' as const,reviewId:'shutdown-review'},input={key,attempt:1,actionId:'shutdown-admission',submitted:f.packet};
  const context={connectionIdentity:'shutdown-fixture',daemonEpoch:'epoch',connectionSignal:new AbortController().signal};
  await registry.admit(input,context);const owner=started[0]!,path=join(f.repo,'.insrc/tmp/code-review/shutdown-review.json');
  const running=workerRpc(owner,'test.review.native',{...owner.admission,probe:'hold'}).catch(()=>undefined);
  await until(async()=> (await inspectReviewResources(key)).remaining===1);
- let closedBeforeExit=false;owner.worker.once('exit',()=>{const cp=JSON.parse(readFileSync(path,'utf8'));closedBeforeExit=cp.attempts.every((a:any)=>!a.resourceGuard?.openLeases.length);});
+ let closedBeforeExit=false;owner.worker.once('exit',()=>{const runtime=JSON.parse(readFileSync(reviewRuntimePath(key),'utf8'));closedBeforeExit=runtime.resourceGuard.openLeases.length===0;});
  await registry.shutdown();await running;await owner.reclaimed;
  assert.equal(closedBeforeExit,true,'confirmed native disposal must be durably saved while its writer is alive');
  assert.equal((await inspectReviewResources(key)).remaining,0);assert.equal(owner.worker.threadId,-1);
@@ -225,7 +239,8 @@ test('disposable daemon crash reconstructs unresolved guards and leaves unrelate
  const permitted=f.recovery.clear(key,{reason:'Verified owned fixture group ended'},f.local),request=await f.peer.request();
  await f.peer.call('approval.answer',{requestId:request.requestId,decision:'approve'});assert.equal((await permitted).status,'cleared');
  await requireClosedReviewResources(key);assert.equal(f.started.has('crash-review'),false);
- await assert.rejects(f.registry.admit({...f.input,key,actionId:'crash-start'},f.local),/explicit resume/);
+ // This crash occurred before semantic qualification. Only an explicit
+ // submission below may re-enter; resource clearance itself starts nothing.
  await f.registry.shutdown();
  assert.equal(f.started.has('crash-review'),false,'rejected start cannot dispatch inference');
  const resumed=await f.registry.admit({...f.input,key,operation:'resume',actionId:'explicit-resume'},f.local);
@@ -236,7 +251,8 @@ test('disposable daemon crash reconstructs unresolved guards and leaves unrelate
  assert.equal((await workerRpc(started,'fixture.stats')).calls,0);
  await workerRpc(started,'fixture.release');
  await until(async()=> (await workerRpc(started,'fixture.stats')).calls>0);
- assert.ok((await readFile(join(f.repo,'.insrc/tmp/code-review/crash-review.json'),'utf8')).includes('Verified owned fixture group ended'));
+ const {reviewRuntimeAudits}=await import('../../../workflow/review/runtime-audit.js');
+ assert.ok(reviewRuntimeAudits(await f.lifecycle.store.history.log(f.artifactId),f.artifactId,key).some(row=>row.runtime.resourceGuard.clearance?.reason==='Verified owned fixture group ended'));
 });
 
 test('legacy active missing guards reconstruct only the requested review fence',async t=>{

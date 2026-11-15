@@ -24,6 +24,7 @@ export interface ReviewBootstrapInput extends ReviewWorkerIdentity {
 }
 export interface ReviewWorkerInit extends DaemonWorkerInit {
  readonly role:'review';readonly review:ReviewBootstrapInput;readonly nativePort:MessagePort;
+ readonly preparation:import('./review-worker-preparation.js').ReviewPreparationBootstrap;
 }
 export interface ReviewAdmissionReceipt extends ReviewWorkerIdentity {
  readonly kind:'review-admission-saved';readonly attempt:number;readonly checkpointPath:string;

@@ -8,6 +8,8 @@ import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 
 import type { ConnectionConfig } from '../../../shared/db-driver.js';
+import { EtcdDriver } from '../drivers/etcd.js';
+import { RedisDriver } from '../drivers/redis.js';
 import {
 	assertNamespaceAllowed,
 	clampSampleShapeLimit,
@@ -95,3 +97,54 @@ describe('clamp helpers', () => {
 	});
 });
 
+
+// ---------------------------------------------------------------------------
+// The listing of a store that has no namespaces
+// ---------------------------------------------------------------------------
+
+describe('a store that derives its namespaces from its keys', () => {
+	it('a Redis or etcd listing is a sample reported incomplete and no key scan is made', async () => {
+		// The store holds 100,000 keys. The listing must not read them all, in either mode.
+		const total = 100_000;
+
+		// etcd: the read is bounded to one key past the sample (5,000), so 5,001 keys are fetched, not 100,000.
+		const etcdAsked: number[] = [];
+		const etcdKeys = Array.from({ length: total }, (_, i) => `/svc${i % 300}/k${i}`);
+		const etcd = Object.assign(Object.create(EtcdDriver.prototype) as EtcdDriver, {
+			client: { getAll: () => ({ prefix: () => ({ limit: (n: number) => { etcdAsked.push(n); return { keys: async () => etcdKeys.slice(0, n) }; } }) }) },
+		});
+		for (const opts of [undefined, { complete: true }] as const) {
+			const listing = await etcd.listNamespaces(opts);
+			assert.equal(listing.sampled, true, 'etcd: reported as a sample');
+			assert.equal(listing.truncated, true, 'etcd: the sample was cut, so it is incomplete');
+		}
+		assert.deepEqual(etcdAsked, [5_001, 5_001], 'etcd: the complete mode reads no more keys than the default');
+
+		// Redis: SCAN stops at the sample pool, however many keys the store holds.
+		let scans = 0;
+		const redis = new RedisDriver('kv-fixture', 'redis', 'redis://127.0.0.1:1', { id: 'kv-fixture', kind: 'redis', url: 'redis://127.0.0.1:1' });
+		(redis as unknown as { client: { disconnect(): void } }).client.disconnect();
+		Object.assign(redis, {
+			client: {
+				status: 'ready',
+				scan: async (cursor: string) => {
+					scans += 1;
+					const from = Number(cursor);
+					const batch = Array.from({ length: 500 }, (_, i) => `svc${(from + i) % 300}:k${from + i}`);
+					return [from + 500 >= total ? '0' : String(from + 500), batch];
+				},
+			},
+		});
+		const callsFor = async (opts?: { complete?: boolean }): Promise<number> => {
+			scans = 0;
+			const listing = await redis.listNamespaces(opts);
+			assert.equal(listing.sampled, true, 'redis: reported as a sample');
+			assert.equal(listing.truncated, true, 'redis: the sample was cut, so it is incomplete');
+			return scans;
+		};
+		const byDefault = await callsFor();
+		const complete = await callsFor({ complete: true });
+		assert.ok(byDefault <= 10, `redis: ${byDefault} SCAN calls for a store of ${total / 500} batches`);
+		assert.equal(complete, byDefault, 'redis: the complete mode scans no more keys than the default');
+	});
+});

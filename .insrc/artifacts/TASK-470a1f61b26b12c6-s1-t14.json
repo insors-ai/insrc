@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-50f55b37-a8e1-4e96-bba1-5ed0c0070f70",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T12:17:34.294Z",
+    "epicCreatedAt": "2026-11-14T08:55:28.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "470a1f61b26b12c6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Qualify performance, packaging and deployment handoff",
+      "parent": {
+        "entityId": "STORY-470a1f61b26b12c6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-470a1f61b26b12c6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-470a1f61b26b12c6-s1-t13",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "881f7fd8732467555f3d562c2c2f997f5b7e9b8a7ff054fed7f13df4c50d0445",
+        "at": "2026-11-14T12:17:34.294Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T12:17:34.296Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Qualify performance, packaging and deployment handoff",
+    "summary": "Measure full managed cold/warm/history-growth workloads, build shipped package and document coordinated restart plus explicitly authorized post-deployment smoke.",
+    "size": "L",
+    "order": 14,
+    "acceptanceChecks": [
+      "Three cold-run median<=120s, warm<=10s, controlled admit/cancel<=2s and progress observation<=2s; report all metrics; failed gates block old qualification; deployment awaits BUILD approval.",
+      "Task completion uses local managed qualification and package checks only. Deployment smoke requires later approved BUILD, user update/restart and explicit permission to retrigger original review.",
+      "Run and record this task's focused validation before advancing; cross-cutting qualification does not replace these checks."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Managed cold x3/warm/history-growth performance gates on supported Node/native package, npm build plus source-free package smoke; no deployed daemon mutation."
+      }
+    ],
+    "planTaskId": "t14"
+  },
+  "citations": []
+}

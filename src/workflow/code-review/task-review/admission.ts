@@ -33,9 +33,12 @@ export interface ReviewAdmissionContext {
   * No renumbering: the qualified view excludes technical-only attempts. */
  readonly accepted?:{readonly admission:CodeAdmissionAttempt;readonly prior:ReviewCheckpoint|undefined;readonly historyLength:number}|undefined;
  readonly qualifiedHistory?:ReviewCheckpoint|undefined;
+ /** Private worker adapter; never a wire field or submitter-provided scope. */
+ readonly preparePacket?: typeof prepareReviewPacket | undefined;
 }
 export async function prepareReviewAdmission(project: string, reviewId: string, attempt: number, input: unknown,
  reviewer: ReviewerParty, sources: ReviewSources, context: ReviewAdmissionContext = {}): Promise<AdmittedReview> {
+ const preparePacket = context.preparePacket ?? prepareReviewPacket;
  const request = decodeReview(context.operation === 'resume' ? SavedReviewRequestSchema : ReviewRequestSchema, { reviewId, attempt, ...(input !== undefined ? { packet: input } : {}), ...(context.operation !== undefined ? { operation: context.operation } : {}) });
  const operation = request.operation ?? 'start';
  const capacity=async(review:AdmittedReview):Promise<AdmittedReview>=>{if(review.prepared.projection&&review.attempt['review-response'].crPublication!=='complete'){review.capacity=await readCapacityBaseline(review.checkpoint.project,review.prepared.epicHash,review.checkpoint.storyId);qualifyReviewCapacity(review);}return review;};
@@ -56,7 +59,7 @@ export async function prepareReviewAdmission(project: string, reviewId: string, 
   for (const [index, entry] of saved.attempts.entries()) {
    requireReview(Number.isFinite(Date.parse(entry.header.createdAt)) && (!entry.header.completedAt || Number.isFinite(Date.parse(entry.header.completedAt))), 'checkpoint', 'Invalid attempt timestamp');
    validateFailureDiagnostics(entry);
-   const prepared = await prepareReviewPacket(entry.submitted, sources, true, undefined, entry.header.derived);
+   const prepared = await preparePacket(entry.submitted, sources, true, undefined, entry.header.derived);
    requireReview(!entry.submitted.reviewRevision || entry.header.finalScopeIdentity === prepared.projection?.identity, 'attribution', 'Saved final scope does not match pinned source');
    const boundAssignments = await restoreAcceptedAssignments({ path, checkpoint: saved, attempt: entry, prepared, priorTaskInputs });
    if(boundAssignments)priorTaskInputs.set(entry.header.attempt,new Map(boundAssignments.map(a=>[a.taskId,taskInputFingerprint(prepared,a)])));
@@ -80,7 +83,7 @@ export async function prepareReviewAdmission(project: string, reviewId: string, 
    if (index < saved.attempts.length - 1) requireReview((entry.header.status==='failed'||entry['review-response'].crPublication === 'complete') && !['pending', 'running'].includes(entry.header.status), 'attempt', 'Earlier attempt was not published');
    if (entry['review-response'].crPublication === 'complete') {
     const cr = JSON.parse(await readFile(artifactJsonPath(canonical, codeReviewArtifactId(prepared.epicHash, canonicalReviewStory(saved.storyId, prepared.epicHash))), 'utf8')) as { meta?: { schemaVersion?: number }; body?: unknown };
-    requireReview(cr.meta?.schemaVersion === 2 || cr.meta?.schemaVersion === 3, 'publication', 'Expected task-based CR history');
+    requireReview([2,3,4].includes(cr.meta?.schemaVersion as number), 'publication', 'Expected task-based CR history');
     const summary = validateTaskBody(cr.body).reviews.find(review => review.reviewId === reviewId && review.attempt === entry.header.attempt);
     const scope = { ...(entry.submitted.reviewRevision?{reviewRevision:entry.submitted.reviewRevision,finalScope:captureFinalScope(prepared,entry)}:{}),storyId: entry.submitted.storyId, ...(entry.submitted.taskId ? { taskId: entry.submitted.taskId } : {}), documents: entry.submitted.documents, reviewSet: entry.submitted.reviewSet };
     requireReview(summary && summary.reviewer === entry.header.reviewer && summary.status === entry.header.status && summary.completedAt === entry.header.completedAt
@@ -108,7 +111,7 @@ export async function prepareReviewAdmission(project: string, reviewId: string, 
  if (latest) requireReview(!['pending', 'running'].includes(latest.header.status) && (latest.header.status==='failed'||latest['review-response'].crPublication === 'complete'), 'attempt', 'attempt-conflict: previous attempt must be terminal and published');
  // The route comes from the Story's stored artifacts, never from the packet. Resume and publication re-read stored history and pass none.
  const route = context.epicHash ? await readStoryRoute(canonical, context.epicHash, canonicalReviewStory(request.packet.storyId, context.epicHash)) : undefined;
- const prepared = await prepareReviewPacket(request.packet, sources, false, route);
+ const prepared = await preparePacket(request.packet, sources, false, route);
  requireReview(!context.epicHash || context.epicHash === prepared.epicHash, 'epicHash', 'Pinned Plan belongs to another review subject');
  if (saved && priorPrepared) requireReview(prepared.epicHash === priorPrepared.epicHash && canonicalReviewStory(prepared.packet.storyId, prepared.epicHash) === canonicalReviewStory(saved.storyId, prepared.epicHash) && prepared.packet.taskId === saved.taskId, 'scope', 'New attempt changes review subject');
  const entry: ReviewAttempt = { header: { attempt, reviewer, status: 'pending', createdAt: context.accepted?.admission.header.createdAt??new Date().toISOString(), selectedTaskIds: prepared.tasks.filter(task => !prepared.packet.taskId || task.id === prepared.packet.taskId).map(task => task.id), ...(prepared.derived ? { derived: prepared.derived } : {}) }, submitted: prepared.packet,

@@ -64,16 +64,36 @@ function qualifyPredecessor({ prior, evidence, evidenceSignature, qualificationK
 		throw new Error('development predecessor writable formats differ');
 	}
 	const record = JSON.parse(evidence.toString('utf8'));
+	const rollback = record?.managedRollback;
+	if (record?.launchProfile !== 'managed' || rollback == null) {
+		throw new Error('managed upgrade requires a managed rollback receipt; graph-store probe evidence is insufficient');
+	}
+	const transactionId = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/;
+	const digest = /^[a-f0-9]{64}$/;
+	if (typeof rollback.transactionId !== 'string' || !transactionId.test(rollback.transactionId) ||
+		typeof rollback.candidateGeneration !== 'string' || !transactionId.test(rollback.candidateGeneration) ||
+		typeof rollback.restoredGeneration !== 'string' || !transactionId.test(rollback.restoredGeneration) ||
+		rollback.candidateGeneration === rollback.restoredGeneration ||
+		typeof rollback.expectedStateSha256 !== 'string' || !digest.test(rollback.expectedStateSha256)) {
+		throw new Error('invalid managed rollback receipt identity');
+	}
 	const expected = {
-		schemaVersion: 1, predecessorManifestSha256: manifestSha256, predecessorRuntimeFingerprint: manifest.runtimeFingerprint,
+		schemaVersion: 2, predecessorManifestSha256: manifestSha256, predecessorRuntimeFingerprint: manifest.runtimeFingerprint,
 		candidateCommit: staged.commit, candidateArchiveSha256: staged.archiveSha256, candidateRuntimeFingerprint: candidateFingerprint,
 		predecessorCompatibility: manifest.compatibility, candidateCompatibility: compatibility,
 		launchProfile: 'managed', candidateWriteObserved: true, candidateInterrupted: true, predecessorReopened: true,
+		managedRollback: {
+			transactionId: rollback.transactionId, outcome: 'rolled-back',
+			candidateGeneration: rollback.candidateGeneration, restoredGeneration: rollback.restoredGeneration,
+			servedRelease: manifest.commit, expectedStateSha256: rollback.expectedStateSha256,
+			servedStateSha256: rollback.expectedStateSha256,
+		},
 	};
 	if (!isDeepStrictEqual(record, expected)) throw new Error('crash-reopen evidence does not qualify these exact releases');
 	return {
 		manifestSha256, commit: manifest.commit, sequence: manifest.sequence, runtimeFingerprint: manifest.runtimeFingerprint,
 		compatibility: manifest.compatibility, crashConsistentReopening: true, launchProfiles: ['managed'],
+		qualificationProfile: 'managed-rollback-v1',
 		qualificationEvidenceSha256: sha256(evidence),
 	};
 }
@@ -165,6 +185,10 @@ async function attestQualification([path, keyPath, ...extra]) {
 	const key = createPrivateKey(await readBoundedRegular(keyPath, 4096));
 	if (key.asymmetricKeyType !== 'ed25519') throw new Error('development qualifier must be Ed25519');
 	const bytes = await readBoundedRegular(path, metadataLimit);
+	const record = JSON.parse(bytes.toString('utf8'));
+	if (record?.schemaVersion !== 2 || record.launchProfile !== 'managed' || record.managedRollback == null) {
+		throw new Error('managed qualification attestation requires a managed rollback receipt');
+	}
 	const destination = resolve(path + '.sig');
 	await publish(dirname(destination), basename(destination), sign(null, developmentQualificationSigningBytes(bytes), key));
 }

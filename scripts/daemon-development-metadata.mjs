@@ -70,12 +70,13 @@ function requireDevelopmentIdentity(manifest) {
 	if (manifest.predecessor === null) return;
 	const p = manifest.predecessor;
 	requireKeys(p, ['manifestSha256', 'commit', 'sequence', 'runtimeFingerprint', 'compatibility',
-		'crashConsistentReopening', 'launchProfiles', 'qualificationEvidenceSha256'], 'predecessor fields');
+		'crashConsistentReopening', 'launchProfiles', 'qualificationProfile', 'qualificationEvidenceSha256'], 'predecessor fields');
 	requireField(matches(oid, p.commit) && p.commit !== manifest.commit && positive(p.sequence) &&
 		p.sequence < manifest.sequence && [p.manifestSha256, p.runtimeFingerprint, p.qualificationEvidenceSha256]
 			.every(value => matches(digest, value)), 'predecessor identity');
 	requireField(p.crashConsistentReopening === true && Array.isArray(p.launchProfiles) &&
-		p.launchProfiles.length === 1 && p.launchProfiles[0] === 'managed', 'predecessor launch profile');
+		p.launchProfiles.length === 1 && p.launchProfiles[0] === 'managed' &&
+		p.qualificationProfile === 'managed-rollback-v1', 'predecessor launch profile');
 	requireBundleCompatibility(p.compatibility);
 }
 

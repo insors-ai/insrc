@@ -95,6 +95,8 @@ export interface ScratchPanelsDeps {
   readonly setPanelTitle?: ((panel: PanelHandle, title: string) => void) | undefined;
   /** Route a document view's send-to-chat text to the chat panel (extension host). */
   readonly onSendToChat?: ((text: string) => void) | undefined;
+  /** Save a document view's edit (document-channel 'scratch-save' {id, gen, text}). */
+  readonly onScratchSave?: ((id: string, gen: number, text: string) => void) | undefined;
 }
 
 export interface ScratchPanels {
@@ -104,6 +106,8 @@ export interface ScratchPanels {
   openDocument(id: string): Promise<ScratchPanelHandle | undefined>;
   /** Re-render the browse table if it is open (e.g. after a create/delete). */
   refreshBrowse(): Promise<void>;
+  /** Post a document-channel 'scratch-saved' reply to the LIVE document generation only. */
+  replySaved(gen: number, msg: ScratchDocHostToWebview): void;
   /** Close the document panel if it currently displays `id`. */
   closeDocumentIfShowing(id: string): void;
   /** Invalidate every pending open of `id` (called after deleteScratch). */
@@ -186,54 +190,73 @@ const browseBootstrap = (): string =>
   `document.querySelectorAll('.scratch-open').forEach(function(b){b.addEventListener('click',function(){vs.postMessage({v:1,payload:{type:'scratch-open',id:b.getAttribute('data-id')||''}});});});` +
   `document.querySelectorAll('.scratch-delete').forEach(function(b){b.addEventListener('click',function(){vs.postMessage({v:1,payload:{type:'scratch-delete',id:b.getAttribute('data-id')||''}});});});`;
 
-/** The document view's static body. Content arrives via a host push and is set with textContent only. */
+/** The document view's static body. Content arrives via a host push and is set
+ * with the textarea's .value only (CSP-safe — never innerHTML/textContent). */
 export function documentBodyHtml(): string {
   return `<div class="scratch-doc-wrap">` +
-    `<pre id="insrc-scratchdoc" class="scratch-doc"></pre>` +
+    `<textarea id="insrc-scratchdoc" class="scratch-doc" spellcheck="false"></textarea>` +
+    `<button type="button" id="insrc-savescratch" class="scratch-save" title="Save (Ctrl/Cmd+S)" aria-label="Save" hidden><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M2.5 2.5h8l3 3V13a.5.5 0 0 1-.5.5h-10A.5.5 0 0 1 2.5 13V3a.5.5 0 0 1 .5-.5Z"/><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M5 2.5V6h5.5V2.5M5 11.5h6"/></svg></button>` +
     `<button type="button" id="insrc-sendtochat" class="scratch-send" title="Send to chat" aria-label="Send to chat" hidden>${SEND_ICON}</button>` +
     `</div>`;
 }
 
 const DOC_STYLE =
-  `.scratch-doc-wrap{position:relative;}` +
-  `.scratch-doc{white-space:pre-wrap;word-break:break-word;font-family:var(--vscode-editor-font-family,monospace);}` +
+  `.scratch-doc-wrap{position:relative;display:flex;flex-direction:column;height:100%;}` +
+  `.scratch-doc{flex:1;width:100%;box-sizing:border-box;resize:none;white-space:pre-wrap;word-break:break-word;font-family:var(--vscode-editor-font-family,monospace);background:var(--vscode-editor-background,transparent);color:var(--vscode-editor-foreground,inherit);border:1px solid var(--vscode-panel-border,#666);border-radius:4px;padding:8px;}` +
+  `.scratch-save{position:fixed;top:8px;right:8px;z-index:2;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;background:var(--vscode-button-background,#0e639c);color:var(--vscode-button-foreground,#fff);border:none;border-radius:6px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.35);}` +
+  `.scratch-save[hidden]{display:none;}` +
+  `.scratch-save svg{width:15px;height:15px;}` +
+  `.scratch-save[disabled]{opacity:.6;cursor:default;}` +
+  `.scratch-doc-wrap .scratch-doc-error{color:var(--vscode-errorForeground,#f48771);font-size:11px;padding:2px 8px;}` +
   `.scratch-send{position:fixed;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;background:var(--vscode-button-background,#0e639c);color:var(--vscode-button-foreground,#fff);border:none;border-radius:6px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.35);}` +
   `.scratch-send[hidden]{display:none;}` +
   `.scratch-send svg{width:15px;height:15px;}`;
 
-/** The document view's nonce'd bootstrap: selectionchange latches the text, the button posts it.
+/** The document view's nonce'd bootstrap: selection latches the textarea's own
+ * selection API (selectionStart/selectionEnd over doc.value), the button posts it.
+ * `gen` is the page load's generation, `id` the scratchpad displayed; input marks
+ * the document dirty (save button visible), Ctrl/Cmd+S or the save button posts
+ * document-channel 'scratch-save' {id, gen, text: doc.value}, and a 'scratch-saved'
+ * reply is honored only when its gen equals this page's gen.
  * The ready handshake is generation-tagged: the host embeds the current docGeneration in the
  * page, the webview echoes it back, so a stale ready from a previous page load can never mark
  * the live generation ready. */
-export function documentBootstrap(gen: number): string {
+export function documentBootstrap(gen: number, id: string): string {
+  const genLiteral = Number.isFinite(gen) && gen >= 0 ? Math.floor(gen) : 0;
+  const idLiteral = JSON.stringify(id);
   return `const vs=acquireVsCodeApi();` +
     `const doc=document.getElementById('insrc-scratchdoc');` +
     `const sendBtn=document.getElementById('insrc-sendtochat');` +
+    `const saveBtn=document.getElementById('insrc-savescratch');` +
+    `const wrap=document.querySelector('.scratch-doc-wrap');` +
+    `var gen=${genLiteral};var docId=${idLiteral};` +
+    `var dirty=false;var saving=false;var errEl=null;` +
     // Webview-ready handshake: the host replays any content posted before the bootstrap
     // installed its listener, so an early read completion can never be lost. The echoed
     // generation tag lets the host ignore a ready from a superseded page load.
-    `var gen=${Number.isFinite(gen) && gen >= 0 ? Math.floor(gen) : 0};` +
     `var pending=null;` +
+    `function showErr(msg){if(!errEl&&wrap){errEl=document.createElement('div');errEl.className='scratch-doc-error';errEl.setAttribute('role','alert');wrap.appendChild(errEl);}if(errEl)errEl.textContent=msg;}` +
+    `function setDirty(d){dirty=d;if(saveBtn)saveBtn.hidden=!d;}` +
     `window.addEventListener('message',function(e){var m=e.data&&e.data.payload;if(!m)return;` +
-    `if(m.type==='scratch-content'&&typeof m.text==='string'){if(doc)doc.textContent=m.text;else pending=m.text;}});` +
-    `vs.postMessage({v:1,payload:{type:'scratch-ready',gen:gen}});` +
-    // The captured selection text, latched at selectionchange so a later focus (the
-    // button click) or selectionchange cannot lose it before the click handler reads it.
-    `var captured='';` +
-    `document.addEventListener('selectionchange',function(){` +
-    `var s=window.getSelection?window.getSelection():null;` +
-    `var t=s&&s.toString?s.toString():'';` +
-    `if(t!==''){captured=t;if(sendBtn){sendBtn.hidden=false;` +
-    // Anchor the floating button at the selection's caret rect (viewport-relative,
-    // matching position:fixed — no scroll offsets).
-    `var r=s.getRangeAt?s.getRangeAt(0).getBoundingClientRect():null;` +
-    `if(r){sendBtn.style.left=Math.max(4,Math.floor(r.right-28))+'px';sendBtn.style.top=Math.max(4,Math.floor(r.bottom+6))+'px';}` +
-    `}}` +
-    // A collapsed selection hides the button but does NOT clear the latch — the click
-    // reads `captured`, so the text is never lost. The button stays visible while it
-    // itself holds focus (the click in flight); otherwise it hides.
-    `else if(s&&s.isCollapsed){if(sendBtn&&!(sendBtn.contains&&sendBtn.contains(document.activeElement))&&document.activeElement!==sendBtn)sendBtn.hidden=true;}` +
+    `if(m.type==='scratch-content'&&typeof m.text==='string'){if(doc)doc.value=m.text;else pending=m.text;setDirty(false);if(errEl)errEl.textContent='';}` +
+    `else if(m.type==='scratch-saved'&&m.gen===gen&&m.id===docId){` +
+    `saving=false;if(saveBtn)saveBtn.disabled=false;` +
+    `if(m.ok){setDirty(false);}else{setDirty(true);showErr('save failed: '+(typeof m.error==='string'?m.error:'unknown error'));}}` +
     `});` +
+    `vs.postMessage({v:1,payload:{type:'scratch-ready',gen:gen}});` +
+    `function postSave(){if(!doc||saving)return;saving=true;if(saveBtn)saveBtn.disabled=true;` +
+    `vs.postMessage({v:1,payload:{type:'scratch-save',id:docId,gen:gen,text:doc.value}});}` +
+    `if(doc){doc.addEventListener('input',function(){setDirty(true);if(errEl)errEl.textContent='';});` +
+    `doc.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&(e.key==='s'||e.key==='S')){e.preventDefault();postSave();}});` +
+    // The selection is read from the TEXTAREA's own selection API (select/keyup/mouseup),
+    // never from window.getSelection (which does not track textarea selections).
+    `var captured='';` +
+    `function readSelection(){if(!doc)return '';var s=doc.selectionStart,e=doc.selectionEnd;` +
+    `if(typeof s!=='number'||typeof e!=='number'||e<=s)return '';return doc.value.substring(s,e);}` +
+    `function onSel(){var t=readSelection();if(t!==''){captured=t;if(sendBtn)sendBtn.hidden=false;}` +
+    `else if(sendBtn&&!(sendBtn.contains&&sendBtn.contains(document.activeElement))&&document.activeElement!==sendBtn)sendBtn.hidden=true;}` +
+    `doc.addEventListener('select',onSel);doc.addEventListener('keyup',onSel);doc.addEventListener('mouseup',onSel);}` +
+    `if(saveBtn)saveBtn.addEventListener('click',function(){postSave();});` +
     `if(sendBtn)sendBtn.addEventListener('click',function(){` +
     // Webview-side cap, same rule as the host-side capUtf8: the posted string, ellipsis
     // included, stays within 65,536 UTF-8 bytes. Iterate with codePointAt so a 4-byte
@@ -245,13 +268,14 @@ export function documentBootstrap(gen: number): string {
     `captured='';sendBtn.hidden=true;` +
     `});` +
     // If content arrived before the doc element was reachable, apply the replay now.
-    `if(pending!==null&&doc){doc.textContent=pending;pending=null;}`;
+    `if(pending!==null&&doc){doc.value=pending;pending=null;setDirty(false);}`;
 }
 
 export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
   const log = deps.logger ?? { warn: () => {} };
   const nonce = (): string => deps.genNonce?.() ?? 'scratch';
   const sendToChat = deps.onSendToChat ?? (() => {});
+  const onScratchSave = deps.onScratchSave ?? (() => {});
   let browseHandle: ScratchPanelHandle | undefined;
   let docHandle: ScratchPanelHandle | undefined;
   let docGeneration = 0;
@@ -425,8 +449,19 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
         panel.onMessage((m) => {
           const env = m as { v?: unknown; payload?: unknown } | null;
           if (env === null || env.v !== 1 || typeof env.payload !== 'object' || env.payload === null) return;
-          const msg = env.payload as { type?: unknown; text?: unknown; gen?: unknown };
+          const msg = env.payload as { type?: unknown; text?: unknown; gen?: unknown; id?: unknown };
           if (msg.type === 'send-to-chat' && typeof msg.text === 'string') sendToChat(capUtf8(msg.text));
+          else if (msg.type === 'scratch-save' && typeof msg.id === 'string' && typeof msg.text === 'string' && typeof msg.gen === 'number' && Number.isFinite(msg.gen)) {
+            // The save seam is validated against the live document: only the id
+            // currently displayed, in the generation that posted, may be saved —
+            // a stale page load's save is dropped, never applied to another doc.
+            if (!disposed && docGeneration === Math.floor(msg.gen) && showingId === msg.id) {
+              // The dirty marker rides the panel title ('•' suffix); cleared when the
+              // matching ok reply is posted (replySaved below).
+              try { panel.setTitle(`${msg.id} •`); } catch { /* best-effort */ }
+              onScratchSave(msg.id, Math.floor(msg.gen), msg.text);
+            } else log.warn(`insrc: a scratch-save for ${msg.id} gen ${msg.gen} was dropped (not the live document generation)`);
+          }
           else if (msg.type === 'scratch-ready') {
             // Bind readiness to the GENERATION THAT SENT the ready, compared against the
             // LIVE docGeneration: a stale ready from a superseded webview load (delivered
@@ -465,7 +500,7 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
       log.warn(`insrc: could not set the scratchpad panel title — ${String(err)}`);
     }
     try {
-      handle.setHtml(shellHtml(id, documentBodyHtml() + `<style>${DOC_STYLE}</style>`, nonce(), documentBootstrap(generation)));
+      handle.setHtml(shellHtml(id, documentBodyHtml() + `<style>${DOC_STYLE}</style>`, nonce(), documentBootstrap(generation, id)));
     } catch (err) {
       log.warn(`insrc: could not render the scratchpad document — ${String(err)}`);
       return handle;
@@ -502,10 +537,25 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
     if (browseHandle !== undefined) await renderBrowse(browseHandle);
   };
 
+  /** Post a 'scratch-saved' reply to the document panel, but ONLY when `gen` is
+   * the live document generation and the panel is still showing — a reply for a
+   * superseded generation (A->B switch, dispose) is dropped, mirroring the
+   * scratch-ready gen guard on the inbound side. */
+  const replySaved = (gen: number, msg: ScratchDocHostToWebview): void => {
+    if (disposed || docHandle === undefined || docGeneration !== gen) return;
+    try {
+      docHandle.postMessage({ v: 1, payload: msg });
+      // An ok reply clears the dirty '•' title suffix; a failure leaves it so the
+      // user still sees the unsaved state.
+      if (msg.type === 'scratch-saved' && msg.ok === true && showingId !== undefined) docHandle.setTitle(showingId);
+    } catch { /* best-effort */ }
+  };
+
   return {
     openBrowse,
     openDocument,
     refreshBrowse,
+    replySaved,
     closeDocumentIfShowing,
     invalidateId,
     get showingId() { return showingId; },

@@ -645,6 +645,54 @@ test('scratch-store.test.ts: r30 CR-MED — the link-only restore NEVER clobbers
   assert.ok(raceCalls.some((c) => c.op === 'unlink' && c.path.includes('.tmp-')), 'temp still cleaned up');
 });
 
+test('scratch-store.test.ts: r32 CR-MED — the backup is taken at the PER-ATTEMPT validated inode, not once up front: when the destination is replaced A→B after the initial lstat but before the loop validates it, a failed publish restores B (the inode the loop actually validated and unlinked), never the stale A', async () => {
+  const { fake, store } = setup();
+  await fake.fs.mkdir(ROOT);
+  const dest = `${ROOT}/20260101-000009-j.md`;
+  // Inode A seeded; the swap below installs inode B with different content + ino.
+  seed(fake, '20260101-000009-j.md', 'inode A original', 110);
+  fake.inos.set(dest, 9001);
+  // Swap A→B on the SECOND lstat of the destination (the first is the pre-loop
+  // validation; the second is publish attempt 0's revalidation): attempt 0 must then
+  // validate, back up, and unlink inode B — so a later failure must restore B.
+  let lstatCalls = 0;
+  const realLstat = fake.fs.lstat;
+  fake.fs.lstat = async (p) => {
+    if (p === dest) {
+      lstatCalls++;
+      if (lstatCalls === 2) {
+        fake.files.set(dest, Buffer.from('inode B replacement', 'utf8'));
+        fake.inos.set(dest, 9002);
+      }
+    }
+    return realLstat(p);
+  };
+  // Publish link (temp->dest) fails EIO — non-EEXIST, so the loop breaks to the
+  // restore path after having unlinked the validated inode B.
+  fake.failOn = (c) => (c.op === 'link' && c.to === dest && !c.path.endsWith('.bak') ? Object.assign(new Error('EIO'), { code: 'EIO' }) : undefined);
+  const markR32 = fake.calls.length;
+  await assert.rejects(store.updateScratch('20260101-000009-j.md', 'never lands'), (e: unknown) => e instanceof ScratchStoreError);
+  fake.fs.lstat = realLstat;
+  fake.failOn = undefined;
+  const r32Calls = fake.calls.slice(markR32);
+  assert.equal(Buffer.from(fake.files.get(dest) ?? []).toString('utf8'), 'inode B replacement', 'the restored content is inode B — the inode the loop validated and unlinked — NOT the stale inode A');
+  assert.equal(fake.inos.get(dest), 9002, 'the restored destination is B\'s inode');
+  // The backup link dest->.bak must have been taken AFTER attempt 0's revalidation
+  // lstat (the 2nd lstat of dest — the pre-loop validation is the 1st), i.e. of inode
+  // B, and the restore must link that same backup back over dest.
+  const idxLstat2 = r32Calls.findIndex((c, i) => c.op === 'lstat' && c.path === dest && r32Calls.slice(0, i + 1).filter((x) => x.op === 'lstat' && x.path === dest).length === 2);
+  assert.ok(idxLstat2 >= 0, 'the loop revalidated the destination (2nd lstat)');
+  const backupLinkIdx = r32Calls.findIndex((c) => c.op === 'link' && c.path === dest && (c.to ?? '').endsWith('.bak'));
+  assert.ok(backupLinkIdx > idxLstat2, `backup link taken after the loop's revalidation lstat (revalidation@${idxLstat2}, backup@${backupLinkIdx}) — backup of the validated inode B, not stale A`);
+  const backupPath = r32Calls[backupLinkIdx]?.to ?? '';
+  assert.ok(backupPath.endsWith('.bak'));
+  const restoreIdx = r32Calls.findIndex((c) => c.op === 'link' && c.path === backupPath && c.to === dest);
+  assert.ok(restoreIdx > backupLinkIdx, 'the B backup was linked back over the destination name on restore');
+  assert.equal(r32Calls.some((c) => c.op === 'unlink' && c.path === backupPath), true, 'the B backup was cleaned up after the failed publish');
+  assert.equal(r32Calls.some((c) => c.op === 'unlink' && c.path.includes('.tmp-') && !c.path.endsWith('.bak')), true, 'temp still cleaned up');
+  assert.equal(r32Calls.some((c) => c.op === 'rename'), false, 'no rename anywhere');
+});
+
 test('scratch-store.test.ts: updateScratch bumps mtime so listScratches reflects the save', async () => {
   const { fake, store } = setup();
   await fake.fs.mkdir(ROOT);

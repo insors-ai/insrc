@@ -385,21 +385,33 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
 
     /** Abandon the save: if any attempt already unlinked the destination, put the
      * ORIGINAL content back from the backup hard link first (the destination must be
-     * untouched by a failed save, even on the retry path), then clean up temp+backup.
+     * untouched by a failed save, even on the retry path), then clean up temp+backups.
      * The restore is link-only: link() is the atomic create-if-absent, so it can never
      * clobber a concurrently recreated destination (EEXIST => leave that file alone).
      * There is deliberately NO rename fallback — rename would race a concurrent
      * recreation between any existence check and the rename itself. If every restore
      * link fails non-EEXIST, the backup is simply left in place (logged) and the store
      * error still reports the failure; the original inode is never destroyed.
-     * The backup is unlinked only if this operation created it — a failed backup-link
-     * (e.g. EEXIST on the random name) must never delete an entry it does not own. */
+     * Backups are unlinked only if this operation created them — a failed backup-link
+     * must never delete an entry it does not own. */
     let unlinkedSoFar = false;
-    let backupLinked = false;
+    // One backup name per publish attempt, in order: backups[i] hard-links the inode
+    // that attempt i validated and unlinked. The LATEST backup is the one whose inode
+    // is currently missing from the destination name and must be restored on failure.
+    const backups: string[] = [];
+    const backupName = (): string => join(root, `.tmp-${process.pid}-${randomBytes(6).toString('hex')}.bak`);
+    const dropBackup = async (b: string): Promise<void> => {
+      try { await fs.unlink(b); } catch (rmErr) { log.warn(`[scratches] could not remove backup ${b}: ${String(rmErr)}`); }
+    };
+    const unlinkBackups = async (): Promise<void> => {
+      for (const b of backups) await dropBackup(b);
+    };
     // restoreFromBackup returns true when every restore link failed non-EEXIST (the
     // backup is intentionally left on disk — it still hard-links the original inode —
     // because no rename fallback exists to force it back safely).
     const restoreFromBackup = async (): Promise<boolean> => {
+      const backup = backups[backups.length - 1];
+      if (backup === undefined) return false;
       for (let rAttempt = 0; rAttempt < PUBLISH_ATTEMPTS; rAttempt++) {
         try {
           await fs.link(backup, path);
@@ -424,26 +436,9 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
     const fail = async (e: unknown): Promise<unknown> => {
       const gaveUp = unlinkedSoFar ? await restoreFromBackup() : false;
       await unlinkTemp();
-      if (backupLinked && !gaveUp) await unlinkBackup();
+      if (!gaveUp) await unlinkBackups();
       return e;
     };
-
-    // Backup hard link BEFORE the unlink: link(path, backup) shares the validated
-    // destination's inode, so a publish that never lands can put the original content
-    // back under the original name — the acceptance check requires the destination to
-    // be untouched on write/publish failure, and this is what makes that hold even when
-    // the failure arrives after the unlink. (The unlink+link pair still has its inherent
-    // brief ENOENT window; no partial content is ever exposed at the destination name.)
-    const backup = join(root, `.tmp-${process.pid}-${randomBytes(6).toString('hex')}.bak`);
-    const unlinkBackup = async (): Promise<void> => {
-      try { await fs.unlink(backup); } catch (rmErr) { log.warn(`[scratches] could not remove backup ${backup}: ${String(rmErr)}`); }
-    };
-    try {
-      await fs.link(path, backup);
-      backupLinked = true;
-    } catch (e) {
-      throw await fail(errCode(e) === 'ENOENT' ? new ScratchNotFound(`'${id}' disappeared before the save`) : storeError(e));
-    }
 
     // No-clobber publish: unlink(destination) + link(temp, destination) + unlink(temp).
     // Never rename — rename would clobber a destination created after the probe above.
@@ -485,11 +480,28 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
         try { await handle.close(); } catch { /* closing the probe fd is best-effort */ }
       }
 
-      // The re-validated inode is confirmed on the fd: unlink it, then link the temp over the name.
+      // Back up the EXACT inode we just validated on the fd, so a later restore puts
+      // back precisely what this attempt removes. The previous attempt's backup (a
+      // stale, already-unlinked inode) is dropped only AFTER this link succeeds, so a
+      // restore backup always exists once anything has been unlinked. A single backup
+      // linked once up front could instead preserve a stale inode A while the loop
+      // unlinks a replacement inode B, and a failed publish would restore A over the
+      // path, losing B (r32 CR-MED).
+      const backup = backupName();
+      try {
+        await fs.link(path, backup);
+      } catch (e) {
+        throw await fail(errCode(e) === 'ENOENT' ? new ScratchNotFound(`'${id}' disappeared before the save`) : storeError(e));
+      }
+      backups.push(backup);
+      if (backups.length > 1) await dropBackup(backups[backups.length - 2] ?? '');
+
+      // The re-validated inode is confirmed on the fd and backed up: unlink it, then
+      // link the temp over the name.
       try {
         await fs.unlink(path);
       } catch (e) {
-        // Deleted between the probe and the unlink: nothing to publish over.
+        // Deleted between the backup and the unlink: nothing to publish over.
         throw await fail(errCode(e) === 'ENOENT' ? new ScratchNotFound(`'${id}' disappeared before the save`) : storeError(e));
       }
       unlinked = true;
@@ -505,24 +517,25 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
         publishErr = e;
         break;
       }
-      // Published: the destination now holds the new content; remove the temp and the backup.
+      // Published: the destination now holds the new content; remove the temp and the backups.
       try {
         await fs.unlink(temp);
       } catch (rmErr) {
         log.warn(`[scratches] could not remove temp ${temp}: ${String(rmErr)}`);
       }
-      await unlinkBackup();
+      await unlinkBackups();
       return;
     }
     // The publish never landed (non-EEXIST link failure, or retries exhausted). Put the
-    // ORIGINAL content back under the original name from the backup hard link (link-only
-    // restore — never a rename, which could clobber a concurrently recreated name). If
-    // even the restore links all fail non-EEXIST, the backup is deliberately LEFT on
-    // disk (it still hard-links the original inode) instead of forcing a rename.
+    // ORIGINAL content back under the original name from the latest backup hard link
+    // (link-only restore — never a rename, which could clobber a concurrently recreated
+    // name). If even the restore links all fail non-EEXIST, the backup is deliberately
+    // LEFT on disk (it still hard-links the original inode) instead of forcing a rename.
     const restoreGaveUp = unlinked ? await restoreFromBackup() : false;
     await unlinkTemp();
-    if (backupLinked && !restoreGaveUp) await unlinkBackup();
-    throw storeError(publishErr);  };
+    if (!restoreGaveUp) await unlinkBackups();
+    throw storeError(publishErr);
+  };
 
   const deleteScratch = async (id: string): Promise<void> => {
     const path = resolveInside(id);

@@ -12,6 +12,7 @@ import { preparationDigest, writePreparedContext } from './prepared-context.js';
 import type { PreparedContextReader, ReadyContextReceipt, PreparedSourceIdentity } from './prepared-context.js';
 
 interface DesignView { submitted: DesignAdmissionAttempt['submitted']; prepared: PreparedDesignSubject; ancestryDigest: string; }
+type OwnedPublication = Parameters<typeof assertDesignSubjectUnchanged>[2];
 function authority(subject: PreparedDesignSubject['subject']): unknown {
  const { availableReferences: _context, ...workflow } = subject.workflow;
  return { ...subject, workflow };
@@ -33,16 +34,25 @@ export class DesignPreparation {
  constructor(private readonly key: ReviewKey, private readonly attempt: number,
   private readonly limits: ReviewPreparationLimits, private readonly capacity: SourceCapacity,
   private readonly submitted?: DesignAdmissionAttempt['submitted'],
-  private readonly prepareSubject:typeof prepareDesignSubject=prepareDesignSubject) {
+  private readonly prepareSubject:typeof prepareDesignSubject=prepareDesignSubject,
+  private readonly ownedPublication?: OwnedPublication) {
   requireDesign(!submitted || submitted.attempt + (submitted.recovery?.operation === 'restart_full' ? 1 : 0) === attempt, 'foreign_checkpoint', 'Design submission attempt mismatch');
   requireDesign(key.family === 'design' && Number.isSafeInteger(attempt) && attempt > 0, 'foreign_checkpoint', 'Design preparation identity required');
  }
- static async reuse(key: ReviewKey, attempt: number, reader: PreparedContextReader, limits: ReviewPreparationLimits, capacity: SourceCapacity): Promise<DesignPreparation> {
+ static async reuse(key: ReviewKey, attempt: number, reader: PreparedContextReader, limits: ReviewPreparationLimits, capacity: SourceCapacity, ownedPublication?:OwnedPublication): Promise<DesignPreparation> {
   requireDesign(same(key, reader.receipt.key) && attempt === reader.receipt.attempt, 'foreign_checkpoint', 'Foreign design context');
-  const result = new DesignPreparation(key, attempt, limits, capacity);
+  const result = new DesignPreparation(key, attempt, limits, capacity, undefined, prepareDesignSubject, ownedPublication);
   result.view = await reader.view('design-subject') as DesignView;
   result.prepare(key.project, result.view.prepared.subject.canonicalPath);
   return result;
+ }
+ /** Cold publication requalifies current authority and ancestry while retaining
+  * the reviewed inventory and baseline verified against permanent publication. */
+ static published(key:ReviewKey,attempt:number,prepared:PreparedDesignSubject,submitted:DesignAdmissionAttempt['submitted'],limits:ReviewPreparationLimits,capacity:SourceCapacity,ownedPublication:OwnedPublication):DesignPreparation {
+  const result=new DesignPreparation(key,attempt,limits,capacity,submitted,prepareDesignSubject,ownedPublication);
+  const current=result.capture(key.project,prepared.subject.canonicalPath);
+  result.view={submitted,prepared:structuredClone(prepared),ancestryDigest:current.ancestryDigest};
+  result.prepare(key.project,prepared.subject.canonicalPath);return result;
  }
  private capture(repo: string, path: string): DesignView {
   requireDesign(!this.failed && repo === this.key.project, 'foreign_checkpoint', 'Design preparation owner unavailable or foreign');
@@ -57,7 +67,7 @@ export class DesignPreparation {
  readonly prepare: typeof prepareDesignSubject = (repo, path) => {
   try {
    const current = this.capture(repo, path); this.check(current);
-   if (this.view) assertDesignSubjectUnchanged(this.view.prepared.subject, this.view.prepared.baseline);
+   if (this.view) assertDesignSubjectUnchanged(this.view.prepared.subject, this.view.prepared.baseline, this.ownedPublication);
    else this.view = current;
    return structuredClone(this.view.prepared);
   } catch (error) { this.failed = true; throw error; }
@@ -65,7 +75,7 @@ export class DesignPreparation {
  /** Called at every existing phase boundary and by the existing monitor. */
  readonly assertSubject: typeof assertDesignSubjectUnchanged = (subject, baseline, owned) => {
   try {
-   assertDesignSubjectUnchanged(subject, baseline, owned);
+   assertDesignSubjectUnchanged(subject, baseline, owned ?? this.ownedPublication);
    const current = this.capture(subject.project, subject.canonicalPath); this.check(current);
    this.view ??= { ...current, prepared: { ...current.prepared, subject: structuredClone(subject), baseline: structuredClone(baseline) } };
    requireDesign(this.view && same(authority(subject), authority(this.view.prepared.subject)), 'artifact_changed', 'Design phase subject changed');

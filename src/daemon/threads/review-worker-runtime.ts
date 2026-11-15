@@ -129,7 +129,13 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
     parentPort!.postMessage(await snapshot());
     const {project,reviewId}=init.review.key;
     if(code){if(!init.review.epicHash)throw new Error('Stored code publication requires its epic scope');return await publishCode(project,reviewId,init.review.epicHash);}
-    await ensureDesign();return await design!.coordinator.recover({phase:'recover',repo:project,reviewId,attempt:init.review.attempt,actionId:p['actionId'],operation:'retry_publication'});
+    await ensureDesign();
+    const result=await design!.coordinator.recover({phase:'recover',repo:project,reviewId,attempt:init.review.attempt,actionId:p['actionId'],operation:'retry_publication'});
+    const saved=await preparation.history.canonical(),last=saved?.attempts.at(-1);
+    // A replayed action can return before calling the publisher. This new
+    // phase still needs its own closed, acknowledged proof for later cleanup.
+    if(last&&'publication'in last&&last.publication?.state==='complete')await preparation.authorizePublication();
+    return result;
     }catch(error){
      if(code)await updateStoredCodeCheckpoint(reviewWorkerCheckpoint(init.review.key),current=>{
       const last=current?.attempts.at(-1);if(!current||!last||isCodeAdmission(last)||last.header.status==='failed')return current!;

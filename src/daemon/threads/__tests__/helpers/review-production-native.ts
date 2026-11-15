@@ -1,5 +1,5 @@
 import { workerData } from 'node:worker_threads';
-import { writeFile,access } from 'node:fs/promises';
+import { writeFile,access,stat,readFile,appendFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { installReviewNativeSpawnGuard } from '../../../../shared/review-native-guard.js';
 import type { LLMProvider,ReviewSessionOpts,StructuredSchema } from '../../../../shared/types.js';
@@ -45,9 +45,19 @@ const provider={capabilities:cli.capabilities,runReviewSession:async(prompt:stri
  }
  const reply=join(repo,`.native-${id}-${++sequence}.json`);await writeFile(reply,JSON.stringify(value));
  const checkpointPath=join(repo,'.insrc/tmp',init.review.key.family==='code'?'code-review':'design-review',`${id}.json`);
+ const unchanged=async<T>(kind:string,work:()=>Promise<T>):Promise<T>=>{
+  const before=await stat(checkpointPath,{bigint:true}),bytes=await readFile(checkpointPath);
+  const result=await work();
+  const after=await stat(checkpointPath,{bigint:true});
+  if(before.ino!==after.ino||before.mtimeNs!==after.mtimeNs||!bytes.equals(await readFile(checkpointPath)))throw Error('Full history mutated during native '+kind);
+  const runtime=await readFile(join(repo,'.insrc/tmp/review-runtime',init.review.key.family,id+'.json'));
+  await appendFile(join(repo,'native-write-proof.jsonl'),JSON.stringify({reviewId:id,kind,fullHistoryWrites:0,runtimeBytes:runtime.length})+'\n');
+  return result;
+ };
+
  let active=0,maxActive=0,maxFrameBytes=0,totalBytes=0,frames=0;
  try{return await withReviewNativeTransport({
-  resolveBinary:c=>transport.resolveBinary(c),reserve:c=>transport.reserve(c),saveOpenIntent:r=>transport.saveOpenIntent(r),waitStarted:r=>transport.waitStarted(r),write:(r,b,e)=>transport.write(r,b,e),cancel:r=>transport.cancel(r),saveClosedIntent:r=>transport.saveClosedIntent(r),
+  resolveBinary:c=>transport.resolveBinary(c),reserve:c=>transport.reserve(c),saveOpenIntent:r=>unchanged('open',()=>transport.saveOpenIntent(r)),waitStarted:r=>transport.waitStarted(r),write:(r,b,e)=>transport.write(r,b,e),cancel:r=>transport.cancel(r),saveClosedIntent:r=>unchanged('close',()=>transport.saveClosedIntent(r)),
   start:(r,receipt,consume)=>transport.start(r,receipt,async output=>{active++;maxActive=Math.max(maxActive,active);maxFrameBytes=Math.max(maxFrameBytes,output.bytes.byteLength);totalBytes+=output.bytes.byteLength;frames++;await new Promise(resolve=>setTimeout(resolve,2));try{await consume(output);}finally{active--;}}),
  },()=>cli.runReviewSession(JSON.stringify({reply,reviewId:id,checkpointPath}),schema,opts));}
  finally{await writeFile(join(repo,`byte-proof-${id}.json`),JSON.stringify({maxActive,maxFrameBytes,totalBytes,frames}));}

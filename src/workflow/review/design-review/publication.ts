@@ -54,6 +54,46 @@ function historyCheckpoint(cp:DesignReviewCheckpoint):DesignReviewCheckpoint {
    observedAt:a.finishedAt??a.startedAt,freshness:'stored'},
  }))};
 }
+/** Validate an existing publication against its exact current owned post-state.
+ * Shared by idempotent publication and preparation handoff; checkpoint receipt
+ * fields alone never authorize a changed artifact head. */
+function publishedPostHead(cp:DesignReviewCheckpoint,attempt:DesignReviewCheckpoint['attempts'][number],prior:ChangeLogEntry,
+ current:Omit<Awaited<ReturnType<ArtifactStore['readWithHistory']>>,'feedback'>,preservation:string):string {
+ const record=validatePermanentDesignReview(prior.outcome?.data,{project:cp.project,artifactId:cp.artifactId});
+ requireDesign(record.preservationDigest===preservation,'publication_conflict','Conflicting publication history');
+ const unchangedHead=prior.targetHeadHash===sha(readDesignFile(cp.project,cp.subject.canonicalPath));
+ if(!unchangedHead){
+  // A lifecycle-only approval/signoff must not force a second review write or
+  // discard its approval. Prove the current approval chain and all original
+  // source/document/workflow bindings instead of accepting arbitrary edits.
+  const rv=current.lifecycle.review,prepared=prepareDesignSubject(cp.project,cp.subject.canonicalPath);
+  const rawHead=readDesignFile(cp.project,cp.subject.canonicalPath);
+  const approvalEntry=[...current.changeLog].reverse().find(e=>e.operation==='approve'&&e.revision?.number===current.lifecycle.revision.number);
+  requireDesign(['approved','in-signoff','signed-off','completed'].includes(current.lifecycle.status)&&
+   current.lifecycle.approval?.revision===current.lifecycle.revision.number&&checkIntegrity(current,current.changeLog).ok&&
+   approvalEntry?.actor.id===current.lifecycle.approval.by.id&&
+   rawHead===JSON.stringify(JSON.parse(rawHead),null,2)+'\n'&&sourceHeadDigest(cp.artifactId,rawHead)===sourceHeadDigest(cp.artifactId,attempt.baseline.reviewedContent.canonical)&&
+   rv?.report?.fragment===prior.id&&rv.report.entityId===cp.artifactId&&rv.report.type==='change-log-entry'&&rv.report.relation==='reviews'&&rv.revision===record.binding.sourceRevision.number&&
+   rv.party===record.reviewer&&rv.reviewer.id===prior.actor.id&&rv.verdict===(attempt.report!.status==='passed'?'pass':'block')&&(['HIGH','MED','LOW'] as const).every(k=>rv.counts[k]===attempt.report!.counts[k])&&
+   current.lifecycle.revision.number===record.binding.sourceRevision.number&&
+   (current.lifecycle.revision.contentHash||contentHash(current.description,current.payload))===record.binding.sourceRevision.contentHash&&
+   authorPartyOf(JSON.parse(readDesignFile(cp.project,cp.subject.canonicalPath)).meta)===record.binding.author&&
+   designWorkflowDigest(prepared.subject.workflow)===record.binding.workflowDigest,
+   'artifact_changed','Published head changed before receipt recovery');
+ }
+ requireDesign(sha(readDesignFile(cp.project,cp.subject.documentPath))===attempt.baseline.subjectFingerprints.document,'artifact_changed','Document changed before receipt recovery');
+ return sha(readDesignFile(cp.project,cp.subject.canonicalPath));
+}
+/** Read-only recovery of the publication's exact allowed canonical delta. */
+export async function publishedDesignSource(input:StoredDesignCheckpoint | DesignPreparationCheckpoint,store:ArtifactStore=createRepoLifecycle(input.project).store):Promise<Pick<DesignPublication,'canonicalBefore'|'canonicalAfter'>|undefined>{
+ const historical=input.schemaVersion===3?preparationSemanticHistory(input):input;
+ const cp=qualifiedDesignProjection(historical);requireDesign(cp,'publication_incomplete','Qualified design history required');
+ const attempt=cp.attempts.at(-1)!,preservation=designPreservationDigest(historical);
+ const id=sha(`design-review-v1\0${cp.project}\0${cp.artifactId}\0${cp.reviewId}\0${attempt.number}\0${preservation}`);
+ const current=await store.readWithHistory(cp.artifactId),prior=current.changeLog.find(e=>e.id===id);
+ if(!prior)return undefined;
+ return{canonicalBefore:attempt.baseline.subjectFingerprints.canonical,canonicalAfter:publishedPostHead(cp,attempt,prior,current,preservation)};
+}
 /** Atomic journalled publication under the artifact store's existing queue; never calls a provider. */
 export async function publishDesignReview(submitted:StoredDesignCheckpoint | DesignPreparationCheckpoint,deps:DesignPublicationDeps={}):Promise<DesignPublication> {
  const decoded = decodePreparationCheckpoint(submitted, { project: submitted.project, family: 'design', reviewId: submitted.reviewId });
@@ -75,30 +115,7 @@ export async function publishDesignReview(submitted:StoredDesignCheckpoint | Des
  await store.updateAndLog(cp.artifactId,actor,current=>{
   const prior=current.changeLog.find(e=>e.id===id);
   if(prior){
-   const record=validatePermanentDesignReview(prior.outcome?.data,{project:cp.project,artifactId:cp.artifactId});
-   requireDesign(record.preservationDigest===preservation,'publication_conflict','Conflicting publication history');
-   const unchangedHead=prior.targetHeadHash===sha(readDesignFile(cp.project,cp.subject.canonicalPath));
-   if(!unchangedHead){
-    // A lifecycle-only approval/signoff must not force a second review write or
-    // discard its approval. Prove the current approval chain and all original
-    // source/document/workflow bindings instead of accepting arbitrary edits.
-    const rv=current.lifecycle.review,prepared=prepareDesignSubject(cp.project,cp.subject.canonicalPath);
-    const rawHead=readDesignFile(cp.project,cp.subject.canonicalPath);
-    const approvalEntry=[...current.changeLog].reverse().find(e=>e.operation==='approve'&&e.revision?.number===current.lifecycle.revision.number);
-    requireDesign(['approved','in-signoff','signed-off','completed'].includes(current.lifecycle.status)&&
-     current.lifecycle.approval?.revision===current.lifecycle.revision.number&&checkIntegrity(current,current.changeLog).ok&&
-     approvalEntry?.actor.id===current.lifecycle.approval.by.id&&
-     rawHead===JSON.stringify(JSON.parse(rawHead),null,2)+'\n'&&sourceHeadDigest(cp.artifactId,rawHead)===sourceHeadDigest(cp.artifactId,attempt.baseline.reviewedContent.canonical)&&
-     rv?.report?.fragment===prior.id&&rv.report.entityId===cp.artifactId&&rv.report.type==='change-log-entry'&&rv.report.relation==='reviews'&&rv.revision===record.binding.sourceRevision.number&&
-     rv.party===record.reviewer&&rv.reviewer.id===prior.actor.id&&rv.verdict===(attempt.report!.status==='passed'?'pass':'block')&&(['HIGH','MED','LOW'] as const).every(k=>rv.counts[k]===attempt.report!.counts[k])&&
-     current.lifecycle.revision.number===record.binding.sourceRevision.number&&
-     (current.lifecycle.revision.contentHash||contentHash(current.description,current.payload))===record.binding.sourceRevision.contentHash&&
-     authorPartyOf(JSON.parse(readDesignFile(cp.project,cp.subject.canonicalPath)).meta)===record.binding.author&&
-     designWorkflowDigest(prepared.subject.workflow)===record.binding.workflowDigest,
-     'artifact_changed','Published head changed before receipt recovery');
-   }
-   requireDesign(sha(readDesignFile(cp.project,cp.subject.documentPath))===attempt.baseline.subjectFingerprints.document,'artifact_changed','Document changed before receipt recovery');
-   acceptedPostHeadHash=sha(readDesignFile(cp.project,cp.subject.canonicalPath));
+   acceptedPostHeadHash=publishedPostHead(cp,attempt,prior,current,preservation);
    published=prior;return undefined;
   }
   assertDesignSubjectUnchanged(cp.subject,attempt.baseline);

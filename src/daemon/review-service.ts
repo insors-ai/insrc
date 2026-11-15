@@ -204,6 +204,7 @@ export class ProductionReviews{
    const path=request.phase==='start'?request.artifactPath:stored?.artifactPath;if(!path)throw new Error('Stored design artifact locator missing');
    const route={artifactPath:path,...(client?{client}:{})};
    const scope=await this.scope(key,ctx,{key,attempt,actionId:'lookup',submitted:request,route});
+   if(request.phase==='recover'&&request.operation==='retry_publication')return this.registry.publishStored({key,attempt,actionId:request.actionId,submitted:request,route},ctx);
    const targetAttempt=request.phase==='recover'&&request.operation==='restart_full'?attempt+1:attempt;
    const ack=await this.registry.admit({key,attempt:targetAttempt,actionId:request.phase==='recover'?request.actionId:`start-${attempt}`,submitted:request,route},ctx);
    await this.registry.execute(ack,ctx);

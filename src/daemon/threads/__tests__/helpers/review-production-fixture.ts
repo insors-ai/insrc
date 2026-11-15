@@ -11,7 +11,7 @@ import { startReviewWorkerBootstrap } from '../../review-worker-bootstrap.js';
 import type { StartedReviewWorker } from '../../review-worker-bootstrap.js';
 import { startWorker } from '../../workers.js';
 import { IpcServer,directDispatch } from '../../../server.js';
-import { startTaskReview,readTaskReviewProgress,exchangeControllerTaskReview,publishStoredTaskReview } from '../../../task-review-rpc.js';
+import { startTaskReview,readTaskReviewProgress,exchangeControllerTaskReview,publishStoredTaskReview,cancelTaskReview } from '../../../task-review-rpc.js';
 import { designReviewOperation } from '../../../design-review-rpc.js';
 import { approvalBroker,createApprovalRpc } from '../../../approval.js';
 import { LocalPeer,workerRpc } from './review-clearance-fixture.js';
@@ -34,6 +34,7 @@ export async function productionFixture(t:TestContext,hang?:'never-ready'|'befor
  const admin=createAdminStatus({snapshot:async()=>services.board.snapshot(),info:async()=>info(),readRepos:async()=>[],readUnattributed:async()=>undefined,firstPublishMs:0});
  const approval=createApprovalRpc(approvalBroker),path=join(code.repo,'production.sock');
  const server=new IpcServer(directDispatch({
+  'taskReview.cancel':cancelTaskReview,'designReview.cancel':(p,c)=>designReviewOperation('cancel',p,c),
   'taskReview.start':startTaskReview,'taskReview.progress':readTaskReviewProgress,'taskReview.publish':publishStoredTaskReview,
   'taskReview.assignment':(p,c)=>exchangeControllerTaskReview(p,c,'assignment'),
   'taskReview.result':(p,c)=>exchangeControllerTaskReview(p,c,'result'),

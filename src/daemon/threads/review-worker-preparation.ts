@@ -179,8 +179,13 @@ export class ReviewWorkerPreparation {
   await this.borrow();
   const cp=await this.history.canonical();
   const submitted=cp?preparationSubmission(cp,this.input.key) as import('../../workflow/review/design-review/contracts.js').DesignAdmissionAttempt['submitted']:submission(this.input);
-  this.design = this.receipt ? await DesignPreparation.reuse(this.input.key, this.input.attempt, await this.reader(), this.bootstrap.limits, this.client)
-   : new DesignPreparation(this.input.key, this.input.attempt, this.bootstrap.limits, this.client, submitted, prepareSubject);
+  const {publishedDesignSource}=await import('../../workflow/review/design-review/publication.js');
+  const owned=this.input.maintenance&&cp&&!('storyId'in cp)?await publishedDesignSource(cp):undefined;
+  const last=cp?.attempts.at(-1);
+  if(this.receipt)this.design=await DesignPreparation.reuse(this.input.key,this.input.attempt,await this.reader(),this.bootstrap.limits,this.client,owned);
+  else if(owned&&cp&&'subject'in cp&&cp.subject&&last&&'baseline'in last){
+   this.design=DesignPreparation.published(this.input.key,this.input.attempt,{subject:cp.subject,baseline:last.baseline,inventory:last.inventory},submitted,this.bootstrap.limits,this.client,owned);
+  }else this.design=new DesignPreparation(this.input.key,this.input.attempt,this.bootstrap.limits,this.client,submitted,prepareSubject);
  }
  readonly prepareDesign: NonNullable<DesignCoordinatorDeps['prepare']> = (...args) => {
   if (!this.design) throw new Error('Design preparation phase not initialized'); return this.design.prepare(...args);

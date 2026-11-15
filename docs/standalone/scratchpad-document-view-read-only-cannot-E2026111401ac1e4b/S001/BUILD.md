@@ -2,13 +2,13 @@
 
 # Build (standalone) — Story s1
 
-**Standalone:** yes  ·  **Created:** 2026-11-15T05:06:15.905Z  ·  **Updated:** 2026-11-15T05:29:07.413Z
+**Standalone:** yes  ·  **Created:** 2026-11-15T05:06:15.905Z  ·  **Updated:** 2026-11-15T05:30:51.036Z
 
-**Commit:** 9f6753341
+**Commit:** f96f6881b
 
 ## Summary
 
-t1 round 4 (checks all satisfied in rounds 2-3; only the scope flag remains). This Story's own commits since the build-start base 60570d87 are exactly 11234b6ee, 296a2fe35, 9f6753341, each carrying Insrc-Story: 01ac1e4b6a6c9c2f/s1 and touching only vscode-plugin/src/chat/scratch-store.ts + its two __tests__ files; the worktree has NO uncommitted changes under vscode-plugin/. Every other dirty path is another Story's committed work on this shared v2 branch (234b9967/s1: src/shared/installation-mutation-gate.ts + its test, in base..HEAD) or pre-existing ledger/doc files (.insrc/**, two foreign CR.md docs, docs/reqs html) — none is this Task's surface. implementation: updateScratch with resolveInside validation, exclusive O_CREAT|O_EXCL|O_NOFOLLOW temp write (occupier untouched), backup hard link before unlink, per-attempt lstat+O_NOFOLLOW open+fstat inode equality re-validation, unlink+link+unlink publish (never rename), bounded EEXIST retry x5, restore-from-backup on publish failure so the destination is never absent/partial. Tests 14/14 pass (incl. publish-failure restore, inode-swap refusal, EEXIST retry), daemon typecheck clean.
+t1 round 5. All 8 acceptance checks satisfied by the judge in the last two rounds; tests 14/14 pass and typecheck clean. Scope: this Story's own units since build base 60570d87 are 11234b6ee, 296a2fe35, 9f6753341 (code, Insrc-Story: 01ac1e4b6a6c9c2f/s1) plus f96f6881b (its own ledger docs, same trailer) — nothing else of ours is uncommitted or untracked. The remaining dirty paths are other Stories' committed work on the shared v2 branch (234b9967/s1's installation-mutation-gate.ts+test in base..HEAD) and pre-existing ledger files (.insrc/artifacts, two foreign CR.md) — none belongs to this Task's surface. updateScratch: resolveInside id validation, exclusive no-follow temp create (occupier untouched), backup hard link before unlink, per-attempt lstat+O_NOFOLLOW-open+fstat inode re-validation, unlink+link+unlink publish (never rename), bounded EEXIST retry, restore-from-backup on publish failure.
 
 ## Tasks validated
 
@@ -18,6 +18,10 @@ t1 round 4 (checks all satisfied in rounds 2-3; only the scope flag remains). Th
 
 ## Changes
 
-- `vscode-plugin/src/chat/__tests__/fake-scratch-fs.ts` — **insrc-build** (2026-11-15T05:29:07.413Z)
-- `vscode-plugin/src/chat/__tests__/scratch-store.test.ts` — **insrc-build** (2026-11-15T05:29:07.413Z)
-- `vscode-plugin/src/chat/scratch-store.ts` — **insrc-build** (2026-11-15T05:29:07.413Z)
+- `vscode-plugin/src/chat/__tests__/fake-scratch-fs.ts` — **insrc-build** (2026-11-15T05:30:51.036Z)
+- `vscode-plugin/src/chat/__tests__/scratch-store.test.ts` — **insrc-build** (2026-11-15T05:30:51.036Z)
+- `vscode-plugin/src/chat/scratch-store.ts` — **insrc-build** (2026-11-15T05:30:51.036Z)
+- `docs/standalone/scratchpad-document-view-read-only-cannot-E2026111401ac1e4b/ISSUE.md` — **insrc-build** (2026-11-15T05:30:51.036Z)
+- `docs/standalone/scratchpad-document-view-read-only-cannot-E2026111401ac1e4b/S001/LLD-SELF-REVIEW.md` — **insrc-build** (2026-11-15T05:30:51.036Z)
+- `docs/standalone/scratchpad-document-view-read-only-cannot-E2026111401ac1e4b/S001/sequence-diagram.html` — **insrc-build** (2026-11-15T05:30:51.036Z)
+- `docs/standalone/scratchpad-document-view-read-only-cannot-E2026111401ac1e4b/S001/ux-mock.html` — **insrc-build** (2026-11-15T05:30:51.036Z)

@@ -45,8 +45,11 @@ export function routeForSizeClass(sizeClass: SizeClass, magnitude?: BugfixMagnit
 			// One story, few tasks, minor: standalone LLD → build (skip plan).
 			return { startStage: 'design.story', standalone: true, needsPlan: false, producesLld: true };
 		case 'trivial':
-			// Mechanical, ~1 file, no design choices: straight to build, no LLD.
-			return { startStage: 'build', standalone: true, needsPlan: false, producesLld: false };
+			// Mechanical, ~1 file, no design choices: no LLD, but an ISSUE first. The
+			// ISSUE (kind 'change') records what was asked and why and heads the work
+			// item, so its Story completes on BUILD approval (Story c5b49ff953a9a295/s1).
+			// No tier starts at build.
+			return { startStage: 'issue', standalone: true, needsPlan: false, producesLld: false };
 		case 'bugfix': {
 			// Defect fix — first stage is always the `issue` record. The magnitude
 			// gates whether design ceremony follows: a `small` fix goes issue→build;

@@ -77,15 +77,20 @@ test('small → standalone design.story, no plan', async () => {
 	assert.match(done.summary, /standalone LLD → build/);
 });
 
-test('trivial → build (no LLD), routed to insrc_build_step standalone', async () => {
+test('triage nextCall: trivial starts the issue workflow with sizeClass trivial, magnitude small and kind change', async () => {
 	const s = await start('Fix a typo in a log message');
 	const done = await classify(s.state, wellFormed('trivial'));
-	assert.equal(done.route.startStage, 'build');
+	assert.equal(done.route.startStage, 'issue');
 	assert.equal(done.route.producesLld, false);
-	assert.equal(done.nextCall.tool, 'insrc_build_step');
-	const sa = done.nextCall.params['standalone'] as Record<string, unknown>;
-	assert.equal(sa['standalone'], true);
-	assert.equal(sa['sizeClass'], 'trivial');
+	assert.equal(done.nextCall.tool, 'insrc_workflow_step');
+	assert.equal((done.nextCall.params as { phase?: string }).phase, 'start');
+	assert.equal((done.nextCall.params as { workflow?: string }).workflow, 'issue');
+	assert.equal((done.nextCall.params as { focus?: string }).focus, 'Fix a typo in a log message');
+	assert.deepEqual(done.nextCall.params['params'], {
+		standalone: true, storyTitle: 'Add a per-repo cache TTL override', storySpec: 'Fix a typo in a log message',
+		sizeClass: 'trivial', magnitude: 'small', kind: 'change', triageRationale: 'sized against the graph',
+	});
+	assert.match(done.summary, /enter at `issue` \(issue → build\)/);
 });
 
 test('epic → define, full chain, no standalone params', async () => {

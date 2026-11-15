@@ -54,7 +54,10 @@ function buildNextCall(result: TriageResult, focus: string, repo: string, specHa
 	// issue body). The magnitude carried here lets the downstream flow decide
 	// whether design ceremony follows (small: issue→build; sized: issue→design→
 	// plan→build). Standalone, like every non-epic entry.
+	// Trivial → the `issue` record too, as a change (kind 'change', magnitude
+	// 'small'): approving it advances to a no-LLD build under the ISSUE's hash.
 	if (route.startStage === 'issue') {
+		const trivial = sizeClass === 'trivial';
 		return {
 			tool: 'insrc_workflow_step',
 			params: {
@@ -65,21 +68,10 @@ function buildNextCall(result: TriageResult, focus: string, repo: string, specHa
 					storyTitle,
 					storySpec: focus,
 					sizeClass,
-					magnitude,
+					magnitude: trivial ? 'small' : magnitude,
+					kind: trivial ? 'change' : 'defect',
 					triageRationale: rationale,
 				},
-			},
-		};
-	}
-	// Trivial → straight to build (no LLD), standalone.
-	if (route.startStage === 'build') {
-		return {
-			tool: 'insrc_build_step',
-			params: {
-				phase: 'implement',
-				repo,
-				target: '(standalone-trivial)',
-				standalone: { standalone: true, sizeClass, focus, triageRationale: rationale },
 			},
 		};
 	}
@@ -108,11 +100,9 @@ function renderSummary(result: TriageResult): string {
 		? 'define → epic → story → plan → build'
 		: route.startStage === 'issue'
 			? (route.needsPlan ? 'issue → design → plan → build' : 'issue → build')
-			: route.startStage === 'build'
-				? 'build (no LLD)'
-				: route.needsPlan
-					? 'standalone LLD → plan → build'
-					: 'standalone LLD → build';
+			: route.needsPlan
+				? 'standalone LLD → plan → build'
+				: 'standalone LLD → build';
 	const label = sizeClass === 'bugfix' && magnitude ? `${sizeClass} (${magnitude})` : sizeClass;
 	return `Triage: **${label}** — enter at \`${route.startStage}\` (${chain}).`;
 }

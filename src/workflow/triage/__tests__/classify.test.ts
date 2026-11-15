@@ -38,12 +38,19 @@ test('routeForSizeClass: small is a standalone LLD, no plan', () => {
 	assert.equal(r.producesLld, true);
 });
 
-test('routeForSizeClass: trivial routes straight to build, no LLD', () => {
+test('routeForSizeClass: trivial routes to the issue stage with no LLD', () => {
 	const r = routeForSizeClass('trivial');
-	assert.equal(r.startStage, 'build');
+	assert.equal(r.startStage, 'issue');
 	assert.equal(r.standalone, true);
 	assert.equal(r.needsPlan, false);
 	assert.equal(r.producesLld, false);
+});
+
+test('routeForSizeClass: no tier starts at build', () => {
+	for (const sc of SIZE_CLASSES) {
+		const routes = sc === 'bugfix' ? [routeForSizeClass(sc, 'small'), routeForSizeClass(sc, 'sized')] : [routeForSizeClass(sc)];
+		for (const r of routes) assert.notEqual(r.startStage, 'build', `${sc} must not start at build`);
+	}
 });
 
 test('routeForSizeClass: every non-epic tier is standalone (the enabling invariant)', () => {

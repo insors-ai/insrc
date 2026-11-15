@@ -566,7 +566,15 @@ export class CliProvider implements LLMProvider {
 	 */
 	async runReviewSession<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T> {
 		assertConnectionProviderAdmission(opts.connectionExecution);
-    if (opts.mode === 'activity') { validateReviewSessionOptions(opts); return this.activityReview<T>(prompt,schema,opts); }
+    if (opts.mode === 'activity') {
+     validateReviewSessionOptions(opts);
+     const lease = await opts.inputOwnership?.acquire(prompt, schema);
+     try {
+      const signal = opts.inputOwnership ? AbortSignal.any([opts.signal, opts.inputOwnership.signal]) : opts.signal;
+      signal.throwIfAborted();
+      return await this.activityReview<T>(prompt, schema, { ...opts, signal });
+     } finally { lease?.release(); }
+    }
     // Preserve the bounded caller's expired-deadline error without starting a process.
     if ((opts.mode === undefined || opts.mode === 'bounded') && Number.isFinite(opts.deadlineMs) && opts.deadlineMs <= 0) throw new ReviewSessionTimeoutError(opts.deadlineMs);
     requireBoundedReview(opts);

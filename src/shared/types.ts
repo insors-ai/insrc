@@ -270,6 +270,11 @@ export interface BoundedReviewSessionOpts {
 }
 
 export interface ActivityReviewSessionOpts {
+  /** Private host-owned input lifetime; never accepted from a wire request. */
+  readonly inputOwnership?: {
+    readonly signal: AbortSignal;
+    acquire(prompt: string, schema: StructuredSchema): Promise<{ release(): void }>;
+  } | undefined;
 	readonly connectionExecution?: import('./step-context.js').ConnectionExecutionContext | undefined;
   readonly mode: 'activity';
   readonly cwd: string;

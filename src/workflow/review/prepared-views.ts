@@ -422,6 +422,9 @@ export class PreparedViewReader {
  private fenced = false;
  private closed = false;
  private pending = 0;
+ private readonly cancellation = new AbortController();
+ get signal(): AbortSignal { return this.cancellation.signal; }
+ private fence(): void { this.fenced = true; this.cancellation.abort(new Error('Staged reader fenced')); }
  private constructor(readonly receipt: ReadyContextReceipt, private readonly manifest: StagedContextManifest,
   readonly memory: ReviewMemoryBudget, private readonly root: string, private readonly stamp: string,
   private readonly manifestLease: MemoryLease, private readonly authorize: () => Promise<void>,
@@ -454,7 +457,7 @@ export class PreparedViewReader {
  private require(ref: PreparedValueReference): void { if (!this.issued.has(ref)) throw new Error('Unissued staged reference'); }
  private async guarded<T>(work: () => Promise<T>): Promise<T> {
   this.pending++;
-  try { await this.active(); return await work(); } catch (error) { this.fenced = true; await this.invalidate(error); throw error; }
+  try { await this.active(); return await work(); } catch (error) { this.fence(); await this.invalidate(error); throw error; }
   finally { this.pending--; }
  }
  private window<T>(value: T, leases: MemoryLease[]): PreparedWindow<T> {
@@ -463,6 +466,12 @@ export class PreparedViewReader {
   const release = () => { if (!released) { released = true; held = undefined; for (const c of leases) c.release(); this.windows.delete(release); } };
   this.windows.add(release);
   return { get value() { if (released) throw new Error('Staged window released'); if (owner.fenced || owner.closed) throw new Error('Staged reader fenced'); return held as T; }, release };
+ }
+ /** Adopt charged derived output into this borrow's cancellation/lifetime.
+  * Caller keeps ownership on refusal and must release its reservations. */
+ retainWindow<T>(value: T, leases: MemoryLease[]): PreparedWindow<T> {
+  if (this.closed || this.fenced) throw new Error('Staged reader fenced');
+  return this.window(value, leases);
  }
  private async bytes(d: string): Promise<PreparedWindow<Buffer>> {
   const size = this.objects.get(d); if (size === undefined) throw new Error('Foreign staged object');
@@ -483,6 +492,9 @@ export class PreparedViewReader {
  }
  async descriptor(id: string, kind?: Kind): Promise<PreparedDescriptor> {
   return this.guarded(async () => { const v = this.manifest.views.find(v => v.id === id && (kind === undefined || v.kind === kind)); if (!v) throw new Error('Unknown staged descriptor'); const r = Object.freeze({ id: v.id, kind: v.kind, digest: v.rootDigest }); this.issued.add(r); return r; });
+ }
+ hasDescriptor(id: string, kind?: Kind): Promise<boolean> {
+  return this.guarded(async () => this.manifest.views.some(v => v.id === id && (kind === undefined || v.kind === kind)));
  }
  async source(queryDigest: string): Promise<PreparedValueReference> {
   return this.guarded(async () => { const object = this.manifest.objects.find(o => o.queryDigest === queryDigest); if (!object) throw new Error('Unknown staged source query'); return this.ref(object.contentDigest); });
@@ -517,7 +529,7 @@ export class PreparedViewReader {
     }
     if (count !== value[1]) throw new Error('Staged child count mismatch');
    } finally { n.release(); }
-  } catch (error) { this.fenced = true; await this.invalidate(error); throw error; }
+  } catch (error) { this.fence(); await this.invalidate(error); throw error; }
   finally { this.pending--; }
  }
  /** Each yielded leaf window remains charged until explicitly released. */
@@ -536,7 +548,7 @@ export class PreparedViewReader {
     }
     if (bytes !== value[1]) throw new Error('Staged leaf length mismatch');
    } finally { n.release(); }
-  } catch (error) { this.fenced = true; await this.invalidate(error); throw error; }
+  } catch (error) { this.fence(); await this.invalidate(error); throw error; }
   finally { this.pending--; }
  }
  async scalar(ref: PreparedValueReference): Promise<PreparedWindow<Scalar>> {
@@ -559,6 +571,7 @@ export class PreparedViewReader {
  }
  /** Cancellation revokes use, not ownership: retained windows remain charged
   * until their actual consumer disposes them. */
- cancel(): void { this.fenced = true; }
+ verify(): Promise<void> { return this.guarded(async () => {}); }
+ cancel(): void { this.fence(); }
  close(): void { if (this.windows.size || this.pending) throw new Error('Staged windows remain borrowed'); if (!this.closed) { this.closed = true; this.manifestLease.release(); this.objects.clear(); } }
 }

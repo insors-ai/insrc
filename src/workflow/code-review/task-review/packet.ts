@@ -249,9 +249,9 @@ export function deriveTaskAssignments<Blob extends BlobIdentity>(prepared: Prepa
 }
 
 /** Model input contains selected reviewed-version text only, never full blobs or prior code. */
-export function selectedCode(change: ReviewChange) {
+export function selectedCode<Blob extends BlobIdentity>(change: ReviewChange<Blob>) {
  const segments: readonly { after?: readonly [number, number] | undefined; deletionAt?: number | undefined }[] = change.segments;
- const text = change.after && segments.some(segment => segment.after) ? utf8(change.after) : '';
+ const text = change.after && segments.some(segment => segment.after) ? utf8(rawBlob(change.after)) : '';
  const lines = text.split('\n');
  const provenance = 'origin' in change ? { origin: { commit: change.origin.commit, parent: change.origin.parent, path: change.origin.path, previousPath: change.origin.previousPath, segments: change.origin.segments }, findingScope: change.findingScope } : { parent: change.parent, previousPath: change.previousPath, limitations: change.limitations };
  return { commit: change.commit, path: change.path, ...provenance,

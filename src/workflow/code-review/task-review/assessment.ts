@@ -6,11 +6,12 @@ import { decodeReview, requireReview, reviewPath, TaskResultSchema } from './con
 import type { TaskReviewResult, TaskResultOrigin } from './contracts.js';
 import { deriveTaskAssignments, originalChange } from './packet.js';
 import type { PreparedReviewPacket, TaskAssignment } from './packet.js';
-import type { ReviewSources } from './sources.js';
+import type { BlobIdentity, ReviewSources } from './sources.js';
 import type { AdmittedReview } from './execution.js';
 import { normalizeTaskResult } from './results.js';
 import { requireReuseIdentity, reuseRefusal, throwReuseRefusals } from './attribution-binding.js';
 import type { ReuseRefusal } from './attribution-binding.js';
+type AssessmentSources<Blob extends BlobIdentity> = ReviewSources<Blob> & { releaseResult?: (value: unknown) => void };
 
 export const AttributionSchema = Type.Object({ tasks: Type.Array(Type.Object({ taskId: Type.String(), changeIndexes: Type.Array(Type.Integer({ minimum: 0 })), testIndexes: Type.Array(Type.Integer({ minimum: 0 })) }, { additionalProperties: false })) }, { additionalProperties: false });
 function applicableTaskIds(prepared:PreparedReviewPacket):string[]{
@@ -46,20 +47,27 @@ export function directAssignments(prepared:PreparedReviewPacket):readonly TaskAs
  if(selected.length!==1)return undefined;
  return deriveTaskAssignments(prepared,[{taskId:selected[0]!.id,changeIndexes:prepared.changes.map((_c,i)=>i),testIndexes:prepared.packet.tests.map((_t,i)=>i)}]);
 }
-export async function taskReferences(sources:ReviewSources,prepared:PreparedReviewPacket,assignment:TaskAssignment):Promise<string[]> {
+export async function taskReferences<Blob extends BlobIdentity>(sources:AssessmentSources<Blob>,prepared:PreparedReviewPacket<Blob>,assignment:TaskAssignment<Blob>):Promise<string[]> {
  const refs=Object.values(prepared.packet.documents).map(doc=>`${doc.commit}:${doc.path}`);
  for(const change of assignment.changes){const origin=originalChange(change);if(origin.before&&origin.parent)refs.push(`${origin.parent}:${origin.previousPath}`);if(origin.after)refs.push(`${origin.commit}:${origin.path}`);if(change.after)refs.push(`${change.commit}:${change.path}`);}
- if(prepared.packet.reviewRevision)for(const test of assignment.tests)if(await sources.file(prepared.packet.reviewRevision,test.file))refs.push(`${prepared.packet.reviewRevision}:${test.file}`);
- for(const pointer of prepared.packet.reviewSet)for(const test of assignment.tests)if(await sources.file(pointer.commit,test.file))refs.push(`${pointer.commit}:${test.file}`);
+ const resolve = async (revision: string, file: string) => {
+  const blob = await sources.file(revision, file);
+  try { if (blob) refs.push(`${revision}:${file}`); } finally { sources.releaseResult?.(blob); }
+ };
+ if(prepared.packet.reviewRevision)for(const test of assignment.tests)await resolve(prepared.packet.reviewRevision,test.file);
+ for(const pointer of prepared.packet.reviewSet)for(const test of assignment.tests)await resolve(pointer.commit,test.file);
  return [...new Set(refs)];
 }
 /** Both actual reviewer parties use precisely the same source resolution and status policy. */
-export async function assessTaskResult(sources:ReviewSources,assignment:TaskAssignment,input:unknown,resolved:readonly string[]):Promise<TaskReviewResult> {
+export async function assessTaskResult<Blob extends BlobIdentity>(sources:AssessmentSources<Blob>,assignment:TaskAssignment<Blob>,input:unknown,resolved:readonly string[]):Promise<TaskReviewResult> {
  const result=decodeReview(TaskResultSchema,input),refs=[...resolved];
  for(const reference of [...result.inspectedReferences,...result.findings.flatMap(f=>f.evidenceReferences),...result.testCoverage.evidenceReferences,...result.executedTests.flatMap(t=>t.evidenceReferences)]){
   if(refs.includes(reference))continue;
   const match=/^([a-f0-9]{40}|[a-f0-9]{64}):(.+)$/.exec(reference);requireReview(match,'evidence','Expected a committed evidence reference');reviewPath(match[2]!);
-  await sources.commit(match[1]!);requireReview(await sources.file(match[1]!,match[2]!),'evidence','Unresolved committed evidence reference');refs.push(reference);
+  const parents = await sources.commit(match[1]!); sources.releaseResult?.(parents);
+  const blob = await sources.file(match[1]!,match[2]!);
+  try { requireReview(blob,'evidence','Unresolved committed evidence reference'); refs.push(reference); }
+  finally { sources.releaseResult?.(blob); }
  }
  return normalizeTaskResult(result,{taskId:assignment.taskId,changes:assignment.changes,evidenceReferences:refs});
 }

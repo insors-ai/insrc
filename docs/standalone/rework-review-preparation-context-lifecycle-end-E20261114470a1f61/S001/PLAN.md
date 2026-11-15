@@ -5,10 +5,10 @@
 ## Summary
 
 **Epic:** `rework-review-preparation-context-lifecycle-end`
-**LLD run:** `wf-1794655838217-bnsgsk`
-**LLD effective hash:** `f2e6e79848fc...`
+**LLD run:** `wf-1794738660757-dh2adn`
+**LLD effective hash:** `c990be2b3102...`
 
-Fourteen dependency-ordered tasks implement the approved holistic preparation correction for both review families. Focused validation accompanies each task; full production-route fault, scope and performance qualification follows integration. Existing judges, source scope and human approval remain; the stopped prior review is not resumed and daemon deployment stays after BUILD approval. Foundation adapters are validated before production wiring; t12/t13 explicitly verify the coordinated production cutover. Build staging: t7/t8 deliver complete family adapters and focused integration fixtures; t9 supplies the private host ownership/capacity/runtime/context bridge. Production activation of every reader/writer remains one mandatory t12 cutover, with actual public-route qualification in t13. Intermediate adapter completion is not activation or final signoff.
+The plan preserves completed T1–T13 and adds six dependency-ordered corrective tasks from approved LLD revision4. T15–T18 bound prepared storage, construction and every lifecycle consumer; T19 measures and corrects admission latency; T20 qualifies the complete production cutover. Retained T14 runs last with its original full-workload performance and package gates. Existing caps, exact scope/history, independent code review and human BUILD approval remain; no intermediate deployment or original-review resume is authorized.
 
 ## Contents
 
@@ -26,14 +26,20 @@ Fourteen dependency-ordered tasks implement the approved holistic preparation co
 | 4 | **`t4`** Implement reserved disk-backed source sessions | L | approved r1 | `t2` | integration: Proposed source-session tests: batching/framing/hash equivalence, per-packet budgets, above-memory disk retention, aggregate reservation exhaustion and zero duplicate queries. | [[c4]] |
 | 5 | **`t5`** Implement stable qualified source contexts and private borrows | L | approved r1 | `t3`, `t4` | integration: Proposed context acquisition tests: private worker receipts/borrows, ready ordering, warm cross-worker handoff, tamper/restart invalidation and eviction restrictions. | [[c2]] [[c4]] |
 | 6 | **`t6`** Implement successor history validation and result commits | M | approved r1 | `t5` | integration: Proposed history binding tests: successive task/chunk feedback and new evidence, old-history tamper, checkpoint/runtime crash reconciliation and no source/model rerun. | [[c2]] [[c3]] |
-| 7 | **`t7`** Integrate code review preparation across routes | L | approved r1 | `t6` | integration: Extend route-admission/projection-lineage/final-scope tests: all workflow story/task routes, merge/rename/delete witnesses, aliases and exact selected after blocks. | [[c5]] |
-| 8 | **`t8`** Integrate design review latest-subject preparation | L | approved r1 | `t6` | integration: Extend design subject-monitor/recovery tests: latest DEF/HLD/LLD routes, impact/chunk reuse, target invalidation/user restart and unrelated edit stability. | [[c5]] |
-| 9 | **`t9`** Add exact cancellation and preparation progress surfaces | L | approved r1 | `t7`, `t8` | integration: Extend worker isolation/progress/recovery and MCP wire fixtures: cancel exact review during preparation/tool/model/publication races, owner rejection, resource fence and nullable genuine counters.; integration: Private preparation bridge tests: exact worker/review ownership, aggregate project capacity, split/combine allocation retention, context/runtime receipts, worker reclamation and cleanup-only release. | [[c6]] |
+| 7 | **`t7`** Integrate code review preparation across routes | L | draft r2 | `t6` | integration: Extend route-admission/projection-lineage/final-scope tests: all workflow story/task routes, merge/rename/delete witnesses, aliases and exact selected after blocks. | [[c5]] |
+| 8 | **`t8`** Integrate design review latest-subject preparation | L | draft r2 | `t6` | integration: Extend design subject-monitor/recovery tests: latest DEF/HLD/LLD routes, impact/chunk reuse, target invalidation/user restart and unrelated edit stability. | [[c5]] |
+| 9 | **`t9`** Add exact cancellation and preparation progress surfaces | L | draft r2 | `t7`, `t8` | integration: Extend worker isolation/progress/recovery and MCP wire fixtures: cancel exact review during preparation/tool/model/publication races, owner rejection, resource fence and nullable genuine counters.; integration: Private preparation bridge tests: exact worker/review ownership, aggregate project capacity, split/combine allocation retention, context/runtime receipts, worker reclamation and cleanup-only release. | [[c6]] |
 | 10 | **`t10`** Integrate publication and approval with new proof | L | approved r1 | `t7`, `t8` | integration: Extend both-family publication/approval tests: complete new CR capabilities, warm zero reconstruction, publication-only retry zero model calls and current-author/BUILD freshness. | [[c7]] |
 | 11 | **`t11`** Implement resumable cleanup claims for both families | L | approved r1 | `t9`, `t10` | integration: Extend both-family cleanup tests: fault every claim/rename/unlink/fsync boundary; cleanup retry after runtime/checkpoint removal, approval/file mismatch and arbitrary missing-runtime refusal. | [[c7]] |
-| 12 | **`t12`** Implement explicit inactive-record migration and coordinated cutover | M | draft r2 | `t11` | integration: Proposed migration/cutover tests: inactive v1/v2 byte-preserving upgrade, legacy guards, interrupted migration, unknown capabilities and unsupported old-reader downgrade. | [[c8]] |
-| 13 | **`t13`** Qualify failure, concurrency and scope equivalence | L | draft r2 | `t12` | integration: Full disposable production two-session matrix through public routes and both families, all crash/tamper/native-loss cases, complete scope equivalence and bounded runtime writes. | [[c1]] [[c3]] [[c5]] [[c6]] [[c7]] [[c8]] |
-| 14 | **`t14`** Qualify performance, packaging and deployment handoff | L | approved r1 | `t13` | integration: Managed cold x3/warm/history-growth performance gates on supported Node/native package, npm build plus source-free package smoke; no deployed daemon mutation. | [[c1]] [[c8]] |
+| 12 | **`t12`** Implement explicit inactive-record migration and coordinated cutover | M | draft r3 | `t11` | integration: Proposed migration/cutover tests: inactive v1/v2 byte-preserving upgrade, legacy guards, interrupted migration, unknown capabilities and unsupported old-reader downgrade. | [[c8]] |
+| 13 | **`t13`** Qualify failure, concurrency and scope equivalence | L | draft r3 | `t12` | integration: Full disposable production two-session matrix through public routes and both families, all crash/tamper/native-loss cases, complete scope equivalence and bounded runtime writes. | [[c1]] [[c3]] [[c5]] [[c6]] [[c7]] [[c8]] |
+| 14 | **`t15`** Stage typed packet descriptors with bounded memory ownership | L | — | `t13` | unit: Typed staged descriptor/leaf codec and shared memory accounting: byte/Unicode/null/order round-trip, shard/version/tamper rejection, reserve-before-allocation and exact window release.; integration: Staged view capacity ownership: aggregate disk reservations, partial sealing, borrowed-window cancellation and two-session memory/disk pressure retain complete evidence. | [[c9]] [[c2]] [[c4]] |
+| 15 | **`t16`** Bound packet projection and history qualification construction | L | — | `t15` | unit: Incremental packet/projection/history equivalence: exact selected after spans, all lineage/replacement/merge/deletion witnesses, tests/documents/origins and identity folds match the existing oracle.; integration: Single oversized packet and1/4/max history construct staged views under combined memory bound with zero physical duplicate source queries and no aggregate binary JSON materialization. | [[c9]] [[c1]] [[c5]] |
+| 16 | **`t17`** Use bounded views in execution and mandatory coverage assessment | L | — | `t16` | integration: Bounded execution and mandatory coverage traversal for code/design task/story routes: no skipped modules, prompt/provider transport copies charged, borrow invalidation/cancellation and no premature provider dispatch. | [[c9]] [[c5]] [[c6]] |
+| 17 | **`t18`** Use staged views across recovery publication and cleanup | L | — | `t16`, `t17` | integration: Bounded warm/cold recovery publication and cleanup: full feedback round-trip, zero warm source/model calls, old derived version rejection, history/native/cleanup crash and authority invariants. | [[c9]] [[c2]] [[c7]] [[c8]] |
+| 18 | **`t19`** Trace and correct measured admission latency | M | — | `t18` | integration: Measured admission segment attribution and durable-ack two-session race matrix: controlled admit/cancel<=2s, progress gap<=2s, complete owner/guard/binding checks and no duplicate dispatch. | [[c10]] [[c3]] [[c6]] |
+| 19 | **`t20`** Qualify the complete staged-view production cutover | L | — | `t18`, `t19` | integration: Actual production staged-view cutover matrix for both families and all workflow routes: combined memory high-water, complete scope/history equality, zero duplicate queries/full-history hot writes, cancellation/tamper/crash fences and task-order preservation.; integration: Source-free compiled package code/design daemon/controller smoke plus backend build after bounded-view cutover; retained full T14 workload remains an independent final gate. | [[c9]] [[c10]] [[c1]] [[c7]] [[c8]] |
+| 20 | **`t14`** Qualify performance, packaging and deployment handoff | L | approved r1 | `t13`, `t20` | integration: Managed cold x3/warm/history-growth performance gates on supported Node/native package, npm build plus source-free package smoke; no deployed daemon mutation. | [[c1]] [[c8]] |
 
 ### 1.1 TASK-470a1f61b26b12c6-s1-t1 — Retain workload fixture and establish managed baseline
 
@@ -147,7 +153,69 @@ Run both-family production fixtures covering all route matrices, source equivale
 - Through actual registered production review routes, prove native resource and progress writes perform zero full-history mutations for both code and design reviews.
 - Repeat all t7/t8 route, alias, merge/rename/delete witness, exact-selected-span and latest-subject invariants through actual production defaults for both families.
 
-### 1.14 TASK-470a1f61b26b12c6-s1-t14 — Qualify performance, packaging and deployment handoff
+### 1.14 TASK-470a1f61b26b12c6-s1-t15 — Stage typed packet descriptors with bounded memory ownership
+
+Extend the existing prepared-context codec/store with proposed typed packet/task/file descriptor indexes, bounded leaf/window access and explicit release; unify live-memory charging with source staging and host disk reservations. Add derived encoding version checks without changing pinned history or CRs.
+
+**Acceptance checks:**
+- Document and implement descriptor lookup, bounded window acquisition/release and cancellation ownership in existing review-context modules; no new DB or eager compatibility path.
+- Reserve before allocation for shared binary buffers, UTF-16 strings, metadata/index shards and encoder/decoder scratch; release only after final owner. Staged immutable leaves retain complete content/digests and aggregate disk reservation.
+- Round-trip byte arrays, Unicode, null/undefined and ordered descriptor references; reject unknown/old derived encodings and foreign/tampered objects before use. Partial generation never grants readiness; unchanged64MiB memory/256MiBcache/4MiBbatch defaults.
+- Run and record this task's focused validation before advancing; no intermediate adapter completion authorizes deployment or resumes the stopped review.
+
+### 1.15 TASK-470a1f61b26b12c6-s1-t16 — Bound packet projection and history qualification construction
+
+Convert existing packet/projection/history preparation to stage each validation window and retain bounded descriptor/lineage indexes instead of whole prepared packets and historical inventories.
+
+**Acceptance checks:**
+- Cold/current/historical construction keeps exact selected spans, rename/delete/replacement/merge witnesses, commit provenance, tests/documents and complete feedback/origin validation; logical per-packet projection limits still apply on source-cache hits.
+- No JSON.stringify of binary packet payloads for size/digest, aggregate packets/inputs array or full-history clone. Fold ordered descriptor identities with explicit version/domain; release one window before opening next without duplicate physical source acquisition.
+- Single-packet and repeated-history content beyond decoded memory budget but within reserved disk completes semantic qualification with combined charged memory<=configured cap; genuine unbounded atomic unit fails before allocation with exact stage/size/bound.
+- Run and record this task's focused validation before advancing; no intermediate adapter completion authorizes deployment or resumes the stopped review.
+
+### 1.16 TASK-470a1f61b26b12c6-s1-t17 — Use bounded views in execution and mandatory coverage assessment
+
+Convert code/design assessment adapters, selected-code extraction, prompt assembly and test-coverage readers to bounded task/file windows under current private generation borrows.
+
+**Acceptance checks:**
+- Complete submitted review scope and mandatory test-coverage assessment remain identical for task/whole-story routes; no module omitted because of size. Test execution remains optional, scope and coverage do not.
+- Final prompt assembly, serialization and provider transport copies are included in memory reservations/high-water instrumentation; do not hide whole-task/whole-packet hydration behind a lazy accessor.
+- Borrow/release/cancel rules hold through provider/native consumption; no source/provider use from unqualified or revoked descriptors. Keep existing model capability and CLI provider path; design prompts use current paths, not copied artifacts.
+- Run and record this task's focused validation before advancing; no intermediate adapter completion authorizes deployment or resumes the stopped review.
+
+### 1.17 TASK-470a1f61b26b12c6-s1-t18 — Use staged views across recovery publication and cleanup
+
+Convert warm/cold phase handoff, history binding/evidence, publication and approval cleanup to the same bounded descriptor traversal; remove aggregate reader.view inventory loading.
+
+**Acceptance checks:**
+- Matching authorized warm handoff/publication/cleanup reconstructs zero sources and invokes zero models; cold restart discards authority and fully qualifies required scope/history once with bounded windows.
+- All pinned submitted values, feedback/actions/failures and origin witnesses survive exact publication/permanent round-trip; old derived encoding cannot become authority or trigger unsafe cache deletion.
+- Preserve result-before-progress ordering, native open/disposal fences and durable cleanup-only claim; canceled active windows and partial stage/seal/promotion/reopen/cleanup failures retain exact evidence/reservations and allow only explicit safe recovery.
+- Run and record this task's focused validation before advancing; no intermediate adapter completion authorizes deployment or resumes the stopped review.
+
+### 1.18 TASK-470a1f61b26b12c6-s1-t19 — Trace and correct measured admission latency
+
+Instrument public admission request, registration, stored guard/scope checks, worker startup, checkpoint/runtime binding, activation and acknowledgement; correct only the measured slow path while preserving durable acknowledgement.
+
+**Acceptance checks:**
+- Record cold/warm monotonic segment timings and causal attribution for the observed2831ms baseline; no assumed Git/model bottleneck.
+- Source/projection/history qualification stays in dedicated registered background workers; any moved expensive pre-ack derivation retains equivalent current owner/author/route/guard validation and bounded DTOs.
+- Acknowledgement follows proven durable input/runtime activation; no provisional success, skipped checks, duplicate dispatch or detached work. Controlled two-review admit/cancel<=2s and progress-gap<=2s with failure/cancel races verified.
+- Run and record this task's focused validation before advancing; no intermediate adapter completion authorizes deployment or resumes the stopped review.
+
+### 1.19 TASK-470a1f61b26b12c6-s1-t20 — Qualify the complete staged-view production cutover
+
+Wire the revised writer and every lifecycle consumer together in the actual production defaults, then run focused bounded-view correctness/capacity/crash and source-free package regressions before retained T14 timing qualification.
+
+**Acceptance checks:**
+- Both families and all epic/standalone/issue/task/story/document routes use the new store; no eager packet Map or aggregate whole-view reader remains reachable through production preparation/execution/publication/recovery/cleanup.
+- Instrumented actual-source managed fixture proves combined memory reservation bound, zero repeated physical queries, unchanged projection/history/permanent results, runtime<=256KiB and zero full-checkpoint writes/native command.
+- Two-session memory/disk contention, borrowed-window cancellation, tampered shards/leaves, version rejection and crash windows retain existing native/cleanup authority; full scope cannot be replaced by small synthetic tests.
+- npm build and source-free package smoke pass with code/design daemon/controller paths. These regressions do not substitute for T14's full coldx3/warm/history-growth/concurrent performance gates.
+- Run and record this task's focused validation before advancing; no intermediate adapter completion authorizes deployment or resumes the stopped review.
+- Verify persisted plan/build scheduling follows explicit order/dependencies: next runnable corrective task t15 and final qualification t14 only after t20; preserve exact t1-t13 definitions/test mappings and passed BUILD/TESTS entries.
+
+### 1.20 TASK-470a1f61b26b12c6-s1-t14 — Qualify performance, packaging and deployment handoff
 
 Measure full managed cold/warm/history-growth workloads, build shipped package and document coordinated restart plus explicitly authorized post-deployment smoke.
 
@@ -194,6 +262,12 @@ Measure full managed cold/warm/history-growth workloads, build shipped package a
 | Update/restart only after the normal approval/publish sequence and coordination with other active reviews; reconnect MCP and validate advertised formats/cancel schema. | `t14` |
 | Small code and design review demonstrate incremental preparation progress, targeted cancellation and explicit recovery with complete CR history. | `t14` |
 | Only then explicitly resolve the original retained fence and ask to retrigger the stopped worker-isolation review with an appropriate immutable attempt; do not reuse a canceled execution implicitly. | `t14` |
+| Single-packet payload and four-attempt history larger than decoded memory budget but within reserved disk qualify with exact original scope/provenance/tests/feedback and zero repeated physical reads; both cold and warm publication/recovery consume bounded windows. | `t15`, `t16`, `t18`, `t20`, `t14` |
+| Instrument reserve-before-allocation and ownership high-water across source acquisition, projection/witness validation, packet descriptor staging, seal, reader, prompt/test-coverage traversal and publication; binary/text/metadata/transient copies included. No full-packet JSON stringify or whole-history view/clone reachable in production. | `t15`, `t16`, `t17`, `t18`, `t20` |
+| Versioned descriptor/index round-trip for Unicode, byte arrays, null/undefined, ordered scope, rename/deletion/replacement/merge/binary; missing/sharded/tampered digest or borrow revocation fails before use. Old derived encoding triggers explicit cold requalification, never old decoder acceptance. | `t15`, `t16`, `t18`, `t20` |
+| Memory and aggregate disk pressure with two sessions, cancellation while window borrowed, interrupted stage/seal/promote/reopen/cleanup retain correct leases and reservations; no pinned eviction or duplicate evidence. | `t15`, `t18`, `t20` |
+| Monotonic admission segment traces distinguish request/guard/scope/startup/binding/activation; durable input/runtime acknowledgement, failure/cancel races and independent sessions retain exact authority while meeting<=2s on controlled host. | `t19`, `t20`, `t14` |
+| Re-run complete retained171-file/four-attempt coldx3/warm/history1,4,max gates with existing bounds and no hosted models; report charged-memory high-water, stagedbytes, heap/external/RSS, all stage durations and writer/query counters. A failed run blocks release; do not replace scope or raise limits. | `t14`, `t20` |
 
 ## 3. References
 
@@ -205,3 +279,5 @@ Measure full managed cold/warm/history-growth workloads, build shipped package a
 - **[[c6]]** `prior-artifact` `LLD s1 cancellation and preparation progress (2.4,3.7)`
 - **[[c7]]** `prior-artifact` `LLD s1 publication, approval and cleanup claim (2.8-2.11,3.8)`
 - **[[c8]]** `prior-artifact` `LLD s1 migration, preserved workload and controlled release gates (3.9,7)`
+- **[[c9]]** `prior-artifact` `LLD s1 bounded prepared packet views and working-set ownership (revision4,3.11; testStrategy added integration subjects)`
+- **[[c10]]** `prior-artifact` `LLD s1 measured admission latency and durable acknowledgement (revision4,3.12;6;7)`

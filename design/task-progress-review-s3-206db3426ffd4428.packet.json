@@ -4,7 +4,7 @@
  "functionalSummary": "Whole-story independent code review for Story s3 of epic 206db3426ffd4428 (show long-running task progress in chat, issue #177): review-originated task progress. t1 adds a read-only ReviewWorkers.progressOf accessor; t2 defines sc5 design/code review details, validators and pure mappings; t3 implements the DesignReviewDelegate/CodeReviewDelegate with never-throw progress, heartbeat handling and unverified-incarnation holds; t4 composes one AllTaskDetails progress runtime and registers the review producers; t5 binds observed review attempts to coordinator tasks at admission through the launchReview seam (option b), consume-only, never slowing admission; t6 signals accepted review publications through the producer port and records terminal owner evidence (completed/failed/interrupted, never the review verdict) at sequence+1 in one swallowed fire-and-forget step; t7 verifies non-interference (unobserved reviews keep the pre-s3 projection) and records the t5 pre-check outcome in the LLD. All 19 commits are exact origins bearing the Insrc-Story trailer; reviewRevision pins the final source at HEAD 88f2014e5. Documents: epic-route story+lld+plan artifacts of this epic/story. Tests: the daemon gate ran each task's named tests (TESTS-206db3426ffd4428-s3); locally the signal suite is 6/6 and all task-progress/threads suites pass; tsc --noEmit clean.",
  "documents": {
   "story": {
-   "path": ".insrc/artifacts/STORY-206db3426ffd4428-s3.json",
+   "path": ".insrc/artifacts/DEF-206db3426ffd4428.json",
    "commit": "88f2014e50ffdee7ec9325aa0b56e662108db8e5"
   },
   "lld": {

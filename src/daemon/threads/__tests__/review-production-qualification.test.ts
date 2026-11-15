@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { isDeepStrictEqual } from 'node:util';
+import { createHash } from 'node:crypto';
 import { readFile, writeFile, rename, rm, mkdir, chmod, access } from 'node:fs/promises';
 import { join } from 'node:path';
 import { productionRoutes } from './helpers/review-production-routes.js';
@@ -17,6 +18,10 @@ import { nextLifecycle } from '../../../workflow/artifact-core/lifecycle.js';
 import { prepareDesignSubject } from '../../../workflow/review/design-review/subject.js';
 import { productionFixture } from './helpers/review-production-fixture.js';
 import { designFixture } from '../../../workflow/review/design-review/__tests__/fixtures.js';
+import { reviewWorkerCheckpoint } from '../review-worker-contract.js';
+import { reviewRuntimePath } from '../review-runtime-store.js';
+import { decodeStoredCheckpoint } from '../../../workflow/code-review/task-review/admission-checkpoint.js';
+import { decodeStoredDesignCheckpoint } from '../../../workflow/review/design-review/admission-checkpoint.js';
 
 async function packets(path: string) {
  const cp = JSON.parse(await readFile(path, 'utf8')), key = { project: cp.project, family: 'code' as const, reviewId: cp.reviewId };
@@ -279,4 +284,48 @@ test('cold production design publication requalifies original evidence and rejec
  await assert.rejects(caller.call('designReview.recover', { ...request, actionId: 'reject-author-edit', operation: 'retry_publication' }), /[Cc]hanged|restart/);
  await assert.rejects(access(marker), { code: 'ENOENT' });
  await cold.host.shutdown();
+});
+
+for (const family of ['code', 'design'] as const) for (const version of [1, 2] as const) for (const boundary of ['before-migration', 'after-migration'] as const)
+test(`production ${family} v${version} migration survives ${boundary} worker loss and only explicit resubmission activates`, async t => {
+ const f = await productionFixture(t, undefined, { migrationCrash: boundary }), peer = await f.peer();
+ const reviewId = `migration-${family}-v${version}-${boundary}`, method = family === 'code' ? 'taskReview' : 'designReview';
+ const initial = family === 'code' ? f.codeRequest(reviewId) : f.designRequest(reviewId), request = { ...initial, attempt: 2 };
+ const key = { project: initial.repo, family, reviewId }, path = reviewWorkerCheckpoint(key);
+ const historical: any = family === 'code' ? f.code.checkpoint(reviewId) : { ...structuredClone(f.design.checkpoint), reviewId };
+ const a = historical.attempts[0], at = '2026-11-15T00:00:00.000Z'; historical.schemaVersion = version;
+ if (family === 'code') {
+  a.header.status = 'failed'; a.header.completedAt = at; a['review-response'].tasks = []; a['review-response'].error = 'Historical technical failure';
+ } else {
+  a.status = 'failed'; a.finishedAt = at; a.failure = { code: 'process_failed', summary: 'Historical technical failure' };
+  a.progress = { ...a.progress, status: 'failed', phase: 'complete', requiresUserInput: true, checkpointPath: path };
+ }
+ if (version === 2) a.resourceGuard = { daemonInstance: 'historical-closed-owner', openLeases: [] };
+ (family === 'code' ? decodeStoredCheckpoint : decodeStoredDesignCheckpoint)(historical);
+ await mkdir(join(path, '..'), { recursive: true }); const original = JSON.stringify(historical); await writeFile(path, original);
+ await assert.rejects(peer.call(`${method}.start`, request), /bootstrap_failed/);
+ await until(() => f.createdWorkers.get(reviewId)!.threadId === -1);
+ const stopped = JSON.parse(await readFile(reviewRuntimePath(key), 'utf8')), interrupted = JSON.parse(await readFile(path, 'utf8'));
+ assert.equal(stopped.state, 'initializing'); assert.equal(stopped.sequence, 0); assert.deepEqual(stopped.resourceGuard.openLeases, []);
+ assert.equal(interrupted.attempts.length, 1, 'worker loss cannot invent an admission or feedback');
+ if (boundary === 'before-migration') assert.equal(await readFile(path, 'utf8'), original);
+ else {
+  assert.equal(interrupted.schemaVersion, 3); assert.equal(interrupted.migration.sourceVersion, version);
+  assert.equal(interrupted.runtime.runtimeId, stopped.runtimeId);
+ }
+ assert.equal(f.started.has(reviewId), false, 'a failed migration bootstrap never becomes executable');
+ // A fresh observation is read-only. It cannot resume the worker or replace
+ // the exact sequence-zero operational proof left by the crash.
+ const retained = await readFile(path, 'utf8'); await peer.call(`${method}.progress`, { ...request, attempt: 1 });
+ assert.equal(await readFile(path, 'utf8'), retained); assert.equal(f.started.has(reviewId), false);
+ await peer.call(`${method}.start`, request); await f.release(reviewId);
+ await until(async () => { const p = await peer.call(`${method}.progress`, request); if (p.status === 'failed') throw Error(JSON.stringify(p)); return family === 'code' ? p.crPublication === 'complete' : p.publication?.state === 'complete'; });
+ const done = JSON.parse(await readFile(path, 'utf8')), runtime = JSON.parse(await readFile(reviewRuntimePath(key), 'utf8'));
+ assert.equal(runtime.runtimeId, stopped.runtimeId); assert.notEqual(runtime.workerIncarnation, stopped.workerIncarnation); assert.equal(runtime.state, 'terminal');
+ assert.equal(done.schemaVersion, 3); assert.equal(done.attempts.length, 2); assert.equal(done.migration.sourceVersion, version);
+ assert.equal(done.migration.sourceDigest, createHash('sha256').update(original).digest('hex'));
+ const { resourceGuard: _guard, ...prior } = historical.attempts[0]; assert.deepEqual(done.attempts[0], prior);
+ assert.deepEqual(done.migration.guards, version === 2 ? [{ attempt: 1, guard: a.resourceGuard }] : []);
+ if (family === 'code') assert.deepEqual(done.attempts[1].submitted, f.code.packet);
+ else assert.deepEqual(done.attempts[1].submitted, { artifactPath: f.design.json, attempt: 2 });
 });

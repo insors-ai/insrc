@@ -18,7 +18,7 @@ import { LocalPeer,workerRpc } from './review-clearance-fixture.js';
 
 /** Real production host, concrete permission policy and public socket routes.
  * Only coordinator providers/admission barriers are deterministic fixtures. */
-export async function productionFixture(t:TestContext,hang?:'never-ready'|'before-save',options:{holdProvider?:boolean;hangOnce?:boolean;fullStory?:boolean}={}){
+export async function productionFixture(t:TestContext,hang?:'never-ready'|'before-save',options:{holdProvider?:boolean;hangOnce?:boolean;fullStory?:boolean;migrationCrash?:'before-migration'|'after-migration'}={}){
  const code=await codeFixture(options.fullStory===true),design=designFixture(t),secondDesign=designFixture(t),thirdDesign=designFixture(t);
  await Promise.all([design,secondDesign,thirdDesign].map(d=>writeFile(join(d.repo,'.insrc/schema.json'),JSON.stringify({version:2}))));
  const info=()=>({startedAt:Date.now(),modelState:{status:'ready'},installedCommit:'fixture'});
@@ -26,8 +26,9 @@ export async function productionFixture(t:TestContext,hang?:'never-ready'|'befor
  const host=new ProductionReviews({services,registeredRepos:async()=>new Set([code.repo,design.repo,secondDesign.repo,thirdDesign.repo]),track:()=>{},
   start:async(svc,input,port,deps)=>{
    const barrier=new Int32Array(new SharedArrayBuffer(32));barriers.set(input.key.reviewId,barrier);
+   const migrationCrash=options.migrationCrash&&!createdWorkers.has(input.key.reviewId)?options.migrationCrash:undefined;
    const hanging=hang&&input.key.reviewId.startsWith('hung-')&&!(options.hangOnce&&createdWorkers.has(input.key.reviewId));
-   const owner=await startReviewWorkerBootstrap(svc,input,port,{...deps,...(hanging?{schedule:(fn:()=>void)=>{const timer=setTimeout(fn,2000);return()=>clearTimeout(timer);}}:{}),start:(s,n,_script,extra,created)=>startWorker(s,n,hanging?'__tests__/helpers/review-bootstrap-hang':input.key.family==='code'?'../../workflow/code-review/task-review/__tests__/helpers/worker-admission':'../../workflow/review/design-review/__tests__/helpers/worker-admission',{workerData:{...extra!.workerData,beforeSave:hang==='before-save',fixtureResult:code.result,fixtureBarrier:barrier.buffer,fixtureHoldProvider:options.holdProvider===true},transferList:extra!.transferList},w=>{createdWorkers.set(input.key.reviewId,w);created?.(w);})});
+   const owner=await startReviewWorkerBootstrap(svc,input,port,{...deps,...(hanging?{schedule:(fn:()=>void)=>{const timer=setTimeout(fn,2000);return()=>clearTimeout(timer);}}:{}),start:(s,n,_script,extra,created)=>startWorker(s,n,hanging?'__tests__/helpers/review-bootstrap-hang':migrationCrash?'__tests__/helpers/review-migration-crash':input.key.family==='code'?'../../workflow/code-review/task-review/__tests__/helpers/worker-admission':'../../workflow/review/design-review/__tests__/helpers/worker-admission',{workerData:{...extra!.workerData,beforeSave:hang==='before-save',fixtureResult:code.result,fixtureBarrier:barrier.buffer,fixtureHoldProvider:options.holdProvider===true,fixtureMigrationCrash:migrationCrash},transferList:extra!.transferList},w=>{createdWorkers.set(input.key.reviewId,w);if(migrationCrash)w.on('message',raw=>{if(raw?.kind==='fixture-migration-boundary'&&raw.boundary===migrationCrash)void w.terminate();});created?.(w);})});
    started.set(input.key.reviewId,owner);return owner;
   }});
  installProductionReviews(host);

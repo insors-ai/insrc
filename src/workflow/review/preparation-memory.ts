@@ -3,6 +3,7 @@
  * It accounts owned allocations, not process RSS. Callers reserve scratch
  * before allocating and keep the lease until the last consumer releases it. */
 export interface MemoryLease { release(): void; }
+export interface MemoryReservation extends MemoryLease { resize(bytes: number, stage: string): void; }
 export interface MemoryAllocation { readonly bytes: Uint8Array; readonly lease: MemoryLease; }
 export class ReviewMemoryBudget {
  private used = 0;
@@ -12,7 +13,7 @@ export class ReviewMemoryBudget {
  constructor(readonly limit: number) {
   if (!Number.isSafeInteger(limit) || limit < 1) throw new Error('Invalid preparation memory bound');
  }
- reserve(bytes: number, stage: string): MemoryLease {
+ reserve(bytes: number, stage: string): MemoryReservation {
   if (!Number.isSafeInteger(bytes) || bytes < 0) throw new Error('Invalid memory reservation');
   while (bytes > this.limit - this.used) {
    let freed = false;
@@ -23,7 +24,14 @@ export class ReviewMemoryBudget {
   }
   this.used += bytes; this.peak = Math.max(this.peak, this.used);
   let active = true;
-  return { release: () => { if (active) { active = false; this.used -= bytes; } } };
+  return {
+   release: () => { if (active) { active = false; this.used -= bytes; } },
+   resize: (next, label) => {
+    if (!active || !Number.isSafeInteger(next) || next < 0) throw new Error('Invalid resized memory reservation');
+    if (next > bytes) { const extra = this.reserve(next - bytes, label); extra.release(); }
+    this.used += next - bytes; bytes = next; this.peak = Math.max(this.peak, this.used);
+   },
+  };
  }
  /** Count shared backing storage once, including Buffer pool/slab capacity. */
  buffer(value: Uint8Array, stage: string): MemoryLease {
@@ -48,6 +56,13 @@ export class ReviewMemoryBudget {
    this.buffers.set(value.buffer, { count: 0, lease });
    return { bytes: value, lease: this.buffer(value, stage) };
   } catch (error) { lease.release(); throw error; }
+ }
+ /** Transfer an already reserved encoder allocation to shared cache ownership. */
+ adopt(value: Uint8Array, reservation: MemoryReservation, stage: string): MemoryLease {
+  if (this.buffers.has(value.buffer)) { const lease = this.buffer(value, stage); reservation.release(); return lease; }
+  reservation.resize(value.buffer.byteLength, stage);
+  this.buffers.set(value.buffer, { count: 0, lease: reservation });
+  return this.buffer(value, stage);
  }
  onEvict(evict: () => boolean): () => void { this.evictors.add(evict); return () => { this.evictors.delete(evict); }; }
  snapshot(): { bytes: number; highWaterBytes: number; limit: number } { return { bytes: this.used, highWaterBytes: this.peak, limit: this.limit }; }

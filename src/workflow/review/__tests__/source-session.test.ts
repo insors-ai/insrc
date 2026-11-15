@@ -61,6 +61,25 @@ test('source evidence windows prevent disposal until the exact consumer releases
  await session.close(); assert.equal(capacity.bytes, 0); assert.equal(session.workingMemory.snapshot().bytes, 0);
 });
 
+test('decoded source results retain their charge until explicit consumer release', async t => {
+ const f = await setup(t), limits = defaults(), capacity = new ReviewPreparationCapacity(limits.cacheMaxBytes), session = await f.create(limits, capacity);
+ const result = await session.file(f.f.packet.reviewRevision!, 'source.js'); assert.ok(result);
+ const before = session.workingMemory.snapshot().bytes, codec = session.workingMemory.buffer(result.bytes, 'following codec consumer');
+ assert.equal(session.workingMemory.snapshot().bytes, before);
+ session.releaseResult(result); const shared = session.workingMemory.snapshot().bytes;
+ assert.ok(shared < before); codec.release();
+ assert.equal(session.workingMemory.snapshot().bytes, shared - result.bytes.buffer.byteLength);
+ session.releaseResult(result); await session.close(); assert.equal(session.workingMemory.snapshot().bytes, 0);
+});
+
+test('source body memory exhaustion refuses before invoking the body provider', async t => {
+ const f = await setup(t), limits = { ...defaults(), memoryMaxBytes: 8192 }, capacity = new ReviewPreparationCapacity(limits.cacheMaxBytes);
+ let bodies = 0;
+ const session = await ReviewSourceSession.create({ project: f.f.repo, family: 'code', reviewId: 'before-body' }, { ...f.source, file: async (...args) => { bodies++; return f.source.file(...args); } }, limits, capacity);
+ await assert.rejects(session.file(f.f.packet.reviewRevision!, 'source.js'), /source body acquisition/);
+ assert.equal(bodies, 0); await session.close(); assert.equal(session.workingMemory.snapshot().bytes, 0); assert.equal(capacity.bytes, 0);
+});
+
 test('source session batches verified Git objects and shares immutable queries without bypassing logical budgets', async t => {
  const f = await setup(t), limits = defaults(), capacity = new ReviewPreparationCapacity(limits.cacheMaxBytes);
  const session = await f.create(limits, capacity);
@@ -81,15 +100,17 @@ test('source session batches verified Git objects and shares immutable queries w
 
 test('source session retains evidence above memory capacity and never refetches evicted data', async t => {
  const f = await setup(t);
- for (let i = 0; i < 12; i++) f.f.put(`large-${i}.txt`, String(i % 10).repeat(8192));
+ for (let i = 0; i < 48; i++) f.f.put(`large-${i}.txt`, String(i % 10).repeat(8192));
  f.f.git('add', '.'); f.f.git('commit', '-qm', 'large fixture'); const commit = f.f.git('rev-parse', 'HEAD');
- const limits = { ...defaults(), memoryMaxBytes: 32768, batchMaxBytes: 1024, cacheMaxBytes: 2 * 1024 * 1024 };
+ const limits = { ...defaults(), memoryMaxBytes: 256 * 1024, batchMaxBytes: 1024, cacheMaxBytes: 2 * 1024 * 1024 };
  const capacity = new ReviewPreparationCapacity(limits.cacheMaxBytes), session = await f.create(limits, capacity);
 
  // Single objects may exceed a configured batch target and run alone.
- await session.prefetchObjects(Array.from({ length: 12 }, (_, i) => ({ commit, path: `large-${i}.txt` })));
+ // Account real encoder/decoder and inventory scratch, not just wire bytes.
+ // The expanded48-file fixture still exceeds this complete working-set bound.
+ for (let offset = 0; offset < 48; offset += 8) await session.prefetchObjects(Array.from({ length: 8 }, (_, i) => ({ commit, path: `large-${offset + i}.txt` })));
  assert.ok(session.snapshot().storedBytes > limits.memoryMaxBytes);
- assert.equal(f.calls.batches, 12, 'valid objects above batch target run alone');
+ assert.equal(f.calls.batches, 48, 'valid objects above batch target run alone');
  const before = { ...f.calls }, first = await session.file(commit, 'large-0.txt');
  assert.equal(Buffer.from(first!.bytes).toString(), '0'.repeat(8192));
  assert.deepEqual(f.calls, before); assert.ok(session.snapshot().diskHits > 0);
@@ -112,12 +133,13 @@ test('shared project reservations refuse body fetch before capacity exhaustion a
 });
 
 test('staged corruption and source errors fence the session instead of implicitly retrying Git', async t => {
- const f = await setup(t), limits = { ...defaults(), memoryMaxBytes: 32768, batchMaxBytes: 1024, cacheMaxBytes: 2 * 1024 * 1024 };
+ const f = await setup(t), limits = { ...defaults(), memoryMaxBytes: 256 * 1024, batchMaxBytes: 1024, cacheMaxBytes: 2 * 1024 * 1024 };
  const capacity = new ReviewPreparationCapacity(limits.cacheMaxBytes);
  for (let i = 0; i < 4; i++) f.f.put(`evict-${i}.txt`, String(i % 10).repeat(8192));
  f.f.git('add', '.'); f.f.git('commit', '-qm', 'eviction fixture'); const commit = f.f.git('rev-parse', 'HEAD');
  const session = await f.create(limits, capacity);
  await session.prefetchObjects(Array.from({ length: 4 }, (_, i) => ({ commit, path: `evict-${i}.txt` })));
+ const pressure = session.workingMemory.reserve(limits.memoryMaxBytes - 8192, 'force verified-wire eviction'); pressure.release();
  const line = (await readFile(join(session.directory, 'queries.jsonl'), 'utf8')).split('\n')[0]!;
  const entry = JSON.parse(line); await writeFile(join(session.directory, entry.name), 'corrupt');
  const before = { ...f.calls };

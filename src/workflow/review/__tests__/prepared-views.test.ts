@@ -63,6 +63,19 @@ test('reserved source and reader allocations remain single-charged across codec 
  codec.release(); assert.equal(memory.snapshot().bytes, 0);
 });
 
+test('allocation happens only after its reservation and refusal performs no allocation', () => {
+ const memory = new ReviewMemoryBudget(1024), Original = globalThis.Uint8Array; let allocations = 0;
+ globalThis.Uint8Array = class extends Original {
+  constructor(size: number) { assert.ok(memory.snapshot().bytes >= size, 'reservation precedes constructor'); super(size); allocations++; }
+ } as typeof Uint8Array;
+ try {
+  const owned = memory.allocate(768, 'instrumented allocation'); assert.equal(allocations, 1);
+  assert.throws(() => memory.allocate(512, 'must refuse before constructor'), /capacity/); assert.equal(allocations, 1);
+  owned.lease.release();
+ } finally { globalThis.Uint8Array = Original; }
+ assert.equal(memory.snapshot().bytes, 0);
+});
+
 test('typed staged descriptors round trip bytes Unicode null undefined and ordered sharded containers', async t => {
  const f = await setup(t), data = new Uint8Array(Array.from({ length: 150000 }, (_, i) => i % 251));
  const value = { nul: null, missing: undefined, yes: true, number: 1.25, text: '🙂\u0000漢字'.repeat(2000), data, list: Array.from({ length: 300 }, (_, i) => ({ i, label: `item-${i}` })) };

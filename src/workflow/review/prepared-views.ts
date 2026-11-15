@@ -237,7 +237,9 @@ export class PreparedViewWriter {
    const ready = join(this.root, this.generation);
    try {
     if (!this.views.length || this.identity.key.family === 'code' && !this.session) throw new Error('Complete staged views/source session required');
-    if (this.session) for (const evidence of await this.session.evidence()) {
+    if (this.session) {
+     const inventory = await this.session.evidence();
+     try { for (const evidence of inventory) {
      const evidenceWindow = await this.session.borrowEvidence(evidence.queryDigest);
      try {
       const bytes = evidenceWindow.bytes;
@@ -249,6 +251,7 @@ export class PreparedViewWriter {
       try { await this.put(await bytesAt(join(this.directory, `${root}.data`), size, { bytes: size, digest: root }), evidence.queryDigest); }
       finally { nodeLease.release(); }
      } finally { evidenceWindow.release(); }
+    } } finally { this.session.releaseResult(inventory); }
     }
     const manifest: StagedContextManifest = { schemaVersion: 2, encoding: 'staged-values-v2', key: this.identity.key,
      attempt: this.identity.attempt, generationId: this.generation, identityDigest: sourceGeneration(this.identity), inputDigest: this.identity.inputDigest,

@@ -105,10 +105,15 @@ export async function writePreparedContext(identity: PreparedSourceIdentity, vie
   } finally { ancestors.delete(value); }
  }
  try {
-  if (session) for (const evidence of await session.evidence()) {
-   const bytes = await session.readEvidence(evidence.queryDigest);
-   if (bytes.length !== evidence.bytes || hash(bytes) !== evidence.contentDigest) throw new Error('Source evidence changed during context commit');
-   await put(evidence.queryDigest, bytes);
+  if (session) {
+   const inventory = await session.evidence();
+   try { for (const evidence of inventory) {
+    const bytes = await session.readEvidence(evidence.queryDigest);
+    try {
+     if (bytes.length !== evidence.bytes || hash(bytes) !== evidence.contentDigest) throw new Error('Source evidence changed during context commit');
+     await put(evidence.queryDigest, bytes);
+    } finally { session.releaseResult(bytes); }
+   } } finally { session.releaseResult(inventory); }
   }
   const readyViews: PreparedContextManifest['views'] = [];
   for (const [id, value] of Object.entries(views).sort(([a], [b]) => a.localeCompare(b))) {

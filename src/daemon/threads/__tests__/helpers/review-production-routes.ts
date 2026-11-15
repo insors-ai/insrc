@@ -18,7 +18,7 @@ export async function productionRoutes(t: TestContext, repos: readonly string[])
  const server = new IpcServer(directDispatch({
   'taskReview.start': startTaskReview, 'taskReview.progress': readTaskReviewProgress, 'taskReview.publish': publishStoredTaskReview, 'taskReview.cancel': cancelTaskReview,
   ...Object.fromEntries((['assignment', 'scope', 'result', 'activity'] as const).map(phase => [`taskReview.${phase}`, (p: unknown, c: import('../../../request-context.js').TrustedRpcContext | undefined) => exchangeControllerTaskReview(p, c, phase)])),
-  ...Object.fromEntries((['start', 'recover', 'progress', 'assignment', 'plan', 'result', 'activity', 'failure', 'cancel'] as const).map(phase => [`designReview.${phase}`, (p: unknown, c: import('../../../request-context.js').TrustedRpcContext | undefined) => designReviewOperation(phase, p, c)])),
+  ...Object.fromEntries((['start', 'recover', 'progress', 'assignment', 'plan', 'impact', 'result', 'activity', 'failure', 'cancel'] as const).map(phase => [`designReview.${phase}`, (p: unknown, c: import('../../../request-context.js').TrustedRpcContext | undefined) => designReviewOperation(phase, p, c)])),
  }), Date.now, join(root, 'daemon.sock'));
  await server.listen(); const peers: LocalPeer[] = [];
  t.after(async () => { for (const p of peers) p.close(); await server.close(); await host.shutdown(); await rm(root, { recursive: true, force: true }); });

@@ -43,5 +43,5 @@ export function routeFixture() {
   try { return await preparation.prepare(repo, id, 1, packet, 'daemon', sources, { epicHash }); }
   finally { await preparation.close(); }
  };
-	return { repo, at, packetWith, sources, admit, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
+	return { repo, at, packetWith, sources, admit, git, put, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
 }

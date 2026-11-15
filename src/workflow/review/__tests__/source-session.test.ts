@@ -44,7 +44,7 @@ test('staged views share source cache memory and retain exact source queries wit
  const restored = JSON.parse(Buffer.concat(parts).toString('utf8'));
  assert.equal(restored.oid, expected!.oid); assert.deepEqual(Buffer.from(restored.base64, 'base64'), Buffer.from(expected!.bytes));
  assert.equal(session.snapshot().physicalQueries, physical);
- reader.close(); await session.close();
+ reader.close(); session.releaseResult(expected); await session.close();
  assert.equal(session.workingMemory.snapshot().bytes, 0);
  await rm(join(contextRoot(session.key), receipt.generationId), { recursive: true }); await capacity.release(receipt.capacityToken);
  assert.equal(capacity.bytes, 0);
@@ -53,12 +53,12 @@ test('staged views share source cache memory and retain exact source queries wit
 test('source evidence windows prevent disposal until the exact consumer releases ownership', async t => {
  const f = await setup(t), limits = defaults(), capacity = new ReviewPreparationCapacity(limits.cacheMaxBytes);
  const session = await f.create(limits, capacity), commit = f.f.packet.reviewRevision!;
- await session.file(commit, 'source.js');
+ const result = await session.file(commit, 'source.js');
  const window = await session.borrowEvidence(reviewSourceQueryDigest('file', [commit, 'source.js']));
  await assert.rejects(session.close(), /windows remain borrowed/);
  assert.ok(capacity.bytes > 0); assert.ok(window.bytes.length > 0);
  window.release(); window.release(); assert.throws(() => window.bytes, /released/);
- await session.close(); assert.equal(capacity.bytes, 0); assert.equal(session.workingMemory.snapshot().bytes, 0);
+ session.releaseResult(result); await session.close(); assert.equal(capacity.bytes, 0); assert.equal(session.workingMemory.snapshot().bytes, 0);
 });
 
 test('decoded source results retain their charge until explicit consumer release', async t => {
@@ -70,6 +70,16 @@ test('decoded source results retain their charge until explicit consumer release
  assert.ok(shared < before); codec.release();
  assert.equal(session.workingMemory.snapshot().bytes, shared - result.bytes.buffer.byteLength);
  session.releaseResult(result); await session.close(); assert.equal(session.workingMemory.snapshot().bytes, 0);
+});
+
+test('session close retains decoded result charges while a caller can still use them', async t => {
+ const f = await setup(t), limits = defaults(), capacity = new ReviewPreparationCapacity(limits.cacheMaxBytes), session = await f.create(limits, capacity);
+ const result = await session.file(f.f.packet.reviewRevision!, 'source.js'); assert.ok(result);
+ const text = Buffer.from(result.bytes).toString();
+ await session.close(); assert.equal(capacity.bytes, 0);
+ assert.ok(session.workingMemory.snapshot().bytes > 0);
+ assert.equal(Buffer.from(result.bytes).toString(), text, 'result remains usable and charged after session close');
+ session.releaseResult(result); assert.equal(session.workingMemory.snapshot().bytes, 0);
 });
 
 test('source body memory exhaustion refuses before invoking the body provider', async t => {

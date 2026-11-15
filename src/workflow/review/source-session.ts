@@ -240,8 +240,8 @@ export class ReviewSourceSession implements ReviewSources {
   this.results.set(value, release); this.resultOwners.add(release); return value;
  }
  /** Release only when the caller has finished all use of a decoded result.
-  * Older callers retain ownership until source-session close; they are not
-  * allowed to evade the same budget. Windowed callers release after staging. */
+  * Session/disk close does not release usable returned values. Their charges
+  * remain until this explicit final-owner release, including after close. */
  releaseResult(value: unknown): void { if (value && typeof value === 'object') this.results.get(value)?.(); }
  private async stage(method: Method, key: string, value: unknown, token: string): Promise<void> {
   const metadata = Buffer.byteLength(key) * 2 + 512;
@@ -439,7 +439,6 @@ export class ReviewSourceSession implements ReviewSources {
   if (!identity.isDirectory() || identity.isSymbolicLink() || identity.dev !== this.identity.dev || identity.ino !== this.identity.ino) throw new Error('Source staging directory replaced; retain capacity/evidence');
   await rm(this.directory, { recursive: true });
   for (const token of this.tokens) await this.capacity.release(token);
-  for (const release of this.resultOwners) release();
   this.tokens.clear(); this.entries.clear(); this.queriesByDigest.clear();
   while (this.evictMemory()) { /* release only source-owned unborrowed cache */ }
   for (const lease of this.metadataLeases) lease.release(); this.metadataLeases.length = 0; this.removeEvictor();

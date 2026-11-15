@@ -76,6 +76,21 @@ test('allocation happens only after its reservation and refusal performs no allo
  assert.equal(memory.snapshot().bytes, 0);
 });
 
+test('small node text and manifest encoders never allocate pooled string buffers', async t => {
+ const f = await setup(t), original = Buffer.from;
+ Buffer.from = ((value: unknown, ...args: unknown[]) => {
+  assert.notEqual(typeof value, 'string', 'encoder must write into reserved exact-size backing storage');
+  return (original as (...args: unknown[]) => Buffer)(value, ...args);
+ }) as typeof Buffer.from;
+ let receipt: ReadyContextReceipt;
+ try {
+  await f.writer.add('file', 'file', { tiny: 'x', text: 'ü'.repeat(3000) }); receipt = await f.writer.seal();
+ } finally { Buffer.from = original; }
+ const reader = await f.open(receipt!);
+ assert.deepEqual(await restore(reader, await reader.descriptor('file')), { tiny: 'x', text: 'ü'.repeat(3000) });
+ reader.close(); assert.equal(f.memory.snapshot().bytes, 0);
+});
+
 test('typed staged descriptors round trip bytes Unicode null undefined and ordered sharded containers', async t => {
  const f = await setup(t), data = new Uint8Array(Array.from({ length: 150000 }, (_, i) => i % 251));
  const value = { nul: null, missing: undefined, yes: true, number: 1.25, text: '🙂\u0000漢字'.repeat(2000), data, list: Array.from({ length: 300 }, (_, i) => ({ i, label: `item-${i}` })) };

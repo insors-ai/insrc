@@ -104,11 +104,15 @@ export class PreparedViewWriter {
  }
  private async node(node: Node): Promise<string> {
   if (++this.nodes > 1000000) throw new Error('Staged value structure exceeds bound');
-  const upper = jsonBound(node), lease = this.memory.reserve(upper * 3 + 512, 'staged encoder scratch');
+  const upper = jsonBound(node), lease = this.memory.reserve(upper * 2 + 512, 'staged encoder scratch');
   try {
    const text = JSON.stringify(node);
    if (Buffer.byteLength(text) > this.limits.batchMaxBytes) throw new Error('Staged index shard exceeds batch bound');
-   return await this.put(Buffer.from(text));
+   const allocation = this.memory.allocate(Buffer.byteLength(text), 'staged encoded node');
+   try {
+    Buffer.from(allocation.bytes.buffer, allocation.bytes.byteOffset, allocation.bytes.byteLength).write(text, 'utf8');
+    return await this.put(allocation.bytes);
+   } finally { allocation.lease.release(); }
   } finally { lease.release(); }
  }
  /** Balanced, bounded fanout: neither large arrays nor object field lists are
@@ -171,10 +175,17 @@ export class PreparedViewWriter {
     for (let offset = 0; offset < input.length;) {
      let end = Math.min(input.length, offset + step);
      if (text && end < value.length && (value as string).charCodeAt(end - 1) >= 0xd800 && (value as string).charCodeAt(end - 1) <= 0xdbff) end++;
-     const scratch = self.memory.reserve((end - offset) * (text ? 5 : 0) + 128, 'staged leaf encoding');
+     const scratch = self.memory.reserve((end - offset) * (text ? 2 : 0) + 128, 'staged leaf encoding');
      try {
-      const chunk = text ? Buffer.from((value as string).slice(offset, end)) : (value as Uint8Array).subarray(offset, end);
-      bytes += chunk.byteLength; yield [ordinal++, await self.put(chunk)];
+      if (text) {
+       const fragment = (value as string).slice(offset, end), allocation = self.memory.allocate(Buffer.byteLength(fragment), 'staged encoded text');
+       try {
+        Buffer.from(allocation.bytes.buffer, allocation.bytes.byteOffset, allocation.bytes.byteLength).write(fragment, 'utf8');
+        bytes += allocation.bytes.byteLength; yield [ordinal++, await self.put(allocation.bytes)];
+       } finally { allocation.lease.release(); }
+      } else {
+       const chunk = (value as Uint8Array).subarray(offset, end); bytes += chunk.byteLength; yield [ordinal++, await self.put(chunk)];
+      }
      } finally { scratch.release(); }
      offset = end;
     }
@@ -262,11 +273,14 @@ export class PreparedViewWriter {
     try {
      manifest.manifestDigest = preparationDigest({ ...manifest, manifestDigest: '' });
      decodeStagedContextManifest(manifest, this.identity.key, reviewJsonLimit());
-     const serialized = Buffer.from(JSON.stringify(manifest)); manifestBytes = serialized.length;
-     const token = await this.capacity.reserve(serialized.length * 2 + 512); this.tokens.push(token);
-     await writeReviewBytes(join(this.directory, 'manifest.json'), serialized, reviewJsonLimit()); await this.capacity.commit(token, serialized.length);
+     const text = JSON.stringify(manifest), allocation = this.memory.allocate(Buffer.byteLength(text), 'staged encoded manifest'); manifestBytes = allocation.bytes.length;
+     try {
+     Buffer.from(allocation.bytes.buffer, allocation.bytes.byteOffset, allocation.bytes.byteLength).write(text, 'utf8');
+     const token = await this.capacity.reserve(allocation.bytes.length * 2 + 512); this.tokens.push(token);
+     await writeReviewBytes(join(this.directory, 'manifest.json'), allocation.bytes, reviewJsonLimit()); await this.capacity.commit(token, allocation.bytes.length);
      await this.checkDirectory(); await rename(this.directory, ready);
      const root = await open(this.root, 'r'); try { await root.sync(); } finally { await root.close(); }
+     } finally { allocation.lease.release(); }
     } finally { scratch.release(); }
     const capacityToken = await this.capacity.combine(this.tokens);
     this.state = 'ready'; this.releaseMemory();

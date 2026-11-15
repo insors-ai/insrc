@@ -17,6 +17,7 @@ import { test } from 'node:test';
 
 import { History } from '../../artifact-core/history.js';
 import { createFileSidecarStore } from '../../artifact-core/sidecar-store.js';
+import { artifactJsonPath } from '../../storage.js';
 import { BACKFILL_REASON, backfillRunId } from '../backfill-issue.js';
 import { runRepair } from '../repair.js';
 import { AT, H, K, has, head, lifecycle, repository, result } from './repair-kit.js';
@@ -116,5 +117,103 @@ test('repair writes a kind change ISSUE for each headless BUILD, approved by the
 		assert.deepEqual(again.plan.changes.filter(c => c.rule === 'backfill-issue'), [], 'a second repair lists none');
 		const rerun = result(await runRepair(r.repo, 'repair'));
 		assert.deepEqual(rerun.written.filter(w => w.step === 'backfill-issue'), [], 'and writes nothing in the step');
+	} finally { r.done(); }
+});
+
+// ---------------------------------------------------------------------------
+// t7: the backfilled Stories are settled by the completion rule, and a run that stops part-way is finished by the next one
+// ---------------------------------------------------------------------------
+
+/** After the cutoff of the completion rule: an approval here is settled only by the live rule. */
+const LATER = '2026-11-20T00:00:00.000Z';
+/** A fifth hash: a headless trivial BUILD approved after the cutoff, with no code review. */
+const N = '5555666677778888';
+
+test('repair settles a backfilled Story by the completion rule: one approved before the cutoff completes, one approved after it with no code review is held, and a draft BUILD is not settled', async () => {
+	const r = repository();
+	try {
+		trivialBuild(r, H, { approved: true, approvedAt: AT });            // before COMPLETION_RULE_FROM
+		trivialBuild(r, N, { approved: true, approvedAt: LATER });         // after it, and no CR
+		trivialBuild(r, K, { approved: false });                           // a draft
+		const preview = await runRepair(r.repo, 'repair-preview');
+		assert.deepEqual(preview.plan.changes.filter(c => c.rule === 'settle-unit').map(c => c.artifactId).sort(), [`EPIC-${H}`, `STORY-${H}-s1`].sort(), 'only the old approval is proposed for settling');
+
+		const done = result(await runRepair(r.repo, 'repair'));
+		assert.equal(done.stoppedAt, undefined, JSON.stringify(done.stoppedAt));
+		// H completes under its backfilled ISSUE: the Story and the Epic the ISSUE heads
+		assert.equal(head(r.repo, `STORY-${H}-s1`).meta['lifecycle'].status, 'completed');
+		assert.equal(head(r.repo, `EPIC-${H}`).meta['lifecycle'].status, 'completed');
+		// N: its Story exists under the ISSUE now, but the live rule needs a code review, so it is held and says why
+		assert.equal(head(r.repo, `ISSUE-${N}`).meta['lifecycle'].status, 'approved');
+		assert.equal(head(r.repo, `STORY-${N}-s1`).meta['lifecycle'].status, 'draft');
+		const heldN = done.held.find(h => h.artifactId === `STORY-${N}-s1`);
+		assert.ok(heldN !== undefined, JSON.stringify(done.held));
+		assert.match(heldN.reason, /review/i);
+		// K: its ISSUE is pending and its Story is neither settled nor reported held: nothing was approved
+		assert.notEqual(head(r.repo, `STORY-${K}-s1`).meta['lifecycle']?.status, 'completed');
+		assert.equal(done.held.some(h => h.artifactId.includes(K)), false);
+		assert.equal(done.failed.length, 0, JSON.stringify(done.failed));
+	} finally { r.done(); }
+});
+
+test('a failure injected during the backfill lists the ISSUEs written and the next repair writes only the rest', async () => {
+	const r = repository();
+	try {
+		trivialBuild(r, H, { approved: true });
+		trivialBuild(r, K, { approved: true });
+		// the second ISSUE's write fails once: the run stops in the backfill, before any later step
+		let failures = 1;
+		const stopped = result(await runRepair(r.repo, 'repair', { backfill: { beforeWrite: id => { if (id === `ISSUE-${K}` && failures-- > 0) throw new Error(`injected failure before ${id}`); } } }));
+		assert.equal(stopped.stoppedAt?.step, 'backfill-issue');
+		assert.match(stopped.stoppedAt?.reason ?? '', /injected failure before ISSUE-fedcba9876543210/);
+		assert.deepEqual(stopped.written.filter(w => w.step === 'backfill-issue' && w.action === 'backfilled').map(w => w.artifactId), [`ISSUE-${H}`], 'what was written is listed');
+		assert.equal(has(r.repo, `ISSUE-${K}`), false);
+		assert.equal(has(r.repo, `STORY-${H}-s1`), false, 'no later step ran');
+		assert.ok(stopped.remaining.some(c => c.rule === 'backfill-issue' && c.artifactId === `ISSUE-${K}`), 'and what is left');
+		const firstH = readFileSync(artifactJsonPath(r.repo, `ISSUE-${H}`), 'utf8');
+
+		const rerun = result(await runRepair(r.repo, 'repair'));
+		assert.equal(rerun.stoppedAt, undefined, JSON.stringify(rerun.stoppedAt));
+		assert.deepEqual(rerun.written.filter(w => w.step === 'backfill-issue' && w.action === 'backfilled').map(w => w.artifactId), [`ISSUE-${K}`], 'only the rest is written');
+		assert.equal(readFileSync(artifactJsonPath(r.repo, `ISSUE-${H}`), 'utf8'), firstH, 'the ISSUE written before is not written again');
+		assert.equal(head(r.repo, `ISSUE-${K}`).meta['lifecycle'].status, 'approved');
+		assert.equal(head(r.repo, `STORY-${H}-s1`).meta['lifecycle'].status, 'completed');
+		assert.equal(head(r.repo, `STORY-${K}-s1`).meta['lifecycle'].status, 'completed');
+	} finally { r.done(); }
+});
+
+test('a backfilled ISSUE whose approval did not happen is approved by the next run, and is not written again', async () => {
+	const r = repository();
+	try {
+		trivialBuild(r, H, { approved: true });
+		// an earlier run wrote the ISSUE and stopped before approving it
+		await runRepair(r.repo, 'repair', { backfill: { beforeWrite: () => undefined } });
+		const issue = head(r.repo, `ISSUE-${H}`);
+		r.put(`ISSUE-${H}`, { ...issue.meta, lifecycle: lifecycle('draft') }, issue.body, (issue as unknown as { citations: unknown[] }).citations);
+		const preview = await runRepair(r.repo, 'repair-preview');
+		const change = preview.plan.changes.find(c => c.rule === 'backfill-issue');
+		assert.match(change?.detail ?? '', /^approve: written from BUILD-0123456789abcdef-s1 by an earlier run$/);
+		const rerun = result(await runRepair(r.repo, 'repair'));
+		assert.deepEqual(rerun.written.filter(w => w.action === 'backfilled'), [], 'not written again');
+		assert.equal(head(r.repo, `ISSUE-${H}`).meta['lifecycle'].status, 'approved');
+	} finally { r.done(); }
+});
+
+test('a legacy trivial BUILD not migrated yet: its approvedAt counts as approved, and its ISSUE is written under the renamed record', async () => {
+	const r = repository();
+	try {
+		// as the build step wrote it before the common model: an uppercase Story id and an approval stamp, no lifecycle
+		r.put(`BUILD-${H}-S001`, {
+			workflow: 'build', epicHash: H, storyId: 'S001', standalone: true, sizeClass: 'trivial', authoredBy: 'controller', approvedAt: AT,
+		}, { focus: 'Fix a typo', producesLld: false, tasks: [{ id: 'S001', passed: true }], changeLog: [] });
+		const preview = await runRepair(r.repo, 'repair-preview');
+		const change = preview.plan.changes.find(c => c.rule === 'backfill-issue');
+		assert.equal(change?.artifactId, `ISSUE-${H}`);
+		assert.match(change?.detail ?? '', /approved by the migration/);
+
+		const done = result(await runRepair(r.repo, 'repair'));
+		assert.equal(done.stoppedAt, undefined, JSON.stringify(done.stoppedAt));
+		assert.equal(head(r.repo, `ISSUE-${H}`).meta['lifecycle'].status, 'approved');
+		assert.match(String(head(r.repo, `ISSUE-${H}`).body['reproduction']), /Fix a typo/);
 	} finally { r.done(); }
 });

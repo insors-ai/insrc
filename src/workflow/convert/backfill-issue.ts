@@ -24,6 +24,7 @@ import { renderCitationBlock } from '../synthesizer.js';
 import type { LifecycleService } from '../artifact-core/lifecycle-service.js';
 import type { PlanRule, RulePlan } from './plan.js';
 import { readRawHeads } from './raw-heads.js';
+import { buildApproval } from './settle.js';
 import type { ConversionChange, ConversionDeps, RawHead, RepairRecorder } from './types.js';
 
 /** The reason the migration's approval of a backfilled ISSUE records. */
@@ -64,7 +65,8 @@ function headlessBuilds(heads: readonly RawHead[]): Headless[] {
 		if (ids.has(`DEF-${hash}`) || lldHashes.has(hash) || !isTrivialStandalone(head)) continue;
 		byHash.set(hash, head);
 	}
-	return [...byHash].map(([hash, build]) => ({ hash, build, approved: approvalStateOf(metaOf(build)) === 'approved' }));
+	// a BUILD not migrated yet carries its approval as a legacy approvedAt: read it the way settle does
+	return [...byHash].map(([hash, build]) => ({ hash, build, approved: buildApproval(build).approved }));
 }
 
 /** A backfilled ISSUE the migration still has to approve: written by an earlier run, its BUILD approved, itself not approved yet. */

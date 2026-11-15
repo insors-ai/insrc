@@ -9,14 +9,14 @@
 import type { ScratchFs, ScratchFsHandle } from '../scratch-store.js';
 
 export interface ScratchFsCall {
-  readonly op: 'mkdir' | 'readdir' | 'lstat' | 'writeFile' | 'link' | 'unlink' | 'open' | 'read' | 'fstat' | 'close';
+  readonly op: 'mkdir' | 'readdir' | 'lstat' | 'writeFile' | 'writeFileExclusive' | 'link' | 'unlink' | 'open' | 'read' | 'fstat' | 'close';
   readonly path: string;
   /** link: the destination. */
   readonly to?: string;
 }
 
 /** Operations that mutate the filesystem. */
-const MUTATIONS: ReadonlySet<ScratchFsCall['op']> = new Set(['mkdir', 'writeFile', 'link', 'unlink']);
+const MUTATIONS: ReadonlySet<ScratchFsCall['op']> = new Set(['mkdir', 'writeFile', 'writeFileExclusive', 'link', 'unlink']);
 
 export interface FakeScratchFs {
   readonly fs: ScratchFs;
@@ -127,6 +127,14 @@ export function fakeScratchFs(): FakeScratchFs {
         put(path, data.subarray(0, Math.floor(data.length / 2)));
         throw err;
       }
+      put(path, data);
+    },
+    writeFileExclusive: async (path, data) => {
+      const err = record({ op: 'writeFileExclusive', path });
+      // O_CREAT|O_EXCL|O_NOFOLLOW: an existing entry (file, dir or symlink) at the
+      // temp name fails EEXIST (occupied) / ELOOP (symlink) and is never followed.
+      if (kindOf(path) !== undefined) throw kindOf(path) === 'symlink' ? eloop(path) : eexist(path);
+      if (err !== undefined) throw err;
       put(path, data);
     },
     link: async (from, to) => {

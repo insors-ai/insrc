@@ -363,6 +363,122 @@ test('scratch-store.test.ts: listScratches skips entries whose lstat fails betwe
   fake.failOn = undefined;
 });
 
+test('scratch-store.test.ts: updateScratch happy path writes full text and replaces content; id validation refusal (outside-root, symlink, non-.md) → ScratchRefused; missing file → ScratchNotFound; write failure leaves destination unchanged and unlinks temp; temp path occupied by a symlink or existing file → exclusive create fails (EEXIST/ELOOP) and nothing is written outside the root', async () => {
+  const { fake, store } = setup();
+  await fake.fs.mkdir(ROOT);
+  seed(fake, '20260101-000000-a.md', 'old content', 10);
+
+  // Happy path: full replacement via exclusive temp write + unlink/link publish (never rename).
+  await store.updateScratch('20260101-000000-a.md', 'brand new body\nwith lines\n');
+  assert.equal(Buffer.from(fake.files.get(`${ROOT}/20260101-000000-a.md`) ?? []).toString('utf8'), 'brand new body\nwith lines\n');
+  const excl = fake.ops('writeFileExclusive');
+  assert.equal(excl.length, 1);
+  const tempPath = excl[0]?.path ?? '';
+  assert.equal(tempPath.startsWith(`${ROOT}/.tmp-`), true);
+  assert.equal(/\.md$/.test(tempPath), false);
+  // Publish sequence: unlink(destination) then link(temp, destination) then unlink(temp).
+  const unlinks = fake.ops('unlink');
+  const links = fake.ops('link');
+  assert.equal(links.length, 1);
+  assert.equal(links[0]?.path, tempPath);
+  assert.equal(links[0]?.to, `${ROOT}/20260101-000000-a.md`);
+  assert.deepEqual(unlinks.map((c) => c.path).sort(), [`${ROOT}/20260101-000000-a.md`, tempPath].sort());
+  // No temp left behind; destination re-opened O_NOFOLLOW + fstat before unlink.
+  assert.equal(fake.files.has(tempPath), false);
+  assert.equal(fake.ops('open').filter((c) => c.path.endsWith('a.md')).length, 1);
+  assert.equal(fake.ops('fstat').filter((c) => c.path.endsWith('a.md')).length, 1);
+
+  // Id validation refusal: same bad ids as read/delete, plus symlink and directory targets.
+  fake.kinds.set(`${ROOT}/evil.md`, 'symlink');
+  fake.linkTargets.set(`${ROOT}/evil.md`, '/etc/passwd');
+  fake.dirs.add(`${ROOT}/dir.md`);
+  fake.kinds.set(`${ROOT}/dir.md`, 'dir');
+  const mark = fake.calls.length;
+  for (const bad of ['.', '..', 'a/b.md', '../x.md', 'noext', '.md', 'x.MD', '20260101-a.md/../../evil.md', '', 'x y.md']) {
+    await assert.rejects(store.updateScratch(bad, 'x'), (e: unknown) => e instanceof ScratchRefused, `update ${JSON.stringify(bad)}`);
+  }
+  await assert.rejects(store.updateScratch('evil.md', 'x'), (e: unknown) => e instanceof ScratchRefused);
+  await assert.rejects(store.updateScratch('dir.md', 'x'), (e: unknown) => e instanceof ScratchRefused);
+  await assert.rejects(store.updateScratch('20260101-000000-a.md', 42 as unknown as string), (e: unknown) => e instanceof ScratchRefused);
+  // Refusals never wrote anything outside the root (zero mutations at all).
+  assert.deepEqual(fake.mutationsSince(mark), []);
+
+  // Missing file at save time -> ScratchNotFound.
+  await assert.rejects(store.updateScratch('20260101-000000-gone.md', 'x'), (e: unknown) => e instanceof ScratchNotFound);
+
+  // Temp path occupied by a symlink -> exclusive create ELOOP, nothing written outside root.
+  seed(fake, '20260101-000001-b.md', 'keep', 20);
+  const realWrite = fake.fs.writeFileExclusive;
+  fake.fs.writeFileExclusive = async (p, data) => {
+    fake.kinds.set(p, 'symlink');
+    fake.linkTargets.set(p, '/etc/passwd');
+    await realWrite(p, data); // the fake then throws ELOOP for the symlink
+    return undefined;
+  };
+  await assert.rejects(store.updateScratch('20260101-000001-b.md', 'evil'), (e: unknown) => e instanceof ScratchStoreError);
+  assert.equal(Buffer.from(fake.files.get(`${ROOT}/20260101-000001-b.md`) ?? []).toString('utf8'), 'keep', 'destination untouched');
+  fake.fs.writeFileExclusive = realWrite;
+
+  // Temp path occupied by an existing regular file -> EEXIST, same refusal.
+  fake.fs.writeFileExclusive = async (p, data) => {
+    fake.files.set(p, Buffer.from('occupier'));
+    fake.kinds.set(p, 'file');
+    await realWrite(p, data); // fake throws EEXIST for the existing entry
+    return undefined;
+  };
+  await assert.rejects(store.updateScratch('20260101-000001-b.md', 'evil2'), (e: unknown) => e instanceof ScratchStoreError);
+  assert.equal(Buffer.from(fake.files.get(`${ROOT}/20260101-000001-b.md`) ?? []).toString('utf8'), 'keep', 'destination untouched');
+  fake.fs.writeFileExclusive = realWrite;
+
+  // Temp write failure (ENOSPC) -> ScratchStoreError, destination unchanged, temp unlinked.
+  fake.failOn = (c) => (c.op === 'writeFileExclusive' ? Object.assign(new Error('ENOSPC'), { code: 'ENOSPC' }) : undefined);
+  const markFail = fake.calls.length;
+  await assert.rejects(store.updateScratch('20260101-000001-b.md', 'no room'), (e: unknown) => e instanceof ScratchStoreError);
+  fake.failOn = undefined;
+  assert.equal(Buffer.from(fake.files.get(`${ROOT}/20260101-000001-b.md`) ?? []).toString('utf8'), 'keep', 'destination unchanged on temp-write failure');
+  // The failed temp write left no .md and the temp was unlinked again (best-effort cleanup ran).
+  assert.equal(fake.calls.slice(markFail).some((c) => c.op === 'unlink' && c.path.includes('.tmp-')), true, 'temp cleanup attempted after the failed write');
+
+  // Destination deleted between validation and save -> ScratchNotFound, temp unlinked.
+  fake.failOn = (c) => (c.op === 'open' && c.path.endsWith('20260101-000001-b.md') ? enoentOf(c.path) : undefined);
+  await assert.rejects(store.updateScratch('20260101-000001-b.md', 'gone'), (e: unknown) => e instanceof ScratchNotFound);
+  fake.failOn = undefined;
+
+  // link() EEXIST race (destination recreated between unlink and link) -> bounded retry succeeds.
+  seed(fake, '20260101-000002-c.md', 'orig', 30);
+  let linkAttempts = 0;
+  const realLink = fake.fs.link;
+  let recreate = true;
+  fake.fs.link = async (from, to) => {
+    if (recreate && to.endsWith('20260101-000002-c.md') && linkAttempts++ === 0) {
+      // A concurrent actor recreated the destination after our unlink.
+      seed(fake, '20260101-000002-c.md', 'recreated', 31);
+      throw eexist(to);
+    }
+    return realLink(from, to);
+  };
+  await store.updateScratch('20260101-000002-c.md', 'won the retry');
+  assert.equal(linkAttempts, 2, 'first link EEXIST, retry published');
+  assert.equal(Buffer.from(fake.files.get(`${ROOT}/20260101-000002-c.md`) ?? []).toString('utf8'), 'won the retry');
+  fake.fs.link = realLink;
+  void recreate;
+});
+
+test('scratch-store.test.ts: updateScratch bumps mtime so listScratches reflects the save', async () => {
+  const { fake, store } = setup();
+  await fake.fs.mkdir(ROOT);
+  seed(fake, '20260101-000000-a.md', 'before', 100);
+  seed(fake, '20260101-000001-b.md', 'other', 200);
+  assert.equal((await store.listScratches())[0]?.id, '20260101-000001-b.md');
+
+  fake.clock += 50;
+  await store.updateScratch('20260101-000000-a.md', 'after');
+  const list = await store.listScratches();
+  assert.equal(list[0]?.id, '20260101-000000-a.md', 'the saved scratchpad moved to the list head');
+  assert.equal(list[0]?.size, Buffer.byteLength('after', 'utf8'));
+  assert.ok((list[0]?.mtime ?? 0) > 100, 'mtime bumped past the seeded value');
+});
+
 test('scratch-store.test.ts: writeFile/copyFile-style symlink seeding helper not used — deleteScratch on a symlink refuses and the symlink target is untouched', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'insrc-scratch-symlink-'));
   try {

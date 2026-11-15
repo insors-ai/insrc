@@ -44,6 +44,12 @@ export interface ScratchFs {
   readdir(path: string): Promise<string[]>;
   lstat(path: string): Promise<{ readonly isFile: boolean; readonly isSymbolicLink: boolean; readonly size: number; readonly mtimeMs: number }>;
   writeFile(path: string, data: Uint8Array): Promise<void>;
+  /**
+   * Exclusive, no-follow write for the update path: creates `path` ONLY when it
+   * does not exist and is not a symlink — fails with EEXIST on an occupied name
+   * and ELOOP on a symlink (O_CREAT|O_EXCL|O_NOFOLLOW).
+   */
+  writeFileExclusive(path: string, data: Uint8Array): Promise<void>;
   /** Hard link — fails with EEXIST when `to` exists. Never replaced by rename. */
   link(from: string, to: string): Promise<void>;
   unlink(path: string): Promise<void>;
@@ -70,6 +76,15 @@ export const nodeScratchFs: ScratchFs = {
     return { isFile: s.isFile(), isSymbolicLink: s.isSymbolicLink(), size: s.size, mtimeMs: s.mtimeMs };
   },
   writeFile: (p, data) => writeFile(p, data),
+  writeFileExclusive: async (p, data) => {
+    // O_CREAT|O_EXCL|O_NOFOLLOW: EEXIST on an occupied name, ELOOP on a symlink — never followed.
+    const h = await open(p, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW);
+    try {
+      await h.writeFile(data);
+    } finally {
+      await h.close();
+    }
+  },
   link: (from, to) => link(from, to),
   unlink: (p) => unlink(p),
   open: async (p) => {
@@ -127,6 +142,18 @@ export interface ScratchStore {
   createScratch(title: string, body?: string | undefined): Promise<ScratchEntry>;
   readScratch(id: string): Promise<{ entry: ScratchEntry; content: string }>;
   deleteScratch(id: string): Promise<void>;
+  /**
+   * Replace the whole content of an existing scratchpad. Same id validation as
+   * read/delete (strictly inside root, *.md basename, regular file, symlink
+   * refused, O_NOFOLLOW). The new content is written to a temp file created
+   * EXCLUSIVELY and no-follow, then published over the destination with
+   * unlink(destination) + link(temp, destination) + unlink(temp) — never rename.
+   * The destination is re-opened O_NOFOLLOW and fstat'd before its unlink, so a
+   * symlink swapped in after the lstat is never removed; a link() EEXIST (the
+   * destination recreated concurrently) is re-validated and retried a bounded
+   * number of times. Throws ScratchRefused / ScratchNotFound / ScratchStoreError.
+   */
+  updateScratch(id: string, text: string): Promise<void>;
 }
 
 /** The shape a scratchpad id must have: a single safe *.md file name. */
@@ -315,6 +342,102 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
     }
   };
 
+  /** Bounded retries when a concurrent recreate surfaces as link() EEXIST on the destination. */
+  const PUBLISH_ATTEMPTS = 5;
+
+  const updateScratch = async (id: string, text: string): Promise<void> => {
+    if (typeof text !== 'string') throw new ScratchRefused('the scratchpad content must be a string');
+    const path = resolveInside(id);
+    // Same validation as delete: lstat-confirm a regular file, symlink refused.
+    let st;
+    try {
+      st = await fs.lstat(path);
+    } catch (e) {
+      if (errCode(e) === 'ENOENT') throw new ScratchNotFound(`'${id}' does not exist`);
+      throw storeError(e);
+    }
+    if (!st.isFile || st.isSymbolicLink) throw new ScratchRefused(`'${id}' is not a regular file and is refused`);
+
+    // Exclusive no-follow temp write: O_CREAT|O_EXCL|O_NOFOLLOW — an occupied or
+    // symlinked temp name fails with EEXIST/ELOOP instead of being followed.
+    const temp = join(root, `.tmp-${process.pid}-${randomBytes(6).toString('hex')}`);
+    const content = Buffer.from(text, 'utf8');
+    const unlinkTemp = async (): Promise<void> => {
+      try { await fs.unlink(temp); } catch (rmErr) { log.warn(`[scratches] could not remove temp ${temp}: ${String(rmErr)}`); }
+    };
+    try {
+      await fs.writeFileExclusive(temp, content);
+    } catch (e) {
+      await unlinkTemp();
+      const code = errCode(e);
+      if (code === 'EEXIST' || code === 'ELOOP') throw new ScratchStoreError(`scratchpad update refused: temp name is occupied (${String(e)})`);
+      throw storeError(e);
+    }
+
+    // No-clobber publish: unlink(destination) + link(temp, destination) + unlink(temp).
+    // Never rename — rename would clobber a destination created after the probe above.
+    for (let attempt = 0; ; attempt++) {
+      // Re-open the destination O_NOFOLLOW and fstat the SAME fd before unlinking,
+      // so a symlink swapped in after the lstat is never removed.
+      let handle;
+      try {
+        handle = await fs.open(path);
+      } catch (e) {
+        await unlinkTemp();
+        const code = errCode(e);
+        if (code === 'ENOENT') throw new ScratchNotFound(`'${id}' disappeared before the save`);
+        if (code === 'ELOOP' || code === 'EISDIR') throw new ScratchRefused(`'${id}' is not a regular file and is refused`);
+        throw storeError(e);
+      }
+      try {
+        let fst;
+        try {
+          fst = await handle.stat();
+        } catch (e) {
+          await unlinkTemp();
+          if (errCode(e) === 'ENOENT') throw new ScratchNotFound(`'${id}' disappeared before the save`);
+          throw storeError(e);
+        }
+        if (!fst.isFile) {
+          await unlinkTemp();
+          throw new ScratchRefused(`'${id}' is not a regular file and is refused`);
+        }
+      } finally {
+        try { await handle.close(); } catch { /* closing the probe fd is best-effort */ }
+      }
+
+      // The destination is confirmed present: unlink it, then link the temp over the name.
+      try {
+        await fs.unlink(path);
+      } catch (e) {
+        await unlinkTemp();
+        if (errCode(e) === 'ENOENT') {
+          // Deleted between the probe and the unlink: nothing to publish over.
+          throw new ScratchNotFound(`'${id}' disappeared before the save`);
+        }
+        throw storeError(e);
+      }
+      try {
+        await fs.link(temp, path);
+      } catch (e) {
+        if (errCode(e) === 'EEXIST' && attempt + 1 < PUBLISH_ATTEMPTS) {
+          // The destination was recreated between our unlink and link: re-validate
+          // (the loop's open+fstat above) and retry the unlink+link pair.
+          continue;
+        }
+        await unlinkTemp();
+        throw storeError(e);
+      }
+      // Published: the destination now holds the new content; remove the temp.
+      try {
+        await fs.unlink(temp);
+      } catch (rmErr) {
+        log.warn(`[scratches] could not remove temp ${temp}: ${String(rmErr)}`);
+      }
+      return;
+    }
+  };
+
   const deleteScratch = async (id: string): Promise<void> => {
     const path = resolveInside(id);
     let st;
@@ -333,5 +456,5 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
     }
   };
 
-  return { listScratches, createScratch, readScratch, deleteScratch };
+  return { listScratches, createScratch, readScratch, deleteScratch, updateScratch };
 }

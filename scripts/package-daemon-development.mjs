@@ -11,7 +11,7 @@ import {
 } from './daemon-development-metadata.mjs';
 import { requireBundleCompatibility, requireBundleTarget } from './daemon-bundle-metadata.mjs';
 import { stageRuntime } from './package-daemon-candidate.mjs';
-import { measureBundleRuntime } from './stage-daemon-bundle.mjs';
+import { measureBundleRuntime, stageVerifiedBundle } from './stage-daemon-bundle.mjs';
 
 function git(cwd, args) {
 	const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
@@ -73,6 +73,32 @@ async function normalizeRuntimeModes(directory) {
 	}
 }
 
+async function removeUnarchivableMistralMetadata(stage) {
+	// USTAR's final path component holds 100 bytes. The SDK's JavaScript stays intact.
+	const operations = join(stage, 'node_modules/@mistralai/mistralai/esm/models/operations');
+	const entries = await readdir(operations, { withFileTypes: true }).catch(error => {
+		if (error.code === 'ENOENT') return [];
+		throw error;
+	});
+	for (const entry of entries) {
+		if (entry.isFile() && Buffer.byteLength(entry.name) > 100 && /(?:\.d\.ts|\.map)$/.test(entry.name)) {
+			await rm(join(operations, entry.name));
+		}
+	}
+}
+
+export async function archiveDevelopmentRuntime(stage, archive, workspace, commit) {
+	await removeUnarchivableMistralMetadata(stage);
+	await normalizeRuntimeModes(stage);
+	execFileSync('/usr/bin/tar', ['--no-mac-metadata', '--no-xattrs', '--format', 'ustar', '-czf', archive,
+		'-C', stage, ...(await readdir(stage)).sort()]);
+	const identity = await measureDevelopmentCandidate(stage, archive);
+	// Verify the archive with the installer's extractor before publishing its handoff.
+	const verified = await stageVerifiedBundle(archive, { commit, ...identity }, workspace, identity.archiveSha256);
+	await rm(verified.root, { recursive: true, force: true });
+	return identity;
+}
+
 async function main([policyPath, ref, commit, version, outputPath, compatibilityPath, ...extra]) {
 	if (!policyPath || !ref || !commit || !outputPath || !compatibilityPath || extra.length ||
 		!/^(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})-dev\.[1-9][0-9]{0,8}$/.test(version ?? '') ||
@@ -112,14 +138,11 @@ export async function packageDevelopmentCandidate({ policy, ref, commit, version
 		await mkdir(stage);
 		await buildRuntime(checkout, stage);
 		requireCleanDevelopmentCheckout(checkout, commit);
-		await normalizeRuntimeModes(stage);
 		await mkdir(output, { mode: 0o700 });
 		ownsOutput = true;
 		const archiveName = `insrc-daemon-${version}-darwin-arm64.tar.gz`;
 		const archive = join(output, archiveName);
-		execFileSync('/usr/bin/tar', ['--no-mac-metadata', '--no-xattrs', '--format', 'ustar', '-czf', archive,
-			'-C', stage, ...(await readdir(stage)).sort()]);
-		const identity = await measureDevelopmentCandidate(stage, archive);
+		const identity = await archiveDevelopmentRuntime(stage, archive, workspace, commit);
 		await writeFile(join(output, 'candidate.json'), JSON.stringify({
 			schemaVersion: 1, channel: 'development', ...source, version, target: 'darwin-arm64',
 			nodeVersion: DEVELOPMENT_NODE_VERSION, minimumMacOS: DEVELOPMENT_MINIMUM_MACOS, archiveName, ...identity,

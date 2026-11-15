@@ -381,44 +381,63 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
       throw storeError(e);
     }
 
+    // Backup hard link BEFORE the unlink: link(path, backup) shares the validated
+    // destination's inode, so a publish that never lands can restore the original
+    // content under the original name — the destination is untouched on every
+    // failure path, not just on refusal.
+    const backup = join(root, `.tmp-${process.pid}-${randomBytes(6).toString('hex')}.bak`);
+    const unlinkBackup = async (): Promise<void> => {
+      try { await fs.unlink(backup); } catch (rmErr) { log.warn(`[scratches] could not remove backup ${backup}: ${String(rmErr)}`); }
+    };
+    try {
+      await fs.link(path, backup);
+    } catch (e) {
+      await unlinkTemp();
+      if (errCode(e) === 'ENOENT') throw new ScratchNotFound(`'${id}' disappeared before the save`);
+      throw storeError(e);
+    }
+    /** Abandon the save: clean up both auxiliary entries, then the caller throws. */
+    const fail = async (e: unknown): Promise<unknown> => {
+      await unlinkTemp();
+      await unlinkBackup();
+      return e;
+    };
+
     // No-clobber publish: unlink(destination) + link(temp, destination) + unlink(temp).
     // Never rename — rename would clobber a destination created after the probe above.
     // Each attempt re-validates the destination (lstat), then re-opens it O_NOFOLLOW and
     // fstats the SAME fd and only unlinks when that fd's inode is the one just lstat'd —
     // a symlink or replacement swapped in between is refused, never removed.
+    let unlinked = false;
+    let publishErr: unknown;
     for (let attempt = 0; ; attempt++) {
       let st2;
       try {
         st2 = await fs.lstat(path);
       } catch (e) {
-        await unlinkTemp();
-        if (errCode(e) === 'ENOENT') throw new ScratchNotFound(`'${id}' disappeared before the save`);
-        throw storeError(e);
+        throw await fail(errCode(e) === 'ENOENT' ? new ScratchNotFound(`'${id}' disappeared before the save`) : storeError(e));
       }
       if (!st2.isFile || st2.isSymbolicLink) {
-        await unlinkTemp();
-        throw new ScratchRefused(`'${id}' is not a regular file and is refused`);
+        throw await fail(new ScratchRefused(`'${id}' is not a regular file and is refused`));
       }
       let handle;
       try {
         handle = await fs.open(path);
       } catch (e) {
-        await unlinkTemp();
         const code = errCode(e);
-        if (code === 'ENOENT') throw new ScratchNotFound(`'${id}' disappeared before the save`);
-        if (code === 'ELOOP' || code === 'EISDIR') throw new ScratchRefused(`'${id}' is not a regular file and is refused`);
-        throw storeError(e);
+        if (code === 'ENOENT') throw await fail(new ScratchNotFound(`'${id}' disappeared before the save`));
+        if (code === 'ELOOP' || code === 'EISDIR') throw await fail(new ScratchRefused(`'${id}' is not a regular file and is refused`));
+        throw await fail(storeError(e));
       }
       try {
         let fst;
         try {
           fst = await handle.stat();
         } catch (e) {
-          if (errCode(e) === 'ENOENT') throw new ScratchNotFound(`'${id}' disappeared before the save`);
-          throw storeError(e);
+          throw await fail(errCode(e) === 'ENOENT' ? new ScratchNotFound(`'${id}' disappeared before the save`) : storeError(e));
         }
         if (!fst.isFile || fst.ino !== st2.ino) {
-          throw new ScratchRefused(`'${id}' changed between validation and unlink and is refused`);
+          throw await fail(new ScratchRefused(`'${id}' changed between validation and unlink and is refused`));
         }
       } finally {
         try { await handle.close(); } catch { /* closing the probe fd is best-effort */ }
@@ -428,13 +447,10 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
       try {
         await fs.unlink(path);
       } catch (e) {
-        await unlinkTemp();
-        if (errCode(e) === 'ENOENT') {
-          // Deleted between the probe and the unlink: nothing to publish over.
-          throw new ScratchNotFound(`'${id}' disappeared before the save`);
-        }
-        throw storeError(e);
+        // Deleted between the probe and the unlink: nothing to publish over.
+        throw await fail(errCode(e) === 'ENOENT' ? new ScratchNotFound(`'${id}' disappeared before the save`) : storeError(e));
       }
+      unlinked = true;
       try {
         await fs.link(temp, path);
       } catch (e) {
@@ -443,20 +459,36 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
           // re-validates it (lstat + O_NOFOLLOW fstat inode check) before unlinking again.
           continue;
         }
-        // Publish failure after the destination unlink: the name may briefly be absent
-        // (ENOENT window inherent to unlink+link, never a partial write), the temp is
-        // cleaned up, and the caller sees a store error — no partial content is exposed.
-        await unlinkTemp();
-        throw storeError(e);
+        publishErr = e;
+        break;
       }
-      // Published: the destination now holds the new content; remove the temp.
+      // Published: the destination now holds the new content; remove the temp and the backup.
       try {
         await fs.unlink(temp);
       } catch (rmErr) {
         log.warn(`[scratches] could not remove temp ${temp}: ${String(rmErr)}`);
       }
+      try {
+        await fs.unlink(backup);
+      } catch (rmErr) {
+        log.warn(`[scratches] could not remove backup ${backup}: ${String(rmErr)}`);
+      }
       return;
     }
+    // The publish never landed (non-EEXIST link failure, or retries exhausted). Restore
+    // the ORIGINAL content under the original name from the backup hard link — the
+    // destination ends up exactly as before the save — then clean up and report. At no
+    // point is partial content exposed at the destination name.
+    if (unlinked) {
+      try {
+        await fs.link(backup, path);
+      } catch (rmErr) {
+        log.warn(`[scratches] could not restore ${id} from the backup link: ${String(rmErr)}`);
+      }
+    }
+    await unlinkTemp();
+    await unlinkBackup();
+    throw storeError(publishErr);
   };
 
   const deleteScratch = async (id: string): Promise<void> => {

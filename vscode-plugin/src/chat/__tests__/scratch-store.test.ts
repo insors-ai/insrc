@@ -378,15 +378,20 @@ test('scratch-store.test.ts: updateScratch happy path writes full text and repla
   const tempPath = excl[0]?.path ?? '';
   assert.equal(tempPath.startsWith(`${ROOT}/.tmp-`), true);
   assert.equal(/\.md$/.test(tempPath), false);
-  // Publish sequence: unlink(destination) then link(temp, destination) then unlink(temp).
+  // Publish sequence: link(destination, backup) taken first, then unlink(destination),
+  // link(temp, destination), unlink(temp), unlink(backup) — never rename.
   const unlinks = fake.ops('unlink');
   const links = fake.ops('link');
-  assert.equal(links.length, 1);
-  assert.equal(links[0]?.path, tempPath);
-  assert.equal(links[0]?.to, `${ROOT}/20260101-000000-a.md`);
-  assert.deepEqual(unlinks.map((c) => c.path).sort(), [`${ROOT}/20260101-000000-a.md`, tempPath].sort());
-  // No temp left behind; destination re-opened O_NOFOLLOW + fstat before unlink.
+  const publishLink = links.find((c) => c.path === tempPath);
+  const backupLink = links.find((c) => c.path === `${ROOT}/20260101-000000-a.md` && c.to !== undefined && c.to.endsWith('.bak'));
+  assert.ok(publishLink, 'temp was linked over the destination');
+  assert.equal(publishLink?.to, `${ROOT}/20260101-000000-a.md`);
+  assert.ok(backupLink, 'a backup hard link of the validated destination was taken before the unlink');
+  const backupPath = backupLink?.to ?? '';
+  assert.deepEqual(unlinks.map((c) => c.path).sort(), [`${ROOT}/20260101-000000-a.md`, tempPath, backupPath].sort());
+  // No temp or backup left behind; destination re-opened O_NOFOLLOW + fstat before unlink.
   assert.equal(fake.files.has(tempPath), false);
+  assert.equal(fake.files.has(backupPath), false);
   assert.equal(fake.ops('open').filter((c) => c.path.endsWith('a.md')).length, 1);
   assert.equal(fake.ops('fstat').filter((c) => c.path.endsWith('a.md')).length, 1);
 
@@ -492,6 +497,23 @@ test('scratch-store.test.ts: updateScratch happy path writes full text and repla
   await assert.rejects(store.updateScratch('20260101-000003-d.md', 'new'), (e: unknown) => e instanceof ScratchRefused);
   fake.failOn = undefined;
   assert.equal(Buffer.from(fake.files.get(`${ROOT}/20260101-000003-d.md`) ?? []).toString('utf8'), 'swapped', 'swapped-in file left untouched');
+
+  // Publish failure (non-EEXIST link error after the destination was unlinked): the
+  // original content is restored from the backup hard link, temp+backup are cleaned,
+  // and the caller sees ScratchStoreError with the destination content INTACT.
+  seed(fake, '20260101-000004-e.md', 'precious original', 50);
+  // Fail only the temp->destination publish link (source is the .tmp- temp), not the
+  // backup->destination restore link (source ends .bak).
+  fake.failOn = (c) => (c.op === 'link' && c.to === `${ROOT}/20260101-000004-e.md` && !c.path.endsWith('.bak') ? Object.assign(new Error('EIO'), { code: 'EIO' }) : undefined);
+  const markPub = fake.calls.length;
+  await assert.rejects(store.updateScratch('20260101-000004-e.md', 'should not land'), (e: unknown) => e instanceof ScratchStoreError);
+  fake.failOn = undefined;
+  assert.equal(Buffer.from(fake.files.get(`${ROOT}/20260101-000004-e.md`) ?? []).toString('utf8'), 'precious original', 'destination restored to its pre-save content after publish failure');
+  const pubCalls = fake.calls.slice(markPub);
+  assert.equal(pubCalls.some((c) => c.op === 'link' && c.path === `${ROOT}/20260101-000004-e.md` && (c.to ?? '').endsWith('.bak')), true, 'backup link was taken before the unlink');
+  assert.equal(pubCalls.some((c) => c.op === 'link' && (c.path ?? '').endsWith('.bak') && c.to === `${ROOT}/20260101-000004-e.md`), true, 'backup was linked back over the destination name on restore');
+  assert.equal(pubCalls.some((c) => c.op === 'unlink' && (c.path.includes('.tmp-'))), true, 'temp cleaned up after the failed publish');
+  assert.equal(pubCalls.some((c) => c.op === 'unlink' && c.path.endsWith('.bak')), true, 'backup cleaned up after the failed publish');
 });
 
 test('scratch-store.test.ts: updateScratch bumps mtime so listScratches reflects the save', async () => {

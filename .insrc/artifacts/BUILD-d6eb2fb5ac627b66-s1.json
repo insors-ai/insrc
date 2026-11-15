@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "433bd952228c998c6d49d3ba0363c0cb9ee14126019b7337e07d9a15dae1a136",
+        "at": "2026-11-14T17:32:25.617Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T17:47:38.910Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-0bf1cf38-5539-439c-9181-38a3a4990153",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-14T17:29:44.599Z",
+    "epicCreatedAt": "2026-11-14T17:29:44.599Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d6eb2fb5ac627b66",
+    "storyId": "s1",
+    "revision": 2,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "A constant change. Grounded by grep (the analyzer was unavailable earlier this session): REPO_TURN_CAPACITY is defined once and read in two places, the capacity gate in sessionQueueWait and the outbox's occupied/total. The claim (acknowledge) re-checks eligibility inside its write transaction, so no structure assumes the value 2. Only two tests hard-code a full house of two and need generalising. No new contract, no schema change, no design choice.",
+    "updatedAt": "2026-11-14T17:31:55.097Z"
+  },
+  "body": {
+    "focus": "Raise the VS Code dev chat's per-repository concurrent turn limit from 2 to 6: REPO_TURN_CAPACITY in vscode-plugin/src/chat/chat-queue-store.ts (used by sessionQueueWait's capacity gate and the outbox's occupied/total display in chat-outbox.ts). Update the two tests that hard-code a full house of 2 (chat-outbox.test.ts capacity projection; chat-queue-routing.test.ts 'waiting approval or retry in A allows B and full capacity queues C') so they fill REPO_TURN_CAPACITY slots instead of exactly two.",
+    "producesLld": false,
+    "commit": "180fc0b05",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": false
+      }
+    ],
+    "summary": "REPO_TURN_CAPACITY raised from 2 to 6 (commit 180fc0b05). Three tests that assumed exactly two slots (chat-outbox, chat-queue-routing, chat-queue-store) now fill REPO_TURN_CAPACITY slots; the outbox and store tests fail if the gate is off by one. 100/100 chat queue tests pass; plugin tsc clean.",
+    "testRecord": {
+      "md": "docs/standalone/d6eb2fb5ac627b66-E20261114d6eb2fb5/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-outbox.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T17:31:55.097Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-queue-routing.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T17:31:55.097Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T17:31:55.097Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-queue-store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T17:31:55.097Z"
+      }
+    ]
+  },
+  "citations": []
+}

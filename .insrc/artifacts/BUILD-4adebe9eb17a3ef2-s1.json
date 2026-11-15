@@ -1,0 +1,196 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 8,
+        "contentHash": "930d0db3c002de978209fdaf10115297c5974f713c316aa81708878f716b72ae",
+        "at": "2026-11-14T15:09:37.605Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 8,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T15:31:09.310Z",
+        "override": {
+          "reason": "User explicitly approved the presented BUILD with override after three review rounds. The third independent review passed artifact provenance and signing policy, and raised two medium findings: emitted candidate metadata coverage was added in 548a8a743 and has not been independently re-reviewed; a single end-to-end rollout fixture remains missing. All 16 focused local tests passed. Formal task validations remain non-green; the earlier full local sweep reported 510 failures and 88 cancellations, not fully classified against baseline. Exact GitHub-built main archive qualification remains required before release."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-1d30dc71-c6c1-4d82-b52f-cd54f6855e1e",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-14T14:11:00.315Z",
+    "epicCreatedAt": "2026-11-14T13:09:02.500Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4adebe9eb17a3ef2",
+    "storyId": "s1",
+    "revision": 8,
+    "updatedAt": "2026-11-14T15:08:34.140Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "separate-daemon-development-release-build-lanes"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": false
+      },
+      {
+        "id": "t2",
+        "passed": false
+      },
+      {
+        "id": "t3",
+        "passed": false
+      },
+      {
+        "id": "t4",
+        "passed": false
+      }
+    ],
+    "testRecord": {
+      "md": "docs/standalone/separate-daemon-development-release-build-lanes-E202611144adebe9e/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".github/workflows/daemon-candidate.yml"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T15:08:34.140Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/package-daemon-candidate.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T15:08:34.140Z"
+      },
+      {
+        "target": {
+          "file": "scripts/package-daemon-candidate.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T15:08:34.140Z"
+      },
+      {
+        "target": {
+          "file": ".github/workflows/daemon-promotion.yml"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T15:08:34.140Z"
+      },
+      {
+        "target": {
+          "file": ".github/workflows/daemon-qualification-sign.yml"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T15:08:34.140Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/daemon-bundle-metadata.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T15:08:34.140Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/promote-daemon-candidate.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T15:08:34.140Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/stage-daemon-bundle.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T15:08:34.140Z"
+      },
+      {
+        "target": {
+          "file": "scripts/daemon-bundle-metadata.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T15:08:34.140Z"
+      },
+      {
+        "target": {
+          "file": "scripts/daemon-release-artifact.sh"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T15:08:34.140Z"
+      },
+      {
+        "target": {
+          "file": "scripts/prepare-daemon-qualification.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T15:08:34.140Z"
+      },
+      {
+        "target": {
+          "file": "scripts/promote-daemon-candidate.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T15:08:34.140Z"
+      },
+      {
+        "target": {
+          "file": "scripts/record-daemon-qualification.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T15:08:34.140Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/daemon-release-policy.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T15:08:34.140Z"
+      },
+      {
+        "target": {
+          "file": "scripts/check-daemon-release-policy.sh"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T15:08:34.140Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/pilot-prebuilt-macos-daemon-releases-E202611148a036e64/S001/QUALIFICATION.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T15:08:34.140Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/daemon-release-artifact.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-14T15:08:34.140Z"
+      }
+    ],
+    "commit": "548a8a743"
+  },
+  "citations": []
+}

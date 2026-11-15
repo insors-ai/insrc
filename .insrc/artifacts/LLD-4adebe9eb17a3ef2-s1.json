@@ -30,7 +30,7 @@
     "triageRationale": "One cohesive deployment contract across existing candidate, qualification and promotion jobs. Requires a reviewed branch/provenance contract and local positive/negative tests.",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "approved",
+      "status": "completed",
       "revision": {
         "number": 4,
         "contentHash": "b36517eb95b4f0d9386bf949118b539d6519d90d923bae30a9837095c6dfee53",

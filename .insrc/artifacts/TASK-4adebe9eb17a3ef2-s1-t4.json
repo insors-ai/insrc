@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-56656cf7-9866-4a64-b1ae-53edde05ce7c",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-14T14:09:25.909Z",
+    "epicCreatedAt": "2026-11-14T13:09:02.500Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4adebe9eb17a3ef2",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Document and verify staged rollout",
+      "parent": {
+        "entityId": "STORY-4adebe9eb17a3ef2-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-4adebe9eb17a3ef2-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-4adebe9eb17a3ef2-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "a57f818a69b7a176f27c9bc28ca94f6ca2fd5863621cb50104e1f8844d2e2629",
+        "at": "2026-11-14T14:09:25.914Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T14:09:25.916Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Document and verify staged rollout",
+    "summary": "Document the narrow default-branch workflow landing, operator setup and shutdown/reconciliation. Verify unsigned v2 can build before main release activation.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Runbook defers enabling main until packaging/installer, branch protection and environment configuration are verified.",
+      "Local end-to-end fixtures prove pre-test signing, evidence approval, byte-preserving promotion, and cancellation guidance. No release is dispatched during implementation."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Local staged rollout and release sequence"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

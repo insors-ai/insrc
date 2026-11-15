@@ -1,0 +1,267 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 17,
+        "contentHash": "3ed8bb251bb53e4096181a209786d86c1c9016e3bd080a8a817c289d6c467ce0",
+        "at": "2026-11-15T08:41:27.423Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-21879f61-7dbb-4c63-888e-af7e19f9ad6e",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-14T17:25:48.338Z",
+    "epicCreatedAt": "2026-11-14T15:54:38.285Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "234b9967599e56d9",
+    "storyId": "s1",
+    "revision": 17,
+    "updatedAt": "2026-11-15T08:40:25.501Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "install-signed-v2-daemon-development-bundles"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": false
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": false
+      },
+      {
+        "id": "t5",
+        "passed": false
+      },
+      {
+        "id": "t6",
+        "passed": false
+      },
+      {
+        "id": "t7",
+        "passed": false
+      }
+    ],
+    "testRecord": {
+      "md": "docs/standalone/install-signed-v2-daemon-development-bundles-E20261114234b9967/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "scripts/__tests__/daemon-development-metadata.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:40:25.501Z"
+      },
+      {
+        "target": {
+          "file": "scripts/daemon-bundle-metadata.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:40:25.501Z"
+      },
+      {
+        "target": {
+          "file": "scripts/daemon-development-metadata.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:40:25.501Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/package-daemon-development.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:40:25.501Z"
+      },
+      {
+        "target": {
+          "file": "scripts/package-daemon-development.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:40:25.501Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/sign-daemon-development.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:40:25.501Z"
+      },
+      {
+        "target": {
+          "file": "scripts/sign-daemon-development.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:40:25.501Z"
+      },
+      {
+        "target": {
+          "file": "src/bin/insrc-daemon-control.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:40:25.501Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/managed-development-bundle-proof.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:40:25.501Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/managed-bundle-proof.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:40:25.501Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/__tests__/installation-mutation-gate.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:40:25.501Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/daemon-bundle-release-floor.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:40:25.501Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/installation-mutation-gate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:40:25.501Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/managed-daemon-control.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:40:25.501Z"
+      },
+      {
+        "target": {
+          "file": "scripts/qualify-daemon-development.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:40:25.501Z"
+      },
+      {
+        "target": {
+          "file": "src/bin/insrc-daemon-supervisor.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:40:25.501Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/daemon-supervisor.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:40:25.501Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/supervisor.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:40:25.501Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/managed-update-preparation.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:40:25.501Z"
+      },
+      {
+        "target": {
+          "file": "scripts/install-daemon-bundle.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:40:25.501Z"
+      },
+      {
+        "target": {
+          "file": "scripts/install-daemon-development-bundle.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:40:25.501Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/handler-runtime.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:40:25.501Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/managed-daemon-probation.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:40:25.501Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/managed-update-recovery.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:40:25.501Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/install-signed-v2-daemon-development-bundles-E20261114234b9967/S001/VERIFICATION.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:40:25.501Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/fresh-managed-activation.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:40:25.501Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/fresh-managed-activation.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:40:25.501Z"
+      }
+    ],
+    "commit": "4e9d67267",
+    "summary": "A fresh journal read leaves the trust-only root pristine while preserving checks for unsafe journal directories."
+  },
+  "citations": []
+}

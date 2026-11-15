@@ -1,0 +1,689 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "store-455cbecb-2c84-48e9-b530-381ab98ce776",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-14T17:33:50.256Z",
+    "epicCreatedAt": "2026-11-14T17:29:44.599Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 2,
+    "epicHash": "d6eb2fb5ac627b66",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "standalone": true,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "3beb9e59e06babdeb3ac558ca59f23979a4605682a119fddaac645842ba585c9",
+        "at": "2026-11-14T17:33:50.261Z",
+        "by": {
+          "id": "insrc:code-review",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "kind": "code-review",
+    "format": "task-based",
+    "storyId": "s1",
+    "status": "passed",
+    "reviews": [
+      {
+        "reviewId": "cr-d6eb2fb5-s1",
+        "attempt": 1,
+        "storyId": "s1",
+        "reviewer": "daemon",
+        "status": "passed",
+        "finalScopeIdentity": "97309b67a2ce6542cbf37d38457c511d36cc96d20ab9c17ce1871234cb68f9ca",
+        "attributionIdentity": "36b362afa5137f3bfc01accf6d5a5f2a44b6ad88174d44e170d10eefc0a82288",
+        "taskScopeIdentities": [
+          {
+            "taskId": "s1",
+            "identity": "19a825b4e74be48b593ead4112f11aeac63b786c156c0aa45f64c567b0fd2ad4"
+          }
+        ],
+        "scope": {
+          "reviewRevision": "180fc0b052f6b717ebd858bd2e4b27e5751d364c",
+          "finalScope": {
+            "revision": "180fc0b052f6b717ebd858bd2e4b27e5751d364c",
+            "identity": "97309b67a2ce6542cbf37d38457c511d36cc96d20ab9c17ce1871234cb68f9ca",
+            "entries": [
+              {
+                "originChangeIndex": 0,
+                "path": "vscode-plugin/src/chat/chat-queue-store.ts",
+                "blobOid": "59c791cb7c156b395f8b39b8a863b38a7ca86521",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      35,
+                      36
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 1,
+                "path": "vscode-plugin/src/chat/__tests__/chat-outbox.test.ts",
+                "blobOid": "6161abb320f4508308620fb37672951abdd74b14",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      5,
+                      5
+                    ]
+                  },
+                  {
+                    "after": [
+                      34,
+                      38
+                    ]
+                  },
+                  {
+                    "after": [
+                      40,
+                      40
+                    ]
+                  },
+                  {
+                    "deletionAt": 20
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 2,
+                "path": "vscode-plugin/src/chat/__tests__/chat-queue-routing.test.ts",
+                "blobOid": "3452bc2dc2a7a774fb19a3bd88b033a7de014df2",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      12,
+                      12
+                    ]
+                  },
+                  {
+                    "after": [
+                      89,
+                      96
+                    ]
+                  },
+                  {
+                    "after": [
+                      100,
+                      100
+                    ]
+                  },
+                  {
+                    "after": [
+                      103,
+                      104
+                    ]
+                  },
+                  {
+                    "after": [
+                      116,
+                      117
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 3,
+                "path": "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts",
+                "blobOid": "0f76e3f82963db7a66e932e3205ffc0df5d38cf9",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      10,
+                      10
+                    ]
+                  },
+                  {
+                    "after": [
+                      25,
+                      25
+                    ]
+                  },
+                  {
+                    "after": [
+                      36,
+                      37
+                    ]
+                  },
+                  {
+                    "after": [
+                      39,
+                      39
+                    ]
+                  },
+                  {
+                    "after": [
+                      47,
+                      49
+                    ]
+                  }
+                ]
+              }
+            ],
+            "dispositions": [
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    35,
+                    36
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      35,
+                      36
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    5,
+                    5
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      5,
+                      5
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "deletionAt": 20
+                },
+                "kind": "deleted",
+                "finalSegments": [
+                  {
+                    "deletionAt": 20
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    34,
+                    38
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      34,
+                      38
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    40,
+                    40
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      40,
+                      40
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    12,
+                    12
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      12,
+                      12
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    89,
+                    96
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      89,
+                      96
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    100,
+                    100
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      100,
+                      100
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    103,
+                    104
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      103,
+                      104
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    116,
+                    117
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      116,
+                      117
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    10,
+                    10
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      10,
+                      10
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    25,
+                    25
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      25,
+                      25
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    36,
+                    37
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      36,
+                      37
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    39,
+                    39
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      39,
+                      39
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    47,
+                    49
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      47,
+                      49
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              }
+            ],
+            "selectedTaskIds": [
+              "s1"
+            ],
+            "testCount": 3,
+            "attributionIdentity": "36b362afa5137f3bfc01accf6d5a5f2a44b6ad88174d44e170d10eefc0a82288",
+            "attributionState": "accepted",
+            "tasks": [
+              {
+                "taskId": "s1",
+                "changeIndexes": [
+                  0,
+                  1,
+                  2,
+                  3
+                ],
+                "testIndexes": [
+                  0,
+                  1,
+                  2
+                ],
+                "decision": {
+                  "action": "initial"
+                },
+                "identity": "19a825b4e74be48b593ead4112f11aeac63b786c156c0aa45f64c567b0fd2ad4"
+              }
+            ]
+          },
+          "storyId": "s1",
+          "documents": {},
+          "reviewSet": [
+            {
+              "commit": "180fc0b052f6b717ebd858bd2e4b27e5751d364c",
+              "parent": "20e5965cc3d425880466291dd818289b56fa3c68",
+              "files": [
+                {
+                  "path": "vscode-plugin/src/chat/chat-queue-store.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        35,
+                        36
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "vscode-plugin/src/chat/__tests__/chat-outbox.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        5,
+                        5
+                      ]
+                    },
+                    {
+                      "deletionAt": 20
+                    },
+                    {
+                      "after": [
+                        34,
+                        38
+                      ]
+                    },
+                    {
+                      "after": [
+                        40,
+                        40
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "vscode-plugin/src/chat/__tests__/chat-queue-routing.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        12,
+                        12
+                      ]
+                    },
+                    {
+                      "after": [
+                        89,
+                        96
+                      ]
+                    },
+                    {
+                      "after": [
+                        100,
+                        100
+                      ]
+                    },
+                    {
+                      "after": [
+                        103,
+                        104
+                      ]
+                    },
+                    {
+                      "after": [
+                        116,
+                        117
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        10,
+                        10
+                      ]
+                    },
+                    {
+                      "after": [
+                        25,
+                        25
+                      ]
+                    },
+                    {
+                      "after": [
+                        36,
+                        37
+                      ]
+                    },
+                    {
+                      "after": [
+                        39,
+                        39
+                      ]
+                    },
+                    {
+                      "after": [
+                        47,
+                        49
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "s1",
+            "status": "passed",
+            "summary": "Reviewed the changed implementation, its consumers, the stated requirement and acceptance check, and all three changed capacity tests. The change raises the repository limit to six; the gate and outbox display use the shared constant, and lease claims re-check eligibility inside the write transaction. No blocking findings.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Inspected the complete bodies and assertions of all three changed tests. The outbox test checks both five occupied slots remain eligible and six cause a capacity wait and display six of six. The routing test fills all six slots, confirms C stays queued, then confirms C runs after a slot frees. The store test claims six leases and confirms another claim is refused. These assertions cover the stated acceptance check and the added store-level capacity check.",
+              "evidenceReferences": [
+                "180fc0b052f6b717ebd858bd2e4b27e5751d364c:vscode-plugin/src/chat/__tests__/chat-outbox.test.ts",
+                "180fc0b052f6b717ebd858bd2e4b27e5751d364c:vscode-plugin/src/chat/__tests__/chat-queue-routing.test.ts",
+                "180fc0b052f6b717ebd858bd2e4b27e5751d364c:vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: I did not run tests, typechecks, or builds. The supplied builder report states the three test files passed at commit 180fc0b05; I treated that as reported evidence, not as my own execution."
+            ],
+            "inspectedReferences": [
+              "180fc0b052f6b717ebd858bd2e4b27e5751d364c:vscode-plugin/src/chat/chat-queue-store.ts",
+              "180fc0b052f6b717ebd858bd2e4b27e5751d364c:vscode-plugin/src/chat/chat-outbox.ts",
+              "180fc0b052f6b717ebd858bd2e4b27e5751d364c:vscode-plugin/src/chat/__tests__/chat-outbox.test.ts",
+              "180fc0b052f6b717ebd858bd2e4b27e5751d364c:vscode-plugin/src/chat/__tests__/chat-queue-routing.test.ts",
+              "180fc0b052f6b717ebd858bd2e4b27e5751d364c:vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts"
+            ],
+            "executedTests": []
+          }
+        ],
+        "summary": "1 selected task assessment(s): passed.",
+        "completedAt": "2026-11-14T17:33:49.306Z",
+        "buildFingerprint": "e3b7ad150c8eeb8086da25bf91615c3f359090af0ffa94ce19b1787214f426fe"
+      }
+    ]
+  },
+  "citations": []
+}

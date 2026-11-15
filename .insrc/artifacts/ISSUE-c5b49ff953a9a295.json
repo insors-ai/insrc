@@ -1,0 +1,110 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1794721780699-s4fd5n",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-15T05:50:20.518Z",
+    "epicCreatedAt": "2026-11-15T05:50:20.518Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 39818,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "c5b49ff953a9a295",
+    "epicSlug": "give-every-trivial-change-issue-record",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ff00ba9fe3ae664df08c753c3801dcb361b20f05d76da75a11dc9b91f6c7a9b7",
+        "at": "2026-11-15T05:50:20.537Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-15T05:50:46.187Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "parentRef": {
+      "epicHash": "c5b49ff953a9a295",
+      "slug": "EPIC-c5b49ff953a9a295"
+    }
+  },
+  "body": {
+    "title": "Give every trivial change an ISSUE record so its trace is kept and its Story completes",
+    "reproduction": "1. Ask for a mechanical change that triage sizes as trivial. On 2026-11-14 this was raising the chat's per-repository turn limit from 2 to 6.\n2. Triage routes it straight to build, with no ISSUE, design or plan record before it.\n3. Build, review and approve the BUILD record (BUILD-d6eb2fb5ac627b66-s1).\n\nObserved: the approval succeeds, but its Story-completion step fails with \"no Epic anchor for d6eb2fb5ac627b66: its head (a Define, an Issue or a stamped standalone LLD) carries no creation time\". No STORY or EPIC record is created. Nothing records what was asked or why, apart from the BUILD record's focus text. All 16 trivial builds in this repository that have no ISSUE, LLD or Define have no STORY record. Trivial builds that started from an ISSUE completed (f0da1b8b9cdb28b6, 3183af2a005db14f, 9d4523c7, de3ab236).\n\nExpected: every trivial change has an ISSUE record that states what was asked and why. Its BUILD hangs off that record, and approving the BUILD completes its Story, as for a small bugfix.",
+    "rootCause": "Triage sends trivial work straight to build without creating any head record:\n\n- `routeForSizeClass` returns `startStage: 'build'` for `trivial`.\n- The triage `nextCall` is `insrc_build_step` with `target: '(standalone-trivial)'` and no work-item hash.\n- The steering text tells agents the same: a standalone BUILD record is the trivial change's ledger entry.\n\nWithout a head, two things are lost:\n\n- **The trace.** The ISSUE is the record of what was asked, why and how it was resolved, and becomes the GitHub issue. A trivial change has none.\n- **Story completion.** Completing a Story creates its STORY and EPIC heads. Their creation context takes the Epic anchor from `requireEpicAnchor` for every kind that is not a root, and `requireEpicAnchor` reads it only from a Define, an ISSUE or a stamped standalone LLD. A headless trivial build has none, so completion stops with `MissingAnchorError`. The BUILD record's own stamped `epicCreatedAt` is not consulted.\n\nA small bugfix does not hit this, because triage routes it to the `issue` stage first and approving the ISSUE advances it to build.",
+    "fixIntent": "- A trivial change gets an ISSUE record before it is built: triage routes `trivial` to the `issue` stage, and approving the ISSUE advances to build with the ISSUE's hash as the work item, as a small bugfix does.\n- The ISSUE record can describe a non-defect change (what was asked and why) as well as a defect.\n- The steering and guide text, and the triage nextCall it documents, say that trivial work starts with an ISSUE.\n- Approving the BUILD of a trivial change completes its Story.\n- The 16 existing headless trivial builds are handled deliberately: either given an ISSUE record and completed, or left as they are with the decision recorded."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/triage/classify.ts:47-49",
+      "quotedText": "case 'trivial': // Mechanical, ~1 file, no design choices: straight to build, no LLD. return { startStage: 'build', standalone: true, needsPlan: false, producesLld: false };"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/steps/triage-step/phases/classify.ts:74-85",
+      "quotedText": "// Trivial → straight to build (no LLD), standalone. ... target: '(standalone-trivial)'"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/codecs.ts:161-164",
+      "quotedText": ": requireEpicAnchor(repoPath, key.epicHash);"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/storage.ts:550-557",
+      "quotedText": "no Epic anchor for ${epicHash}: its head (a Define, an Issue or a stamped standalone LLD) carries no creation time"
+    },
+    {
+      "id": "c5",
+      "kind": "doc",
+      "ref": "src/prompts/steering-block.md:231",
+      "quotedText": "**trivial** → `build` (no LLD; a standalone BUILD record is its ledger entry)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/BUILD-d6eb2fb5ac627b66-s1.json",
+      "quotedText": "story-completion followOn: no Epic anchor for d6eb2fb5ac627b66"
+    },
+    {
+      "id": "c7",
+      "kind": "stakeholder",
+      "ref": "user 2026-11-15",
+      "quotedText": "trivial builds should also have an ISSUE record. else the trace gets lost."
+    }
+  ]
+}

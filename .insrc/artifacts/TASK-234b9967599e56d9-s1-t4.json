@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-94c87004-4d50-4605-b1c6-f12449e08a59",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-14T17:22:38.548Z",
+    "epicCreatedAt": "2026-11-14T15:54:38.285Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "234b9967599e56d9",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Managed development proof and sequence floor",
+      "parent": {
+        "entityId": "STORY-234b9967599e56d9-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-234b9967599e56d9-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-234b9967599e56d9-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e365b0709d89c41c64a868a40f17ccf52220b3689b18ca3cc26941105e3961a5",
+        "at": "2026-11-14T17:22:38.554Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T17:22:38.556Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Managed development proof and sequence floor",
+    "summary": "Add dev proof and repository/channel floor in journal, admission and re-verification. Keep production trust domains separate.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Atomic reservation keeps admission floor after rollback and rejects conflicting same-sequence bytes.",
+      "Restart/recovery verify exact pinned contents and preserve existing production records."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Development proof and reservation floor, rollback and equal-sequence byte identity"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

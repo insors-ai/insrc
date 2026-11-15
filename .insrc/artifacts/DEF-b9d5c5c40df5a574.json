@@ -65,8 +65,10 @@
     "tracker": {
       "adapter": "github",
       "epicStatus": "open",
-      "storyStatus": {},
-      "lastSyncedAt": "2026-11-14T07:30:16.169Z"
+      "storyStatus": {
+        "s4": "open"
+      },
+      "lastSyncedAt": "2026-11-15T05:00:33.675Z"
     }
   },
   "body": {

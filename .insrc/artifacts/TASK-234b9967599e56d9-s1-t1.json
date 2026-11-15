@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-987153db-778b-4ec5-a906-86a5e3a9e920",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-14T17:22:38.522Z",
+    "epicCreatedAt": "2026-11-14T15:54:38.285Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "234b9967599e56d9",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Development policy and manifest",
+      "parent": {
+        "entityId": "STORY-234b9967599e56d9-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-234b9967599e56d9-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fdf52502c9d97d4274fe8eff11efecd8a4939a9524d7b11f773715c29e7ec02a",
+        "at": "2026-11-14T17:22:38.527Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T17:22:38.530Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Development policy and manifest",
+    "summary": "Define authenticated allowed refs, canonical manifest, signature, target and staging adapter.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Unsigned or wrong-domain proof and invalid ref/target fail before activation.",
+      "Production and qualification formats stay accepted only by existing policy."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Canonical development manifest, branch policy and wrong-domain proof rejection"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

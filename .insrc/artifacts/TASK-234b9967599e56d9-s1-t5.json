@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9b4166ef-2f91-4ea8-ab9b-bd24909d989c",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-14T17:22:38.558Z",
+    "epicCreatedAt": "2026-11-14T15:54:38.285Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "234b9967599e56d9",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Development bootstrap and isolated first activation",
+      "parent": {
+        "entityId": "STORY-234b9967599e56d9-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-234b9967599e56d9-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-234b9967599e56d9-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-234b9967599e56d9-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c12713cd50ebadb97051f523a928f5fc138f93362192c3e02118544c27d0e580",
+        "at": "2026-11-14T17:22:38.563Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T17:22:38.565Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Development bootstrap and isolated first activation",
+    "summary": "Implement authenticated bootstrap and preflight for a dedicated Apple Silicon macOS VM and controller dispatch for fresh activation.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Fresh install checks trusted policy, host/runtime and archive before activation.",
+      "Foreign state and invalid proof leave service and data untouched."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Authenticated bootstrap fixture and host, archive and foreign-state refusal"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

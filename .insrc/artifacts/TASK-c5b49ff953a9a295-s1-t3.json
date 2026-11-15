@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b8996962-5924-436e-9820-2c22541a392b",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-15T06:40:22.871Z",
+    "epicCreatedAt": "2026-11-15T05:50:20.518Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c5b49ff953a9a295",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Refuse a headless no-design build",
+      "parent": {
+        "entityId": "STORY-c5b49ff953a9a295-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c5b49ff953a9a295-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c5b49ff953a9a295-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "71484460a6fbfe7b9025f03871121e5f7590e631c050dfe7dc269e36d8cbb915",
+        "at": "2026-11-15T06:40:22.871Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-15T06:40:22.877Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Refuse a headless no-design build",
+    "summary": "The standalone no-LLD build stops minting a hash from the focus: implement and validate refuse a call without epicHash (no-identity) or whose epicHash has no approved ISSUE (no-head). Small (LLD) builds are unchanged.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "A no-LLD call without epicHash is refused with no-identity and writes nothing.",
+      "A no-LLD call whose epicHash has no approved ISSUE is refused.",
+      "A no-LLD call under an approved ISSUE builds as before."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "build implement: a no-LLD standalone call without epicHash is refused with no-identity and writes nothing"
+      },
+      {
+        "level": "integration",
+        "name": "build implement: a no-LLD standalone call whose epicHash has no approved ISSUE is refused"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

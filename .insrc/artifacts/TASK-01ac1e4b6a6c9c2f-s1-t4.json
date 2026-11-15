@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-75f15c92-72dc-4c6a-96cb-809940577061",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-15T05:00:05.918Z",
+    "epicCreatedAt": "2026-11-14T15:32:49.965Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "01ac1e4b6a6c9c2f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Route scratch-save in the scratch host and wire onScratchSave in extension.ts",
+      "parent": {
+        "entityId": "STORY-01ac1e4b6a6c9c2f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-01ac1e4b6a6c9c2f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-01ac1e4b6a6c9c2f-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-01ac1e4b6a6c9c2f-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4ae7b98d17eb0a12da84c73714c3eb26af57c9ead0f80c4ca20989f74a8b557d",
+        "at": "2026-11-15T05:00:05.918Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-15T05:00:05.922Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Route scratch-save in the scratch host and wire onScratchSave in extension.ts",
+    "summary": "Add the 'scratch-save' route to createScratchHost.onMessage in scratch-host.ts (validate, await store.updateScratch, reply via panels.replySaved with gen, refresh browse + chat list; ok:false + warn on failure) and wire the document panel's onScratchSave seam in extension.ts to that route; new scratch-host.test.ts plus extension-chat-wiring.test.ts pins.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "createScratchHost.onMessage has a 'scratch-save' case validating string id/text + numeric gen (warn+drop otherwise)",
+      "on success: await store.updateScratch(id, text) then panels.replySaved(gen, { type:'scratch-saved', id, gen, ok:true }) + refreshBrowse() + scratch-list re-push (sendScratchList) so the menu mtime refreshes",
+      "on store failure: replySaved ok:false with error + log.warn, browse/list still refresh",
+      "extension.ts wires the new onScratchSave seam to the scratch-host route exactly like onSendToChat (chat-channel SCRATCH_INTENT_TYPES interception cannot see document-panel messages)",
+      "NEW vscode-plugin/src/chat/__tests__/scratch-host.test.ts covers ok / ok=false / malformed-drop / refresh calls with fake store + fake panels; extension-chat-wiring.test.ts regex-pins the onScratchSave wiring and replySaved"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "scratch-host.test.ts (NEW): 'scratch-save' {id,gen,text} → store.updateScratch called with exact args → replySaved(gen, {type:'scratch-saved', id, gen, ok:true, ...}) posted to the document panel + refreshBrowse + scratch-list re-pushed; store failure → ok:false with error and log.warn; malformed (non-string id/text, non-number gen) dropped with warn"
+      },
+      {
+        "level": "integration",
+        "name": "extension-chat-wiring.test.ts regex pins: textarea element, save button, 'scratch-save'/'scratch-saved' strings, replySaved, selectionStart present in the built sources and panel wiring; onScratchSave wiring pinned"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

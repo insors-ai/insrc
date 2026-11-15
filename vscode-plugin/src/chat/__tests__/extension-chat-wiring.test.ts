@@ -487,6 +487,11 @@ test('extension-chat-wiring.test.ts: extension.ts constructs createScratchStore 
   assert.match(b, /scratchpads:\s*\{\s*enabled:\s*true\s*\}/, 'the chat host gets the scratchpads seam enabled');
   assert.match(b, /createScratchPanels\(\{[\s\S]*?panels:\s*scratchPanelFactory,[\s\S]*?genNonce:\s*makeNonce,[\s\S]*?setPanelTitle:/, 'the panels controller gets the title-capable factory, nonce source and setPanelTitle adapter');
   assert.match(b, /onSendToChat:\s*\(text\)\s*=>\s*scratchHost\.onMessage\(\{\s*type:\s*'send-to-chat',\s*text\s*\}\)/, 'the document view send-to-chat routes through the shared scratch host');
+  // Story 01ac1e4b6a6c9c2f/s1 t4: the document channel's save/dirty posts route to the
+  // scratch host's DOCUMENT route — the chat-channel SCRATCH_INTENT_TYPES interception
+  // cannot see document-panel messages, so they go straight to onDocMessage.
+  assert.match(b, /onScratchSave:\s*\(id,\s*gen,\s*text\)\s*=>\s*scratchHost\.onDocMessage\(\{\s*type:\s*'scratch-save',\s*id,\s*gen,\s*text\s*\}\)/, 'the document view scratch-save routes through the scratch host document route');
+  assert.match(b, /onScratchDirty:\s*\(id,\s*gen,\s*dirty\)\s*=>\s*scratchHost\.onDocMessage\(\{\s*type:\s*'scratch-dirty',\s*id,\s*gen,\s*dirty\s*\}\)/, 'the document view scratch-dirty routes through the scratch host document route');
   // The scratch-host module itself is vscode-free.
   const host = read(join(HERE, '..', 'scratch-host.ts'));
   assert.doesNotMatch(host, /from ['"]vscode['"]/, 'scratch-host.ts imports nothing from vscode');
@@ -814,4 +819,36 @@ test('extension-chat-wiring.test.ts: send-to-chat reveals the chat panel, awaits
   const hostSrc = read(join(HERE, '..', 'scratch-host.ts'));
   assert.match(hostSrc, /deps\.chat\.open\(\);\s*\n\s*await deps\.chat\.ready\(\);\s*\n\s*if \(deps\.chat\.disposed\(\)\) return;/, 'the host opens the chat, awaits ready, THEN checks disposed (a closed chat is opened first)');
   assert.match(hostSrc, /type:\s*'insert-into-input',\s*text:\s*capUtf8\(text\)/, 'the push is capped via the shared capUtf8');
+});
+
+// ---- Story 01ac1e4b6a6c9c2f/s1 t4: document-channel save wiring pins ----
+
+test("extension-chat-wiring.test.ts regex pins: textarea element, save button, 'scratch-save'/'scratch-saved' strings, replySaved, selectionStart present in the built sources and panel wiring; onScratchSave wiring pinned", () => {
+  const src = read(EXT);
+  const block = /if \(chatEnabled\) \{([\s\S]*?)\n  \}/.exec(src);
+  assert.ok(block, 'the chatEnabled block is present');
+  const b = block![1]!;
+  // onScratchSave / onScratchDirty route to the scratch host's document channel.
+  assert.match(b, /onScratchSave:\s*\(id,\s*gen,\s*text\)\s*=>\s*scratchHost\.onDocMessage\(\{\s*type:\s*'scratch-save',\s*id,\s*gen,\s*text\s*\}\)/, 'onScratchSave routes scratch-save to onDocMessage');
+  assert.match(b, /onScratchDirty:\s*\(id,\s*gen,\s*dirty\)\s*=>\s*scratchHost\.onDocMessage\(\{\s*type:\s*'scratch-dirty',\s*id,\s*gen,\s*dirty\s*\}\)/, 'onScratchDirty routes scratch-dirty to onDocMessage');
+  // The document panel's static body carries the textarea + save button.
+  const sp = read(join(HERE, '..', '..', 'panels', 'scratch-panels.ts'));
+  assert.match(sp, /<textarea id="insrc-scratchdoc"/, 'the document body is a textarea element');
+  assert.match(sp, /id="insrc-savescratch"[^>]*hidden/, 'the save button exists and starts hidden');
+  // The document channel carries scratch-save / scratch-dirty webview->host and scratch-saved host->webview.
+  assert.ok(sp.includes("'scratch-save'"), 'scratch-save present in the panels source');
+  assert.ok(sp.includes("'scratch-dirty'"), 'scratch-dirty present in the panels source');
+  assert.ok(sp.includes("'scratch-saved'"), 'scratch-saved present in the panels source');
+  // replySaved is the host->webview reply seam; selectionStart is the textarea selection API.
+  assert.match(sp, /replySaved\(gen:\s*number,\s*msg:\s*ScratchDocHostToWebview\)/, 'replySaved(gen, msg) seam present');
+  assert.ok(sp.includes('doc.selectionStart') && sp.includes('doc.selectionEnd'), 'selectionStart/End present in the bootstrap');
+  // The scratch host routes scratch-save: updateScratch + replySaved + refreshBrowse + list re-push.
+  const host = read(join(HERE, '..', 'scratch-host.ts'));
+  assert.match(host, /onDocMessage/, 'the host exposes the document-channel route');
+  assert.match(host, /deps\.store\.updateScratch\(msg\.id,\s*msg\.text\)/, 'scratch-save persists via store.updateScratch(id, text)');
+  assert.match(host, /deps\.panels\.replySaved\(gen,\s*\{\s*type:\s*'scratch-saved',\s*id:\s*msg\.id,\s*gen,\s*ok,/, 'the save is answered via replySaved with the same gen');
+  assert.match(host, /await deps\.panels\.refreshBrowse\(\)/, 'the browse table refreshes after a save');
+  assert.match(host, /void sendScratchList\(\)/, 'the chat scratch-list is re-pushed after a save');
+  // The chat-channel interception stays chat-only: SCRATCH_INTENT_TYPES has no document types.
+  assert.match(host, /'send-to-chat',\s*\n\]\)/, 'SCRATCH_INTENT_TYPES still ends at the six chat intents (no document types)');
 });

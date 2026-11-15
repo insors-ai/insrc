@@ -1024,6 +1024,11 @@ export function activate(context: vscode.ExtensionContext): void {
       // A document view's Send-to-chat: routed by the shared scratch host (reveal chat, await
       // the ready handshake, push the capped insert-into-input; disposed chat drops silently).
       onSendToChat: (text) => scratchHost.onMessage({ type: 'send-to-chat', text }),
+      // A document view's save/dirty posts arrive on the DOCUMENT channel (not the chat
+      // channel the SCRATCH_INTENT_TYPES interception sees), so they route straight to the
+      // scratch host's document route — same seam shape as onSendToChat.
+      onScratchSave: (id, gen, text) => scratchHost.onDocMessage({ type: 'scratch-save', id, gen, text }),
+      onScratchDirty: (id, gen, dirty) => scratchHost.onDocMessage({ type: 'scratch-dirty', id, gen, dirty }),
     });
     context.subscriptions.push({ dispose: () => scratchPanels.dispose() });
     // The six scratchpad webview->host intents arrive on the CHAT panel's channel; the wrapped

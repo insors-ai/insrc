@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 408 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 409 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -730,3 +730,19 @@ Run at 2026-11-15T18:26:44.188Z on commit `47ec128f3`. Tests check: **passed**. 
 | `src/workflow/review/__tests__/history-binding.test.ts` | 0 | 11 | 5.8 s |  |
 | `src/workflow/review/__tests__/prepared-publication.test.ts` | 0 | 5 | 4.3 s |  |
 | `src/workflow/review/__tests__/staged-lifecycle.test.ts` | 0 | 7 | 8.3 s |  |
+
+## t19
+
+Run at 2026-11-15T18:54:11.578Z on commit `8e3eb7e2d`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: Measured admission segment attribution and durable-ack two-session race matrix: controlled admit/cancel<=2s, progress gap<=2s, complete owner/guard/binding checks and no duplicate dispatch.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | Measured admission segment attribution and durable-ack two-session race matrix: controlled admit/cancel<=2s, progress gap<=2s, complete owner/guard/binding checks and no duplicate dispatch. | `src/daemon/threads/__tests__/review-workers.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/review-workers.test.ts` | 0 | 5 | 4.8 s |  |

@@ -12,12 +12,42 @@ import { DesignPreparation } from '../design-preparation.js';
 import { ReviewPreparationCapacity } from '../source-session.js';
 import { reviewPreparationLimits } from '../../../config/review.js';
 import { join } from 'node:path';
+import { fixture as codeFixture } from '../../code-review/task-review/__tests__/publication-fixture.js';
+import { decodeStoredCheckpoint } from '../../code-review/task-review/admission-checkpoint.js';
+import { decodeStoredDesignCheckpoint } from '../design-review/admission-checkpoint.js';
 
 function runtime(project: string, family: 'code' | 'design', reviewId: string, attempt: number, input: unknown): ReviewRuntime {
  return { schemaVersion: 1, key: { project, family, reviewId }, attempt, runtimeId: 'migration-runtime', daemonEpoch: 'epoch-new', workerIncarnation: 'worker-new', sequence: 0,
   checkpointBinding: { inputDigest: preparationDigest(input), semanticSequence: 0 }, state: 'initializing', resourceGuard: { daemonInstance: 'epoch-new', openLeases: [] },
   progress: { completedUnits: 0, totalUnits: null, observedAt: '2026-11-15T00:00:00.000Z', lastMeaningfulActivityAt: null } };
 }
+
+test('inactive version-one migration preserves code and design history and old readers reject format three', async t => {
+ const code = await codeFixture(); t.after(code.cleanup);
+ const design = designFixture(t), codeInput = code.checkpoint();
+ codeInput.attempts[0]!.header.status = 'passed';
+ const designInput = design.checkpoint;
+ designInput.attempts[0]!.status = 'failed';
+ designInput.attempts[0]!.finishedAt = designInput.attempts[0]!.startedAt;
+ designInput.attempts[0]!.failure = { code: 'process_failed', summary: 'Historical reviewer process failed' };
+ for (const [family, input, oldReader] of [
+  ['code', codeInput, decodeStoredCheckpoint], ['design', designInput, decodeStoredDesignCheckpoint],
+ ] as const) {
+  const original = JSON.stringify(input), key = { project: input.project, family, reviewId: input.reviewId };
+  assert.equal(input.schemaVersion, 1);
+  assert.doesNotThrow(() => oldReader(input));
+  const migrated = upgradePreparationHistory(input, key, runtime(input.project, family, input.reviewId, 1, preparationSubmission(input, key)));
+  assert.equal(JSON.stringify(input), original, 'migration leaves historical input bytes unchanged');
+  assert.equal(migrated.migration!.sourceVersion, 1);
+  assert.deepEqual(migrated.migration!.guards, []);
+  assert.deepEqual(migrated.attempts, input.attempts);
+  assert.equal(decodePreparationCheckpoint(migrated, key).format, 'current');
+  const current = JSON.stringify(migrated);
+  // These are the historical readers, not the new read-only v3 projections.
+  assert.throws(() => oldReader(migrated), 'an unsupported old reader must refuse the new format');
+  assert.equal(JSON.stringify(migrated), current, 'rejected reads cannot downgrade or rewrite history');
+ }
+});
 
 test('inactive historical migration preserves both family submissions feedback and closed guard audit without mutating originals', t => {
  const code = JSON.parse(gunzipSync(readFileSync(new URL('../../../daemon/threads/__tests__/fixtures/review-preparation/history.json.gz', import.meta.url))).toString());

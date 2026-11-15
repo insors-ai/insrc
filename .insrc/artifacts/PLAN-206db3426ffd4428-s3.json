@@ -1,0 +1,478 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1794723453904-6rn7xb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-15T06:21:42.326Z",
+    "epicCreatedAt": "2026-11-09T06:00:04.355Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 243486,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "206db3426ffd4428",
+    "epicSlug": "show-long-running-task-progress-chat",
+    "storyId": "s3",
+    "lldRunId": "wf-1794677964987-aaux10",
+    "lldEffectiveHash": "48a6a5468b45d758c2f607734dcbfdf65a0d1476d8c409eeed1ac09aa037dec9",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "16a2ea18ec2251013a1527653e4ea8931ffcaebff231398389333d31712fab22",
+        "at": "2026-11-15T06:21:43.735Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-15T18:14:44.670Z"
+      }
+    },
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "revision": 2,
+    "rangeBase": "e59406189d8361f85945579b20b81d867d532652"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Story s3 wires review executions into the daemon's task-progress surface: read-only progress accessors (t1), sc5 review detail types and pure mappings (t2), the two progress delegates (t3), one composed runtime (t4), admission-time task binding via the launchReview seam (t5, amended rev 2), measurement signalling and terminal evidence (t6), and non-interference verification (t7). Revision 2 amends ONLY t5: the plan-mandated pre-check proved no review admission carries a bound chat origin, so t5 uses the daemon-internal ProgressAccess.launchReview seam (user-approved option b) and its acceptance checks name session/aborted/session-memory/refused-launch/refused-registration as the unobserved set."
+    },
+    "tasks": [
+      {
+        "acceptanceChecks": [
+          "progressOf returns the last accepted progress after acceptPublication and undefined for an unknown or closing key",
+          "the returned value is a clone: mutating it does not change the entry",
+          "calling progressOf any number of times leaves e.progress.sequence, the board and worker messages unchanged",
+          "no existing ReviewWorkers method changes behavior"
+        ],
+        "dependsOn": [],
+        "derivedFrom": [
+          "c1",
+          "c7"
+        ],
+        "id": "t1",
+        "order": 1,
+        "size": "S",
+        "summary": "In src/daemon/threads/review-workers.ts add progressOf(key) returning a frozen structured clone of the entry's last accepted progress (incarnation, attempt, sequence, phase, completed, total, observation, display), or undefined when there is no entry, the entry is closing, or nothing has been accepted. It writes nothing, does not advance sequence, does not renew any grace and does not post to a worker.",
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/daemon/threads/__tests__/review-workers-progress-of.test.ts: progressOf returns a clone of the last accepted progress and undefined for a closing or unknown key"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/threads/__tests__/review-workers-progress-of.test.ts: progressOf is read-only and never advances sequence or renews grace"
+          }
+        ],
+        "title": "Add the read-only ReviewWorkers.progressOf accessor"
+      },
+      {
+        "acceptanceChecks": [
+          "validators accept the sc5 shapes and reject unknown kinds, extra fields, negative or non-integer counts and over-long labels",
+          "design mapping keeps retained coverage out of the fresh counts and reports retries null",
+          "code mapping reports initial tasks, publication state and followUp and retries null",
+          "inconsistent counts, foreign identity and unverified admission with reviewed work map to null",
+          "a mapped measurement fits the 8 KiB snapshot bound"
+        ],
+        "dependsOn": [],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "id": "t2",
+        "order": 2,
+        "size": "M",
+        "summary": "In a new module src/daemon/task-progress/review-measurements.ts define DesignReviewDetails and CodeReviewDetails exactly as sc5, in this order: bounded typebox validators and a combined validateReviewDetails(kind, value); then the design mapping from a ReviewWorkerProgress to a DelegateMeasurement (phase, active chunk, reviewed against selected chunks as unit 'chunks', retained chunks, retries null); then the code mapping (phase, active task name, completed against total tasks as unit 'tasks', followUp and retries null, publication pending | complete | failed | unknown). Mappings return null for foreign identity, completed above total, a retained plus selected total that is not the planned total, or unverified admission claiming reviewed work. Each part has its own tests.",
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/daemon/task-progress/__tests__/review-measurements.test.ts: validators accept the sc5 shapes and reject unknown kinds, extra fields and over-long labels"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/task-progress/__tests__/review-measurements.test.ts: design review reports active chunk, reviewed against selected chunks and retained coverage separately"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/task-progress/__tests__/review-measurements.test.ts: code review reports active task, completed against total tasks and publication state"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/task-progress/__tests__/review-measurements.test.ts: retries and follow-up stay null when the engine reports none"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/task-progress/__tests__/review-measurements.test.ts: foreign identity, inconsistent counts and unverified admission map to null"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/task-progress/__tests__/review-measurements.test.ts: a mapped measurement fits the 8 KiB snapshot bound"
+          }
+        ],
+        "title": "Define the sc5 review details, validators and pure mappings"
+      },
+      {
+        "acceptanceChecks": [
+          "each delegate's progress never throws and keeps the last accepted measurement on a rejected sample",
+          "ownerActivity returns a fresh sequence only for the live incarnation (and alive process for code review), else null",
+          "neither delegate exposes cancel so controls stay empty"
+        ],
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "id": "t3",
+        "order": 3,
+        "size": "M",
+        "summary": "In src/daemon/task-progress/review-measurements.ts (or a sibling file) add the two delegates implementing TaskProgressDelegate. progress(task) reads ReviewWorkers.progressOf for the identity bound at registration, maps it with the t2 functions, ignores a publication older than the last accepted incarnation and sequence, keeps the last accepted measurement when a sample is rejected, and never throws. ownerActivity compares ReviewWorkers.identity(key) with the incarnation of the last accepted publication (and processState alive for code review) and returns the next owner sequence or null. Neither delegate exposes cancel, so controls stay empty.",
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/daemon/task-progress/__tests__/review-measurements.test.ts: a delayed publication from an earlier incarnation does not replace the newer measurement"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/task-progress/__tests__/review-measurements.test.ts: heartbeat-only samples keep counts and meaningful revision unchanged"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/task-progress/__tests__/review-measurements.test.ts: an interrupted review reads as interrupted until the new incarnation is verified"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/task-progress/__tests__/review-measurements.test.ts: a missing or closing entry returns null without throwing"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/task-progress/__tests__/review-measurements.test.ts: observing progress leaves review results, publication and approval unchanged"
+          }
+        ],
+        "title": "Implement DesignReviewDelegate and CodeReviewDelegate"
+      },
+      {
+        "acceptanceChecks": [
+          "one runtime accepts both review kinds plus the existing executor/workflow/analysis kinds through the composed validator",
+          "the review producers register on the same coordinator and store without disturbing existing kinds"
+        ],
+        "dependsOn": [
+          "t2"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5"
+        ],
+        "id": "t4",
+        "order": 4,
+        "size": "M",
+        "summary": "Compose the one progress runtime so the review producers register next to the existing ones on the same coordinator and store; the composed validator (validateAllDetails) accepts every kind.",
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/daemon/task-progress/__tests__/review-producers.test.ts: register both delegates through registerProducer and ProducerPort.register with a minted authorization"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/task-progress/__tests__/review-producers.test.ts: a review measurement is committed and read back through the one store and an unknown kind is rejected"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/task-progress/__tests__/review-producers.test.ts: second registration of the same kind is refused"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/task-progress/__tests__/review-producers.test.ts: committed workflow and analysis record fixtures decode with the composed validator"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/task-progress/__tests__/review-producers.test.ts: DesignReviewDetails and CodeReviewDetails pass the bounded measurement schema and stay under 8 KiB"
+          }
+        ],
+        "title": "Compose one progress runtime that accepts the review kinds"
+      },
+      {
+        "acceptanceChecks": [
+          "the admission call path is documented in the build record: which requests carry a bound origin (finding: none — review-service.ts:128/192 -> context(trusted) -> ReviewWorkers.admit/admitOwned carry only connectionIdentity/daemonEpoch/connectionSignal; the only origin-bound launch is executor-relay.ts:245 on executor connections)",
+          "an observed review (any non-session, non-aborted admission) is registered as a task of kind design-review or code-review via the daemon-internal launchReview seam (access.ts) minting origin { turnId: reviewId }",
+          "an unobserved review (session connection, aborted connection, session-memory execution, refused launch or refused registration) is admitted exactly as before with no task",
+          "a failure or stall of launch or register never fails or slows the review admission",
+          "no minting or fencing logic is added outside s1's access and coordinator"
+        ],
+        "dependsOn": [
+          "t3",
+          "t4"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5",
+          "c6",
+          "c7",
+          "c8",
+          "c9",
+          "c10"
+        ],
+        "id": "t5",
+        "order": 5,
+        "size": "M",
+        "summary": "AMENDED (rev 2, user-approved option b): at review admission in ReviewWorkers (admit/admitOwned, which already receive the TrustedRpcContext), call the daemon-internal s1 seam ProgressAccess.launchReview for the review — the pre-check proved no review admission carries a chat origin bound to its connection, so launchReview mints authorization with origin { turnId: reviewId } without requiring one; no IPC method exposes it — and register the matching delegate through the review producer, fire-and-forget guarded. A session connection, an aborted connection, a session-memory execution, a refused launch or a refused registration has no task and behaves exactly as today. s3 supplies only the review identity and delegates; minting and fencing stay in s1.",
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/daemon/threads/__tests__/review-task-binding.test.ts: an observed review is registered as a task of kind design-review or code-review"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/threads/__tests__/review-task-binding.test.ts: a review without an origin, session or capacity is admitted exactly as before"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/threads/__tests__/review-task-binding.test.ts: a failure to launch or register never fails or slows the review"
+          }
+        ],
+        "title": "Bind a review attempt to a task at admission"
+      },
+      {
+        "acceptanceChecks": [
+          "an observed review's task progress changes as publications are accepted",
+          "terminal evidence follows the owner's terminal phase (complete, failed, interrupted) and never the review verdict",
+          "coordinator failures are fire-and-forget guarded and never affect progress acceptance, the board update or reclaim"
+        ],
+        "dependsOn": [
+          "t5"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c6"
+        ],
+        "id": "t6",
+        "order": 6,
+        "size": "M",
+        "summary": "In ReviewWorkers.acceptProgress, after a publication is accepted, signal the coordinator through the review producer's signalMeasurement for the registered owner, and when the review reaches a terminal phase record the owner's terminal evidence through recordLifecycle from that phase, never from the review verdict. Calls are fire-and-forget guarded so a coordinator failure cannot affect progress acceptance, the board update or reclaim.",
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/daemon/threads/__tests__/review-task-signal.test.ts: an observed review's task progress changes as publications are accepted"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/threads/__tests__/review-task-signal.test.ts: terminal evidence follows the owner's terminal phase and never the review verdict"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/threads/__tests__/review-task-signal.test.ts: a coordinator error is swallowed without altering acceptProgress, the board publication or reclaim"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/threads/__tests__/review-task-signal.test.ts: snapshot after interruption shows interrupted or stale, then a newer incarnation is verified"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/threads/__tests__/review-task-signal.test.ts: a delayed publication from the earlier incarnation does not overwrite the newer snapshot"
+          }
+        ],
+        "title": "Signal measurements and record terminal evidence"
+      },
+      {
+        "acceptanceChecks": [
+          "existing executor-relay, coordinator and store tests pass unchanged",
+          "review admission binding does not disturb non-review tasks or observers"
+        ],
+        "dependsOn": [
+          "t6"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5"
+        ],
+        "id": "t7",
+        "order": 7,
+        "size": "S",
+        "summary": "Verify non-interference (existing progress suites unchanged and passing, review binding never disturbs other tasks) and update the design notes (LLD open questions) with the t5 pre-check outcome and the option-(b) seam.",
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/daemon/threads/__tests__/review-task-signal.test.ts: the normalized projection of an unobserved review is unchanged"
+          }
+        ],
+        "title": "Verify non-interference and update the design notes"
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ],
+        "lldStrategyItem": "DesignReviewDelegate.progress maps phase, active chunk, reviewed against selected chunks and retained coverage"
+      },
+      {
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ],
+        "lldStrategyItem": "CodeReviewDelegate.progress maps phase, active task, completed against total tasks and publication state"
+      },
+      {
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ],
+        "lldStrategyItem": "retries and followUp are null for both kinds"
+      },
+      {
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ],
+        "lldStrategyItem": "foreign identity, invalid counts and unverified admission yield null"
+      },
+      {
+        "coveredByTaskIds": [
+          "t3"
+        ],
+        "lldStrategyItem": "stale incarnation or sequence is ignored"
+      },
+      {
+        "coveredByTaskIds": [
+          "t3"
+        ],
+        "lldStrategyItem": "heartbeat-only samples leave counts and meaningfulRevision unchanged"
+      },
+      {
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ],
+        "lldStrategyItem": "register both delegates through registerProducer and ProducerPort.register with a minted authorization"
+      },
+      {
+        "coveredByTaskIds": [
+          "t5",
+          "t6"
+        ],
+        "lldStrategyItem": "snapshot after interruption shows interrupted/stale, then a newer incarnation is verified"
+      },
+      {
+        "coveredByTaskIds": [
+          "t5",
+          "t6"
+        ],
+        "lldStrategyItem": "a delayed publication from the earlier incarnation does not overwrite the newer snapshot"
+      },
+      {
+        "coveredByTaskIds": [
+          "t3"
+        ],
+        "lldStrategyItem": "reading progress does not renew owner activity"
+      },
+      {
+        "coveredByTaskIds": [
+          "t4"
+        ],
+        "lldStrategyItem": "second registration of the same kind is refused"
+      },
+      {
+        "coveredByTaskIds": [
+          "t1"
+        ],
+        "lldStrategyItem": "ReviewWorkers.progressOf returns a clone of the last accepted progress and undefined for a closing or unknown key"
+      },
+      {
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ],
+        "lldStrategyItem": "DesignReviewDetails and CodeReviewDetails pass the bounded measurement schema and stay under 8 KiB"
+      },
+      {
+        "coveredByTaskIds": [
+          "t3",
+          "t6"
+        ],
+        "lldStrategyItem": "mapped publications round-trip through reviewProgressPublication without changing it"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contract details (DesignReviewDelegate, CodeReviewDelegate, ReviewWorkers.progressOf)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 data model changes (DesignReviewDetails, CodeReviewDetails)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 error paths"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 test strategy and open questions"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 migration"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "src/daemon/index.ts:500-506"
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "src/daemon/threads/review-workers.ts:337-356"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "quotedText": "Review admission passes the socket TrustedRpcContext through context(trusted) into ReviewWorkers.admit/admitOwned; no bound progress origin reaches the admission path.",
+      "ref": "src/daemon/review-service.ts:95"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "quotedText": "The only product caller of an origin-bound launch (launchBound) is the executor relay on executor connections.",
+      "ref": "src/daemon/task-progress/executor-relay.ts:245"
+    },
+    {
+      "id": "c10",
+      "kind": "doc",
+      "quotedText": "t5 admission-path analysis: Finding: none do. User chose option (b): daemon-internal launchReview seam.",
+      "ref": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/S003/BUILD.md"
+    }
+  ]
+}

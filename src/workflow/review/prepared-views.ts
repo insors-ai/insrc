@@ -499,6 +499,9 @@ export class PreparedViewReader {
  async source(queryDigest: string): Promise<PreparedValueReference> {
   return this.guarded(async () => { const object = this.manifest.objects.find(o => o.queryDigest === queryDigest); if (!object) throw new Error('Unknown staged source query'); return this.ref(object.contentDigest); });
  }
+ hasSource(queryDigest: string): Promise<boolean> {
+  return this.guarded(async () => this.manifest.objects.some(object => object.queryDigest === queryDigest));
+ }
  async describe(ref: PreparedValueReference): Promise<{ type: ViewNode[0]; size: number }> {
   return this.guarded(async () => {
    this.require(ref); const n = await this.node(ref.digest);
@@ -574,4 +577,30 @@ export class PreparedViewReader {
  verify(): Promise<void> { return this.guarded(async () => {}); }
  cancel(): void { this.fence(); }
  close(): void { if (this.windows.size || this.pending) throw new Error('Staged windows remain borrowed'); if (!this.closed) { this.closed = true; this.manifestLease.release(); this.objects.clear(); } }
+}
+
+/** Transitional adapter for consumers that still require an eager value.
+ * Staged byte leaves are read through bounded windows and copied into their
+ * semantic Uint8Array representation; all reader-owned windows are released
+ * before the value is returned. */
+export async function materializePreparedValue(reader: PreparedViewReader, value: unknown, ancestors = new Set<object>()): Promise<unknown> {
+ if (!value || typeof value !== 'object') return value;
+ if (Object.isFrozen(value) && Object.keys(value).length === 1 && typeof Reflect.get(value, 'digest') === 'string') {
+  const reference = value as PreparedValueReference, description = await reader.describe(reference);
+  if (description.type !== 'bytes') throw new Error('Unexpected staged value reference');
+  const bytes = new Uint8Array(description.size); let offset = 0;
+  for await (const chunk of reader.chunks(reference)) {
+   try { bytes.set(chunk.value, offset); offset += chunk.value.length; }
+   finally { chunk.release(); }
+  }
+  if (offset !== bytes.length) throw new Error('Staged value binary length mismatch');
+  return bytes;
+ }
+ if (ancestors.has(value)) throw new Error('Cyclic staged value metadata');
+ ancestors.add(value);
+ try {
+  if (Array.isArray(value)) for (let i = 0; i < value.length; i++) value[i] = await materializePreparedValue(reader, value[i], ancestors);
+  else for (const key of Object.keys(value)) Reflect.set(value, key, await materializePreparedValue(reader, Reflect.get(value, key), ancestors));
+  return value;
+ } finally { ancestors.delete(value); }
 }

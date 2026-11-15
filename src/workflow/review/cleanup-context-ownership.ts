@@ -1,7 +1,8 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { join } from 'node:path';
 import { isDeepStrictEqual as same } from 'node:util';
-import { decodeHistoryBinding, decodePreparedContextManifest } from '../../shared/review-preparation.js';
+import { decodeHistoryBinding, decodePreparedContextManifest, decodeStagedContextManifest } from '../../shared/review-preparation.js';
+import type { PreparedContextManifest, StagedContextManifest } from '../../shared/review-preparation.js';
 import type { ReviewKey } from '../../shared/review-resources.js';
 import { reviewJsonLimit } from '../../config/review.js';
 import { contextRoot, preparationDigest } from './prepared-context.js';
@@ -13,12 +14,19 @@ import { cleanupBytes, cleanupStat, bytesDigest, inventoryCleanupContext } from 
  * capacity capability, and can include an already-evicted old generation. */
 export type CleanupContextOwner = Pick<ReadyContextReceipt, 'key' | 'attempt' | 'generationId' | 'manifestDigest'>;
 
+function contextManifest(input: unknown, key: ReviewKey): PreparedContextManifest | StagedContextManifest {
+ const value = input as { schemaVersion?: unknown; encoding?: unknown };
+ return value?.schemaVersion === 2 && value.encoding === 'staged-values-v2'
+  ? decodeStagedContextManifest(input, key, reviewJsonLimit())
+  : decodePreparedContextManifest(input, key, reviewJsonLimit());
+}
+
 /** The main owner supplies retained qualification receipts over a PRIVATE
  * dependency. Neither a directory name nor a self-declared disk manifest owns
  * files. Unknown objects, staging trees and user files retain the whole scope. */
 export async function ownedCleanupContext(key: ReviewKey, receipts: readonly CleanupContextOwner[], heads: readonly string[]) {
  if (!receipts.length || receipts.length > 1024) throw new Error('Private context ownership is required for cleanup');
- const root = contextRoot(key), owners = new Map<string, CleanupContextOwner>(), allowed = new Map<string, string | null>([['', null]]), baseContents = new Map<string, Set<string>>();
+ const root = contextRoot(key), owners = new Map<string, CleanupContextOwner>(), allowed = new Map<string, string | null>([['', null]]);
  const allow = (path: string, digest: string | null) => {
   const prior = allowed.get(path); if (allowed.has(path) && prior !== digest) throw new Error('Conflicting owned context bytes'); allowed.set(path, digest);
  };
@@ -27,12 +35,11 @@ export async function ownedCleanupContext(key: ReviewKey, receipts: readonly Cle
    || !/^[a-f0-9]{64}$/.test(source.manifestDigest) || owners.has(source.generationId)) throw new Error('Foreign or duplicate private context owner');
   owners.set(source.generationId, source);
   if (!await cleanupStat(join(root, source.generationId))) continue;
-  const raw = await cleanupBytes(join(root, source.generationId, 'manifest.json'), reviewJsonLimit()), manifest = decodePreparedContextManifest(JSON.parse(raw.bytes.toString('utf8')), key, reviewJsonLimit());
+  const raw = await cleanupBytes(join(root, source.generationId, 'manifest.json'), reviewJsonLimit()), manifest = contextManifest(JSON.parse(raw.bytes.toString('utf8')), key);
   if (manifest.manifestDigest !== source.manifestDigest || manifest.manifestDigest !== preparationDigest({ ...manifest, manifestDigest: '' }) || manifest.generationId !== source.generationId
    || manifest.attempt !== source.attempt || manifest.validatorVersion !== 1) throw new Error('Context manifest differs from private ownership receipt');
   allow(source.generationId, null); allow(`${source.generationId}/manifest.json`, bytesDigest(raw.bytes));
-  const contents = new Set<string>(); baseContents.set(source.generationId, contents);
-  for (const object of manifest.objects) { allow(`${source.generationId}/${object.contentDigest}.data`, object.contentDigest); contents.add(object.contentDigest); }
+  for (const object of manifest.objects) allow(`${source.generationId}/${object.contentDigest}.data`, object.contentDigest);
  }
  const bindings = [...heads], seen = new Set<string>(), evidence = new Set<string>();
  while (bindings.length) {
@@ -48,7 +55,10 @@ export async function ownedCleanupContext(key: ReviewKey, receipts: readonly Cle
    if (chain.has(head) || evidence.size + chain.size >= 10000) throw new Error('Cleanup evidence ownership exceeds bound or cycles'); chain.add(head);
    const { manifest, rawDigest } = await readHistoryEvidenceManifest(owner, head);
    allow('history-evidence', null); allow(`history-evidence/${head}.json`, rawDigest);
-   for (const object of manifest.objects) if (!baseContents.get(owner.generationId)?.has(object.contentDigest)) allow(`history-evidence/${object.contentDigest}.data`, object.contentDigest);
+   // A staged source can contain the same payload as a later history delta
+   // under a different descriptor graph. If the delta file was durably
+   // written, its authenticated manifest owns that exact duplicate too.
+   for (const object of manifest.objects) allow(`history-evidence/${object.contentDigest}.data`, object.contentDigest);
    head = manifest.previousDigest;
   }
   for (const id of chain) evidence.add(`${owner.generationId}:${id}`);
@@ -75,7 +85,7 @@ export async function permanentCleanupContexts(key: ReviewKey, heads: readonly s
   if (binding.bindingDigest !== id || preparationDigest({ ...binding, bindingDigest: '' }) !== id) throw new Error('Permanent cleanup binding changed');
   if (binding.priorBindingDigest) pending.push(binding.priorBindingDigest);
   const bytes = await cleanupBytes(join(root, binding.generationId, 'manifest.json'), reviewJsonLimit());
-  const manifest = decodePreparedContextManifest(JSON.parse(bytes.bytes.toString('utf8')), key, reviewJsonLimit());
+  const manifest = contextManifest(JSON.parse(bytes.bytes.toString('utf8')), key);
   if (manifest.generationId !== binding.generationId || manifest.attempt !== binding.attempt || manifest.manifestDigest !== preparationDigest({ ...manifest, manifestDigest: '' })) throw new Error('Permanent cleanup source manifest changed');
   const owner: CleanupContextOwner = { key, attempt: binding.attempt, generationId: binding.generationId, manifestDigest: manifest.manifestDigest };
   let evidence = binding.evidenceManifestDigest; const chain = new Set<string>();

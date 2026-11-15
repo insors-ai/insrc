@@ -92,7 +92,7 @@ export async function publishTaskCheckpoint(project: string, epicHash:string, re
  const store=deps.through.store; requireReview(store,'publication','Canonical round-writer store is required');
  const id=codeReviewArtifactId(epicHash,storyId), folder=storyRecordFolderArgs(canonical,epicHash,storyId,{},{kind:'read'});
  const paths=codeReviewArtifactPaths(canonical,epicHash,storyId,folder.epicCreatedAt,folder.workItemKind,folder.epicSlug);
- await auditResources(stored, id, deps);
+ await auditResources(stored, id, deps, current);
  try {
   await store.updateAndLog(id,deps.through.actor,async current=>{
    await checkCurrentBuild();
@@ -146,9 +146,17 @@ export async function publishTaskCheckpoint(project: string, epicHash:string, re
  }
 }
 
-async function auditResources(cp: StoredReviewCheckpoint, artifactId: string, deps: PublicationDeps): Promise<void> {
+async function auditResources(cp: StoredReviewCheckpoint, artifactId: string, deps: PublicationDeps, operational?: CodePreparationCheckpoint): Promise<void> {
  const store = deps.through.store; requireReview(store, 'publication', 'Canonical round-writer store is required');
- await persistReviewResourceAudit(store, artifactId, { project: cp.project, family: 'code', reviewId: cp.reviewId }, cp.attempts.flatMap(a => a.resourceGuard ? [{ attempt: a.header.attempt, resourceGuard: a.resourceGuard }] : []));
+ const guards = new Map<number, NonNullable<StoredReviewCheckpoint['attempts'][number]['resourceGuard']>>();
+ for (const attempt of cp.attempts) if (attempt.resourceGuard) guards.set(attempt.header.attempt, attempt.resourceGuard);
+ for (const migrated of operational?.migration?.guards ?? []) {
+  const prior = guards.get(migrated.attempt);
+  if (prior && !isDeepStrictEqual(prior, migrated.guard)) throw new Error('Conflicting migrated resource audit');
+  guards.set(migrated.attempt, migrated.guard);
+ }
+ await persistReviewResourceAudit(store, artifactId, { project: cp.project, family: 'code', reviewId: cp.reviewId },
+  [...guards].map(([attempt, resourceGuard]) => ({ attempt, resourceGuard })));
 }
 async function publishTechnicalAdmission(project: string, hash: string, cp: StoredReviewCheckpoint, latest: CodeAdmissionAttempt, deps: PublicationDeps): Promise<{ path: string; jsonPath: string; status: string }> {
  requireReview(['failed','interrupted'].includes(latest.header.status), 'admission', 'Unverified active admission cannot publish a review');

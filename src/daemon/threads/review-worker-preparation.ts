@@ -15,8 +15,10 @@ import { preparationSubmission, upgradePreparationHistory } from '../../workflow
 import { preparationSemanticHistory } from '../../workflow/review/preparation-semantic-history.js';
 import { CodePreparation } from '../../workflow/review/code-preparation.js';
 import { DesignPreparation } from '../../workflow/review/design-preparation.js';
-import { PreparedContextReader, preparationDigest } from '../../workflow/review/prepared-context.js';
+import { preparationDigest } from '../../workflow/review/prepared-context.js';
 import type { ReadyContextReceipt } from '../../workflow/review/prepared-context.js';
+import { PreparedViewReader } from '../../workflow/review/prepared-views.js';
+import { ReviewMemoryBudget } from '../../workflow/review/preparation-memory.js';
 import { HistoryBindingSession, readPreparationHistoryBinding, preparationHistorySnapshot } from '../../workflow/review/history-binding.js';
 import type { PreparationHistory, HistoryValidation } from '../../workflow/review/history-binding.js';
 import { PreparationProgress } from '../../workflow/review/preparation-progress.js';
@@ -51,6 +53,7 @@ export class ReviewWorkerPreparation {
  readonly history: PreparationHistoryStore;
  onObservation:((value:PreparationObservation)=>void)|undefined;
  private readonly progress:PreparationProgress;
+ private readonly memory:ReviewMemoryBudget;
  private active = false;
  private terminal = false;
  private access: PreparationAccess | undefined;
@@ -64,6 +67,7 @@ export class ReviewWorkerPreparation {
  private readonly packets = new Map<number, PreparedReviewPacket>();
  private constructor(readonly input: ReviewBootstrapInput, readonly bootstrap: ReviewPreparationBootstrap, private readonly rawSources: BatchReviewSources, history: PreparationHistoryStore, client: ReviewPreparationClient) {
   this.history = history; this.client = client;
+  this.memory=new ReviewMemoryBudget(bootstrap.limits.memoryMaxBytes);
   this.progress=new PreparationProgress(value=>{const at=new Date().toISOString();return this.client.progress({progress:{...this.bootstrap.runtime.progress,completedUnits:this.binding?.latest().completedUnits??0,observedAt:at,lastMeaningfulActivityAt:at},preparation:value});});
  }
  static async open(input: ReviewBootstrapInput, bootstrap: ReviewPreparationBootstrap, sources: BatchReviewSources): Promise<ReviewWorkerPreparation> {
@@ -82,8 +86,10 @@ export class ReviewWorkerPreparation {
    observe: async update => {
     if (!owner.active || owner.terminal) return;
     const old = bootstrap.runtime.progress;
-    await client.progress({ progress: { ...old, completedUnits: owner.binding?.latest().completedUnits ?? 0,
-     totalUnits: update.family === 'code' ? update.progress.task?.total ?? null : update.progress.totalChunks,
+    const completedUnits = owner.binding?.latest().completedUnits ?? 0;
+    const observedTotal = update.family === 'code' ? update.progress.task?.total ?? null : update.progress.totalChunks;
+    await client.progress({ progress: { ...old, completedUnits,
+     totalUnits: observedTotal === null ? null : Math.max(observedTotal, completedUnits),
      observedAt: update.progress.observedAt ?? old.observedAt,
      lastMeaningfulActivityAt: 'lastMeaningfulActivityAt' in update.progress ? update.progress.lastMeaningfulActivityAt : null } });
     owner.onObservation?.(update);
@@ -119,7 +125,7 @@ export class ReviewWorkerPreparation {
   if (this.receipt) return;
   const identity = await this.client.currentIdentity(); if (!identity) return;
   const borrowed = await this.client.borrow(identity); this.access = borrowed.access; this.receipt = borrowed.receipt;
-  this.evidence = await HistoryEvidenceStore.open(this.receipt, this.client, this.bootstrap.limits, this.authorize, this.invalidate);
+  this.evidence = await HistoryEvidenceStore.open(this.receipt, this.client, this.bootstrap.limits, this.authorize, this.invalidate, this.receipt.manifestDigest, this.memory);
   const cp = await this.history.canonical();
   if (cp?.context?.generationId === this.receipt.generationId) {
    const node=await readPreparationHistoryBinding(this.input.key,cp.context.historyBindingDigest);
@@ -130,12 +136,12 @@ export class ReviewWorkerPreparation {
   if (!this.access) throw new Error('Private preparation borrow required'); return this.client.resolve(this.access);
  };
  private readonly invalidate = async (error: unknown): Promise<void> => { if (this.access) await this.client.invalidate(this.access); throw error; };
- private async reader(): Promise<PreparedContextReader> {
-  return PreparedContextReader.open(await this.authorize(), this.bootstrap.limits, async () => { await this.authorize(); }, this.invalidate);
+ private async reader(): Promise<PreparedViewReader> {
+  return PreparedViewReader.open(await this.authorize(), this.bootstrap.limits, this.memory, async () => { await this.authorize(); }, this.invalidate);
  }
  private async query(method: keyof ReviewSources, args: readonly unknown[]): Promise<unknown> {
-  if (this.evidence?.has(method, args)) return this.evidence.query(method, args);
-  this.extra ??= await ReviewSourceSession.create(this.input.key, this.rawSources, this.bootstrap.limits, this.client);
+  if (this.evidence && await this.evidence.contains(method, args)) return this.evidence.query(method, args);
+  this.extra ??= await ReviewSourceSession.create(this.input.key, this.rawSources, this.bootstrap.limits, this.client, this.memory);
   switch (method) {
    case 'commit': return this.extra.commit(args[0] as string);
    case 'file': return this.extra.file(args[0] as string, args[1] as string);
@@ -155,7 +161,7 @@ export class ReviewWorkerPreparation {
   if (!this.code) {
    await this.borrow();
    this.code = this.receipt ? await CodePreparation.reuse(this.input.key, await this.reader(), this.sources, this.bootstrap.limits, this.client)
-    : await CodePreparation.create(this.input.key, this.rawSources, this.bootstrap.limits, this.client);
+    : await CodePreparation.create(this.input.key, this.rawSources, this.bootstrap.limits, this.client, this.memory);
    this.code.observeSources(metrics=>this.progress.report('fetch_sources',metrics));
   }
   return this.code;
@@ -168,7 +174,7 @@ export class ReviewWorkerPreparation {
    const receipt = await preparation.seal(review); await this.client.qualify(preparation.qualificationIdentity(), receipt);
    const borrowed = await this.client.borrow(preparation.qualificationIdentity()); this.access = borrowed.access; this.receipt = borrowed.receipt;
    await preparation.close();
-   this.evidence = await HistoryEvidenceStore.open(receipt, this.client, this.bootstrap.limits, this.authorize, this.invalidate);
+   this.evidence = await HistoryEvidenceStore.open(receipt, this.client, this.bootstrap.limits, this.authorize, this.invalidate, receipt.manifestDigest, this.memory);
    this.code = await CodePreparation.reuse(this.input.key, await this.reader(), this.sources, this.bootstrap.limits, this.client);
   }
   for (const attempt of review.checkpoint.attempts) this.packets.set(attempt.header.attempt,
@@ -185,7 +191,13 @@ export class ReviewWorkerPreparation {
   if(this.receipt)this.design=await DesignPreparation.reuse(this.input.key,this.input.attempt,await this.reader(),this.bootstrap.limits,this.client,owned);
   else if(owned&&cp&&'subject'in cp&&cp.subject&&last&&'baseline'in last){
    this.design=DesignPreparation.published(this.input.key,this.input.attempt,{subject:cp.subject,baseline:last.baseline,inventory:last.inventory},submitted,this.bootstrap.limits,this.client,owned);
-  }else this.design=new DesignPreparation(this.input.key,this.input.attempt,this.bootstrap.limits,this.client,submitted,prepareSubject);
+  }else{
+   this.design=new DesignPreparation(this.input.key,this.input.attempt,this.bootstrap.limits,this.client,submitted,prepareSubject,undefined,this.memory);
+   // A maintenance recovery can append its durable action before the
+   // coordinator asks for an assignment. Qualify the current subject first so
+   // that commit cannot seal an empty preparation.
+   if(this.input.maintenance&&cp&&'subject'in cp&&cp.subject)this.design.prepare(cp.project,cp.subject.canonicalPath);
+  }
  }
  readonly prepareDesign: NonNullable<DesignCoordinatorDeps['prepare']> = (...args) => {
   if (!this.design) throw new Error('Design preparation phase not initialized'); return this.design.prepare(...args);
@@ -232,13 +244,13 @@ export class ReviewWorkerPreparation {
   };
   if (!this.binding) {
    await writeReviewBytes(this.history.path, JSON.stringify(next) + '\n', reviewJsonLimit());
-   const deps = { authorize: this.authorize, validate, capacity: this.client, limits: this.bootstrap.limits, invalidateSource: this.invalidate };
+   const deps = { authorize: this.authorize, validate, capacity: this.client, limits: this.bootstrap.limits, memory:this.memory, invalidateSource: this.invalidate };
    this.binding = next.context ? await HistoryBindingSession.requalify(this.receipt, next, deps, this.acceptedPrefix??(previous?.context ? previous : undefined))
     : await HistoryBindingSession.open(this.receipt, next, deps);
   } else await this.binding.accept(next);
   const proof = this.binding.latest();
   if (this.input.key.family === 'code') {
-   this.evidence ??= await HistoryEvidenceStore.open(this.receipt, this.client, this.bootstrap.limits, this.authorize, this.invalidate);
+   this.evidence ??= await HistoryEvidenceStore.open(this.receipt, this.client, this.bootstrap.limits, this.authorize, this.invalidate, this.receipt.manifestDigest, this.memory);
    await this.evidence.restore(proof.binding.evidenceManifestDigest);
   }
   // Main retains every accepted phase allocation. Transient query stages must

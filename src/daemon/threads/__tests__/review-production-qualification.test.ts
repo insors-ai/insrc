@@ -9,7 +9,9 @@ import { until, workerRpc } from './helpers/review-clearance-fixture.js';
 import { routeFixture, ISSUE_ONLY, LLD_ONLY, PLAN_STORY, BUILD_ONLY, DEF_STORY } from '../../../workflow/code-review/task-review/__tests__/helpers/route-fixture.js';
 import { fixture as codeFixture, hash } from '../../../workflow/code-review/task-review/__tests__/publication-fixture.js';
 import { prepareReviewAdmission } from '../../../workflow/code-review/task-review/admission.js';
-import { PreparedContextReader, contextRoot } from '../../../workflow/review/prepared-context.js';
+import { contextRoot } from '../../../workflow/review/prepared-context.js';
+import { materializePreparedValue, PreparedViewReader } from '../../../workflow/review/prepared-views.js';
+import { ReviewMemoryBudget } from '../../../workflow/review/preparation-memory.js';
 import { reviewPreparationLimits } from '../../../config/review.js';
 import type { PreparedReviewPacket } from '../../../workflow/code-review/task-review/packet.js';
 import { subjectFixture } from '../../../workflow/review/design-review/__tests__/helpers/subject-fixture.js';
@@ -26,8 +28,13 @@ import { decodeStoredDesignCheckpoint } from '../../../workflow/review/design-re
 async function packets(path: string) {
  const cp = JSON.parse(await readFile(path, 'utf8')), key = { project: cp.project, family: 'code' as const, reviewId: cp.reviewId };
  const manifest = JSON.parse(await readFile(join(contextRoot(key), cp.context.generationId, 'manifest.json'), 'utf8'));
- const reader = await PreparedContextReader.open({ ...manifest, storedBytes: manifest.byteTotals.stored, capacityToken: 'inspection-only' }, reviewPreparationLimits(join(cp.project, 'no-config.json')), async () => {}, async error => { throw error; });
- return (await reader.view('code-packets') as [string, PreparedReviewPacket][]).map(([, p]) => p);
+ const limits=reviewPreparationLimits(join(cp.project, 'no-config.json'));
+ const reader = await PreparedViewReader.open({ key:manifest.key,attempt:manifest.attempt,generationId:manifest.generationId,identityDigest:manifest.identityDigest,inputDigest:manifest.inputDigest,sourceIdentity:manifest.sourceIdentity,validatorVersion:manifest.validatorVersion,manifestDigest:manifest.manifestDigest,storedBytes:manifest.byteTotals.stored,capacityToken:'inspection-only' }, limits, new ReviewMemoryBudget(limits.memoryMaxBytes), async () => {}, async error => { throw error; });
+ const result:PreparedReviewPacket[]=[];
+ for(const view of manifest.views as {id:string;kind:string}[])if(view.kind==='packet'){
+  const window=await reader.metadata(await reader.descriptor(view.id,'packet'));try{result.push(structuredClone(await materializePreparedValue(reader, window.value)) as PreparedReviewPacket);}finally{window.release();}
+ }
+ reader.close();return result;
 }
 
 test('production defaults preserve all code routes story aliases task selection and complete pinned packet views', async t => {

@@ -18,6 +18,7 @@ import type { CodePreparationCheckpoint, DesignPreparationCheckpoint } from './p
 import { preparationDigest, contextRoot } from './prepared-context.js';
 import type { ReadyContextReceipt } from './prepared-context.js';
 import type { SourceCapacity } from './source-session.js';
+import type { ReviewMemoryBudget } from './preparation-memory.js';
 import { designActionEvolution } from './design-review/action-state.js';
 import type { DesignAttempt } from './design-review/contracts.js';
 
@@ -38,6 +39,7 @@ export interface HistoryBindingDeps {
  validate(next: PreparationHistory, previous?: PreparationHistory): Promise<HistoryValidation>;
  capacity: SourceCapacity;
  limits: ReviewPreparationLimits;
+ memory?: ReviewMemoryBudget | undefined;
  invalidateSource(error: unknown): Promise<void>;
  write?: typeof writeReviewBytes | undefined;
 }
@@ -159,13 +161,13 @@ export class HistoryBindingSession {
    if (cp.context.generationId !== source.generationId || cp.context.manifestDigest !== source.manifestDigest) throw new Error('History needs explicit source requalification/rebind');
    const binding = await session.readBinding(cp.context.historyBindingDigest);
    session.verifyBinding(cp, binding);
-   session.evidence = await HistoryEvidenceStore.open(source, deps.capacity, deps.limits, deps.authorize, deps.invalidateSource, binding.evidenceManifestDigest);
+   session.evidence = await HistoryEvidenceStore.open(source, deps.capacity, deps.limits, deps.authorize, deps.invalidateSource, binding.evidenceManifestDigest, deps.memory);
    const validation = await deps.validate(cp);
    if (await session.evidence.append(validation.evidence) !== binding.evidenceManifestDigest) throw new Error('Accepted history evidence was not preserved');
    session.previous = structuredClone(cp); session.binding = binding;
    session.receipt = await session.observe(cp, binding, validation); return session;
   }
-  session.evidence = await HistoryEvidenceStore.open(source, deps.capacity, deps.limits, deps.authorize, deps.invalidateSource);
+  session.evidence = await HistoryEvidenceStore.open(source, deps.capacity, deps.limits, deps.authorize, deps.invalidateSource, source.manifestDigest, deps.memory);
   await session.commit(cp); return session;
  }
  /** Explicit cold qualification only. A fresh private source receipt has
@@ -192,7 +194,7 @@ export class HistoryBindingSession {
   // commit() receives no previous validation cache and checks every result.
   session.binding = previous;
   session.requalifiedFrom = previous;
-  session.evidence = await HistoryEvidenceStore.open(source, deps.capacity, deps.limits, deps.authorize, deps.invalidateSource);
+  session.evidence = await HistoryEvidenceStore.open(source, deps.capacity, deps.limits, deps.authorize, deps.invalidateSource, source.manifestDigest, deps.memory);
   await session.commit(cp); return session;
  }
  private async authorize(): Promise<void> { if (!same(await this.deps.authorize(), this.source)) throw new Error('History source borrow changed'); }

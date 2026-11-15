@@ -221,3 +221,29 @@ test('a delayed publication from the earlier incarnation does not overwrite the 
   const after = f.coordinator.read(record.task)!;
   assert.deepEqual(after.measurement, newer.measurement, 'the newer snapshot is unchanged');
 });
+
+test('the normalized projection of an unobserved review is unchanged', async t => {
+  // An unobserved review is one admitted without a task binding (session
+  // connection, aborted connection, session-memory execution, refused launch
+  // or refused registration — proven in review-task-binding.test.ts). Its
+  // public surface is exactly the pre-s3 projection: cachedProgress/progressOf
+  // plus the board publication, with no store record and no coordinator task.
+  const f = await fixture(t);
+  const session = context('session-conn', { connectionSession: { role: 'control', access: {}, audience: 'test', controlGeneration: 1, signal: new AbortController().signal, assertActive: () => {} } });
+  const ack = await f.registry.admit(f.submit('unobserved-projection', 'code'), session.context);
+  await until(() => f.started.get('unobserved-projection') !== undefined);
+  await new Promise(r => setTimeout(r, 50));
+  assert.equal(f.store.list().length, 0, 'no task record is created for an unobserved review');
+  // The admission still publishes its progress on the board, unchanged.
+  const board = JSON.parse(JSON.stringify(services.board.snapshot()));
+  const reviewThreads = board.threads.filter((th: { cls: string }) => th.cls === 'review');
+  assert.ok(reviewThreads.length > 0, 'the review still appears on the board');
+  // Binding an observed review of the same shape does not disturb it: admit a
+  // second, observed review and confirm the unobserved one's record set and
+  // projection are untouched.
+  const projectionBefore = JSON.stringify(f.registry.progressOf(ack.key));
+  const { ack: observedAck } = await admitBound(f, 'observed-neighbor', 'code');
+  assert.equal(f.store.list().length, 1, 'only the observed review has a task record');
+  assert.equal(f.store.list()[0]!.origin.turnId, observedAck.key.reviewId);
+  assert.equal(JSON.stringify(f.registry.progressOf(ack.key)), projectionBefore, 'the unobserved review projection is unchanged');
+});

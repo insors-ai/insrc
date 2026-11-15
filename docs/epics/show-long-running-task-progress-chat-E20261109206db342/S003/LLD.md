@@ -374,6 +374,11 @@ Add retries and followUp counters to ReviewProgress (task-review/progress.ts) an
 - Error 'type' values for the delegates are 'none thrown' and 'null result' (behaviours, not error classes); decide whether a named outcome type is wanted (s8 cd3 partial).
 - Source of review progress: the status board carries only the display projection, so the delegates read ReviewWorkers.progressOf, a new read-only accessor in src/daemon/threads/review-workers.ts. That is the daemon's review-worker hosting class, not a review engine; confirm it is acceptable under the DEF non-goal on changes to review execution.
 
+### t5 pre-check outcome (build note, 2026-11-15)
+
+The plan-mandated pre-check proved that **no review admission request carries a progress origin bound to its connection**: `review-service.ts:128/:192` build the socket `TrustedRpcContext` via `context(trusted)` at `review-service.ts:95`, and `ReviewWorkers.admit`/`admitOwned` carry only `connectionIdentity`/`daemonEpoch`/`connectionSignal`. The only origin-bound launch caller in product code is `executor-relay.ts:245` (`launchBound`) on executor connections; `progress.origin.open/bind` have no product callers. Resolution (user-approved option b, PLAN rev 2): t5 binds through the daemon-internal s1 seam `ProgressAccess.launchReview` (`src/daemon/task-progress/access.ts:176`), which mints `origin { turnId: reviewId }` without requiring a client-bound origin. There is no IPC method for it. Observed = any non-session, non-aborted admission; unobserved = session connection, aborted connection, session-memory execution, refused launch or refused registration — each admitted exactly as before (see `S003/BUILD.md` and `S003/TESTS.md`).
+
+
 ## Resolved questions
 
 - `q52d7a4a9` — Retries and follow-up work are not published by either review engine today, so ac1's 'retries and discovered follow-up work' is only partly met: both are reported as null. Accept null now, or add a separate Story that makes the engines publish those counters (a4 was rejected because it changes review execution, which the DEF's first non-goal excludes)?

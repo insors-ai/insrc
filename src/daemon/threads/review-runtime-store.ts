@@ -142,6 +142,7 @@ export class ReviewRuntimeStore {
    if (value.runtimeId === previous.runtimeId || value.workerIncarnation === previous.workerIncarnation
     || value.attempt !== previous.attempt && value.attempt !== previous.attempt + 1) throw new Error('Invalid inactive runtime successor');
    const sameAttempt = value.attempt === previous.attempt;
+   if(sameAttempt&&previous.cancellation)throw new Error('Stopped review requires a separate explicit new attempt');
    if (!sameAttempt) {
     const status = 'header' in last ? last.header.status : last.status;
     if (['pending', 'running'].includes(status)

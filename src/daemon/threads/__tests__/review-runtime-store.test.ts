@@ -297,3 +297,13 @@ test('cancellation aborts an in-flight model CLI without replaying it or changin
  assert.equal((await f.store.finishCancellation(f.handle,true,true)).cancellation!.operationState,'stopped');assert.equal(spawns,1);
  assert.deepEqual(await readFile(f.path),history);
 });
+
+test('inactive handoff refuses a cancelled same-attempt predecessor after a cold daemon restart',async t=>{
+ const f=await setup(t);await f.store.activate(f.handle);
+ await f.store.beginCancellation(f.handle,'cancel-closed-attempt','User stopped this review');
+ await f.store.finishCancellation(f.handle,true,true);
+ const before=await readFile(reviewRuntimePath(f.key)),history=await readFile(f.path);f.store.release(f.handle);
+ let archives=0;const replacement=new ReviewRuntimeStore();
+ await assert.rejects(replacement.replaceInactive({...f.runtime,runtimeId:'forbidden-restart',workerIncarnation:'replacement-worker'},async()=>{archives++;},async()=>{}),/separate explicit new attempt/);
+ assert.equal(archives,0);assert.deepEqual(await readFile(reviewRuntimePath(f.key)),before);assert.deepEqual(await readFile(f.path),history);
+});

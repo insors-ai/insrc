@@ -53,6 +53,8 @@ export class CodeReviewWorker {
   }));
  }
  async assertResume():Promise<void>{
+  const {loadReviewRuntime}=await import('../../../daemon/threads/review-runtime-store.js');
+  if((await loadReviewRuntime(this.input.key))?.cancellation)throw new Error('Stopped review requires a separate explicit new attempt');
   requireReview(!this.preparing&&!this.coordinator.isActive(this.input.key.project,this.input.key.reviewId),'attempt','Review is still active');
   const cp=await loadStoredCheckpoint(checkpointPath(this.input.key.project,this.input.key.reviewId)),last=cp?.attempts.at(-1);
   requireReview(last&&last.header.attempt===this.input.attempt&&same(last.submitted,this.input.submitted),'packet','Resume input is pinned');

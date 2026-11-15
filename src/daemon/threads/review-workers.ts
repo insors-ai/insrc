@@ -165,7 +165,7 @@ export class ReviewWorkers {
   if(context.connectionSignal.aborted)throw new Error('Review connection lost');
   if(this.scopeCleaning(key,scope)&&cleanupScope!==scope.cleanupScope)throw new Error('Review subject or cleanup busy');
   const cancelled=this.cancellations.get(keyOf(key));
-  if(cancelled&&input.operation!=='resume'&&!(input.attempt===cancelled.receipt.attempt+1))throw new Error('Stopped review requires explicit recovery or a separate new attempt');
+  if(cancelled&&input.attempt!==cancelled.receipt.attempt+1)throw new Error('Stopped review requires a separate explicit new attempt');
   const previous=this.entries.get(keyOf(key));
   if(previous){
    if(previous.closing){
@@ -241,6 +241,7 @@ export class ReviewWorkers {
   const input=entry.input,key=input.key,previous=await loadReviewRuntime(key),saved=await loadPreparationCheckpoint(key);
   const assertInactive=async()=>{if(this.entries.get(keyOf(key))!==entry||entry.started||entry.closing)throw new Error('Inactive review fence changed');this.active(entry);};
   await assertInactive();
+  if(previous?.cancellation&&input.attempt===previous.attempt)throw new Error('Stopped review requires a separate explicit new attempt');
   if(saved?.format==='current'&&!previous)throw new Error('Current review lost its runtime proof');
   if(previous&&!saved&&previous.state!=='initializing')throw new Error('Orphan compact review runtime');
   const last=saved?.checkpoint.attempts.at(-1),number=last&&('header'in last?last.header.attempt:last.number);

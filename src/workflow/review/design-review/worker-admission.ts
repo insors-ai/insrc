@@ -64,6 +64,8 @@ export class DesignReviewWorker {
   });
  }
  async recover(raw:unknown,owner?:DesignControllerOwner){
+  const {loadReviewRuntime}=await import('../../../daemon/threads/review-runtime-store.js');
+  if((await loadReviewRuntime(this.input.key))?.cancellation)throw new Error('Stopped review requires a separate explicit new attempt');
   requireDesign(this.input.subject,'wrong_owner','Registered design subject required');
   if(this.input.reviewer==='controller')requireDesign(owner&&!owner.signal.aborted&&(this.owner===undefined||this.owner===owner.id),'wrong_owner','Trusted reviewing controller required');
   const request=parseDesignRequest(raw);

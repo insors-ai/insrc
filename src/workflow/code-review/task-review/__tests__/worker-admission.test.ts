@@ -145,5 +145,7 @@ test('targeted main cancellation rejects another session and retires only its ex
  assert.equal((await rpc(f.started.get('cancel-peer')!,'fixture.stats')).calls,0);
  assert.equal(readFileSync(path,'utf8'),pinned,'cancellation never rewrites input or accepted history');
  await assert.rejects(f.registry.execute(ack,f.context),/not found|Foreign|fenced|missing/i);
- await assert.rejects(f.registry.admit(submission,f.context),/explicit recovery/);
+ await assert.rejects(f.registry.admit(submission,f.context),/separate explicit new attempt/);
+ await assert.rejects(f.registry.admit({...submission,operation:'resume'},f.context),/separate explicit new attempt/);
+ assert.equal(readFileSync(path,'utf8'),pinned);
 });

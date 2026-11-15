@@ -24,7 +24,7 @@ import { openProgressRuntime } from './task-progress/runtime.js';
 import { registerExecutorProducers } from './task-progress/executor-measurements.js';
 import type { ExecutorDetails } from './task-progress/executor-measurements.js';
 import type { ProgressCoordinator } from './task-progress/coordinator.js';
-import { registerReviewProducers, validateAllDetails } from './task-progress/review-measurements.js';
+import { bindReviewTask, registerReviewProducers, validateAllDetails } from './task-progress/review-measurements.js';
 import { ExecutorProgressRelay } from './task-progress/executor-relay.js';
 import { setLogMode, getLogger } from '../shared/logger.js';
 
@@ -417,10 +417,13 @@ async function main(): Promise<void> {
 	//     onto the canonical unified ids in one pass.
 	const { registerBuiltinTools } = await import('./tools/builtins/index.js');
 	registerBuiltinTools();
- const reviews=new ProductionReviews({services:reviewServices,registeredRepos:async()=>new Set((await listRepos(db)).map(r=>r.path)),track:(worker,name)=>{
+ const reviews:ProductionReviews=new ProductionReviews({services:reviewServices,registeredRepos:async()=>new Set((await listRepos(db)).map(r=>r.path)),track:(worker,name)=>{
   if(supervisor)supervisor.track(worker,name);
   else worker.on('error',error=>log.error({worker:name,error:error.message},'review worker failed'));
- }});
+ },
+ // s3: reviews are bound to a task of the ONE progress runtime at admission; a
+ // launch/registration failure leaves the review unobserved, exactly as before.
+ bindTask:(key,attempt,context):Promise<import('./task-progress/review-measurements.js').ReviewTaskBinding|undefined>=>bindReviewTask({runtime:getProgressRuntime,source:reviews.registry},key,attempt,context)});
  installProductionReviews(reviews);
  let reviewClosing:Promise<void>|undefined;
 

@@ -48,6 +48,8 @@ export interface ReviewWorkersDeps {
  readonly resolveBinary:(command:string)=>Promise<string>;
  readonly track:(worker:Worker,name:string)=>void;
  readonly start?:typeof startReviewWorkerBootstrap | undefined;
+ /** s3 seam: binds an admitted review attempt to a task-progress task. Absent = no task, as before. */
+ readonly bindTask?:((key:ReviewKey,attempt:number,context:TrustedRpcContext)=>Promise<import('../task-progress/review-measurements.js').ReviewTaskBinding|undefined>)|undefined;
 }
 export interface ReviewWorkerProgress extends ReviewWorkerIdentity {
  readonly attempt:number;readonly sequence:number;
@@ -85,6 +87,8 @@ interface Entry {
  closing?:Promise<void>|undefined;
  reclaimedHealthy?:boolean|undefined;
  runtime?:{store:ReviewRuntimeStore;handle:ReviewRuntimeHandle}|undefined;
+ /** The coordinator task this attempt was bound to at admission; undefined when unobserved. */
+ taskBinding?:import('../task-progress/review-measurements.js').ReviewTaskBinding|undefined;
  readonly detach:()=>void;
 }
 const keyOf=(key:ReviewKey)=>JSON.stringify([key.project,key.family,key.reviewId]);
@@ -179,6 +183,13 @@ export class ReviewWorkers {
   const detach=()=>context.connectionSignal?.removeEventListener('abort',lost);
   entry={...(key.family==='design'&&review.submitted&&typeof review.submitted==='object'&&Reflect.get(review.submitted,'phase')==='recover'&&Reflect.get(review.submitted,'operation')==='restart_full'?{pendingAttempt:review.attempt+1}:{}),cleanupOwner:cleanupScope===scope.cleanupScope,attempt:review.attempt,input:review,scope,context,fence,lifetime,connection,owner,native,ready,pending:new Map(),detach};
   this.entries.set(keyOf(key),entry);
+  // s3: bind the attempt to a task-progress task. Fire-and-forget guarded: a
+  // launch or registration failure must never fail or slow the admission.
+  if(this.deps.bindTask!==undefined){
+   void Promise.resolve().then(()=>this.deps.bindTask!(key,review.attempt,context))
+    .then(binding=>{if(binding!==undefined&&this.entries.get(keyOf(key))===entry&&!entry.closing)entry.taskBinding=binding;})
+    .catch(()=>{});
+  }
   if(scope.reviewer==='controller')context.connectionSignal.addEventListener('abort',lost,{once:true});
   void Promise.resolve().then(()=>(this.deps.start??startReviewWorkerBootstrap)(this.deps.services,review,port2,{fence,onCreated:worker=>this.deps.track(worker,`review:${key.family}:${key.reviewId}`),onClosing:(_worker,reclaimed)=>{void reclaimed.then(()=>this.closeEntry(entry));}})).then(started=>{
    entry.started=started;

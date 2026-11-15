@@ -9,7 +9,10 @@ import { MeasuredCountSchema, ProgressLabel, ProgressSequence, progressObject } 
 import type { DelegateMeasurement, MeasuredCount, ProgressKind, TaskOwnerFence, TaskProgressDelegate, TaskRef } from '../../shared/task-progress.js';
 import { validateExecutorDetails } from './executor-measurements.js';
 import type { ExecutorDetails } from './executor-measurements.js';
+import type { ProgressAccess } from './access.js';
+import type { OwnerHandle, ProducerPort } from './coordinator.js';
 import type { ProgressCoordinator } from './coordinator.js';
+import type { TrustedRpcContext } from '../request-context.js';
 
 const target = Type.String({ minLength: 1, maxLength: 2048, pattern: '^[^\\x00-\\x1f\\x7f]+$' });
 const nullableCount = Type.Union([MeasuredCountSchema, Type.Null()]);
@@ -160,6 +163,55 @@ export function mapCodeReviewMeasurement(
 export interface ReviewProgressSource {
   progressOf(key: ReviewKey): ReviewWorkerProgress | undefined;
   identity(key: ReviewKey): ReviewWorkerIdentity | undefined;
+}
+
+/** One registered review task, owned through the review producer's port. */
+export interface ReviewTaskBinding {
+  readonly kind: 'design-review' | 'code-review';
+  readonly task: TaskRef;
+  readonly owner: OwnerHandle;
+}
+
+export interface BindReviewTaskDeps {
+  /** The one progress runtime, typed over every detail kind. */
+  readonly runtime: () => Promise<{
+    access: Pick<ProgressAccess<AllTaskDetails>, 'launchReview' | 'projectForScope'>;
+    producers: { designReview: ProducerPort<DesignReviewDetails>; codeReview: ProducerPort<CodeReviewDetails> };
+  }>;
+  /** Read-only review publication source; the delegates consume it, nothing else. */
+  readonly source: ReviewProgressSource;
+}
+
+/** Bind a review attempt to a coordinator task at admission. Returns undefined
+ *  (the review is admitted unobserved, exactly as before) when the connection is
+ *  a session, the launch is refused or registration fails; callers must never
+ *  let this fail or slow the review. Minting and fencing stay in s1. */
+export async function bindReviewTask(
+  deps: BindReviewTaskDeps,
+  key: ReviewKey, attempt: number, context: TrustedRpcContext,
+): Promise<ReviewTaskBinding | undefined> {
+  try {
+    if (context.connectionSignal?.aborted || context.connectionSession !== undefined ||
+        context.connectionExecution?.mode === 'session-memory') return undefined;
+    const runtime = await deps.runtime();
+    const project = await runtime.access.projectForScope(key.project);
+    if (project === undefined) return undefined;
+    const incarnation = deps.source.identity(key)?.incarnation;
+    if (incarnation === undefined) return undefined;
+    const { authorization } = await runtime.access.launchReview(project, key.reviewId, `review-${key.family}-${key.reviewId}`, context);
+    if (key.family === 'design') {
+      const registration = await runtime.producers.designReview.register(authorization, key.reviewId,
+        new DesignReviewDelegate(deps.source, { key, incarnation, attempt }));
+      if (registration.kind !== 'admitted') return undefined;
+      return { kind: 'design-review', task: registration.task, owner: registration.owner };
+    }
+    const registration = await runtime.producers.codeReview.register(authorization, key.reviewId,
+      new CodeReviewDelegate(deps.source, { key, incarnation, attempt }));
+    if (registration.kind !== 'admitted') return undefined;
+    return { kind: 'code-review', task: registration.task, owner: registration.owner };
+  } catch {
+    return undefined;
+  }
 }
 
 abstract class ReviewDelegateBase<D extends ReviewDetails> implements TaskProgressDelegate<D> {

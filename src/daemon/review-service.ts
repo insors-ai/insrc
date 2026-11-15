@@ -35,6 +35,8 @@ export interface ProductionReviewDeps{
  readonly track:(worker:Worker,name:string)=>void;
  /** Real-worker fixture seam; production uses the ordinary compiled entry. */
  readonly start?:typeof startReviewWorkerBootstrap;
+ /** s3: binds an admitted review attempt to a task-progress task (the one runtime). */
+ readonly bindTask?:((key:ReviewKey,attempt:number,context:TrustedRpcContext)=>Promise<import('./task-progress/review-measurements.js').ReviewTaskBinding|undefined>)|undefined;
 }
 let installed:ProductionReviews|undefined;
 export function installProductionReviews(service:ProductionReviews):void{
@@ -59,7 +61,7 @@ export class ProductionReviews{
     await this.registered(key.project);if(!scope)throw new Error('Registered review scope required');
     if(command.kind==='cli')this.currentReviewer(key.project,scope.subject,scope.reviewer);
     await authorizeReviewNative(key,command,scope.reviewer,signal,receipt);
-   },track:(w,name)=>{this.tracked.add(w);w.once('exit',()=>this.tracked.delete(w));deps.track(w,name);},...(deps.start?{start:deps.start}:{})});
+   },track:(w,name)=>{this.tracked.add(w);w.once('exit',()=>this.tracked.delete(w));deps.track(w,name);},...(deps.start?{start:deps.start}:{}),...(deps.bindTask?{bindTask:deps.bindTask}:{})});
   this.resources=this.registry.resourceRecovery(approvalBroker,async(key,rows,knownScope)=>{
    const scope=knownScope??await this.scope(key),id=key.family==='code'?scope.subject.replace(/^BUILD-/,'CR-'):scope.subject;
    await persistReviewResourceAudit(lifecycleFor(key.project).store,id,key,rows);

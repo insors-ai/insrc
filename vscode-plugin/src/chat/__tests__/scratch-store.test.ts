@@ -556,6 +556,34 @@ test('scratch-store.test.ts: updateScratch happy path writes full text and repla
   assert.equal(retryCalls.some((c) => c.op === 'link' && c.path.endsWith('.bak') && c.to === `${ROOT}/20260101-000005-f.md`), true, 'backup was linked back over the destination on the retry-path failure');
   assert.equal(retryCalls.some((c) => c.op === 'unlink' && c.path.includes('.tmp-')), true, 'temp cleaned up after the retry-path failure');
   assert.equal(retryCalls.some((c) => c.op === 'unlink' && c.path.endsWith('.bak')), true, 'backup cleaned up after the retry-path failure');
+
+  // Backup-link ownership (the r26 CR MED): when the backup link itself fails (the random
+  // .bak name is already occupied -> EEXIST), fail() must NOT unlink that backup path — it
+  // is an entry this operation never created, so deleting it would clobber another file.
+  seed(fake, '20260101-000006-g.md', 'owned original', 70);
+  const ownedBak = `${ROOT}/.tmp-owned.bak`;
+  seed(fake, '.tmp-owned.bak', 'foreign backup entry', 71);
+  const realLink3 = fake.fs.link;
+  let backupLinkHits = 0;
+  fake.fs.link = async (from, to) => {
+    // Fail ONLY the destination->backup link (to ends with a generated .bak name) with
+    // EEXIST, simulating a collision on the random backup name.
+    if (to.endsWith('.bak') && from === `${ROOT}/20260101-000006-g.md`) {
+      backupLinkHits++;
+      fake.calls.push({ op: 'link', path: from, to } as never);
+      throw eexist(to);
+    }
+    return realLink3(from, to);
+  };
+  const markBak = fake.calls.length;
+  await assert.rejects(store.updateScratch('20260101-000006-g.md', 'never lands'), (e: unknown) => e instanceof ScratchStoreError);
+  fake.fs.link = realLink3;
+  const bakCalls = fake.calls.slice(markBak);
+  assert.equal(backupLinkHits, 1, 'backup link was attempted exactly once');
+  assert.equal(bakCalls.some((c) => c.op === 'unlink' && c.path.endsWith('.bak')), false, 'no .bak path was unlinked — the failed backup link was never owned');
+  assert.equal(Buffer.from(fake.files.get(`${ROOT}/20260101-000006-g.md`) ?? []).toString('utf8'), 'owned original', 'destination untouched when the backup link fails');
+  assert.equal(Buffer.from(fake.files.get(ownedBak) ?? []).toString('utf8'), 'foreign backup entry', 'the foreign .bak entry survives a failed backup link');
+  assert.equal(bakCalls.some((c) => c.op === 'unlink' && c.path.includes('.tmp-')), true, 'temp still cleaned up when the backup link fails');
 });
 
 test('scratch-store.test.ts: updateScratch bumps mtime so listScratches reflects the save', async () => {

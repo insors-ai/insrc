@@ -383,8 +383,11 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
 
     /** Abandon the save: if any attempt already unlinked the destination, put the
      * ORIGINAL content back from the backup hard link first (the destination must be
-     * untouched by a failed save, even on the retry path), then clean up temp+backup. */
+     * untouched by a failed save, even on the retry path), then clean up temp+backup.
+     * The backup is unlinked only if this operation created it — a failed backup-link
+     * (e.g. EEXIST on the random name) must never delete an entry it does not own. */
     let unlinkedSoFar = false;
+    let backupLinked = false;
     const fail = async (e: unknown): Promise<unknown> => {
       if (unlinkedSoFar) {
         try {
@@ -397,7 +400,7 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
         }
       }
       await unlinkTemp();
-      await unlinkBackup();
+      if (backupLinked) await unlinkBackup();
       return e;
     };
 
@@ -413,6 +416,7 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
     };
     try {
       await fs.link(path, backup);
+      backupLinked = true;
     } catch (e) {
       throw await fail(errCode(e) === 'ENOENT' ? new ScratchNotFound(`'${id}' disappeared before the save`) : storeError(e));
     }
@@ -483,11 +487,7 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
       } catch (rmErr) {
         log.warn(`[scratches] could not remove temp ${temp}: ${String(rmErr)}`);
       }
-      try {
-        await fs.unlink(backup);
-      } catch (rmErr) {
-        log.warn(`[scratches] could not remove backup ${backup}: ${String(rmErr)}`);
-      }
+      await unlinkBackup();
       return;
     }
     // The publish never landed (non-EEXIST link failure, or retries exhausted). Put the
@@ -505,8 +505,7 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
     }
     await unlinkTemp();
     await unlinkBackup();
-    throw storeError(publishErr);
-  };
+    throw storeError(publishErr);  };
 
   const deleteScratch = async (id: string): Promise<void> => {
     const path = resolveInside(id);

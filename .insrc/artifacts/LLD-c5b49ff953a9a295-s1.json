@@ -1,0 +1,665 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1794721863217-7hrb97",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-15T05:55:14.920Z",
+    "epicCreatedAt": "2026-11-15T05:50:20.518Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "claude-opus-5-5"
+        }
+      ]
+    },
+    "elapsedMs": 250798,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c5b49ff953a9a295",
+    "epicSlug": "give-every-trivial-change-issue-record",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1794721863217-7hrb97",
+    "hldEffectiveHash": "2faaccb0cf13a1cadb06fcce0d77b052ad854dde28fc2460041e92e1a067c892",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Design the fix for ISSUE-c5b49ff953a9a295: every trivial change gets an ISSUE record (triage routes trivial to the issue stage, approval advances to build), the ISSUE can describe a non-defect change, steering/guide text updated, approving a trivial BUILD completes its Story, and a deliberate decision for the 16 existing headless trivial builds.",
+    "standalone": true,
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "3bdbcbf27ac74cb17212a9c6f44de1f4bce8e70f3aecfdee47c4c033c79cfba0",
+        "at": "2026-11-15T05:55:15.202Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1,
+    "questionResolutions": {
+      "q7aeab4c0": {
+        "question": "q1: The 16 existing headless trivial builds. Recommended: leave them and record the decision, because a backfilled ISSUE would be system-written after the fact, not a person-reviewed trace. Alternative: a one-off repair that writes a kind 'change' ISSUE from each BUILD's focus under its own hash, approved by the migration actor, then completes each Story.",
+        "status": "resolved",
+        "choice": "Backfill: a one-off repair writes an ISSUE (kind 'change') for each of the 16 existing headless trivial builds from its BUILD's request text (focus and triage rationale), under the BUILD's own hash, approved by the migration actor with the reason recorded, then completes each Story through the existing completion walk.",
+        "rationale": "User decision 2026-11-15: chose the backfill alternative over leaving the 16 builds headless.",
+        "resolvedAt": "2026-11-15T06:02:16.513Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "A trivial change now starts with an ISSUE record, like a small bugfix. Triage routes trivial work to the issue stage; the ISSUE says it is a change rather than a defect and is worded that way. Approving it hands build the ISSUE's own hash, so the build, its review and its Story completion all hang off that record. Build no longer invents a new work item for a no-design build, so neither a trivial change nor a small bugfix can end up without its ISSUE.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Design the fix for ISSUE-c5b49ff953a9a295: every trivial change gets an ISSUE record (triage routes trivial to the issue stage, approval advances to build), the ISSUE can describe a non-defect change, steering/guide text updated, approving a trivial BUILD completes its Story, and a deliberate decision for the 16 existing headless trivial builds."
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "routeForSizeClass",
+          "signature": "routeForSizeClass(sizeClass: SizeClass, magnitude?: BugfixMagnitude): TriageRoute",
+          "parameters": [
+            {
+              "name": "sizeClass",
+              "type": "SizeClass",
+              "purpose": "The triage tier.",
+              "optional": false
+            },
+            {
+              "name": "magnitude",
+              "type": "BugfixMagnitude",
+              "purpose": "Required for bugfix only; ignored otherwise, as today.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "TriageRoute",
+            "meaning": "For 'trivial': { startStage: 'issue', standalone: true, needsPlan: false, producesLld: false } (was startStage 'build'). Every other tier is unchanged."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "bugfix without a magnitude (unchanged)."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "No tier returns startStage 'build'; build is always reached from an approved head."
+          ]
+        },
+        {
+          "name": "buildNextCall",
+          "signature": "buildNextCall(result: TriageResult, focus: string, repo: string, specHash?: string): TriageDone['nextCall']",
+          "parameters": [
+            {
+              "name": "result",
+              "type": "TriageResult",
+              "purpose": "The classified result.",
+              "optional": false
+            },
+            {
+              "name": "focus",
+              "type": "string",
+              "purpose": "The request text.",
+              "optional": false
+            },
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Absolute repo path.",
+              "optional": false
+            },
+            {
+              "name": "specHash",
+              "type": "string",
+              "purpose": "Approved SPEC to seed from (unchanged).",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "TriageDone['nextCall']",
+            "meaning": "For 'trivial': insrc_workflow_step { phase:'start', workflow:'issue', focus, params: { standalone: true, storyTitle, storySpec: focus, sizeClass: 'trivial', magnitude: 'small', kind: 'change', triageRationale } }. The '(standalone-trivial)' build call is no longer emitted."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The trivial nextCall starts the issue workflow, never insrc_build_step."
+          ]
+        },
+        {
+          "name": "nextAfterIssue",
+          "signature": "nextAfterIssue(issue: IssueArtifact, repo: string): BugfixNextCall",
+          "parameters": [
+            {
+              "name": "issue",
+              "type": "IssueArtifact",
+              "purpose": "The approved ISSUE.",
+              "optional": false
+            },
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Absolute repo path.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "BugfixNextCall",
+            "meaning": "magnitude 'small' (a small bugfix, or a trivial change): insrc_build_step { phase:'implement', target:'(standalone-bugfix)', standalone: { standalone: true, sizeClass: 'trivial', epicHash: issue.meta.issueHash, focus: scope } }. magnitude 'sized': the design.story call with params.epicHash: issue.meta.issueHash added. The scope text is the ISSUE body, as today."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "magnitude neither 'small' nor 'sized' (unchanged)."
+            },
+            {
+              "type": "Error",
+              "condition": "issue.meta.issueHash missing or not 16 hex characters: refuse rather than emit a call without the work item."
+            }
+          ],
+          "preconditions": [
+            "The ISSUE is approved."
+          ],
+          "postconditions": [
+            "Every emitted call names the ISSUE's hash as its work item."
+          ]
+        },
+        {
+          "name": "handleStandaloneImplement",
+          "signature": "handleStandaloneImplement(ctx: StandaloneContext, ...): Promise<BuildStepResult>",
+          "parameters": [
+            {
+              "name": "ctx",
+              "type": "StandaloneContext",
+              "purpose": "standalone.{epicHash, storyId, focus, sizeClass, triageRationale}.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<BuildStepResult>",
+            "meaning": "Unchanged for a call that carries epicHash."
+          },
+          "errors": [
+            {
+              "type": "BuildStepError 'no-identity'",
+              "condition": "A no-LLD (trivial) standalone call with no epicHash. Previously a hash was minted from the focus (standaloneEpicHashFromFocus); now the call is refused with a message naming the issue stage."
+            },
+            {
+              "type": "BuildStepError 'no-head'",
+              "condition": "A no-LLD standalone call whose epicHash has no approved ISSUE head."
+            }
+          ],
+          "preconditions": [
+            "standalone.epicHash names an approved ISSUE (no-LLD) or an approved standalone LLD (small)."
+          ],
+          "postconditions": [
+            "No standalone build is created without a head."
+          ]
+        },
+        {
+          "name": "renderIssueMarkdown",
+          "signature": "renderIssueMarkdown(artifact: IssueArtifact): string",
+          "parameters": [
+            {
+              "name": "artifact",
+              "type": "IssueArtifact",
+              "purpose": "The ISSUE to render.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "meta.kind 'change' renders the body under '## What was asked', '## Why' and '## Change'; absent or 'defect' renders '## Reproduction', '## Root cause', '## Fix intent' as today."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Existing ISSUE documents render byte-identically."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "IssueArtifact.meta",
+        "change": "field-add",
+        "details": "Optional kind: 'defect' | 'change'. Absent means 'defect', so every stored ISSUE keeps its meaning and rendering. Set from the issue run's params.kind ('change' for a trivial triage result). The body fields (title, reproduction, rootCause, fixIntent) keep their names and validator; for a change they hold what was asked, why, and the change. magnitude stays 'small' | 'sized'; a trivial change carries 'small'.",
+        "schemaDiff": "meta.kind?: 'defect' | 'change'",
+        "callSites": [
+          "src/workflow/artifacts/issue.ts:10-100",
+          "src/workflow/runners/issue/index.ts:26-62",
+          "src/workflow/bugfix/next-after-issue.ts:26-95"
+        ]
+      },
+      {
+        "entity": "insrc_build_step standalone identity",
+        "change": "invariant-change",
+        "details": "A no-LLD standalone build must carry epicHash naming an approved ISSUE. The focus-derived hash is no longer minted.",
+        "callSites": [
+          "src/daemon/steps/build-step/phases/implement.ts:142-144",
+          "src/workflow/runners/build/admission.ts:245-247"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "An agent calls insrc_build_step for a no-LLD standalone build without epicHash (an old steering copy, a hand-written call, or a caller that dropped it).",
+          "detection": "handleStandaloneImplement finds ctx.epicHash undefined for a sizeClass 'trivial' call, where it used to call standaloneEpicHashFromFocus.",
+          "response": "Return BuildStepError 'no-identity' naming the fix: run insrc_triage, approve the ISSUE, then build with its hash. Nothing is written.",
+          "userImpact": "The build does not start until an ISSUE exists; no headless record is created.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A no-LLD standalone build names an epicHash with no ISSUE, or with an ISSUE that is still pending.",
+          "detection": "Admission reads the ISSUE head for the hash and finds it missing or its lifecycle not approved.",
+          "response": "Refuse with 'no-head' (missing) or the existing unapproved-upstream refusal (pending), naming the ISSUE id.",
+          "userImpact": "The user approves the ISSUE first; the build then proceeds under it.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An approved ISSUE reaches the advance without a usable issueHash.",
+          "detection": "nextAfterIssue checks issue.meta.issueHash against /^[0-9a-f]{16}$/.",
+          "response": "Throw; the approval's followOn reports bugfix-advance ok:false with the message, as for an invalid magnitude today.",
+          "userImpact": "The ISSUE stays approved; the agent sees the failed advance instead of a call that would build headless.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An ISSUE written with kind 'change' is read by a client built before this change.",
+          "detection": "The old renderer ignores meta.kind.",
+          "response": "It renders the defect headings over the change text; the record and routing stay correct.",
+          "userImpact": "Wording only, until the client updates.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "An ISSUE stored before this change (no meta.kind).",
+          "expected": "Reads as kind 'defect'; renders byte-identically; routes by magnitude as today."
+        },
+        {
+          "input": "A trivial change whose ISSUE is approved with magnitude 'small' and kind 'change'.",
+          "expected": "The advance emits the build call with sizeClass 'trivial' and epicHash = the ISSUE hash; BUILD approval completes STORY and EPIC."
+        },
+        {
+          "input": "A small bugfix (kind 'defect', magnitude 'small') after this change.",
+          "expected": "Same build route as before, now with epicHash = the ISSUE hash; no headless build."
+        },
+        {
+          "input": "A sized bugfix ISSUE.",
+          "expected": "Advances to design.story as today, with params.epicHash = the ISSUE hash added."
+        },
+        {
+          "input": "One of the 16 existing headless trivial builds is re-approved or revalidated.",
+          "expected": "Unchanged until migration backfills it (see migration); no new failure is introduced for it."
+        },
+        {
+          "input": "Triage classifies a request 'trivial' that the user explicitly scoped as a one-liner.",
+          "expected": "Still routes to the issue stage; the steering text no longer offers a build-only path."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "routeForSizeClass stays the single route table: nextAfterIssue and buildNextCall derive their stage from it and never re-implement the size decision; the exhaustiveness check stays.",
+          "source": "c1"
+        },
+        {
+          "text": "A bugfix still requires a magnitude, and the advance still refuses anything other than 'small' | 'sized'.",
+          "source": "c3"
+        },
+        {
+          "text": "A small (LLD) standalone build still requires epicHash plus an approved standalone LLD, unchanged.",
+          "source": "c4"
+        },
+        {
+          "text": "Story completion keeps reading the Epic anchor only from the head; no BUILD-stamp fallback is added (the ISSUE is the head).",
+          "source": "c5"
+        },
+        {
+          "text": "IssueArtifact body field names and the four-field validator are unchanged; stored ISSUEs keep their rendering.",
+          "source": "c6"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Pin the new routes, the advance's work-item hash and the ISSUE kind rendering.",
+          "subjects": [
+            "routeForSizeClass: trivial routes to the issue stage with no LLD",
+            "routeForSizeClass: no tier starts at build",
+            "triage nextCall: trivial starts the issue workflow with sizeClass trivial, magnitude small and kind change",
+            "nextAfterIssue: a small ISSUE routes to build with the ISSUE hash as standalone.epicHash",
+            "nextAfterIssue: a sized ISSUE routes to design.story with params.epicHash set to the ISSUE hash",
+            "nextAfterIssue: an ISSUE without a 16-hex issueHash is refused",
+            "renderIssueMarkdown: kind change renders What was asked, Why and Change",
+            "renderIssueMarkdown: an ISSUE with no kind renders byte-identically to before",
+            "issue capture prompt: a change run asks what was asked and why, not for a defect"
+          ],
+          "fixturesNeeded": [
+            "An approved IssueArtifact fixture with and without meta.kind",
+            "A golden rendering of a pre-change ISSUE document"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the build refuses headless calls and that a trivial change completes its Story end to end.",
+          "subjects": [
+            "build implement: a no-LLD standalone call without epicHash is refused with no-identity and writes nothing",
+            "build implement: a no-LLD standalone call whose epicHash has no approved ISSUE is refused",
+            "a trivial change: ISSUE approved, build under its hash, BUILD approved completes STORY and EPIC",
+            "the steering triage list and build guide route trivial work through the issue stage"
+          ],
+          "fixturesNeeded": [
+            "Temp repository with the store and lifecycle (story-completion test kit)"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "routeForSizeClass: trivial routes to the issue stage with no LLD",
+            "triage nextCall: trivial starts the issue workflow with sizeClass trivial, magnitude small and kind change",
+            "build implement: a no-LLD standalone call without epicHash is refused with no-identity and writes nothing",
+            "build implement: a no-LLD standalone call whose epicHash has no approved ISSUE is refused"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "renderIssueMarkdown: kind change renders What was asked, Why and Change",
+            "renderIssueMarkdown: an ISSUE with no kind renders byte-identically to before",
+            "issue capture prompt: a change run asks what was asked and why, not for a defect"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "the steering triage list and build guide route trivial work through the issue stage"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "a trivial change: ISSUE approved, build under its hash, BUILD approved completes STORY and EPIC",
+            "nextAfterIssue: a small ISSUE routes to build with the ISSUE hash as standalone.epicHash",
+            "nextAfterIssue: a sized ISSUE routes to design.story with params.epicHash set to the ISSUE hash",
+            "nextAfterIssue: an ISSUE without a 16-hex issueHash is refused"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "routeForSizeClass: no tier starts at build"
+          ]
+        }
+      ],
+      "testFramework": "node:test run through tsx (npx tsx --test), as in src/workflow/triage/__tests__/classify.test.ts and src/daemon/steps/triage-step/__tests__/handler.test.ts"
+    },
+    "migration": {
+      "stateBefore": "Triage routes trivial work straight to build (routeForSizeClass returns startStage 'build'; the triage nextCall is insrc_build_step '(standalone-trivial)' with no epicHash). Build mints a work-item hash from the focus text for a no-LLD call (standaloneEpicHashFromFocus). The small-bugfix advance also emits its build call without the ISSUE's hash. A headless trivial build cannot complete its Story because requireEpicAnchor reads only the head. The steering block tells agents a standalone BUILD record is a trivial change's ledger entry. 16 approved headless trivial BUILD records exist in this repository, none with a STORY record.",
+      "stateAfter": "Triage routes trivial work to the issue stage (sizeClass trivial, magnitude small, kind change). The ISSUE renders change wording when meta.kind is 'change'. Approving any small or sized ISSUE hands the next stage the ISSUE's hash. Build refuses a no-LLD call without an epicHash naming an approved ISSUE, so no new headless build can be made. Approving a trivial BUILD completes its Story under the ISSUE. The steering text says trivial work starts with an ISSUE. The 16 existing headless builds are handled as decided in the open question below.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add optional meta.kind ('defect' | 'change') to IssueArtifact; absent reads as 'defect'. Teach the renderer and the issue.capture prompt the change wording. Stored ISSUEs are untouched and render byte-identically.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Make nextAfterIssue put the ISSUE's hash into the emitted build call (standalone.epicHash) and design.story call (params.epicHash), refusing an ISSUE without a 16-hex issueHash.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Flip routeForSizeClass('trivial') to startStage 'issue' and change the triage nextCall to start the issue workflow with sizeClass trivial, magnitude small, kind change. Update the route tests.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Make the standalone no-LLD build refuse a call without epicHash (no-identity) or whose epicHash has no approved ISSUE (no-head), replacing the focus-derived hash.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Update the steering block (triage route list, build guide, code-review pinning rule, triage skip rule) so trivial work starts with an ISSUE and pins it in the code-review packet; refresh assets/steering-block.md through the plugin's sync-assets.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Existing headless trivial builds: apply the decision recorded for open question q1. Recommended: leave the 16 records as they are and record the decision in BUILD.md, because a backfilled ISSUE would be written by the system after the fact rather than reviewed by a person, which is the trace the rule asks for. The alternative is a one-off repair that writes an ISSUE (kind change) from each BUILD's focus and triage rationale under the BUILD's own hash, approved by the migration actor with the reason recorded, after which the existing completion walk completes each Story.",
+          "rollbackable": false
+        }
+      ],
+      "backwardCompat": "IssueArtifact gains an optional field; old ISSUEs read and render as before, and an old client renders a change ISSUE with defect headings (wording only). The triage nextCall for trivial changes shape (issue workflow instead of build); agents follow nextCall verbatim, and the steering text changes in the same release. insrc_build_step now refuses a no-LLD standalone call without epicHash: a caller relying on the minted hash (an old steering copy or a hand-written call) gets a no-identity error that names the issue stage, instead of a headless build. Small (LLD) standalone builds are unchanged.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Issue stage first, with a change kind",
+        "oneLineSummary": "Triage routes trivial to the issue stage; the ISSUE records a change kind; approval advances to build carrying the ISSUE's hash; build refuses a headless trivial build.",
+        "approach": "routeForSizeClass('trivial') returns startStage 'issue' with producesLld false, and triage's nextCall starts the issue workflow (as for a small bugfix) with sizeClass 'trivial'. The IssueArtifact meta gains kind: 'defect' | 'change' (absent reads as defect, so every existing ISSUE is unchanged). For a change, the capture prompt asks what was asked and why, and the document renders 'What was asked' / 'Why' / 'Change' in place of Reproduction / Root cause / Fix intent; the body fields keep their names. The issue-approval advance (nextAfterIssue) routes a trivial ISSUE, and a small bugfix, to build and puts the ISSUE's hash in standalone.epicHash. The standalone no-LLD build stops minting a hash from the focus and refuses a call with no epicHash, so no new headless build can be made. Steering and guide text change to match. The 16 headless builds are handled by a repair step (see migration).",
+        "pros": [
+          "Every trivial change and every small bugfix gets a reviewed ISSUE record, the user's rule.",
+          "Story completion works with no change to the anchor rules: the ISSUE is the head.",
+          "Closes the second route: a small bugfix followed verbatim no longer builds headless.",
+          "Reuses the existing issue stage, advance seam and route table; no new record kind."
+        ],
+        "cons": [
+          "Adds one approval stop (the ISSUE) before every trivial build.",
+          "Touches triage, the issue artifact and prompt, the advance, build-step identity and steering text."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Issue stage first, neutral wording, no kind",
+        "oneLineSummary": "Same routing as a1, but the ISSUE is reworded to fit both defects and changes instead of carrying a kind.",
+        "approach": "Routing, the advance carrying the ISSUE's hash and the build refusing a headless trivial call are as in a1. Instead of a kind field, the capture prompt and the rendered headings become neutral for every ISSUE ('Problem or request', 'Cause or motivation', 'Intended change'). No meta field is added.",
+        "pros": [
+          "No new meta field or validator change.",
+          "One wording for every ISSUE."
+        ],
+        "cons": [
+          "Rewords every existing and future defect ISSUE, which loses the sharp reproduction / root-cause framing defects need.",
+          "Downstream readers (the GitHub issue body, reviewers) cannot tell a defect from a change."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Same routing as a1 but fi2 is only partial: rewording every ISSUE degrades defect records to avoid one optional meta field."
+      },
+      {
+        "id": "a3",
+        "name": "Build writes the ISSUE itself",
+        "oneLineSummary": "Keep trivial routed to build, but build's implement phase writes an ISSUE head from the focus before it starts.",
+        "approach": "Triage keeps startStage 'build'. When a standalone trivial build has no head, implement writes an IssueArtifact (kind change) from the focus and triage rationale under the build's hash, approved by the system rather than a person, then builds. Completion then finds the ISSUE head.",
+        "pros": [
+          "No extra approval stop for trivial work.",
+          "Every trivial build gets a head and its Story completes."
+        ],
+        "cons": [
+          "The ISSUE is never reviewed or approved by a person, so it records the agent's own wording only.",
+          "A system-approved head bypasses the human approval gate the workflow relies on for every other head.",
+          "Build writes a design-stage record, mixing stage responsibilities."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Avoids the extra stop but violates the human-approval rule for heads and only partly meets fi1."
+      },
+      {
+        "id": "a4",
+        "name": "Anchor fallback only",
+        "oneLineSummary": "Leave routing as it is; let Story completion take the anchor from the BUILD record's stamp.",
+        "approach": "requireEpicAnchor (or the creation context) falls back to the work item's BUILD record epicCreatedAt when there is no head, as record path resolution already does. Trivial work stays headless; approving its BUILD now completes its Story.",
+        "pros": [
+          "Smallest change; existing headless builds could complete without new records."
+        ],
+        "cons": [
+          "Does not meet the user's rule: no ISSUE record, so the trace is still lost.",
+          "Leaves the small-bugfix advance building headless."
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "Fixes only fi4; the trace stays lost, which is the user's actual requirement."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "q1: The 16 existing headless trivial builds. Recommended: leave them and record the decision, because a backfilled ISSUE would be system-written after the fact, not a person-reviewed trace. Alternative: a one-off repair that writes a kind 'change' ISSUE from each BUILD's focus under its own hash, approved by the migration actor, then completes each Story.",
+      "ts1: The Story carries no acceptance criteria of its own; ac1-ac5 are the five fix-intent points of ISSUE-c5b49ff953a9a295."
+    ],
+    "sequenceDefinition": {
+      "narrative": "The trivial path after the fix: triage starts the issue stage, the user approves the ISSUE, the advance hands build the ISSUE's hash, and approving the BUILD completes the Story under that ISSUE.",
+      "participants": [
+        {
+          "id": "agent",
+          "label": "Agent",
+          "description": "The controller session driving the tools."
+        },
+        {
+          "id": "triage",
+          "label": "insrc_triage",
+          "description": "Sizes the request and returns nextCall."
+        },
+        {
+          "id": "issue",
+          "label": "issue stage",
+          "description": "insrc_workflow_step workflow 'issue'; writes the ISSUE with kind 'change'."
+        },
+        {
+          "id": "user",
+          "label": "User",
+          "description": "Approves the ISSUE and later the BUILD."
+        },
+        {
+          "id": "advance",
+          "label": "bugfix advance",
+          "description": "advanceBugfixAfterIssue / nextAfterIssue on ISSUE approval."
+        },
+        {
+          "id": "build",
+          "label": "insrc_build_step",
+          "description": "Implements and validates under the ISSUE's hash."
+        },
+        {
+          "id": "complete",
+          "label": "story completion",
+          "description": "Creates and completes the STORY/EPIC heads on BUILD approval."
+        }
+      ],
+      "messages": [
+        {
+          "from": "agent",
+          "to": "triage",
+          "label": "classify trivial",
+          "description": "Triage returns nextCall: issue workflow, sizeClass trivial, magnitude small, kind change."
+        },
+        {
+          "from": "agent",
+          "to": "issue",
+          "label": "start / step / synthesize",
+          "description": "Writes ISSUE-<hash> describing the change."
+        },
+        {
+          "from": "user",
+          "to": "advance",
+          "label": "approve ISSUE",
+          "description": "Approval runs the advance."
+        },
+        {
+          "from": "advance",
+          "to": "agent",
+          "label": "nextCall build (epicHash = ISSUE hash)",
+          "description": "The build call names the ISSUE as its work item."
+        },
+        {
+          "from": "agent",
+          "to": "build",
+          "label": "implement / validate",
+          "description": "Refused if epicHash is missing or has no approved ISSUE."
+        },
+        {
+          "from": "user",
+          "to": "complete",
+          "label": "approve BUILD",
+          "description": "Completion reads the anchor from the ISSUE head and completes the Story."
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/give-every-trivial-change-issue-record-E20261115c5b49ff9/S001/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/triage/classify.ts:36-70"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/steps/triage-step/phases/classify.ts:55-85"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/bugfix/next-after-issue.ts:26-95"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/steps/build-step/phases/implement.ts:142-144"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/storage.ts:528-557"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/issue.ts:10-100"
+    },
+    {
+      "id": "c7",
+      "kind": "doc",
+      "ref": "src/prompts/steering-block.md:231"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/codecs.ts:144-180"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-c5b49ff953a9a295"
+    }
+  ]
+}

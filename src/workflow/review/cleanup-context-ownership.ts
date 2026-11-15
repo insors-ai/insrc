@@ -12,7 +12,7 @@ import { cleanupBytes, cleanupStat, bytesDigest, inventoryCleanupContext } from 
 
 /** Cleanup ownership is narrower than a borrow: it grants no execution or
  * capacity capability, and can include an already-evicted old generation. */
-export type CleanupContextOwner = Pick<ReadyContextReceipt, 'key' | 'attempt' | 'generationId' | 'manifestDigest'>;
+export type CleanupContextOwner = Pick<ReadyContextReceipt, 'key' | 'attempt' | 'generationId' | 'manifestDigest' | 'validatorVersion'>;
 
 function contextManifest(input: unknown, key: ReviewKey): PreparedContextManifest | StagedContextManifest {
  const value = input as { schemaVersion?: unknown; encoding?: unknown };
@@ -47,7 +47,7 @@ export async function ownedCleanupContext(key: ReviewKey, receipts: readonly Cle
   if (!await cleanupStat(join(root, source.generationId))) continue;
   const raw = await cleanupBytes(join(root, source.generationId, 'manifest.json'), reviewJsonLimit()), manifest = contextManifest(JSON.parse(raw.bytes.toString('utf8')), key);
   if (manifest.manifestDigest !== source.manifestDigest || manifest.manifestDigest !== preparationDigest({ ...manifest, manifestDigest: '' }) || manifest.generationId !== source.generationId
-   || manifest.attempt !== source.attempt || manifest.validatorVersion !== 1) throw new Error('Context manifest differs from private ownership receipt');
+   || manifest.attempt !== source.attempt || manifest.validatorVersion !== source.validatorVersion) throw new Error('Context manifest differs from private ownership receipt');
   allow(source.generationId, null); allow(`${source.generationId}/manifest.json`, bytesDigest(raw.bytes));
   for (const object of manifest.objects) allow(`${source.generationId}/${object.contentDigest}.data`, object.contentDigest);
  }
@@ -98,7 +98,7 @@ export async function permanentCleanupContexts(key: ReviewKey, heads: readonly s
   const bytes = await cleanupBytes(join(root, binding.generationId, 'manifest.json'), reviewJsonLimit());
   const manifest = contextManifest(JSON.parse(bytes.bytes.toString('utf8')), key);
   if (manifest.generationId !== binding.generationId || manifest.attempt !== binding.attempt || manifest.manifestDigest !== preparationDigest({ ...manifest, manifestDigest: '' })) throw new Error('Permanent cleanup source manifest changed');
-  const owner: CleanupContextOwner = { key, attempt: binding.attempt, generationId: binding.generationId, manifestDigest: manifest.manifestDigest };
+  const owner: CleanupContextOwner = { key, attempt: binding.attempt, generationId: binding.generationId, manifestDigest: manifest.manifestDigest, validatorVersion: manifest.validatorVersion };
   if (binding.lifecycle) {
    const lifecycleBytes = await cleanupBytes(join(root, binding.lifecycle.generationId, 'manifest.json'), reviewJsonLimit());
    const lifecycleManifest = contextManifest(JSON.parse(lifecycleBytes.bytes.toString('utf8')), key);

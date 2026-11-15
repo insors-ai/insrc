@@ -19,7 +19,7 @@ import { admitManagedPreparation, prepareLegacyUpgrade, retainManagedReleaseVeri
 import { PATHS } from '../shared/paths.js';
 import { requestLegacyDrain, restoredLegacyDrainPath } from '../daemon/legacy-private-drain.js';
 import { stopRestoredLegacyProcess } from '../daemon/legacy-public-stop.js';
-import { readManagedBundleProof, verifyManagedBundleManifest } from '../daemon/managed-bundle-proof.js';
+import { readManagedBundleProof, verifyManagedBundleManifest, verifyManagedBundleProof } from '../daemon/managed-bundle-proof.js';
 import { prepareBundleLegacyUpgrade, prepareInstalledBundleUpgrade } from '../daemon/managed-update-preparation.js';
 
 const NOT_MANAGED = 10;
@@ -95,12 +95,30 @@ async function main(command: string): Promise<void> {
 				throw new Error('development activation requires exclusive development state');
 			}
 			const manifest = await verifyManagedBundleManifest(proof, releaseId, PATHS.insrc);
-			if ((manifest.qualificationOnly === true) !== qualificationOnly || manifest.predecessor !== null) {
+			if ((manifest.qualificationOnly === true) !== qualificationOnly || (qualificationOnly && manifest.predecessor !== null)) {
 				throw new Error('development manifest does not match activation mode');
 			}
-			if (qualificationOnly ? journal.installedBundle?.proof.floor.domain !== 'development'
-				: journal.installedBundle !== undefined || (await readdir(PATHS.insrc)).some(name => name !== 'bundle-trust')) {
-				throw new Error('development activation requires the matching installation state');
+			const installed = journal.installedBundle;
+			if (installed === undefined) {
+				if (qualificationOnly || manifest.predecessor !== null || (await readdir(PATHS.insrc)).some(name => name !== 'bundle-trust')) {
+					throw new Error('development activation requires the matching installation state');
+				}
+			} else {
+				if (proof.floor.domain !== 'development' || installed.proof.floor.domain !== 'development' ||
+					installed.proof.floor.repository !== proof.floor.repository) {
+					throw new Error('development activation requires a matching development installation');
+				}
+				if (!qualificationOnly && installed.proof.floor.manifestSha256 === proof.floor.manifestSha256 &&
+					installed.proof.floor.archiveSha256 === proof.floor.archiveSha256) {
+					const selected = await readInstallationSelector(PATHS.insrc);
+					if (selected?.releaseRoot !== installed.releaseRoot || selected.releaseId !== releaseId || !selected.enabled) {
+						throw new Error('installed development bundle selector disagrees with its receipt');
+					}
+					await verifyManagedBundleProof(selected, installed.proof);
+					process.stdout.write('Development bundle is already installed.\n');
+					return;
+				}
+				if (!qualificationOnly && manifest.predecessor === null) throw new Error('development update requires an exact predecessor');
 			}
 		} else await mkdir(PATHS.insrc, { mode: 0o700, recursive: true });
 		const stateRoot = await realpath(PATHS.insrc);

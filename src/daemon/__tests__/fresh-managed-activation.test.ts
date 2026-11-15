@@ -11,10 +11,11 @@ import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import { ManagedDaemonControl, openManagedSupervisorLink } from '../../cli/services/managed-daemon-control.js';
 import { readDarwinIncarnation } from '../../shared/darwin-lifecycle.js';
+import { SupervisorLifecycleError } from '../../shared/daemon-supervisor-protocol.js';
 import { InstallationMutationGate } from '../../shared/installation-mutation-gate.js';
 import type { FreshActivation } from '../../shared/installation-mutation-gate.js';
 import { inspectManagedJob, installFreshSelectorMember, installationPaths, readInstallationSelector, removeManagedJob } from '../../shared/managed-daemon-installation.js';
-import { activateFreshManagedDaemon } from '../fresh-managed-activation.js';
+import { activateFreshManagedDaemon, verifyRequestedState } from '../fresh-managed-activation.js';
 import { captureManagedReleasePin } from '../managed-release-staging.js';
 
 const exec = promisify(execFile);
@@ -22,6 +23,34 @@ const darwin = process.platform === 'darwin' && (process.getuid?.() ?? 0) > 0;
 const platform = { skip: !darwin, timeout: 40_000 };
 const loader = import.meta.resolve('tsx/esm/api');
 const reference = (path: string) => JSON.stringify(new URL(path, import.meta.url).href);
+
+test('fresh activation reconnects after a lost start reply and retains the admitted generation', async () => {
+	const generation = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+	let connections = 0;
+	let starts = 0;
+	const result = await verifyRequestedState(async () => {
+		const connection = ++connections;
+		return {
+			async call(request) {
+				const base = { v: 1 as const, id: 'response', generation: null };
+				if (request.op === 'start') {
+					assert.equal(request.generation, null);
+					if (++starts === 1) throw new SupervisorLifecycleError('supervisor-unavailable', 'lost start reply');
+					if (starts === 2) return { ...base, ok: false, error: 'busy' };
+					return { ...base, ok: true, generation, state: 'starting' };
+				}
+				if (connection === 1) return { ...base, ok: true, state: 'idle' };
+				assert.equal(request.generation, generation);
+				return { ...base, ok: true, generation, state: 'running' };
+			},
+			close() {},
+		};
+	}, true);
+	assert.equal(connections, 2);
+	assert.equal(starts, 3);
+	assert.equal(result.generation, generation);
+	assert.equal(result.state, 'running');
+});
 
 async function connectFixture(installation: Parameters<typeof openManagedSupervisorLink>[0]) {
 	for (let attempt = 0;; attempt++) {

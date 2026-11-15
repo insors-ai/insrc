@@ -33,22 +33,29 @@ export async function retainBundleTrustAnchor(trustRoot, domain, key, beforePubl
 	} finally { await rm(staging, { recursive: true, force: true }); }
 }
 
-export async function pinnedRecovery(journal, { stateRoot, root, domain, key }) {
+export async function pinnedRecovery(journal, { stateRoot, root, domain, key, verifyManifest = verifyBundleManifest, repository }) {
 	if (journal.version !== 1 || journal.root !== stateRoot) throw new Error('invalid bundle recovery journal identity');
 	const { active } = journal;
 	if (active === null) return undefined;
+	if (active?.kind !== 'start' && active?.kind !== 'update') throw new Error('another daemon lifecycle transaction is unfinished');
 	const proof = active?.kind === 'start' ? active.activation?.bundleProof : active?.predecessor?.bundleProof?.candidate;
 	const installation = active?.kind === 'start' ? active.activation?.installation : active?.predecessor?.pins?.candidate;
 	if (!proof || !installation || installation.stateRoot !== stateRoot) throw new Error('another daemon lifecycle transaction is unfinished');
 	const bytes = Buffer.from(proof.manifestBase64, 'base64');
-	const m = verifyBundleManifest(bytes, Buffer.from(proof.signatureBase64, 'base64'), domain, key);
+	const m = verifyManifest(bytes, Buffer.from(proof.signatureBase64, 'base64'), domain, key);
 	const { releaseRoot, runtime, releaseId } = installation;
 	if (proof.floor.domain !== domain || sha256(bytes) !== proof.floor.manifestSha256 || m.commit !== releaseId ||
+		(repository !== undefined && (proof.floor.repository !== repository || m.repository !== repository)) ||
 		m.sequence !== proof.floor.sequence || m.channel !== proof.floor.channel ||
 		m.archiveSha256 !== proof.floor.archiveSha256 || dirname(releaseRoot) !== root || await realpath(releaseRoot) !== releaseRoot ||
 		runtime !== join(releaseRoot, 'tools/node') || await realpath(runtime) !== runtime ||
 		proof.fingerprint !== m.runtimeFingerprint ||
 		await measureBundleRuntime(releaseRoot) !== m.runtimeFingerprint) throw new Error('unfinished bundle transaction does not match its authenticated release');
+	if (domain === 'development' && !journal.daemonBundleFloors?.some(floor => floor.domain === domain &&
+		floor.repository === repository && floor.channel === proof.floor.channel && floor.sequence === proof.floor.sequence &&
+		floor.manifestSha256 === proof.floor.manifestSha256 && floor.archiveSha256 === proof.floor.archiveSha256)) {
+		throw new Error('unfinished development transaction differs from its admission floor');
+	}
 	return { runtime, entry: join(releaseRoot, 'out/bin/insrc-daemon-control.js') };
 }
 

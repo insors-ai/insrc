@@ -1,12 +1,14 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 
 import { setTimeout as delay } from 'node:timers/promises';
+import { readdir } from 'node:fs/promises';
 import { isDeepStrictEqual } from 'node:util';
 import { accepted, openManagedSupervisorLink } from '../cli/services/managed-daemon-control.js';
 import type { ManagedSupervisorLink } from '../cli/services/managed-daemon-control.js';
 import { matchesDarwinPeer, readDarwinIncarnation } from '../shared/darwin-lifecycle.js';
 import type { DarwinIncarnation } from '../shared/darwin-lifecycle.js';
 import { SupervisorLifecycleError } from '../shared/daemon-supervisor-protocol.js';
+import type { SupervisorReply } from '../shared/daemon-supervisor-protocol.js';
 import { InstallationMutationGate } from '../shared/installation-mutation-gate.js';
 import type { FreshActivation, MutationReservation } from '../shared/installation-mutation-gate.js';
 import {
@@ -23,6 +25,7 @@ function conflict(message: string): never {
 }
 
 type Active = Extract<MutationReservation, { kind: 'start' }>;
+type Request = Parameters<ManagedSupervisorLink['call']>[0];
 
 async function connect(installation: ManagedInstallation): Promise<ManagedSupervisorLink> {
 	const deadline = performance.now() + 5_000;
@@ -36,27 +39,46 @@ async function connect(installation: ManagedInstallation): Promise<ManagedSuperv
 	}
 }
 
-async function verifyRequestedState(link: ManagedSupervisorLink, startChild: boolean) {
-	let status = accepted(await link.call({ op: 'status', generation: null }));
-	if (!startChild) {
-		if (status.state !== 'idle' || status.generation !== null) conflict('fresh no-start installation is not idle');
+export async function verifyRequestedState(open: () => Promise<ManagedSupervisorLink>, startChild: boolean): Promise<Extract<SupervisorReply, { ok: true }>> {
+	let deadline = performance.now() + 360_000;
+	let link: ManagedSupervisorLink | undefined;
+	const call = async (request: Request) => {
+		for (;;) {
+			try {
+				link ??= await open();
+				const reply = await link.call(request);
+				if (reply.ok || request.op !== 'start' || reply.error !== 'busy' || performance.now() >= deadline) {
+					return accepted(reply);
+				}
+				// The supervisor can still be preparing the original start after a lost reply.
+			} catch (error) {
+				if (!(error instanceof SupervisorLifecycleError) || error.code !== 'supervisor-unavailable' || performance.now() >= deadline) throw error;
+				link?.close();
+				link = undefined;
+			}
+			await delay(100);
+		}
+	};
+	try {
+		let status = await call({ op: 'status', generation: null });
+		if (!startChild) {
+			if (status.state !== 'idle' || status.generation !== null) conflict('fresh no-start installation is not idle');
+			return status;
+		}
+		if (status.state === 'idle' || status.state === 'exited') status = await call({ op: 'start', generation: status.generation });
+		if (status.generation === null) conflict('supervisor did not admit a daemon generation');
+		const generation = status.generation;
+		deadline = performance.now() + 70_000;
+		while (status.state === 'starting' && performance.now() < deadline) {
+			await delay(100);
+			status = await call({ op: 'status', generation });
+		}
+		if (status.state === 'exited' && status.generation === generation && status.exit !== undefined) {
+			throw new SupervisorLifecycleError('daemon-exit-failed', 'fresh daemon exited before readiness', generation, status.exit);
+		}
+		if (status.state !== 'running' || status.generation !== generation) conflict('fresh daemon readiness is unconfirmed');
 		return status;
-	}
-	if (status.state === 'idle' || status.state === 'exited') {
-		status = accepted(await link.call({ op: 'start', generation: status.generation }));
-	}
-	if (status.generation === null) conflict('supervisor did not admit a daemon generation');
-	const generation = status.generation;
-	const deadline = performance.now() + 70_000;
-	while (status.state === 'starting' && performance.now() < deadline) {
-		await delay(100);
-		status = accepted(await link.call({ op: 'status', generation }));
-	}
-	if (status.state === 'exited' && status.generation === generation && status.exit !== undefined) {
-		throw new SupervisorLifecycleError('daemon-exit-failed', 'fresh daemon exited before readiness', generation, status.exit);
-	}
-	if (status.state !== 'running' || status.generation !== generation) conflict('fresh daemon readiness is unconfirmed');
-	return status;
+	} finally { link?.close(); }
 }
 
 /** Re-run an interrupted fresh installation using the same pinned intent. */
@@ -87,7 +109,12 @@ export async function activateFreshManagedDaemon(activation: FreshActivation): P
 		await gate.claimRecovery(previous.id, owner, async () => {
 			await verifyFreshSelectorOwnership(installation, previous.id);
 			const job = await inspectManagedJob(installation);
-			return job === undefined || previous.entries.some(entry => entry.step === 'activation-job');
+			const entry = previous.entries.find(item => item.step === 'activation-job');
+			if (entry?.receipt === undefined) return job === undefined || entry !== undefined;
+			if (job?.pid == null) return false;
+			const pinned = JSON.parse(entry.receipt) as { target: string; incarnation: DarwinIncarnation };
+			const observed = await readDarwinIncarnation(job.pid);
+			return job.target === pinned.target && matchesDarwinPeer(observed, observed, pinned.incarnation);
 		});
 		reservation = { ...previous, owner, recovery: true };
 	}
@@ -105,6 +132,10 @@ export async function activateFreshManagedDaemon(activation: FreshActivation): P
 	};
 	const rollback = async () => {
 		await step('activation-rollback', async () => {
+			if (activation.bundleProof?.floor.domain === 'development' &&
+				(await readdir(installation.stateRoot)).some(name => !['bundle-trust', 'managed-lifecycle'].includes(name))) {
+				conflict('fresh rollback cannot attribute writes in the development state root');
+			}
 			const job = await inspectManagedJob(installation);
 			if (job !== undefined) {
 				const pinned = await recordedJob();
@@ -141,20 +172,28 @@ export async function activateFreshManagedDaemon(activation: FreshActivation): P
 		await verifyManagedSelectorFiles(installation);
 		await step('activation-job', async () => {
 			await ensureManagedJob(installation, revalidate, { intent: async () => {}, receipt: async () => {} });
-			const job = await inspectManagedJob(installation);
-			if (job?.pid == null) conflict('fresh supervisor registration is unconfirmed');
-			return JSON.stringify({ target: job.target, incarnation: await readDarwinIncarnation(job.pid) });
+			const deadline = performance.now() + 20_000;
+			for (;;) {
+				const job = await inspectManagedJob(installation).catch(error => {
+					if (!['launch-job-starting', 'launch-job-ambiguous-state'].includes(error.code)) throw error;
+				});
+				if (job?.pid != null) return JSON.stringify({ target: job.target, incarnation: await readDarwinIncarnation(job.pid) });
+				if (performance.now() >= deadline) conflict('fresh supervisor registration is unconfirmed');
+				await delay(100);
+			}
 		});
-		const registered = await inspectManagedJob(installation);
 		const pinnedJob = await recordedJob();
-		if (registered?.pid == null || pinnedJob === null || registered.target !== pinnedJob.target) {
-			conflict('fresh supervisor registration changed after admission');
-		}
-		const observed = await readDarwinIncarnation(registered.pid);
-		if (!matchesDarwinPeer(observed, observed, pinnedJob.incarnation)) conflict('fresh supervisor incarnation changed after admission');
-		const link = await connect(installation);
+		if (pinnedJob === null) conflict('fresh supervisor registration is unconfirmed');
+		const openPinned = async () => {
+			const current = await inspectManagedJob(installation);
+			if (current?.pid == null || current.target !== pinnedJob.target) conflict('fresh supervisor registration changed after admission');
+			const incarnation = await readDarwinIncarnation(current.pid);
+			if (!matchesDarwinPeer(incarnation, incarnation, pinnedJob.incarnation)) conflict('fresh supervisor incarnation changed after admission');
+			return connect(installation);
+		};
+		await step('activation-state', async () => JSON.stringify(await verifyRequestedState(openPinned, startChild)));
+		const link = await openPinned();
 		try {
-			await step('activation-state', async () => JSON.stringify(await verifyRequestedState(link, startChild)));
 			// Re-read over the authenticated control socket before releasing a recovered receipt.
 			const status = accepted(await link.call({ op: 'status', generation: null }));
 			const receipt = (await gate.admit(reservation)).entries.find(entry => entry.step === 'activation-state')?.receipt;

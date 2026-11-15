@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { execFileSync, spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { after, before, test } from 'node:test';
@@ -39,6 +39,15 @@ function fixture(): { root: string; gate: InstallationMutationGate } {
 	const root = mkdtempSync(join(scratch!, 'root-'));
 	return { root, gate: new InstallationMutationGate(root, helper) };
 }
+
+test('a fresh installation journal read leaves the trust-only state root pristine', options, async () => {
+	const { gate, root } = fixture();
+	mkdirSync(join(root, 'bundle-trust'), { mode: 0o700 });
+	assert.deepEqual(await gate.read(), { version: 1, root, active: null, outcome: null });
+	assert.deepEqual(readdirSync(root), ['bundle-trust']);
+	symlinkSync(join(root, 'bundle-trust'), join(root, 'managed-lifecycle'));
+	await assert.rejects(gate.read(), /journal directory is not private and owned/);
+});
 
 for (const trust of [
 	{ domain: 'production', channel: 'macos-arm64-pilot' },

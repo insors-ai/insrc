@@ -452,23 +452,33 @@ export class InstallationMutationGate {
 		this.journalPath = join(this.directory, 'journal.json');
 	}
 
-	private async directoryOwner(): Promise<number> {
+	private async owner(): Promise<number> {
 		const uid = process.getuid?.();
 		if (process.platform !== 'darwin' || uid === undefined || uid <= 0) conflict('managed lifecycle requires a macOS user');
 		if (await realpath(this.root) !== this.root) conflict('installation root must be canonical');
-		try { await mkdir(this.directory, { mode: 0o700 }); }
-		catch (error) { if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error; }
-		const identity = await lstat(this.directory);
+		return uid;
+	}
+
+	private async hasOwnedDirectory(uid: number): Promise<boolean> {
+		const identity = await lstat(this.directory).catch((error: NodeJS.ErrnoException) => {
+			if (error.code === 'ENOENT') return undefined;
+			throw error;
+		});
+		if (identity === undefined) return false;
 		if (!identity.isDirectory() || identity.uid !== uid || (identity.mode & 0o077) !== 0) {
 			conflict('installation journal directory is not private and owned');
 		}
-		return uid;
+		return true;
+	}
+
+	private emptyJournal(): InstallationJournal {
+		return { version: 1, root: this.root, active: null, outcome: null };
 	}
 
 	private async readOwned(uid: number): Promise<InstallationJournal> {
 		const file = await open(this.journalPath, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK)
 			.catch((error: NodeJS.ErrnoException) => { if (error.code !== 'ENOENT') throw error; });
-		if (file === undefined) return { version: 1, root: this.root, active: null, outcome: null };
+		if (file === undefined) return this.emptyJournal();
 		try {
 			const identity = await file.stat();
 			if (!identity.isFile() || identity.uid !== uid || identity.nlink !== 1 || (identity.mode & 0o077) !== 0
@@ -481,7 +491,8 @@ export class InstallationMutationGate {
 	}
 
 	async read(): Promise<InstallationJournal> {
-		return this.readOwned(await this.directoryOwner());
+		const uid = await this.owner();
+		return await this.hasOwnedDirectory(uid) ? this.readOwned(uid) : this.emptyJournal();
 	}
 
 	private async write(state: InstallationJournal): Promise<void> {
@@ -501,7 +512,10 @@ export class InstallationMutationGate {
 	}
 
 	private async arbitrate<T>(change: (state: InstallationJournal, uid: number) => Promise<T>): Promise<T> {
-		const uid = await this.directoryOwner();
+		const uid = await this.owner();
+		try { await mkdir(this.directory, { mode: 0o700 }); }
+		catch (error) { if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error; }
+		if (!await this.hasOwnedDirectory(uid)) conflict('installation journal directory disappeared');
 		const path = join(this.directory, 'arbitration.lock');
 		const file = await open(path, constants.O_RDWR | constants.O_CREAT | constants.O_NOFOLLOW | constants.O_NONBLOCK, 0o600);
 		try {

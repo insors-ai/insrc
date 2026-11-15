@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 22,
-        "contentHash": "119614c865be72117ba834bc5eb65882c129bf16c96503399425eea16c681631",
-        "at": "2026-11-14T18:32:38.460Z",
+        "number": 25,
+        "contentHash": "bd53076d3f799b6210549d15750f3cf48db9a8416ff0de5e23b2876bae889772",
+        "at": "2026-11-15T08:15:24.066Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "470a1f61b26b12c6",
     "storyId": "s1",
     "createdAt": "2026-11-14T12:24:52.408Z",
-    "updatedAt": "2026-11-14T18:32:38.272Z",
+    "updatedAt": "2026-11-15T08:15:23.802Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-14T08:55:28.320Z",
     "epicSlug": "rework-review-preparation-context-lifecycle-end",
-    "revision": 22
+    "revision": 25
   },
   "body": {
     "tasks": [
@@ -2641,6 +2641,308 @@
               },
               {
                 "title": "prepared design cleanup resumes after actual worker termination with runtime removed and checkpoint retained",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "0c655b018",
+        "ranAt": "2026-11-15T08:15:23.802Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Proposed migration/cutover tests: inactive v1/v2 byte-preserving upgrade, legacy guards, interrupted migration, unknown capabilities and unsupported old-reader downgrade.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/preparation-migration.test.ts",
+                "title": "inactive historical migration preserves both family submissions feedback and closed guard audit without mutating originals",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/preparation-migration.test.ts",
+                "title": "inactive migration refuses unresolved and unverifiable legacy guards and mismatched initialization",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/preparation-migration.test.ts",
+                "title": "historical design migration derives the current attempt locator without rewriting its original submission",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/preparation-migration.test.ts",
+                "title": "explicit next-attempt migration binds its exact input and preserves history without inventing an admission",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-cutover.test.ts",
+                "title": "production workers emit format three and historical writers refuse downgrade for both families",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-cutover.test.ts",
+                "title": "production approval cleanup removes code runtime checkpoint and contexts from permanent proof without launching a reviewer",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-cutover.test.ts",
+                "title": "production approval cleanup removes design runtime checkpoint and contexts from permanent proof without launching a reviewer",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-cutover.test.ts",
+                "title": "explicit production publication recovery reuses accepted feedback after worker reclamation",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-cutover.test.ts",
+                "title": "production next-attempt admission migrates closed historical evidence and retains the exact prior input",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-cutover.test.ts",
+                "title": "a production re-review preserves the earlier publication without treating it as the new attempt boundary",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-cutover.test.ts",
+                "title": "an explicit production resubmission recovers the initialize-before-checkpoint crash window without losing runtime proof",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-runtime-store.test.ts",
+                "title": "explicit initialization recovery adopts only the exact inactive crash window and never a live owner",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-runtime-store.test.ts",
+                "title": "inactive runtime handoff preserves exact old audit before replacement and waits for actual checkpoint rebind",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-runtime-store.test.ts",
+                "title": "inactive runtime handoff refuses unresolved leases and preserves evidence on failed or stale archive",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-runtime-resources.test.ts",
+                "title": "production resource observer reads compact runtime leases without mutating full format-three history",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-runtime-resources.test.ts",
+                "title": "broker clearance updates only the inactive compact runtime and requires the exact guard digest",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-publication.test.ts",
+                "title": "permanent preparation proof refuses unknown capability",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-runtime-store.test.ts",
+                "title": "inactive handoff refuses a cancelled same-attempt predecessor after a cold daemon restart",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/preparation-migration.test.ts",
+                "title": "inactive version-one migration preserves code and design history and old readers reject format three",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/review-production-cutover.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 22767,
+            "titles": [
+              {
+                "title": "production approval cleanup removes code runtime checkpoint and contexts from permanent proof without launching a reviewer",
+                "result": "pass"
+              },
+              {
+                "title": "production approval cleanup removes design runtime checkpoint and contexts from permanent proof without launching a reviewer",
+                "result": "pass"
+              },
+              {
+                "title": "production workers emit format three and historical writers refuse downgrade for both families",
+                "result": "pass"
+              },
+              {
+                "title": "explicit production publication recovery reuses accepted feedback after worker reclamation",
+                "result": "pass"
+              },
+              {
+                "title": "production next-attempt admission migrates closed historical evidence and retains the exact prior input",
+                "result": "pass"
+              },
+              {
+                "title": "a production re-review preserves the earlier publication without treating it as the new attempt boundary",
+                "result": "pass"
+              },
+              {
+                "title": "an explicit production resubmission recovers the initialize-before-checkpoint crash window without losing runtime proof",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-runtime-resources.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1093,
+            "titles": [
+              {
+                "title": "production resource observer reads compact runtime leases without mutating full format-three history",
+                "result": "pass"
+              },
+              {
+                "title": "production resource observer refuses missing foreign and half-migrated runtime bindings",
+                "result": "pass"
+              },
+              {
+                "title": "broker clearance updates only the inactive compact runtime and requires the exact guard digest",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-runtime-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2293,
+            "titles": [
+              {
+                "title": "cold qualification acknowledges an accepted result prefix at sequence zero without replaying work",
+                "result": "pass"
+              },
+              {
+                "title": "explicit initialization recovery adopts only the exact inactive crash window and never a live owner",
+                "result": "pass"
+              },
+              {
+                "title": "initialization recovery retains missing changed and uncertain proof instead of guessing ownership",
+                "result": "pass"
+              },
+              {
+                "title": "inactive runtime handoff preserves exact old audit before replacement and waits for actual checkpoint rebind",
+                "result": "pass"
+              },
+              {
+                "title": "inactive runtime handoff refuses unresolved leases and preserves evidence on failed or stale archive",
+                "result": "pass"
+              },
+              {
+                "title": "compact runtime native host persists intents before spawn and leaves history untouched",
+                "result": "pass"
+              },
+              {
+                "title": "uncertain compact open save prevents spawn and retains the exact fence",
+                "result": "pass"
+              },
+              {
+                "title": "runtime initialization and missing proof never recreate an empty guard",
+                "result": "pass"
+              },
+              {
+                "title": "interrupted initialization retains inactive proof and external replacement fences the writer",
+                "result": "pass"
+              },
+              {
+                "title": "runtime closure requires exact host disposal and cannot be supplied by a progress update",
+                "result": "pass"
+              },
+              {
+                "title": "phase progress flush waits for an already running durable update",
+                "result": "pass"
+              },
+              {
+                "title": "cancellation preserves accepted history and permits confirmed native closure after stopping admission",
+                "result": "pass"
+              },
+              {
+                "title": "durable cancellation allows exact closure and reports a resource fence until disposal is confirmed",
+                "result": "pass"
+              },
+              {
+                "title": "cancellation while spawn authorization is pending prevents the model CLI from launching",
+                "result": "pass"
+              },
+              {
+                "title": "cancellation aborts an in-flight model CLI without replaying it or changing accepted history",
+                "result": "pass"
+              },
+              {
+                "title": "inactive handoff refuses a cancelled same-attempt predecessor after a cold daemon restart",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/preparation-migration.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1168,
+            "titles": [
+              {
+                "title": "inactive version-one migration preserves code and design history and old readers reject format three",
+                "result": "pass"
+              },
+              {
+                "title": "inactive historical migration preserves both family submissions feedback and closed guard audit without mutating originals",
+                "result": "pass"
+              },
+              {
+                "title": "inactive migration refuses unresolved and unverifiable legacy guards and mismatched initialization",
+                "result": "pass"
+              },
+              {
+                "title": "historical design migration derives the current attempt locator without rewriting its original submission",
+                "result": "pass"
+              },
+              {
+                "title": "explicit next-attempt migration binds its exact input and preserves history without inventing an admission",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/prepared-publication.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1350,
+            "titles": [
+              {
+                "title": "prepared code publication preserves complete input and closed proof across failed render, warm retry and temp deletion",
+                "result": "pass"
+              },
+              {
+                "title": "prepared design publication emits capability three and retries one permanent full history without models or temporary context",
+                "result": "pass"
+              },
+              {
+                "title": "permanent preparation proof refuses unknown capability",
+                "result": "pass"
+              },
+              {
+                "title": "prepared code publication preserves an earlier qualified failure without promoting its retained scope headers to signoff",
+                "result": "pass"
+              },
+              {
+                "title": "publication bookkeeping errors do not change assessment authority and remain in the main phase audit",
                 "result": "pass"
               }
             ],

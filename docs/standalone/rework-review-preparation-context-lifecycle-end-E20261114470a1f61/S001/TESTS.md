@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 98 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 117 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -287,3 +287,41 @@ Run at 2026-11-14T18:32:38.272Z on commit `6526976d3`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/review/__tests__/prepared-cleanup.test.ts` | 0 | 294 | 52.3 s |  |
+
+## t12
+
+Run at 2026-11-15T08:15:23.802Z on commit `0c655b018`. Tests check: **passed**. 19 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: Proposed migration/cutover tests: inactive v1/v2 byte-preserving upgrade, legacy guards, interrupted migration, unknown capabilities and unsupported old-reader downgrade.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | inactive historical migration preserves both family submissions feedback and closed guard audit without mutating originals | `src/workflow/review/__tests__/preparation-migration.test.ts` |
+| pass | inactive migration refuses unresolved and unverifiable legacy guards and mismatched initialization | `src/workflow/review/__tests__/preparation-migration.test.ts` |
+| pass | historical design migration derives the current attempt locator without rewriting its original submission | `src/workflow/review/__tests__/preparation-migration.test.ts` |
+| pass | explicit next-attempt migration binds its exact input and preserves history without inventing an admission | `src/workflow/review/__tests__/preparation-migration.test.ts` |
+| pass | production workers emit format three and historical writers refuse downgrade for both families | `src/daemon/threads/__tests__/review-production-cutover.test.ts` |
+| pass | production approval cleanup removes code runtime checkpoint and contexts from permanent proof without launching a reviewer | `src/daemon/threads/__tests__/review-production-cutover.test.ts` |
+| pass | production approval cleanup removes design runtime checkpoint and contexts from permanent proof without launching a reviewer | `src/daemon/threads/__tests__/review-production-cutover.test.ts` |
+| pass | explicit production publication recovery reuses accepted feedback after worker reclamation | `src/daemon/threads/__tests__/review-production-cutover.test.ts` |
+| pass | production next-attempt admission migrates closed historical evidence and retains the exact prior input | `src/daemon/threads/__tests__/review-production-cutover.test.ts` |
+| pass | a production re-review preserves the earlier publication without treating it as the new attempt boundary | `src/daemon/threads/__tests__/review-production-cutover.test.ts` |
+| pass | an explicit production resubmission recovers the initialize-before-checkpoint crash window without losing runtime proof | `src/daemon/threads/__tests__/review-production-cutover.test.ts` |
+| pass | explicit initialization recovery adopts only the exact inactive crash window and never a live owner | `src/daemon/threads/__tests__/review-runtime-store.test.ts` |
+| pass | inactive runtime handoff preserves exact old audit before replacement and waits for actual checkpoint rebind | `src/daemon/threads/__tests__/review-runtime-store.test.ts` |
+| pass | inactive runtime handoff refuses unresolved leases and preserves evidence on failed or stale archive | `src/daemon/threads/__tests__/review-runtime-store.test.ts` |
+| pass | production resource observer reads compact runtime leases without mutating full format-three history | `src/daemon/threads/__tests__/review-runtime-resources.test.ts` |
+| pass | broker clearance updates only the inactive compact runtime and requires the exact guard digest | `src/daemon/threads/__tests__/review-runtime-resources.test.ts` |
+| pass | permanent preparation proof refuses unknown capability | `src/workflow/review/__tests__/prepared-publication.test.ts` |
+| pass | inactive handoff refuses a cancelled same-attempt predecessor after a cold daemon restart | `src/daemon/threads/__tests__/review-runtime-store.test.ts` |
+| pass | inactive version-one migration preserves code and design history and old readers reject format three | `src/workflow/review/__tests__/preparation-migration.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/review-production-cutover.test.ts` | 0 | 7 | 22.8 s |  |
+| `src/daemon/threads/__tests__/review-runtime-resources.test.ts` | 0 | 3 | 1.1 s |  |
+| `src/daemon/threads/__tests__/review-runtime-store.test.ts` | 0 | 16 | 2.3 s |  |
+| `src/workflow/review/__tests__/preparation-migration.test.ts` | 0 | 5 | 1.2 s |  |
+| `src/workflow/review/__tests__/prepared-publication.test.ts` | 0 | 5 | 1.4 s |  |

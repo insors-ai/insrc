@@ -19,11 +19,22 @@ import type { BugfixNextCall } from './types.js';
  * Emit the routed next-stage call for a bugfix that has cleared its approved
  * issue. `repo` is forwarded into the emitted params (matching buildNextCall).
  *
+ * @throws when `issue.meta.issueHash` is not a 16-hex hash (invalid-issue-hash).
  * @throws when `issue.meta.magnitude` is neither 'small' nor 'sized' — a
  *         non-bugfix / malformed issue reached the bugfix advance; we refuse to
  *         mis-route rather than default to a stage.
  */
 export function nextAfterIssue(issue: IssueArtifact, repo: string): BugfixNextCall {
+	// The ISSUE's own hash is the work item's identity: the build (or the LLD)
+	// lands under it, so the BUILD record has the ISSUE as its head and its
+	// Story completes on approval. Without it the next stage would mint a
+	// headless identity of its own, so refuse rather than emit such a call.
+	const issueHash = issue.meta.issueHash;
+	if (typeof issueHash !== 'string' || !/^[0-9a-f]{16}$/.test(issueHash)) {
+		throw new Error(
+			`nextAfterIssue: invalid-issue-hash — expected a 16-hex meta.issueHash, got ${String(issueHash)}`,
+		);
+	}
 	const magnitude = issue.meta.magnitude;
 	if (magnitude !== 'small' && magnitude !== 'sized') {
 		throw new Error(
@@ -62,7 +73,7 @@ export function nextAfterIssue(issue: IssueArtifact, repo: string): BugfixNextCa
 				phase:  'implement',
 				repo,
 				target: '(standalone-bugfix)',
-				standalone: { standalone: true, sizeClass: 'trivial', focus: scope },
+				standalone: { standalone: true, epicHash: issueHash, sizeClass: 'trivial', focus: scope },
 			},
 		};
 	}
@@ -79,6 +90,7 @@ export function nextAfterIssue(issue: IssueArtifact, repo: string): BugfixNextCa
 			focus:    scope,
 			params: {
 				standalone: true,
+				epicHash:   issueHash,
 				storyTitle: title,
 				storySpec:  scope,
 				sizeClass:  'bugfix',

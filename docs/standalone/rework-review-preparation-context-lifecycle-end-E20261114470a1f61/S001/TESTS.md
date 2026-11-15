@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 310 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 380 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -569,3 +569,99 @@ Run at 2026-11-15T14:08:45.034Z on commit `6a8437b69`. Tests check: **passed**. 
 | `src/daemon/threads/__tests__/review-context-registry.test.ts` | 0 | 8 | 2.4 s |  |
 | `src/workflow/review/__tests__/prepared-views.test.ts` | 0 | 17 | 1.9 s |  |
 | `src/workflow/review/__tests__/source-session.test.ts` | 0 | 14 | 2.2 s |  |
+
+## t16
+
+Run at 2026-11-15T15:28:21.764Z on commit `23a3b373a`. Tests check: **passed**. 70 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: Incremental packet/projection/history equivalence: exact selected after spans, all lineage/replacement/merge/deletion witnesses, tests/documents/origins and identity folds match the existing oracle.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | bounded byte lines preserve the string oracle for Unicode BOM CRLF and final newlines | `src/workflow/review/__tests__/projection-lines.test.ts` |
+| pass | bounded lines reject invalid UTF-8 binary input and insufficient capacity without leaked ownership | `src/workflow/review/__tests__/projection-lines.test.ts` |
+| pass | streamed task metadata digest matches the previous canonical identity bytes | `src/workflow/review/__tests__/projection-lines.test.ts` |
+| pass | streamed review JSON size preserves exact metadata escaping and rejects source payloads | `src/workflow/review/__tests__/projection-lines.test.ts` |
+| pass | construction metadata reopens exact values while binary leaves stay issued references | `src/workflow/review/__tests__/prepared-views.test.ts` |
+| pass | construction metadata rejects forged references and retains charges after fencing until release | `src/workflow/review/__tests__/prepared-views.test.ts` |
+| pass | memory leases count shared backing buffers once and reserve before allocation | `src/workflow/review/__tests__/prepared-views.test.ts` |
+| pass | cache eviction releases every shared slab reference before refusing a new reservation | `src/workflow/review/__tests__/prepared-views.test.ts` |
+| pass | reserved source and reader allocations remain single-charged across codec borrows | `src/workflow/review/__tests__/prepared-views.test.ts` |
+| pass | allocation happens only after its reservation and refusal performs no allocation | `src/workflow/review/__tests__/prepared-views.test.ts` |
+| pass | small node text and manifest encoders never allocate pooled string buffers | `src/workflow/review/__tests__/prepared-views.test.ts` |
+| pass | typed staged descriptors round trip bytes Unicode null undefined and ordered sharded containers | `src/workflow/review/__tests__/prepared-views.test.ts` |
+| pass | incremental entries stage complete content above working memory without retaining payloads | `src/workflow/review/__tests__/prepared-views.test.ts` |
+| pass | descriptor references are private to their reader and kind lookup is enforced | `src/workflow/review/__tests__/prepared-views.test.ts` |
+| pass | old or unknown derived encodings are rejected without issuing a descriptor | `src/workflow/review/__tests__/prepared-views.test.ts` |
+| pass | tampered staged leaf fails digest verification and revokes its reader | `src/workflow/review/__tests__/prepared-views.test.ts` |
+| pass | cancellation revokes window access but holds its charge until actual release | `src/workflow/review/__tests__/prepared-views.test.ts` |
+| pass | two staged writers cannot exceed aggregate project disk reservation | `src/workflow/review/__tests__/prepared-views.test.ts` |
+| pass | partial seal retains bounded recovery evidence and never emits readiness | `src/workflow/review/__tests__/prepared-views.test.ts` |
+| pass | invalid streamed entry order and canceled construction preserve evidence for explicit disposal | `src/workflow/review/__tests__/prepared-views.test.ts` |
+| pass | tampered index shards cannot return unverified child references | `src/workflow/review/__tests__/prepared-views.test.ts` |
+| pass | pending reader authorization keeps metadata owned until the operation ends | `src/workflow/review/__tests__/prepared-views.test.ts` |
+| pass | explicit writer disposal fences an in-flight entry producer before removing files | `src/workflow/review/__tests__/prepared-views.test.ts` |
+| pass | selected later witnesses justify complete supersession and immutable origin accounting | `src/workflow/code-review/task-review/__tests__/projection.test.ts` |
+| pass | partial replacement witnesses must cover the entire changed target and deletions retain explicit witnesses | `src/workflow/code-review/task-review/__tests__/projection.test.ts` |
+| pass | selected rename chains compare exact blobs independently of rename similarity and reject unselected moves | `src/workflow/code-review/task-review/__tests__/projection.test.ts` |
+| pass | unselected merge resolution rejects and explicit selected merge replacement supplies the witness | `src/workflow/code-review/task-review/__tests__/projection.test.ts` |
+| pass | competing selected path moves fail instead of choosing a rename by array order | `src/workflow/code-review/task-review/__tests__/projection.test.ts` |
+| pass | identical final blobs cannot hide an unselected rename-away and recreation | `src/workflow/code-review/task-review/__tests__/projection.test.ts` |
+| pass | typed blob diff mode requires both objects and cannot fall back to HEAD or the working tree | `src/workflow/code-review/task-review/__tests__/projection.test.ts` |
+| pass | projection budgets refuse before exceeding limits, preserve source fields and use serial reads | `src/workflow/code-review/task-review/__tests__/projection.test.ts` |
+| pass | actual diff truncation stays changes while oversized JSON refuses input before source/provider work | `src/workflow/code-review/task-review/__tests__/projection.test.ts` |
+| pass | production projection budgets accept their exact ceilings and refuse the next unit | `src/workflow/code-review/task-review/__tests__/projection.test.ts` |
+| pass | selected rename then deletion projects absent final blobs and still requires the deletion witness | `src/workflow/code-review/task-review/__tests__/projection.test.ts` |
+| pass | verified rename deletion ignores unrelated and identical recreation at the original pathname | `src/workflow/code-review/task-review/__tests__/projection.test.ts` |
+| pass | projection identity matches the identity pinned from the code before the change | `src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts` |
+| pass | pathChanges lists the commits that changed the path and refuses a failed or malformed listing as a source error | `src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts` |
+| pass | boundedProjectionSources caches pathChanges and charges one read per uncached listing | `src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts` |
+| pass | lineage reads do not grow with interleaved commits that leave the selected path untouched | `src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts` |
+| pass | a side-branch deletion merged back with the file kept still interrupts lineage | `src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts` |
+| pass | a side-branch deletion and recreation merged back still interrupts lineage | `src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts` |
+| pass | a path history failure is a source error, not a projection limit or lineage conflict | `src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts` |
+| pass | the read limit still refuses with projection_limit when the selected file itself changed too often | `src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts` |
+| pass | shared code preparation preserves merge and selected rename lineage with every after span | `src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts` |
+| pass | all small single-edit intervals preserve exactly the selected surviving line identities | `src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts` |
+| pass | interval projection partitions changed overlaps without granting replacement text | `src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts` |
+| pass | interval offsets exclude insertions inside selected spans and support negative shifts | `src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts` |
+| pass | normalization retains every origin and never coalesces unselected gaps | `src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts` |
+| pass | deletion anchors preserve empty-file zero and mark touched boundaries for witness verification | `src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts` |
+| pass | committed projection uses identical-blob fast path and ignores HEAD/worktree changes | `src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts` |
+| pass | projection refuses malformed or omitted changes, invalid UTF-8 and binary sources without invented partitions | `src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts` |
+
+**integration: Single oversized packet and1/4/max history construct staged views under combined memory bound with zero physical duplicate source queries and no aggregate binary JSON materialization.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | maximum byte-bounded repeated history stages one packet window at a time | `src/workflow/review/__tests__/staged-packet-construction.test.ts` |
+| pass | one and four history windows retain complete feedback and reject invalid origins through shared admission | `src/workflow/review/__tests__/staged-packet-construction.test.ts` |
+| pass | a packet larger than memory stages selected source bodies under one shared cap without binary JSON | `src/workflow/review/__tests__/staged-packet-construction.test.ts` |
+| pass | staged packet construction reopens repeated history metadata without rebuilding source qualification | `src/workflow/review/__tests__/source-session.test.ts` |
+| pass | staged packet source windows preserve packet qualification and reopen blobs without physical queries | `src/workflow/review/__tests__/source-session.test.ts` |
+| pass | staged views share source cache memory and retain exact source queries without refetch | `src/workflow/review/__tests__/source-session.test.ts` |
+| pass | source evidence windows prevent disposal until the exact consumer releases ownership | `src/workflow/review/__tests__/source-session.test.ts` |
+| pass | decoded source results retain their charge until explicit consumer release | `src/workflow/review/__tests__/source-session.test.ts` |
+| pass | session close retains decoded result charges while a caller can still use them | `src/workflow/review/__tests__/source-session.test.ts` |
+| pass | source body memory exhaustion refuses before invoking the body provider | `src/workflow/review/__tests__/source-session.test.ts` |
+| pass | source session batches verified Git objects and shares immutable queries without bypassing logical budgets | `src/workflow/review/__tests__/source-session.test.ts` |
+| pass | source session retains evidence above memory capacity and never refetches evicted data | `src/workflow/review/__tests__/source-session.test.ts` |
+| pass | shared project reservations refuse body fetch before capacity exhaustion and transfer batches atomically | `src/workflow/review/__tests__/source-session.test.ts` |
+| pass | staged corruption and source errors fence the session instead of implicitly retrying Git | `src/workflow/review/__tests__/source-session.test.ts` |
+| pass | a source failure is recorded once and requires a fresh preparation session | `src/workflow/review/__tests__/source-session.test.ts` |
+| pass | preparation configuration is discoverable bounded and rejects malformed values | `src/workflow/review/__tests__/source-session.test.ts` |
+| pass | replaced staging directory is retained with its capacity until exact ownership is restored | `src/workflow/review/__tests__/source-session.test.ts` |
+| pass | two source sessions share project capacity without overlapping identities or duplicate fetches | `src/workflow/review/__tests__/source-session.test.ts` |
+| pass | historical and current packet qualification share sources while preserving exact projection | `src/workflow/review/__tests__/source-session.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts` | 0 | 7 | 1 s |  |
+| `src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts` | 0 | 9 | 3.7 s |  |
+| `src/workflow/code-review/task-review/__tests__/projection.test.ts` | 0 | 12 | 3.5 s |  |
+| `src/workflow/review/__tests__/prepared-views.test.ts` | 0 | 19 | 1.9 s |  |
+| `src/workflow/review/__tests__/projection-lines.test.ts` | 0 | 4 | 0.5 s |  |
+| `src/workflow/review/__tests__/source-session.test.ts` | 0 | 16 | 2.9 s |  |
+| `src/workflow/review/__tests__/staged-packet-construction.test.ts` | 0 | 3 | 11.3 s |  |

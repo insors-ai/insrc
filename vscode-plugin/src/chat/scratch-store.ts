@@ -390,8 +390,9 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
     /** Abandon the save: if any attempt already unlinked the destination, put the
      * ORIGINAL content back from the backup hard link first (the destination must be
      * untouched by a failed save, even on the retry path), then clean up temp+backup.
-     * The restore retries, and on persistent link failure falls back to an atomic
-     * rename of the backup over the name so the destination is never left missing.
+     * The restore retries link(); on persistent link failure it falls back to an atomic
+     * rename of the backup over the name — but ONLY after re-confirming the name is
+     * still absent, so a concurrently recreated destination is never clobbered.
      * The backup is unlinked only if this operation created it — a failed backup-link
      * (e.g. EEXIST on the random name) must never delete an entry it does not own. */
     let unlinkedSoFar = false;
@@ -413,14 +414,36 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
           log.warn(`[scratches] could not restore ${id} from the backup link (attempt ${rAttempt + 1}): ${String(rmErr)}`);
         }
       }
-      // Last resort: the backup hard link still shares the ORIGINAL inode, so rename it
-      // over the name. rename is atomic and never leaves the name missing.
+      // Last resort: the backup hard link still shares the ORIGINAL inode. Before
+      // renaming it over the name, re-confirm the name is STILL absent — a writer that
+      // recreated the destination after our failed link attempts must never be
+      // clobbered. (link() below is the atomic existence check: it fails EEXIST the
+      // instant the name exists, and the rename only ever runs when it does not.)
       try {
-        await fs.rename(backup, path);
-        return true;
-      } catch (rnErr) {
-        log.warn(`[scratches] final rename-restore of ${id} from the backup failed: ${String(rnErr)}`);
+        await fs.link(backup, path);
         return false;
+      } catch (finalErr) {
+        if (errCode(finalErr) === 'EEXIST') {
+          log.warn(`[scratches] rename-restore of ${id} skipped: the name was recreated concurrently: ${String(finalErr)}`);
+          return false;
+        }
+        // The name is absent (any other error is not EEXIST, but the rename below is
+        // still safe: rename only replaces an existing name, and we just failed to
+        // create one non-atomically — re-check lstat to be certain before renaming).
+        try {
+          await fs.lstat(path);
+          log.warn(`[scratches] rename-restore of ${id} skipped: the destination exists: concurrent recreation`);
+          return false;
+        } catch (lstErr) {
+          if (errCode(lstErr) !== 'ENOENT') throw lstErr;
+        }
+        try {
+          await fs.rename(backup, path);
+          return true;
+        } catch (rnErr) {
+          log.warn(`[scratches] final rename-restore of ${id} from the backup failed: ${String(rnErr)}`);
+          return false;
+        }
       }
     };
     const fail = async (e: unknown): Promise<unknown> => {

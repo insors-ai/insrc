@@ -613,6 +613,47 @@ test('scratch-store.test.ts: r29 CR-MED — when the backup->destination restore
   assert.equal(fake.files.has([...fake.files.keys()].find((k) => k.endsWith('.bak') && k.includes('.tmp-')) ?? ''), false, 'no leftover backup entry remains');
 });
 
+test('scratch-store.test.ts: r30 CR-MED — the rename-restore fallback never clobbers a concurrently recreated destination: when the name exists again before the fallback, the restore is skipped and the other writer\'s file survives', async () => {
+  const { fake, store } = setup();
+  await fake.fs.mkdir(ROOT);
+  // Publish link fails EIO; the first restore-link attempts fail EIO too, then a
+  // concurrent writer recreates the destination name — the pre-rename existence check
+  // must detect it and skip the rename, leaving the concurrent file intact.
+  seed(fake, '20260101-000008-i.md', 'race original', 90);
+  let restoreLinkAttempts = 0;
+  const realLink = fake.fs.link;
+  fake.fs.link = async (from, to) => {
+    if (to === `${ROOT}/20260101-000008-i.md`) {
+      if (!from.endsWith('.bak')) {
+        // publish link (temp->dest): always fail EIO so we reach the restore path
+        fake.calls.push({ op: 'link', path: from, to } as never);
+        throw Object.assign(new Error('EIO'), { code: 'EIO' });
+      }
+      restoreLinkAttempts++;
+      fake.calls.push({ op: 'link', path: from, to } as never);
+      if (restoreLinkAttempts <= 2) {
+        throw Object.assign(new Error('EIO'), { code: 'EIO' });
+      }
+      if (restoreLinkAttempts === 3) {
+        // Simulate the race: the destination name was recreated concurrently right
+        // after this attempt — model it as the EEXIST the next link would see, by
+        // planting the concurrent file now and letting the attempt succeed-or-EEXIST.
+        seed(fake, '20260101-000008-i.md', 'concurrent writer content', 91);
+        throw Object.assign(new Error('EEXIST'), { code: 'EEXIST' });
+      }
+    }
+    return realLink(from, to);
+  };
+  // The pre-rename link+lstat existence checks must observe the recreated name.
+  const markRace = fake.calls.length;
+  await assert.rejects(store.updateScratch('20260101-000008-i.md', 'never lands'), (e: unknown) => e instanceof ScratchStoreError);
+  fake.fs.link = realLink;
+  const raceCalls = fake.calls.slice(markRace);
+  assert.equal(Buffer.from(fake.files.get(`${ROOT}/20260101-000008-i.md`) ?? []).toString('utf8'), 'concurrent writer content', 'the concurrently recreated destination is NOT clobbered by the rename fallback');
+  assert.equal(raceCalls.some((c) => c.op === 'rename' && c.to === `${ROOT}/20260101-000008-i.md`), false, 'no rename ran once the destination existed again');
+  assert.ok(raceCalls.some((c) => c.op === 'unlink' && c.path.includes('.tmp-')), 'temp still cleaned up');
+});
+
 test('scratch-store.test.ts: updateScratch bumps mtime so listScratches reflects the save', async () => {
   const { fake, store } = setup();
   await fake.fs.mkdir(ROOT);

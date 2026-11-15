@@ -41813,6 +41813,10 @@
           "JSON.stringify"
         ],
         [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
           "diagnostic",
           "log.info"
         ],
@@ -41905,9 +41909,9 @@
           "writeAtomic"
         ]
       ],
-      "siteCount": 47,
-      "sitesDigest": "499b862f0c93c1bd67b76c77144e5db58008e7591bda1258e300f10a47dc2836",
-      "sourceDigest": "4a0dde67a2ede42fa26a5e4a923a90732d4848b479d60d2bbdd5d46b1b136582"
+      "siteCount": 48,
+      "sitesDigest": "ac8a7b35c8095766df20a37c4e5e55ddba534a52079bfe79d34b0b86b89a1aa0",
+      "sourceDigest": "c1a164ff247d3cc52b3f735fcf2f79af6d692e0a64a0e069f01ceb7583d2b901"
     },
     "src/workflow/path-scheme.ts": {
       "classification": "forbidden-session-service",
@@ -43653,7 +43657,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "d445d7328dc2f46594ec7adf03aa4876dab12aeb957ec3ad144cd6a98b734397",
-      "sourceDigest": "9cd3fe19e5ec90eb8d1c56468e3ba31c919c04b82f8a8f5282040451a1e5fb28"
+      "sourceDigest": "a401f3f2d54952562f6e748c8f6f68b8535a680de78a7d975a00b9969307e1ab"
     },
     "src/workflow/runners/plan/index.ts": {
       "classification": "forbidden-session-service",

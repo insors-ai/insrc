@@ -33,10 +33,50 @@ function magnitudeOf(ctx: StepRunnerContext): string {
 // s1 — issue.capture (assemble the defect record, grounded on the code)
 // ---------------------------------------------------------------------------
 
+/** The prompt lines for a 'change' run: the record of a requested change (a
+ *  trivial build's ISSUE), not a defect. The body fields keep their names;
+ *  each holds the change's request, reason and intended change. */
+function changeCapturePrompt(): string[] {
+	return [
+		'You are running the `issue.capture` step of the `issue` workflow for a requested CHANGE, not a',
+		'defect. Record what was asked and why as a single, durable record whose prose IS the eventual',
+		'GitHub issue body (so keep it clear, self-contained, and free of internal jargon).',
+		'',
+		'HARD RULES:',
+		'- Use `insrc_analyze_step` to ground the change in the REAL code. Do NOT invent paths/symbols;',
+		'  every `citations[].ref` of kind `code` must be a real path/entity from an analyze bundle.',
+		'- `title`:        a short imperative title for the change.',
+		'- `reproduction`: WHAT WAS ASKED — the request, as the user stated it. There is no defect to reproduce.',
+		'- `rootCause`:    WHY — the reason for the change (the user\'s reason, or the triage rationale).',
+		'- `fixIntent`:    the CHANGE — what will be different afterwards (intent), NOT the implementation/diff.',
+		'- Cite every claim: at least one `citations[]` entry; ids are `cN`.',
+		PATH_FORM_RULE,
+		'',
+		'Emit the capture JSON matching the schema now.',
+	];
+}
+
 const issueCapture: StepRunner = {
 	id:       'issue.capture',
 	workflow: 'issue',
 	async run(ctx) {
+		if (ctx.intent.params['kind'] === 'change') {
+			return {
+				type: 'llm-pause',
+				prompt: changeCapturePrompt().join('\n'),
+				userTurn: [
+					`Requested change (the focus): ${ctx.intent.focus}`,
+					`Repo: ${ctx.intent.repoPath}`,
+					...(typeof ctx.intent.params['triageRationale'] === 'string'
+						? [`Triage rationale: ${ctx.intent.params['triageRationale']}`]
+						: []),
+					'',
+					'Ground the change against the code, then emit the capture JSON now.',
+				].join('\n'),
+				schema: issueCaptureSchema,
+				preparedBlob: { stepId: 'issue.capture' },
+			};
+		}
 		return {
 			type: 'llm-pause',
 			prompt: [

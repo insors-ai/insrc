@@ -23,6 +23,14 @@ export const SIZE_CLASSES: readonly SizeClass[] = ['epic', 'feature', 'small', '
  *  full design path (issue → design → plan → build). */
 export type BugfixMagnitude = 'small' | 'sized';
 
+/** What an ISSUE records: a defect, or a requested change (a trivial build's
+ *  record). Absent on a stored ISSUE means 'defect'. */
+export type IssueKind = 'defect' | 'change';
+
+export function isIssueKind(v: unknown): v is IssueKind {
+	return v === 'defect' || v === 'change';
+}
+
 /** Where a classified request enters the chain, and how much ceremony it carries. */
 export interface TriageRoute {
 	/** The workflow to start at. */

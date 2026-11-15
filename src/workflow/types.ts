@@ -6,7 +6,7 @@
 import type { LLMProvider } from '../shared/types.js';
 import type { FamilyId } from '../daemon/model-catalog.js';
 import type { ReviewReport } from './review/types.js';
-import type { BugfixMagnitude, SizeClass } from './triage/types.js';
+import type { BugfixMagnitude, IssueKind, SizeClass } from './triage/types.js';
 
 /**
  * Workflow framework type surface.
@@ -395,6 +395,9 @@ export interface ArtifactMetaBase {
 	 *  the downstream router (s4) can size the route without re-classifying.
 	 *  Present only on a bugfix `issue` artifact. */
 	readonly magnitude?:   BugfixMagnitude;
+	/** What an `issue` artifact records: 'defect' or 'change' (the record of a
+	 *  trivial change). Absent means 'defect'. Present only on an `issue` artifact. */
+	readonly kind?:        IssueKind;
 	/** The work item this bugfix corrects, stamped by the tiered parent-locator
 	 *  (sc3 / S003) once located; `null` = standalone (no located parent). The
 	 *  `issue` stage (s2) leaves it absent; s3 fills it. A meta-side stamp so it

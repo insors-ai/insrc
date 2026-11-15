@@ -996,12 +996,15 @@ test('scratch-panel.test.ts: r14 CR-MED — a scratch-saved ok clears dirty ONLY
   assert.ok(src.includes('savedText=doc.value'), 'postSave snapshots the saved text');
   assert.ok(src.includes('doc.value!==savedText'), 'the ok branch compares the current value against the saved snapshot');
   // Case A: no edit during the save -> ok clears dirty (existing behavior preserved).
+  // Save via the BUTTON click (the keydown path is pinned in the test above): the click
+  // handler must post scratch-save with the current id, gen and doc.value.
   const a = bootstrapHarness(7, 'pad.md');
   a.doc.value = 'v1';
   a.fire('input');
-  a.fire('keydown', { ctrlKey: true, key: 's', preventDefault: () => {} });
-  const saveA = (JSON.parse(JSON.stringify(a.sent)) as Array<{ payload: { type: string; text?: string } }>).map((m) => m.payload).filter((p) => p.type === 'scratch-save');
-  assert.deepEqual(saveA, [{ type: 'scratch-save', id: 'pad.md', gen: 7, text: 'v1' }], 'the save posted the v1 snapshot');
+  fire(a.saveBtn, 'click');
+  const saveA = (JSON.parse(JSON.stringify(a.sent)) as Array<{ payload: { type: string; id?: string; gen?: number; text?: string } }>).map((m) => m.payload).filter((p) => p.type === 'scratch-save');
+  assert.deepEqual(saveA, [{ type: 'scratch-save', id: 'pad.md', gen: 7, text: 'v1' }], 'the Save-button click posted scratch-save { id: pad.md, gen: 7, text: doc.value }');
+  assert.equal(a.isSaveDisabled(), true, 'save button disabled while the save is in flight');
   a.hostMsg({ type: 'scratch-saved', id: 'pad.md', gen: 7, ok: true });
   assert.equal(a.isSaveHidden(), true, 'ok with unchanged value clears dirty — save button hidden');
   // Case B: an edit lands while the save is in flight -> ok does NOT clear dirty.

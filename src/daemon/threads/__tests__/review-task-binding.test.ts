@@ -66,9 +66,15 @@ async function fixture(t: { after: (fn: () => Promise<void>) => void }, opts: { 
   const access = new ProgressAccess<AllTaskDetails>(store, coordinator, authority.mint, projects, fallback);
   const producers = registerReviewProducers(coordinator);
   let runtimeCalls = 0, launchFailures = 0, registerFailures = 0, lastError: unknown;
+  let releaseStall: (() => void) | undefined;
   const runtime = async () => {
     runtimeCalls++;
     if (opts.breakRuntime) throw new Error('runtime offline');
+    if (releaseStall !== undefined) {
+      // A launch that never settles until released: the admission must not wait on it.
+      const stalledLaunchReview = () => new Promise<{ authorization: never }>(resolve => { releaseStall = () => resolve({ authorization: undefined as never }); });
+      return { access: { projectForScope: access.projectForScope.bind(access), launchReview: stalledLaunchReview }, producers };
+    }
     if (launchFailures > 0) return { access: { projectForScope: access.projectForScope.bind(access), launchReview: async () => { launchFailures--; throw new Error('task-unavailable'); } }, producers };
     if (registerFailures > 0) return { access, producers: { designReview: { ...producers.designReview, register: async () => { registerFailures--; return { kind: 'refused', reason: 'capacity' as const }; } }, codeReview: producers.codeReview } };
     return { access, producers };
@@ -94,7 +100,7 @@ async function fixture(t: { after: (fn: () => Promise<void>) => void }, opts: { 
       ? { reviewRevision: 'a'.repeat(40), storyId: 's1', functionalSummary: 'Fixture', documents: {}, reviewSet: [], tests: [] }
       : { phase: 'start', repo, reviewId: id, attempt: 1, artifactPath: 'unread-artifact.json' },
   });
-  return { root, repo, registry, coordinator, store, runtimeCalls: () => runtimeCalls, launchFailures: () => launchFailures, registerFailures: () => registerFailures, lastError: () => lastError, setLaunchFailures: (n: number) => { launchFailures = n; }, setRegisterFailures: (n: number) => { registerFailures = n; }, submit };
+  return { root, repo, registry, coordinator, store, runtimeCalls: () => runtimeCalls, launchFailures: () => launchFailures, registerFailures: () => registerFailures, lastError: () => lastError, setLaunchFailures: (n: number) => { launchFailures = n; }, setRegisterFailures: (n: number) => { registerFailures = n; }, setStalledLaunch: () => { releaseStall = () => undefined; }, releaseStalledLaunch: () => { releaseStall?.(); releaseStall = undefined; }, submit };
 }
 
 async function until(check: () => boolean): Promise<void> {
@@ -170,5 +176,18 @@ test('a failure to launch or register never fails or slows the review', async t 
   assert.ok(ack3.incarnation);
   await new Promise(r => setTimeout(r, 50));
   assert.equal(g.store.list().length, 0);
+  // A stalled launch (never settles) must not slow the admission either: the
+  // bind is fire-and-forget, so the admit returned above already, and the
+  // pending launch resolves on its own without ever registering a task.
+  const h = await fixture(t, { bind: true });
+  h.setStalledLaunch();
+  const stalled = context('stalled-launch');
+  const startedAt = Date.now();
+  const ack4 = await h.registry.admit(h.submit('stalled', 'code'), stalled.context);
+  assert.ok(ack4.incarnation, 'admission returns although launch never settles');
+  assert.ok(Date.now() - startedAt < 1000, 'admission is not delayed by the stalled launch');
+  await new Promise(r => setTimeout(r, 50));
+  assert.equal(h.store.list().length, 0, 'a stalled launch registers nothing');
+  h.releaseStalledLaunch();
 });
 

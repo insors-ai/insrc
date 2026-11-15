@@ -1,7 +1,7 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { createPrivateKey, createPublicKey, sign, verify } from 'node:crypto';
 import { link, lstat, mkdtemp, open, realpath, rm } from 'node:fs/promises';
-import { basename, dirname, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { homedir, tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
@@ -51,11 +51,19 @@ function requireHandoff(bytes, signature, builderKey) {
 	return JSON.parse(bytes.toString('utf8'));
 }
 
-function qualifyPredecessor({ prior, evidence, evidenceSignature, qualificationKey, staged, candidateFingerprint, publicKey, compatibility }) {
+function qualifyPredecessor({
+	prior, evidence, evidenceSignature, qualificationKey, qualificationKeyId, staged, candidateFingerprint, publicKey, compatibility,
+}) {
 	if (!prior && !evidence) return null;
 	if (!prior || !evidence) throw new Error('upgrade requires the prior proof and local qualification evidence');
+	if (qualificationKeyId === undefined || qualificationKey === undefined) {
+		throw new Error('managed upgrades require a qualifier pinned in signed development policy');
+	}
 	const key = createPublicKey(qualificationKey);
-	if (key.asymmetricKeyType !== 'ed25519' || evidenceSignature?.length !== 64 ||
+	if (key.asymmetricKeyType !== 'ed25519' || sha256(key.export({ type: 'spki', format: 'der' })) !== qualificationKeyId) {
+		throw new Error('qualifier key differs from the signed development policy');
+	}
+	if (evidenceSignature?.length !== 64 ||
 		!verify(null, developmentQualificationSigningBytes(evidence), key, evidenceSignature)) {
 		throw new Error('development qualification signature failed');
 	}
@@ -129,7 +137,7 @@ export async function signDevelopmentCandidate({
 		}
 	} finally { await rm(staging, { recursive: true, force: true }); }
 	const predecessor = qualifyPredecessor({ prior, evidence, evidenceSignature, qualificationKey,
-		staged: draft, candidateFingerprint: fingerprint, publicKey: publicPem, compatibility });
+		qualificationKeyId: policy.qualificationKeyId, staged: draft, candidateFingerprint: fingerprint, publicKey: publicPem, compatibility });
 	const bytes = encodeDevelopmentManifest({ ...draft, predecessor });
 	const signature = sign(null, developmentManifestSigningBytes(bytes), privateKey);
 	// Publish the sequence binding before releasing any signed bundle files.
@@ -180,22 +188,8 @@ async function attestHandoff([directory, keyPath, ...extra]) {
 	await publish(directory, 'candidate.sig', sign(null, developmentHandoffSigningBytes(bytes), key));
 }
 
-async function attestQualification([path, keyPath, ...extra]) {
-	if (!path || !keyPath || extra.length) throw new Error('usage: sign-daemon-development.mjs attest-qualification EVIDENCE QUALIFIER_KEY');
-	const key = createPrivateKey(await readBoundedRegular(keyPath, 4096));
-	if (key.asymmetricKeyType !== 'ed25519') throw new Error('development qualifier must be Ed25519');
-	const bytes = await readBoundedRegular(path, metadataLimit);
-	const record = JSON.parse(bytes.toString('utf8'));
-	if (record?.schemaVersion !== 2 || record.launchProfile !== 'managed' || record.managedRollback == null) {
-		throw new Error('managed qualification attestation requires a managed rollback receipt');
-	}
-	const destination = resolve(path + '.sig');
-	await publish(dirname(destination), basename(destination), sign(null, developmentQualificationSigningBytes(bytes), key));
-}
-
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
 	const args = process.argv.slice(2);
 	if (args[0] === 'attest-handoff') await attestHandoff(args.slice(1));
-	else if (args[0] === 'attest-qualification') await attestQualification(args.slice(1));
 	else await main(args);
 }

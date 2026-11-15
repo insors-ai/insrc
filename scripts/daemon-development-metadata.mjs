@@ -37,8 +37,10 @@ export function requireDevelopmentRef(ref) {
 
 // The policy must come from the authenticated bootstrap or protected build configuration.
 export function readDevelopmentPolicy(value) {
-	requireKeys(value, ['repository', 'releaseRef', 'developmentRefs'], 'policy fields');
-	const { repository, releaseRef, developmentRefs } = value;
+	const hasQualifier = value !== null && typeof value === 'object' && Object.hasOwn(value, 'qualificationKeyId');
+	requireKeys(value, ['repository', 'releaseRef', 'developmentRefs', ...(hasQualifier ? ['qualificationKeyId'] : [])], 'policy fields');
+	const { repository, releaseRef, developmentRefs, qualificationKeyId } = value;
+	requireField(!hasQualifier || matches(digest, qualificationKeyId), 'qualification key identity');
 	requireField(typeof repository === 'string' && repository.length <= 2048, 'repository');
 	const remote = URL.parse(repository);
 	requireField(remote?.protocol === 'https:' && !remote.username && !remote.password &&
@@ -50,7 +52,7 @@ export function readDevelopmentPolicy(value) {
 		requireDevelopmentRef(ref);
 		requireField(ref !== releaseRef, 'release ref cannot be a development ref');
 	}
-	return { repository, releaseRef, developmentRefs: [...developmentRefs] };
+	return { repository, releaseRef, developmentRefs: [...developmentRefs], ...(hasQualifier ? { qualificationKeyId } : {}) };
 }
 
 function requireDevelopmentIdentity(manifest) {

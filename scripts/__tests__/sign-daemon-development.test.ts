@@ -23,7 +23,10 @@ test('development signer binds the authenticated archive, sequence and exact qua
 		const pem = issuer.publicKey.export({ type: 'spki', format: 'pem' });
 		const repository = 'https://github.com/example/daemon.git';
 		const sourceRef = 'refs/heads/preview';
-		const policyBytes = Buffer.from(JSON.stringify({ repository, releaseRef: 'refs/heads/main', developmentRefs: [sourceRef] }));
+		const policyBytes = Buffer.from(JSON.stringify({
+			repository, releaseRef: 'refs/heads/main', developmentRefs: [sourceRef],
+			qualificationKeyId: sha256(qualifier.publicKey.export({ type: 'spki', format: 'der' })),
+		}));
 		const ledgerDirectory = join(root, 'ledger');
 		await mkdir(ledgerDirectory, { mode: 0o700 });
 		const compatibility = { graphSchema: SCHEMA_VERSION, formats: { lance: '1', repoAndIndexQueue: '1', config: '1', workflowAndSession: '1' } };
@@ -121,7 +124,15 @@ test('development signer binds the authenticated archive, sequence and exact qua
 		assert.throws(() => execFileSync(process.execPath, [
 			new URL('../sign-daemon-development.mjs', import.meta.url).pathname,
 			'attest-qualification', graphReport, qualifierKeyPath,
-		], { stdio: 'pipe' }), /requires a managed rollback receipt/);
+		], { stdio: 'pipe' }), /usage: sign-daemon-development/);
+		await assert.rejects(signDevelopmentCandidate({ ...upgrade, ...qualification,
+			qualificationKey: builder.publicKey.export({ type: 'spki', format: 'pem' }),
+			evidenceSignature: sign(null, developmentQualificationSigningBytes(qualification.evidence), builder.privateKey),
+		}), /qualifier key differs/);
+		const unpinnedPolicy = Buffer.from(JSON.stringify({ repository, releaseRef: 'refs/heads/main', developmentRefs: [sourceRef] }));
+		await assert.rejects(signDevelopmentCandidate({ ...upgrade, ...qualification, policyBytes: unpinnedPolicy,
+			policySignature: sign(null, developmentPolicySigningBytes(unpinnedPolicy), issuer.privateKey),
+		}), /qualifier pinned in signed development policy/);
 		await assert.rejects(signDevelopmentCandidate({ ...upgrade, ...qualification, evidenceSignature: Buffer.alloc(64) }), /qualification signature/);
 		await assert.rejects(signDevelopmentCandidate({ ...upgrade, ...attest(graphProbe) }), /requires a managed rollback receipt/);
 		await assert.rejects(signDevelopmentCandidate({ ...upgrade, ...attest({ ...graphProbe, launchProfile: 'managed' }) }),

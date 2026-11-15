@@ -381,8 +381,21 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
       throw storeError(e);
     }
 
-    /** Abandon the save: clean up temp and backup, then the caller throws. */
+    /** Abandon the save: if any attempt already unlinked the destination, put the
+     * ORIGINAL content back from the backup hard link first (the destination must be
+     * untouched by a failed save, even on the retry path), then clean up temp+backup. */
+    let unlinkedSoFar = false;
     const fail = async (e: unknown): Promise<unknown> => {
+      if (unlinkedSoFar) {
+        try {
+          await fs.link(backup, path);
+        } catch (rmErr) {
+          // The restore itself failed (e.g. the name was recreated concurrently): the
+          // destination is then whatever the concurrent actor placed there — never our
+          // partial temp content — and the caller still sees the store error below.
+          log.warn(`[scratches] could not restore ${id} from the backup link: ${String(rmErr)}`);
+        }
+      }
       await unlinkTemp();
       await unlinkBackup();
       return e;
@@ -452,6 +465,7 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
         throw await fail(errCode(e) === 'ENOENT' ? new ScratchNotFound(`'${id}' disappeared before the save`) : storeError(e));
       }
       unlinked = true;
+      unlinkedSoFar = true;
       try {
         await fs.link(temp, path);
       } catch (e) {

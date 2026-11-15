@@ -221,7 +221,10 @@ const DOC_STYLE =
  * `gen` is the page load's generation, `id` the scratchpad displayed; input marks
  * the document dirty (save button visible), Ctrl/Cmd+S or the save button posts
  * document-channel 'scratch-save' {id, gen, text: doc.value}, and a 'scratch-saved'
- * reply is honored only when its gen equals this page's gen.
+ * reply is honored only when its gen equals this page's gen. A 'scratch-saved' ok
+ * clears the dirty flag only when the document still holds the exact text that was
+ * saved — edits typed while the save was in flight keep the document dirty so the
+ * newer text is not silently reported as saved.
  * The ready handshake is generation-tagged: the host embeds the current docGeneration in the
  * page, the webview echoes it back, so a stale ready from a previous page load can never mark
  * the live generation ready. */
@@ -235,6 +238,10 @@ export function documentBootstrap(gen: number, id: string): string {
     `const wrap=document.querySelector('.scratch-doc-wrap');` +
     `var gen=${genLiteral};var docId=${idLiteral};` +
     `var dirty=false;var saving=false;var errEl=null;` +
+    // The text snapshot of the in-flight save: a 'scratch-saved' ok clears dirty only if
+    // the document still holds that snapshot — edits typed while the save was in flight
+    // must keep the document dirty (the save persisted an older text).
+    `var savedText=null;` +
     // Webview-ready handshake: the host replays any content posted before the bootstrap
     // installed its listener, so an early read completion can never be lost. The echoed
     // generation tag lets the host ignore a ready from a superseded page load.
@@ -245,10 +252,10 @@ export function documentBootstrap(gen: number, id: string): string {
     `if(m.type==='scratch-content'&&typeof m.text==='string'){if(doc)doc.value=m.text;else pending=m.text;setDirty(false);if(errEl)errEl.textContent='';}` +
     `else if(m.type==='scratch-saved'&&m.gen===gen&&m.id===docId){` +
     `saving=false;if(saveBtn)saveBtn.disabled=false;` +
-    `if(m.ok){setDirty(false);}else{setDirty(true);showErr('save failed: '+(typeof m.error==='string'?m.error:'unknown error'));}}` +
+    `if(m.ok){if(savedText!==null&&doc&&doc.value!==savedText){setDirty(true);showErr('saved — but the document changed while saving; save again to keep the latest text');}else{setDirty(false);}}else{setDirty(true);showErr('save failed: '+(typeof m.error==='string'?m.error:'unknown error'));}}` +
     `});` +
     `vs.postMessage({v:1,payload:{type:'scratch-ready',gen:gen}});` +
-    `function postSave(){if(!doc||saving)return;saving=true;if(saveBtn)saveBtn.disabled=true;` +
+    `function postSave(){if(!doc||saving)return;saving=true;if(saveBtn)saveBtn.disabled=true;savedText=doc.value;` +
     `vs.postMessage({v:1,payload:{type:'scratch-save',id:docId,gen:gen,text:doc.value}});}` +
     `if(doc){doc.addEventListener('input',function(){setDirty(true);if(errEl)errEl.textContent='';});` +
     `doc.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&(e.key==='s'||e.key==='S')){e.preventDefault();postSave();}});` +

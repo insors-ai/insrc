@@ -516,6 +516,46 @@ test('scratch-store.test.ts: updateScratch happy path writes full text and repla
   assert.equal(pubCalls.some((c) => c.op === 'link' && c.path.endsWith('.bak') && c.to === `${ROOT}/20260101-000004-e.md`), true, 'backup was linked back over the destination name on restore');
   assert.equal(pubCalls.some((c) => c.op === 'unlink' && c.path.includes('.tmp-')), true, 'temp cleaned up after the failed publish');
   assert.equal(pubCalls.some((c) => c.op === 'unlink' && c.path.endsWith('.bak')), true, 'backup cleaned up after the failed publish');
+
+  // Retry-path failure (the r14 CR MED at scratch-store.ts: a publish EEXIST retry whose
+  // LATER validation fails must still restore the original from the backup, not just
+  // unlink temp+backup): the first link() loses an EEXIST race, then the next attempt's
+  // lstat fails with EIO -> the destination (already unlinked once) is restored from the
+  // backup, temp+backup are cleaned, and the caller sees ScratchStoreError.
+  seed(fake, '20260101-000005-f.md', 'retry-path original', 60);
+  let retryLinkAttempts = 0;
+  const realLink2 = fake.fs.link;
+  fake.fs.link = async (from, to) => {
+    if (to.endsWith('20260101-000005-f.md') && !from.endsWith('.bak') && retryLinkAttempts++ === 0) {
+      fake.calls.push({ op: 'link', path: from, to } as never);
+      // Lost an EEXIST race: by the time the retry re-validates, the destination name is
+      // free again (the racing entry is gone), but the retry's lstat fails EIO below.
+      throw eexist(to);
+    }
+    return realLink2(from, to);
+  };
+  // The retry attempt's lstat of the destination fails with EIO — but only once an
+  // unlink of the destination was actually recorded (the pre-loop validation lstat and
+  // attempt 0's lstat must pass; attempt 1's lstat, after attempt 0 unlinked, throws).
+  const realLstat = fake.fs.lstat;
+  fake.fs.lstat = async (p) => {
+    if (p === `${ROOT}/20260101-000005-f.md` && fake.calls.some((c) => c.op === 'unlink' && c.path === p)) {
+      const err = Object.assign(new Error('EIO'), { code: 'EIO' });
+      fake.calls.push({ op: 'lstat', path: p } as never);
+      throw err;
+    }
+    return realLstat(p);
+  };
+  const markRetry = fake.calls.length;
+  await assert.rejects(store.updateScratch('20260101-000005-f.md', 'never lands'), (e: unknown) => e instanceof ScratchStoreError);
+  fake.fs.link = realLink2;
+  fake.fs.lstat = realLstat;
+  fake.failOn = undefined;
+  const retryCalls = fake.calls.slice(markRetry);
+  assert.equal(Buffer.from(fake.files.get(`${ROOT}/20260101-000005-f.md`) ?? []).toString('utf8'), 'retry-path original', 'retry-path failure restored the original from the backup');
+  assert.equal(retryCalls.some((c) => c.op === 'link' && c.path.endsWith('.bak') && c.to === `${ROOT}/20260101-000005-f.md`), true, 'backup was linked back over the destination on the retry-path failure');
+  assert.equal(retryCalls.some((c) => c.op === 'unlink' && c.path.includes('.tmp-')), true, 'temp cleaned up after the retry-path failure');
+  assert.equal(retryCalls.some((c) => c.op === 'unlink' && c.path.endsWith('.bak')), true, 'backup cleaned up after the retry-path failure');
 });
 
 test('scratch-store.test.ts: updateScratch bumps mtime so listScratches reflects the save', async () => {

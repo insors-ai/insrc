@@ -991,6 +991,33 @@ test('scratch-panel.test.ts: documentBodyHtml emits <textarea id="insrc-scratchd
   assert.equal(b.errEl.textContent, 'save failed: EACCES', 'the failure is shown in the error line');
 });
 
+test('scratch-panel.test.ts: r14 CR-MED — a scratch-saved ok clears dirty ONLY when the document still holds the exact saved text; edits typed while the save was in flight keep the document dirty with a notice', () => {
+  const src = documentBootstrap(7, 'pad.md');
+  assert.ok(src.includes('savedText=doc.value'), 'postSave snapshots the saved text');
+  assert.ok(src.includes('doc.value!==savedText'), 'the ok branch compares the current value against the saved snapshot');
+  // Case A: no edit during the save -> ok clears dirty (existing behavior preserved).
+  const a = bootstrapHarness(7, 'pad.md');
+  a.doc.value = 'v1';
+  a.fire('input');
+  a.fire('keydown', { ctrlKey: true, key: 's', preventDefault: () => {} });
+  const saveA = (JSON.parse(JSON.stringify(a.sent)) as Array<{ payload: { type: string; text?: string } }>).map((m) => m.payload).filter((p) => p.type === 'scratch-save');
+  assert.deepEqual(saveA, [{ type: 'scratch-save', id: 'pad.md', gen: 7, text: 'v1' }], 'the save posted the v1 snapshot');
+  a.hostMsg({ type: 'scratch-saved', id: 'pad.md', gen: 7, ok: true });
+  assert.equal(a.isSaveHidden(), true, 'ok with unchanged value clears dirty — save button hidden');
+  // Case B: an edit lands while the save is in flight -> ok does NOT clear dirty.
+  const b = bootstrapHarness(7, 'pad.md');
+  b.doc.value = 'v1';
+  b.fire('input');
+  b.fire('keydown', { ctrlKey: true, key: 's', preventDefault: () => {} });
+  b.doc.value = 'v1 + typed while saving'; // the user edits during the in-flight save
+  b.fire('input'); // input re-marks dirty (already dirty) — the value no longer matches the snapshot
+  b.hostMsg({ type: 'scratch-saved', id: 'pad.md', gen: 7, ok: true });
+  assert.equal(b.isSaveHidden(), false, 'ok after an in-flight edit keeps the save button visible — the newer text is not reported as saved');
+  assert.ok((b.errEl.textContent ?? '').includes('changed while saving'), 'a notice explains the saved text is older than the document');
+  const dirtiesB = (JSON.parse(JSON.stringify(b.sent)) as Array<{ payload: { type: string; dirty?: boolean } }>).map((m) => m.payload).filter((p) => p.type === 'scratch-dirty');
+  assert.equal(dirtiesB.at(-1)?.dirty, true, 'the last scratch-dirty post is dirty:true');
+});
+
 test('scratch-panel.test.ts behavioral: input event sets dirty (save button visible, title suffix via setTitle), \'scratch-saved\' ok with matching gen clears dirty, ok=false keeps dirty and shows error, stale-gen reply ignored; scratch-content sets textarea .value (not textContent/innerHTML); send-to-chat reads selection from textarea selectionStart/selectionEnd over doc.value and posts capUtf8-capped text', async () => {
   // Host-side: a scratch-dirty from the live document generation sets the '•' title
   // suffix via onScratchDirty; a scratch-save from the live generation is routed

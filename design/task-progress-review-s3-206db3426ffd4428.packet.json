@@ -314,13 +314,6 @@
      "path": "src/daemon/task-progress/review-measurements.ts",
      "segments": [
       {
-       "deletionAt": 178,
-       "after": [
-        1,
-        1
-       ]
-      },
-      {
        "after": [
         180,
         196
@@ -330,13 +323,6 @@
        "after": [
         198,
         198
-       ]
-      },
-      {
-       "deletionAt": 199,
-       "after": [
-        1,
-        1
        ]
       }
      ]

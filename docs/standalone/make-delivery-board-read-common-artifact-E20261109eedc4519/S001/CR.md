@@ -2,7 +2,11 @@
 
 # Code review: s1
 
-Status: **changes_requested** · task-based schema version 2
+Status: **failed** · task-based schema version 3
+
+## board-common-model-s1 — attempt 4: admission failed
+
+Technical admission only; scope was not verified and no task assessment was performed. code_review_admission_failed (projection_limit): projection_limit: Complete terminal review envelopes exceed storage capacity; submit a smaller explicit review unit
 
 ## board-common-model-s1 — attempt 1
 
@@ -2085,3 +2089,1033 @@ Inspected references:
 - `5f422dfa194f2ddd2e456e773121ecdeaf9af208:vscode-plugin/src/delivery/labels.ts`
 - `5f422dfa194f2ddd2e456e773121ecdeaf9af208:vscode-plugin/src/delivery/delivery-client.ts`
 - `5f422dfa194f2ddd2e456e773121ecdeaf9af208:src/workflow/delivery/types.ts`
+## board-common-model-s1 — attempt 5
+
+Scope: whole story · reviewer: daemon · 2026-11-14T16:03:26.002Z
+
+10 selected task assessment(s): changes_requested.
+Native output diagnostics: [{"phase":"attribution","provider":"codex","resolved":true,"errors":[{"code":"HOST_VALIDATION_ERROR","field":"attribution","correction":"Correct the host-rejected review field before resubmitting.","occurrences":1}]}]
+
+### Submitted scope
+
+- `e30bbe91d006495df72e215d8494fc1b9a39f6ac:src/workflow/artifact-core/__tests__/completion-evidence.test.ts` — [{"after":[7,7]},{"after":[91,151]}]
+- `e30bbe91d006495df72e215d8494fc1b9a39f6ac:src/workflow/artifact-core/__tests__/completion-holds.test.ts` — [{"deletionAt":26},{"after":[28,28]},{"after":[30,31]},{"after":[33,33]},{"deletionAt":35},{"after":[38,38]},{"after":[55,55]}]
+- `e30bbe91d006495df72e215d8494fc1b9a39f6ac:src/workflow/artifact-core/__tests__/lifecycle-completion.test.ts` — [{"after":[8,8]},{"after":[16,16]},{"after":[26,26]},{"after":[28,28]},{"after":[30,30]},{"after":[32,32]},{"after":[36,36]},{"after":[47,47]},{"after":[56,56]},{"after":[60,61]},{"deletionAt":72},{"after":[75,75]},{"after":[84,84]},{"after":[86,86]},{"deletionAt":100},{"after":[102,102]},{"deletionAt":112},{"after":[119,119]},{"deletionAt":129},{"after":[133,134]},{"deletionAt":154},{"after":[156,185]}]
+- `e30bbe91d006495df72e215d8494fc1b9a39f6ac:src/workflow/artifact-core/__tests__/lifecycle-kit.ts` — [{"after":[4,4]},{"after":[17,27]},{"after":[29,32]},{"after":[35,38]}]
+- `e30bbe91d006495df72e215d8494fc1b9a39f6ac:src/workflow/artifact-core/__tests__/lifecycle-rollup.test.ts` — [{"after":[22,31]},{"after":[33,34]},{"after":[43,43]},{"after":[45,53]},{"deletionAt":68},{"after":[72,72]},{"after":[75,75]},{"after":[87,137]}]
+- `e30bbe91d006495df72e215d8494fc1b9a39f6ac:src/workflow/artifact-core/completion-evidence.ts` — [{"after":[11,12]},{"after":[16,16]},{"after":[19,20]},{"after":[47,66]},{"after":[97,123]}]
+- `e30bbe91d006495df72e215d8494fc1b9a39f6ac:src/workflow/artifact-core/lifecycle.ts` — [{"after":[306,325]},{"after":[350,370]},{"after":[373,375]},{"after":[382,388]},{"after":[392,397]},{"after":[406,406]},{"after":[418,418]}]
+- `e30bbe91d006495df72e215d8494fc1b9a39f6ac:src/workflow/tasks/__tests__/task-build-rounds.test.ts` — [{"after":[21,21]},{"after":[46,48]},{"after":[50,51]},{"after":[53,53]}]
+- `b4e54c873e8b09859938433f67379454fb6c7f15:src/workflow/artifact-core/__tests__/completion-evidence.test.ts` — [{"after":[3,3]},{"after":[8,8]},{"after":[10,12]},{"after":[22,34]},{"after":[37,37]},{"after":[40,41]},{"after":[44,52]},{"after":[55,58]},{"after":[60,75]},{"after":[77,79]},{"after":[81,82]},{"after":[95,161]}]
+- `dd4eefa5957ec753fed7d0d1e66c45fecd34e0f5:src/cli/services/workflow.ts` — [{"after":[75,76]},{"after":[155,155]},{"after":[163,163]}]
+- `dd4eefa5957ec753fed7d0d1e66c45fecd34e0f5:src/daemon/workflow-approve.ts` — [{"after":[58,58]}]
+- `dd4eefa5957ec753fed7d0d1e66c45fecd34e0f5:src/workflow/__tests__/story-completion.test.ts` — [{"after":[1,362]}]
+- `dd4eefa5957ec753fed7d0d1e66c45fecd34e0f5:src/workflow/artifact-core/__tests__/lifecycle-resignoff.test.ts` — [{"after":[36,37]}]
+- `dd4eefa5957ec753fed7d0d1e66c45fecd34e0f5:src/workflow/artifact-core/__tests__/lifecycle-table.test.ts` — [{"after":[16,16]}]
+- `dd4eefa5957ec753fed7d0d1e66c45fecd34e0f5:src/workflow/artifact-core/completion-evidence.ts` — [{"after":[108,108]}]
+- `dd4eefa5957ec753fed7d0d1e66c45fecd34e0f5:src/workflow/artifact-core/history.ts` — [{"after":[21,21]}]
+- `dd4eefa5957ec753fed7d0d1e66c45fecd34e0f5:src/workflow/artifact-core/lifecycle-service.ts` — [{"after":[17,17]},{"after":[155,155]},{"after":[260,275]}]
+- `dd4eefa5957ec753fed7d0d1e66c45fecd34e0f5:src/workflow/artifact-core/lifecycle.ts` — [{"after":[26,26]},{"after":[52,52]},{"after":[242,247]}]
+- `dd4eefa5957ec753fed7d0d1e66c45fecd34e0f5:src/workflow/artifact-core/types.ts` — [{"after":[55,55]}]
+- `dd4eefa5957ec753fed7d0d1e66c45fecd34e0f5:src/workflow/gates.ts` — [{"after":[29,30]},{"after":[42,42]},{"after":[693,696]},{"after":[861,861]},{"after":[875,876]},{"after":[935,935]},{"after":[961,980]},{"after":[982,982]},{"after":[984,995]},{"after":[1015,1017]},{"after":[1020,1020]},{"after":[1049,1052]},{"after":[1082,1082]}]
+- `19b00a12b71e9cea1674531b962f02687442e0df:src/daemon/steps/workflow-step/phases/synthesize.ts` — [{"after":[25,25]},{"after":[93,93]}]
+- `19b00a12b71e9cea1674531b962f02687442e0df:src/daemon/workflow-rpc.ts` — [{"after":[46,46]},{"after":[349,349]}]
+- `19b00a12b71e9cea1674531b962f02687442e0df:src/workflow/__tests__/workflow-head-lifecycle.test.ts` — [{"after":[1,151]}]
+- `19b00a12b71e9cea1674531b962f02687442e0df:src/workflow/artifact-write-inventory.ts` — [{"after":[34,39]},{"after":[53,54]},{"after":[66,67]},{"after":[73,78]},{"after":[86,86]},{"after":[94,94]},{"after":[340,397]}]
+- `19b00a12b71e9cea1674531b962f02687442e0df:src/workflow/storage.ts` — [{"after":[241,259]}]
+- `939183ed684643bdda6b35ffd51afcc29791a4c1:src/daemon/repo-convert.ts` — [{"after":[19,20]},{"after":[23,23]},{"after":[30,30]},{"after":[35,39]},{"after":[44,44]},{"after":[47,47]}]
+- `939183ed684643bdda6b35ffd51afcc29791a4c1:src/workflow/artifact-core/repo-lifecycle.ts` — [{"after":[19,19]},{"after":[28,49]},{"after":[53,53]}]
+- `939183ed684643bdda6b35ffd51afcc29791a4c1:src/workflow/artifact-core/store.ts` — [{"after":[51,52]},{"after":[379,379]},{"after":[446,446]}]
+- `939183ed684643bdda6b35ffd51afcc29791a4c1:src/workflow/convert/__tests__/repair.test.ts` — [{"after":[1,179]}]
+- `939183ed684643bdda6b35ffd51afcc29791a4c1:src/workflow/convert/amendments.ts` — [{"after":[20,20]},{"after":[82,82]},{"after":[84,87]}]
+- `939183ed684643bdda6b35ffd51afcc29791a4c1:src/workflow/convert/migrated-head.ts` — [{"after":[26,27]},{"after":[90,90]}]
+- `939183ed684643bdda6b35ffd51afcc29791a4c1:src/workflow/convert/plan.ts` — [{"after":[62,63]},{"after":[127,127]}]
+- `939183ed684643bdda6b35ffd51afcc29791a4c1:src/workflow/convert/rename.ts` — [{"after":[24,24]},{"after":[52,66]},{"after":[110,110]},{"after":[150,150]},{"after":[158,158]},{"after":[165,165]},{"after":[167,167]},{"after":[170,170]},{"after":[177,178]},{"after":[184,184]}]
+- `939183ed684643bdda6b35ffd51afcc29791a4c1:src/workflow/convert/repair.ts` — [{"after":[1,104]}]
+- `939183ed684643bdda6b35ffd51afcc29791a4c1:src/workflow/convert/stamps.ts` — [{"after":[18,18]},{"after":[73,73]},{"after":[79,79]}]
+- `939183ed684643bdda6b35ffd51afcc29791a4c1:src/workflow/convert/types.ts` — [{"after":[141,177]}]
+- `939183ed684643bdda6b35ffd51afcc29791a4c1:src/workflow/convert/units.ts` — [{"after":[28,28]},{"after":[95,95]},{"after":[101,101]},{"after":[105,105]},{"after":[116,116]},{"after":[127,127]},{"after":[129,129]},{"after":[134,134]},{"after":[149,149]},{"after":[155,156]}]
+- `212cb1c43f1e2832fb5e8e214cdb110e8c6684e1:src/workflow/convert/__tests__/repair.test.ts` — [{"after":[128,164]}]
+- `212cb1c43f1e2832fb5e8e214cdb110e8c6684e1:src/workflow/convert/units.ts` — [{"after":[99,101]},{"after":[116,117]},{"after":[119,120]}]
+- `212cb1c43f1e2832fb5e8e214cdb110e8c6684e1:src/workflow/tracker/binding.ts` — [{"after":[90,92]},{"after":[97,97]},{"after":[115,115]},{"after":[126,126]},{"after":[134,134]},{"after":[138,138]},{"after":[143,143]},{"after":[149,149]},{"after":[159,159]}]
+- `60436e184578a7354ea79f83030f303564556c83:src/workflow/convert/__tests__/repair.test.ts` — [{"after":[27,27]},{"after":[166,179]}]
+- `60436e184578a7354ea79f83030f303564556c83:src/workflow/convert/repair.ts` — [{"after":[59,59]}]
+- `60436e184578a7354ea79f83030f303564556c83:src/workflow/tasks/task-set.ts` — [{"after":[27,27]},{"after":[58,59]},{"after":[227,227]},{"after":[232,232]}]
+- `3dc857553594c1c2aa98acfe68f05f0fcbf4cd13:src/workflow/convert/__tests__/repair-tasks.test.ts` — [{"after":[1,205]}]
+- `3dc857553594c1c2aa98acfe68f05f0fcbf4cd13:src/workflow/convert/plan.ts` — [{"after":[33,33]}]
+- `3dc857553594c1c2aa98acfe68f05f0fcbf4cd13:src/workflow/convert/repair.ts` — [{"after":[21,23]},{"after":[26,30]},{"after":[32,33]},{"after":[45,45]},{"after":[48,50]},{"after":[53,53]},{"after":[68,68]},{"after":[75,76]},{"after":[99,99]},{"after":[101,101]},{"after":[108,108]}]
+- `3dc857553594c1c2aa98acfe68f05f0fcbf4cd13:src/workflow/convert/tasks.ts` — [{"after":[17,19]},{"after":[21,21]},{"after":[25,25]},{"after":[41,41]},{"after":[43,43]},{"after":[47,47]},{"after":[51,51]},{"after":[78,113]},{"after":[119,134]},{"after":[138,138]},{"after":[142,143]},{"after":[146,155]},{"after":[158,159]},{"after":[161,161]},{"after":[174,174]}]
+- `3dc857553594c1c2aa98acfe68f05f0fcbf4cd13:src/workflow/convert/types.ts` — [{"after":[29,29]}]
+- `3dc857553594c1c2aa98acfe68f05f0fcbf4cd13:src/workflow/convert/units.ts` — [{"after":[50,67]},{"after":[87,88]},{"after":[91,91]},{"after":[93,93]},{"after":[97,97]},{"after":[105,107]},{"after":[157,157]},{"after":[169,169]}]
+- `3dc857553594c1c2aa98acfe68f05f0fcbf4cd13:src/workflow/tasks/task-set.ts` — [{"after":[28,28]},{"after":[63,67]},{"after":[119,119]},{"after":[128,128]},{"after":[163,164]}]
+- `bd52cff4dc0e1f6e836d307540903d961a8feb3d:src/workflow/convert/__tests__/repair-tasks.test.ts` — [{"after":[204,210]}]
+- `bd52cff4dc0e1f6e836d307540903d961a8feb3d:src/workflow/convert/repair.ts` — [{"after":[29,30]},{"after":[93,94]}]
+- `bd52cff4dc0e1f6e836d307540903d961a8feb3d:src/workflow/convert/tasks.ts` — [{"after":[130,141]}]
+- `435f14567df123c1e4d616eaa16b3f96b6701e9c:src/workflow/artifact-core/lifecycle-service.ts` — [{"after":[260,266]}]
+- `435f14567df123c1e4d616eaa16b3f96b6701e9c:src/workflow/convert/__tests__/repair-kit.ts` — [{"after":[1,68]}]
+- `435f14567df123c1e4d616eaa16b3f96b6701e9c:src/workflow/convert/__tests__/repair-settle.test.ts` — [{"after":[1,244]}]
+- `435f14567df123c1e4d616eaa16b3f96b6701e9c:src/workflow/convert/__tests__/repair-tasks.test.ts` — [{"after":[14,14]},{"deletionAt":16},{"deletionAt":19},{"deletionAt":21},{"after":[24,24]},{"after":[70,71]}]
+- `435f14567df123c1e4d616eaa16b3f96b6701e9c:src/workflow/convert/plan.ts` — [{"after":[33,33]}]
+- `435f14567df123c1e4d616eaa16b3f96b6701e9c:src/workflow/convert/repair.ts` — [{"after":[19,19]},{"after":[31,32]},{"after":[52,52]},{"after":[60,60]},{"after":[67,67]},{"after":[71,71]},{"after":[81,81]},{"after":[96,97]},{"after":[104,104]},{"after":[106,106]},{"after":[113,113]}]
+- `435f14567df123c1e4d616eaa16b3f96b6701e9c:src/workflow/convert/settle.ts` — [{"after":[1,155]}]
+- `435f14567df123c1e4d616eaa16b3f96b6701e9c:src/workflow/convert/tasks.ts` — [{"after":[35,35]},{"after":[47,47]},{"after":[59,59]},{"after":[130,133]},{"after":[136,136]},{"after":[139,141]}]
+- `435f14567df123c1e4d616eaa16b3f96b6701e9c:src/workflow/convert/types.ts` — [{"after":[29,29]}]
+- `435f14567df123c1e4d616eaa16b3f96b6701e9c:src/workflow/convert/units.ts` — [{"after":[88,88]},{"after":[100,100]},{"after":[106,107]}]
+- `d6d103919b74a50bc2cc4aa4e5e1cd0e37b0dd3a:src/workflow/delivery/__tests__/handlers.test.ts` — [{"after":[43,67]}]
+- `d6d103919b74a50bc2cc4aa4e5e1cd0e37b0dd3a:src/workflow/delivery/__tests__/load.test.ts` — [{"after":[175,200]},{"after":[223,223]}]
+- `d6d103919b74a50bc2cc4aa4e5e1cd0e37b0dd3a:src/workflow/delivery/handlers.ts` — [{"after":[30,30]},{"after":[45,50]},{"after":[116,116]}]
+- `d6d103919b74a50bc2cc4aa4e5e1cd0e37b0dd3a:src/workflow/delivery/load.ts` — [{"after":[37,37]},{"after":[59,60]},{"after":[62,62]}]
+- `d6d103919b74a50bc2cc4aa4e5e1cd0e37b0dd3a:src/workflow/delivery/types.ts` — [{"after":[26,26]},{"after":[28,29]},{"after":[192,192]},{"after":[261,261]},{"after":[291,291]}]
+- `b2ae44c37e6049cb727459d987c134254a59917e:src/workflow/delivery/__tests__/fixtures.ts` — [{"after":[424,460]}]
+- `b2ae44c37e6049cb727459d987c134254a59917e:src/workflow/delivery/__tests__/fixtures/delivery-snapshot.sample.json` — [{"after":[62,62]},{"after":[87,96]},{"after":[101,102]},{"after":[128,128]},{"after":[131,131]},{"after":[215,215]},{"after":[219,228]},{"after":[242,245]},{"after":[298,298]},{"after":[352,352]},{"after":[355,366]},{"after":[369,370]},{"after":[417,417]},{"after":[474,475]},{"after":[477,477]}]
+- `b2ae44c37e6049cb727459d987c134254a59917e:src/workflow/delivery/__tests__/gate.test.ts` — [{"after":[37,37]},{"after":[48,48]},{"after":[87,124]},{"after":[136,136]},{"after":[293,293]},{"after":[385,385]}]
+- `b2ae44c37e6049cb727459d987c134254a59917e:src/workflow/delivery/__tests__/graph.test.ts` — [{"after":[26,26]},{"after":[45,66]}]
+- `b2ae44c37e6049cb727459d987c134254a59917e:src/workflow/delivery/__tests__/notice.test.ts` — [{"after":[14,14]},{"after":[16,17]}]
+- `b2ae44c37e6049cb727459d987c134254a59917e:src/workflow/delivery/__tests__/snapshot.test.ts` — [{"after":[32,32]},{"after":[38,39]},{"after":[47,47]},{"after":[82,82]}]
+- `b2ae44c37e6049cb727459d987c134254a59917e:src/workflow/delivery/__tests__/stage.test.ts` — [{"after":[24,24]},{"after":[76,93]},{"after":[96,96]},{"after":[99,99]},{"after":[167,167]},{"after":[244,244]}]
+- `b2ae44c37e6049cb727459d987c134254a59917e:src/workflow/delivery/gate.ts` — [{"after":[220,220]},{"after":[359,360]},{"after":[376,395]}]
+- `b2ae44c37e6049cb727459d987c134254a59917e:src/workflow/delivery/graph.ts` — [{"after":[28,28]},{"after":[31,31]},{"after":[124,137]},{"after":[159,159]},{"after":[176,176]},{"after":[183,183]},{"after":[211,211]},{"after":[248,248]},{"after":[250,250]},{"after":[257,257]},{"after":[338,338]},{"after":[340,340]},{"after":[364,364]},{"after":[393,393]},{"after":[436,436]}]
+- `b2ae44c37e6049cb727459d987c134254a59917e:src/workflow/delivery/notice.ts` — [{"after":[30,30]}]
+- `b2ae44c37e6049cb727459d987c134254a59917e:src/workflow/delivery/snapshot.ts` — [{"after":[146,146]}]
+- `b2ae44c37e6049cb727459d987c134254a59917e:src/workflow/delivery/stage.ts` — [{"after":[16,17]},{"after":[39,39]},{"after":[136,136]},{"after":[145,147]},{"after":[192,192]},{"after":[215,215]}]
+- `b2ae44c37e6049cb727459d987c134254a59917e:src/workflow/delivery/types.ts` — [{"after":[14,14]},{"after":[28,33]},{"after":[114,115]},{"after":[146,147]},{"after":[228,228]},{"after":[359,360]}]
+- `9b6fad24535ee3ed03f5392cb339e4e85786f603:src/workflow/delivery/__tests__/gate.test.ts` — [{"after":[118,121]},{"after":[273,273]}]
+- `9b6fad24535ee3ed03f5392cb339e4e85786f603:src/workflow/delivery/gate.ts` — [{"after":[384,384]},{"after":[389,390]},{"after":[393,395]}]
+- `60810876ef31bddda3c0b8180131335493dd8530:src/workflow/delivery/__tests__/gate.test.ts` — [{"after":[121,121]}]
+- `60810876ef31bddda3c0b8180131335493dd8530:src/workflow/delivery/gate.ts` — [{"after":[394,395]}]
+- `8495c443d043658d615edf47ee24e93248425435:src/daemon/__tests__/delivery-handler-contract.test.ts` — [{"after":[18,19]},{"after":[21,21]},{"after":[49,88]}]
+- `8495c443d043658d615edf47ee24e93248425435:src/workflow/convert/__tests__/repair.test.ts` — [{"after":[30,30]},{"after":[181,192]}]
+- `8495c443d043658d615edf47ee24e93248425435:src/workflow/delivery/__tests__/fixtures.ts` — [{"after":[427,427]},{"after":[429,429]}]
+- `8495c443d043658d615edf47ee24e93248425435:src/workflow/delivery/__tests__/fixtures/delivery-snapshot.sample.json` — [{"after":[63,64]},{"after":[206,207]},{"after":[219,220]},{"after":[304,305]},{"after":[360,361]},{"after":[427,428]}]
+- `8495c443d043658d615edf47ee24e93248425435:src/workflow/delivery/__tests__/task-membership.test.ts` — [{"after":[1,146]}]
+- `8495c443d043658d615edf47ee24e93248425435:src/workflow/delivery/gate.ts` — [{"after":[306,306]},{"after":[315,315]},{"after":[397,397]}]
+- `8495c443d043658d615edf47ee24e93248425435:src/workflow/delivery/graph.ts` — [{"after":[20,20]},{"after":[98,101]},{"after":[164,165]},{"after":[183,184]},{"after":[191,191]},{"after":[395,451]},{"after":[453,455]},{"after":[458,469]},{"after":[472,489]},{"after":[493,493]},{"after":[496,496]},{"after":[498,501]}]
+- `8495c443d043658d615edf47ee24e93248425435:src/workflow/delivery/snapshot.ts` — [{"after":[147,148]}]
+- `8495c443d043658d615edf47ee24e93248425435:src/workflow/delivery/types.ts` — [{"after":[116,119]},{"after":[229,230]},{"after":[238,238]},{"after":[367,370]}]
+- `8495c443d043658d615edf47ee24e93248425435:src/workflow/path-scheme.ts` — [{"after":[131,137]}]
+- `1f6edc0a136c23a5b3a93b6aa3e6cc10caa0e20e:src/workflow/delivery/__tests__/graph.test.ts` — [{"after":[11,11]},{"after":[13,13]},{"after":[46,61]}]
+- `1f6edc0a136c23a5b3a93b6aa3e6cc10caa0e20e:src/workflow/delivery/gate.ts` — [{"after":[353,353]}]
+- `1f6edc0a136c23a5b3a93b6aa3e6cc10caa0e20e:src/workflow/delivery/graph.ts` — [{"after":[44,46]},{"after":[132,132]}]
+- `6951de5a0fe470834173a90223bd0ed1502ed61d:vscode-plugin/src/delivery/__tests__/board-details.test.ts` — [{"after":[40,84]}]
+- `6951de5a0fe470834173a90223bd0ed1502ed61d:vscode-plugin/src/delivery/__tests__/board-fixtures.ts` — [{"after":[32,32]}]
+- `6951de5a0fe470834173a90223bd0ed1502ed61d:vscode-plugin/src/delivery/__tests__/board-views.test.ts` — [{"after":[234,250]},{"after":[256,256]}]
+- `6951de5a0fe470834173a90223bd0ed1502ed61d:vscode-plugin/src/delivery/__tests__/delivery-client.test.ts` — [{"after":[16,16]},{"after":[18,19]},{"after":[36,62]}]
+- `6951de5a0fe470834173a90223bd0ed1502ed61d:vscode-plugin/src/delivery/__tests__/labels.test.ts` — [{"after":[18,18]},{"after":[29,29]},{"after":[35,35]},{"after":[38,42]},{"after":[58,58]}]
+- `6951de5a0fe470834173a90223bd0ed1502ed61d:vscode-plugin/src/delivery/board-details.ts` — [{"after":[12,14]},{"after":[21,21]},{"after":[48,50]},{"after":[54,54]},{"after":[64,65]}]
+- `6951de5a0fe470834173a90223bd0ed1502ed61d:vscode-plugin/src/delivery/board-host.ts` — [{"after":[235,235]}]
+- `6951de5a0fe470834173a90223bd0ed1502ed61d:vscode-plugin/src/delivery/board-model.ts` — [{"after":[112,112]}]
+- `6951de5a0fe470834173a90223bd0ed1502ed61d:vscode-plugin/src/delivery/board-protocol.ts` — [{"after":[141,143]}]
+- `6951de5a0fe470834173a90223bd0ed1502ed61d:vscode-plugin/src/delivery/board-views.ts` — [{"after":[83,83]},{"after":[102,111]}]
+- `6951de5a0fe470834173a90223bd0ed1502ed61d:vscode-plugin/src/delivery/delivery-contract.ts` — [{"after":[34,34]},{"after":[57,57]},{"after":[72,72]}]
+- `6951de5a0fe470834173a90223bd0ed1502ed61d:vscode-plugin/src/delivery/labels.ts` — [{"after":[19,19]},{"after":[31,32]},{"after":[84,84]},{"after":[89,95]},{"after":[131,131]},{"after":[146,146]},{"after":[157,170]}]
+- `22726b2d08a0a87d7dd274ec53e36293f9d1eb2d:src/understanding/__tests__/acceptance.test.ts` — [{"after":[28,28]}]
+- `22726b2d08a0a87d7dd274ec53e36293f9d1eb2d:src/workflow/artifact-core/__tests__/lifecycle-members.test.ts` — [{"after":[19,19]},{"after":[21,21]},{"after":[23,23]}]
+- `842760d03a026fd5a96abc8b4223d23612c21deb:src/workflow/artifact-core/sidecar-store.ts` — [{"after":[205,215]}]
+- `842760d03a026fd5a96abc8b4223d23612c21deb:src/workflow/convert/__tests__/repair.test.ts` — [{"after":[193,227]}]
+- `842760d03a026fd5a96abc8b4223d23612c21deb:src/workflow/convert/plan.ts` — [{"after":[32,32]}]
+- `842760d03a026fd5a96abc8b4223d23612c21deb:src/workflow/convert/repair.ts` — [{"after":[19,19]},{"after":[28,28]},{"after":[31,31]},{"after":[53,55]},{"after":[57,57]},{"after":[71,71]},{"after":[73,73]},{"after":[87,87]}]
+- `842760d03a026fd5a96abc8b4223d23612c21deb:src/workflow/convert/story-history.ts` — [{"after":[21,22]},{"after":[58,58]},{"after":[70,70]},{"after":[84,87]},{"after":[94,94]},{"after":[97,97]}]
+- `842760d03a026fd5a96abc8b4223d23612c21deb:src/workflow/convert/types.ts` — [{"after":[28,28]}]
+- `40a183fec43a8074d632b09bd83b297081341048:src/workflow/convert/__tests__/repair-tasks.test.ts` — [{"after":[96,115]}]
+- `40a183fec43a8074d632b09bd83b297081341048:src/workflow/convert/tasks.ts` — [{"after":[173,173]}]
+- `e87668592ef923e3876a12c5a6824e5cb9ada831:src/workflow/convert/__tests__/repair-settle.test.ts` — [{"after":[19,20]},{"after":[51,58]},{"after":[80,80]},{"after":[242,302]}]
+- `e87668592ef923e3876a12c5a6824e5cb9ada831:src/workflow/convert/settle.ts` — [{"after":[43,43]},{"after":[81,85]},{"after":[105,109]},{"after":[120,120]},{"after":[127,129]},{"after":[132,132]},{"after":[139,139]},{"after":[145,145]},{"after":[153,155]},{"after":[163,165]},{"after":[167,174]},{"after":[176,178]},{"after":[181,182]}]
+- `e23b804ed85ec4d7abe5e62ae2229ade9f19e374:src/workflow/delivery/__tests__/task-membership.test.ts` — [{"after":[142,154]}]
+- `e23b804ed85ec4d7abe5e62ae2229ade9f19e374:src/workflow/delivery/graph.ts` — [{"after":[443,444]}]
+- `2a8e3832b2cd630c9803e2db3b372e834ec08784:src/workflow/delivery/__tests__/gate.test.ts` — [{"after":[122,132]}]
+- `2a8e3832b2cd630c9803e2db3b372e834ec08784:src/workflow/delivery/gate.ts` — [{"after":[359,359]},{"after":[376,376]},{"after":[382,388]},{"after":[393,393]},{"after":[397,400]},{"after":[407,407]}]
+- `b4613685c1723573b21f92fbd1931812d91309bb:vscode-plugin/src/delivery/__tests__/board-host.test.ts` — [{"after":[1794,1813]}]
+- `503b242e76c81c6ea7e34c9b89284c96e2fd94b6:src/workflow/convert/__tests__/repair.test.ts` — [{"after":[14,14]},{"after":[208,221]}]
+- `503b242e76c81c6ea7e34c9b89284c96e2fd94b6:src/workflow/convert/repair.ts` — [{"after":[73,75]}]
+- `84aba0da8fc7e1ea11a56e670f5a2d6c7f528055:src/workflow/convert/__tests__/repair-settle.test.ts` — [{"after":[14,14]},{"after":[261,290]}]
+- `84aba0da8fc7e1ea11a56e670f5a2d6c7f528055:src/workflow/convert/settle.ts` — [{"deletionAt":80},{"after":[100,107]},{"after":[135,137]},{"after":[139,139]}]
+- `5f422dfa194f2ddd2e456e773121ecdeaf9af208:src/workflow/delivery/__tests__/gate.test.ts` — [{"after":[133,135]}]
+- `5f422dfa194f2ddd2e456e773121ecdeaf9af208:src/workflow/delivery/gate.ts` — [{"after":[398,400]}]
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/__tests__/repair-settle.test.ts` — [{"after":[289,304]}]
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/settle.ts` — [{"after":[100,100]},{"after":[103,104]}]
+
+### Verified final scope: 92491bba943e2a8212a5ac52407d3e9fdcba9fd3
+
+Projection: 56504efb652d4e33d6ed005ed02c10d48e0341c537c8b8eebaecd8eb94d06700 · attribution: accepted
+
+- `src/workflow/artifact-core/__tests__/completion-evidence.test.ts` (bd129bbab618e7d11b228e607c72694adfb81296) — selected: [{"after":[7,7]},{"after":[163,223]}]
+- `src/workflow/artifact-core/__tests__/completion-holds.test.ts` (a4e396448e24609053cfa1d2f6058bf01d4682a9) — selected: [{"after":[28,28]},{"after":[30,31]},{"after":[33,33]},{"after":[38,38]},{"after":[55,55]},{"deletionAt":26},{"deletionAt":35}]
+- `src/workflow/artifact-core/__tests__/lifecycle-completion.test.ts` (1721a33c3a9f746e92aa6acace2aaa35744ec888) — selected: [{"after":[8,8]},{"after":[16,16]},{"after":[26,26]},{"after":[28,28]},{"after":[30,30]},{"after":[32,32]},{"after":[36,36]},{"after":[47,47]},{"after":[56,56]},{"after":[60,61]},{"after":[75,75]},{"after":[84,84]},{"after":[86,86]},{"after":[102,102]},{"after":[119,119]},{"after":[133,134]},{"after":[156,185]},{"deletionAt":72},{"deletionAt":100},{"deletionAt":112},{"deletionAt":129},{"deletionAt":154}]
+- `src/workflow/artifact-core/__tests__/lifecycle-kit.ts` (48fb128e6dd6d9cb5b03a7bbc5d8b851bce61953) — selected: [{"after":[4,4]},{"after":[17,27]},{"after":[29,32]},{"after":[35,38]}]
+- `src/workflow/artifact-core/__tests__/lifecycle-rollup.test.ts` (8dd5bf6ee7180c232f2a744e0fe322929b65897e) — selected: [{"after":[22,31]},{"after":[33,34]},{"after":[43,43]},{"after":[45,53]},{"after":[72,72]},{"after":[75,75]},{"after":[87,137]},{"deletionAt":68}]
+- `src/workflow/artifact-core/completion-evidence.ts` (aa253967ad80503e631a42ba3e3251f43f580ce5) — selected: [{"after":[11,12]},{"after":[16,16]},{"after":[19,20]},{"after":[47,66]},{"after":[97,107]},{"after":[109,123]}]
+- `src/workflow/artifact-core/lifecycle.ts` (96afa93bcb4ac5ec0cb04f3a974f37269d43cf11) — selected: [{"after":[313,332]},{"after":[357,377]},{"after":[380,382]},{"after":[389,395]},{"after":[399,404]},{"after":[413,413]},{"after":[425,425]}]
+- `src/workflow/tasks/__tests__/task-build-rounds.test.ts` (69751f22d34013e69551e058253218d24f15d158) — selected: [{"after":[21,21]},{"after":[46,48]},{"after":[50,51]},{"after":[53,53]}]
+- `src/workflow/artifact-core/__tests__/completion-evidence.test.ts` (bd129bbab618e7d11b228e607c72694adfb81296) — selected: [{"after":[3,3]},{"after":[8,8]},{"after":[10,12]},{"after":[22,34]},{"after":[37,37]},{"after":[40,41]},{"after":[44,52]},{"after":[55,58]},{"after":[60,75]},{"after":[77,79]},{"after":[81,82]},{"after":[95,161]}]
+- `src/cli/services/workflow.ts` (36c90df0eca2615282c0510977911eb2965f8cd1) — selected: [{"after":[75,76]},{"after":[155,155]},{"after":[163,163]}]
+- `src/daemon/workflow-approve.ts` (dcc90190ad93bec5a7e197417cf473bfc9b8013d) — selected: [{"after":[58,58]}]
+- `src/workflow/__tests__/story-completion.test.ts` (726477fa02bf0faae57b98ae8b39729571abae47) — selected: [{"after":[1,362]}]
+- `src/workflow/artifact-core/__tests__/lifecycle-resignoff.test.ts` (e00c62bb5798dc8d36443e5ea059d9f5d7719b53) — selected: [{"after":[36,37]}]
+- `src/workflow/artifact-core/__tests__/lifecycle-table.test.ts` (f07ddd91cd76396b382d5cf356064f5a94149ea7) — selected: [{"after":[16,16]}]
+- `src/workflow/artifact-core/completion-evidence.ts` (aa253967ad80503e631a42ba3e3251f43f580ce5) — selected: [{"after":[108,108]}]
+- `src/workflow/artifact-core/history.ts` (27b19d336917e8eeb48754ceac7df528287dd38e) — selected: [{"after":[21,21]}]
+- `src/workflow/artifact-core/lifecycle-service.ts` (c1b384b18b73fc6c9d0a0951a98d7605fedeac4c) — selected: [{"after":[17,17]},{"after":[155,155]},{"after":[267,282]}]
+- `src/workflow/artifact-core/lifecycle.ts` (96afa93bcb4ac5ec0cb04f3a974f37269d43cf11) — selected: [{"after":[26,26]},{"after":[52,52]},{"after":[242,247]}]
+- `src/workflow/artifact-core/types.ts` (932f1c619bc40edc92823301f3f50be578184c51) — selected: [{"after":[55,55]}]
+- `src/workflow/gates.ts` (15ed1344a712bee7e874cad8b5d946d825e3d001) — selected: [{"after":[29,30]},{"after":[42,42]},{"after":[693,696]},{"after":[861,861]},{"after":[875,876]},{"after":[935,935]},{"after":[961,980]},{"after":[982,982]},{"after":[984,995]},{"after":[1015,1017]},{"after":[1020,1020]},{"after":[1049,1052]},{"after":[1082,1082]}]
+- `src/daemon/steps/workflow-step/phases/synthesize.ts` (f753386662e466b357a5af15f928730bde429e4e) — selected: [{"after":[25,25]},{"after":[93,93]}]
+- `src/daemon/workflow-rpc.ts` (ee8bcfb054f50eb01f564d94eebeef9b6e68403d) — selected: [{"after":[46,46]},{"after":[349,349]}]
+- `src/workflow/__tests__/workflow-head-lifecycle.test.ts` (e540858836a7c79bc41c1c88e83ca84745fd1d6d) — selected: [{"after":[1,151]}]
+- `src/workflow/artifact-write-inventory.ts` (508bc19017517001e27829a0d8ba10403aa6aeb2) — selected: [{"after":[34,39]},{"after":[53,54]},{"after":[66,67]},{"after":[73,78]},{"after":[86,86]},{"after":[94,94]},{"after":[340,397]}]
+- `src/workflow/storage.ts` (2d3f6de4c1cf96f3c8e6c5d136181163f0231609) — selected: [{"after":[241,259]}]
+- `src/daemon/repo-convert.ts` (e4ab6bc0c339f9329002e1e99f550eba5e8936e8) — selected: [{"after":[19,20]},{"after":[23,23]},{"after":[30,30]},{"after":[35,39]},{"after":[44,44]},{"after":[47,47]}]
+- `src/workflow/artifact-core/repo-lifecycle.ts` (d98717880b9ac4114aff827245bf5fd84370740f) — selected: [{"after":[19,19]},{"after":[28,49]},{"after":[53,53]}]
+- `src/workflow/artifact-core/store.ts` (6dc046047182874d04ee9305fe7f014cfbd6534a) — selected: [{"after":[51,52]},{"after":[379,379]},{"after":[446,446]}]
+- `src/workflow/convert/__tests__/repair.test.ts` (c87396b031573b26d6680b97576458722864befe) — selected: [{"after":[1,13]},{"after":[15,26]},{"after":[28,29]},{"after":[31,129]},{"after":[242,293]}]
+- `src/workflow/convert/amendments.ts` (5f7363698cef9b5261f2b0414d24c76b54c4724d) — selected: [{"after":[20,20]},{"after":[82,82]},{"after":[84,87]}]
+- `src/workflow/convert/migrated-head.ts` (cc1352e5d0dd4f606b1242313c670f4a459ec7b8) — selected: [{"after":[26,27]},{"after":[90,90]}]
+- `src/workflow/convert/plan.ts` (8a42b3a30d9db3c367da72fdd7ce6713bb072b74) — selected: [{"after":[62,63]},{"after":[127,127]}]
+- `src/workflow/convert/rename.ts` (c9e4db2dbc0036a1b7a63d1dd9491175845813d2) — selected: [{"after":[24,24]},{"after":[52,66]},{"after":[110,110]},{"after":[150,150]},{"after":[158,158]},{"after":[165,165]},{"after":[167,167]},{"after":[170,170]},{"after":[177,178]},{"after":[184,184]}]
+- `src/workflow/convert/repair.ts` (c95406e896b36d8f1ce759380f45399df2d8e906) — selected: [{"after":[1,18]},{"after":[21,22]},{"after":[26,27]},{"after":[36,36]},{"after":[39,49]},{"after":[51,52]},{"after":[59,60]},{"after":[62,64]},{"after":[66,70]},{"after":[72,72]},{"after":[77,79]},{"after":[81,86]},{"after":[91,104]},{"after":[107,111]},{"after":[114,114]},{"after":[116,121]},{"after":[123,124]}]
+- `src/workflow/convert/stamps.ts` (a63a5f78c99dcd3e1c9b62d12b9c07301a5047a3) — selected: [{"after":[18,18]},{"after":[73,73]},{"after":[79,79]}]
+- `src/workflow/convert/types.ts` (6a8d186668f199c37268b0fbc52a9760e68562fd) — selected: [{"after":[141,177]}]
+- `src/workflow/convert/units.ts` (ebe4e652dcdbc997a3b23b85839bda58770254ca) — selected: [{"after":[28,28]},{"after":[117,117]},{"after":[125,125]},{"after":[129,129]},{"after":[151,151]},{"after":[153,153]},{"after":[173,173]},{"after":[179,180]}]
+- `src/workflow/convert/__tests__/repair.test.ts` (c87396b031573b26d6680b97576458722864befe) — selected: [{"after":[130,166]}]
+- `src/workflow/convert/units.ts` (ebe4e652dcdbc997a3b23b85839bda58770254ca) — selected: [{"after":[121,123]},{"after":[138,139]},{"after":[141,142]}]
+- `src/workflow/tracker/binding.ts` (333aef82399f69e45465a97ebb42ba0d82b8e6ca) — selected: [{"after":[90,92]},{"after":[97,97]},{"after":[115,115]},{"after":[126,126]},{"after":[134,134]},{"after":[138,138]},{"after":[143,143]},{"after":[149,149]},{"after":[159,159]}]
+- `src/workflow/convert/__tests__/repair.test.ts` (c87396b031573b26d6680b97576458722864befe) — selected: [{"after":[27,27]},{"after":[167,180]}]
+- `src/workflow/convert/repair.ts` (c95406e896b36d8f1ce759380f45399df2d8e906) — none: []
+- `src/workflow/tasks/task-set.ts` (32d003d82334650a736748b48fb6cf495e682ba9) — selected: [{"after":[27,27]},{"after":[59,60]},{"after":[233,233]},{"after":[238,238]}]
+- `src/workflow/convert/__tests__/repair-tasks.test.ts` (e6f96d610f1f364ad3ccc0f17476bc5bfa799048) — selected: [{"after":[1,13]},{"after":[15,16]},{"after":[17,19]},{"after":[20,21]},{"after":[22,23]},{"after":[25,69]},{"after":[72,95]},{"after":[116,167]},{"after":[175,176]}]
+- `src/workflow/convert/plan.ts` (8a42b3a30d9db3c367da72fdd7ce6713bb072b74) — none: []
+- `src/workflow/convert/repair.ts` (c95406e896b36d8f1ce759380f45399df2d8e906) — selected: [{"after":[23,25]},{"after":[29,30]},{"after":[34,35]},{"after":[37,38]},{"after":[50,50]},{"after":[56,56]},{"after":[58,58]},{"after":[61,61]},{"after":[87,88]},{"after":[112,112]}]
+- `src/workflow/convert/tasks.ts` (71d54b6991ed63f6f1b168de47d1a40614dd290a) — selected: [{"after":[17,19]},{"after":[21,21]},{"after":[25,25]},{"after":[41,41]},{"after":[43,43]},{"after":[51,51]},{"after":[78,113]},{"after":[119,129]},{"after":[144,148]},{"after":[152,152]},{"after":[156,157]},{"after":[160,169]},{"after":[172,172]},{"after":[175,175]},{"after":[188,188]}]
+- `src/workflow/convert/types.ts` (6a8d186668f199c37268b0fbc52a9760e68562fd) — none: []
+- `src/workflow/convert/units.ts` (ebe4e652dcdbc997a3b23b85839bda58770254ca) — selected: [{"after":[50,67]},{"after":[87,87]},{"after":[91,91]},{"after":[93,93]},{"after":[97,97]},{"after":[108,108]},{"after":[158,158]},{"after":[170,170]}]
+- `src/workflow/tasks/task-set.ts` (32d003d82334650a736748b48fb6cf495e682ba9) — selected: [{"after":[28,28]},{"after":[63,67]},{"after":[119,119]},{"after":[128,128]},{"after":[163,164]}]
+- `src/workflow/convert/__tests__/repair-tasks.test.ts` (e6f96d610f1f364ad3ccc0f17476bc5bfa799048) — selected: [{"after":[168,174]}]
+- `src/workflow/convert/repair.ts` (c95406e896b36d8f1ce759380f45399df2d8e906) — selected: [{"after":[32,32]}]
+- `src/workflow/convert/tasks.ts` (71d54b6991ed63f6f1b168de47d1a40614dd290a) — selected: [{"after":[134,135]},{"after":[137,138]},{"after":[142,143]}]
+- `src/workflow/artifact-core/lifecycle-service.ts` (c1b384b18b73fc6c9d0a0951a98d7605fedeac4c) — selected: [{"after":[260,266]}]
+- `src/workflow/convert/__tests__/repair-kit.ts` (c9a8a15e5c8dce5e80dbc6c602b165594ac9a390) — selected: [{"after":[1,68]}]
+- `src/workflow/convert/__tests__/repair-settle.test.ts` (484a14fe91a937b57986222e042ffdf78c40ceec) — selected: [{"after":[1,13]},{"after":[15,18]},{"after":[21,50]},{"after":[59,79]},{"after":[81,241]},{"after":[349,361]}]
+- `src/workflow/convert/__tests__/repair-tasks.test.ts` (e6f96d610f1f364ad3ccc0f17476bc5bfa799048) — selected: [{"after":[14,14]},{"after":[24,24]},{"after":[70,71]},{"deletionAt":16},{"deletionAt":19},{"deletionAt":21}]
+- `src/workflow/convert/plan.ts` (8a42b3a30d9db3c367da72fdd7ce6713bb072b74) — selected: [{"after":[33,33]}]
+- `src/workflow/convert/repair.ts` (c95406e896b36d8f1ce759380f45399df2d8e906) — selected: [{"after":[20,20]},{"after":[33,34]},{"after":[65,65]},{"after":[76,76]},{"after":[80,80]},{"after":[90,90]},{"after":[105,106]},{"after":[113,113]},{"after":[115,115]},{"after":[122,122]}]
+- `src/workflow/convert/settle.ts` (f19f27e6413cd2ebd6380500f6175b29b2567ce4) — selected: [{"after":[1,42]},{"after":[44,99]},{"after":[114,123]},{"after":[125,130]},{"after":[134,135]},{"after":[139,139]},{"after":[141,144]},{"after":[146,150]},{"after":[152,158]},{"after":[162,168]},{"after":[172,172]},{"after":[181,181]},{"after":[185,186]},{"after":[189,189]}]
+- `src/workflow/convert/tasks.ts` (71d54b6991ed63f6f1b168de47d1a40614dd290a) — selected: [{"after":[35,35]},{"after":[47,47]},{"after":[59,59]},{"after":[130,133]},{"after":[136,136]},{"after":[139,141]}]
+- `src/workflow/convert/types.ts` (6a8d186668f199c37268b0fbc52a9760e68562fd) — selected: [{"after":[29,29]}]
+- `src/workflow/convert/units.ts` (ebe4e652dcdbc997a3b23b85839bda58770254ca) — selected: [{"after":[88,88]},{"after":[100,100]},{"after":[106,107]}]
+- `src/workflow/delivery/__tests__/handlers.test.ts` (eb4a9c94363013122a477b33b40e02747d222a59) — selected: [{"after":[43,67]}]
+- `src/workflow/delivery/__tests__/load.test.ts` (67262f8e26c55aa13c29771ddd61e93af6dcfd16) — selected: [{"after":[175,200]},{"after":[223,223]}]
+- `src/workflow/delivery/handlers.ts` (f9fce5cfea45e12e4c31dd3020e174a8d5de090e) — selected: [{"after":[30,30]},{"after":[45,50]},{"after":[116,116]}]
+- `src/workflow/delivery/load.ts` (5cce914e8f2833bb35094ad155fdeed1f6987087) — selected: [{"after":[37,37]},{"after":[59,60]},{"after":[62,62]}]
+- `src/workflow/delivery/types.ts` (182bc628d666307a89eb07ce089ed73d6b91c18f) — selected: [{"after":[26,26]},{"after":[34,35]},{"after":[205,205]},{"after":[276,276]},{"after":[306,306]}]
+- `src/workflow/delivery/__tests__/fixtures.ts` (4ce88a9dbb1647ae530022f8806a617f85ab55c4) — selected: [{"after":[424,426]},{"after":[428,428]},{"after":[430,460]}]
+- `src/workflow/delivery/__tests__/fixtures/delivery-snapshot.sample.json` (5094242fd6d564ee2d2ab4a6c4daedbee0fd0f23) — selected: [{"after":[62,62]},{"after":[89,98]},{"after":[103,104]},{"after":[130,130]},{"after":[133,133]},{"after":[218,218]},{"after":[224,233]},{"after":[247,250]},{"after":[303,303]},{"after":[359,359]},{"after":[364,375]},{"after":[378,379]},{"after":[426,426]},{"after":[485,486]},{"after":[488,488]}]
+- `src/workflow/delivery/__tests__/gate.test.ts` (646e6c5806460709d1d0d7cda7d69aac5906abb6) — selected: [{"after":[37,37]},{"after":[48,48]},{"after":[87,117]},{"after":[136,142]},{"after":[154,154]},{"after":[311,311]},{"after":[403,403]}]
+- `src/workflow/delivery/__tests__/graph.test.ts` (e1fb34637df46aff3d523f6832b3cbcf0ad96fb6) — selected: [{"after":[27,27]},{"after":[62,83]}]
+- `src/workflow/delivery/__tests__/notice.test.ts` (8cb75fe3570a60b2fb4de87bee11cc8b2c90ed99) — selected: [{"after":[14,14]},{"after":[16,17]}]
+- `src/workflow/delivery/__tests__/snapshot.test.ts` (b004115e942bd309182d9946d2bb6edde1f88f34) — selected: [{"after":[32,32]},{"after":[38,39]},{"after":[47,47]},{"after":[82,82]}]
+- `src/workflow/delivery/__tests__/stage.test.ts` (32bda0ce2d51609d7ef12b656ddff2812889b2ad) — selected: [{"after":[24,24]},{"after":[76,93]},{"after":[96,96]},{"after":[99,99]},{"after":[167,167]},{"after":[244,244]}]
+- `src/workflow/delivery/gate.ts` (606527422a51a3455dc01a0f8746ab17d4ff55da) — selected: [{"after":[220,220]},{"after":[360,360]},{"after":[377,381]},{"after":[389,390]},{"after":[392,392]},{"after":[394,395]},{"after":[403,404]},{"after":[410,412]}]
+- `src/workflow/delivery/graph.ts` (c9fb0b04cb19425e026c7c3e9ccfe9e2b36a6b38) — selected: [{"after":[28,28]},{"after":[31,31]},{"after":[131,131]},{"after":[133,144]},{"after":[166,166]},{"after":[185,185]},{"after":[222,222]},{"after":[259,259]},{"after":[261,261]},{"after":[268,268]},{"after":[349,349]},{"after":[351,351]},{"after":[375,375]},{"after":[461,461]}]
+- `src/workflow/delivery/notice.ts` (ed7e3ac48bab27bc4a91c20b90cc71d89de74657) — selected: [{"after":[30,30]}]
+- `src/workflow/delivery/snapshot.ts` (74391b9f1abd69fed339e7a942322c95281f639b) — selected: [{"after":[146,146]}]
+- `src/workflow/delivery/stage.ts` (28357728e51e94873e18d9d28e294f88a9fc9500) — selected: [{"after":[16,17]},{"after":[39,39]},{"after":[136,136]},{"after":[145,147]},{"after":[192,192]},{"after":[215,215]}]
+- `src/workflow/delivery/types.ts` (182bc628d666307a89eb07ce089ed73d6b91c18f) — selected: [{"after":[14,14]},{"after":[28,33]},{"after":[114,115]},{"after":[150,151]},{"after":[234,234]},{"after":[365,366]}]
+- `src/workflow/delivery/__tests__/gate.test.ts` (646e6c5806460709d1d0d7cda7d69aac5906abb6) — selected: [{"after":[118,120]},{"after":[287,287]}]
+- `src/workflow/delivery/gate.ts` (606527422a51a3455dc01a0f8746ab17d4ff55da) — selected: [{"after":[391,391]},{"after":[396,396]},{"after":[405,405]},{"after":[408,408]}]
+- `src/workflow/delivery/__tests__/gate.test.ts` (646e6c5806460709d1d0d7cda7d69aac5906abb6) — selected: [{"after":[121,121]}]
+- `src/workflow/delivery/gate.ts` (606527422a51a3455dc01a0f8746ab17d4ff55da) — selected: [{"after":[406,407]}]
+- `src/daemon/__tests__/delivery-handler-contract.test.ts` (ba95758ec9237c93071b0955e583009f1a767c26) — selected: [{"after":[18,19]},{"after":[21,21]},{"after":[49,88]}]
+- `src/workflow/convert/__tests__/repair.test.ts` (c87396b031573b26d6680b97576458722864befe) — selected: [{"after":[30,30]},{"after":[181,192]}]
+- `src/workflow/delivery/__tests__/fixtures.ts` (4ce88a9dbb1647ae530022f8806a617f85ab55c4) — selected: [{"after":[427,427]},{"after":[429,429]}]
+- `src/workflow/delivery/__tests__/fixtures/delivery-snapshot.sample.json` (5094242fd6d564ee2d2ab4a6c4daedbee0fd0f23) — selected: [{"after":[63,64]},{"after":[206,207]},{"after":[219,220]},{"after":[304,305]},{"after":[360,361]},{"after":[427,428]}]
+- `src/workflow/delivery/__tests__/task-membership.test.ts` (86b2d60e0c3426bc602a24bcfa29b624e2cb6cfe) — selected: [{"after":[1,141]},{"after":[155,159]}]
+- `src/workflow/delivery/gate.ts` (606527422a51a3455dc01a0f8746ab17d4ff55da) — selected: [{"after":[306,306]},{"after":[315,315]}]
+- `src/workflow/delivery/graph.ts` (c9fb0b04cb19425e026c7c3e9ccfe9e2b36a6b38) — selected: [{"after":[20,20]},{"after":[101,104]},{"after":[167,168]},{"after":[186,187]},{"after":[194,194]},{"after":[398,442]},{"after":[445,455]},{"after":[457,459]},{"after":[462,473]},{"after":[476,493]},{"after":[497,497]},{"after":[500,500]},{"after":[502,505]}]
+- `src/workflow/delivery/snapshot.ts` (74391b9f1abd69fed339e7a942322c95281f639b) — selected: [{"after":[147,148]}]
+- `src/workflow/delivery/types.ts` (182bc628d666307a89eb07ce089ed73d6b91c18f) — selected: [{"after":[116,119]},{"after":[229,230]},{"after":[238,238]},{"after":[367,370]}]
+- `src/workflow/path-scheme.ts` (67d1d8cc624e72b547e6a1260d8cbe0baa2aed76) — selected: [{"after":[131,137]}]
+- `src/workflow/delivery/__tests__/graph.test.ts` (e1fb34637df46aff3d523f6832b3cbcf0ad96fb6) — selected: [{"after":[11,11]},{"after":[13,13]},{"after":[46,61]}]
+- `src/workflow/delivery/gate.ts` (606527422a51a3455dc01a0f8746ab17d4ff55da) — selected: [{"after":[353,353]}]
+- `src/workflow/delivery/graph.ts` (c9fb0b04cb19425e026c7c3e9ccfe9e2b36a6b38) — selected: [{"after":[44,46]},{"after":[132,132]}]
+- `vscode-plugin/src/delivery/__tests__/board-details.test.ts` (7ae74426ac9d5ff5b90fd71b97a239dcd345e466) — selected: [{"after":[40,84]}]
+- `vscode-plugin/src/delivery/__tests__/board-fixtures.ts` (927d455c2019828eb6872840dbed956dedb7305e) — selected: [{"after":[32,32]}]
+- `vscode-plugin/src/delivery/__tests__/board-views.test.ts` (0452db40681fe9daef0fbe3479d0bbc0114f8375) — selected: [{"after":[234,250]},{"after":[256,256]}]
+- `vscode-plugin/src/delivery/__tests__/delivery-client.test.ts` (cf76de98a0c7778c58f8190610a8135a0f627044) — selected: [{"after":[16,16]},{"after":[18,19]},{"after":[36,62]}]
+- `vscode-plugin/src/delivery/__tests__/labels.test.ts` (d95207e5621e4e00581989e7390e031c783dc6c1) — selected: [{"after":[18,18]},{"after":[29,29]},{"after":[35,35]},{"after":[38,42]},{"after":[58,58]}]
+- `vscode-plugin/src/delivery/board-details.ts` (f49183bf48b86424297388c1431b8d4c936e4700) — selected: [{"after":[12,14]},{"after":[21,21]},{"after":[48,50]},{"after":[54,54]},{"after":[64,65]}]
+- `vscode-plugin/src/delivery/board-host.ts` (d4a2fd682c9036c8e7f97bce637c34c6b0da76a8) — selected: [{"after":[235,235]}]
+- `vscode-plugin/src/delivery/board-model.ts` (e921e136779cb02715a738b34d0d36a346adc4eb) — selected: [{"after":[112,112]}]
+- `vscode-plugin/src/delivery/board-protocol.ts` (0630f2901e92e5e962546dd47dae02390fa8e01d) — selected: [{"after":[141,143]}]
+- `vscode-plugin/src/delivery/board-views.ts` (ff41f91c1d2d9419487a8d284c07baaa5bcd25b6) — selected: [{"after":[83,83]},{"after":[102,111]}]
+- `vscode-plugin/src/delivery/delivery-contract.ts` (6ceee37a70793ac4cfb84c775a2fdce8eae10a10) — selected: [{"after":[34,34]},{"after":[57,57]},{"after":[72,72]}]
+- `vscode-plugin/src/delivery/labels.ts` (4273ad3dfabc34096fb728dd484163ab3645df9f) — selected: [{"after":[19,19]},{"after":[31,32]},{"after":[84,84]},{"after":[89,95]},{"after":[131,131]},{"after":[146,146]},{"after":[157,170]}]
+- `src/understanding/__tests__/acceptance.test.ts` (5946c74fbcf09dd56925241361d14773c91aa9e9) — selected: [{"after":[28,28]}]
+- `src/workflow/artifact-core/__tests__/lifecycle-members.test.ts` (c41ddabe0ccdb09002bbb382c558ba8945ad3263) — selected: [{"after":[19,19]},{"after":[21,21]},{"after":[23,23]}]
+- `src/workflow/artifact-core/sidecar-store.ts` (4f52af66a5e56704135b06f7a1460841d21ea071) — selected: [{"after":[205,215]}]
+- `src/workflow/convert/__tests__/repair.test.ts` (c87396b031573b26d6680b97576458722864befe) — selected: [{"after":[193,207]},{"after":[222,241]}]
+- `src/workflow/convert/plan.ts` (8a42b3a30d9db3c367da72fdd7ce6713bb072b74) — selected: [{"after":[32,32]}]
+- `src/workflow/convert/repair.ts` (c95406e896b36d8f1ce759380f45399df2d8e906) — selected: [{"after":[19,19]},{"after":[28,28]},{"after":[31,31]},{"after":[53,55]},{"after":[57,57]},{"after":[71,71]},{"after":[89,89]}]
+- `src/workflow/convert/story-history.ts` (db50b7b02aa58b1e25e48d855309b8812c3d7079) — selected: [{"after":[21,22]},{"after":[58,58]},{"after":[70,70]},{"after":[84,87]},{"after":[94,94]},{"after":[97,97]}]
+- `src/workflow/convert/types.ts` (6a8d186668f199c37268b0fbc52a9760e68562fd) — selected: [{"after":[28,28]}]
+- `src/workflow/convert/__tests__/repair-tasks.test.ts` (e6f96d610f1f364ad3ccc0f17476bc5bfa799048) — selected: [{"after":[96,115]}]
+- `src/workflow/convert/tasks.ts` (71d54b6991ed63f6f1b168de47d1a40614dd290a) — selected: [{"after":[173,173]}]
+- `src/workflow/convert/__tests__/repair-settle.test.ts` (484a14fe91a937b57986222e042ffdf78c40ceec) — selected: [{"after":[19,20]},{"after":[51,58]},{"after":[80,80]},{"after":[242,260]},{"after":[307,348]}]
+- `src/workflow/convert/settle.ts` (f19f27e6413cd2ebd6380500f6175b29b2567ce4) — selected: [{"after":[43,43]},{"after":[109,113]},{"after":[124,124]},{"after":[131,133]},{"after":[145,145]},{"after":[151,151]},{"after":[159,161]},{"after":[169,171]},{"after":[173,180]},{"after":[182,184]},{"after":[187,188]}]
+- `src/workflow/delivery/__tests__/task-membership.test.ts` (86b2d60e0c3426bc602a24bcfa29b624e2cb6cfe) — selected: [{"after":[142,154]}]
+- `src/workflow/delivery/graph.ts` (c9fb0b04cb19425e026c7c3e9ccfe9e2b36a6b38) — selected: [{"after":[443,444]}]
+- `src/workflow/delivery/__tests__/gate.test.ts` (646e6c5806460709d1d0d7cda7d69aac5906abb6) — selected: [{"after":[122,132]}]
+- `src/workflow/delivery/gate.ts` (606527422a51a3455dc01a0f8746ab17d4ff55da) — selected: [{"after":[359,359]},{"after":[376,376]},{"after":[382,388]},{"after":[393,393]},{"after":[397,397]},{"after":[401,402]},{"after":[409,409]}]
+- `vscode-plugin/src/delivery/__tests__/board-host.test.ts` (925f8281109fa0e938ef99c0e07de1930fe40413) — selected: [{"after":[1794,1813]}]
+- `src/workflow/convert/__tests__/repair.test.ts` (c87396b031573b26d6680b97576458722864befe) — selected: [{"after":[14,14]},{"after":[208,221]}]
+- `src/workflow/convert/repair.ts` (c95406e896b36d8f1ce759380f45399df2d8e906) — selected: [{"after":[73,75]}]
+- `src/workflow/convert/__tests__/repair-settle.test.ts` (484a14fe91a937b57986222e042ffdf78c40ceec) — selected: [{"after":[14,14]},{"after":[261,288]},{"after":[305,306]}]
+- `src/workflow/convert/settle.ts` (f19f27e6413cd2ebd6380500f6175b29b2567ce4) — selected: [{"after":[101,102]},{"after":[105,108]},{"after":[136,138]},{"after":[140,140]},{"deletionAt":80}]
+- `src/workflow/delivery/__tests__/gate.test.ts` (646e6c5806460709d1d0d7cda7d69aac5906abb6) — selected: [{"after":[133,135]}]
+- `src/workflow/delivery/gate.ts` (606527422a51a3455dc01a0f8746ab17d4ff55da) — selected: [{"after":[398,400]}]
+- `src/workflow/convert/__tests__/repair-settle.test.ts` (484a14fe91a937b57986222e042ffdf78c40ceec) — selected: [{"after":[289,304]}]
+- `src/workflow/convert/settle.ts` (f19f27e6413cd2ebd6380500f6175b29b2567ce4) — selected: [{"after":[100,100]},{"after":[103,104]}]
+- Task t1: reassess; changes 0, 1, 2, 3, 4, 5, 6, 7, 8, 14, 111; identity f02d6557bbe75308406b5f4d06a676be2ed23673c94cfa944a37705300e0dec3
+- Task t2: reassess; changes 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19; identity 883cf29923ec7b50fc04f2b23fec7fbda2333ecf120c6998059403f9721410c8
+- Task t3: reassess; changes 20, 21, 22, 23, 24; identity 82de8665409bc49b21c8ec47644b709bbf4fdff928aad0a9388b161227b17830
+- Task t4: reassess; changes 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 45, 48, 51, 58, 62, 112, 113, 114, 115, 116, 117, 127, 128; identity 1ba1e9878cc7970a449f6af0c50c335a821662b18550486ce4d565415bd877d9
+- Task t5: reassess; changes 26, 27, 40, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 54, 56, 57, 58, 60, 61, 62, 113, 114, 115, 116, 117, 118, 119, 127, 128; identity d1ba43d23f6bc475ad982a1fc364c649ec057fedf2c9b41553e304448c5bf35c
+- Task t6: reassess; changes 26, 27, 35, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 112, 114, 115, 117, 120, 121, 127, 128, 129, 130, 133, 134; identity 9716c59814a0ac65749a1d88dc94a83e83eb8d235654f8c7eaece065f0c9d88b
+- Task t7: reassess; changes 63, 64, 65, 66, 67, 86, 95, 96, 97; identity f8551ac18625233e164f9bc144512cc8215d41f2f324d5f0302e004611c2ae91
+- Task t8: reassess; changes 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 90, 91, 97, 110, 122, 123, 124, 125, 131, 132; identity 4a2756a41a2d803ffe076107698994a2cdcd3e6f86a3701e984bd46504bba28f
+- Task t9: reassess; changes 68, 81, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 122, 123, 124, 125, 131, 132; identity f46daa166a66be838c8fd15712fbf73402d5be79af3400a0078816d5a11bb613
+- Task t10: reassess; changes 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 126; identity ff5ee1cd7fa3871ef64354438a6f6a99dfcff8cbdbed30dca88d6df0e38b6665
+
+Reassess all ten tasks against the pinned LLD and Plan. Attempt 4 failed, so its results remain unresolved. Attribution covers all 135 changes and all 20 supplied tests; shared evidence is assigned to each applicable task. No code findings are produced.
+
+### t1: passed
+
+Reassessed the submitted Story completion and cascade changes at 92491bba against the pinned LLD, plan, and all four t1 acceptance checks. No blocking implementation or test-coverage defects found.
+
+Coverage: **verified** — Inspected the committed implementation and test bodies/assertions for approval and review gates, Task-set and latest-round holds, missing Task heads, override behavior, declared Story settlement before Epic completion, and Story-owned Task cascading. Tests also check that a held Story leaves Tasks unchanged and that reopening affects only Tasks the Story froze. Coverage review is complete; this does not claim independent test execution.
+
+
+Optional verification and advice (nonblocking):
+
+- Optional execution: I did not run tests, integration checks, typecheck, or build. Builder-reported results were not treated as reviewer executions; the reported story-completion run is from 22726b2d08a0, while the repair-settlement regression run is reported at 92491bba9.
+
+Inspected references:
+
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:docs/standalone/make-delivery-board-read-common-artifact-E20261109eedc4519/S001/LLD.md`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:docs/standalone/make-delivery-board-read-common-artifact-E20261109eedc4519/S001/PLAN.md`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/artifact-core/completion-evidence.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/artifact-core/lifecycle.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/settle.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/artifact-core/__tests__/completion-evidence.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/artifact-core/__tests__/completion-holds.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/artifact-core/__tests__/lifecycle-completion.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/artifact-core/__tests__/lifecycle-rollup.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/tasks/__tests__/task-build-rounds.test.ts`
+
+### t2: passed
+
+Reassessed the pinned approval and completion implementation against the LLD, plan, and all four acceptance checks. No blocking defects found.
+
+Coverage: **verified** — Inspected test bodies and assertions for override persistence and audit logging, Story/Task/Epic completion, held and failed walks, stored-override retries, draft revision gating, signoff holds, daemon/CLI outcome forwarding, latest-round evidence, missing or incomplete Task sets, stale plan revisions, lifecycle transitions, and repair settlement including the unmigrated Task regression. The coverage review is complete; this does not establish independent test execution.
+
+
+Optional verification and advice (nonblocking):
+
+- Optional execution: I did not run tests, typechecking, or builds. The supplied builder reports include runs at the pin for repair settlement and earlier-pin runs for the approval and evidence suites; I did not independently verify those execution results.
+- Nearby TypeScript naming and responsibility patterns are consistent with this change, including `approveOutcomeOf`, `storyTaskHolds`, and `completeIfRolledUp`.
+
+Inspected references:
+
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:docs/standalone/make-delivery-board-read-common-artifact-E20261109eedc4519/S001/LLD.md`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:docs/standalone/make-delivery-board-read-common-artifact-E20261109eedc4519/S001/PLAN.md`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/gates.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/artifact-core/lifecycle.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/artifact-core/lifecycle-service.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/artifact-core/completion-evidence.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/daemon/workflow-approve.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/cli/services/workflow.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/__tests__/story-completion.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/artifact-core/__tests__/completion-evidence.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/artifact-core/__tests__/lifecycle-resignoff.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/artifact-core/__tests__/lifecycle-table.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/__tests__/repair-settle.test.ts`
+
+### t3: passed
+
+Reviewed all five submitted changed modules at 92491bba943e2a8212a5ac52407d3e9fdcba9fd3 against the pinned LLD, Plan and all three acceptance checks. Lifecycle initialization, unchanged-content preservation and changed-content reset with retained Signoff entries satisfy the requirements. No material defects found.
+
+Coverage: **verified** — Inspected the submitted lifecycle test bodies and assertions, including first and legacy writes, unchanged and changed rewrites with and without Signoff entries, and both production first-write paths. Inspected the lifecycle inventory guard’s implementation, negative and positive controls, and the inventory scanner tests that check production writer files and classifications. The guard is source-pattern based, so it does not prove runtime behavior or catch every future syntactic variation; this is an optional strengthening opportunity, not a demonstrated failure of the current acceptance checks.
+
+
+Optional verification and advice (nonblocking):
+
+- Optional execution: Tests, typecheck and build were not run by the reviewer. The builder reports three passing cases for this test file at 22726b2d08a0; that is not a reviewer execution.
+- Consider tightening the guard’s `carried` and `store-first` checks to tie the matched lifecycle or store call to the specific writer, since the current checks rely on source patterns.
+
+Inspected references:
+
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:docs/standalone/make-delivery-board-read-common-artifact-E20261109eedc4519/S001/LLD.md`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:docs/standalone/make-delivery-board-read-common-artifact-E20261109eedc4519/S001/PLAN.md`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/daemon/steps/workflow-step/phases/synthesize.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/daemon/workflow-rpc.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/storage.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/artifact-write-inventory.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/__tests__/workflow-head-lifecycle.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/__tests__/artifact-write-inventory.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/artifact-core/lifecycle.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/artifact-core/decode.ts`
+
+### t4: changes_requested
+
+Completed the reassessment of the pinned repair implementation, requirements, acceptance checks, and relevant test assertions. The added Task migration check is covered; one reporting defect remains for repository-rule writes.
+
+Coverage: **verified** — Inspected the repair, repair-tasks, and repair-settle test bodies and assertions, including the replacement witnesses for exact write reporting, repository-rule failures, standalone Story history, and the newly added Task-without-lifecycle preview case. Coverage was checked against the repair requirements and acceptance checks for preview immutability, ordered steps, schema-marker preservation, failures and recovery, nested commits, missing units and Tasks, settlement eligibility, and problem-plan refusal. The repository-rule tests demonstrate successful and failed writes but do not check their reported step, as described in the finding. Assessment is complete; it does not imply reviewer execution.
+
+- **MED** `src/workflow/convert/repair.ts:110-111`: Repository-rule writes are reported under the wrong repair step.
+  repairDeps opens the lifecycle store and records repository-rule writes before the step loop updates current. Since current is initialized to 'rename', these writes appear as rename actions even though the plan lists them as repo-rules changes. The report therefore misattributes a committed write, weakening its step-by-step accuracy. The repository-rule tests check the action and artifact ID but do not assert the step.
+  Evidence: `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/repair.ts`, `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/types.ts`, `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/__tests__/repair.test.ts`, `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:docs/standalone/make-delivery-board-read-common-artifact-E20261109eedc4519/S001/PLAN.md`
+
+Optional verification and advice (nonblocking):
+
+- Optional execution: No tests, integration checks, typechecks, or builds were run by the reviewer. Builder-reported test runs were not independently reproduced; the repair-tasks result cited in the task input targets an earlier commit.
+
+Inspected references:
+
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:docs/standalone/make-delivery-board-read-common-artifact-E20261109eedc4519/S001/LLD.md`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:docs/standalone/make-delivery-board-read-common-artifact-E20261109eedc4519/S001/PLAN.md`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/daemon/repo-convert.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/repair.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/settle.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/types.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/plan.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/units.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/story-history.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/artifact-core/repo-lifecycle.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/artifact-core/sidecar-store.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/__tests__/repair.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/__tests__/repair-tasks.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/__tests__/repair-settle.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/__tests__/legacy-repo.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/__tests__/repair-kit.ts`
+
+### t5: passed
+
+Reassessed the pinned repair implementation against the t5 requirements, design contracts, and acceptance checks. Task creation, row-based BUILD attribution, active replacement selection, and reporting of unusable Task sets are supported by the inspected code and regression assertions. No blocking findings remain.
+
+Coverage: **verified** — Inspected the repair Task test bodies and assertions, plus related repair and settlement coverage. Tests exercise missing unit and Task creation on schema version 2, eligibility of later PLAN statuses, completion of a partial Task set, crossed Task numbers and plan rows, preservation of existing rounds, attribution to an active replacement Task, reporting of missing listed heads and plan-revision mismatches, and continued processing of other Stories. The repository-rule write-failure regression also checks that only committed changes are reported. Builder-reported Task test execution is from an earlier pin and does not establish execution of the reviewed revision.
+
+
+Optional verification and advice (nonblocking):
+
+- Optional execution: Tests, typechecks, and builds were not run by this reviewer. Builder-reported results for repair-settle and repair.test are reported at earlier pins; the repair-tasks result is also from an earlier pin, so none establish execution of the reviewed commit.
+
+Inspected references:
+
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:docs/standalone/make-delivery-board-read-common-artifact-E20261109eedc4519/S001/LLD.md`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:docs/standalone/make-delivery-board-read-common-artifact-E20261109eedc4519/S001/PLAN.md`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/tasks.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/repair.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/tasks/task-set.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/__tests__/repair-tasks.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/__tests__/repair-kit.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/__tests__/repair.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/__tests__/repair-settle.test.ts`
+
+Test: `npx tsx --test --test-force-exit --test-timeout=120000 --test-reporter=tap src/workflow/convert/__tests__/repair-settle.test.ts` — pass
+Builder-reported at pin 92491bba9 on Node 22; not independently run by this reviewer.
+
+Test: `npx tsx --test --test-force-exit --test-timeout=120000 --test-reporter=tap src/workflow/convert/__tests__/repair-tasks.test.ts` — pass
+Builder-reported at earlier pin b4613685c172 on Node 22; this result does not establish execution at reviewed pin 92491bba9.
+
+Test: `npx tsx --test --test-force-exit --test-timeout=120000 --test-reporter=tap src/workflow/convert/__tests__/repair.test.ts` — pass
+Builder-reported at earlier pin 5f422dfa194f on Node 22; this result does not establish execution at reviewed pin 92491bba9.
+
+### t6: passed
+
+Reassessed the pinned changes, requirements, acceptance checks, and relevant test assertions. The prior settlement findings are addressed, including the unmigrated Task lifecycle case.
+
+Coverage: **verified** — Reviewed the settlement, repair, and Task test bodies and assertions against the four acceptance checks and the LLD repair and settlement requirements. Coverage includes approvals before and at/after the cutoff, stored overrides, held outcomes, partial failures and completedMembers, retry behavior, preview-to-write correspondence, Task and Epic settlement, and repeat-run idempotence. The added regression removes a Task lifecycle and asserts that preview proposes settlement, repair completes the Story after migration, and the next preview has no settlement change. This verifies the coverage assessment, not independent test execution.
+
+
+Optional verification and advice (nonblocking):
+
+- Optional execution: I did not run tests, integration checks, typecheck, or build. The supplied passing results are builder-reported; the settlement suite is reported at the reviewed pin, while the Task and repair suite reports are from earlier revisions. No naming, separation-of-concerns, state ownership, encapsulation, readability, or compatibility issue was identified in the reviewed scope.
+
+Inspected references:
+
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/settle.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/repair.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/tasks.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/plan.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/types.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/artifact-core/repo-lifecycle.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/artifact-core/store.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/artifact-core/lifecycle-service.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/artifact-core/sidecar-store.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/__tests__/repair-kit.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/__tests__/repair-settle.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/__tests__/repair-tasks.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/__tests__/repair.test.ts`
+
+### t7: passed
+
+Reassessed the pinned implementation at 92491bba943e2a8212a5ac52407d3e9fdcba9fd3 against the pinned LLD, PLAN and all three t7 acceptance checks. The common artifact kinds load while TESTS remains excluded; absent lifecycle data is reported as unmigrated; and TASK/DIAG evidence IDs are accepted with malformed IDs and paths escaping the store rejected. DIAG evidence is grouped by the Story in its ID and does not trigger pending-decision. No blocking defects found.
+
+Coverage: **verified** — Inspected the relevant test bodies and assertions at the pinned commit. Loader tests cover the newly admitted EPIC, STORY, TASK, TASKS and DIAG kinds, TESTS exclusion, and unmigrated approval even when legacy approval stamps exist. Evidence tests exercise TASK and sequenced DIAG reads, one-suffix and uppercase legacy IDs, malformed IDs, and symlink containment. Graph tests assert DIAG Story grouping and exclusion from pending-decision. The plugin test covers the new unit/row fields and opening a sequenced DIAG evidence row. Coverage review is complete; this assessment does not claim test execution.
+
+
+Optional verification and advice (nonblocking):
+
+- Optional execution: I did not run tests, integration checks, typecheck or build. Supplied builder-reported passes are from other pins (5f422dfa194f or 22726b2d08a0), so I did not treat them as execution evidence for 92491bba.
+
+Inspected references:
+
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:docs/standalone/make-delivery-board-read-common-artifact-E20261109eedc4519/S001/LLD.md`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:docs/standalone/make-delivery-board-read-common-artifact-E20261109eedc4519/S001/PLAN.md`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/delivery/load.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/delivery/handlers.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/delivery/graph.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/delivery/gate.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/delivery/types.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/artifact-ids.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/delivery/__tests__/load.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/delivery/__tests__/handlers.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/delivery/__tests__/graph.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:vscode-plugin/src/delivery/__tests__/delivery-client.test.ts`
+
+### t8: passed
+
+Reassessed the pinned implementation and its requirements, design and acceptance checks. The round-three correction makes repair preview recognize an unmigrated Task head as a reason to defer settlement; the added regression checks both preview and repair behavior. No remaining HIGH or MED defects identified.
+
+Coverage: **verified** — Reviewed the relevant test bodies and assertions against all three acceptance checks and the submitted behavior: unit status and migration notices, Story completion requiring a completed STORY head, Task membership and identity, and settlement during repair. The new repair-settle case removes a Task lifecycle, verifies the Story appears in the preview, then checks repair completes it and a subsequent preview has no settlement left. Compatibility, snapshot propagation, conversion and understanding-engine assertions were also inspected. Verified means the coverage review is complete; tests were not executed by this reviewer.
+
+
+Optional verification and advice (nonblocking):
+
+- Optional execution: No tests, integration checks, typechecks or builds were run by this reviewer. Builder-reported results identify earlier pins (22726b2d08a0, b4613685c172 and 5f422dfa194f), so they do not independently verify the final 92491bba correction.
+
+Inspected references:
+
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:docs/standalone/make-delivery-board-read-common-artifact-E20261109eedc4519/S001/LLD.md`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:docs/standalone/make-delivery-board-read-common-artifact-E20261109eedc4519/S001/PLAN.md`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/settle.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/__tests__/repair-settle.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/delivery/graph.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/delivery/gate.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/delivery/stage.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/delivery/types.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/delivery/snapshot.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/delivery/notice.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/delivery/__tests__/fixtures.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/delivery/__tests__/fixtures/delivery-snapshot.sample.json`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/delivery/__tests__/gate.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/delivery/__tests__/graph.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/delivery/__tests__/stage.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/delivery/__tests__/task-membership.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/delivery/__tests__/snapshot.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/delivery/__tests__/notice.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/delivery/__tests__/load.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/daemon/__tests__/delivery-handler-contract.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/__tests__/repair.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/understanding/__tests__/acceptance.test.ts`
+
+### t9: passed
+
+Completed the reassessment of the pinned implementation against the LLD, PLAN, and all three acceptance checks. The membership fallback, unmatched BUILD handling, collision-free board IDs, and task ordering match the requirements. No material defects found.
+
+Coverage: **verified** — Inspected the relevant test bodies, assertions, and fixtures for TASKS membership and plan-revision fallback; terminal Task exclusion; planRowId and taskOrder; unmatched BUILD results retaining validation and conflicts without needs-migration; board ID collisions and stable IDs; and null-last ordering. Also inspected migration-gate assertions, serialized snapshot contract assertions, and the conversion verifier test. Coverage review is complete; this assessment does not claim independent test execution.
+
+
+Optional verification and advice (nonblocking):
+
+- Optional execution: Tests, integration checks, typecheck, and build were not run independently. Builder-reported test results target earlier revisions (membership at b4613685c172; handler, gate, and conversion at 22726b2d08a0 or 5f422dfa194f), so they do not establish execution of the reviewed 92491bba revision.
+
+Inspected references:
+
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:docs/standalone/make-delivery-board-read-common-artifact-E20261109eedc4519/S001/LLD.md`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:docs/standalone/make-delivery-board-read-common-artifact-E20261109eedc4519/S001/PLAN.md`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/delivery/graph.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/delivery/gate.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/delivery/snapshot.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/delivery/types.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/path-scheme.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/delivery/__tests__/task-membership.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/delivery/__tests__/gate.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/delivery/__tests__/fixtures.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/daemon/__tests__/delivery-handler-contract.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/__tests__/repair.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/verify.ts`
+
+Test: `npx tsx --test --test-force-exit --test-timeout=120000 --test-reporter=tap src/workflow/delivery/__tests__/task-membership.test.ts` — pass
+Builder-reported: 8 cases passed on b4613685c172, Node 22. Not independently run; this is an earlier revision.
+
+Test: `npx tsx --test --test-force-exit --test-timeout=120000 --test-reporter=tap src/workflow/delivery/__tests__/gate.test.ts` — pass
+Builder-reported: 17 cases passed on 5f422dfa194f, Node 22. Not independently run; this is an earlier revision.
+
+Test: `npx tsx --test --test-force-exit --test-timeout=120000 --test-reporter=tap src/daemon/__tests__/delivery-handler-contract.test.ts` — pass
+Builder-reported: 3 cases passed on 22726b2d08a0, Node 22. Not independently run; this is an earlier revision.
+
+Test: `npx tsx --test --test-force-exit --test-timeout=120000 --test-reporter=tap src/workflow/convert/__tests__/repair.test.ts` — pass
+Builder-reported: 12 cases passed on 5f422dfa194f, Node 22. Not independently run; this is an earlier revision.
+
+### t10: passed
+
+Reassessed the selected VS Code delivery changes at 92491bba against the pinned LLD, plan, and all three acceptance checks. No blocking implementation defects found.
+
+Coverage: **verified** — Inspected the relevant test bodies and assertions. Coverage checks snapshot field propagation and DIAG evidence routing; planRowId precedence, null-only sourceIds fallback, dependency joins, received order, and R004 IDs; Epic completion gating and retained child progress; and labels for every UnitStatus. The webview test runs the production BOARD_WEBVIEW_SCRIPT through the fake DOM harness and asserts Completed and Not migrated beside validation results, plus omission when no Task exists. This verifies assertion coverage, not visual browser rendering or test execution.
+
+
+Optional verification and advice (nonblocking):
+
+- Optional execution: No tests, typechecks, builds, or live browser checks were run. The supplied results are builder-reported: board-details, board-views, and delivery-client at 22726b2d08a0; board-host at b4613685c172. They do not establish execution of the reviewed 92491bba pin. Rendering behavior was assessed through source and assertions, without visual browser verification.
+
+Inspected references:
+
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:docs/standalone/make-delivery-board-read-common-artifact-E20261109eedc4519/S001/LLD.md`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:docs/standalone/make-delivery-board-read-common-artifact-E20261109eedc4519/S001/PLAN.md`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:vscode-plugin/src/delivery/board-details.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:vscode-plugin/src/delivery/board-host.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:vscode-plugin/src/delivery/board-model.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:vscode-plugin/src/delivery/board-protocol.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:vscode-plugin/src/delivery/board-views.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:vscode-plugin/src/delivery/delivery-contract.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:vscode-plugin/src/delivery/labels.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:vscode-plugin/src/delivery/__tests__/board-details.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:vscode-plugin/src/delivery/__tests__/board-fixtures.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:vscode-plugin/src/delivery/__tests__/board-views.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:vscode-plugin/src/delivery/__tests__/delivery-client.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:vscode-plugin/src/delivery/__tests__/labels.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:vscode-plugin/src/delivery/__tests__/board-host.test.ts`
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:vscode-plugin/src/delivery/__tests__/board-webview-harness.ts`
+## board-common-model-s1 — attempt 6
+
+Scope: whole story · reviewer: daemon · 2026-11-14T16:25:06.885Z
+
+10 selected task assessment(s): failed. Attribution failure (attribution_failed): attribution: Task scope omits a required replacement witness
+Native output diagnostics: [{"phase":"attribution","provider":"codex","resolved":false,"errors":[{"code":"HOST_VALIDATION_ERROR","field":"attribution","correction":"Correct the host-rejected review field before resubmitting.","occurrences":1}]}]
+
+### Submitted scope
+
+- `e30bbe91d006495df72e215d8494fc1b9a39f6ac:src/workflow/artifact-core/__tests__/completion-evidence.test.ts` — [{"after":[7,7]},{"after":[91,151]}]
+- `e30bbe91d006495df72e215d8494fc1b9a39f6ac:src/workflow/artifact-core/__tests__/completion-holds.test.ts` — [{"deletionAt":26},{"after":[28,28]},{"after":[30,31]},{"after":[33,33]},{"deletionAt":35},{"after":[38,38]},{"after":[55,55]}]
+- `e30bbe91d006495df72e215d8494fc1b9a39f6ac:src/workflow/artifact-core/__tests__/lifecycle-completion.test.ts` — [{"after":[8,8]},{"after":[16,16]},{"after":[26,26]},{"after":[28,28]},{"after":[30,30]},{"after":[32,32]},{"after":[36,36]},{"after":[47,47]},{"after":[56,56]},{"after":[60,61]},{"deletionAt":72},{"after":[75,75]},{"after":[84,84]},{"after":[86,86]},{"deletionAt":100},{"after":[102,102]},{"deletionAt":112},{"after":[119,119]},{"deletionAt":129},{"after":[133,134]},{"deletionAt":154},{"after":[156,185]}]
+- `e30bbe91d006495df72e215d8494fc1b9a39f6ac:src/workflow/artifact-core/__tests__/lifecycle-kit.ts` — [{"after":[4,4]},{"after":[17,27]},{"after":[29,32]},{"after":[35,38]}]
+- `e30bbe91d006495df72e215d8494fc1b9a39f6ac:src/workflow/artifact-core/__tests__/lifecycle-rollup.test.ts` — [{"after":[22,31]},{"after":[33,34]},{"after":[43,43]},{"after":[45,53]},{"deletionAt":68},{"after":[72,72]},{"after":[75,75]},{"after":[87,137]}]
+- `e30bbe91d006495df72e215d8494fc1b9a39f6ac:src/workflow/artifact-core/completion-evidence.ts` — [{"after":[11,12]},{"after":[16,16]},{"after":[19,20]},{"after":[47,66]},{"after":[97,123]}]
+- `e30bbe91d006495df72e215d8494fc1b9a39f6ac:src/workflow/artifact-core/lifecycle.ts` — [{"after":[306,325]},{"after":[350,370]},{"after":[373,375]},{"after":[382,388]},{"after":[392,397]},{"after":[406,406]},{"after":[418,418]}]
+- `e30bbe91d006495df72e215d8494fc1b9a39f6ac:src/workflow/tasks/__tests__/task-build-rounds.test.ts` — [{"after":[21,21]},{"after":[46,48]},{"after":[50,51]},{"after":[53,53]}]
+- `b4e54c873e8b09859938433f67379454fb6c7f15:src/workflow/artifact-core/__tests__/completion-evidence.test.ts` — [{"after":[3,3]},{"after":[8,8]},{"after":[10,12]},{"after":[22,34]},{"after":[37,37]},{"after":[40,41]},{"after":[44,52]},{"after":[55,58]},{"after":[60,75]},{"after":[77,79]},{"after":[81,82]},{"after":[95,161]}]
+- `dd4eefa5957ec753fed7d0d1e66c45fecd34e0f5:src/cli/services/workflow.ts` — [{"after":[75,76]},{"after":[155,155]},{"after":[163,163]}]
+- `dd4eefa5957ec753fed7d0d1e66c45fecd34e0f5:src/daemon/workflow-approve.ts` — [{"after":[58,58]}]
+- `dd4eefa5957ec753fed7d0d1e66c45fecd34e0f5:src/workflow/__tests__/story-completion.test.ts` — [{"after":[1,362]}]
+- `dd4eefa5957ec753fed7d0d1e66c45fecd34e0f5:src/workflow/artifact-core/__tests__/lifecycle-resignoff.test.ts` — [{"after":[36,37]}]
+- `dd4eefa5957ec753fed7d0d1e66c45fecd34e0f5:src/workflow/artifact-core/__tests__/lifecycle-table.test.ts` — [{"after":[16,16]}]
+- `dd4eefa5957ec753fed7d0d1e66c45fecd34e0f5:src/workflow/artifact-core/completion-evidence.ts` — [{"after":[108,108]}]
+- `dd4eefa5957ec753fed7d0d1e66c45fecd34e0f5:src/workflow/artifact-core/history.ts` — [{"after":[21,21]}]
+- `dd4eefa5957ec753fed7d0d1e66c45fecd34e0f5:src/workflow/artifact-core/lifecycle-service.ts` — [{"after":[17,17]},{"after":[155,155]},{"after":[260,275]}]
+- `dd4eefa5957ec753fed7d0d1e66c45fecd34e0f5:src/workflow/artifact-core/lifecycle.ts` — [{"after":[26,26]},{"after":[52,52]},{"after":[242,247]}]
+- `dd4eefa5957ec753fed7d0d1e66c45fecd34e0f5:src/workflow/artifact-core/types.ts` — [{"after":[55,55]}]
+- `dd4eefa5957ec753fed7d0d1e66c45fecd34e0f5:src/workflow/gates.ts` — [{"after":[29,30]},{"after":[42,42]},{"after":[693,696]},{"after":[861,861]},{"after":[875,876]},{"after":[935,935]},{"after":[961,980]},{"after":[982,982]},{"after":[984,995]},{"after":[1015,1017]},{"after":[1020,1020]},{"after":[1049,1052]},{"after":[1082,1082]}]
+- `19b00a12b71e9cea1674531b962f02687442e0df:src/daemon/steps/workflow-step/phases/synthesize.ts` — [{"after":[25,25]},{"after":[93,93]}]
+- `19b00a12b71e9cea1674531b962f02687442e0df:src/daemon/workflow-rpc.ts` — [{"after":[46,46]},{"after":[349,349]}]
+- `19b00a12b71e9cea1674531b962f02687442e0df:src/workflow/__tests__/workflow-head-lifecycle.test.ts` — [{"after":[1,151]}]
+- `19b00a12b71e9cea1674531b962f02687442e0df:src/workflow/artifact-write-inventory.ts` — [{"after":[34,39]},{"after":[53,54]},{"after":[66,67]},{"after":[73,78]},{"after":[86,86]},{"after":[94,94]},{"after":[340,397]}]
+- `19b00a12b71e9cea1674531b962f02687442e0df:src/workflow/storage.ts` — [{"after":[241,259]}]
+- `939183ed684643bdda6b35ffd51afcc29791a4c1:src/daemon/repo-convert.ts` — [{"after":[19,20]},{"after":[23,23]},{"after":[30,30]},{"after":[35,39]},{"after":[44,44]},{"after":[47,47]}]
+- `939183ed684643bdda6b35ffd51afcc29791a4c1:src/workflow/artifact-core/repo-lifecycle.ts` — [{"after":[19,19]},{"after":[28,49]},{"after":[53,53]}]
+- `939183ed684643bdda6b35ffd51afcc29791a4c1:src/workflow/artifact-core/store.ts` — [{"after":[51,52]},{"after":[379,379]},{"after":[446,446]}]
+- `939183ed684643bdda6b35ffd51afcc29791a4c1:src/workflow/convert/__tests__/repair.test.ts` — [{"after":[1,179]}]
+- `939183ed684643bdda6b35ffd51afcc29791a4c1:src/workflow/convert/amendments.ts` — [{"after":[20,20]},{"after":[82,82]},{"after":[84,87]}]
+- `939183ed684643bdda6b35ffd51afcc29791a4c1:src/workflow/convert/migrated-head.ts` — [{"after":[26,27]},{"after":[90,90]}]
+- `939183ed684643bdda6b35ffd51afcc29791a4c1:src/workflow/convert/plan.ts` — [{"after":[62,63]},{"after":[127,127]}]
+- `939183ed684643bdda6b35ffd51afcc29791a4c1:src/workflow/convert/rename.ts` — [{"after":[24,24]},{"after":[52,66]},{"after":[110,110]},{"after":[150,150]},{"after":[158,158]},{"after":[165,165]},{"after":[167,167]},{"after":[170,170]},{"after":[177,178]},{"after":[184,184]}]
+- `939183ed684643bdda6b35ffd51afcc29791a4c1:src/workflow/convert/repair.ts` — [{"after":[1,104]}]
+- `939183ed684643bdda6b35ffd51afcc29791a4c1:src/workflow/convert/stamps.ts` — [{"after":[18,18]},{"after":[73,73]},{"after":[79,79]}]
+- `939183ed684643bdda6b35ffd51afcc29791a4c1:src/workflow/convert/types.ts` — [{"after":[141,177]}]
+- `939183ed684643bdda6b35ffd51afcc29791a4c1:src/workflow/convert/units.ts` — [{"after":[28,28]},{"after":[95,95]},{"after":[101,101]},{"after":[105,105]},{"after":[116,116]},{"after":[127,127]},{"after":[129,129]},{"after":[134,134]},{"after":[149,149]},{"after":[155,156]}]
+- `212cb1c43f1e2832fb5e8e214cdb110e8c6684e1:src/workflow/convert/__tests__/repair.test.ts` — [{"after":[128,164]}]
+- `212cb1c43f1e2832fb5e8e214cdb110e8c6684e1:src/workflow/convert/units.ts` — [{"after":[99,101]},{"after":[116,117]},{"after":[119,120]}]
+- `212cb1c43f1e2832fb5e8e214cdb110e8c6684e1:src/workflow/tracker/binding.ts` — [{"after":[90,92]},{"after":[97,97]},{"after":[115,115]},{"after":[126,126]},{"after":[134,134]},{"after":[138,138]},{"after":[143,143]},{"after":[149,149]},{"after":[159,159]}]
+- `60436e184578a7354ea79f83030f303564556c83:src/workflow/convert/__tests__/repair.test.ts` — [{"after":[27,27]},{"after":[166,179]}]
+- `60436e184578a7354ea79f83030f303564556c83:src/workflow/convert/repair.ts` — [{"after":[59,59]}]
+- `60436e184578a7354ea79f83030f303564556c83:src/workflow/tasks/task-set.ts` — [{"after":[27,27]},{"after":[58,59]},{"after":[227,227]},{"after":[232,232]}]
+- `3dc857553594c1c2aa98acfe68f05f0fcbf4cd13:src/workflow/convert/__tests__/repair-tasks.test.ts` — [{"after":[1,205]}]
+- `3dc857553594c1c2aa98acfe68f05f0fcbf4cd13:src/workflow/convert/plan.ts` — [{"after":[33,33]}]
+- `3dc857553594c1c2aa98acfe68f05f0fcbf4cd13:src/workflow/convert/repair.ts` — [{"after":[21,23]},{"after":[26,30]},{"after":[32,33]},{"after":[45,45]},{"after":[48,50]},{"after":[53,53]},{"after":[68,68]},{"after":[75,76]},{"after":[99,99]},{"after":[101,101]},{"after":[108,108]}]
+- `3dc857553594c1c2aa98acfe68f05f0fcbf4cd13:src/workflow/convert/tasks.ts` — [{"after":[17,19]},{"after":[21,21]},{"after":[25,25]},{"after":[41,41]},{"after":[43,43]},{"after":[47,47]},{"after":[51,51]},{"after":[78,113]},{"after":[119,134]},{"after":[138,138]},{"after":[142,143]},{"after":[146,155]},{"after":[158,159]},{"after":[161,161]},{"after":[174,174]}]
+- `3dc857553594c1c2aa98acfe68f05f0fcbf4cd13:src/workflow/convert/types.ts` — [{"after":[29,29]}]
+- `3dc857553594c1c2aa98acfe68f05f0fcbf4cd13:src/workflow/convert/units.ts` — [{"after":[50,67]},{"after":[87,88]},{"after":[91,91]},{"after":[93,93]},{"after":[97,97]},{"after":[105,107]},{"after":[157,157]},{"after":[169,169]}]
+- `3dc857553594c1c2aa98acfe68f05f0fcbf4cd13:src/workflow/tasks/task-set.ts` — [{"after":[28,28]},{"after":[63,67]},{"after":[119,119]},{"after":[128,128]},{"after":[163,164]}]
+- `bd52cff4dc0e1f6e836d307540903d961a8feb3d:src/workflow/convert/__tests__/repair-tasks.test.ts` — [{"after":[204,210]}]
+- `bd52cff4dc0e1f6e836d307540903d961a8feb3d:src/workflow/convert/repair.ts` — [{"after":[29,30]},{"after":[93,94]}]
+- `bd52cff4dc0e1f6e836d307540903d961a8feb3d:src/workflow/convert/tasks.ts` — [{"after":[130,141]}]
+- `435f14567df123c1e4d616eaa16b3f96b6701e9c:src/workflow/artifact-core/lifecycle-service.ts` — [{"after":[260,266]}]
+- `435f14567df123c1e4d616eaa16b3f96b6701e9c:src/workflow/convert/__tests__/repair-kit.ts` — [{"after":[1,68]}]
+- `435f14567df123c1e4d616eaa16b3f96b6701e9c:src/workflow/convert/__tests__/repair-settle.test.ts` — [{"after":[1,244]}]
+- `435f14567df123c1e4d616eaa16b3f96b6701e9c:src/workflow/convert/__tests__/repair-tasks.test.ts` — [{"after":[14,14]},{"deletionAt":16},{"deletionAt":19},{"deletionAt":21},{"after":[24,24]},{"after":[70,71]}]
+- `435f14567df123c1e4d616eaa16b3f96b6701e9c:src/workflow/convert/plan.ts` — [{"after":[33,33]}]
+- `435f14567df123c1e4d616eaa16b3f96b6701e9c:src/workflow/convert/repair.ts` — [{"after":[19,19]},{"after":[31,32]},{"after":[52,52]},{"after":[60,60]},{"after":[67,67]},{"after":[71,71]},{"after":[81,81]},{"after":[96,97]},{"after":[104,104]},{"after":[106,106]},{"after":[113,113]}]
+- `435f14567df123c1e4d616eaa16b3f96b6701e9c:src/workflow/convert/settle.ts` — [{"after":[1,155]}]
+- `435f14567df123c1e4d616eaa16b3f96b6701e9c:src/workflow/convert/tasks.ts` — [{"after":[35,35]},{"after":[47,47]},{"after":[59,59]},{"after":[130,133]},{"after":[136,136]},{"after":[139,141]}]
+- `435f14567df123c1e4d616eaa16b3f96b6701e9c:src/workflow/convert/types.ts` — [{"after":[29,29]}]
+- `435f14567df123c1e4d616eaa16b3f96b6701e9c:src/workflow/convert/units.ts` — [{"after":[88,88]},{"after":[100,100]},{"after":[106,107]}]
+- `d6d103919b74a50bc2cc4aa4e5e1cd0e37b0dd3a:src/workflow/delivery/__tests__/handlers.test.ts` — [{"after":[43,67]}]
+- `d6d103919b74a50bc2cc4aa4e5e1cd0e37b0dd3a:src/workflow/delivery/__tests__/load.test.ts` — [{"after":[175,200]},{"after":[223,223]}]
+- `d6d103919b74a50bc2cc4aa4e5e1cd0e37b0dd3a:src/workflow/delivery/handlers.ts` — [{"after":[30,30]},{"after":[45,50]},{"after":[116,116]}]
+- `d6d103919b74a50bc2cc4aa4e5e1cd0e37b0dd3a:src/workflow/delivery/load.ts` — [{"after":[37,37]},{"after":[59,60]},{"after":[62,62]}]
+- `d6d103919b74a50bc2cc4aa4e5e1cd0e37b0dd3a:src/workflow/delivery/types.ts` — [{"after":[26,26]},{"after":[28,29]},{"after":[192,192]},{"after":[261,261]},{"after":[291,291]}]
+- `b2ae44c37e6049cb727459d987c134254a59917e:src/workflow/delivery/__tests__/fixtures.ts` — [{"after":[424,460]}]
+- `b2ae44c37e6049cb727459d987c134254a59917e:src/workflow/delivery/__tests__/fixtures/delivery-snapshot.sample.json` — [{"after":[62,62]},{"after":[87,96]},{"after":[101,102]},{"after":[128,128]},{"after":[131,131]},{"after":[215,215]},{"after":[219,228]},{"after":[242,245]},{"after":[298,298]},{"after":[352,352]},{"after":[355,366]},{"after":[369,370]},{"after":[417,417]},{"after":[474,475]},{"after":[477,477]}]
+- `b2ae44c37e6049cb727459d987c134254a59917e:src/workflow/delivery/__tests__/gate.test.ts` — [{"after":[37,37]},{"after":[48,48]},{"after":[87,124]},{"after":[136,136]},{"after":[293,293]},{"after":[385,385]}]
+- `b2ae44c37e6049cb727459d987c134254a59917e:src/workflow/delivery/__tests__/graph.test.ts` — [{"after":[26,26]},{"after":[45,66]}]
+- `b2ae44c37e6049cb727459d987c134254a59917e:src/workflow/delivery/__tests__/notice.test.ts` — [{"after":[14,14]},{"after":[16,17]}]
+- `b2ae44c37e6049cb727459d987c134254a59917e:src/workflow/delivery/__tests__/snapshot.test.ts` — [{"after":[32,32]},{"after":[38,39]},{"after":[47,47]},{"after":[82,82]}]
+- `b2ae44c37e6049cb727459d987c134254a59917e:src/workflow/delivery/__tests__/stage.test.ts` — [{"after":[24,24]},{"after":[76,93]},{"after":[96,96]},{"after":[99,99]},{"after":[167,167]},{"after":[244,244]}]
+- `b2ae44c37e6049cb727459d987c134254a59917e:src/workflow/delivery/gate.ts` — [{"after":[220,220]},{"after":[359,360]},{"after":[376,395]}]
+- `b2ae44c37e6049cb727459d987c134254a59917e:src/workflow/delivery/graph.ts` — [{"after":[28,28]},{"after":[31,31]},{"after":[124,137]},{"after":[159,159]},{"after":[176,176]},{"after":[183,183]},{"after":[211,211]},{"after":[248,248]},{"after":[250,250]},{"after":[257,257]},{"after":[338,338]},{"after":[340,340]},{"after":[364,364]},{"after":[393,393]},{"after":[436,436]}]
+- `b2ae44c37e6049cb727459d987c134254a59917e:src/workflow/delivery/notice.ts` — [{"after":[30,30]}]
+- `b2ae44c37e6049cb727459d987c134254a59917e:src/workflow/delivery/snapshot.ts` — [{"after":[146,146]}]
+- `b2ae44c37e6049cb727459d987c134254a59917e:src/workflow/delivery/stage.ts` — [{"after":[16,17]},{"after":[39,39]},{"after":[136,136]},{"after":[145,147]},{"after":[192,192]},{"after":[215,215]}]
+- `b2ae44c37e6049cb727459d987c134254a59917e:src/workflow/delivery/types.ts` — [{"after":[14,14]},{"after":[28,33]},{"after":[114,115]},{"after":[146,147]},{"after":[228,228]},{"after":[359,360]}]
+- `9b6fad24535ee3ed03f5392cb339e4e85786f603:src/workflow/delivery/__tests__/gate.test.ts` — [{"after":[118,121]},{"after":[273,273]}]
+- `9b6fad24535ee3ed03f5392cb339e4e85786f603:src/workflow/delivery/gate.ts` — [{"after":[384,384]},{"after":[389,390]},{"after":[393,395]}]
+- `60810876ef31bddda3c0b8180131335493dd8530:src/workflow/delivery/__tests__/gate.test.ts` — [{"after":[121,121]}]
+- `60810876ef31bddda3c0b8180131335493dd8530:src/workflow/delivery/gate.ts` — [{"after":[394,395]}]
+- `8495c443d043658d615edf47ee24e93248425435:src/daemon/__tests__/delivery-handler-contract.test.ts` — [{"after":[18,19]},{"after":[21,21]},{"after":[49,88]}]
+- `8495c443d043658d615edf47ee24e93248425435:src/workflow/convert/__tests__/repair.test.ts` — [{"after":[30,30]},{"after":[181,192]}]
+- `8495c443d043658d615edf47ee24e93248425435:src/workflow/delivery/__tests__/fixtures.ts` — [{"after":[427,427]},{"after":[429,429]}]
+- `8495c443d043658d615edf47ee24e93248425435:src/workflow/delivery/__tests__/fixtures/delivery-snapshot.sample.json` — [{"after":[63,64]},{"after":[206,207]},{"after":[219,220]},{"after":[304,305]},{"after":[360,361]},{"after":[427,428]}]
+- `8495c443d043658d615edf47ee24e93248425435:src/workflow/delivery/__tests__/task-membership.test.ts` — [{"after":[1,146]}]
+- `8495c443d043658d615edf47ee24e93248425435:src/workflow/delivery/gate.ts` — [{"after":[306,306]},{"after":[315,315]},{"after":[397,397]}]
+- `8495c443d043658d615edf47ee24e93248425435:src/workflow/delivery/graph.ts` — [{"after":[20,20]},{"after":[98,101]},{"after":[164,165]},{"after":[183,184]},{"after":[191,191]},{"after":[395,451]},{"after":[453,455]},{"after":[458,469]},{"after":[472,489]},{"after":[493,493]},{"after":[496,496]},{"after":[498,501]}]
+- `8495c443d043658d615edf47ee24e93248425435:src/workflow/delivery/snapshot.ts` — [{"after":[147,148]}]
+- `8495c443d043658d615edf47ee24e93248425435:src/workflow/delivery/types.ts` — [{"after":[116,119]},{"after":[229,230]},{"after":[238,238]},{"after":[367,370]}]
+- `8495c443d043658d615edf47ee24e93248425435:src/workflow/path-scheme.ts` — [{"after":[131,137]}]
+- `1f6edc0a136c23a5b3a93b6aa3e6cc10caa0e20e:src/workflow/delivery/__tests__/graph.test.ts` — [{"after":[11,11]},{"after":[13,13]},{"after":[46,61]}]
+- `1f6edc0a136c23a5b3a93b6aa3e6cc10caa0e20e:src/workflow/delivery/gate.ts` — [{"after":[353,353]}]
+- `1f6edc0a136c23a5b3a93b6aa3e6cc10caa0e20e:src/workflow/delivery/graph.ts` — [{"after":[44,46]},{"after":[132,132]}]
+- `6951de5a0fe470834173a90223bd0ed1502ed61d:vscode-plugin/src/delivery/__tests__/board-details.test.ts` — [{"after":[40,84]}]
+- `6951de5a0fe470834173a90223bd0ed1502ed61d:vscode-plugin/src/delivery/__tests__/board-fixtures.ts` — [{"after":[32,32]}]
+- `6951de5a0fe470834173a90223bd0ed1502ed61d:vscode-plugin/src/delivery/__tests__/board-views.test.ts` — [{"after":[234,250]},{"after":[256,256]}]
+- `6951de5a0fe470834173a90223bd0ed1502ed61d:vscode-plugin/src/delivery/__tests__/delivery-client.test.ts` — [{"after":[16,16]},{"after":[18,19]},{"after":[36,62]}]
+- `6951de5a0fe470834173a90223bd0ed1502ed61d:vscode-plugin/src/delivery/__tests__/labels.test.ts` — [{"after":[18,18]},{"after":[29,29]},{"after":[35,35]},{"after":[38,42]},{"after":[58,58]}]
+- `6951de5a0fe470834173a90223bd0ed1502ed61d:vscode-plugin/src/delivery/board-details.ts` — [{"after":[12,14]},{"after":[21,21]},{"after":[48,50]},{"after":[54,54]},{"after":[64,65]}]
+- `6951de5a0fe470834173a90223bd0ed1502ed61d:vscode-plugin/src/delivery/board-host.ts` — [{"after":[235,235]}]
+- `6951de5a0fe470834173a90223bd0ed1502ed61d:vscode-plugin/src/delivery/board-model.ts` — [{"after":[112,112]}]
+- `6951de5a0fe470834173a90223bd0ed1502ed61d:vscode-plugin/src/delivery/board-protocol.ts` — [{"after":[141,143]}]
+- `6951de5a0fe470834173a90223bd0ed1502ed61d:vscode-plugin/src/delivery/board-views.ts` — [{"after":[83,83]},{"after":[102,111]}]
+- `6951de5a0fe470834173a90223bd0ed1502ed61d:vscode-plugin/src/delivery/delivery-contract.ts` — [{"after":[34,34]},{"after":[57,57]},{"after":[72,72]}]
+- `6951de5a0fe470834173a90223bd0ed1502ed61d:vscode-plugin/src/delivery/labels.ts` — [{"after":[19,19]},{"after":[31,32]},{"after":[84,84]},{"after":[89,95]},{"after":[131,131]},{"after":[146,146]},{"after":[157,170]}]
+- `22726b2d08a0a87d7dd274ec53e36293f9d1eb2d:src/understanding/__tests__/acceptance.test.ts` — [{"after":[28,28]}]
+- `22726b2d08a0a87d7dd274ec53e36293f9d1eb2d:src/workflow/artifact-core/__tests__/lifecycle-members.test.ts` — [{"after":[19,19]},{"after":[21,21]},{"after":[23,23]}]
+- `842760d03a026fd5a96abc8b4223d23612c21deb:src/workflow/artifact-core/sidecar-store.ts` — [{"after":[205,215]}]
+- `842760d03a026fd5a96abc8b4223d23612c21deb:src/workflow/convert/__tests__/repair.test.ts` — [{"after":[193,227]}]
+- `842760d03a026fd5a96abc8b4223d23612c21deb:src/workflow/convert/plan.ts` — [{"after":[32,32]}]
+- `842760d03a026fd5a96abc8b4223d23612c21deb:src/workflow/convert/repair.ts` — [{"after":[19,19]},{"after":[28,28]},{"after":[31,31]},{"after":[53,55]},{"after":[57,57]},{"after":[71,71]},{"after":[73,73]},{"after":[87,87]}]
+- `842760d03a026fd5a96abc8b4223d23612c21deb:src/workflow/convert/story-history.ts` — [{"after":[21,22]},{"after":[58,58]},{"after":[70,70]},{"after":[84,87]},{"after":[94,94]},{"after":[97,97]}]
+- `842760d03a026fd5a96abc8b4223d23612c21deb:src/workflow/convert/types.ts` — [{"after":[28,28]}]
+- `40a183fec43a8074d632b09bd83b297081341048:src/workflow/convert/__tests__/repair-tasks.test.ts` — [{"after":[96,115]}]
+- `40a183fec43a8074d632b09bd83b297081341048:src/workflow/convert/tasks.ts` — [{"after":[173,173]}]
+- `e87668592ef923e3876a12c5a6824e5cb9ada831:src/workflow/convert/__tests__/repair-settle.test.ts` — [{"after":[19,20]},{"after":[51,58]},{"after":[80,80]},{"after":[242,302]}]
+- `e87668592ef923e3876a12c5a6824e5cb9ada831:src/workflow/convert/settle.ts` — [{"after":[43,43]},{"after":[81,85]},{"after":[105,109]},{"after":[120,120]},{"after":[127,129]},{"after":[132,132]},{"after":[139,139]},{"after":[145,145]},{"after":[153,155]},{"after":[163,165]},{"after":[167,174]},{"after":[176,178]},{"after":[181,182]}]
+- `e23b804ed85ec4d7abe5e62ae2229ade9f19e374:src/workflow/delivery/__tests__/task-membership.test.ts` — [{"after":[142,154]}]
+- `e23b804ed85ec4d7abe5e62ae2229ade9f19e374:src/workflow/delivery/graph.ts` — [{"after":[443,444]}]
+- `2a8e3832b2cd630c9803e2db3b372e834ec08784:src/workflow/delivery/__tests__/gate.test.ts` — [{"after":[122,132]}]
+- `2a8e3832b2cd630c9803e2db3b372e834ec08784:src/workflow/delivery/gate.ts` — [{"after":[359,359]},{"after":[376,376]},{"after":[382,388]},{"after":[393,393]},{"after":[397,400]},{"after":[407,407]}]
+- `b4613685c1723573b21f92fbd1931812d91309bb:vscode-plugin/src/delivery/__tests__/board-host.test.ts` — [{"after":[1794,1813]}]
+- `503b242e76c81c6ea7e34c9b89284c96e2fd94b6:src/workflow/convert/__tests__/repair.test.ts` — [{"after":[14,14]},{"after":[208,221]}]
+- `503b242e76c81c6ea7e34c9b89284c96e2fd94b6:src/workflow/convert/repair.ts` — [{"after":[73,75]}]
+- `84aba0da8fc7e1ea11a56e670f5a2d6c7f528055:src/workflow/convert/__tests__/repair-settle.test.ts` — [{"after":[14,14]},{"after":[261,290]}]
+- `84aba0da8fc7e1ea11a56e670f5a2d6c7f528055:src/workflow/convert/settle.ts` — [{"deletionAt":80},{"after":[100,107]},{"after":[135,137]},{"after":[139,139]}]
+- `5f422dfa194f2ddd2e456e773121ecdeaf9af208:src/workflow/delivery/__tests__/gate.test.ts` — [{"after":[133,135]}]
+- `5f422dfa194f2ddd2e456e773121ecdeaf9af208:src/workflow/delivery/gate.ts` — [{"after":[398,400]}]
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/__tests__/repair-settle.test.ts` — [{"after":[289,304]}]
+- `92491bba943e2a8212a5ac52407d3e9fdcba9fd3:src/workflow/convert/settle.ts` — [{"after":[100,100]},{"after":[103,104]}]
+- `8521b3819fd3b9295da4e0cd264a20bf62fc133f:src/workflow/convert/__tests__/repair-settle.test.ts` — [{"after":[80,81]}]
+- `8521b3819fd3b9295da4e0cd264a20bf62fc133f:src/workflow/convert/__tests__/repair.test.ts` — [{"after":[203,203]},{"after":[219,219]}]
+- `8521b3819fd3b9295da4e0cd264a20bf62fc133f:src/workflow/convert/repair.ts` — [{"after":[109,110]}]
+- `8521b3819fd3b9295da4e0cd264a20bf62fc133f:src/workflow/convert/types.ts` — [{"after":[145,146]}]
+
+### Verified final scope: 8521b3819fd3b9295da4e0cd264a20bf62fc133f
+
+Projection: b087415480ec479ff9a2812eb365c52765d14ffa720848a50a3bcbabd03d5f62 · attribution: unmapped_failure
+
+- `src/workflow/artifact-core/__tests__/completion-evidence.test.ts` (bd129bbab618e7d11b228e607c72694adfb81296) — selected: [{"after":[7,7]},{"after":[163,223]}]
+- `src/workflow/artifact-core/__tests__/completion-holds.test.ts` (a4e396448e24609053cfa1d2f6058bf01d4682a9) — selected: [{"after":[28,28]},{"after":[30,31]},{"after":[33,33]},{"after":[38,38]},{"after":[55,55]},{"deletionAt":26},{"deletionAt":35}]
+- `src/workflow/artifact-core/__tests__/lifecycle-completion.test.ts` (1721a33c3a9f746e92aa6acace2aaa35744ec888) — selected: [{"after":[8,8]},{"after":[16,16]},{"after":[26,26]},{"after":[28,28]},{"after":[30,30]},{"after":[32,32]},{"after":[36,36]},{"after":[47,47]},{"after":[56,56]},{"after":[60,61]},{"after":[75,75]},{"after":[84,84]},{"after":[86,86]},{"after":[102,102]},{"after":[119,119]},{"after":[133,134]},{"after":[156,185]},{"deletionAt":72},{"deletionAt":100},{"deletionAt":112},{"deletionAt":129},{"deletionAt":154}]
+- `src/workflow/artifact-core/__tests__/lifecycle-kit.ts` (48fb128e6dd6d9cb5b03a7bbc5d8b851bce61953) — selected: [{"after":[4,4]},{"after":[17,27]},{"after":[29,32]},{"after":[35,38]}]
+- `src/workflow/artifact-core/__tests__/lifecycle-rollup.test.ts` (8dd5bf6ee7180c232f2a744e0fe322929b65897e) — selected: [{"after":[22,31]},{"after":[33,34]},{"after":[43,43]},{"after":[45,53]},{"after":[72,72]},{"after":[75,75]},{"after":[87,137]},{"deletionAt":68}]
+- `src/workflow/artifact-core/completion-evidence.ts` (aa253967ad80503e631a42ba3e3251f43f580ce5) — selected: [{"after":[11,12]},{"after":[16,16]},{"after":[19,20]},{"after":[47,66]},{"after":[97,107]},{"after":[109,123]}]
+- `src/workflow/artifact-core/lifecycle.ts` (96afa93bcb4ac5ec0cb04f3a974f37269d43cf11) — selected: [{"after":[313,332]},{"after":[357,377]},{"after":[380,382]},{"after":[389,395]},{"after":[399,404]},{"after":[413,413]},{"after":[425,425]}]
+- `src/workflow/tasks/__tests__/task-build-rounds.test.ts` (69751f22d34013e69551e058253218d24f15d158) — selected: [{"after":[21,21]},{"after":[46,48]},{"after":[50,51]},{"after":[53,53]}]
+- `src/workflow/artifact-core/__tests__/completion-evidence.test.ts` (bd129bbab618e7d11b228e607c72694adfb81296) — selected: [{"after":[3,3]},{"after":[8,8]},{"after":[10,12]},{"after":[22,34]},{"after":[37,37]},{"after":[40,41]},{"after":[44,52]},{"after":[55,58]},{"after":[60,75]},{"after":[77,79]},{"after":[81,82]},{"after":[95,161]}]
+- `src/cli/services/workflow.ts` (36c90df0eca2615282c0510977911eb2965f8cd1) — selected: [{"after":[75,76]},{"after":[155,155]},{"after":[163,163]}]
+- `src/daemon/workflow-approve.ts` (dcc90190ad93bec5a7e197417cf473bfc9b8013d) — selected: [{"after":[58,58]}]
+- `src/workflow/__tests__/story-completion.test.ts` (726477fa02bf0faae57b98ae8b39729571abae47) — selected: [{"after":[1,362]}]
+- `src/workflow/artifact-core/__tests__/lifecycle-resignoff.test.ts` (e00c62bb5798dc8d36443e5ea059d9f5d7719b53) — selected: [{"after":[36,37]}]
+- `src/workflow/artifact-core/__tests__/lifecycle-table.test.ts` (f07ddd91cd76396b382d5cf356064f5a94149ea7) — selected: [{"after":[16,16]}]
+- `src/workflow/artifact-core/completion-evidence.ts` (aa253967ad80503e631a42ba3e3251f43f580ce5) — selected: [{"after":[108,108]}]
+- `src/workflow/artifact-core/history.ts` (27b19d336917e8eeb48754ceac7df528287dd38e) — selected: [{"after":[21,21]}]
+- `src/workflow/artifact-core/lifecycle-service.ts` (c1b384b18b73fc6c9d0a0951a98d7605fedeac4c) — selected: [{"after":[17,17]},{"after":[155,155]},{"after":[267,282]}]
+- `src/workflow/artifact-core/lifecycle.ts` (96afa93bcb4ac5ec0cb04f3a974f37269d43cf11) — selected: [{"after":[26,26]},{"after":[52,52]},{"after":[242,247]}]
+- `src/workflow/artifact-core/types.ts` (932f1c619bc40edc92823301f3f50be578184c51) — selected: [{"after":[55,55]}]
+- `src/workflow/gates.ts` (15ed1344a712bee7e874cad8b5d946d825e3d001) — selected: [{"after":[29,30]},{"after":[42,42]},{"after":[693,696]},{"after":[861,861]},{"after":[875,876]},{"after":[935,935]},{"after":[961,980]},{"after":[982,982]},{"after":[984,995]},{"after":[1015,1017]},{"after":[1020,1020]},{"after":[1049,1052]},{"after":[1082,1082]}]
+- `src/daemon/steps/workflow-step/phases/synthesize.ts` (f753386662e466b357a5af15f928730bde429e4e) — selected: [{"after":[25,25]},{"after":[93,93]}]
+- `src/daemon/workflow-rpc.ts` (239b1535129e4c0cdd5e7cc607b4e7e30e5e728e) — selected: [{"after":[49,49]},{"after":[369,369]}]
+- `src/workflow/__tests__/workflow-head-lifecycle.test.ts` (e540858836a7c79bc41c1c88e83ca84745fd1d6d) — selected: [{"after":[1,151]}]
+- `src/workflow/artifact-write-inventory.ts` (508bc19017517001e27829a0d8ba10403aa6aeb2) — selected: [{"after":[34,39]},{"after":[53,54]},{"after":[66,67]},{"after":[73,78]},{"after":[86,86]},{"after":[94,94]},{"after":[340,397]}]
+- `src/workflow/storage.ts` (2d3f6de4c1cf96f3c8e6c5d136181163f0231609) — selected: [{"after":[241,259]}]
+- `src/daemon/repo-convert.ts` (e4ab6bc0c339f9329002e1e99f550eba5e8936e8) — selected: [{"after":[19,20]},{"after":[23,23]},{"after":[30,30]},{"after":[35,39]},{"after":[44,44]},{"after":[47,47]}]
+- `src/workflow/artifact-core/repo-lifecycle.ts` (d98717880b9ac4114aff827245bf5fd84370740f) — selected: [{"after":[19,19]},{"after":[28,49]},{"after":[53,53]}]
+- `src/workflow/artifact-core/store.ts` (ce586c7452fb4caa21d5c135ac8154ee050dee08) — selected: [{"after":[52,53]},{"after":[380,380]},{"after":[447,447]}]
+- `src/workflow/convert/__tests__/repair.test.ts` (2e12e8870bb77d77253db9ff4143c267fa2b3765) — selected: [{"after":[1,13]},{"after":[15,26]},{"after":[28,29]},{"after":[31,129]},{"after":[244,295]}]
+- `src/workflow/convert/amendments.ts` (5f7363698cef9b5261f2b0414d24c76b54c4724d) — selected: [{"after":[20,20]},{"after":[82,82]},{"after":[84,87]}]
+- `src/workflow/convert/migrated-head.ts` (cc1352e5d0dd4f606b1242313c670f4a459ec7b8) — selected: [{"after":[26,27]},{"after":[90,90]}]
+- `src/workflow/convert/plan.ts` (8a42b3a30d9db3c367da72fdd7ce6713bb072b74) — selected: [{"after":[62,63]},{"after":[127,127]}]
+- `src/workflow/convert/rename.ts` (c9e4db2dbc0036a1b7a63d1dd9491175845813d2) — selected: [{"after":[24,24]},{"after":[52,66]},{"after":[110,110]},{"after":[150,150]},{"after":[158,158]},{"after":[165,165]},{"after":[167,167]},{"after":[170,170]},{"after":[177,178]},{"after":[184,184]}]
+- `src/workflow/convert/repair.ts` (04794ff9b0a1d7be61712c832b226149628b7839) — selected: [{"after":[1,18]},{"after":[21,22]},{"after":[26,27]},{"after":[36,36]},{"after":[39,49]},{"after":[51,52]},{"after":[59,60]},{"after":[62,64]},{"after":[66,70]},{"after":[72,72]},{"after":[77,79]},{"after":[81,86]},{"after":[91,104]},{"after":[107,108]},{"after":[111,112]},{"after":[115,115]},{"after":[117,122]},{"after":[124,125]}]
+- `src/workflow/convert/stamps.ts` (a63a5f78c99dcd3e1c9b62d12b9c07301a5047a3) — selected: [{"after":[18,18]},{"after":[73,73]},{"after":[79,79]}]
+- `src/workflow/convert/types.ts` (08cd1e446052915a0648b82897c8c3889ab86c96) — selected: [{"after":[141,144]},{"after":[147,178]}]
+- `src/workflow/convert/units.ts` (ebe4e652dcdbc997a3b23b85839bda58770254ca) — selected: [{"after":[28,28]},{"after":[117,117]},{"after":[125,125]},{"after":[129,129]},{"after":[151,151]},{"after":[153,153]},{"after":[173,173]},{"after":[179,180]}]
+- `src/workflow/convert/__tests__/repair.test.ts` (2e12e8870bb77d77253db9ff4143c267fa2b3765) — selected: [{"after":[130,166]}]
+- `src/workflow/convert/units.ts` (ebe4e652dcdbc997a3b23b85839bda58770254ca) — selected: [{"after":[121,123]},{"after":[138,139]},{"after":[141,142]}]
+- `src/workflow/tracker/binding.ts` (333aef82399f69e45465a97ebb42ba0d82b8e6ca) — selected: [{"after":[90,92]},{"after":[97,97]},{"after":[115,115]},{"after":[126,126]},{"after":[134,134]},{"after":[138,138]},{"after":[143,143]},{"after":[149,149]},{"after":[159,159]}]
+- `src/workflow/convert/__tests__/repair.test.ts` (2e12e8870bb77d77253db9ff4143c267fa2b3765) — selected: [{"after":[27,27]},{"after":[167,180]}]
+- `src/workflow/convert/repair.ts` (04794ff9b0a1d7be61712c832b226149628b7839) — none: []
+- `src/workflow/tasks/task-set.ts` (32d003d82334650a736748b48fb6cf495e682ba9) — selected: [{"after":[27,27]},{"after":[59,60]},{"after":[233,233]},{"after":[238,238]}]
+- `src/workflow/convert/__tests__/repair-tasks.test.ts` (e6f96d610f1f364ad3ccc0f17476bc5bfa799048) — selected: [{"after":[1,13]},{"after":[15,16]},{"after":[17,19]},{"after":[20,21]},{"after":[22,23]},{"after":[25,69]},{"after":[72,95]},{"after":[116,167]},{"after":[175,176]}]
+- `src/workflow/convert/plan.ts` (8a42b3a30d9db3c367da72fdd7ce6713bb072b74) — none: []
+- `src/workflow/convert/repair.ts` (04794ff9b0a1d7be61712c832b226149628b7839) — selected: [{"after":[23,25]},{"after":[29,30]},{"after":[34,35]},{"after":[37,38]},{"after":[50,50]},{"after":[56,56]},{"after":[58,58]},{"after":[61,61]},{"after":[87,88]},{"after":[113,113]}]
+- `src/workflow/convert/tasks.ts` (71d54b6991ed63f6f1b168de47d1a40614dd290a) — selected: [{"after":[17,19]},{"after":[21,21]},{"after":[25,25]},{"after":[41,41]},{"after":[43,43]},{"after":[51,51]},{"after":[78,113]},{"after":[119,129]},{"after":[144,148]},{"after":[152,152]},{"after":[156,157]},{"after":[160,169]},{"after":[172,172]},{"after":[175,175]},{"after":[188,188]}]
+- `src/workflow/convert/types.ts` (08cd1e446052915a0648b82897c8c3889ab86c96) — none: []
+- `src/workflow/convert/units.ts` (ebe4e652dcdbc997a3b23b85839bda58770254ca) — selected: [{"after":[50,67]},{"after":[87,87]},{"after":[91,91]},{"after":[93,93]},{"after":[97,97]},{"after":[108,108]},{"after":[158,158]},{"after":[170,170]}]
+- `src/workflow/tasks/task-set.ts` (32d003d82334650a736748b48fb6cf495e682ba9) — selected: [{"after":[28,28]},{"after":[63,67]},{"after":[119,119]},{"after":[128,128]},{"after":[163,164]}]
+- `src/workflow/convert/__tests__/repair-tasks.test.ts` (e6f96d610f1f364ad3ccc0f17476bc5bfa799048) — selected: [{"after":[168,174]}]
+- `src/workflow/convert/repair.ts` (04794ff9b0a1d7be61712c832b226149628b7839) — selected: [{"after":[32,32]}]
+- `src/workflow/convert/tasks.ts` (71d54b6991ed63f6f1b168de47d1a40614dd290a) — selected: [{"after":[134,135]},{"after":[137,138]},{"after":[142,143]}]
+- `src/workflow/artifact-core/lifecycle-service.ts` (c1b384b18b73fc6c9d0a0951a98d7605fedeac4c) — selected: [{"after":[260,266]}]
+- `src/workflow/convert/__tests__/repair-kit.ts` (c9a8a15e5c8dce5e80dbc6c602b165594ac9a390) — selected: [{"after":[1,68]}]
+- `src/workflow/convert/__tests__/repair-settle.test.ts` (12837a18bf30d955a842d84109a9f2549a055497) — selected: [{"after":[1,13]},{"after":[15,18]},{"after":[21,50]},{"after":[59,79]},{"after":[81,242]},{"after":[350,362]}]
+- `src/workflow/convert/__tests__/repair-tasks.test.ts` (e6f96d610f1f364ad3ccc0f17476bc5bfa799048) — selected: [{"after":[14,14]},{"after":[24,24]},{"after":[70,71]},{"deletionAt":16},{"deletionAt":19},{"deletionAt":21}]
+- `src/workflow/convert/plan.ts` (8a42b3a30d9db3c367da72fdd7ce6713bb072b74) — selected: [{"after":[33,33]}]
+- `src/workflow/convert/repair.ts` (04794ff9b0a1d7be61712c832b226149628b7839) — selected: [{"after":[20,20]},{"after":[33,34]},{"after":[65,65]},{"after":[76,76]},{"after":[80,80]},{"after":[90,90]},{"after":[105,106]},{"after":[114,114]},{"after":[116,116]},{"after":[123,123]}]
+- `src/workflow/convert/settle.ts` (f19f27e6413cd2ebd6380500f6175b29b2567ce4) — selected: [{"after":[1,42]},{"after":[44,99]},{"after":[114,123]},{"after":[125,130]},{"after":[134,135]},{"after":[139,139]},{"after":[141,144]},{"after":[146,150]},{"after":[152,158]},{"after":[162,168]},{"after":[172,172]},{"after":[181,181]},{"after":[185,186]},{"after":[189,189]}]
+- `src/workflow/convert/tasks.ts` (71d54b6991ed63f6f1b168de47d1a40614dd290a) — selected: [{"after":[35,35]},{"after":[47,47]},{"after":[59,59]},{"after":[130,133]},{"after":[136,136]},{"after":[139,141]}]
+- `src/workflow/convert/types.ts` (08cd1e446052915a0648b82897c8c3889ab86c96) — selected: [{"after":[29,29]}]
+- `src/workflow/convert/units.ts` (ebe4e652dcdbc997a3b23b85839bda58770254ca) — selected: [{"after":[88,88]},{"after":[100,100]},{"after":[106,107]}]
+- `src/workflow/delivery/__tests__/handlers.test.ts` (eb4a9c94363013122a477b33b40e02747d222a59) — selected: [{"after":[43,67]}]
+- `src/workflow/delivery/__tests__/load.test.ts` (67262f8e26c55aa13c29771ddd61e93af6dcfd16) — selected: [{"after":[175,200]},{"after":[223,223]}]
+- `src/workflow/delivery/handlers.ts` (f9fce5cfea45e12e4c31dd3020e174a8d5de090e) — selected: [{"after":[30,30]},{"after":[45,50]},{"after":[116,116]}]
+- `src/workflow/delivery/load.ts` (5cce914e8f2833bb35094ad155fdeed1f6987087) — selected: [{"after":[37,37]},{"after":[59,60]},{"after":[62,62]}]
+- `src/workflow/delivery/types.ts` (182bc628d666307a89eb07ce089ed73d6b91c18f) — selected: [{"after":[26,26]},{"after":[34,35]},{"after":[205,205]},{"after":[276,276]},{"after":[306,306]}]
+- `src/workflow/delivery/__tests__/fixtures.ts` (4ce88a9dbb1647ae530022f8806a617f85ab55c4) — selected: [{"after":[424,426]},{"after":[428,428]},{"after":[430,460]}]
+- `src/workflow/delivery/__tests__/fixtures/delivery-snapshot.sample.json` (5094242fd6d564ee2d2ab4a6c4daedbee0fd0f23) — selected: [{"after":[62,62]},{"after":[89,98]},{"after":[103,104]},{"after":[130,130]},{"after":[133,133]},{"after":[218,218]},{"after":[224,233]},{"after":[247,250]},{"after":[303,303]},{"after":[359,359]},{"after":[364,375]},{"after":[378,379]},{"after":[426,426]},{"after":[485,486]},{"after":[488,488]}]
+- `src/workflow/delivery/__tests__/gate.test.ts` (646e6c5806460709d1d0d7cda7d69aac5906abb6) — selected: [{"after":[37,37]},{"after":[48,48]},{"after":[87,117]},{"after":[136,142]},{"after":[154,154]},{"after":[311,311]},{"after":[403,403]}]
+- `src/workflow/delivery/__tests__/graph.test.ts` (e1fb34637df46aff3d523f6832b3cbcf0ad96fb6) — selected: [{"after":[27,27]},{"after":[62,83]}]
+- `src/workflow/delivery/__tests__/notice.test.ts` (8cb75fe3570a60b2fb4de87bee11cc8b2c90ed99) — selected: [{"after":[14,14]},{"after":[16,17]}]
+- `src/workflow/delivery/__tests__/snapshot.test.ts` (b004115e942bd309182d9946d2bb6edde1f88f34) — selected: [{"after":[32,32]},{"after":[38,39]},{"after":[47,47]},{"after":[82,82]}]
+- `src/workflow/delivery/__tests__/stage.test.ts` (32bda0ce2d51609d7ef12b656ddff2812889b2ad) — selected: [{"after":[24,24]},{"after":[76,93]},{"after":[96,96]},{"after":[99,99]},{"after":[167,167]},{"after":[244,244]}]
+- `src/workflow/delivery/gate.ts` (606527422a51a3455dc01a0f8746ab17d4ff55da) — selected: [{"after":[220,220]},{"after":[360,360]},{"after":[377,381]},{"after":[389,390]},{"after":[392,392]},{"after":[394,395]},{"after":[403,404]},{"after":[410,412]}]
+- `src/workflow/delivery/graph.ts` (c9fb0b04cb19425e026c7c3e9ccfe9e2b36a6b38) — selected: [{"after":[28,28]},{"after":[31,31]},{"after":[131,131]},{"after":[133,144]},{"after":[166,166]},{"after":[185,185]},{"after":[222,222]},{"after":[259,259]},{"after":[261,261]},{"after":[268,268]},{"after":[349,349]},{"after":[351,351]},{"after":[375,375]},{"after":[461,461]}]
+- `src/workflow/delivery/notice.ts` (ed7e3ac48bab27bc4a91c20b90cc71d89de74657) — selected: [{"after":[30,30]}]
+- `src/workflow/delivery/snapshot.ts` (74391b9f1abd69fed339e7a942322c95281f639b) — selected: [{"after":[146,146]}]
+- `src/workflow/delivery/stage.ts` (28357728e51e94873e18d9d28e294f88a9fc9500) — selected: [{"after":[16,17]},{"after":[39,39]},{"after":[136,136]},{"after":[145,147]},{"after":[192,192]},{"after":[215,215]}]
+- `src/workflow/delivery/types.ts` (182bc628d666307a89eb07ce089ed73d6b91c18f) — selected: [{"after":[14,14]},{"after":[28,33]},{"after":[114,115]},{"after":[150,151]},{"after":[234,234]},{"after":[365,366]}]
+- `src/workflow/delivery/__tests__/gate.test.ts` (646e6c5806460709d1d0d7cda7d69aac5906abb6) — selected: [{"after":[118,120]},{"after":[287,287]}]
+- `src/workflow/delivery/gate.ts` (606527422a51a3455dc01a0f8746ab17d4ff55da) — selected: [{"after":[391,391]},{"after":[396,396]},{"after":[405,405]},{"after":[408,408]}]
+- `src/workflow/delivery/__tests__/gate.test.ts` (646e6c5806460709d1d0d7cda7d69aac5906abb6) — selected: [{"after":[121,121]}]
+- `src/workflow/delivery/gate.ts` (606527422a51a3455dc01a0f8746ab17d4ff55da) — selected: [{"after":[406,407]}]
+- `src/daemon/__tests__/delivery-handler-contract.test.ts` (ba95758ec9237c93071b0955e583009f1a767c26) — selected: [{"after":[18,19]},{"after":[21,21]},{"after":[49,88]}]
+- `src/workflow/convert/__tests__/repair.test.ts` (2e12e8870bb77d77253db9ff4143c267fa2b3765) — selected: [{"after":[30,30]},{"after":[181,192]}]
+- `src/workflow/delivery/__tests__/fixtures.ts` (4ce88a9dbb1647ae530022f8806a617f85ab55c4) — selected: [{"after":[427,427]},{"after":[429,429]}]
+- `src/workflow/delivery/__tests__/fixtures/delivery-snapshot.sample.json` (5094242fd6d564ee2d2ab4a6c4daedbee0fd0f23) — selected: [{"after":[63,64]},{"after":[206,207]},{"after":[219,220]},{"after":[304,305]},{"after":[360,361]},{"after":[427,428]}]
+- `src/workflow/delivery/__tests__/task-membership.test.ts` (86b2d60e0c3426bc602a24bcfa29b624e2cb6cfe) — selected: [{"after":[1,141]},{"after":[155,159]}]
+- `src/workflow/delivery/gate.ts` (606527422a51a3455dc01a0f8746ab17d4ff55da) — selected: [{"after":[306,306]},{"after":[315,315]}]
+- `src/workflow/delivery/graph.ts` (c9fb0b04cb19425e026c7c3e9ccfe9e2b36a6b38) — selected: [{"after":[20,20]},{"after":[101,104]},{"after":[167,168]},{"after":[186,187]},{"after":[194,194]},{"after":[398,442]},{"after":[445,455]},{"after":[457,459]},{"after":[462,473]},{"after":[476,493]},{"after":[497,497]},{"after":[500,500]},{"after":[502,505]}]
+- `src/workflow/delivery/snapshot.ts` (74391b9f1abd69fed339e7a942322c95281f639b) — selected: [{"after":[147,148]}]
+- `src/workflow/delivery/types.ts` (182bc628d666307a89eb07ce089ed73d6b91c18f) — selected: [{"after":[116,119]},{"after":[229,230]},{"after":[238,238]},{"after":[367,370]}]
+- `src/workflow/path-scheme.ts` (67d1d8cc624e72b547e6a1260d8cbe0baa2aed76) — selected: [{"after":[131,137]}]
+- `src/workflow/delivery/__tests__/graph.test.ts` (e1fb34637df46aff3d523f6832b3cbcf0ad96fb6) — selected: [{"after":[11,11]},{"after":[13,13]},{"after":[46,61]}]
+- `src/workflow/delivery/gate.ts` (606527422a51a3455dc01a0f8746ab17d4ff55da) — selected: [{"after":[353,353]}]
+- `src/workflow/delivery/graph.ts` (c9fb0b04cb19425e026c7c3e9ccfe9e2b36a6b38) — selected: [{"after":[44,46]},{"after":[132,132]}]
+- `vscode-plugin/src/delivery/__tests__/board-details.test.ts` (7ae74426ac9d5ff5b90fd71b97a239dcd345e466) — selected: [{"after":[40,84]}]
+- `vscode-plugin/src/delivery/__tests__/board-fixtures.ts` (927d455c2019828eb6872840dbed956dedb7305e) — selected: [{"after":[32,32]}]
+- `vscode-plugin/src/delivery/__tests__/board-views.test.ts` (0452db40681fe9daef0fbe3479d0bbc0114f8375) — selected: [{"after":[234,250]},{"after":[256,256]}]
+- `vscode-plugin/src/delivery/__tests__/delivery-client.test.ts` (cf76de98a0c7778c58f8190610a8135a0f627044) — selected: [{"after":[16,16]},{"after":[18,19]},{"after":[36,62]}]
+- `vscode-plugin/src/delivery/__tests__/labels.test.ts` (d95207e5621e4e00581989e7390e031c783dc6c1) — selected: [{"after":[18,18]},{"after":[29,29]},{"after":[35,35]},{"after":[38,42]},{"after":[58,58]}]
+- `vscode-plugin/src/delivery/board-details.ts` (f49183bf48b86424297388c1431b8d4c936e4700) — selected: [{"after":[12,14]},{"after":[21,21]},{"after":[48,50]},{"after":[54,54]},{"after":[64,65]}]
+- `vscode-plugin/src/delivery/board-host.ts` (d4a2fd682c9036c8e7f97bce637c34c6b0da76a8) — selected: [{"after":[235,235]}]
+- `vscode-plugin/src/delivery/board-model.ts` (e921e136779cb02715a738b34d0d36a346adc4eb) — selected: [{"after":[112,112]}]
+- `vscode-plugin/src/delivery/board-protocol.ts` (0630f2901e92e5e962546dd47dae02390fa8e01d) — selected: [{"after":[141,143]}]
+- `vscode-plugin/src/delivery/board-views.ts` (ff41f91c1d2d9419487a8d284c07baaa5bcd25b6) — selected: [{"after":[83,83]},{"after":[102,111]}]
+- `vscode-plugin/src/delivery/delivery-contract.ts` (6ceee37a70793ac4cfb84c775a2fdce8eae10a10) — selected: [{"after":[34,34]},{"after":[57,57]},{"after":[72,72]}]
+- `vscode-plugin/src/delivery/labels.ts` (4273ad3dfabc34096fb728dd484163ab3645df9f) — selected: [{"after":[19,19]},{"after":[31,32]},{"after":[84,84]},{"after":[89,95]},{"after":[131,131]},{"after":[146,146]},{"after":[157,170]}]
+- `src/understanding/__tests__/acceptance.test.ts` (5946c74fbcf09dd56925241361d14773c91aa9e9) — selected: [{"after":[28,28]}]
+- `src/workflow/artifact-core/__tests__/lifecycle-members.test.ts` (c41ddabe0ccdb09002bbb382c558ba8945ad3263) — selected: [{"after":[19,19]},{"after":[21,21]},{"after":[23,23]}]
+- `src/workflow/artifact-core/sidecar-store.ts` (4f52af66a5e56704135b06f7a1460841d21ea071) — selected: [{"after":[205,215]}]
+- `src/workflow/convert/__tests__/repair.test.ts` (2e12e8870bb77d77253db9ff4143c267fa2b3765) — selected: [{"after":[193,202]},{"after":[204,208]},{"after":[224,243]}]
+- `src/workflow/convert/plan.ts` (8a42b3a30d9db3c367da72fdd7ce6713bb072b74) — selected: [{"after":[32,32]}]
+- `src/workflow/convert/repair.ts` (04794ff9b0a1d7be61712c832b226149628b7839) — selected: [{"after":[19,19]},{"after":[28,28]},{"after":[31,31]},{"after":[53,55]},{"after":[57,57]},{"after":[71,71]},{"after":[89,89]}]
+- `src/workflow/convert/story-history.ts` (db50b7b02aa58b1e25e48d855309b8812c3d7079) — selected: [{"after":[21,22]},{"after":[58,58]},{"after":[70,70]},{"after":[84,87]},{"after":[94,94]},{"after":[97,97]}]
+- `src/workflow/convert/types.ts` (08cd1e446052915a0648b82897c8c3889ab86c96) — selected: [{"after":[28,28]}]
+- `src/workflow/convert/__tests__/repair-tasks.test.ts` (e6f96d610f1f364ad3ccc0f17476bc5bfa799048) — selected: [{"after":[96,115]}]
+- `src/workflow/convert/tasks.ts` (71d54b6991ed63f6f1b168de47d1a40614dd290a) — selected: [{"after":[173,173]}]
+- `src/workflow/convert/__tests__/repair-settle.test.ts` (12837a18bf30d955a842d84109a9f2549a055497) — selected: [{"after":[19,20]},{"after":[51,58]},{"after":[243,261]},{"after":[308,349]}]
+- `src/workflow/convert/settle.ts` (f19f27e6413cd2ebd6380500f6175b29b2567ce4) — selected: [{"after":[43,43]},{"after":[109,113]},{"after":[124,124]},{"after":[131,133]},{"after":[145,145]},{"after":[151,151]},{"after":[159,161]},{"after":[169,171]},{"after":[173,180]},{"after":[182,184]},{"after":[187,188]}]
+- `src/workflow/delivery/__tests__/task-membership.test.ts` (86b2d60e0c3426bc602a24bcfa29b624e2cb6cfe) — selected: [{"after":[142,154]}]
+- `src/workflow/delivery/graph.ts` (c9fb0b04cb19425e026c7c3e9ccfe9e2b36a6b38) — selected: [{"after":[443,444]}]
+- `src/workflow/delivery/__tests__/gate.test.ts` (646e6c5806460709d1d0d7cda7d69aac5906abb6) — selected: [{"after":[122,132]}]
+- `src/workflow/delivery/gate.ts` (606527422a51a3455dc01a0f8746ab17d4ff55da) — selected: [{"after":[359,359]},{"after":[376,376]},{"after":[382,388]},{"after":[393,393]},{"after":[397,397]},{"after":[401,402]},{"after":[409,409]}]
+- `vscode-plugin/src/delivery/__tests__/board-host.test.ts` (925f8281109fa0e938ef99c0e07de1930fe40413) — selected: [{"after":[1794,1813]}]
+- `src/workflow/convert/__tests__/repair.test.ts` (2e12e8870bb77d77253db9ff4143c267fa2b3765) — selected: [{"after":[14,14]},{"after":[209,218]},{"after":[220,223]}]
+- `src/workflow/convert/repair.ts` (04794ff9b0a1d7be61712c832b226149628b7839) — selected: [{"after":[73,75]}]
+- `src/workflow/convert/__tests__/repair-settle.test.ts` (12837a18bf30d955a842d84109a9f2549a055497) — selected: [{"after":[14,14]},{"after":[262,289]},{"after":[306,307]}]
+- `src/workflow/convert/settle.ts` (f19f27e6413cd2ebd6380500f6175b29b2567ce4) — selected: [{"after":[101,102]},{"after":[105,108]},{"after":[136,138]},{"after":[140,140]},{"deletionAt":80}]
+- `src/workflow/delivery/__tests__/gate.test.ts` (646e6c5806460709d1d0d7cda7d69aac5906abb6) — selected: [{"after":[133,135]}]
+- `src/workflow/delivery/gate.ts` (606527422a51a3455dc01a0f8746ab17d4ff55da) — selected: [{"after":[398,400]}]
+- `src/workflow/convert/__tests__/repair-settle.test.ts` (12837a18bf30d955a842d84109a9f2549a055497) — selected: [{"after":[290,305]}]
+- `src/workflow/convert/settle.ts` (f19f27e6413cd2ebd6380500f6175b29b2567ce4) — selected: [{"after":[100,100]},{"after":[103,104]}]
+- `src/workflow/convert/__tests__/repair-settle.test.ts` (12837a18bf30d955a842d84109a9f2549a055497) — selected: [{"after":[80,81]}]
+- `src/workflow/convert/__tests__/repair.test.ts` (2e12e8870bb77d77253db9ff4143c267fa2b3765) — selected: [{"after":[203,203]},{"after":[219,219]}]
+- `src/workflow/convert/repair.ts` (04794ff9b0a1d7be61712c832b226149628b7839) — selected: [{"after":[109,110]}]
+- `src/workflow/convert/types.ts` (08cd1e446052915a0648b82897c8c3889ab86c96) — selected: [{"after":[145,146]}]
+
+Attribution failure (attribution_failed): attribution: Task scope omits a required replacement witness
+
+### t1: failed
+
+No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Coverage: **unverified** — No valid completed assessment was obtained.
+
+
+Review limitations (blocking):
+
+- No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Inspected references:
+
+
+### t2: failed
+
+No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Coverage: **unverified** — No valid completed assessment was obtained.
+
+
+Review limitations (blocking):
+
+- No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Inspected references:
+
+
+### t3: failed
+
+No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Coverage: **unverified** — No valid completed assessment was obtained.
+
+
+Review limitations (blocking):
+
+- No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Inspected references:
+
+
+### t4: failed
+
+No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Coverage: **unverified** — No valid completed assessment was obtained.
+
+
+Review limitations (blocking):
+
+- No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Inspected references:
+
+
+### t5: failed
+
+No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Coverage: **unverified** — No valid completed assessment was obtained.
+
+
+Review limitations (blocking):
+
+- No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Inspected references:
+
+
+### t6: failed
+
+No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Coverage: **unverified** — No valid completed assessment was obtained.
+
+
+Review limitations (blocking):
+
+- No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Inspected references:
+
+
+### t7: failed
+
+No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Coverage: **unverified** — No valid completed assessment was obtained.
+
+
+Review limitations (blocking):
+
+- No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Inspected references:
+
+
+### t8: failed
+
+No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Coverage: **unverified** — No valid completed assessment was obtained.
+
+
+Review limitations (blocking):
+
+- No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Inspected references:
+
+
+### t9: failed
+
+No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Coverage: **unverified** — No valid completed assessment was obtained.
+
+
+Review limitations (blocking):
+
+- No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Inspected references:
+
+
+### t10: failed
+
+No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Coverage: **unverified** — No valid completed assessment was obtained.
+
+
+Review limitations (blocking):
+
+- No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Inspected references:
+

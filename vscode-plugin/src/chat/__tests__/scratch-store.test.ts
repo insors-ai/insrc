@@ -586,6 +586,33 @@ test('scratch-store.test.ts: updateScratch happy path writes full text and repla
   assert.equal(bakCalls.some((c) => c.op === 'unlink' && c.path.includes('.tmp-')), true, 'temp still cleaned up when the backup link fails');
 });
 
+test('scratch-store.test.ts: r29 CR-MED — when the backup->destination restore link itself fails, the restore retries and falls back to an ATOMIC rename of the backup over the name, so the destination is never left missing; the consumed backup is not unlinked afterwards', async () => {
+  const { fake, store } = setup();
+  await fake.fs.mkdir(ROOT);
+  // Publish link (temp->dest) fails EIO, AND every backup->dest restore link fails EIO:
+  // only the final rename succeeds. Destination was unlinked, so without the rename
+  // fallback the name would be left missing.
+  seed(fake, '20260101-000007-h.md', 'restore-fallback original', 80);
+  fake.failOn = (c) => {
+    if (c.op === 'link' && c.to === `${ROOT}/20260101-000007-h.md`) {
+      return c.path.endsWith('.bak') ? Object.assign(new Error('EIO'), { code: 'EIO' }) : Object.assign(new Error('EIO'), { code: 'EIO' });
+    }
+    return undefined;
+  };
+  const markFb = fake.calls.length;
+  await assert.rejects(store.updateScratch('20260101-000007-h.md', 'never lands'), (e: unknown) => e instanceof ScratchStoreError);
+  fake.failOn = undefined;
+  const fbCalls = fake.calls.slice(markFb);
+  assert.equal(Buffer.from(fake.files.get(`${ROOT}/20260101-000007-h.md`) ?? []).toString('utf8'), 'restore-fallback original', 'destination restored with the ORIGINAL content — never left missing');
+  const restoreLinks = fbCalls.filter((c) => c.op === 'link' && c.path.endsWith('.bak') && c.to === `${ROOT}/20260101-000007-h.md`);
+  assert.ok(restoreLinks.length >= 2, `restore link was retried (${restoreLinks.length} attempts) before the fallback`);
+  const renames = fbCalls.filter((c) => c.op === 'rename' && c.path.endsWith('.bak') && c.to === `${ROOT}/20260101-000007-h.md`);
+  assert.equal(renames.length, 1, 'exactly one atomic rename of the backup over the destination name');
+  assert.equal(fbCalls.some((c) => c.op === 'unlink' && c.path.endsWith('.bak')), false, 'the rename-consumed backup is NOT unlinked afterwards');
+  assert.equal(fbCalls.some((c) => c.op === 'unlink' && c.path.includes('.tmp-')), true, 'temp still cleaned up');
+  assert.equal(fake.files.has([...fake.files.keys()].find((k) => k.endsWith('.bak') && k.includes('.tmp-')) ?? ''), false, 'no leftover backup entry remains');
+});
+
 test('scratch-store.test.ts: updateScratch bumps mtime so listScratches reflects the save', async () => {
   const { fake, store } = setup();
   await fake.fs.mkdir(ROOT);

@@ -20,7 +20,7 @@
  */
 
 import { constants } from 'node:fs';
-import { link, lstat, mkdir, open, readdir, unlink, writeFile } from 'node:fs/promises';
+import { link, lstat, mkdir, open, readdir, rename, unlink, writeFile } from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
 import { join, relative, resolve, sep } from 'node:path';
 import { errCode } from './async-util.js';
@@ -50,8 +50,13 @@ export interface ScratchFs {
    * and ELOOP on a symlink (O_CREAT|O_EXCL|O_NOFOLLOW).
    */
   writeFileExclusive(path: string, data: Uint8Array): Promise<void>;
-  /** Hard link — fails with EEXIST when `to` exists. Never replaced by rename. */
+  /** Hard link — fails with EEXIST when `to` exists. Never replaced by rename in the
+ * publish path; the ONLY rename in the store is the last-resort backup restore
+ * (restoreFromBackup), which renames the backup hard link back over the original
+ * name so a failed save never leaves the destination missing. */
   link(from: string, to: string): Promise<void>;
+  /** Atomic rename used ONLY by the backup-restore fallback. */
+  rename(from: string, to: string): Promise<void>;
   unlink(path: string): Promise<void>;
   open(path: string): Promise<ScratchFsHandle>;
 }
@@ -86,6 +91,7 @@ export const nodeScratchFs: ScratchFs = {
     }
   },
   link: (from, to) => link(from, to),
+  rename: (from, to) => rename(from, to),
   unlink: (p) => unlink(p),
   open: async (p) => {
     // O_NOFOLLOW: a symlink at the path yields ELOOP and is never followed.
@@ -384,23 +390,43 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
     /** Abandon the save: if any attempt already unlinked the destination, put the
      * ORIGINAL content back from the backup hard link first (the destination must be
      * untouched by a failed save, even on the retry path), then clean up temp+backup.
+     * The restore retries, and on persistent link failure falls back to an atomic
+     * rename of the backup over the name so the destination is never left missing.
      * The backup is unlinked only if this operation created it — a failed backup-link
      * (e.g. EEXIST on the random name) must never delete an entry it does not own. */
     let unlinkedSoFar = false;
     let backupLinked = false;
-    const fail = async (e: unknown): Promise<unknown> => {
-      if (unlinkedSoFar) {
+    // restoreFromBackup returns true when the backup name was CONSUMED (renamed over
+    // the destination), so the caller must not unlink it again.
+    const restoreFromBackup = async (): Promise<boolean> => {
+      for (let rAttempt = 0; rAttempt < PUBLISH_ATTEMPTS; rAttempt++) {
         try {
           await fs.link(backup, path);
+          return false;
         } catch (rmErr) {
-          // The restore itself failed (e.g. the name was recreated concurrently): the
-          // destination is then whatever the concurrent actor placed there — never our
-          // partial temp content — and the caller still sees the store error below.
-          log.warn(`[scratches] could not restore ${id} from the backup link: ${String(rmErr)}`);
+          if (errCode(rmErr) === 'EEXIST') {
+            // The name was recreated concurrently after our unlink: leave that actor's
+            // file alone (never clobber it) — the destination is not missing.
+            log.warn(`[scratches] restore of ${id} skipped: the name was recreated concurrently: ${String(rmErr)}`);
+            return false;
+          }
+          log.warn(`[scratches] could not restore ${id} from the backup link (attempt ${rAttempt + 1}): ${String(rmErr)}`);
         }
       }
+      // Last resort: the backup hard link still shares the ORIGINAL inode, so rename it
+      // over the name. rename is atomic and never leaves the name missing.
+      try {
+        await fs.rename(backup, path);
+        return true;
+      } catch (rnErr) {
+        log.warn(`[scratches] final rename-restore of ${id} from the backup failed: ${String(rnErr)}`);
+        return false;
+      }
+    };
+    const fail = async (e: unknown): Promise<unknown> => {
+      const consumed = unlinkedSoFar ? await restoreFromBackup() : false;
       await unlinkTemp();
-      if (backupLinked) await unlinkBackup();
+      if (backupLinked && !consumed) await unlinkBackup();
       return e;
     };
 
@@ -492,19 +518,11 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
     }
     // The publish never landed (non-EEXIST link failure, or retries exhausted). Put the
     // ORIGINAL content back under the original name from the backup hard link so the
-    // destination is untouched by the failed save, then clean up and report.
-    if (unlinked) {
-      try {
-        await fs.link(backup, path);
-      } catch (rmErr) {
-        // The restore itself failed (e.g. the name was recreated concurrently): the
-        // destination is then whatever the concurrent actor placed there — never our
-        // partial temp content — and the caller still sees the store error below.
-        log.warn(`[scratches] could not restore ${id} from the backup link: ${String(rmErr)}`);
-      }
-    }
+    // destination is untouched by the failed save (retry + atomic rename-restore, so
+    // the name is never left missing), then clean up and report.
+    const backupConsumed = unlinked ? await restoreFromBackup() : false;
     await unlinkTemp();
-    await unlinkBackup();
+    if (backupLinked && !backupConsumed) await unlinkBackup();
     throw storeError(publishErr);  };
 
   const deleteScratch = async (id: string): Promise<void> => {

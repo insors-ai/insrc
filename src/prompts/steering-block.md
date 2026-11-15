@@ -228,7 +228,9 @@ or small, is tracked**. `insrc_triage` sizes the request (grounded on your own
 - **epic** → `define` (full chain — new subsystem / many stories)
 - **feature** → standalone `design.story` (LLD) → `plan` → `build`
 - **small** → standalone `design.story` (LLD) → `build`
-- **trivial** → `build` (no LLD; a standalone BUILD record is its ledger entry)
+- **trivial** → `issue` stage as a change (`kind: 'change'`, no LLD) → `build`.
+  The ISSUE records what was asked and why and heads the work item; the build
+  runs under its hash.
 - **bugfix** → `issue` stage (carries a `magnitude`: `small` → issue → build;
   `sized` → issue → design.story → plan → build). A defect is tracked like a
   feature; see `insrc_guide({ workflow: 'bugfix' })`.
@@ -338,8 +340,10 @@ Present-ask-approve the PLAN, then run `build`.
 ## build — implement an approved plan (`insrc_build_step`)
 
 Turns an approved LLD/PLAN into code. Multi-turn: `phase:'implement'` →
-`phase:'validate'`. A **trivial** triage result goes straight here with no LLD
-(a standalone BUILD record is its ledger entry). Call
+`phase:'validate'`. A **trivial** change or a **small** bugfix comes here with no
+LLD, after its ISSUE is approved: pass the ISSUE's hash as `standalone.epicHash`
+(the advance's `nextCall` carries it). A no-LLD build without an approved ISSUE
+is refused. Call
 `insrc_schema({ tool:'insrc_build_step', phase })` for the exact shape of each
 phase.
 
@@ -460,8 +464,8 @@ only that final projection authorizes findings. Original selections remain prove
 including superseded entries with no finding scope; commits are lookup pointers. Pin exactly the documents the
 Story's route produced, as committed canonical artifacts: a Story with a Plan pins its
 `lld` and `plan` (and its `story` definition when an epic DEF exists); a Story with only
-an LLD pins that `lld`; a bugfix with only an ISSUE pins that `issue`; a trivial change
-pins none and is reviewed against the BUILD's focus. The daemon reads the route from the
+an LLD pins that `lld`; a bugfix or a trivial change with only an ISSUE pins that
+`issue`. The daemon reads the route from the
 Story's stored artifacts, refuses a packet whose set differs, and reviews a Story without
 a Plan as one unit, the BUILD's task. Include full test cases, commands, results and
 execution details. Never infer
@@ -533,8 +537,8 @@ classifies it `bugfix` and routes it to the `issue` stage.
 
 1. **`insrc_triage` FIRST** (as for any change). It sizes the defect and, for a
    `bugfix`, returns a `magnitude`:
-   - **small** → `issue` → `build` (no LLD; the standalone BUILD is the ledger
-     entry).
+   - **small** → `issue` → `build` (no LLD; the build runs under the ISSUE's
+     hash).
    - **sized** → `issue` → `design.story` (LLD) → `plan` → `build`.
    Triage hands back a pre-filled `nextCall` that starts `insrc_workflow_step`
    with `workflow: 'issue'` — make exactly that call.
@@ -553,6 +557,6 @@ classifies it `bugfix` and routes it to the `issue` stage.
    mandatory (the LLD, and the code review of the build). Completing the bugfix BUILD
    is the code-review-gated completion act, exactly as for a feature story.
 
-Do NOT patch a bug off-ledger. Skip triage only for a one-liner the user
-explicitly scoped as trivial.
+Do NOT patch a bug off-ledger. A change the user scoped as trivial still starts
+with an ISSUE: triage routes trivial work to the `issue` stage too.
 <!-- insrc:guide:bugfix:end -->

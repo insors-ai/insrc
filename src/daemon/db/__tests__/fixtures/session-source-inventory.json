@@ -36865,7 +36865,7 @@
       ],
       "siteCount": 9,
       "sitesDigest": "a8ce25ee55e92f906c493216e179e3b5abc04a91e9e75964b94f8da3d38d913b",
-      "sourceDigest": "191650381dc15b888a99d737ce827f078547fd33b410ec2814c66737ffa2e817"
+      "sourceDigest": "8c8aa951cac7e9a9bf9bcb09a85c7f9a8880124d5780d6e8251e3a6182e450bc"
     },
     "src/mcp/session-bootstrap.ts": {
       "classification": "private-mcp-bootstrap",

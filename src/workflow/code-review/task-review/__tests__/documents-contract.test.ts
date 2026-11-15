@@ -40,6 +40,7 @@ test('src/workflow/code-review/task-review/__tests__/documents-contract.test.ts:
 	assert.match(g, /Pin exactly the documents the Story's route produced/);
 	assert.match(g, /a Story with a Plan pins its `lld` and `plan`/);
 	assert.match(g, /a Story with only an LLD pins that `lld`/);
-	assert.match(g, /a bugfix with only an ISSUE pins that `issue`/);
-	assert.match(g, /a trivial change pins none/);
+	// A trivial change now has an ISSUE head (Story c5b49ff953a9a295/s1), so it pins its ISSUE like a bugfix.
+	assert.match(g, /a bugfix or a trivial change with only an ISSUE pins that `issue`/);
+	assert.doesNotMatch(g, /a trivial change pins none/);
 });

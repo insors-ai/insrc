@@ -141,6 +141,14 @@ test('a review without an origin, session or capacity is admitted exactly as bef
   assert.ok(ack2.incarnation);
   assert.equal(g.store.list().length, 0);
   assert.equal(g.runtimeCalls(), 0, 'the seam is never touched without bindTask');
+  // A refused launch on a normal connection (no capacity for a new origin)
+  // leaves the admission intact and registers nothing, exactly as before.
+  f.setLaunchFailures(1);
+  const noCapacity = context('no-capacity');
+  const ack3 = await f.registry.admit(f.submit('unobserved-3', 'code'), noCapacity.context);
+  assert.ok(ack3.incarnation, 'admission succeeds with no capacity');
+  await until(() => f.launchFailures() === 0);
+  assert.equal(f.store.list().length, 0, 'no task when the launch is refused');
 });
 
 test('a failure to launch or register never fails or slows the review', async t => {

@@ -136,3 +136,44 @@ test('Small standalone build without an epicHash is an error (no-identity)', asy
 	assert.equal(out.next, 'error');
 	assert.equal((out as BuildStepError).error.code, 'no-identity');
 });
+
+// ---------------------------------------------------------------------------
+// handleBuildStep[validate] standalone branch: the same refusals as implement
+// (Story c5b49ff953a9a295/s1, t3; code review attempt 2 finding on validate.ts:334)
+// ---------------------------------------------------------------------------
+
+async function validate(input: Record<string, unknown>): Promise<{ next: string; error?: { code: string; message: string } }> {
+	const env = await handleBuildStep({ phase: 'validate', target: '(ignored)', ...input });
+	return JSON.parse((env as { content: { text: string }[] }).content[0]!.text);
+}
+
+test('build validate: a no-LLD standalone call without epicHash, or whose epicHash has no approved ISSUE, is refused before any check and writes nothing', async () => {
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-sa-'));
+	try {
+		const artifacts = join(dir, '.insrc/artifacts');
+		const written = (): string[] => (existsSync(artifacts) ? readdirSync(artifacts) : []).filter(f => !f.startsWith('ISSUE-'));
+
+		// no identity: nothing is minted from the focus
+		const none = await validate({ repo: dir, standalone: { standalone: true, sizeClass: 'trivial', focus: 'Fix a typo in the status log line' } });
+		assert.equal(none.next, 'error');
+		assert.equal(none.error?.code, 'no-identity');
+		assert.match(none.error?.message ?? '', /hash of its approved ISSUE/);
+
+		// an epicHash with no ISSUE at all
+		const absent = await validate({ repo: dir, standalone: { standalone: true, epicHash: '1111111111111111', sizeClass: 'trivial', focus: 'Fix a typo' } });
+		assert.equal(absent.next, 'error');
+		assert.equal(absent.error?.code, 'no-head');
+		assert.match(absent.error?.message ?? '', /no ISSUE exists under 1111111111111111/);
+
+		// an ISSUE that is not approved yet
+		seedIssue(dir, '2222222222222222', { approved: false });
+		const draft = await validate({ repo: dir, standalone: { standalone: true, epicHash: '2222222222222222', sizeClass: 'trivial', focus: 'Fix a typo' } });
+		assert.equal(draft.next, 'error');
+		assert.equal(draft.error?.code, 'no-head');
+		assert.match(draft.error?.message ?? '', /ISSUE-2222222222222222 is not approved/);
+
+		assert.deepEqual(written(), [], 'no BUILD, TESTS or other record was written by a refused validate');
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});

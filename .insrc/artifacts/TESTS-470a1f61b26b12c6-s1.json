@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 34,
-        "contentHash": "f00ab28275f4b1a2ac17f98b4cdf363afb927f8ee4bc407256cd7002e401fe7a",
-        "at": "2026-11-15T16:05:25.583Z",
+        "number": 37,
+        "contentHash": "9a6f5177ff7e4f2ab7612a6ad9236f7da421f5209d7d89140591aeecb3134107",
+        "at": "2026-11-15T18:26:44.327Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "470a1f61b26b12c6",
     "storyId": "s1",
     "createdAt": "2026-11-14T12:24:52.408Z",
-    "updatedAt": "2026-11-15T16:05:25.470Z",
+    "updatedAt": "2026-11-15T18:26:44.188Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-14T08:55:28.320Z",
     "epicSlug": "rework-review-preparation-context-lifecycle-end",
-    "revision": 34
+    "revision": 37
   },
   "body": {
     "tasks": [
@@ -6881,6 +6881,219 @@
               },
               {
                 "title": "assessment evidence probes release owned committed bodies after reference resolution",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t18",
+        "commit": "47ec128f3",
+        "ranAt": "2026-11-15T18:26:44.188Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Bounded warm/cold recovery publication and cleanup: full feedback round-trip, zero warm source/model calls, old derived version rejection, history/native/cleanup crash and authority invariants.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/staged-lifecycle.test.ts",
+                "title": "warm staged publication preserves every submitted feedback action failure and origin without source or model reconstruction",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/staged-lifecycle.test.ts",
+                "title": "cold staged recovery qualifies exactly once then traverses the complete history in bounded windows",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/staged-lifecycle.test.ts",
+                "title": "publication failure never advances progress and retry reuses the same authorized staged generation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/staged-lifecycle.test.ts",
+                "title": "cleanup traverses exact staged history then requires current authority and a durable claim before deletion",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/staged-lifecycle.test.ts",
+                "title": "cancellation during a publication fragment fences authority but retains the active window until its consumer settles",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/staged-lifecycle.test.ts",
+                "title": "old derived encoding and tampered reopen never gain authority or invoke cleanup deletion",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/staged-lifecycle.test.ts",
+                "title": "revoked warm authority fences traversal without falling back to cold qualification",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/history-binding.test.ts",
+                "title": "successive code feedback resolves only new evidence and publication advances history without rebuilding source",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-publication.test.ts",
+                "title": "prepared code publication preserves complete input and closed proof across failed render, warm retry and temp deletion",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-publication.test.ts",
+                "title": "prepared design publication emits capability three and retries one permanent full history without models or temporary context",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-cleanup.test.ts",
+                "title": "approval cleanup retains active targets and preserves both-family permanent history",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/review-worker-cleanup.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 15437,
+            "titles": [
+              {
+                "title": "code",
+                "result": "pass"
+              },
+              {
+                "title": "design",
+                "result": "pass"
+              },
+              {
+                "title": "approval cleanup retains active targets and preserves both-family permanent history",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/history-binding.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5832,
+            "titles": [
+              {
+                "title": "successive code feedback resolves only new evidence and publication advances history without rebuilding source",
+                "result": "pass"
+              },
+              {
+                "title": "explicit cold source requalification preserves acknowledged feedback and advances the existing history chain",
+                "result": "pass"
+              },
+              {
+                "title": "explicit cold source requalification preserves unacknowledged feedback and advances the existing history chain",
+                "result": "pass"
+              },
+              {
+                "title": "accepted feedback or pinned attribution edits fence descendants without another source call",
+                "result": "pass"
+              },
+              {
+                "title": "lost checkpoint acknowledgment reconciles a durable result and lagging runtime without repeating model or source work",
+                "result": "pass"
+              },
+              {
+                "title": "remove",
+                "result": "pass"
+              },
+              {
+                "title": "rewrite",
+                "result": "pass"
+              },
+              {
+                "title": "accepted task origins cannot be removed or rewritten by a successor",
+                "result": "pass"
+              },
+              {
+                "title": "new feedback cannot reuse an absent or current-attempt origin",
+                "result": "pass"
+              },
+              {
+                "title": "design plan and dependency-ordered chunk results get successor bindings without changing source generation",
+                "result": "pass"
+              },
+              {
+                "title": "cancellation during publication bookkeeping preserves committed feedback and publication proof without accepting a late runtime boundary",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/prepared-publication.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4301,
+            "titles": [
+              {
+                "title": "prepared code publication preserves complete input and closed proof across failed render, warm retry and temp deletion",
+                "result": "pass"
+              },
+              {
+                "title": "prepared design publication emits capability three and retries one permanent full history without models or temporary context",
+                "result": "pass"
+              },
+              {
+                "title": "permanent preparation proof refuses unknown capability",
+                "result": "pass"
+              },
+              {
+                "title": "prepared code publication preserves an earlier qualified failure without promoting its retained scope headers to signoff",
+                "result": "pass"
+              },
+              {
+                "title": "publication bookkeeping errors do not change assessment authority and remain in the main phase audit",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/staged-lifecycle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8324,
+            "titles": [
+              {
+                "title": "warm staged publication preserves every submitted feedback action failure and origin without source or model reconstruction",
+                "result": "pass"
+              },
+              {
+                "title": "cold staged recovery qualifies exactly once then traverses the complete history in bounded windows",
+                "result": "pass"
+              },
+              {
+                "title": "publication failure never advances progress and retry reuses the same authorized staged generation",
+                "result": "pass"
+              },
+              {
+                "title": "cleanup traverses exact staged history then requires current authority and a durable claim before deletion",
+                "result": "pass"
+              },
+              {
+                "title": "cancellation during a publication fragment fences authority but retains the active window until its consumer settles",
+                "result": "pass"
+              },
+              {
+                "title": "old derived encoding and tampered reopen never gain authority or invoke cleanup deletion",
+                "result": "pass"
+              },
+              {
+                "title": "revoked warm authority fences traversal without falling back to cold qualification",
                 "result": "pass"
               }
             ],

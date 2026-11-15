@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 397 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 408 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -701,3 +701,32 @@ Run at 2026-11-15T16:05:25.470Z on commit `3129f64b2`. Tests check: **passed**. 
 | `src/workflow/review/__tests__/selected-code-window.test.ts` | 0 | 2 | 0.7 s |  |
 | `src/workflow/review/__tests__/staged-design-execution.test.ts` | 0 | 1 | 0.9 s |  |
 | `src/workflow/review/__tests__/staged-task-execution.test.ts` | 0 | 7 | 3.7 s |  |
+
+## t18
+
+Run at 2026-11-15T18:26:44.188Z on commit `47ec128f3`. Tests check: **passed**. 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: Bounded warm/cold recovery publication and cleanup: full feedback round-trip, zero warm source/model calls, old derived version rejection, history/native/cleanup crash and authority invariants.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | warm staged publication preserves every submitted feedback action failure and origin without source or model reconstruction | `src/workflow/review/__tests__/staged-lifecycle.test.ts` |
+| pass | cold staged recovery qualifies exactly once then traverses the complete history in bounded windows | `src/workflow/review/__tests__/staged-lifecycle.test.ts` |
+| pass | publication failure never advances progress and retry reuses the same authorized staged generation | `src/workflow/review/__tests__/staged-lifecycle.test.ts` |
+| pass | cleanup traverses exact staged history then requires current authority and a durable claim before deletion | `src/workflow/review/__tests__/staged-lifecycle.test.ts` |
+| pass | cancellation during a publication fragment fences authority but retains the active window until its consumer settles | `src/workflow/review/__tests__/staged-lifecycle.test.ts` |
+| pass | old derived encoding and tampered reopen never gain authority or invoke cleanup deletion | `src/workflow/review/__tests__/staged-lifecycle.test.ts` |
+| pass | revoked warm authority fences traversal without falling back to cold qualification | `src/workflow/review/__tests__/staged-lifecycle.test.ts` |
+| pass | successive code feedback resolves only new evidence and publication advances history without rebuilding source | `src/workflow/review/__tests__/history-binding.test.ts` |
+| pass | prepared code publication preserves complete input and closed proof across failed render, warm retry and temp deletion | `src/workflow/review/__tests__/prepared-publication.test.ts` |
+| pass | prepared design publication emits capability three and retries one permanent full history without models or temporary context | `src/workflow/review/__tests__/prepared-publication.test.ts` |
+| pass | approval cleanup retains active targets and preserves both-family permanent history | `src/daemon/threads/__tests__/review-worker-cleanup.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/review-worker-cleanup.test.ts` | 0 | 3 | 15.4 s |  |
+| `src/workflow/review/__tests__/history-binding.test.ts` | 0 | 11 | 5.8 s |  |
+| `src/workflow/review/__tests__/prepared-publication.test.ts` | 0 | 5 | 4.3 s |  |
+| `src/workflow/review/__tests__/staged-lifecycle.test.ts` | 0 | 7 | 8.3 s |  |

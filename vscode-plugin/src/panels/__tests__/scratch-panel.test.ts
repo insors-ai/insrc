@@ -860,3 +860,37 @@ test('chat-panel.test.ts + scratch-panel.test.ts: every button in the new UI is 
   assert.equal((browse.match(/<button\b/g) ?? []).length, 2, 'browse renders exactly Open + Delete per row');
   assert.equal((doc.match(/<button\b/g) ?? []).length, 1, 'document renders exactly the Send-to-chat button');
 });
+
+// ---------------------------------------------------------------------------
+// t2: document-channel protocol (scratch-panels.ts own unions/arrays)
+// ---------------------------------------------------------------------------
+
+test("scratch-panel.test.ts: 'scratch-save' in SCRATCH_DOC_WEBVIEW_TO_HOST_TYPES and NOT in SCRATCH_DOC_HOST_TO_WEBVIEW_TYPES; 'scratch-saved' in SCRATCH_DOC_HOST_TO_WEBVIEW_TYPES and NOT in SCRATCH_DOC_WEBVIEW_TO_HOST_TYPES; both carry gen; the chat-channel protocol.ts unions/arrays are untouched (direction isolation per channel)", async () => {
+  const {
+    SCRATCH_DOC_WEBVIEW_TO_HOST_TYPES,
+    SCRATCH_DOC_HOST_TO_WEBVIEW_TYPES,
+  } = await import('../scratch-panels.js');
+  const { WEBVIEW_TO_HOST_TYPES, HOST_TO_WEBVIEW_TYPES } = await import('../../chat/protocol.js');
+  const w2h = new Set<string>(SCRATCH_DOC_WEBVIEW_TO_HOST_TYPES);
+  const h2w = new Set<string>(SCRATCH_DOC_HOST_TO_WEBVIEW_TYPES);
+  assert.ok(w2h.has('scratch-save'), "'scratch-save' is webview→host on the document channel");
+  assert.ok(!h2w.has('scratch-save'), "'scratch-save' is NOT host→webview");
+  assert.ok(h2w.has('scratch-saved'), "'scratch-saved' is host→webview on the document channel");
+  assert.ok(!w2h.has('scratch-saved'), "'scratch-saved' is NOT webview→host");
+  // Both messages carry gen: the unions' only members expose it.
+  const saveType: import('../scratch-panels.js').ScratchDocWebviewToHost = { type: 'scratch-save', id: 'a.md', gen: 3, text: 'x' };
+  const savedType: import('../scratch-panels.js').ScratchDocHostToWebview = { type: 'scratch-saved', id: 'a.md', gen: 3, ok: true };
+  assert.equal(saveType.gen, 3, 'scratch-save carries gen');
+  assert.equal(savedType.gen, 3, 'scratch-saved carries gen');
+  // Direction isolation per channel: neither document-channel type appears in the
+  // chat channel's arrays, and the chat channel's arrays are unchanged by t2.
+  for (const t of ['scratch-save', 'scratch-saved'] as const) {
+    assert.ok(!WEBVIEW_TO_HOST_TYPES.includes(t as never), `chat WEBVIEW_TO_HOST_TYPES untouched: no ${t}`);
+    assert.ok(!HOST_TO_WEBVIEW_TYPES.includes(t as never), `chat HOST_TO_WEBVIEW_TYPES untouched: no ${t}`);
+  }
+  // The chat channel keeps its own scratch intents (they are chat-panel messages,
+  // a different channel) — they must still be present.
+  for (const t of ['scratch-open', 'scratch-delete', 'scratch-new', 'scratch-browse', 'send-to-chat'] as const) {
+    assert.ok(WEBVIEW_TO_HOST_TYPES.includes(t as never), `chat channel still carries ${t}`);
+  }
+});

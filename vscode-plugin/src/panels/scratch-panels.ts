@@ -37,6 +37,50 @@ export const SCRATCHPADS_VIEW_TYPE = 'insrc.scratchpads';
 /** The single-document view type. */
 export const SCRATCHPAD_VIEW_TYPE = 'insrc.scratchpad';
 
+/**
+ * The DOCUMENT-channel protocol (Story 01ac1e4b6a6c9c2f/s1 t2). The document
+ * webview's messages live here, in scratch-panels.ts — the chat channel's
+ * protocol.ts unions/arrays stay untouched (direction isolation per channel).
+ * Both messages carry `gen` so the save round-trip is generation-guarded end
+ * to end: the webview posts the gen of the page load it edited in, and the
+ * host answers with the same gen so a stale reply can be ignored.
+ */
+export type ScratchDocWebviewToHost =
+  | { readonly type: 'scratch-save'; readonly id: string; readonly gen: number; readonly text: string };
+
+/** Host -> document webview. */
+export type ScratchDocHostToWebview =
+  | { readonly type: 'scratch-saved'; readonly id: string; readonly gen: number; readonly ok: boolean; readonly error?: string | undefined };
+
+export const SCRATCH_DOC_WEBVIEW_TO_HOST_TYPES = [
+  'scratch-save',
+] as const;
+
+export const SCRATCH_DOC_HOST_TO_WEBVIEW_TYPES = [
+  'scratch-saved',
+] as const;
+
+export type ScratchDocWebviewToHostType = (typeof SCRATCH_DOC_WEBVIEW_TO_HOST_TYPES)[number];
+export type ScratchDocHostToWebviewType = (typeof SCRATCH_DOC_HOST_TO_WEBVIEW_TYPES)[number];
+
+type _AssertTrue<T extends true> = T;
+/** Compile-time union/array equality, mirroring protocol.ts: each const array
+ * contains exactly its union's discriminants, in its own direction. */
+type _DocWebviewArrayEqualsUnion = _AssertTrue<
+  ScratchDocWebviewToHostType extends ScratchDocWebviewToHost['type']
+    ? ScratchDocWebviewToHost['type'] extends ScratchDocWebviewToHostType
+      ? true
+      : false
+    : false
+>;
+type _DocHostArrayEqualsUnion = _AssertTrue<
+  ScratchDocHostToWebviewType extends ScratchDocHostToWebview['type']
+    ? ScratchDocHostToWebview['type'] extends ScratchDocHostToWebviewType
+      ? true
+      : false
+    : false
+>;
+
 /** The controller's handle: the stock PanelHandle plus setTitle. */
 export interface ScratchPanelHandle extends PanelHandle {
   setTitle(title: string): void;

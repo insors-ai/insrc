@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { isDeepStrictEqual } from 'node:util';
 import { createHash } from 'node:crypto';
-import { readFile, writeFile, rename, rm, mkdir, chmod, access } from 'node:fs/promises';
+import { readFile, writeFile, rename, rm, mkdir, chmod, access, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { productionRoutes } from './helpers/review-production-routes.js';
 import { until, workerRpc } from './helpers/review-clearance-fixture.js';
@@ -71,6 +71,27 @@ test('production defaults preserve all code routes story aliases task selection 
   } });
   assert.equal(done.crPublication, 'complete', JSON.stringify(done));
  }
+});
+
+test('instrumented actual-source managed code cutover stays bounded and preserves qualified and permanent results', async t => {
+ const f=await productionFixture(t,undefined,{holdProvider:true}),peer=await f.peer(),reviewId='instrumented-cutover',request=f.codeRequest(reviewId);
+ const oracle=await prepareReviewAdmission(f.code.repo,'instrumented-oracle',1,f.code.packet,'controller',f.code.deps.sources,{epicHash:hash});
+ const ack=await peer.call('taskReview.start',request);await f.release(reviewId);
+ await until(()=>Atomics.load(f.barriers.get(reviewId)!,5)>0);
+ const owner=f.started.get(reviewId)!,metrics=await workerRpc(owner,'fixture.stats') as {physicalQueries:number;physicalDuplicates:number;memoryHighWaterBytes:number;nativeCommands:number;fullCheckpointNativeWrites:number;qualifiedBeforeProvider:boolean};
+ const limits=reviewPreparationLimits(join(f.code.repo,'missing-review-config.json'));
+ assert.ok(metrics.physicalQueries>0);assert.equal(metrics.physicalDuplicates,0);
+ assert.ok(metrics.memoryHighWaterBytes<=limits.memoryMaxBytes,`${metrics.memoryHighWaterBytes} exceeds ${limits.memoryMaxBytes}`);
+ assert.equal(metrics.nativeCommands,0);assert.equal(metrics.fullCheckpointNativeWrites,0);assert.equal(metrics.qualifiedBeforeProvider,true);
+ const runtime=await stat(reviewRuntimePath({project:f.code.repo,family:'code',reviewId}));assert.ok(runtime.size<=256*1024,`runtime record ${runtime.size} exceeds 256KiB`);
+ assert.ok((await packets(ack.checkpointPath)).some(packet=>isDeepStrictEqual(packet,structuredClone(oracle.prepared))));
+ await workerRpc(owner,'fixture.releaseProvider');
+ await until(async()=>{const progress=await peer.call('taskReview.progress',request);return progress.crPublication==='complete';});
+ const checkpoint=JSON.parse(await readFile(ack.checkpointPath,'utf8')),attempt=checkpoint.attempts.at(-1);
+ assert.deepEqual(attempt.submitted,f.code.packet);assert.deepEqual(attempt['review-response'].tasks,[f.code.result]);
+ const permanent=JSON.parse(await readFile(join(f.code.repo,`.insrc/artifacts/CR-${hash}-s1.json`),'utf8'));
+ const recorded=permanent.body.reviews.find((review:{reviewId:string})=>review.reviewId===reviewId);
+ assert.deepEqual(recorded.tasks,[f.code.result]);
 });
 
 test('production design defaults preserve DEF HLD epic standalone and issue LLD latest targets and ignore unrelated edits', async t => {

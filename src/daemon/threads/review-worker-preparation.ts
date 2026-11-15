@@ -27,7 +27,6 @@ import { HistoryEvidenceStore } from '../../workflow/review/history-evidence.js'
 import { codeHistoryFeedback, designHistoryFeedback } from '../../workflow/review/history-feedback.js';
 import { ReviewSourceSession } from '../../workflow/review/source-session.js';
 import type { ReviewSources, BatchReviewSources } from '../../workflow/code-review/task-review/sources.js';
-import type { PreparedReviewPacket } from '../../workflow/code-review/task-review/packet.js';
 import type { TaskReviewDeps } from '../../workflow/code-review/task-review/coordinator.js';
 import type { DesignCoordinatorDeps } from '../../workflow/review/design-review/coordinator.js';
 import { submission } from './review-preparation-input.js';
@@ -64,7 +63,6 @@ export class ReviewWorkerPreparation {
  private evidence: HistoryEvidenceStore | undefined;
  private binding: HistoryBindingSession | undefined;
  private acceptedPrefix:PreparationHistory|undefined;
- private readonly packets = new Map<number, PreparedReviewPacket>();
  private constructor(readonly input: ReviewBootstrapInput, readonly bootstrap: ReviewPreparationBootstrap, private readonly rawSources: BatchReviewSources, history: PreparationHistoryStore, client: ReviewPreparationClient) {
   this.history = history; this.client = client;
   this.memory=new ReviewMemoryBudget(bootstrap.limits.memoryMaxBytes);
@@ -178,8 +176,6 @@ export class ReviewWorkerPreparation {
    this.evidence = await HistoryEvidenceStore.open(receipt, this.client, this.bootstrap.limits, this.authorize, this.invalidate, receipt.manifestDigest, this.memory);
    this.code = await CodePreparation.reuse(this.input.key, await this.reader(), this.sources, this.bootstrap.limits, this.client);
   }
-  for (const attempt of review.checkpoint.attempts) this.packets.set(attempt.header.attempt,
-   await this.code!.publicationPacket(attempt.submitted, this.sources, true, undefined, attempt.header.derived));
   return review;
  };
  async initializeDesign(prepareSubject?:DesignCoordinatorDeps['prepare']): Promise<void> {
@@ -234,7 +230,10 @@ export class ReviewWorkerPreparation {
    const borrowed = await this.client.borrow(this.design.qualificationIdentity()); this.receipt = borrowed.receipt; this.access = borrowed.access;
   }
   if (!this.receipt || !this.access) throw new Error('Qualified source preparation required before accepting feedback');
-  const feedback = 'storyId' in next ? codeHistoryFeedback(this.packets, this.sources, cp => this.verifyPublication(cp)) : designHistoryFeedback(cp => this.verifyPublication(cp));
+  const feedback = 'storyId' in next ? codeHistoryFeedback(attempt => {
+   if (!this.code) throw new Error('Publication source not qualified');
+   return this.code.publicationPacket(attempt.submitted, this.sources, true, undefined, attempt.header.derived);
+  }, this.sources, cp => this.verifyPublication(cp)) : designHistoryFeedback(cp => this.verifyPublication(cp));
   const validate = async (cp: PreparationHistory, prior?: PreparationHistory): Promise<HistoryValidation> => {
    const result = await feedback(cp, prior), evidence = [...(result.evidence ?? [])]; let bytes = 0;
    if (this.extra) for (const item of await this.extra.evidence()) {

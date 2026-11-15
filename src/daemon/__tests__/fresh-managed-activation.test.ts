@@ -211,8 +211,8 @@ test('Explicit fresh activation start intent and owned partial publication', pla
 });
 
 test('Fresh controller activation reconciles partial selector and bootstrap', { ...platform, timeout: 100_000 }, async t => {
-	for (const interruption of ['descriptor', 'manifest-link', 'bootstrap', 'recorded-readiness']) {
-		const startChild = interruption === 'bootstrap' || interruption === 'recorded-readiness';
+	for (const interruption of ['reserved', 'descriptor', 'manifest-link', 'bootstrap', 'unrecorded-readiness', 'recorded-readiness']) {
+		const startChild = ['bootstrap', 'unrecorded-readiness', 'recorded-readiness'].includes(interruption);
 		const { activation, gate, installation, scratch, exitTrigger } = await fixture(t, startChild);
 		const helper = join(scratch, 'interrupt.mjs');
 		await writeFile(helper, `
@@ -227,6 +227,7 @@ const interruption = ${JSON.stringify(interruption)};
 const installation = activation.installation;
 const gate = new InstallationMutationGate(installation.stateRoot);
 const active = await gate.reserve({ kind: 'start', owner: await readDarwinIncarnation(process.pid), activation });
+if (interruption === 'reserved') process.exit(0);
 const admit = async () => { await gate.admit(active); };
 for (const member of ['descriptor', 'manifest']) {
   await gate.recordIntent(active, 'activation-' + member, installation.releaseId);
@@ -245,7 +246,7 @@ if (activation.startChild) {
   await gate.recordIntent(active, 'activation-job', installation.releaseId);
   await ensureManagedJob(installation, admit, { intent: async () => {}, receipt: async () => {} });
 }
-if (interruption === 'recorded-readiness') {
+if (interruption.endsWith('readiness')) {
   const job = await inspectManagedJob(installation);
   await gate.recordReceipt(active, 'activation-job', JSON.stringify({ target: job.target, incarnation: await readDarwinIncarnation(job.pid) }));
   await gate.recordIntent(active, 'activation-state', installation.releaseId);
@@ -260,7 +261,7 @@ if (interruption === 'recorded-readiness') {
     state = accepted(await link.call({ op: 'status', generation: state.generation }));
   }
   if (state.state !== 'running') throw new Error('fixture did not reach readiness');
-  await gate.recordReceipt(active, 'activation-state', JSON.stringify(state));
+  if (interruption === 'recorded-readiness') await gate.recordReceipt(active, 'activation-state', JSON.stringify(state));
   link.close();
 }
 `);

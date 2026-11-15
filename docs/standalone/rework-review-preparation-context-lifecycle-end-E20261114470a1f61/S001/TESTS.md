@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 117 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 254 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -325,3 +325,169 @@ Run at 2026-11-15T08:15:23.802Z on commit `0c655b018`. Tests check: **passed**. 
 | `src/daemon/threads/__tests__/review-runtime-store.test.ts` | 0 | 16 | 2.3 s |  |
 | `src/workflow/review/__tests__/preparation-migration.test.ts` | 0 | 5 | 1.2 s |  |
 | `src/workflow/review/__tests__/prepared-publication.test.ts` | 0 | 5 | 1.4 s |  |
+
+## t13
+
+Run at 2026-11-15T09:57:51.957Z on commit `ab9e0aea4`. Tests check: **passed**. 137 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: Full disposable production two-session matrix through public routes and both families, all crash/tamper/native-loss cases, complete scope equivalence and bounded runtime writes.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | qualified context becomes ready atomically and survives warm phase handoff without source reconstruction | `src/daemon/threads/__tests__/review-context-registry.test.ts` |
+| pass | cold daemon receipts and tampered prepared objects cannot authorize reuse | `src/daemon/threads/__tests__/review-context-registry.test.ts` |
+| pass | design context uses complete validator output and refreshes latest target authority | `src/daemon/threads/__tests__/review-context-registry.test.ts` |
+| pass | partial context writes never emit a ready receipt and retain bounded recovery evidence | `src/daemon/threads/__tests__/review-context-registry.test.ts` |
+| pass | real reclaimed execution worker hands complete context to a distinct publication worker | `src/daemon/threads/__tests__/review-context-registry.test.ts` |
+| pass | matching context acquisitions coalesce qualification and refresh authority before every borrow | `src/daemon/threads/__tests__/review-context-registry.test.ts` |
+| pass | an immutable manifest replacement revokes an active borrow and fresh generations preserve source identity | `src/daemon/threads/__tests__/review-context-registry.test.ts` |
+| pass | central context serialization preserves binary text undefined and tag-shaped artifact data | `src/daemon/threads/__tests__/review-context-registry.test.ts` |
+| pass | cold qualification acknowledges an accepted result prefix at sequence zero without replaying work | `src/daemon/threads/__tests__/review-runtime-store.test.ts` |
+| pass | explicit initialization recovery adopts only the exact inactive crash window and never a live owner | `src/daemon/threads/__tests__/review-runtime-store.test.ts` |
+| pass | initialization recovery retains missing changed and uncertain proof instead of guessing ownership | `src/daemon/threads/__tests__/review-runtime-store.test.ts` |
+| pass | inactive runtime handoff preserves exact old audit before replacement and waits for actual checkpoint rebind | `src/daemon/threads/__tests__/review-runtime-store.test.ts` |
+| pass | inactive runtime handoff refuses unresolved leases and preserves evidence on failed or stale archive | `src/daemon/threads/__tests__/review-runtime-store.test.ts` |
+| pass | compact runtime native host persists intents before spawn and leaves history untouched | `src/daemon/threads/__tests__/review-runtime-store.test.ts` |
+| pass | uncertain compact open save prevents spawn and retains the exact fence | `src/daemon/threads/__tests__/review-runtime-store.test.ts` |
+| pass | runtime initialization and missing proof never recreate an empty guard | `src/daemon/threads/__tests__/review-runtime-store.test.ts` |
+| pass | interrupted initialization retains inactive proof and external replacement fences the writer | `src/daemon/threads/__tests__/review-runtime-store.test.ts` |
+| pass | runtime closure requires exact host disposal and cannot be supplied by a progress update | `src/daemon/threads/__tests__/review-runtime-store.test.ts` |
+| pass | phase progress flush waits for an already running durable update | `src/daemon/threads/__tests__/review-runtime-store.test.ts` |
+| pass | cancellation preserves accepted history and permits confirmed native closure after stopping admission | `src/daemon/threads/__tests__/review-runtime-store.test.ts` |
+| pass | durable cancellation allows exact closure and reports a resource fence until disposal is confirmed | `src/daemon/threads/__tests__/review-runtime-store.test.ts` |
+| pass | cancellation while spawn authorization is pending prevents the model CLI from launching | `src/daemon/threads/__tests__/review-runtime-store.test.ts` |
+| pass | cancellation aborts an in-flight model CLI without replaying it or changing accepted history | `src/daemon/threads/__tests__/review-runtime-store.test.ts` |
+| pass | inactive handoff refuses a cancelled same-attempt predecessor after a cold daemon restart | `src/daemon/threads/__tests__/review-runtime-store.test.ts` |
+| pass | private bootstrap activates only the actual bound checkpoint before capacity or native work | `src/daemon/threads/__tests__/review-preparation-host.test.ts` |
+| pass | private bootstrap retains inactive proof and fences an incorrectly bound checkpoint | `src/daemon/threads/__tests__/review-preparation-host.test.ts` |
+| pass | private preparation ports share aggregate capacity and reject foreign allocations and forged input | `src/daemon/threads/__tests__/review-preparation-host.test.ts` |
+| pass | private publication proof seals only acknowledged owned history and keeps cancellation available while publishing | `src/daemon/threads/__tests__/review-preparation-host.test.ts` |
+| pass | private bridge binds context and accepted history to current input and retains capacity until cleanup | `src/daemon/threads/__tests__/review-preparation-host.test.ts` |
+| pass | private preparation requests are revoked when the exact worker loses ownership | `src/daemon/threads/__tests__/review-preparation-host.test.ts` |
+| pass | private preparation client validates and reads qualified context from a real worker and retains proof until actual reclamation | `src/daemon/threads/__tests__/review-preparation-host.test.ts` |
+| pass | private progress preserves unknown totals and cannot advance committed result counts | `src/daemon/threads/__tests__/review-preparation-host.test.ts` |
+| pass | cleanup cannot pass while a private phase attachment is awaiting ownership validation | `src/daemon/threads/__tests__/review-preparation-host.test.ts` |
+| pass | one private phase cannot mutate another phase allocation for the same review | `src/daemon/threads/__tests__/review-preparation-host.test.ts` |
+| pass | cancellation rejects a model candidate released after the private phase was fenced | `src/daemon/threads/__tests__/review-preparation-host.test.ts` |
+| pass | canonical code persistence preserves submitted packets and feedback through actual family read-modify-write calls | `src/workflow/review/__tests__/preparation-history-store.test.ts` |
+| pass | private inactive handoff forces checkpoint rebind even when semantic input is unchanged | `src/workflow/review/__tests__/preparation-history-store.test.ts` |
+| pass | actual code progress producer sends only bounded observations without reading or saving full history | `src/workflow/review/__tests__/preparation-history-store.test.ts` |
+| pass | actual design controller activity updates bounded ownership and progress without traversing full history | `src/workflow/review/__tests__/preparation-history-store.test.ts` |
+| pass | canonical design persistence routes existing family writers to format three and keeps observer churn out of full history | `src/workflow/review/__tests__/preparation-history-store.test.ts` |
+| pass | canonical persistence fences external replacements and refuses embedded native writers or foreign paths | `src/workflow/review/__tests__/preparation-history-store.test.ts` |
+| pass | bounded observations cannot advance accepted results or replace a design execution owner | `src/workflow/review/__tests__/preparation-history-store.test.ts` |
+| pass | successive code feedback resolves only new evidence and publication advances history without rebuilding source | `src/workflow/review/__tests__/history-binding.test.ts` |
+| pass | accepted feedback or pinned attribution edits fence descendants without another source call | `src/workflow/review/__tests__/history-binding.test.ts` |
+| pass | lost checkpoint acknowledgment reconciles a durable result and lagging runtime without repeating model or source work | `src/workflow/review/__tests__/history-binding.test.ts` |
+| pass | accepted task origins cannot be removed or rewritten by a successor | `src/workflow/review/__tests__/history-binding.test.ts` |
+| pass | new feedback cannot reuse an absent or current-attempt origin | `src/workflow/review/__tests__/history-binding.test.ts` |
+| pass | design plan and dependency-ordered chunk results get successor bindings without changing source generation | `src/workflow/review/__tests__/history-binding.test.ts` |
+| pass | cancellation during publication bookkeeping preserves committed feedback and publication proof without accepting a late runtime boundary | `src/workflow/review/__tests__/history-binding.test.ts` |
+| pass | migrated code history passes feedback publication and cleanup with its complete migration proof | `src/workflow/review/__tests__/prepared-cleanup.test.ts` |
+| pass | migrated design history passes feedback publication and cleanup with its complete migration proof | `src/workflow/review/__tests__/prepared-cleanup.test.ts` |
+| pass | prepared code cleanup preserves permanent evidence and deletes exact private claims without Git or model calls | `src/workflow/review/__tests__/prepared-cleanup.test.ts` |
+| pass | prepared design cleanup preserves permanent evidence and deletes exact private claims without Git or model calls | `src/workflow/review/__tests__/prepared-cleanup.test.ts` |
+| pass | prepared code cleanup resumes every claim rename unlink and fsync boundary using only permanent proof | `src/workflow/review/__tests__/prepared-cleanup.test.ts` |
+| pass | prepared design cleanup resumes every claim rename unlink and fsync boundary using only permanent proof | `src/workflow/review/__tests__/prepared-cleanup.test.ts` |
+| pass | prepared code cleanup refuses arbitrary missing runtime, changed approval and active context ownership | `src/workflow/review/__tests__/prepared-cleanup.test.ts` |
+| pass | prepared design cleanup refuses arbitrary missing runtime, changed approval and active context ownership | `src/workflow/review/__tests__/prepared-cleanup.test.ts` |
+| pass | prepared code cleanup retains public replacements and fences changed private evidence | `src/workflow/review/__tests__/prepared-cleanup.test.ts` |
+| pass | prepared design cleanup retains public replacements and fences changed private evidence | `src/workflow/review/__tests__/prepared-cleanup.test.ts` |
+| pass | prepared code cleanup finishes final-claim crash recovery while retaining all public replacements | `src/workflow/review/__tests__/prepared-cleanup.test.ts` |
+| pass | prepared design cleanup finishes final-claim crash recovery while retaining all public replacements | `src/workflow/review/__tests__/prepared-cleanup.test.ts` |
+| pass | prepared code cleanup rechecks approval at deletion and rejects edited claim paths or digests | `src/workflow/review/__tests__/prepared-cleanup.test.ts` |
+| pass | prepared design cleanup rechecks approval at deletion and rejects edited claim paths or digests | `src/workflow/review/__tests__/prepared-cleanup.test.ts` |
+| pass | prepared code cleanup never treats pre-existing unrelated context files or self-declared generations as owned | `src/workflow/review/__tests__/prepared-cleanup.test.ts` |
+| pass | prepared design cleanup never treats pre-existing unrelated context files or self-declared generations as owned | `src/workflow/review/__tests__/prepared-cleanup.test.ts` |
+| pass | prepared code cleanup promotes a verified temporary claim after actual worker death before rename | `src/workflow/review/__tests__/prepared-cleanup.test.ts` |
+| pass | prepared design cleanup promotes a verified temporary claim after actual worker death before rename | `src/workflow/review/__tests__/prepared-cleanup.test.ts` |
+| pass | prepared code cleanup recovers hard-killed claim writes without losing fragments or rebuilding sources | `src/workflow/review/__tests__/prepared-cleanup.test.ts` |
+| pass | prepared design cleanup recovers hard-killed claim writes without losing fragments or rebuilding sources | `src/workflow/review/__tests__/prepared-cleanup.test.ts` |
+| pass | prepared code cleanup resumes after actual worker termination with runtime removed and checkpoint retained | `src/workflow/review/__tests__/prepared-cleanup.test.ts` |
+| pass | prepared design cleanup resumes after actual worker termination with runtime removed and checkpoint retained | `src/workflow/review/__tests__/prepared-cleanup.test.ts` |
+| pass | source session batches verified Git objects and shares immutable queries without bypassing logical budgets | `src/workflow/review/__tests__/source-session.test.ts` |
+| pass | source session retains evidence above memory capacity and never refetches evicted data | `src/workflow/review/__tests__/source-session.test.ts` |
+| pass | shared project reservations refuse body fetch before capacity exhaustion and transfer batches atomically | `src/workflow/review/__tests__/source-session.test.ts` |
+| pass | staged corruption and source errors fence the session instead of implicitly retrying Git | `src/workflow/review/__tests__/source-session.test.ts` |
+| pass | a source failure is recorded once and requires a fresh preparation session | `src/workflow/review/__tests__/source-session.test.ts` |
+| pass | preparation configuration is discoverable bounded and rejects malformed values | `src/workflow/review/__tests__/source-session.test.ts` |
+| pass | replaced staging directory is retained with its capacity until exact ownership is restored | `src/workflow/review/__tests__/source-session.test.ts` |
+| pass | two source sessions share project capacity without overlapping identities or duplicate fetches | `src/workflow/review/__tests__/source-session.test.ts` |
+| pass | historical and current packet qualification share sources while preserving exact projection | `src/workflow/review/__tests__/source-session.test.ts` |
+| pass | src/workflow/code-review/task-review/__tests__/route-admission.test.ts: admission builds the route from the Story's stored artifacts and refuses a packet that does not match it | `src/workflow/code-review/task-review/__tests__/route-admission.test.ts` |
+| pass | src/workflow/code-review/task-review/__tests__/route-admission.test.ts: a Story with no BUILD record is refused before anything is admitted | `src/workflow/code-review/task-review/__tests__/route-admission.test.ts` |
+| pass | src/workflow/code-review/task-review/__tests__/route-admission.test.ts: resume and publication of a stored review read no route | `src/workflow/code-review/task-review/__tests__/route-admission.test.ts` |
+| pass | shared preparation retains route-qualified views for pinned recovery without native refetch | `src/workflow/code-review/task-review/__tests__/route-admission.test.ts` |
+| pass | shared preparation preserves task selection and canonical story aliases across every route | `src/workflow/code-review/task-review/__tests__/route-admission.test.ts` |
+| pass | workflow matrix resolves Epic designs, standalone LLD and ISSUE LLD without future artifacts | `src/workflow/review/design-review/__tests__/subject.test.ts` |
+| pass | workflow requirements do not downgrade broken Epics or turn correction links into ancestors | `src/workflow/review/design-review/__tests__/subject.test.ts` |
+| pass | subject identity, containment and party are validated and only subject changes invalidate | `src/workflow/review/design-review/__tests__/subject.test.ts` |
+| pass | native and controller correction reviews preserve Epic standalone and ISSUE workflow requirements | `src/workflow/review/design-review/__tests__/subject.test.ts` |
+| pass | shared design preparation invalidates required ancestry and ignores unrelated files | `src/workflow/review/design-review/__tests__/subject.test.ts` |
+| pass | journalled publication and lost-receipt recovery preserve one exact full history without model calls | `src/workflow/review/design-review/__tests__/publication.test.ts` |
+| pass | publication capacity stays pending and a raised history allowance retries persistence only | `src/workflow/review/design-review/__tests__/publication.test.ts` |
+| pass | publication refuses changed subject before write and additional edits after its exact owned delta | `src/workflow/review/design-review/__tests__/publication.test.ts` |
+| pass | native review waits for durable publication and recovers failed receipt persistence without rerunning models | `src/workflow/review/design-review/__tests__/publication.test.ts` |
+| pass | publication append and head-replace crashes replay the same complete history entry | `src/workflow/review/design-review/__tests__/publication.test.ts` |
+| pass | known permanent-history minimum preserves failure and starts a new attempt after the allowance is raised | `src/workflow/review/design-review/__tests__/publication.test.ts` |
+| pass | canonical edits during journal staging or log append are preserved and refuse publication | `src/workflow/review/design-review/__tests__/publication.test.ts` |
+| pass | crash-boundary owner-loss and cleanup races retain targeted lifecycle guarantees | `src/daemon/threads/__tests__/review-worker-recovery.test.ts` |
+| pass | legacy interrupted code history retains uncertainty on earlier attempts | `src/daemon/threads/__tests__/review-worker-recovery.test.ts` |
+| pass | shutdown drains host leases before worker reclamation and replacement | `src/daemon/threads/__tests__/review-worker-recovery.test.ts` |
+| pass | disposable daemon crash reconstructs unresolved guards and leaves unrelated reviews usable | `src/daemon/threads/__tests__/review-worker-recovery.test.ts` |
+| pass | legacy active missing guards reconstruct only the requested review fence | `src/daemon/threads/__tests__/review-worker-recovery.test.ts` |
+| pass | code code design design and mixed reviews use distinct real worker threads | `src/daemon/threads/__tests__/review-worker-isolation.test.ts` |
+| pass | blocked admission permits progress daemon status and an unrelated review before release | `src/daemon/threads/__tests__/review-worker-isolation.test.ts` |
+| pass | installed production routing bounds never-ready and pre-save-hung boot without fallback | `src/daemon/threads/__tests__/review-worker-isolation.test.ts` |
+| pass | production controller exchanges and disconnect reclaim only their own review | `src/daemon/threads/__tests__/review-worker-isolation.test.ts` |
+| pass | full daemon entrypoint retains both-family crash fences and failed-attempt recovery through public routes | `src/daemon/threads/__tests__/review-worker-daemon.test.ts` |
+| pass | production defaults preserve all code routes story aliases task selection and complete pinned packet views | `src/daemon/threads/__tests__/review-production-qualification.test.ts` |
+| pass | production design defaults preserve DEF HLD epic standalone and issue LLD latest targets and ignore unrelated edits | `src/daemon/threads/__tests__/review-production-qualification.test.ts` |
+| pass | production defaults preserve merge rename deletion witnesses and exact selected spans against the baseline oracle | `src/daemon/threads/__tests__/review-production-qualification.test.ts` |
+| pass | production defaults reject unselected side-branch deletion even when the merge retains selected text | `src/daemon/threads/__tests__/review-production-qualification.test.ts` |
+| pass | production defaults reject unselected side-branch replacement even when the merge retains selected text | `src/daemon/threads/__tests__/review-production-qualification.test.ts` |
+| pass | production design target edits invalidate and only explicit approved restart captures the latest source | `src/daemon/threads/__tests__/review-production-qualification.test.ts` |
+| pass | production code cold publication rejects edited accepted feedback without another model call | `src/daemon/threads/__tests__/review-production-qualification.test.ts` |
+| pass | production design cold publication rejects edited accepted feedback without another model call | `src/daemon/threads/__tests__/review-production-qualification.test.ts` |
+| pass | production cancellation of an assessing code session leaves the other family owner and feedback untouched | `src/daemon/threads/__tests__/review-production-qualification.test.ts` |
+| pass | production cancellation of an assessing design session leaves the other family owner and feedback untouched | `src/daemon/threads/__tests__/review-production-qualification.test.ts` |
+| pass | production cancellation during code preparation leaves the other session usable and dispatches no target model | `src/daemon/threads/__tests__/review-production-qualification.test.ts` |
+| pass | production cancellation during design preparation leaves the other session usable and dispatches no target model | `src/daemon/threads/__tests__/review-production-qualification.test.ts` |
+| pass | production whole-story defaults preserve multi-task dependency order and every submitted test detail | `src/daemon/threads/__tests__/review-production-qualification.test.ts` |
+| pass | production code publication-only recovery after reclamation preserves feedback without model dispatch | `src/daemon/threads/__tests__/review-production-qualification.test.ts` |
+| pass | production design publication-only recovery after reclamation preserves feedback without model dispatch | `src/daemon/threads/__tests__/review-production-qualification.test.ts` |
+| pass | cold production design publication requalifies original evidence and rejects later author edits without a model | `src/daemon/threads/__tests__/review-production-qualification.test.ts` |
+| pass | production code v1 migration survives before-migration worker loss and only explicit resubmission activates | `src/daemon/threads/__tests__/review-production-qualification.test.ts` |
+| pass | production code v1 migration survives after-migration worker loss and only explicit resubmission activates | `src/daemon/threads/__tests__/review-production-qualification.test.ts` |
+| pass | production code v2 migration survives before-migration worker loss and only explicit resubmission activates | `src/daemon/threads/__tests__/review-production-qualification.test.ts` |
+| pass | production code v2 migration survives after-migration worker loss and only explicit resubmission activates | `src/daemon/threads/__tests__/review-production-qualification.test.ts` |
+| pass | production design v1 migration survives before-migration worker loss and only explicit resubmission activates | `src/daemon/threads/__tests__/review-production-qualification.test.ts` |
+| pass | production design v1 migration survives after-migration worker loss and only explicit resubmission activates | `src/daemon/threads/__tests__/review-production-qualification.test.ts` |
+| pass | production design v2 migration survives before-migration worker loss and only explicit resubmission activates | `src/daemon/threads/__tests__/review-production-qualification.test.ts` |
+| pass | production design v2 migration survives after-migration worker loss and only explicit resubmission activates | `src/daemon/threads/__tests__/review-production-qualification.test.ts` |
+| pass | production defaults reject missing BUILD mismatched document roles and foreign workflow epic issue and story documents | `src/daemon/threads/__tests__/review-production-route-invariants.test.ts` |
+| pass | production pinned code scope survives mutable route removal and rejects a changed same-attempt packet | `src/daemon/threads/__tests__/review-production-route-invariants.test.ts` |
+| pass | production design defaults reject broken Epic missing seed and orphan issue ancestry before assessment | `src/daemon/threads/__tests__/review-production-route-invariants.test.ts` |
+| pass | production design defaults reject invalid identity containment authors and oversized targets | `src/daemon/threads/__tests__/review-production-route-invariants.test.ts` |
+| pass | production design required HLD mutation invalidates the review while unrelated edits do not | `src/daemon/threads/__tests__/review-production-route-invariants.test.ts` |
+| pass | production design correction attempts preserve Epic standalone issue correction links and seed ancestry | `src/daemon/threads/__tests__/review-production-route-invariants.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/review-context-registry.test.ts` | 0 | 8 | 2.2 s |  |
+| `src/daemon/threads/__tests__/review-preparation-host.test.ts` | 0 | 11 | 2.4 s |  |
+| `src/daemon/threads/__tests__/review-production-qualification.test.ts` | 0 | 24 | 141.1 s |  |
+| `src/daemon/threads/__tests__/review-production-route-invariants.test.ts` | 0 | 6 | 53.3 s |  |
+| `src/daemon/threads/__tests__/review-runtime-store.test.ts` | 0 | 16 | 2.1 s |  |
+| `src/daemon/threads/__tests__/review-worker-daemon.test.ts` | 0 | 1 | 65.3 s |  |
+| `src/daemon/threads/__tests__/review-worker-isolation.test.ts` | 0 | 6 | 35.9 s |  |
+| `src/daemon/threads/__tests__/review-worker-recovery.test.ts` | 0 | 5 | 45.7 s |  |
+| `src/workflow/code-review/task-review/__tests__/route-admission.test.ts` | 0 | 5 | 1.9 s |  |
+| `src/workflow/review/__tests__/history-binding.test.ts` | 0 | 11 | 2.9 s |  |
+| `src/workflow/review/__tests__/preparation-history-store.test.ts` | 0 | 9 | 1.1 s |  |
+| `src/workflow/review/__tests__/prepared-cleanup.test.ts` | 0 | 296 | 51.3 s |  |
+| `src/workflow/review/__tests__/source-session.test.ts` | 0 | 9 | 1.6 s |  |
+| `src/workflow/review/design-review/__tests__/publication.test.ts` | 0 | 7 | 1.3 s |  |
+| `src/workflow/review/design-review/__tests__/subject.test.ts` | 0 | 5 | 3.1 s |  |

@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 25,
-        "contentHash": "bd53076d3f799b6210549d15750f3cf48db9a8416ff0de5e23b2876bae889772",
-        "at": "2026-11-15T08:15:24.066Z",
+        "number": 29,
+        "contentHash": "ab2e14f22f098022261e635d8ea6eb8476d84e6b20e24adcc52d51792436ffa8",
+        "at": "2026-11-15T09:57:52.111Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "470a1f61b26b12c6",
     "storyId": "s1",
     "createdAt": "2026-11-14T12:24:52.408Z",
-    "updatedAt": "2026-11-15T08:15:23.802Z",
+    "updatedAt": "2026-11-15T09:57:51.957Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-14T08:55:28.320Z",
     "epicSlug": "rework-review-preparation-context-lifecycle-end",
-    "revision": 25
+    "revision": 29
   },
   "body": {
     "tasks": [
@@ -2943,6 +2943,2520 @@
               },
               {
                 "title": "publication bookkeeping errors do not change assessment authority and remain in the main phase audit",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t13",
+        "commit": "ab9e0aea4",
+        "ranAt": "2026-11-15T09:57:51.957Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Full disposable production two-session matrix through public routes and both families, all crash/tamper/native-loss cases, complete scope equivalence and bounded runtime writes.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-context-registry.test.ts",
+                "title": "qualified context becomes ready atomically and survives warm phase handoff without source reconstruction",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-context-registry.test.ts",
+                "title": "cold daemon receipts and tampered prepared objects cannot authorize reuse",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-context-registry.test.ts",
+                "title": "design context uses complete validator output and refreshes latest target authority",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-context-registry.test.ts",
+                "title": "partial context writes never emit a ready receipt and retain bounded recovery evidence",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-context-registry.test.ts",
+                "title": "real reclaimed execution worker hands complete context to a distinct publication worker",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-context-registry.test.ts",
+                "title": "matching context acquisitions coalesce qualification and refresh authority before every borrow",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-context-registry.test.ts",
+                "title": "an immutable manifest replacement revokes an active borrow and fresh generations preserve source identity",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-context-registry.test.ts",
+                "title": "central context serialization preserves binary text undefined and tag-shaped artifact data",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-runtime-store.test.ts",
+                "title": "cold qualification acknowledges an accepted result prefix at sequence zero without replaying work",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-runtime-store.test.ts",
+                "title": "explicit initialization recovery adopts only the exact inactive crash window and never a live owner",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-runtime-store.test.ts",
+                "title": "initialization recovery retains missing changed and uncertain proof instead of guessing ownership",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-runtime-store.test.ts",
+                "title": "inactive runtime handoff preserves exact old audit before replacement and waits for actual checkpoint rebind",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-runtime-store.test.ts",
+                "title": "inactive runtime handoff refuses unresolved leases and preserves evidence on failed or stale archive",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-runtime-store.test.ts",
+                "title": "compact runtime native host persists intents before spawn and leaves history untouched",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-runtime-store.test.ts",
+                "title": "uncertain compact open save prevents spawn and retains the exact fence",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-runtime-store.test.ts",
+                "title": "runtime initialization and missing proof never recreate an empty guard",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-runtime-store.test.ts",
+                "title": "interrupted initialization retains inactive proof and external replacement fences the writer",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-runtime-store.test.ts",
+                "title": "runtime closure requires exact host disposal and cannot be supplied by a progress update",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-runtime-store.test.ts",
+                "title": "phase progress flush waits for an already running durable update",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-runtime-store.test.ts",
+                "title": "cancellation preserves accepted history and permits confirmed native closure after stopping admission",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-runtime-store.test.ts",
+                "title": "durable cancellation allows exact closure and reports a resource fence until disposal is confirmed",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-runtime-store.test.ts",
+                "title": "cancellation while spawn authorization is pending prevents the model CLI from launching",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-runtime-store.test.ts",
+                "title": "cancellation aborts an in-flight model CLI without replaying it or changing accepted history",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-runtime-store.test.ts",
+                "title": "inactive handoff refuses a cancelled same-attempt predecessor after a cold daemon restart",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-preparation-host.test.ts",
+                "title": "private bootstrap activates only the actual bound checkpoint before capacity or native work",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-preparation-host.test.ts",
+                "title": "private bootstrap retains inactive proof and fences an incorrectly bound checkpoint",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-preparation-host.test.ts",
+                "title": "private preparation ports share aggregate capacity and reject foreign allocations and forged input",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-preparation-host.test.ts",
+                "title": "private publication proof seals only acknowledged owned history and keeps cancellation available while publishing",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-preparation-host.test.ts",
+                "title": "private bridge binds context and accepted history to current input and retains capacity until cleanup",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-preparation-host.test.ts",
+                "title": "private preparation requests are revoked when the exact worker loses ownership",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-preparation-host.test.ts",
+                "title": "private preparation client validates and reads qualified context from a real worker and retains proof until actual reclamation",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-preparation-host.test.ts",
+                "title": "private progress preserves unknown totals and cannot advance committed result counts",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-preparation-host.test.ts",
+                "title": "cleanup cannot pass while a private phase attachment is awaiting ownership validation",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-preparation-host.test.ts",
+                "title": "one private phase cannot mutate another phase allocation for the same review",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-preparation-host.test.ts",
+                "title": "cancellation rejects a model candidate released after the private phase was fenced",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/preparation-history-store.test.ts",
+                "title": "canonical code persistence preserves submitted packets and feedback through actual family read-modify-write calls",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/preparation-history-store.test.ts",
+                "title": "private inactive handoff forces checkpoint rebind even when semantic input is unchanged",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/preparation-history-store.test.ts",
+                "title": "actual code progress producer sends only bounded observations without reading or saving full history",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/preparation-history-store.test.ts",
+                "title": "actual design controller activity updates bounded ownership and progress without traversing full history",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/preparation-history-store.test.ts",
+                "title": "canonical design persistence routes existing family writers to format three and keeps observer churn out of full history",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/preparation-history-store.test.ts",
+                "title": "canonical persistence fences external replacements and refuses embedded native writers or foreign paths",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/preparation-history-store.test.ts",
+                "title": "bounded observations cannot advance accepted results or replace a design execution owner",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/history-binding.test.ts",
+                "title": "successive code feedback resolves only new evidence and publication advances history without rebuilding source",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/history-binding.test.ts",
+                "title": "accepted feedback or pinned attribution edits fence descendants without another source call",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/history-binding.test.ts",
+                "title": "lost checkpoint acknowledgment reconciles a durable result and lagging runtime without repeating model or source work",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/history-binding.test.ts",
+                "title": "accepted task origins cannot be removed or rewritten by a successor",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/history-binding.test.ts",
+                "title": "new feedback cannot reuse an absent or current-attempt origin",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/history-binding.test.ts",
+                "title": "design plan and dependency-ordered chunk results get successor bindings without changing source generation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/history-binding.test.ts",
+                "title": "cancellation during publication bookkeeping preserves committed feedback and publication proof without accepting a late runtime boundary",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-cleanup.test.ts",
+                "title": "migrated code history passes feedback publication and cleanup with its complete migration proof",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-cleanup.test.ts",
+                "title": "migrated design history passes feedback publication and cleanup with its complete migration proof",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-cleanup.test.ts",
+                "title": "prepared code cleanup preserves permanent evidence and deletes exact private claims without Git or model calls",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-cleanup.test.ts",
+                "title": "prepared design cleanup preserves permanent evidence and deletes exact private claims without Git or model calls",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-cleanup.test.ts",
+                "title": "prepared code cleanup resumes every claim rename unlink and fsync boundary using only permanent proof",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-cleanup.test.ts",
+                "title": "prepared design cleanup resumes every claim rename unlink and fsync boundary using only permanent proof",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-cleanup.test.ts",
+                "title": "prepared code cleanup refuses arbitrary missing runtime, changed approval and active context ownership",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-cleanup.test.ts",
+                "title": "prepared design cleanup refuses arbitrary missing runtime, changed approval and active context ownership",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-cleanup.test.ts",
+                "title": "prepared code cleanup retains public replacements and fences changed private evidence",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-cleanup.test.ts",
+                "title": "prepared design cleanup retains public replacements and fences changed private evidence",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-cleanup.test.ts",
+                "title": "prepared code cleanup finishes final-claim crash recovery while retaining all public replacements",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-cleanup.test.ts",
+                "title": "prepared design cleanup finishes final-claim crash recovery while retaining all public replacements",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-cleanup.test.ts",
+                "title": "prepared code cleanup rechecks approval at deletion and rejects edited claim paths or digests",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-cleanup.test.ts",
+                "title": "prepared design cleanup rechecks approval at deletion and rejects edited claim paths or digests",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-cleanup.test.ts",
+                "title": "prepared code cleanup never treats pre-existing unrelated context files or self-declared generations as owned",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-cleanup.test.ts",
+                "title": "prepared design cleanup never treats pre-existing unrelated context files or self-declared generations as owned",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-cleanup.test.ts",
+                "title": "prepared code cleanup promotes a verified temporary claim after actual worker death before rename",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-cleanup.test.ts",
+                "title": "prepared design cleanup promotes a verified temporary claim after actual worker death before rename",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-cleanup.test.ts",
+                "title": "prepared code cleanup recovers hard-killed claim writes without losing fragments or rebuilding sources",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-cleanup.test.ts",
+                "title": "prepared design cleanup recovers hard-killed claim writes without losing fragments or rebuilding sources",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-cleanup.test.ts",
+                "title": "prepared code cleanup resumes after actual worker termination with runtime removed and checkpoint retained",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-cleanup.test.ts",
+                "title": "prepared design cleanup resumes after actual worker termination with runtime removed and checkpoint retained",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "source session batches verified Git objects and shares immutable queries without bypassing logical budgets",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "source session retains evidence above memory capacity and never refetches evicted data",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "shared project reservations refuse body fetch before capacity exhaustion and transfer batches atomically",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "staged corruption and source errors fence the session instead of implicitly retrying Git",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "a source failure is recorded once and requires a fresh preparation session",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "preparation configuration is discoverable bounded and rejects malformed values",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "replaced staging directory is retained with its capacity until exact ownership is restored",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "two source sessions share project capacity without overlapping identities or duplicate fetches",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "historical and current packet qualification share sources while preserving exact projection",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts",
+                "title": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts: admission builds the route from the Story's stored artifacts and refuses a packet that does not match it",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts",
+                "title": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts: a Story with no BUILD record is refused before anything is admitted",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts",
+                "title": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts: resume and publication of a stored review read no route",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts",
+                "title": "shared preparation retains route-qualified views for pinned recovery without native refetch",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts",
+                "title": "shared preparation preserves task selection and canonical story aliases across every route",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/subject.test.ts",
+                "title": "workflow matrix resolves Epic designs, standalone LLD and ISSUE LLD without future artifacts",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/subject.test.ts",
+                "title": "workflow requirements do not downgrade broken Epics or turn correction links into ancestors",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/subject.test.ts",
+                "title": "subject identity, containment and party are validated and only subject changes invalidate",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/subject.test.ts",
+                "title": "native and controller correction reviews preserve Epic standalone and ISSUE workflow requirements",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/subject.test.ts",
+                "title": "shared design preparation invalidates required ancestry and ignores unrelated files",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
+                "title": "journalled publication and lost-receipt recovery preserve one exact full history without model calls",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
+                "title": "publication capacity stays pending and a raised history allowance retries persistence only",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
+                "title": "publication refuses changed subject before write and additional edits after its exact owned delta",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
+                "title": "native review waits for durable publication and recovers failed receipt persistence without rerunning models",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
+                "title": "publication append and head-replace crashes replay the same complete history entry",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
+                "title": "known permanent-history minimum preserves failure and starts a new attempt after the allowance is raised",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
+                "title": "canonical edits during journal staging or log append are preserved and refuse publication",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-recovery.test.ts",
+                "title": "crash-boundary owner-loss and cleanup races retain targeted lifecycle guarantees",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-recovery.test.ts",
+                "title": "legacy interrupted code history retains uncertainty on earlier attempts",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-recovery.test.ts",
+                "title": "shutdown drains host leases before worker reclamation and replacement",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-recovery.test.ts",
+                "title": "disposable daemon crash reconstructs unresolved guards and leaves unrelated reviews usable",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-recovery.test.ts",
+                "title": "legacy active missing guards reconstruct only the requested review fence",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-isolation.test.ts",
+                "title": "code code design design and mixed reviews use distinct real worker threads",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-isolation.test.ts",
+                "title": "blocked admission permits progress daemon status and an unrelated review before release",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-isolation.test.ts",
+                "title": "installed production routing bounds never-ready and pre-save-hung boot without fallback",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-isolation.test.ts",
+                "title": "production controller exchanges and disconnect reclaim only their own review",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-daemon.test.ts",
+                "title": "full daemon entrypoint retains both-family crash fences and failed-attempt recovery through public routes",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+                "title": "production defaults preserve all code routes story aliases task selection and complete pinned packet views",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+                "title": "production design defaults preserve DEF HLD epic standalone and issue LLD latest targets and ignore unrelated edits",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+                "title": "production defaults preserve merge rename deletion witnesses and exact selected spans against the baseline oracle",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+                "title": "production defaults reject unselected side-branch deletion even when the merge retains selected text",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+                "title": "production defaults reject unselected side-branch replacement even when the merge retains selected text",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+                "title": "production design target edits invalidate and only explicit approved restart captures the latest source",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+                "title": "production code cold publication rejects edited accepted feedback without another model call",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+                "title": "production design cold publication rejects edited accepted feedback without another model call",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+                "title": "production cancellation of an assessing code session leaves the other family owner and feedback untouched",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+                "title": "production cancellation of an assessing design session leaves the other family owner and feedback untouched",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+                "title": "production cancellation during code preparation leaves the other session usable and dispatches no target model",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+                "title": "production cancellation during design preparation leaves the other session usable and dispatches no target model",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+                "title": "production whole-story defaults preserve multi-task dependency order and every submitted test detail",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+                "title": "production code publication-only recovery after reclamation preserves feedback without model dispatch",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+                "title": "production design publication-only recovery after reclamation preserves feedback without model dispatch",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+                "title": "cold production design publication requalifies original evidence and rejects later author edits without a model",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+                "title": "production code v1 migration survives before-migration worker loss and only explicit resubmission activates",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+                "title": "production code v1 migration survives after-migration worker loss and only explicit resubmission activates",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+                "title": "production code v2 migration survives before-migration worker loss and only explicit resubmission activates",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+                "title": "production code v2 migration survives after-migration worker loss and only explicit resubmission activates",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+                "title": "production design v1 migration survives before-migration worker loss and only explicit resubmission activates",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+                "title": "production design v1 migration survives after-migration worker loss and only explicit resubmission activates",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+                "title": "production design v2 migration survives before-migration worker loss and only explicit resubmission activates",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+                "title": "production design v2 migration survives after-migration worker loss and only explicit resubmission activates",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-route-invariants.test.ts",
+                "title": "production defaults reject missing BUILD mismatched document roles and foreign workflow epic issue and story documents",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-route-invariants.test.ts",
+                "title": "production pinned code scope survives mutable route removal and rejects a changed same-attempt packet",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-route-invariants.test.ts",
+                "title": "production design defaults reject broken Epic missing seed and orphan issue ancestry before assessment",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-route-invariants.test.ts",
+                "title": "production design defaults reject invalid identity containment authors and oversized targets",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-route-invariants.test.ts",
+                "title": "production design required HLD mutation invalidates the review while unrelated edits do not",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-route-invariants.test.ts",
+                "title": "production design correction attempts preserve Epic standalone issue correction links and seed ancestry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/review-context-registry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2230,
+            "titles": [
+              {
+                "title": "qualified context becomes ready atomically and survives warm phase handoff without source reconstruction",
+                "result": "pass"
+              },
+              {
+                "title": "cold daemon receipts and tampered prepared objects cannot authorize reuse",
+                "result": "pass"
+              },
+              {
+                "title": "design context uses complete validator output and refreshes latest target authority",
+                "result": "pass"
+              },
+              {
+                "title": "partial context writes never emit a ready receipt and retain bounded recovery evidence",
+                "result": "pass"
+              },
+              {
+                "title": "real reclaimed execution worker hands complete context to a distinct publication worker",
+                "result": "pass"
+              },
+              {
+                "title": "matching context acquisitions coalesce qualification and refresh authority before every borrow",
+                "result": "pass"
+              },
+              {
+                "title": "an immutable manifest replacement revokes an active borrow and fresh generations preserve source identity",
+                "result": "pass"
+              },
+              {
+                "title": "central context serialization preserves binary text undefined and tag-shaped artifact data",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-preparation-host.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2350,
+            "titles": [
+              {
+                "title": "private bootstrap activates only the actual bound checkpoint before capacity or native work",
+                "result": "pass"
+              },
+              {
+                "title": "private bootstrap retains inactive proof and fences an incorrectly bound checkpoint",
+                "result": "pass"
+              },
+              {
+                "title": "private preparation ports share aggregate capacity and reject foreign allocations and forged input",
+                "result": "pass"
+              },
+              {
+                "title": "private publication proof seals only acknowledged owned history and keeps cancellation available while publishing",
+                "result": "pass"
+              },
+              {
+                "title": "private bridge binds context and accepted history to current input and retains capacity until cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "private preparation requests are revoked when the exact worker loses ownership",
+                "result": "pass"
+              },
+              {
+                "title": "private preparation client validates and reads qualified context from a real worker and retains proof until actual reclamation",
+                "result": "pass"
+              },
+              {
+                "title": "private progress preserves unknown totals and cannot advance committed result counts",
+                "result": "pass"
+              },
+              {
+                "title": "cleanup cannot pass while a private phase attachment is awaiting ownership validation",
+                "result": "pass"
+              },
+              {
+                "title": "one private phase cannot mutate another phase allocation for the same review",
+                "result": "pass"
+              },
+              {
+                "title": "cancellation rejects a model candidate released after the private phase was fenced",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 141082,
+            "titles": [
+              {
+                "title": "production defaults preserve all code routes story aliases task selection and complete pinned packet views",
+                "result": "pass"
+              },
+              {
+                "title": "production design defaults preserve DEF HLD epic standalone and issue LLD latest targets and ignore unrelated edits",
+                "result": "pass"
+              },
+              {
+                "title": "production defaults preserve merge rename deletion witnesses and exact selected spans against the baseline oracle",
+                "result": "pass"
+              },
+              {
+                "title": "production defaults reject unselected side-branch deletion even when the merge retains selected text",
+                "result": "pass"
+              },
+              {
+                "title": "production defaults reject unselected side-branch replacement even when the merge retains selected text",
+                "result": "pass"
+              },
+              {
+                "title": "production design target edits invalidate and only explicit approved restart captures the latest source",
+                "result": "pass"
+              },
+              {
+                "title": "production code cold publication rejects edited accepted feedback without another model call",
+                "result": "pass"
+              },
+              {
+                "title": "production design cold publication rejects edited accepted feedback without another model call",
+                "result": "pass"
+              },
+              {
+                "title": "production cancellation of an assessing code session leaves the other family owner and feedback untouched",
+                "result": "pass"
+              },
+              {
+                "title": "production cancellation of an assessing design session leaves the other family owner and feedback untouched",
+                "result": "pass"
+              },
+              {
+                "title": "production cancellation during code preparation leaves the other session usable and dispatches no target model",
+                "result": "pass"
+              },
+              {
+                "title": "production cancellation during design preparation leaves the other session usable and dispatches no target model",
+                "result": "pass"
+              },
+              {
+                "title": "production whole-story defaults preserve multi-task dependency order and every submitted test detail",
+                "result": "pass"
+              },
+              {
+                "title": "production code publication-only recovery after reclamation preserves feedback without model dispatch",
+                "result": "pass"
+              },
+              {
+                "title": "production design publication-only recovery after reclamation preserves feedback without model dispatch",
+                "result": "pass"
+              },
+              {
+                "title": "cold production design publication requalifies original evidence and rejects later author edits without a model",
+                "result": "pass"
+              },
+              {
+                "title": "production code v1 migration survives before-migration worker loss and only explicit resubmission activates",
+                "result": "pass"
+              },
+              {
+                "title": "production code v1 migration survives after-migration worker loss and only explicit resubmission activates",
+                "result": "pass"
+              },
+              {
+                "title": "production code v2 migration survives before-migration worker loss and only explicit resubmission activates",
+                "result": "pass"
+              },
+              {
+                "title": "production code v2 migration survives after-migration worker loss and only explicit resubmission activates",
+                "result": "pass"
+              },
+              {
+                "title": "production design v1 migration survives before-migration worker loss and only explicit resubmission activates",
+                "result": "pass"
+              },
+              {
+                "title": "production design v1 migration survives after-migration worker loss and only explicit resubmission activates",
+                "result": "pass"
+              },
+              {
+                "title": "production design v2 migration survives before-migration worker loss and only explicit resubmission activates",
+                "result": "pass"
+              },
+              {
+                "title": "production design v2 migration survives after-migration worker loss and only explicit resubmission activates",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-production-route-invariants.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 53251,
+            "titles": [
+              {
+                "title": "production defaults reject missing BUILD mismatched document roles and foreign workflow epic issue and story documents",
+                "result": "pass"
+              },
+              {
+                "title": "production pinned code scope survives mutable route removal and rejects a changed same-attempt packet",
+                "result": "pass"
+              },
+              {
+                "title": "production design defaults reject broken Epic missing seed and orphan issue ancestry before assessment",
+                "result": "pass"
+              },
+              {
+                "title": "production design defaults reject invalid identity containment authors and oversized targets",
+                "result": "pass"
+              },
+              {
+                "title": "production design required HLD mutation invalidates the review while unrelated edits do not",
+                "result": "pass"
+              },
+              {
+                "title": "production design correction attempts preserve Epic standalone issue correction links and seed ancestry",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-runtime-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2096,
+            "titles": [
+              {
+                "title": "cold qualification acknowledges an accepted result prefix at sequence zero without replaying work",
+                "result": "pass"
+              },
+              {
+                "title": "explicit initialization recovery adopts only the exact inactive crash window and never a live owner",
+                "result": "pass"
+              },
+              {
+                "title": "initialization recovery retains missing changed and uncertain proof instead of guessing ownership",
+                "result": "pass"
+              },
+              {
+                "title": "inactive runtime handoff preserves exact old audit before replacement and waits for actual checkpoint rebind",
+                "result": "pass"
+              },
+              {
+                "title": "inactive runtime handoff refuses unresolved leases and preserves evidence on failed or stale archive",
+                "result": "pass"
+              },
+              {
+                "title": "compact runtime native host persists intents before spawn and leaves history untouched",
+                "result": "pass"
+              },
+              {
+                "title": "uncertain compact open save prevents spawn and retains the exact fence",
+                "result": "pass"
+              },
+              {
+                "title": "runtime initialization and missing proof never recreate an empty guard",
+                "result": "pass"
+              },
+              {
+                "title": "interrupted initialization retains inactive proof and external replacement fences the writer",
+                "result": "pass"
+              },
+              {
+                "title": "runtime closure requires exact host disposal and cannot be supplied by a progress update",
+                "result": "pass"
+              },
+              {
+                "title": "phase progress flush waits for an already running durable update",
+                "result": "pass"
+              },
+              {
+                "title": "cancellation preserves accepted history and permits confirmed native closure after stopping admission",
+                "result": "pass"
+              },
+              {
+                "title": "durable cancellation allows exact closure and reports a resource fence until disposal is confirmed",
+                "result": "pass"
+              },
+              {
+                "title": "cancellation while spawn authorization is pending prevents the model CLI from launching",
+                "result": "pass"
+              },
+              {
+                "title": "cancellation aborts an in-flight model CLI without replaying it or changing accepted history",
+                "result": "pass"
+              },
+              {
+                "title": "inactive handoff refuses a cancelled same-attempt predecessor after a cold daemon restart",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-worker-daemon.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 65285,
+            "titles": [
+              {
+                "title": "full daemon entrypoint retains both-family crash fences and failed-attempt recovery through public routes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-worker-isolation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 35907,
+            "titles": [
+              {
+                "title": "code code design design and mixed reviews use distinct real worker threads",
+                "result": "pass"
+              },
+              {
+                "title": "blocked admission permits progress daemon status and an unrelated review before release",
+                "result": "pass"
+              },
+              {
+                "title": "never-ready",
+                "result": "pass"
+              },
+              {
+                "title": "before-save",
+                "result": "pass"
+              },
+              {
+                "title": "installed production routing bounds never-ready and pre-save-hung boot without fallback",
+                "result": "pass"
+              },
+              {
+                "title": "production controller exchanges and disconnect reclaim only their own review",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-worker-recovery.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 45717,
+            "titles": [
+              {
+                "title": "crash-boundary owner-loss and cleanup races retain targeted lifecycle guarantees",
+                "result": "pass"
+              },
+              {
+                "title": "legacy interrupted code history retains uncertainty on earlier attempts",
+                "result": "pass"
+              },
+              {
+                "title": "shutdown drains host leases before worker reclamation and replacement",
+                "result": "pass"
+              },
+              {
+                "title": "disposable daemon crash reconstructs unresolved guards and leaves unrelated reviews usable",
+                "result": "pass"
+              },
+              {
+                "title": "legacy active missing guards reconstruct only the requested review fence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1853,
+            "titles": [
+              {
+                "title": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts: admission builds the route from the Story's stored artifacts and refuses a packet that does not match it",
+                "result": "pass"
+              },
+              {
+                "title": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts: a Story with no BUILD record is refused before anything is admitted",
+                "result": "pass"
+              },
+              {
+                "title": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts: resume and publication of a stored review read no route",
+                "result": "pass"
+              },
+              {
+                "title": "shared preparation retains route-qualified views for pinned recovery without native refetch",
+                "result": "pass"
+              },
+              {
+                "title": "shared preparation preserves task selection and canonical story aliases across every route",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/history-binding.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2892,
+            "titles": [
+              {
+                "title": "successive code feedback resolves only new evidence and publication advances history without rebuilding source",
+                "result": "pass"
+              },
+              {
+                "title": "explicit cold source requalification preserves acknowledged feedback and advances the existing history chain",
+                "result": "pass"
+              },
+              {
+                "title": "explicit cold source requalification preserves unacknowledged feedback and advances the existing history chain",
+                "result": "pass"
+              },
+              {
+                "title": "accepted feedback or pinned attribution edits fence descendants without another source call",
+                "result": "pass"
+              },
+              {
+                "title": "lost checkpoint acknowledgment reconciles a durable result and lagging runtime without repeating model or source work",
+                "result": "pass"
+              },
+              {
+                "title": "remove",
+                "result": "pass"
+              },
+              {
+                "title": "rewrite",
+                "result": "pass"
+              },
+              {
+                "title": "accepted task origins cannot be removed or rewritten by a successor",
+                "result": "pass"
+              },
+              {
+                "title": "new feedback cannot reuse an absent or current-attempt origin",
+                "result": "pass"
+              },
+              {
+                "title": "design plan and dependency-ordered chunk results get successor bindings without changing source generation",
+                "result": "pass"
+              },
+              {
+                "title": "cancellation during publication bookkeeping preserves committed feedback and publication proof without accepting a late runtime boundary",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/preparation-history-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1064,
+            "titles": [
+              {
+                "title": "canonical code persistence preserves submitted packets and feedback through actual family read-modify-write calls",
+                "result": "pass"
+              },
+              {
+                "title": "private inactive handoff forces checkpoint rebind even when semantic input is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "canonical persistence fences in-place replacement between validated readback and stamp adoption",
+                "result": "pass"
+              },
+              {
+                "title": "canonical persistence fences rename replacement between validated readback and stamp adoption",
+                "result": "pass"
+              },
+              {
+                "title": "actual code progress producer sends only bounded observations without reading or saving full history",
+                "result": "pass"
+              },
+              {
+                "title": "actual design controller activity updates bounded ownership and progress without traversing full history",
+                "result": "pass"
+              },
+              {
+                "title": "canonical design persistence routes existing family writers to format three and keeps observer churn out of full history",
+                "result": "pass"
+              },
+              {
+                "title": "canonical persistence fences external replacements and refuses embedded native writers or foreign paths",
+                "result": "pass"
+              },
+              {
+                "title": "bounded observations cannot advance accepted results or replace a design execution owner",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/prepared-cleanup.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 51251,
+            "titles": [
+              {
+                "title": "migrated code history passes feedback publication and cleanup with its complete migration proof",
+                "result": "pass"
+              },
+              {
+                "title": "prepared code cleanup preserves permanent evidence and deletes exact private claims without Git or model calls",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 1: claim.audit.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 2: claim.audit.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 3: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 4: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 5: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 6: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 7: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 8: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 9: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 10: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 11: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 12: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 13: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 14: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 15: rename.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 16: rename.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 17: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 18: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 19: unlink.tmp.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 20: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 21: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 22: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 23: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 24: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 25: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 26: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 27: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 28: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 29: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 30: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 31: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 32: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 33: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 34: rename.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 35: rename.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 36: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 37: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 38: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 39: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 40: rename.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 41: rename.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 42: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 43: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 44: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 45: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 46: rename.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 47: rename.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 48: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 49: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 50: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 51: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 52: claim.roots.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 53: claim.roots.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 54: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 55: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 56: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 57: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 58: unlink.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 59: unlink.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 60: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 61: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 62: unlink.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 63: unlink.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 64: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 65: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 66: unlink.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 67: unlink.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 68: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 69: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 70: unlink.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 71: unlink.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 72: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 73: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 74: unlink.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 75: unlink.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 76: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 77: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 78: unlink.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 79: unlink.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 80: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 81: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 82: unlink.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 83: unlink.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 84: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 85: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 86: unlink.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 87: unlink.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 88: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 89: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 90: unlink.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 91: unlink.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 92: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 93: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 94: unlink.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 95: unlink.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 96: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 97: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 98: unlink.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 99: unlink.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 100: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 101: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 102: unlink.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 103: unlink.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 104: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 105: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 106: unlink.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 107: unlink.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 108: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 109: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 110: unlink.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 111: unlink.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 112: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 113: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 114: unlink.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 115: unlink.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 116: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 117: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 118: unlink.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 119: unlink.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 120: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 121: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 122: unlink.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 123: unlink.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 124: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 125: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 126: rmdir.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 127: rmdir.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 128: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 129: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 130: rmdir.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 131: rmdir.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 132: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 133: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 134: rmdir.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 135: rmdir.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 136: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 137: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 138: unlink.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 139: unlink.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 140: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 141: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 142: unlink.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 143: unlink.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 144: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 145: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 146: unlink.claim.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 147: unlink.claim.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 148: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 149: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 150: rmdir.claim.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 151: rmdir.claim.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 152: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 153: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "prepared code cleanup resumes every claim rename unlink and fsync boundary using only permanent proof",
+                "result": "pass"
+              },
+              {
+                "title": "prepared code cleanup refuses arbitrary missing runtime, changed approval and active context ownership",
+                "result": "pass"
+              },
+              {
+                "title": "prepared code cleanup retains public replacements and fences changed private evidence",
+                "result": "pass"
+              },
+              {
+                "title": "prepared code cleanup finishes final-claim crash recovery while retaining all public replacements",
+                "result": "pass"
+              },
+              {
+                "title": "path",
+                "result": "pass"
+              },
+              {
+                "title": "digest",
+                "result": "pass"
+              },
+              {
+                "title": "prepared code cleanup rechecks approval at deletion and rejects edited claim paths or digests",
+                "result": "pass"
+              },
+              {
+                "title": "root",
+                "result": "pass"
+              },
+              {
+                "title": "generation",
+                "result": "pass"
+              },
+              {
+                "title": "self-declared",
+                "result": "pass"
+              },
+              {
+                "title": "prepared code cleanup never treats pre-existing unrelated context files or self-declared generations as owned",
+                "result": "pass"
+              },
+              {
+                "title": "prepared code cleanup promotes a verified temporary claim after actual worker death before rename",
+                "result": "pass"
+              },
+              {
+                "title": "full",
+                "result": "pass"
+              },
+              {
+                "title": "partial",
+                "result": "pass"
+              },
+              {
+                "title": "empty",
+                "result": "pass"
+              },
+              {
+                "title": "prepared code cleanup recovers hard-killed claim writes without losing fragments or rebuilding sources",
+                "result": "pass"
+              },
+              {
+                "title": "prepared code cleanup resumes after actual worker termination with runtime removed and checkpoint retained",
+                "result": "pass"
+              },
+              {
+                "title": "migrated design history passes feedback publication and cleanup with its complete migration proof",
+                "result": "pass"
+              },
+              {
+                "title": "prepared design cleanup preserves permanent evidence and deletes exact private claims without Git or model calls",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 1: claim.audit.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 2: claim.audit.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 3: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 4: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 5: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 6: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 7: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 8: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 9: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 10: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 11: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 12: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 13: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 14: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 15: rename.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 16: rename.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 17: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 18: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 19: unlink.tmp.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 20: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 21: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 22: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 23: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 24: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 25: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 26: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 27: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 28: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 29: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 30: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 31: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 32: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 33: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 34: rename.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 35: rename.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 36: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 37: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 38: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 39: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 40: rename.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 41: rename.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 42: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 43: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 44: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 45: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 46: rename.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 47: rename.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 48: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 49: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 50: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 51: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 52: claim.roots.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 53: claim.roots.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 54: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 55: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 56: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 57: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 58: unlink.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 59: unlink.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 60: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 61: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 62: unlink.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 63: unlink.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 64: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 65: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 66: unlink.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 67: unlink.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 68: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 69: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 70: unlink.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 71: unlink.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 72: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 73: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 74: unlink.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 75: unlink.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 76: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 77: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 78: rmdir.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 79: rmdir.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 80: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 81: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 82: rmdir.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 83: rmdir.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 84: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 85: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 86: rmdir.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 87: rmdir.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 88: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 89: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 90: unlink.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 91: unlink.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 92: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 93: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 94: unlink.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 95: unlink.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 96: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 97: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 98: unlink.claim.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 99: unlink.claim.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 100: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 101: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 102: rmdir.claim.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 103: rmdir.claim.after",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 104: fsync.before",
+                "result": "pass"
+              },
+              {
+                "title": "boundary 105: fsync.after",
+                "result": "pass"
+              },
+              {
+                "title": "prepared design cleanup resumes every claim rename unlink and fsync boundary using only permanent proof",
+                "result": "pass"
+              },
+              {
+                "title": "prepared design cleanup refuses arbitrary missing runtime, changed approval and active context ownership",
+                "result": "pass"
+              },
+              {
+                "title": "prepared design cleanup retains public replacements and fences changed private evidence",
+                "result": "pass"
+              },
+              {
+                "title": "prepared design cleanup finishes final-claim crash recovery while retaining all public replacements",
+                "result": "pass"
+              },
+              {
+                "title": "path",
+                "result": "pass"
+              },
+              {
+                "title": "digest",
+                "result": "pass"
+              },
+              {
+                "title": "prepared design cleanup rechecks approval at deletion and rejects edited claim paths or digests",
+                "result": "pass"
+              },
+              {
+                "title": "root",
+                "result": "pass"
+              },
+              {
+                "title": "generation",
+                "result": "pass"
+              },
+              {
+                "title": "self-declared",
+                "result": "pass"
+              },
+              {
+                "title": "prepared design cleanup never treats pre-existing unrelated context files or self-declared generations as owned",
+                "result": "pass"
+              },
+              {
+                "title": "prepared design cleanup promotes a verified temporary claim after actual worker death before rename",
+                "result": "pass"
+              },
+              {
+                "title": "full",
+                "result": "pass"
+              },
+              {
+                "title": "partial",
+                "result": "pass"
+              },
+              {
+                "title": "empty",
+                "result": "pass"
+              },
+              {
+                "title": "prepared design cleanup recovers hard-killed claim writes without losing fragments or rebuilding sources",
+                "result": "pass"
+              },
+              {
+                "title": "prepared design cleanup resumes after actual worker termination with runtime removed and checkpoint retained",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/source-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1606,
+            "titles": [
+              {
+                "title": "source session batches verified Git objects and shares immutable queries without bypassing logical budgets",
+                "result": "pass"
+              },
+              {
+                "title": "source session retains evidence above memory capacity and never refetches evicted data",
+                "result": "pass"
+              },
+              {
+                "title": "shared project reservations refuse body fetch before capacity exhaustion and transfer batches atomically",
+                "result": "pass"
+              },
+              {
+                "title": "staged corruption and source errors fence the session instead of implicitly retrying Git",
+                "result": "pass"
+              },
+              {
+                "title": "a source failure is recorded once and requires a fresh preparation session",
+                "result": "pass"
+              },
+              {
+                "title": "preparation configuration is discoverable bounded and rejects malformed values",
+                "result": "pass"
+              },
+              {
+                "title": "replaced staging directory is retained with its capacity until exact ownership is restored",
+                "result": "pass"
+              },
+              {
+                "title": "two source sessions share project capacity without overlapping identities or duplicate fetches",
+                "result": "pass"
+              },
+              {
+                "title": "historical and current packet qualification share sources while preserving exact projection",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1318,
+            "titles": [
+              {
+                "title": "journalled publication and lost-receipt recovery preserve one exact full history without model calls",
+                "result": "pass"
+              },
+              {
+                "title": "publication capacity stays pending and a raised history allowance retries persistence only",
+                "result": "pass"
+              },
+              {
+                "title": "publication refuses changed subject before write and additional edits after its exact owned delta",
+                "result": "pass"
+              },
+              {
+                "title": "native review waits for durable publication and recovers failed receipt persistence without rerunning models",
+                "result": "pass"
+              },
+              {
+                "title": "publication append and head-replace crashes replay the same complete history entry",
+                "result": "pass"
+              },
+              {
+                "title": "known permanent-history minimum preserves failure and starts a new attempt after the allowance is raised",
+                "result": "pass"
+              },
+              {
+                "title": "canonical edits during journal staging or log append are preserved and refuse publication",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/design-review/__tests__/subject.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3140,
+            "titles": [
+              {
+                "title": "workflow matrix resolves Epic designs, standalone LLD and ISSUE LLD without future artifacts",
+                "result": "pass"
+              },
+              {
+                "title": "workflow requirements do not downgrade broken Epics or turn correction links into ancestors",
+                "result": "pass"
+              },
+              {
+                "title": "subject identity, containment and party are validated and only subject changes invalidate",
+                "result": "pass"
+              },
+              {
+                "title": "native and controller correction reviews preserve Epic standalone and ISSUE workflow requirements",
+                "result": "pass"
+              },
+              {
+                "title": "shared design preparation invalidates required ancestry and ignores unrelated files",
                 "result": "pass"
               }
             ],

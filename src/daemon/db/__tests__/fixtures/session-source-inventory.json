@@ -40898,6 +40898,27 @@
       "sitesDigest": "dcc7428afc3a2ca6ef5082d2d597ef4b88ea0a877f328919725bd366bd105fd7",
       "sourceDigest": "6d268d8b29e0326dd6c7c531ed8e6d747b2a45591fe82d4f92ef257b8de076c9"
     },
+    "src/workflow/convert/backfill-issue.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Writes the ISSUE a headless trivial build lacks and approves it through the lifecycle service during a repair. The records concern artifact conversion and are outside connection-session dispatch.",
+      "sites": [
+        [
+          "filesystem-write",
+          "mkdirSync"
+        ],
+        [
+          "serialization",
+          "writeArtifact"
+        ],
+        [
+          "serialization",
+          "writeAtomic"
+        ]
+      ],
+      "siteCount": 3,
+      "sitesDigest": "3af5bfe33c04849290c8c23be9c5b9d7398add7ed00ee7a2d13574b7434bdfea",
+      "sourceDigest": "10e0002146444beb2458a7fab5de894c0bafefb6bc21ad408dc02cdaac6abce6"
+    },
     "src/workflow/convert/backfill.ts": {
       "classification": "forbidden-session-service",
       "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service.",
@@ -41013,7 +41034,7 @@
       ],
       "siteCount": 3,
       "sitesDigest": "5e36449c0229d54e6b00ff031745947614900088ce0613d6c98b9e9a415e5136",
-      "sourceDigest": "b603b072781328299e3185bb5630f949058b4f45e30750e3519851a3e489d38b"
+      "sourceDigest": "16078142f0e8af480ec44a925a5a5aedc0ef2ccfb6d809eda3aae686d152e2c6"
     },
     "src/workflow/convert/raw-heads.ts": {
       "classification": "forbidden-session-service",

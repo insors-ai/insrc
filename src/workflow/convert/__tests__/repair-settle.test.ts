@@ -84,6 +84,7 @@ function belongs(w: RepairWrite, changes: readonly ConversionChange[]): boolean 
 		case 'feedback':      return rule('convert-feedback').some(named);
 		// a flat amendment is listed once, as its conversion: the migration of the head it becomes is part of that change
 		case 'migrate':       return rule('migrate-head', 'convert-amendment').some(named);
+		case 'backfill-issue': return rule('backfill-issue').some(named);
 		case 'units':         return rule('create-epic', 'create-story', 'move-binding', 'set-parent').some(named);
 		case 'tasks':         return rule('create-tasks').some(c => sameUnit(w.artifactId, c)) || rule('backfill-round').some(named);
 		case 'story-history': return rule('move-story-history').some(named);

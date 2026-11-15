@@ -8,7 +8,7 @@ What the build validation gate ran for each Task of this Story, and what each te
 
 ## t1
 
-Run at 2026-11-15T05:30:51.036Z on commit `f96f6881b`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-15T05:40:15.193Z on commit `553c5d35f`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: scratch-store.test.ts: updateScratch happy path writes full text and replaces content; id validation refusal (outside-root, symlink, non-.md) → ScratchRefused; missing file → ScratchNotFound; write failure leaves destination unchanged and unlinks temp; temp path occupied by a symlink or existing file → exclusive create fails (EEXIST/ELOOP) and nothing is written outside the root**
 
@@ -26,4 +26,4 @@ Run at 2026-11-15T05:30:51.036Z on commit `f96f6881b`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `vscode-plugin/src/chat/__tests__/scratch-store.test.ts` | 0 | 14 | 0.8 s |  |
+| `vscode-plugin/src/chat/__tests__/scratch-store.test.ts` | 0 | 14 | 1 s |  |

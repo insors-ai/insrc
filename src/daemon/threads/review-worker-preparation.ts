@@ -70,8 +70,8 @@ export class ReviewWorkerPreparation {
   this.memory=new ReviewMemoryBudget(bootstrap.limits.memoryMaxBytes);
   this.progress=new PreparationProgress(value=>{const at=new Date().toISOString();return this.client.progress({progress:{...this.bootstrap.runtime.progress,completedUnits:this.binding?.latest().completedUnits??0,observedAt:at,lastMeaningfulActivityAt:at},preparation:value});});
  }
- static async open(input: ReviewBootstrapInput, bootstrap: ReviewPreparationBootstrap, sources: BatchReviewSources): Promise<ReviewWorkerPreparation> {
-  const client = new ReviewPreparationClient(bootstrap.port), key = input.key;
+ static async open(input: ReviewBootstrapInput, bootstrap: ReviewPreparationBootstrap, sources: BatchReviewSources, existingClient?:ReviewPreparationClient): Promise<ReviewWorkerPreparation> {
+  const client = existingClient??new ReviewPreparationClient(bootstrap.port), key = input.key;
   const loaded = await loadPreparationCheckpoint(key);
   if (loaded?.format === 'historical') {
    const last = loaded.checkpoint.attempts.at(-1)!, attempt = 'header' in last ? last.header.attempt : last.number;

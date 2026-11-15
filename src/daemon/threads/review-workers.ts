@@ -1,5 +1,6 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { randomUUID } from 'node:crypto';
+import { performance } from 'node:perf_hooks';
 import { realpath } from 'node:fs/promises';
 import { MessageChannel } from 'node:worker_threads';
 import type { Worker } from 'node:worker_threads';
@@ -12,7 +13,7 @@ import { ReviewProcessLeases } from './review-processes.js';
 import { ReviewNativeHost } from './review-native-host.js';
 import { ReviewBootstrapFence,ReviewWorkerBootstrapError,startReviewWorkerBootstrap } from './review-worker-bootstrap.js';
 import type { StartedReviewWorker } from './review-worker-bootstrap.js';
-import type { ReviewAdmissionReceipt,ReviewBootstrapInput,ReviewWorkerIdentity } from './review-worker-contract.js';
+import type { ReviewAdmissionReceipt,ReviewAdmissionSegment,ReviewBootstrapInput,ReviewWorkerIdentity } from './review-worker-contract.js';
 import { assertReviewIdentity,sameReviewWorker } from './review-worker-contract.js';
 import type { ReplyEnvelope } from './channel.js';
 import type { DesignRecoveryRequest } from '../../workflow/review/design-review/contracts.js';
@@ -52,6 +53,7 @@ export interface ReviewWorkerScope {
  readonly cleanupScope:string;
  readonly epicHash?:string|undefined;
 }
+interface AdmissionTrace {readonly started:number;requestMs:number;scopeMs:number;runtimeBindingMs:number;cold:boolean;}
 export interface ReviewWorkersDeps {
  readonly services:ThreadServices;
  readonly resolveScope:(key:ReviewKey,context:TrustedRpcContext,input?:Omit<ReviewBootstrapInput,'incarnation'|'reviewer'|'epicHash'|'subject'>)=>Promise<ReviewWorkerScope>;
@@ -94,6 +96,8 @@ interface Entry {
  progress?:ReviewWorkerProgress|undefined;
  publication?:Promise<unknown>|undefined;
  reclaiming?:Promise<void>|undefined;
+ execution?:Promise<unknown>|undefined;
+ executionOperation?:'start'|'resume'|undefined;
  executed?:boolean|undefined;
  closing?:Promise<void>|undefined;
  reclaimedHealthy?:boolean|undefined;
@@ -150,17 +154,29 @@ export class ReviewWorkers {
  }
  private scopeCleaning(key:ReviewKey,scope:Pick<ReviewWorkerScope,'cleanupScope'>):boolean{return this.cleanup.has(scope.cleanupScope)||scope.cleanupScope===reviewUnknownCleanupScope(key.project,key.family)&&[...this.cleanupTargets.values()].some(t=>t.project===key.project&&t.family===key.family);}
  async admit(input:Omit<ReviewBootstrapInput,'incarnation'|'reviewer'|'epicHash'|'subject'>,context:TrustedRpcContext):Promise<ReviewAdmissionReceipt>{
-  return this.admitOwned(input,context);
+  const trace:AdmissionTrace={started:performance.now(),requestMs:0,scopeMs:0,runtimeBindingMs:0,cold:false};
+  const receipt=await this.admitOwned(input,context,undefined,trace),totalMs=performance.now()-trace.started;
+  const worker=trace.cold?receipt.timing?.segments??[]:[],segments:ReviewAdmissionSegment[]=[
+   {name:'request',durationMs:trace.requestMs},{name:'scope',durationMs:trace.scopeMs},
+   {name:'runtime_binding',durationMs:trace.runtimeBindingMs},...worker,
+  ];
+  const accounted=segments.reduce((sum,value)=>sum+value.durationMs,0);
+  segments.push({name:'acknowledgement',durationMs:Math.max(0,totalMs-accounted)});
+  const slowest=segments.reduce((a,b)=>b.durationMs>a.durationMs?b:a).name;
+  return{...receipt,timing:{mode:trace.cold?'cold':'warm',totalMs,segments,slowest}};
  }
- private async admitOwned(input:Omit<ReviewBootstrapInput,'incarnation'|'reviewer'|'epicHash'|'subject'>,context:TrustedRpcContext,cleanupScope?:string):Promise<ReviewAdmissionReceipt>{
+ private async admitOwned(input:Omit<ReviewBootstrapInput,'incarnation'|'reviewer'|'epicHash'|'subject'>,context:TrustedRpcContext,cleanupScope?:string,trace?:AdmissionTrace):Promise<ReviewAdmissionReceipt>{
+  const requestStarted=performance.now();
   if(this.shutdownWork)throw new Error('Review workers are shutting down');
   if(!context.connectionIdentity||!context.daemonEpoch||!context.connectionSignal||context.connectionSignal.aborted)throw new Error('Trusted live review connection required');
   context.assertRequestActive?.();
   if(!Number.isSafeInteger(input.attempt)||input.attempt<1||typeof input.actionId!=='string'||!input.actionId||input.actionId.length>128||input.operation!==undefined&&!['start','resume'].includes(input.operation))throw new Error('Invalid review admission header');
   const key={...input.key,project:await realpath(input.key.project)};
+  if(trace)trace.requestMs+=performance.now()-requestStarted;
   const identity={key,incarnation:randomUUID()};assertReviewIdentity(identity);
   if(this.resourceHolds.has(keyOf(key)))throw new Error('Review resource recovery is in progress');
-  const scope=await this.deps.resolveScope(key,context,input);
+  const scopeStarted=performance.now(),scope=await this.deps.resolveScope(key,context,input);
+  if(trace)trace.scopeMs+=performance.now()-scopeStarted;
   if(!scope.subject||!scope.cleanupScope||!['daemon','controller'].includes(scope.reviewer)||scope.epicHash!==undefined&&!/^[0-9a-f]{16}$/.test(scope.epicHash))throw new Error('Invalid trusted review scope');
   if(context.connectionSignal.aborted)throw new Error('Review connection lost');
   if(this.scopeCleaning(key,scope)&&cleanupScope!==scope.cleanupScope)throw new Error('Review subject or cleanup busy');
@@ -171,7 +187,7 @@ export class ReviewWorkers {
    if(previous.closing){
     if(input.attempt!==previous.input.attempt)this.assertController(previous,context);
     await previous.closing;if(this.entries.has(keyOf(key)))throw new Error('Review resources remain fenced');
-    return this.admitOwned(input,context,cleanupScope);
+    return this.admitOwned(input,context,cleanupScope,trace);
    }
    if(previous.publication)throw new Error('Review publication is active');
    if(previous.cleanupOwner&&!cleanupScope)throw new Error('Review cleanup is active');
@@ -182,7 +198,7 @@ export class ReviewWorkers {
     await this.call(previous,'review.worker.advance',{attempt:previous.attempt,nextAttempt:input.attempt});
     await this.closeEntry(previous);
     if(this.entries.has(keyOf(key)))throw new Error('Review resources remain fenced');
-    return this.admit(input,context);
+    return this.admitOwned(input,context,cleanupScope,trace);
    }
    const foreign=previous.scope.reviewer==='controller'&&(context.connectionIdentity!==previous.context.connectionIdentity||context.daemonEpoch!==previous.context.daemonEpoch);
    if(foreign&&input.operation==='resume'){
@@ -191,7 +207,7 @@ export class ReviewWorkers {
     await this.call(previous,'review.worker.assertIdle',{});
     await this.call(previous,'review.worker.matchAdmission',{...input,actionId:previous.input.actionId,key,incarnation:previous.input.incarnation,reviewer:scope.reviewer});
     await this.closeEntry(previous);if(this.entries.has(keyOf(key)))throw new Error('Review resources remain fenced');
-    return this.admit(input,context);
+    return this.admitOwned(input,context,cleanupScope,trace);
    }
    this.assertController(previous,context);
    return this.call(previous,'review.worker.matchAdmission',{...input,...(key.family==='code'&&input.operation==='resume'?{actionId:previous.input.actionId}:{}),key,incarnation:previous.input.incarnation,reviewer:scope.reviewer}) as Promise<ReviewAdmissionReceipt>;
@@ -199,6 +215,7 @@ export class ReviewWorkers {
   if(this.cleanup.has(scope.cleanupScope)&&cleanupScope!==scope.cleanupScope||key.family==='design'&&[...this.entries.values()].some(e=>e.input.key.family==='design'&&e.input.key.project===key.project&&e.scope.subject===scope.subject))throw new Error('Review subject or cleanup busy');
   if(input.key.family==='code'&&(input.operation==='resume'&&input.submitted===undefined||input.maintenance)){const saved=await loadPreparationCheckpoint(key);if(!saved)throw new Error('Saved review input missing');input={...input,submitted:preparationSubmission(saved.checkpoint,key)};}
   const review:ReviewBootstrapInput={attempt:input.attempt,actionId:input.actionId,submitted:input.submitted,...identity,reviewer:scope.reviewer,subject:scope.subject,...(scope.epicHash?{epicHash:scope.epicHash}:{}),...(input.operation?{operation:input.operation}:{}),...(input.maintenance?{maintenance:true as const}:{}),...(input.route?{route:input.route}:{})};
+  if(trace)trace.cold=true;
   const {port1,port2}=new MessageChannel(),connection=registerReviewWorkerConnection(port1),lifetime=new AbortController();
   const owner=registerReviewRequestOwner(connection,randomUUID(),scope.reviewer==='controller'?context.connectionSignal:lifetime.signal);
   const processOwner=this.leases.register(key,identity.incarnation),fence=new ReviewBootstrapFence(identity);
@@ -221,7 +238,7 @@ export class ReviewWorkers {
     .catch(()=>{});
   }
   if(scope.reviewer==='controller')context.connectionSignal.addEventListener('abort',lost,{once:true});
-  void Promise.resolve().then(async()=>{const preparation=await this.prepareRuntime(entry);return (this.deps.start??startReviewWorkerBootstrap)(this.deps.services,review,port2,{preparation,fence,onCreated:worker=>{entry.created=worker;this.deps.track(worker,`review:${key.family}:${key.reviewId}`);},onClosing:(_worker,reclaimed)=>{void reclaimed.then(()=>this.closeEntry(entry));}});}).then(started=>{
+  void Promise.resolve().then(async()=>{const began=performance.now(),preparation=await this.prepareRuntime(entry);if(trace)trace.runtimeBindingMs+=performance.now()-began;return (this.deps.start??startReviewWorkerBootstrap)(this.deps.services,review,port2,{preparation,fence,onCreated:worker=>{entry.created=worker;this.deps.track(worker,`review:${key.family}:${key.reviewId}`);},onClosing:(_worker,reclaimed)=>{void reclaimed.then(()=>this.closeEntry(entry));}});}).then(started=>{
    entry.started=started;
    const hubConnection=reviewWorkerConnection(started.port);
    if(!hubConnection){rejectReady(new Error('Review worker hub is not registered'));void started.worker.terminate();void this.closeEntry(entry);return;}
@@ -408,15 +425,25 @@ export class ReviewWorkers {
  /** Admission has already been acknowledged. The worker schedules expensive
   * qualification in the background and this private control returns promptly. */
  async execute(identity:ReviewWorkerIdentity,context:TrustedRpcContext,operation?:'start'|'resume'):Promise<unknown>{
+  return this.execution(identity,context,operation);
+ }
+ /** Queue execution on the same owned worker without extending the public
+  * durable-admission acknowledgement through heavy runtime initialization. */
+ dispatchExecution(identity:ReviewWorkerIdentity,context:TrustedRpcContext,operation?:'start'|'resume'):void{
+  const work=this.execution(identity,context,operation);void work.catch(()=>{});
+ }
+ private execution(identity:ReviewWorkerIdentity,context:TrustedRpcContext,operation?:'start'|'resume'):Promise<unknown>{
   const e=this.entries.get(keyOf(identity.key));if(!e||!sameReviewWorker(e.input,identity))throw new Error('Foreign review execution');
   this.assertController(e,context);this.active(e);
   if(e.publication||e.cleanupOwner||this.scopeCleaning(e.input.key,e.scope))throw new Error('Review publication or cleanup is active');
   const requested=operation??e.input.operation??'start';
   if(!['start','resume'].includes(requested))throw new Error('Invalid review operation');
-  const result=await this.call(e,'review.worker.execute',{operation:requested,attempt:e.input.attempt}) as {attempt:number};
-  e.executed=true;
-  if(result.attempt!==e.attempt)throw new Error('Execution requires the exact admitted worker attempt');
-  return result;
+  if(e.execution){if(e.executionOperation!==requested)throw new Error('Conflicting review execution replay');return e.execution;}
+  const work=this.call(e,'review.worker.execute',{operation:requested,attempt:e.input.attempt}).then(raw=>{
+   const result=raw as {attempt:number};if(result.attempt!==e.attempt)throw new Error('Execution requires the exact admitted worker attempt');e.executed=true;return result;
+  });
+  e.execution=work;e.executionOperation=requested;
+  const clear=()=>{if(e.execution===work){e.execution=undefined;e.executionOperation=undefined;}};void work.then(clear,clear);return work;
  }
  async control(request:ReviewWorkerControl,context:TrustedRpcContext):Promise<unknown>{
   const e=this.entries.get(keyOf(request.key));

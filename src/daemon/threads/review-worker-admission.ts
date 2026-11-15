@@ -2,7 +2,7 @@
 import { isDeepStrictEqual } from 'node:util';
 import { appendCodeAdmission } from '../../workflow/code-review/task-review/admission-checkpoint.js';
 import { parsePacket,isCodeAdmission } from '../../workflow/code-review/task-review/contracts.js';
-import { updateStoredCodeCheckpoint } from '../../workflow/code-review/task-review/checkpoint.js';
+import { updateStoredCodeCheckpoint,loadStoredCheckpoint } from '../../workflow/code-review/task-review/checkpoint.js';
 import { ReviewProgressTracker } from '../../workflow/code-review/task-review/progress.js';
 import { updateStoredDesignCheckpoint } from '../../workflow/review/design-review/checkpoint.js';
 import { decodeDesign,DesignRequestSchemas,isDesignAdmission } from '../../workflow/review/design-review/contracts.js';
@@ -10,6 +10,15 @@ import { reviewWorkerCheckpoint } from './review-worker-contract.js';
 import type { ReviewAdmissionReceipt,ReviewBootstrapInput } from './review-worker-contract.js';
 import { requestSignature } from '../../workflow/review/design-review/request-signature.js';
 import { admitDesignRecovery } from '../../workflow/review/design-review/action-admission.js';
+import type { ReviewPreparationBootstrap } from './review-worker-preparation.js';
+import { decodePreparationCheckpoint,loadPreparationCheckpoint } from '../../workflow/review/preparation-checkpoint.js';
+import { upgradePreparationHistory } from '../../workflow/review/preparation-migration.js';
+import { writeReviewBytes } from '../../workflow/code-review/task-review/checkpoint.js';
+import { reviewJsonLimit } from '../../config/review.js';
+import { reviewProgressPublication } from './review-progress.js';
+import type { ReviewProgressPublication } from './review-progress.js';
+import { observeStoredDesignCheckpoint } from '../../workflow/review/design-review/progress.js';
+import { loadStoredDesignCheckpoint } from '../../workflow/review/design-review/checkpoint.js';
 
 /** Only bounded input/history persistence: no Git, artifact qualification or
  * model dispatch. Family execution/recovery adapters consume this in t9/t10. */
@@ -66,4 +75,37 @@ export async function persistReviewWorkerAdmission(input:ReviewBootstrapInput):P
   });
  }
  return{kind:'review-admission-saved',key:input.key,incarnation:input.incarnation,attempt:input.attempt,checkpointPath:path};
+}
+
+/** Bind durable semantic input to the exact initializing runtime without
+ * loading source, projection, history-qualification or model machinery. */
+export async function bindReviewWorkerAdmission(input:ReviewBootstrapInput,bootstrap:ReviewPreparationBootstrap):Promise<void>{
+ const loaded=await loadPreparationCheckpoint(input.key);
+ if(!loaded)throw new Error('Durable review admission missing');
+ let next;
+ if(loaded.format==='historical')next=upgradePreparationHistory(loaded.checkpoint,input.key,bootstrap.runtime);
+ else{
+  const current=loaded.checkpoint;
+  const runtime={runtimeId:bootstrap.runtime.runtimeId,inputDigest:bootstrap.runtime.checkpointBinding.inputDigest};
+  if(isDeepStrictEqual(current.runtime,runtime))return;
+  if(!bootstrap.handoff||!isDeepStrictEqual(current.runtime,bootstrap.handoff.previousRuntime))throw new Error('Preparation runtime binding mismatch');
+  const {context:_context,...rest}=current;
+  next={...rest,runtime,...(!bootstrap.handoff.resetContext&&current.context?{context:current.context}:{})};
+ }
+ const checked=decodePreparationCheckpoint(next,input.key);if(checked.format!=='current')throw new Error('Runtime-bound admission must use the current checkpoint format');
+ await writeReviewBytes(reviewWorkerCheckpoint(input.key),JSON.stringify(checked.checkpoint)+'\n',reviewJsonLimit());
+}
+
+/** The first honest observation is derived only from the durable admission.
+ * It claims no qualified scope, completed work, source activity or provider
+ * dispatch and is available before the heavier family runtime is loaded. */
+export async function reviewWorkerAdmissionProgress(input:ReviewBootstrapInput):Promise<ReviewProgressPublication>{
+ if(input.key.family==='code'){
+  const cp=await loadStoredCheckpoint(reviewWorkerCheckpoint(input.key)),last=cp?.attempts.at(-1);
+  if(!last||last.header.attempt!==input.attempt||!isCodeAdmission(last))throw new Error('Durable code admission observation missing');
+  return reviewProgressPublication(input,1,{reviewId:input.key.reviewId,attempt:input.attempt,status:last.header.status,crPublication:'pending',executionState:'starting',completedTasks:0,totalTasks:0,interrupted:false,hasError:!!last.error,freshness:'live',progress:last.progress,admission:{validation:'unverified',...(last.error?{error:last.error}:{})}});
+ }
+ const cp=await loadStoredDesignCheckpoint(input.key.project,input.key.reviewId),last=cp?.attempts.at(-1);
+ if(!cp||!last||last.number!==input.attempt||!isDesignAdmission(last))throw new Error('Durable design admission observation missing');
+ return reviewProgressPublication(input,1,observeStoredDesignCheckpoint(cp,{active:true}));
 }

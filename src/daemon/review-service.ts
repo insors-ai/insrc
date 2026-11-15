@@ -5,6 +5,7 @@ import { isMainThread } from 'node:worker_threads';
 import type { Worker } from 'node:worker_threads';
 import { realpath } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
+import { performance } from 'node:perf_hooks';
 import { resolve } from 'node:path';
 import type { TrustedRpcContext } from './request-context.js';
 import type { ThreadServices } from './threads/main-services.js';
@@ -27,6 +28,7 @@ import { persistReviewResourceAudit } from '../workflow/review/resource-audit.js
 import { lifecycleFor } from './lifecycle-registry.js';
 import { repoSchemaRefusal } from './repo-schema-guard.js';
 import type { DesignObservation } from '../workflow/review/design-review/progress.js';
+import type { ReviewAdmissionReceipt, ReviewAdmissionTiming } from './threads/review-worker-contract.js';
 
 type Admission=Omit<ReviewBootstrapInput,'incarnation'|'reviewer'|'epicHash'|'subject'>;
 export interface ProductionReviewDeps{
@@ -97,6 +99,13 @@ export class ProductionReviews{
   if(ctx.connectionExecution?.mode==='session-memory')throw new Error('unsupported-temporary');
   return ctx;
  }
+ private admissionTiming(ack:ReviewAdmissionReceipt,started:number,registryStarted:number):ReviewAdmissionTiming|undefined{
+  if(!ack.timing)return undefined;
+  const now=performance.now(),before=registryStarted-started,after=Math.max(0,now-registryStarted-ack.timing.totalMs);
+  const segments=ack.timing.segments.map(segment=>segment.name==='request'?{...segment,durationMs:segment.durationMs+before}:segment.name==='acknowledgement'?{...segment,durationMs:segment.durationMs+after}:segment);
+  const slowest=segments.reduce((a,b)=>b.durationMs>a.durationMs?b:a).name;
+  return{...ack.timing,totalMs:now-started,segments,slowest};
+ }
  private async request(raw:unknown,family:'code'|'design'){
   requireReview(raw&&typeof raw==='object'&&!Array.isArray(raw),'request','Expected review request');
   requireReview(Buffer.byteLength(JSON.stringify(raw))<=reviewJsonLimit(),'request','Review request exceeds capacity');
@@ -131,6 +140,7 @@ export class ProductionReviews{
   return undefined;
  }
  async codeStart(raw:unknown,trusted?:TrustedRpcContext):Promise<unknown>{
+  const admissionStarted=performance.now();
   const {p,key,attempt}=await this.request(raw,'code'),ctx=this.context(trusted),resume=p['operation']==='resume';
   requireReview(p['operation']===undefined||p['operation']==='start'||resume,'operation','Expected start or resume');
   requireReview(typeof p['epicHash']==='string'&&/^[a-f0-9]{16}$/.test(p['epicHash']),'epicHash','Canonical epic identity required');
@@ -143,9 +153,9 @@ export class ProductionReviews{
   const client=p['client'];requireReview(client===undefined||client==='claude'||client==='codex'||client==='vibe','client','Unsupported review client');
   const scope=await this.scope(key,ctx,{key,attempt,actionId:'lookup',submitted:undefined,route:{epicHash:p['epicHash'],storyId:story}});
   if(scope.reviewer==='controller')requireReview(p['timingProtocol']==='activity-v1','timingProtocol','Controller must support activity-v1');
-  const ack=await this.registry.admit({key,attempt,actionId:`${resume?'resume':'start'}-${attempt}`,operation:resume?'resume':'start',submitted:resume?p['packet']:packet,route:{epicHash:p['epicHash'],storyId:story,...(client?{client}:{})}},ctx);
-  await this.registry.execute(ack,ctx,resume?'resume':'start');
-  return{reviewId:key.reviewId,attempt,reviewer:scope.reviewer,status:'pending',path:ack.checkpointPath,checkpointPath:ack.checkpointPath,crPublication:'pending',completedTaskIds:[],pendingTaskIds:[],admission:{validation:'unverified'}};
+  const registryStarted=performance.now(),ack=await this.registry.admit({key,attempt,actionId:`${resume?'resume':'start'}-${attempt}`,operation:resume?'resume':'start',submitted:resume?p['packet']:packet,route:{epicHash:p['epicHash'],storyId:story,...(client?{client}:{})}},ctx);
+  if(resume)await this.registry.execute(ack,ctx,'resume');else this.registry.dispatchExecution(ack,ctx,'start');
+  return{reviewId:key.reviewId,attempt,reviewer:scope.reviewer,status:'pending',path:ack.checkpointPath,checkpointPath:ack.checkpointPath,crPublication:'pending',completedTaskIds:[],pendingTaskIds:[],admission:{validation:'unverified'},timing:this.admissionTiming(ack,admissionStarted,registryStarted)};
  }
  async codeCancel(raw:unknown,trusted?:TrustedRpcContext):Promise<unknown>{
   const {p,key,attempt}=await this.request(raw,'code');
@@ -177,6 +187,7 @@ export class ProductionReviews{
   return this.registry.control({...identity,attempt,phase,actionId:`control-${phase}-${attempt}`,executionId:typeof p['executionId']==='string'?p['executionId']:'pending',sequence:typeof p['sequence']==='number'?p['sequence']:1,...(typeof p['taskId']==='string'?{taskId:p['taskId']}:{}),input:phase==='scope'?p['scope']:phase==='result'?p['result']:phase==='activity'?p['event']:{}},ctx);
  }
  async design(raw:unknown,trusted?:TrustedRpcContext,client?:'claude'|'codex'|'vibe'):Promise<unknown>{
+  const admissionStarted=performance.now();
   const {p,key,attempt}=await this.request(raw,'design');
   if(p['phase']==='cancel'){
    const request={...p,repo:key.project};if(!Value.Check(ReviewCancellationRequestSchema,request))throw new Error('Invalid cancellation request');
@@ -206,9 +217,9 @@ export class ProductionReviews{
    const scope=await this.scope(key,ctx,{key,attempt,actionId:'lookup',submitted:request,route});
    if(request.phase==='recover'&&request.operation==='retry_publication')return this.registry.publishStored({key,attempt,actionId:request.actionId,submitted:request,route},ctx);
    const targetAttempt=request.phase==='recover'&&request.operation==='restart_full'?attempt+1:attempt;
-   const ack=await this.registry.admit({key,attempt:targetAttempt,actionId:request.phase==='recover'?request.actionId:`start-${attempt}`,submitted:request,route},ctx);
-   await this.registry.execute(ack,ctx);
-   return{accepted:true,reviewId:key.reviewId,attempt:targetAttempt,reviewer:scope.reviewer,status:'pending',checkpointPath:ack.checkpointPath,admission:{validation:'unverified'}};
+   const registryStarted=performance.now(),ack=await this.registry.admit({key,attempt:targetAttempt,actionId:request.phase==='recover'?request.actionId:`start-${attempt}`,submitted:request,route},ctx);
+   if(request.phase==='start')this.registry.dispatchExecution(ack,ctx);else await this.registry.execute(ack,ctx);
+   return{accepted:true,reviewId:key.reviewId,attempt:targetAttempt,reviewer:scope.reviewer,status:'pending',checkpointPath:ack.checkpointPath,admission:{validation:'unverified'},timing:this.admissionTiming(ack,admissionStarted,registryStarted)};
   }
   const identity=this.registry.identity(key);if(!identity)throw new Error('Design owner unavailable; explicitly recover first');
   const scope=await this.scope(key);if(request.phase!=='activity')this.currentReviewer(key.project,scope.subject,'controller');

@@ -443,8 +443,12 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
     // No-clobber publish: unlink(destination) + link(temp, destination) + unlink(temp).
     // Never rename — rename would clobber a destination created after the probe above.
     // Each attempt re-validates the destination (lstat), then re-opens it O_NOFOLLOW and
-    // fstats the SAME fd and only unlinks when that fd's inode is the one just lstat'd —
-    // a symlink or replacement swapped in between is refused, never removed.
+    // fstats the SAME fd and only proceeds when that fd's inode is the one just lstat'd —
+    // a symlink swapped in between is refused, never removed. The fd stays OPEN through
+    // the critical section, the backup link's own inode is checked against the
+    // fd-validated inode, and the name is re-lstat'd immediately before the unlink, so a
+    // replacement swapped in at ANY point before the unlink is refused (r33 CR-MED) —
+    // never backed up as the wrong inode, never removed.
     let unlinked = false;
     let publishErr: unknown;
     for (let attempt = 0; ; attempt++) {
@@ -476,55 +480,81 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
         if (!fst.isFile || fst.ino !== st2.ino) {
           throw await fail(new ScratchRefused(`'${id}' changed between validation and unlink and is refused`));
         }
+
+        // Back up the EXACT inode validated on the fd, so a later restore puts back
+        // precisely what this attempt removes. The previous attempt's backup (a stale,
+        // already-unlinked inode) is dropped only AFTER this link succeeds, so a restore
+        // backup always exists once anything has been unlinked. A single backup linked
+        // once up front could instead preserve a stale inode A while the loop unlinks a
+        // replacement inode B, and a failed publish would restore A over the path, losing
+        // B (r32 CR-MED).
+        const backup = backupName();
+        try {
+          await fs.link(path, backup);
+        } catch (e) {
+          throw await fail(errCode(e) === 'ENOENT' ? new ScratchNotFound(`'${id}' disappeared before the save`) : storeError(e));
+        }
+        // The backup hard link must share the fd-validated inode. If the name was
+        // swapped between the fstat and this link, the backup captured the WRONG inode —
+        // refuse (nothing has been unlinked yet, so no restore is needed) and drop the
+        // mismatched backup we just created.
+        let bst;
+        try {
+          bst = await fs.lstat(backup);
+        } catch (e) {
+          throw await fail(storeError(e));
+        }
+        if (bst.ino !== fst.ino) {
+          await dropBackup(backup);
+          throw await fail(new ScratchRefused(`'${id}' changed between validation and backup and is refused`));
+        }
+        backups.push(backup);
+        if (backups.length > 1) await dropBackup(backups[backups.length - 2] ?? '');
+
+        // Final revalidation immediately before the unlink: the name must still be the
+        // fd-validated inode, or the unlink could remove a concurrent writer's file.
+        let st3;
+        try {
+          st3 = await fs.lstat(path);
+        } catch (e) {
+          throw await fail(errCode(e) === 'ENOENT' ? new ScratchNotFound(`'${id}' disappeared before the save`) : storeError(e));
+        }
+        if (!st3.isFile || st3.ino !== fst.ino) {
+          throw await fail(new ScratchRefused(`'${id}' changed between backup and unlink and is refused`));
+        }
+
+        // The validated inode is confirmed on the fd, backed up, and still at the name:
+        // unlink it, then link the temp over the name.
+        try {
+          await fs.unlink(path);
+        } catch (e) {
+          // Deleted between the final validation and the unlink: nothing to publish over.
+          throw await fail(errCode(e) === 'ENOENT' ? new ScratchNotFound(`'${id}' disappeared before the save`) : storeError(e));
+        }
+        unlinked = true;
+        unlinkedSoFar = true;
+        try {
+          await fs.link(temp, path);
+        } catch (e) {
+          if (errCode(e) === 'EEXIST' && attempt + 1 < PUBLISH_ATTEMPTS) {
+            // The destination was recreated between our unlink and link: the next attempt
+            // re-validates it (lstat + O_NOFOLLOW fstat inode check) before unlinking again.
+            continue;
+          }
+          publishErr = e;
+          break;
+        }
+        // Published: the destination now holds the new content; remove the temp and the backups.
+        try {
+          await fs.unlink(temp);
+        } catch (rmErr) {
+          log.warn(`[scratches] could not remove temp ${temp}: ${String(rmErr)}`);
+        }
+        await unlinkBackups();
+        return;
       } finally {
         try { await handle.close(); } catch { /* closing the probe fd is best-effort */ }
       }
-
-      // Back up the EXACT inode we just validated on the fd, so a later restore puts
-      // back precisely what this attempt removes. The previous attempt's backup (a
-      // stale, already-unlinked inode) is dropped only AFTER this link succeeds, so a
-      // restore backup always exists once anything has been unlinked. A single backup
-      // linked once up front could instead preserve a stale inode A while the loop
-      // unlinks a replacement inode B, and a failed publish would restore A over the
-      // path, losing B (r32 CR-MED).
-      const backup = backupName();
-      try {
-        await fs.link(path, backup);
-      } catch (e) {
-        throw await fail(errCode(e) === 'ENOENT' ? new ScratchNotFound(`'${id}' disappeared before the save`) : storeError(e));
-      }
-      backups.push(backup);
-      if (backups.length > 1) await dropBackup(backups[backups.length - 2] ?? '');
-
-      // The re-validated inode is confirmed on the fd and backed up: unlink it, then
-      // link the temp over the name.
-      try {
-        await fs.unlink(path);
-      } catch (e) {
-        // Deleted between the backup and the unlink: nothing to publish over.
-        throw await fail(errCode(e) === 'ENOENT' ? new ScratchNotFound(`'${id}' disappeared before the save`) : storeError(e));
-      }
-      unlinked = true;
-      unlinkedSoFar = true;
-      try {
-        await fs.link(temp, path);
-      } catch (e) {
-        if (errCode(e) === 'EEXIST' && attempt + 1 < PUBLISH_ATTEMPTS) {
-          // The destination was recreated between our unlink and link: the next attempt
-          // re-validates it (lstat + O_NOFOLLOW fstat inode check) before unlinking again.
-          continue;
-        }
-        publishErr = e;
-        break;
-      }
-      // Published: the destination now holds the new content; remove the temp and the backups.
-      try {
-        await fs.unlink(temp);
-      } catch (rmErr) {
-        log.warn(`[scratches] could not remove temp ${temp}: ${String(rmErr)}`);
-      }
-      await unlinkBackups();
-      return;
     }
     // The publish never landed (non-EEXIST link failure, or retries exhausted). Put the
     // ORIGINAL content back under the original name from the latest backup hard link

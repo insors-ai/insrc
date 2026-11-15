@@ -693,6 +693,71 @@ test('scratch-store.test.ts: r32 CR-MED — the backup is taken at the PER-ATTEM
   assert.equal(r32Calls.some((c) => c.op === 'rename'), false, 'no rename anywhere');
 });
 
+test('scratch-store.test.ts: r33 CR-MED — a replacement swapped in AFTER the fd fstat but before the backup link (or before the unlink) is refused: the backup inode is checked against the fd-validated inode and the name is re-lstat\'d immediately before the unlink, so the wrong inode is never backed up and never unlinked', async () => {
+  // Scenario 1: dest swapped A->B between the fd fstat and link(path, backup). The
+  // backup link then captures B, the backup lstat's ino !== fst.ino -> refuse; dest
+  // (B) untouched, dest never unlinked, mismatched backup dropped.
+  {
+    const { fake, store } = setup();
+    await fake.fs.mkdir(ROOT);
+    const dest = `${ROOT}/20260101-000010-k.md`;
+    seed(fake, '20260101-000010-k.md', 'inode A original', 120);
+    fake.inos.set(dest, 9101);
+    const realLink = fake.fs.link;
+    fake.fs.link = async (from, to) => {
+      if (from === dest && (to ?? '').endsWith('.bak')) {
+        // The race window: the name is replaced right before the backup link runs.
+        fake.files.set(dest, Buffer.from('inode B swapped', 'utf8'));
+        fake.inos.set(dest, 9102);
+      }
+      return realLink(from, to);
+    };
+    const mark = fake.calls.length;
+    await assert.rejects(store.updateScratch('20260101-000010-k.md', 'new text'), (e: unknown) => e instanceof ScratchRefused);
+    fake.fs.link = realLink;
+    const calls = fake.calls.slice(mark);
+    assert.equal(Buffer.from(fake.files.get(dest) ?? []).toString('utf8'), 'inode B swapped', 'the swapped-in file B survives — never unlinked, never overwritten');
+    assert.equal(fake.inos.get(dest), 9102, 'destination is still B\'s inode');
+    assert.equal(calls.some((c) => c.op === 'unlink' && c.path === dest), false, 'the destination was NEVER unlinked after the swap (refused before any unlink)');
+    assert.equal(calls.some((c) => c.op === 'unlink' && (c.path ?? '').endsWith('.bak')), true, 'the mismatched backup was dropped');
+    assert.equal(calls.some((c) => c.op === 'unlink' && c.path.includes('.tmp-') && !c.path.endsWith('.bak')), true, 'temp still cleaned up');
+  }
+  // Scenario 2: dest swapped A->C between the backup link and the final pre-unlink
+  // lstat. st3.ino !== fst.ino -> refuse; C untouched, dest never unlinked, and the
+  // backup of A is cleaned up without restoring over C.
+  {
+    const { fake, store } = setup();
+    await fake.fs.mkdir(ROOT);
+    const dest = `${ROOT}/20260101-000011-l.md`;
+    seed(fake, '20260101-000011-l.md', 'inode A original', 130);
+    fake.inos.set(dest, 9201);
+    let destLstats = 0;
+    const realLstat = fake.fs.lstat;
+    fake.fs.lstat = async (p) => {
+      if (p === dest) {
+        destLstats++;
+        // lstat #1 = pre-loop validation, #2 = attempt revalidation, #3 = final
+        // pre-unlink revalidation: swap in C just before #3 observes it.
+        if (destLstats === 3) {
+          fake.files.set(dest, Buffer.from('inode C swapped', 'utf8'));
+          fake.inos.set(dest, 9202);
+        }
+      }
+      return realLstat(p);
+    };
+    const mark = fake.calls.length;
+    await assert.rejects(store.updateScratch('20260101-000011-l.md', 'new text'), (e: unknown) => e instanceof ScratchRefused);
+    fake.fs.lstat = realLstat;
+    const calls = fake.calls.slice(mark);
+    assert.equal(Buffer.from(fake.files.get(dest) ?? []).toString('utf8'), 'inode C swapped', 'the swapped-in file C survives — refused at the final pre-unlink revalidation');
+    assert.equal(fake.inos.get(dest), 9202);
+    assert.equal(calls.some((c) => c.op === 'unlink' && c.path === dest), false, 'the destination was NEVER unlinked');
+    assert.equal(calls.some((c) => c.op === 'link' && c.path === dest && (c.to ?? '').endsWith('.bak')), true, 'the backup of the validated inode A was still taken');
+    assert.equal(calls.some((c) => c.op === 'unlink' && (c.path ?? '').endsWith('.bak')), true, 'the A backup was cleaned up (no restore needed — nothing was unlinked)');
+    assert.equal(calls.some((c) => c.op === 'unlink' && c.path.includes('.tmp-') && !c.path.endsWith('.bak')), true, 'temp still cleaned up');
+  }
+});
+
 test('scratch-store.test.ts: updateScratch bumps mtime so listScratches reflects the save', async () => {
   const { fake, store } = setup();
   await fake.fs.mkdir(ROOT);

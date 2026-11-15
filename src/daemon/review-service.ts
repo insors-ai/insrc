@@ -120,6 +120,12 @@ export class ProductionReviews{
    const answer=await this.resources.clear(key,p['resourceRecovery'] as {reason:string;leaseIds?:string[]},context,scope);
    return{...answer,guidance:'Resource clearance never starts review work. Submit a separate explicit resume/recover, or the next attempt after a failed attempt.'};
   }
+  // A sequence-zero initializing runtime cannot have admitted native work.
+  // The explicit submission continues only through the exact fenced
+  // initialize/bind recovery, which rechecks input and archived predecessor.
+  const {loadReviewRuntime}=await import('./threads/review-runtime-store.js');
+  const initializing=await loadReviewRuntime(key);
+  if(initializing?.state==='initializing'&&initializing.sequence===0&&!initializing.resourceGuard.openLeases.length&&initializing.attempt===p['attempt'])return undefined;
   const state=await this.resources.inspect(key,context,scope);
   if(state.remaining)return{status:'resource_recovery_required',remaining:state.remaining,reviewId:key.reviewId,guardDigest:state.digest,guidance:'Verify the prior resources have ended, then request resourceRecovery with a reason and optional exact leaseIds through the existing local approval broker. Clearance alone will not resume.'};
   return undefined;
@@ -198,9 +204,10 @@ export class ProductionReviews{
    const path=request.phase==='start'?request.artifactPath:stored?.artifactPath;if(!path)throw new Error('Stored design artifact locator missing');
    const route={artifactPath:path,...(client?{client}:{})};
    const scope=await this.scope(key,ctx,{key,attempt,actionId:'lookup',submitted:request,route});
-   const ack=await this.registry.admit({key,attempt,actionId:request.phase==='recover'?request.actionId:`start-${attempt}`,submitted:request,route},ctx);
+   const targetAttempt=request.phase==='recover'&&request.operation==='restart_full'?attempt+1:attempt;
+   const ack=await this.registry.admit({key,attempt:targetAttempt,actionId:request.phase==='recover'?request.actionId:`start-${attempt}`,submitted:request,route},ctx);
    await this.registry.execute(ack,ctx);
-   return{accepted:true,reviewId:key.reviewId,attempt,reviewer:scope.reviewer,status:'pending',checkpointPath:ack.checkpointPath,admission:{validation:'unverified'}};
+   return{accepted:true,reviewId:key.reviewId,attempt:targetAttempt,reviewer:scope.reviewer,status:'pending',checkpointPath:ack.checkpointPath,admission:{validation:'unverified'}};
   }
   const identity=this.registry.identity(key);if(!identity)throw new Error('Design owner unavailable; explicitly recover first');
   const scope=await this.scope(key);if(request.phase!=='activity')this.currentReviewer(key.project,scope.subject,'controller');

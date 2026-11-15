@@ -12,7 +12,7 @@ import type { ReviewSources, BatchReviewSources } from '../code-review/task-revi
 import { ReviewSourceSession } from './source-session.js';
 import type { SourceCapacity } from './source-session.js';
 import { preparationDigest, writePreparedContext } from './prepared-context.js';
-import type { PreparedContextReader, ReadyContextReceipt } from './prepared-context.js';
+import type { PreparedContextReader, ReadyContextReceipt, PreparedSourceIdentity } from './prepared-context.js';
 
 /** One private preparation phase. Route resolution and every semantic check
  * remain in the existing admission/packet implementations. This object only
@@ -24,6 +24,7 @@ export class CodePreparation {
  private failed = false;
  private sealed = false;
  private packetBytes = 0;
+ private identity: PreparedSourceIdentity | undefined;
  private constructor(readonly sources: ReviewSources, private readonly key: ReviewKey,
   private readonly session: ReviewSourceSession | undefined,
   private readonly reader: PreparedContextReader | undefined,
@@ -86,11 +87,17 @@ export class CodePreparation {
   for (const entry of review.checkpoint.attempts) await this.packet(entry.submitted, this.sources, true, undefined, entry.header.derived);
   this.sealed = true;
   const packets = [...this.packets.entries()], inputs = packets.map(([, p]) => p.packet);
-  return writePreparedContext({ key: this.key, attempt: review.attempt.header.attempt, inputDigest: preparationDigest(review.attempt.submitted), validatorVersion: 1,
+  const identity: PreparedSourceIdentity = { key: this.key, attempt: review.attempt.header.attempt, inputDigest: preparationDigest(review.attempt.submitted), validatorVersion: 1,
    routeDigest: preparationDigest([...this.routes.entries()]), sourceIdentity: preparationDigest(inputs.map(p => [p.reviewRevision, p.reviewSet])),
    scopeDigest: preparationDigest(packets.map(([id, p]) => [id, p.projection?.identity, p.tasks])),
-   testDocumentDigest: preparationDigest(inputs.map(p => [p.tests, p.documents])) },
-  { 'code-packets': packets }, this.session, this.limits, this.capacity);
+   testDocumentDigest: preparationDigest(inputs.map(p => [p.tests, p.documents])) };
+  const receipt = await writePreparedContext(identity, { 'code-packets': packets }, this.session, this.limits, this.capacity);
+  this.identity = identity; return receipt;
+ }
+ /** Lookup metadata for the private main qualification channel, not a borrow. */
+ qualificationIdentity(): PreparedSourceIdentity {
+  if (!this.identity) throw new Error('Code preparation has not sealed a context');
+  return structuredClone(this.identity);
  }
  observeSources(observer: Parameters<ReviewSourceSession['observe']>[0]): () => void { return this.session?.observe(observer) ?? (() => {}); }
  sourceMetrics(): ReturnType<ReviewSourceSession['snapshot']> | undefined { return this.session?.snapshot(); }

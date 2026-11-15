@@ -5,7 +5,7 @@ import type { FileHandle } from 'node:fs/promises';
 import { designFixture, admissionFixture } from '../design-review/__tests__/fixtures.js';
 import { PreparationHistoryStore } from '../preparation-history-store.js';
 import { withPreparationPersistence } from '../preparation-persistence.js';
-import { writeCheckpoint } from '../../code-review/task-review/checkpoint.js';
+import { writeReviewBytes } from '../../code-review/task-review/checkpoint.js';
 import { loadStoredDesignCheckpoint, updateStoredDesignCheckpoint } from '../design-review/checkpoint.js';
 import { preparationDigest } from '../prepared-context.js';
 import { fixture } from '../../code-review/task-review/__tests__/publication-fixture.js';
@@ -16,6 +16,9 @@ import { DesignReviewCoordinator } from '../design-review/coordinator.js';
 import type { DesignUnitAssignment } from '../design-review/contracts.js';
 import { qualifiedDesignProjection } from '../design-review/checkpoint.js';
 import { setTimeout as pause } from 'node:timers/promises';
+import { reviewJsonLimit } from '../../../config/review.js';
+const writeCheckpoint=(path:string,bytes:string)=>writeReviewBytes(path,bytes,reviewJsonLimit());
+import { loadPreparationCheckpointSnapshot } from '../preparation-checkpoint.js';
 
 test('canonical code persistence preserves submitted packets and feedback through actual family read-modify-write calls', async t => {
  const f = await fixture(); t.after(() => f.cleanup());
@@ -36,6 +39,24 @@ test('canonical code persistence preserves submitted packets and feedback throug
   await updateStoredCodeCheckpoint(path, cp => { const a = cp!.attempts[0]!; if ('review-response' in a) a['review-response'].summary = 'Semantic publication summary'; return cp!; });
   assert.equal(commits, 2);
  });
+});
+
+test('private inactive handoff forces checkpoint rebind even when semantic input is unchanged', async t => {
+ const f = designFixture(t), input = admissionFixture(f), key = { project: f.repo, family: 'design' as const, reviewId: input.reviewId };
+ const oldRef = { runtimeId: 'old-runtime', inputDigest: preparationDigest(input.attempts[0]!.submitted) }, nextRef = { ...oldRef, runtimeId: 'next-runtime' };
+ let commits = 0;
+ const deps = { commit: async (cp: Parameters<import('../preparation-history-store.js').PreparationHistoryStoreDeps['commit']>[0]) => { commits++; await writeCheckpoint(f.path, JSON.stringify(cp)); return cp; }, observe: async () => {} };
+ const old = await PreparationHistoryStore.open(key, oldRef, deps); await old.write(input);
+ const prior = await loadPreparationCheckpointSnapshot(key);
+ assert.ok(prior);
+ await assert.rejects(PreparationHistoryStore.open(key, nextRef, deps), /binding mismatch/);
+ await assert.rejects(PreparationHistoryStore.open(key, nextRef, deps, { checkpointDigest: 'f'.repeat(64), previousRuntime: oldRef, resetContext: false }), /binding mismatch/);
+ const next = await PreparationHistoryStore.open(key, nextRef, deps, { checkpointDigest: prior.digest, previousRuntime: oldRef, resetContext: false });
+ assert.deepEqual(JSON.parse(await readFile(f.path, 'utf8')).runtime, oldRef, 'opening grants no execution or writer shortcut');
+ await next.write(input);
+ assert.equal(commits, 2); assert.deepEqual(JSON.parse(await readFile(f.path, 'utf8')).runtime, nextRef);
+ assert.deepEqual(await next.read(), input);
+ await assert.rejects(old.read(), /fenced/);
 });
 
 for (const replacement of ['in-place', 'rename'] as const) test(`canonical persistence fences ${replacement} replacement between validated readback and stamp adoption`, async t => {

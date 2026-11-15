@@ -11,6 +11,7 @@ import type { LLMProvider } from '../../../shared/types.js';
 import { reviewPreparationLimits } from '../../../config/review.js';
 import { ReviewPreparationCapacity } from '../source-session.js';
 import { CodePreparation } from '../code-preparation.js';
+import { preparationDigest } from '../prepared-context.js';
 
 for (const full of [false, true]) test(`shared preparation executes ${full ? 'story' : 'task'} through coordinator and fresh durable worker admission`, async t => {
  for (const workerMode of [false, true]) await t.test(workerMode ? 'worker' : 'coordinator', async () => {
@@ -49,6 +50,10 @@ for (const full of [false, true]) test(`shared preparation executes ${full ? 'st
    assert.equal(modelCalls, selected.length + (full ? 1 : 0));
    assert.deepEqual(attempt.submitted.reviewSet, f.packet.reviewSet);
    const receipt = await preparation.seal(prepared);
+   const qualifiedIdentity = preparation.qualificationIdentity();
+   assert.equal(preparationDigest(qualifiedIdentity), receipt.identityDigest);
+   qualifiedIdentity.key.reviewId = 'caller-mutated-copy';
+   assert.equal(preparation.qualificationIdentity().key.reviewId, receipt.key.reviewId);
    assert.equal(receipt.attempt, 1); assert.equal(receipt.key.reviewId, id);
   } finally { await preparation.close(); f.cleanup(); }
  });

@@ -47,6 +47,7 @@ test('shared design preparation executes planning and chunks through coordinator
   }else{coordinator=new DesignReviewCoordinator(deps);await coordinator.start(request);}
   const done=await terminal(coordinator,f.repo);assert.equal(done.status,'passed');assert.equal(done.completedChunks,2);assert.deepEqual(native.calls,['planning','content','final']);
   const receipt=await preparation.seal(),reader=await PreparedContextReader.open(receipt,limits,async()=>{},async error=>{throw error;});
+  assert.equal(preparationDigest(preparation.qualificationIdentity()), receipt.identityDigest);
   writeFileSync(join(f.repo,'unrelated.txt'),'External activity');
   const reused=await DesignPreparation.reuse(key,1,reader,limits,capacity);assert.deepEqual(reused.prepare(f.repo,f.json).inventory,f.prepared.inventory);
   appendFileSync(f.md,'\nChanged target');

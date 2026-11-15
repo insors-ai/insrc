@@ -12,7 +12,8 @@ export interface PreparationPersistence {
  observe(update: PreparationObservation): Promise<void>;
 }
 const active = new AsyncLocalStorage<PreparationPersistence>();
-export function withPreparationPersistence<T>(owner: PreparationPersistence, work: () => Promise<T>): Promise<T> {
+export function withPreparationPersistence<T>(owner: PreparationPersistence, work: () => T): T {
+ if (active.getStore() === owner) return work();
  if (active.getStore()) throw new Error('Review preparation persistence already installed');
  return active.run(owner, work);
 }

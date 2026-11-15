@@ -53,6 +53,7 @@ export function updateStoredCodeCheckpoint(path:string,mutate:(current:StoredRev
 /** Shared durable byte writer. Callers own their format/size validation and
  * serialization lane; this preserves the existing exact save outcomes. */
 export async function writeCheckpoint(path: string, serialized: string, io: CheckpointIO = defaultIO): Promise<void> {
+ await rejectPreparationDowngrade(path);
  return writeReviewBytes(path, serialized, reviewJsonLimit(), io);
 }
 /** Same atomic durability for bounded raw context objects and JSON envelopes. */
@@ -112,6 +113,14 @@ export async function loadStoredCheckpoint(path: string): Promise<StoredReviewCh
  try {
   const stat = await file.stat();
   requireReview(stat.isFile() && stat.size <= reviewJsonLimit(), 'checkpoint', 'Expected bounded checkpoint file');
-  return decodeStoredCheckpoint(JSON.parse(await file.readFile('utf8')));
+  const raw=JSON.parse(await file.readFile('utf8'));
+  if(raw.schemaVersion===3){const {decodePreparationCheckpoint}=await import('../../review/preparation-checkpoint.js');const {preparationSemanticHistory}=await import('../../review/preparation-semantic-history.js');const cp=decodePreparationCheckpoint(raw,{project:raw.project,family:'code',reviewId:raw.reviewId});if(cp.format!=='current'||!('storyId'in cp.checkpoint))throw new Error('Invalid current code history');return decodeStoredCheckpoint(preparationSemanticHistory(cp.checkpoint));}
+  return decodeStoredCheckpoint(raw);
  } finally { await file.close(); }
+}
+
+/** Historical writers cannot silently replace a current-format operational record. */
+export async function rejectPreparationDowngrade(path:string):Promise<void>{
+ let file;try{file=await open(path,constants.O_RDONLY|constants.O_NOFOLLOW);}catch(error){if((error as NodeJS.ErrnoException).code==='ENOENT')return;throw error;}
+ try{const st=await file.stat();if(!st.isFile()||st.size>reviewJsonLimit())throw new Error('Invalid checkpoint file');const value=JSON.parse(await file.readFile('utf8'));if(value.schemaVersion===3)throw new Error('Current preparation history requires its private owner; downgrade forbidden');}finally{await file.close();}
 }

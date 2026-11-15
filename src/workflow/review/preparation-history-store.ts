@@ -20,6 +20,13 @@ export interface PreparationHistoryStoreDeps {
  /** Hot state goes to compact runtime/main progress, never full history. */
  observe(update: PreparationObservation): Promise<void>;
 }
+/** Supplied only in private bootstrap data by main after archiving the exact
+ * inactive predecessor. It is not a public review packet field. */
+export interface PreparationHistoryHandoff {
+ readonly checkpointDigest: string;
+ readonly previousRuntime: PreparationHistory['runtime'];
+ readonly resetContext: boolean;
+}
 /** One dedicated worker owns this complete canonical history cache. Reads
  * check file identity without decoding every packet again. No public caller
  * can supply the commit/observation authorities. */
@@ -29,16 +36,21 @@ export class PreparationHistoryStore implements PreparationPersistence {
  private fileStamp: string | undefined;
  private fenced = false;
  private tail: Promise<void> = Promise.resolve();
+ private needsRebind = false;
+ private resetContext = false;
  private constructor(private readonly key: ReviewKey, private readonly runtime: { runtimeId: string; inputDigest: string }, private readonly deps: PreparationHistoryStoreDeps) {
   this.path = reviewWorkerCheckpoint(key);
  }
- static async open(key: ReviewKey, runtime: { runtimeId: string; inputDigest: string }, deps: PreparationHistoryStoreDeps): Promise<PreparationHistoryStore> {
+ static async open(key: ReviewKey, runtime: { runtimeId: string; inputDigest: string }, deps: PreparationHistoryStoreDeps, handoff?: PreparationHistoryHandoff): Promise<PreparationHistoryStore> {
   const owner = new PreparationHistoryStore(key, structuredClone(runtime), deps), before = await preparationCheckpointStamp(key);
   const snapshot = await loadPreparationCheckpointSnapshot(key), loaded = snapshot?.value;
   if (before !== snapshot?.stamp || before !== await preparationCheckpointStamp(key)) throw new Error('Preparation history changed while opening');
   if (loaded) {
    if (loaded.format !== 'current') throw new Error('Inactive historical history requires explicit migration');
-   if (!same(loaded.checkpoint.runtime, runtime)) throw new Error('Preparation runtime binding mismatch');
+   if (!same(loaded.checkpoint.runtime, runtime)) {
+    if (!handoff || snapshot?.digest !== handoff.checkpointDigest || !same(loaded.checkpoint.runtime, handoff.previousRuntime)) throw new Error('Preparation runtime binding mismatch');
+    owner.needsRebind = true; owner.resetContext = handoff.resetContext;
+   }
    owner.value = structuredClone(loaded.checkpoint);
   }
   owner.fileStamp = snapshot?.stamp; return owner;
@@ -69,6 +81,7 @@ export class PreparationHistoryStore implements PreparationPersistence {
   const value = structuredClone(update);
   const work = this.tail.then(async () => {
    await this.assertCurrent();
+   if (this.needsRebind) throw new Error('Preparation checkpoint handoff is not committed');
    const last = this.value?.attempts.at(-1);
    if (!last || value.family !== this.key.family || value.attempt !== ('header' in last ? last.header.attempt : last.number)) throw new Error('Foreign preparation observation');
    if (value.progress.sequence < (last.progress?.sequence ?? 0)) throw new Error('Stale preparation observation');
@@ -96,6 +109,19 @@ export class PreparationHistoryStore implements PreparationPersistence {
   }).catch(error => { this.fenced = true; throw error; });
   this.tail = work.then(() => {}, () => {}); return work;
  }
+ /** Explicit phase requalification of unchanged semantic history (for a
+  * cold publication/recovery). The owner adopts only its own verified commit. */
+ qualify():Promise<void>{
+  const work=this.tail.then(async()=>{
+   await this.assertCurrent();if(!this.value||this.needsRebind)throw new Error('Committed preparation handoff required');
+   const before=structuredClone(this.value),committed=await this.deps.commit(structuredClone(before),before);
+   if(!same(committed.runtime,this.runtime)||!same(preparationHistorySnapshot(committed),preparationHistorySnapshot(before)))throw new Error('Requalification changed accepted history');
+   const snapshot=await loadPreparationCheckpointSnapshot(this.key);
+   if(snapshot?.value.format!=='current'||!same(snapshot.value.checkpoint,committed))throw new Error('Requalification lacks a durable boundary');
+   this.value=structuredClone(committed);this.fileStamp=snapshot.stamp;
+  }).catch(error=>{this.fenced=true;throw error;});
+  this.tail=work.then(()=>{},()=>{});return work;
+ }
  write(input: unknown): Promise<void> {
   const submitted = structuredClone(input);
   const work = this.tail.then(async () => {
@@ -105,18 +131,19 @@ export class PreparationHistoryStore implements PreparationPersistence {
    const history = decoded.checkpoint;
    if (history.attempts.some(a => 'resourceGuard' in a && a.resourceGuard)) throw new Error('Embedded native guard writer is forbidden');
    const next = { ...history, schemaVersion: 3, runtime: this.runtime,
-    ...(this.value?.context ? { context: this.value.context } : {}),
+    ...(this.value?.context && !this.resetContext ? { context: this.value.context } : {}),
     ...(this.value?.migration ? { migration: this.value.migration } : {}),
    } as PreparationHistory;
    const checked = decodePreparationCheckpoint(next, this.key);
    if (checked.format !== 'current') throw new Error('Expected canonical preparation history');
    const before = this.value;
-   if (!before || !same(preparationHistorySnapshot(before), preparationHistorySnapshot(next))) {
+   if (!before || this.needsRebind || !same(preparationHistorySnapshot(before), preparationHistorySnapshot(next))) {
     const committed = await this.deps.commit(structuredClone(next), before && structuredClone(before));
     if (!same(committed.runtime, this.runtime) || !same(preparationHistorySnapshot(committed), preparationHistorySnapshot(next))) throw new Error('Committed preparation history differs from submitted evidence');
     const snapshot = await loadPreparationCheckpointSnapshot(this.key), durable = snapshot?.value;
     if (durable?.format !== 'current' || !same(durable.checkpoint, committed)) throw new Error('Preparation history lacks a durable committed boundary');
     this.value = structuredClone(committed); this.fileStamp = snapshot!.stamp;
+    this.needsRebind = false; this.resetContext = false;
    }
    // Current execution ownership/sequence is transient; semantic dispatch and
    // retry counters remain in the full record and take the branch above.

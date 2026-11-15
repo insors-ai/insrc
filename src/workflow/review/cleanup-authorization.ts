@@ -18,12 +18,24 @@ import type { PreparationHistory } from './history-binding.js';
 import type { PublicationProof } from './publication-proof.js';
 import { validatePublicationProof } from './publication-proof.js';
 import { cleanupBytes, cleanupStat } from './cleanup-claim-files.js';
+import { reviewRuntimeAudits } from './runtime-audit.js';
+import type { ChangeLogEntry } from '../artifact-core/types.js';
 import { preparationDigest } from './prepared-context.js';
 
 export interface PreparedCleanupAuthorization {
  readonly history: PreparationHistory; readonly proof: PublicationProof; readonly approvalRevision: number;
  readonly bindingHeads: readonly string[];
  readonly permanent: { readonly artifactId: string; readonly historyEntryId: string; readonly preservationDigest: string };
+}
+/** A re-publication phase has its own closed runtime, while the original
+ * assessment stays immutable. Main's bounded journal audit preserves that
+ * phase; it grants deletion authority only after matching permanent evidence. */
+function publicationPhase(first:PreparedCleanupAuthorization,log:readonly ChangeLogEntry[],key:ReviewKey):PreparedCleanupAuthorization{
+ const phases=reviewRuntimeAudits(log,first.permanent.artifactId,key).filter(a=>a.publication&&a.runtime.attempt===first.proof.runtime.attempt&&a.publication.evidenceDigest===first.proof.evidenceDigest);
+ const latest=phases.at(-1);if(!latest?.publication)return first;
+ const proof=latest.publication,history={...first.history,runtime:latest.checkpointRuntime,context:latest.context} as PreparationHistory;
+ validatePublicationProof(proof,history,key);
+ return{...first,history,proof,bindingHeads:[...new Set([...first.bindingHeads,...phases.map(a=>a.publication!.binding.bindingDigest)])]};
 }
 /** Current human approval and independent permanent evidence, never a disk
  * cache credential. Used on initial cleanup AND every explicit claim retry. */
@@ -49,7 +61,7 @@ export async function authorizePreparedCleanup(target: ReviewCleanupTarget, key:
   });
   if (!entry) throw new Error('Permanent code publication entry is missing');
   validatePublicationProof(archive.proof, archive.checkpoint, key);
-  return { history: archive.checkpoint, proof: archive.proof, bindingHeads: [archive.proof, ...(archive.earlierProofs ?? [])].map(p => p.binding.bindingDigest), approvalRevision: approval.revision, permanent: { artifactId, historyEntryId: entry.id, preservationDigest: archive.proof.evidenceDigest } };
+  return publicationPhase({ history: archive.checkpoint, proof: archive.proof, bindingHeads: [archive.proof, ...(archive.earlierProofs ?? [])].map(p => p.binding.bindingDigest), approvalRevision: approval.revision, permanent: { artifactId, historyEntryId: entry.id, preservationDigest: archive.proof.evidenceDigest } },permanent.changeLog,key);
  }
  const entries = approved.changeLog.filter(e => (e.outcome?.data as { kind?: unknown; reviewId?: unknown } | undefined)?.kind === 'design-chunk-review'
   && (e.outcome!.data as { reviewId?: unknown }).reviewId === key.reviewId).map(entry => ({ entry, record: validatePermanentDesignReview(entry.outcome!.data, { project: key.project, artifactId: target.artifactId }) }))
@@ -61,7 +73,7 @@ export async function authorizePreparedCleanup(target: ReviewCleanupTarget, key:
   || prepared.subject.reviewer !== record.reviewer) throw new Error('Current design approval no longer matches reviewed content, author or workflow');
  const history = preparedDesignCheckpointFromRecord(record);
  validatePublicationProof(record.preparation.proof, history, key);
- return { history, proof: record.preparation.proof, bindingHeads: entries.flatMap(e => e.record.schemaVersion === 3 ? [e.record.preparation.proof.binding.bindingDigest] : []), approvalRevision: approval.revision, permanent: { artifactId: target.artifactId, historyEntryId: latest.entry.id, preservationDigest: record.preservationDigest } };
+ return publicationPhase({ history, proof: record.preparation.proof, bindingHeads: entries.flatMap(e => e.record.schemaVersion === 3 ? [e.record.preparation.proof.binding.bindingDigest] : []), approvalRevision: approval.revision, permanent: { artifactId: target.artifactId, historyEntryId: latest.entry.id, preservationDigest: record.preservationDigest } },approved.changeLog,key);
 }
 
 /** A private phase pins validated evidence, not mutable approval. Every

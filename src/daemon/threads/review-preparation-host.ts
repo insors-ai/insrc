@@ -36,6 +36,7 @@ export interface PreparationConnection { readonly port: MessagePort; close(): Pr
 export class ReviewPreparationHost {
  private readonly projects = new Map<string, ReviewPreparationCapacity>();
  private readonly generations = new Map<string, Set<string>>();
+ private readonly identities = new Map<string, PreparedSourceIdentity>();
  private readonly phases = new Map<string, number>();
  private readonly cleaning = new Set<string>();
  private readonly allocations = new Map<string, Allocation>();
@@ -45,7 +46,8 @@ export class ReviewPreparationHost {
   assertDisposed: (identity: ContextPhaseIdentity) => Promise<void>,
   private readonly limits: (project: string) => ReviewPreparationLimits = () => reviewPreparationLimits(),
   private readonly onProgress: (identity: ContextPhaseIdentity, progress: Pick<ReviewRuntime, 'progress' | 'preparation'>) => void = () => {},
-  private readonly closeNativeForPublication?: (identity: ContextPhaseIdentity) => Promise<void>) {
+  private readonly closeNativeForPublication?: (identity: ContextPhaseIdentity) => Promise<void>,
+  private readonly auditPublication?:((identity:ContextPhaseIdentity,proof:import('../../workflow/review/publication-proof.js').PublicationProof,receipt:HistoryBoundaryReceipt,history:import('../../workflow/review/history-binding.js').PreparationHistory)=>Promise<void>)|undefined) {
   if (!isMainThread) throw new Error('Preparation host must live on main');
   this.contexts = new ReviewContextRegistry(epoch, assertCurrent, assertDisposed, async receipt => {
    const allocation = this.allocation(receipt.key, receipt.capacityToken);
@@ -68,7 +70,7 @@ export class ReviewPreparationHost {
   await this.assertCurrent(identity);
   if (this.cleaning.has(keyOf(identity.key))) throw new Error('Preparation cleanup in progress');
   const initial = this.runtimes.snapshot(runtime);
-  if (!same(identity.key, runtime.key) || initial.attempt !== identity.attempt || initial.workerIncarnation !== identity.incarnation || initial.state !== 'active') throw new Error('Foreign preparation runtime');
+  if (!same(identity.key, runtime.key) || initial.attempt !== identity.attempt || initial.workerIncarnation !== identity.incarnation || !['initializing', 'active'].includes(initial.state)) throw new Error('Foreign preparation runtime');
   const review = keyOf(identity.key), phaseId = JSON.stringify([review, identity.incarnation, identity.attempt, identity.phase]);
   // Reserve the phase before awaiting registry attachment. Cleanup must not
   // pass its no-borrowers check while an attachment is in flight.
@@ -81,14 +83,16 @@ export class ReviewPreparationHost {
   const active = async (method: string) => {
    if (closed) throw new Error('Preparation phase closed'); await this.assertCurrent(identity);
    const state = this.runtimes.snapshot(runtime);
-   const closedPublication = state.state === 'terminal' && ['runtime.publication', 'runtime.history', 'context.resolve', 'context.release'].includes(method);
-   if (closed || state.state !== 'active' && !closedPublication || state.cancellation) throw new Error('Preparation owner fenced');
+   const initializing = state.state === 'initializing' && method === 'runtime.activate';
+   const closedPublication = state.state === 'terminal' && ['runtime.publication', 'runtime.history', 'context.resolve', 'context.release', 'capacity.reserve', 'capacity.commit', 'capacity.split', 'capacity.combine', 'capacity.release'].includes(method);
+   if (closed || state.state !== 'active' && !closedPublication && !initializing || state.cancellation) throw new Error('Preparation owner fenced');
   };
   const expected = (value: PreparedSourceIdentity) => {
    if (!same(value.key, identity.key) || value.attempt !== identity.attempt || value.inputDigest !== this.runtimes.snapshot(runtime).checkpointBinding.inputDigest) throw new Error('Foreign prepared input');
   };
   const add = (token: string, bytes: number) => { this.allocations.set(token, { owner: phaseId, key: keyOf(identity.key), project: identity.key.project, bytes, retained: false }); };
   const work: HubHandlers = {
+   'runtime.activate': async raw => { fields(raw, []); await this.runtimes.activate(runtime); },
    'capacity.reserve': async raw => { const p = fields(raw, ['bytes']); if (this.allocations.size >= 100000) throw new Error('Preparation allocation inventory exhausted'); const token = await capacity.reserve(p['bytes'] as number); add(token, p['bytes'] as number); return token; },
    'capacity.commit': async raw => { const p = fields(raw, ['token', 'bytes']), allocation = this.allocation(identity.key, p['token'], true, phaseId); await capacity.commit(p['token'] as string, p['bytes'] as number); allocation.bytes = p['bytes'] as number; },
    'capacity.release': async raw => { const p = fields(raw, ['token']); this.allocation(identity.key, p['token'], true, phaseId); await capacity.release(p['token'] as string); this.allocations.delete(p['token'] as string); },
@@ -108,6 +112,18 @@ export class ReviewPreparationHost {
     this.allocation(identity.key, receipt.capacityToken, false, phaseId);
     await this.contexts.qualify(owner, source, receipt); this.allocation(identity.key, receipt.capacityToken, false, phaseId).retained = true;
     const generations = this.generations.get(review) ?? new Set<string>(); generations.add(receipt.generationId); this.generations.set(review, generations);
+    this.identities.set(receipt.generationId, structuredClone(source));
+   },
+   // Current-epoch lookup metadata only. The new phase still needs its own
+   // registered borrow and the family's fresh mutable subject/route checks.
+   'context.current': raw => {
+    fields(raw, []);
+    const input = this.runtimes.snapshot(runtime).checkpointBinding.inputDigest;
+    for (const id of [...(this.generations.get(review) ?? [])].reverse()) {
+     const value = this.identities.get(id);
+     if (value?.attempt === identity.attempt && value.inputDigest === input) return structuredClone(value);
+    }
+    return null;
    },
    'context.borrow': async raw => { const p = fields(raw, ['identity']), source = p['identity'] as PreparedSourceIdentity; expected(source); return this.contexts.borrow(owner, source); },
    'context.resolve': async raw => { const p = fields(raw, ['access']); return this.contexts.resolve(owner, p['access'] as PreparationAccess); },
@@ -128,7 +144,8 @@ export class ReviewPreparationHost {
     const p = fields(raw, ['access', 'receipt']), source = await this.contexts.resolve(owner, p['access'] as PreparationAccess), receipt = p['receipt'] as HistoryBoundaryReceipt;
     if (!this.closeNativeForPublication) throw new Error('Main native publication closure unavailable');
     const audit = await this.runtimes.sealPublication(runtime, receipt, () => verifyHistoryBoundaryReceipt(receipt, source), () => this.closeNativeForPublication!(identity));
-    return publicationProof(audit, receipt, source, await readBoundPreparationHistory(receipt, source));
+    const history=await readBoundPreparationHistory(receipt, source),proof=publicationProof(audit, receipt, source, history);
+    await this.auditPublication?.(identity,proof,receipt,history);return proof;
    },
   };
   const handlers: HubHandlers = Object.fromEntries(Object.entries(work).map(([name, handler]) => [name, (raw: unknown) => {
@@ -152,7 +169,7 @@ export class ReviewPreparationHost {
   try {
    await verifyDeleted();
    const generations = this.generations.get(review);
-   for (const id of generations ?? []) { this.contexts.evict(id); generations!.delete(id); }
+   for (const id of generations ?? []) { this.contexts.evict(id); generations!.delete(id); this.identities.delete(id); }
    this.generations.delete(review);
    for (const [token, allocation] of this.allocations) if (allocation.key === review) { await this.capacity(allocation.project).release(token); this.allocations.delete(token); }
   } finally { this.cleaning.delete(review); }

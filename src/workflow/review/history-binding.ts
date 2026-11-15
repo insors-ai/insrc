@@ -18,6 +18,8 @@ import type { CodePreparationCheckpoint, DesignPreparationCheckpoint } from './p
 import { preparationDigest, contextRoot } from './prepared-context.js';
 import type { ReadyContextReceipt } from './prepared-context.js';
 import type { SourceCapacity } from './source-session.js';
+import { designActionEvolution } from './design-review/action-state.js';
+import type { DesignAttempt } from './design-review/contracts.js';
 
 export type PreparationHistory = CodePreparationCheckpoint | DesignPreparationCheckpoint;
 export interface HistoryValidation { readonly evidence?: readonly CapturedHistoryEvidence[]; readonly publication?: { readonly artifactId: string; readonly preservationDigest: string } | undefined; }
@@ -25,6 +27,9 @@ export interface HistoryBoundaryReceipt {
  readonly key: ReviewKey; readonly attempt: number; readonly runtimeId: string; readonly inputDigest: string;
  readonly binding: HistoryBinding; readonly checkpointDigest: string; readonly completedUnits: number;
  readonly publication?: HistoryValidation['publication'];
+ /** Explicit cold qualification can cross the one committed checkpoint whose
+  * acknowledgment was lost. This is immutable binding metadata, not feedback. */
+ readonly requalifiedFrom?: HistoryBinding | undefined;
 }
 export interface HistoryBindingDeps {
  /** Resolves the current private context borrow; disk references cannot substitute. */
@@ -79,6 +84,9 @@ function prefix(previous: PreparationHistory, next: PreparationHistory): void {
   for (const key of ['plan', 'impact', 'report']) if (old[key] !== undefined && !same(old[key], now[key])) throw new Error('Accepted design plan/report changed');
   const oldResults = old['completedChunks'] as unknown[], newResults = now['completedChunks'] as unknown[];
   if (!same(oldResults, newResults.slice(0, oldResults.length))) throw new Error('Accepted chunk feedback changed');
+  const oldActions = (old['actions'] ?? []) as NonNullable<DesignAttempt['actions']>;
+  const newActions = (now['actions'] ?? []) as NonNullable<DesignAttempt['actions']>;
+  if (newActions.length < oldActions.length || oldActions.some((action, index) => !designActionEvolution(action, newActions[index]!))) throw new Error('Accepted design recovery action changed');
  }
 }
 async function bounded(path: string): Promise<string> {
@@ -89,6 +97,12 @@ async function bounded(path: string): Promise<string> {
   while (offset < bytes.length) { const n = await file.read(bytes, offset, bytes.length - offset, null); if (!n.bytesRead) break; offset += n.bytesRead; }
   if (offset !== st.size) throw new Error('History record changed while reading'); return bytes.subarray(0, offset).toString('utf8');
  } finally { await file.close(); }
+}
+/** Bounded, no-follow immutable node read. Metadata alone grants no borrow. */
+export async function readPreparationHistoryBinding(key:ReviewKey,id:string):Promise<HistoryBinding>{
+ if(!/^[a-f0-9]{64}$/.test(id))throw new Error('Invalid history binding id');
+ const binding=decodeHistoryBinding(JSON.parse(await bounded(join(contextRoot(key),'history-bindings',`${id}.json`))),key,reviewJsonLimit());
+ if(binding.bindingDigest!==id||preparationDigest({...binding,bindingDigest:''})!==id)throw new Error('History binding digest mismatch');return binding;
 }
 /** Main private publication bridge reads the same bounded, no-follow history
  * bytes that its durable receipt acknowledges. */
@@ -113,6 +127,13 @@ export async function verifyHistoryBoundaryReceipt(receipt: HistoryBoundaryRecei
  await verifyHistoryEvidenceChain(expectedSource, binding.evidenceManifestDigest);
  const stored = decodeHistoryBinding(JSON.parse(await bounded(join(contextRoot(expectedSource.key), 'history-bindings', `${binding.bindingDigest}.json`))), expectedSource.key, reviewJsonLimit());
  if (!same(stored, binding)) throw new Error('Durable history binding replaced');
+ if (receipt.requalifiedFrom) {
+  const prior = decodeHistoryBinding(receipt.requalifiedFrom, expectedSource.key, reviewJsonLimit());
+  if (prior.attempt !== binding.attempt || binding.priorBindingDigest !== prior.bindingDigest || binding.semanticSequence !== prior.semanticSequence + 1
+   || prior.bindingDigest !== preparationDigest({ ...prior, bindingDigest: '' })) throw new Error('Invalid cold requalification predecessor');
+  const saved = decodeHistoryBinding(JSON.parse(await bounded(join(contextRoot(expectedSource.key), 'history-bindings', `${prior.bindingDigest}.json`))), expectedSource.key, reviewJsonLimit());
+  if (!same(saved, prior)) throw new Error('Cold requalification predecessor replaced');
+ }
  const last = cp.attempts.at(-1)!, published = 'review-response' in last ? last['review-response'].crPublication === 'complete' : 'publication' in last && last.publication?.state === 'complete';
  if (published !== Boolean(receipt.publication)) throw new Error('Unverified permanent publication boundary');
 }
@@ -125,6 +146,7 @@ export class HistoryBindingSession {
  private receipt: HistoryBoundaryReceipt | undefined;
  private pending: { checkpoint: PreparationHistory; binding: HistoryBinding; validation: HistoryValidation } | undefined;
  private evidence!: HistoryEvidenceStore;
+ private requalifiedFrom: HistoryBinding | undefined;
  private failed = false;
  private tail: Promise<void> = Promise.resolve();
  private constructor(private readonly source: ReadyContextReceipt, private readonly deps: HistoryBindingDeps) {}
@@ -146,6 +168,33 @@ export class HistoryBindingSession {
   session.evidence = await HistoryEvidenceStore.open(source, deps.capacity, deps.limits, deps.authorize, deps.invalidateSource);
   await session.commit(cp); return session;
  }
+ /** Explicit cold qualification only. A fresh private source receipt has
+  * already been issued after authoritative source checks; old disk context
+  * cannot authorize this transition. Revalidate the complete accepted history
+  * and advance its existing sequence instead of resetting completed work. */
+ static async requalify(source: ReadyContextReceipt, input: unknown, deps: HistoryBindingDeps, acceptedPrefix?: PreparationHistory): Promise<HistoryBindingSession> {
+  const session = new HistoryBindingSession(structuredClone(source), deps);
+  await session.authorize(); const cp = current(input, source);
+  const actual = current(JSON.parse(await bounded(reviewWorkerCheckpoint(source.key))), source);
+  if (!same(actual, cp)) throw new Error('Requalification input is not the committed checkpoint');
+  if (!cp.context || cp.context.generationId === source.generationId && !acceptedPrefix) return HistoryBindingSession.open(source, input, deps);
+  const previous = await session.readBinding(cp.context.historyBindingDigest);
+  // An explicit recovery action can be durably admitted before a fresh phase
+  // qualifies its source. Authenticate the saved prefix against its immutable
+  // binding, then allow only the normal append-only history evolution. The
+  // caller's snapshot alone never establishes accepted feedback.
+  const preserved = acceptedPrefix ? current({ ...structuredClone(acceptedPrefix), runtime: cp.runtime }, source) : cp;
+  if (!same(preserved.context, cp.context)) throw new Error('Recovery prefix context changed');
+  if (previous.attempt !== source.attempt || previous.generationId !== cp.context.generationId
+   || previous.historyPrefixDigest !== preparationDigest(snapshot(preserved))) throw new Error('Accepted history changed before source requalification');
+  if (acceptedPrefix) prefix(preserved, cp);
+  // Keep the exact old chain head, but do not reuse old evidence as authority.
+  // commit() receives no previous validation cache and checks every result.
+  session.binding = previous;
+  session.requalifiedFrom = previous;
+  session.evidence = await HistoryEvidenceStore.open(source, deps.capacity, deps.limits, deps.authorize, deps.invalidateSource);
+  await session.commit(cp); return session;
+ }
  private async authorize(): Promise<void> { if (!same(await this.deps.authorize(), this.source)) throw new Error('History source borrow changed'); }
  private async directory(): Promise<string> {
   const root = contextRoot(this.source.key);
@@ -155,9 +204,7 @@ export class HistoryBindingSession {
   const st = await lstat(directory); if (!st.isDirectory() || st.isSymbolicLink() || await realpath(directory) !== directory) throw new Error('Unsafe history-binding directory'); return directory;
  }
  private async readBinding(id: string): Promise<HistoryBinding> {
-  if (!/^[a-f0-9]{64}$/.test(id)) throw new Error('Invalid history binding id');
-  const binding = decodeHistoryBinding(JSON.parse(await bounded(join(await this.directory(), `${id}.json`))), this.source.key, reviewJsonLimit());
-  if (binding.bindingDigest !== id || preparationDigest({ ...binding, bindingDigest: '' }) !== id) throw new Error('History binding digest mismatch'); return binding;
+  await this.directory();return readPreparationHistoryBinding(this.source.key,id);
  }
  private verifyBinding(cp: PreparationHistory, binding: HistoryBinding): void {
   if (binding.attempt !== this.source.attempt || binding.generationId !== this.source.generationId || binding.historyPrefixDigest !== preparationDigest(snapshot(cp))) throw new Error('History binding disagrees with preserved feedback');
@@ -165,7 +212,9 @@ export class HistoryBindingSession {
  private async observe(cp: PreparationHistory, binding: HistoryBinding, validation: HistoryValidation): Promise<HistoryBoundaryReceipt> {
   const raw = await bounded(reviewWorkerCheckpoint(this.source.key));
   if (!same(JSON.parse(raw), cp)) throw new Error('History changed after commit');
-  return { key: this.source.key, attempt: this.source.attempt, runtimeId: cp.runtime.runtimeId, inputDigest: this.source.inputDigest, binding: structuredClone(binding), checkpointDigest: digest(raw), completedUnits: completed(cp), ...(validation.publication ? { publication: validation.publication } : {}) };
+  const prior = this.requalifiedFrom;
+  return { key: this.source.key, attempt: this.source.attempt, runtimeId: cp.runtime.runtimeId, inputDigest: this.source.inputDigest, binding: structuredClone(binding), checkpointDigest: digest(raw), completedUnits: completed(cp), ...(validation.publication ? { publication: validation.publication } : {}),
+   ...(prior && binding.priorBindingDigest === prior.bindingDigest && binding.semanticSequence === prior.semanticSequence + 1 ? { requalifiedFrom: structuredClone(prior) } : {}) };
  }
  private async commit(input: PreparationHistory): Promise<HistoryBoundaryReceipt> {
   await this.authorize();

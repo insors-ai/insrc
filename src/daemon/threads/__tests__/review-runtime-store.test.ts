@@ -10,7 +10,8 @@ import { reviewWorkerCheckpoint } from '../review-worker-contract.js';
 import { withReviewNativeTransport } from '../../../shared/review-process-bridge.js';
 import { decodeReviewRuntime } from '../../../shared/review-preparation.js';
 import type { ReviewRuntime } from '../../../shared/review-preparation.js';
-import { fixture } from '../../../workflow/code-review/task-review/__tests__/publication-fixture.js';
+import { fixture, hash } from '../../../workflow/code-review/task-review/__tests__/publication-fixture.js';
+import { persistReviewRuntimeAudit, reviewRuntimeAudits } from '../../../workflow/review/runtime-audit.js';
 import { writeCheckpoint, CheckpointSaveError } from '../../../workflow/code-review/task-review/checkpoint.js';
 
 test('cold qualification acknowledges an accepted result prefix at sequence zero without replaying work', async t => {
@@ -65,6 +66,46 @@ test('initialization recovery retains missing changed and uncertain proof instea
  await unlink(reviewRuntimePath(f.key));
  await assert.rejects(new ReviewRuntimeStore().recoverInitialization(f.runtime, async () => {}), /ENOENT/);
  await assert.rejects(readFile(reviewRuntimePath(f.key)), /ENOENT/);
+});
+
+test('inactive runtime handoff preserves exact old audit before replacement and waits for actual checkpoint rebind', async t => {
+ const f = await setup(t); await f.store.activate(f.handle);
+ const previous = await f.read(), history = await readFile(f.path); f.store.release(f.handle);
+ const store = new ReviewRuntimeStore(), next = { ...f.runtime, runtimeId: 'successor-runtime', workerIncarnation: 'successor-worker' };
+ let archived = 0;
+ const transferred = await store.replaceInactive(next, async proof => {
+  archived++; assert.deepEqual(proof.runtime, previous); assert.equal(proof.checkpointDigest.length, 64);
+  assert.equal(JSON.parse(await readFile(reviewRuntimePath(f.key), 'utf8')).runtimeId, previous.runtimeId);
+  assert.deepEqual(await readFile(f.path), history);
+  await persistReviewRuntimeAudit(f.f.deps.through.store!, `CR-${hash}-s1`, f.key, proof);
+  await persistReviewRuntimeAudit(f.f.deps.through.store!, `CR-${hash}-s1`, f.key, proof);
+ }, async () => {});
+ t.after(() => store.release(transferred.handle));
+ assert.equal(archived, 1); assert.equal(store.snapshot(transferred.handle).state, 'initializing');
+ const log = await f.f.deps.through.store!.history.log(`CR-${hash}-s1`), audits = reviewRuntimeAudits(log, `CR-${hash}-s1`, f.key);
+ assert.equal(audits.length, 1, 'lost-ack archive retry is idempotent'); assert.deepEqual(audits[0]!.runtime, previous);
+ const changed = structuredClone(log), auditEntry = changed.find(e => e.id === log[0]!.id)!;
+ (auditEntry.outcome!.data as { checkpointDigest: string }).checkpointDigest = 'f'.repeat(64);
+ assert.throws(() => reviewRuntimeAudits(changed, `CR-${hash}-s1`, f.key), /identity changed/);
+ assert.deepEqual(await readFile(f.path), history, 'main does not become a full-history writer');
+ const cp = JSON.parse(history.toString()); cp.runtime.runtimeId = next.runtimeId; await writeFile(f.path, JSON.stringify(cp));
+ await store.activate(transferred.handle); assert.equal(store.snapshot(transferred.handle).state, 'active');
+});
+
+test('inactive runtime handoff refuses unresolved leases and preserves evidence on failed or stale archive', async t => {
+ const f = await setup(t); await f.store.activate(f.handle);
+ const reservation = { key: f.key, daemonInstance: f.runtime.daemonEpoch, workerIncarnation: f.runtime.workerIncarnation, operationId: 'open', kind: 'git', openedAt: '2026-11-15T00:00:00.000Z', commandDigest: 'a'.repeat(64) };
+ await f.store.resource(f.handle, 'open', reservation); f.store.release(f.handle);
+ const store = new ReviewRuntimeStore(), next = { ...f.runtime, runtimeId: 'next-runtime', workerIncarnation: 'next-worker' };
+ let archived = 0;
+ await assert.rejects(store.replaceInactive(next, async () => { archived++; }, async () => {}), /unresolved/);
+ assert.equal(archived, 0); assert.equal((await f.read()).resourceGuard.openLeases.length, 1);
+ const g = await setup(t); await g.store.activate(g.handle); const old = await g.read(); g.store.release(g.handle);
+ const successor = { ...g.runtime, runtimeId: 'next-runtime', workerIncarnation: 'next-worker' };
+ await assert.rejects(store.replaceInactive(successor, async () => { throw Error('Archive durability failed'); }, async () => {}), /Archive durability failed/);
+ assert.deepEqual(await g.read(), old);
+ await assert.rejects(store.replaceInactive(successor, async () => { await writeFile(g.path, (await readFile(g.path, 'utf8')) + ' '); }, async () => {}), /proof changed/);
+ assert.deepEqual(await g.read(), old);
 });
 
 async function setup(t: { after: (fn: () => void | Promise<void>) => void }, failOpen = false) {

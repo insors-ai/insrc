@@ -59,7 +59,38 @@ serveRequests(parentPort!,directDispatch({
   if(!failure)throw new Error('Permanent review attempt not found');
   return{reviewId:key.reviewId,attempt,status:failure.header.status,crPublication:'pending',executionState:'inactive',completedTasks:0,totalTasks:0,interrupted:failure.header.status==='interrupted',hasError:!!failure.error,freshness:'stale',progress:failure.progress,admission:{validation:'unverified',...(failure.error?{error:failure.error}:{})}};
  },
- 'review.cleanup.execute':async()=>{const target=workerData.target as ReviewCleanupTarget;if(target.family!=='design')throw new Error('Design cleanup scope required');return{candidates:[],...await cleanupDesignArtifact(target.project,target.artifactId,{ownerScope:true})};},
+ 'review.cleanup.execute':async()=>{
+  const target=workerData.target as ReviewCleanupTarget;
+  const {createRepoLifecycle}=await import('../../workflow/artifact-core/repo-lifecycle.js');
+  const {authorizePreparedCleanup}=await import('../../workflow/review/cleanup-authorization.js');
+  const {permanentCleanupContexts}=await import('../../workflow/review/cleanup-context-ownership.js');
+  const {cleanupPreparedReview}=await import('../../workflow/review/cleanup-claim.js');
+  const {loadPreparationCheckpoint}=await import('../../workflow/review/preparation-checkpoint.js');
+  const store=createRepoLifecycle(target.project).store,id=target.family==='code'?codeReviewArtifactId(target.epicHash,target.storyId):target.artifactId;
+  const artifact=await store.readWithHistory(id),ids=new Set<string>();
+  if(target.family==='code'){
+   const body=validateTaskBody(artifact.payload.body);for(const archive of body.preparationHistories??[])ids.add(archive.checkpoint.reviewId);
+  }else for(const entry of artifact.changeLog){const data=entry.outcome?.data as {kind?:unknown;schemaVersion?:unknown;reviewId?:unknown}|undefined;if(data?.kind==='design-chunk-review'&&data.schemaVersion===3&&typeof data.reviewId==='string')ids.add(data.reviewId);}
+  // Include current records so missing permanent evidence is reported, rather
+  // than disappearing from approval cleanup. No review is resumed here.
+  const root=join(target.project,'.insrc/tmp',target.family==='code'?'code-review':'design-review');
+  let names:string[]=[];try{names=await readdir(root);}catch(error){if((error as NodeJS.ErrnoException).code!=='ENOENT')throw error;}
+  if(names.length>10000)throw new Error('Cleanup scope exceeds scan limit');
+  for(const name of names){if(!/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}\.json$/.test(name))continue;const key={project:target.project,family:target.family,reviewId:name.slice(0,-5)};const cp=await loadPreparationCheckpoint(key);if(cp?.format!=='current')continue;const history=cp.checkpoint;if(target.family==='code'&&'storyId'in history&&canonicalReviewStory(history.storyId,target.epicHash)===target.storyId||target.family==='design'&&'artifactId'in history&&history.artifactId===target.artifactId)ids.add(key.reviewId);}
+  const result={candidates:[],deleted:[] as string[],retained:[] as string[],errors:[] as string[]};
+  for(const reviewId of ids){
+   const key={project:target.project,family:target.family,reviewId};
+   try{
+    const cp=await loadPreparationCheckpoint(key);
+    const {lstat}=await import('node:fs/promises');const {preparedCleanupDirectory}=await import('../../workflow/review/cleanup-claim.js');
+    if(!cp){let claimed=false;try{await lstat(preparedCleanupDirectory(key));claimed=true;}catch(error){if((error as NodeJS.ErrnoException).code!=='ENOENT')throw error;}if(!claimed)continue;}
+    const authorization=await authorizePreparedCleanup(target,key,store);
+    const clean=await cleanupPreparedReview(target,key,{store,assertIdle:async()=>{},contexts:()=>permanentCleanupContexts(key,authorization.bindingHeads)});
+    result.deleted.push(...clean.deleted);result.retained.push(...clean.retained);result.errors.push(...clean.errors);
+   }catch(error){result.retained.push(join(root,`${reviewId}.json`));result.errors.push(String(error));}
+  }
+  return result;
+ },
  'review.cleanup.discover':async()=>{
  const target=workerData.target as ReviewCleanupTarget,dir=join(target.project,'.insrc/tmp',target.family==='code'?'code-review':'design-review');
  if(target.family==='code'){const {requireApprovedBuildForReviewCleanup}=await import('../task-review-rpc.js');await requireApprovedBuildForReviewCleanup(target.project,target.epicHash,target.storyId);}

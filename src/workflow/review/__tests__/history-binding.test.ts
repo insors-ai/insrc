@@ -63,8 +63,11 @@ async function code(t: { after: (fn: () => void | Promise<void>) => void }) {
 test('successive code feedback resolves only new evidence and publication advances history without rebuilding source', async t => {
  const f = await code(t), history = await HistoryBindingSession.open(f.receipt, f.cp, { authorize: f.authorize, validate: f.validate, capacity: f.capacity, limits: f.limits, invalidateSource: f.invalidateSource });
  await f.acceptRuntime(history.latest()); const physical = f.source.snapshot().physicalQueries;
+ f.store.publishProgress(f.handle,{progress:{...f.store.snapshot(f.handle).progress,totalUnits:0}});await f.store.flushProgress(f.handle);
  let cp = await f.read(); cp.attempts[0]['review-response'].tasks.push(f.result('t1'));
- const first = await history.accept(cp); await f.acceptRuntime(first); assert.equal(f.source.snapshot().physicalQueries, physical);
+ const first = await history.accept(cp); await f.acceptRuntime(first);assert.equal(f.store.snapshot(f.handle).progress.totalUnits,null,'a stale planning denominator cannot fence accepted feedback');
+ f.store.publishProgress(f.handle,{progress:{...f.store.snapshot(f.handle).progress,totalUnits:2}});await f.store.flushProgress(f.handle);
+ assert.equal(f.source.snapshot().physicalQueries, physical);
  cp = await f.read(); const second = f.result('t2'); second.inspectedReferences.push(`${f.f.packet.reviewRevision}:extra.js`);
  cp.attempts[0]['review-response'].tasks.push(second); cp.attempts[0].header.status = 'passed'; cp.attempts[0].header.completedAt = time;
  const complete = await history.accept(cp); await f.acceptRuntime(complete);
@@ -95,6 +98,39 @@ test('successive code feedback resolves only new evidence and publication advanc
  assert.equal(f.source.snapshot().physicalQueries, physical + 1, 'corruption cannot silently refetch source');
 
 
+});
+
+for (const acknowledged of [true, false]) test(`explicit cold source requalification preserves ${acknowledged ? 'acknowledged' : 'unacknowledged'} feedback and advances the existing history chain`, async t => {
+ const f = await code(t), old = await HistoryBindingSession.open(f.receipt, f.cp, { authorize: f.authorize, validate: f.validate, capacity: f.capacity, limits: f.limits, invalidateSource: f.invalidateSource });
+ await f.acceptRuntime(old.latest());
+ let cp = await f.read(); cp.attempts[0]['review-response'].tasks.push(f.result('t1'));
+ const accepted = await old.accept(cp); if (acknowledged) await f.acceptRuntime(accepted);
+ cp = await f.read(); const originalBytes = await readFile(f.path);
+ const cold = await ReviewSourceSession.create(f.key, f.f.deps.sources, f.limits, f.capacity);
+ try {
+  const prepared = await prepareReviewPacket(f.f.packet, cold, true);
+  const identity = { key: f.key, attempt: 1, inputDigest: preparationDigest(f.f.packet), validatorVersion: 1, routeDigest: preparationDigest(f.f.packet.documents), sourceIdentity: preparationDigest(f.f.packet.reviewRevision), scopeDigest: prepared.projection!.identity, testDocumentDigest: preparationDigest([f.f.packet.tests, f.f.packet.documents]) };
+  const fresh = await writePreparedContext(identity, { current: prepared }, cold, f.limits, f.capacity);
+  assert.notEqual(fresh.generationId, f.receipt.generationId);
+  let validations = 0;
+  const validate = codeHistoryFeedback(new Map([[1, prepared]]), cold);
+  const deps = { authorize: async () => fresh, validate: async (...args: Parameters<typeof validate>) => { validations++; return validate(...args); }, capacity: f.capacity, limits: f.limits, invalidateSource: async (e: unknown) => { throw e; } };
+  await assert.rejects(HistoryBindingSession.open(fresh, cp, deps), /explicit source requalification/);
+  const changed = structuredClone(cp); changed.attempts[0]['review-response'].tasks[0].summary = 'Edited old feedback'; await writeFile(f.path, JSON.stringify(changed));
+  await assert.rejects(HistoryBindingSession.requalify(fresh, changed, deps), /Accepted history changed/);
+  assert.equal(validations, 0, 'reject a changed accepted prefix before revalidation');
+  await writeFile(f.path, originalBytes);
+  const rebound = await HistoryBindingSession.requalify(fresh, cp, deps), proof = rebound.latest();
+  assert.equal(validations, 1); assert.equal(proof.binding.semanticSequence, accepted.binding.semanticSequence + 1);
+  assert.equal(proof.binding.priorBindingDigest, accepted.binding.bindingDigest); assert.equal(proof.binding.generationId, fresh.generationId);
+  assert.ok(proof.requalifiedFrom);
+  const forged = structuredClone(proof); forged.requalifiedFrom!.priorBindingDigest = 'f'.repeat(64);
+  await assert.rejects(verifyHistoryBoundaryReceipt(forged, fresh), /Invalid cold requalification predecessor/);
+  await f.store.acceptHistory(f.handle, proof, () => verifyHistoryBoundaryReceipt(proof, fresh));
+  assert.equal(f.store.snapshot(f.handle).progress.completedUnits, 1);
+  const current = await f.read(); assert.deepEqual(current.attempts, cp.attempts);
+  assert.equal(current.context.generationId, fresh.generationId);
+ } finally { await cold.close(); }
 });
 
 test('accepted feedback or pinned attribution edits fence descendants without another source call', async t => {
@@ -162,9 +198,21 @@ test('design plan and dependency-ordered chunk results get successor bindings wi
  const state = runtime(key, inputDigest, 2), store = new ReviewRuntimeStore(), handle = await store.initialize(state); t.after(() => store.release(handle));
  const initial = { ...f.checkpoint, schemaVersion: 3, runtime: { runtimeId: state.runtimeId, inputDigest } }, path = reviewWorkerCheckpoint(key);
  await writeReviewBytes(path, JSON.stringify(initial), 8 * 1024 * 1024); await store.activate(handle);
- const history = await HistoryBindingSession.open(receipt, initial, { authorize: async () => receipt, validate: designHistoryFeedback(), capacity, limits, invalidateSource: async error => { throw error; } });
+ const deps = { authorize: async () => receipt, validate: designHistoryFeedback(), capacity, limits, invalidateSource: async (error: unknown) => { throw error; } };
+ let history = await HistoryBindingSession.open(receipt, initial, deps);
  const accept = (proof: HistoryBoundaryReceipt) => store.acceptHistory(handle, proof, () => verifyHistoryBoundaryReceipt(proof, receipt));
  await accept(history.latest());
+ const actionCheckpoint = JSON.parse(await readFile(path, 'utf8'));
+ const acceptedPrefix = structuredClone(actionCheckpoint);
+ actionCheckpoint.attempts[0].actions = [{ actionId: 'resume-1', signature: 'a'.repeat(64), operation: 'resume', sourceAttempt: 1, resultAttempt: 1, acceptedAt: time, validation: 'unverified' }];
+ await writeReviewBytes(path, JSON.stringify(actionCheckpoint), 8 * 1024 * 1024);
+ await assert.rejects(HistoryBindingSession.requalify(receipt, actionCheckpoint, deps), /preserved|prefix|disagrees/);
+ const changedPrefix = structuredClone(acceptedPrefix); changedPrefix.attempts[0].startedAt = '2026-11-15T00:00:00.000Z';
+ await assert.rejects(HistoryBindingSession.requalify(receipt, actionCheckpoint, deps, changedPrefix), /Accepted history changed/);
+ history = await HistoryBindingSession.requalify(receipt, actionCheckpoint, deps, acceptedPrefix);
+ await accept(history.latest());
+ actionCheckpoint.attempts[0].actions[0].validation = 'qualified';
+ await accept(await history.accept(actionCheckpoint));
  const selectors = f.prepared.inventory.units.map(u => u.id), cp = JSON.parse(await readFile(path, 'utf8'));
  cp.attempts[0].plan = { chunks: [{ id: 'content', title: 'Content', selectors, concerns: ['Requirements'], dependsOn: [], purpose: 'substantive' }, { id: 'final', title: 'Consistency', selectors: [], concerns: ['Consistency'], dependsOn: ['content'], purpose: 'consistency' }], coverageExplanation: 'Complete scope and final consistency', finalConsistencyChunkId: 'final', coverage: selectors.map(unitId => ({ unitId, chunkIds: ['content'] })) };
  await accept(await history.accept(cp));
@@ -176,6 +224,12 @@ test('design plan and dependency-ordered chunk results get successor bindings wi
  const proof = await history.accept(cp); await accept(proof);
  assert.equal(proof.binding.generationId, receipt.generationId); assert.equal(proof.completedUnits, 2);
  assert.equal(JSON.parse(await readFile(reviewRuntimePath(key), 'utf8')).progress.completedUnits, 2);
+ const acceptedActionBytes = await readFile(path, 'utf8');
+ const changedAction = JSON.parse(acceptedActionBytes);
+ changedAction.attempts[0].actions[0].signature = 'b'.repeat(64);
+ await assert.rejects(history.accept(changedAction), /Accepted design recovery action changed/);
+ assert.equal(await readFile(path, 'utf8'), acceptedActionBytes);
+ await assert.rejects(history.accept(JSON.parse(acceptedActionBytes)), /History owner fenced/);
 });
 
 test('cancellation during publication bookkeeping preserves committed feedback and publication proof without accepting a late runtime boundary',async t=>{

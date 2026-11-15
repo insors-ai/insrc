@@ -167,3 +167,18 @@ test('prepared code publication preserves an earlier qualified failure without p
  const tampered = structuredClone(body); delete tampered.reviews.find(r => r.attempt === 1)!.failedAttempt!.header.buildFingerprint;
  assert.throws(() => validateTaskBody(tampered), /history disagrees/);
 });
+
+test('publication bookkeeping errors do not change assessment authority and remain in the main phase audit',async t=>{
+ const {publishedCleanupFixture}=await import('./prepared-publication-fixture.js');
+ const {authorizePreparedCleanup}=await import('../cleanup-authorization.js');
+ const {persistReviewRuntimeAudit,reviewRuntimeAudits}=await import('../runtime-audit.js');
+ const f=await publishedCleanupFixture('code',t),first=await authorizePreparedCleanup(f.target,f.key,f.store);
+ const cp=structuredClone(first.history),last=cp.attempts.at(-1)!;assert.ok('review-response'in last);
+ const diagnostic='CR publication failed: interrupted rendering after permanent publication';last['review-response'].error=diagnostic;
+ assert.equal(publicationEvidenceDigest(cp),first.proof.evidenceDigest);validatePublicationProof(first.proof,cp,f.key);
+ assert.equal(last['review-response'].error,diagnostic,'normalization cannot mutate canonical diagnostics');
+ await persistReviewRuntimeAudit(f.store,first.permanent.artifactId,f.key,{runtime:first.proof.runtime,checkpointRuntime:cp.runtime,checkpointDigest:preparationDigest(cp),context:cp.context!,publication:first.proof,publicationError:diagnostic});
+ const audits=reviewRuntimeAudits(await f.store.history.log(first.permanent.artifactId),first.permanent.artifactId,f.key);
+ assert.equal(audits.at(-1)!.publicationError,diagnostic);
+ last['review-response'].error='Reviewer execution failed';assert.notEqual(publicationEvidenceDigest(cp),first.proof.evidenceDigest);
+});

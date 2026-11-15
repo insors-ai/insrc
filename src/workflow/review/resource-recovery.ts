@@ -4,6 +4,8 @@ import type { ReviewKey,ReviewGuardRow,ReviewAuthorizedClearance } from '../../s
 import { reviewGuardDigest,validateReviewResourceGuard,MAX_REVIEW_OPEN_LEASES } from '../../shared/review-resources.js';
 import { checkpointPath,loadStoredCheckpoint,updateStoredCodeCheckpoint } from '../code-review/task-review/checkpoint.js';
 import { loadStoredDesignCheckpoint,updateStoredDesignCheckpoint } from './design-review/checkpoint.js';
+import { loadPreparationCheckpoint } from './preparation-checkpoint.js';
+import { loadReviewRuntime } from '../../daemon/threads/review-runtime-store.js';
 
 export interface ReviewResourceSnapshot {readonly key:ReviewKey;readonly guards:readonly ReviewGuardRow[];readonly digest:string;readonly remaining:number;}
 export class ReviewResourceFenceError extends Error {
@@ -18,6 +20,15 @@ function legacyGuard(key:ReviewKey,attempt:number){return{daemonInstance:'unveri
 /** No PID probing, Git, provider, tool or artifact-approval access. A missing
  * legacy guard means uncertainty, never absence of a surviving process. */
 export async function inspectReviewResources(key:ReviewKey):Promise<ReviewResourceSnapshot>{
+ const prepared = await loadPreparationCheckpoint(key), runtime = await loadReviewRuntime(key);
+ if (prepared?.format === 'current') {
+  const cp = prepared.checkpoint, last = cp.attempts.at(-1)!, attempt = 'header' in last ? last.header.attempt : last.number;
+  if (!runtime || runtime.runtimeId !== cp.runtime.runtimeId || runtime.checkpointBinding.inputDigest !== cp.runtime.inputDigest || runtime.attempt !== attempt) throw new ReviewResourceFenceError(key);
+  return snapshot(key, [{ attempt, resourceGuard: runtime.resourceGuard }]);
+ }
+ // An orphan or half-migrated runtime is retained proof, not an empty old
+ // checkpoint. Only the exact explicit initialization recovery can reconcile it.
+ if (runtime) throw new ReviewResourceFenceError(key);
  if(key.family==='code'){
   let cp=await loadStoredCheckpoint(checkpointPath(key.project,key.reviewId));
   if(!cp)return snapshot(key,[]);
@@ -42,6 +53,7 @@ export async function requireClosedReviewResources(key:ReviewKey):Promise<void>{
 /** Only the registered metadata worker receives this command from its main
  * broker owner. No public API accepts a serialized caller approval receipt. */
 export async function applyReviewResourceClearance(key:ReviewKey,clearance:ReviewAuthorizedClearance):Promise<ReviewResourceSnapshot>{
+ if((await loadPreparationCheckpoint(key))?.format==='current')throw new Error('Current runtime clearance is main-owned');
  const receipt=clearance.approvalReceipt,selected=new Set(receipt.leaseIds);
  if(!same(receipt.reviewKey,key)||receipt.decision!=='approve'||!receipt.requestId||!selected.size||selected.size!==receipt.leaseIds.length||selected.size>MAX_REVIEW_OPEN_LEASES)throw new Error('Invalid resource clearance binding');
  const mutate=(rows:readonly ReviewGuardRow[])=>{

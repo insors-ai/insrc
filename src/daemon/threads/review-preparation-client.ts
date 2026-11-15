@@ -11,12 +11,15 @@ import type { PublicationProof } from '../../workflow/review/publication-proof.j
 export class ReviewPreparationClient implements SourceCapacity {
  private readonly hub: HubClient;
  constructor(port: MessagePort) { this.hub = new HubClient(port); }
+ /** Acknowledge the actual format-3 checkpoint before source/native/model work. */
+ activate(): Promise<void> { return this.hub.request('runtime.activate', {}); }
  reserve(bytes: number): Promise<string> { return this.hub.request('capacity.reserve', { bytes }); }
  commit(token: string, bytes: number): Promise<void> { return this.hub.request('capacity.commit', { token, bytes }); }
  split(token: string, bytes: readonly number[]): Promise<readonly string[]> { return this.hub.request('capacity.split', { token, bytes }); }
  combine(tokens: readonly string[]): Promise<string> { return this.hub.request('capacity.combine', { tokens }); }
  release(token: string): Promise<void> { return this.hub.request('capacity.release', { token }); }
  qualify(identity: PreparedSourceIdentity, receipt: ReadyContextReceipt): Promise<void> { return this.hub.request('context.qualify', { identity, receipt }); }
+ currentIdentity(): Promise<PreparedSourceIdentity | null> { return this.hub.request('context.current', {}); }
  borrow(identity: PreparedSourceIdentity): Promise<{ access: PreparationAccess; receipt: ReadyContextReceipt }> { return this.hub.request('context.borrow', { identity }); }
  resolve(access: PreparationAccess): Promise<ReadyContextReceipt> { return this.hub.request('context.resolve', { access }); }
  releaseBorrow(access: PreparationAccess): Promise<void> { return this.hub.request('context.release', { access }); }

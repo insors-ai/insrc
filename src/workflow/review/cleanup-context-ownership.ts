@@ -61,3 +61,30 @@ export async function ownedCleanupContext(key: ReviewKey, receipts: readonly Cle
  for (const path of allowed.keys()) if (!present.has(path)) throw new Error(`Owned context entry is missing: ${path}`);
  return inventory;
 }
+
+/** Cold cleanup grants deletion only. Every descriptor is authenticated by a
+ * permanent publication binding, including its immutable predecessor chain;
+ * directory names and self-signed manifests alone never grant ownership. */
+export async function permanentCleanupContexts(key: ReviewKey, heads: readonly string[]): Promise<readonly CleanupContextOwner[]> {
+ const owners = new Map<string, CleanupContextOwner>(), pending = [...heads], seen = new Set<string>(), root = contextRoot(key);
+ while (pending.length) {
+  const id = pending.pop()!; if (seen.has(id)) continue;
+  if (!/^[a-f0-9]{64}$/.test(id) || seen.size >= 10000) throw new Error('Invalid permanent cleanup lineage'); seen.add(id);
+  const raw = await cleanupBytes(join(root, 'history-bindings', `${id}.json`), reviewJsonLimit());
+  const binding = decodeHistoryBinding(JSON.parse(raw.bytes.toString('utf8')), key, reviewJsonLimit());
+  if (binding.bindingDigest !== id || preparationDigest({ ...binding, bindingDigest: '' }) !== id) throw new Error('Permanent cleanup binding changed');
+  if (binding.priorBindingDigest) pending.push(binding.priorBindingDigest);
+  const bytes = await cleanupBytes(join(root, binding.generationId, 'manifest.json'), reviewJsonLimit());
+  const manifest = decodePreparedContextManifest(JSON.parse(bytes.bytes.toString('utf8')), key, reviewJsonLimit());
+  if (manifest.generationId !== binding.generationId || manifest.attempt !== binding.attempt || manifest.manifestDigest !== preparationDigest({ ...manifest, manifestDigest: '' })) throw new Error('Permanent cleanup source manifest changed');
+  const owner: CleanupContextOwner = { key, attempt: binding.attempt, generationId: binding.generationId, manifestDigest: manifest.manifestDigest };
+  let evidence = binding.evidenceManifestDigest; const chain = new Set<string>();
+  while (evidence !== owner.manifestDigest) {
+   if (chain.has(evidence) || chain.size >= 10000) throw new Error('Invalid permanent cleanup evidence lineage'); chain.add(evidence);
+   const { manifest: delta } = await readHistoryEvidenceManifest(owner, evidence); evidence = delta.previousDigest;
+  }
+  const previous = owners.get(owner.generationId);
+  if (previous && !same(previous, owner)) throw new Error('Conflicting permanent cleanup ownership'); owners.set(owner.generationId, owner);
+ }
+ return [...owners.values()];
+}

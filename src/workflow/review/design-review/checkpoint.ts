@@ -163,6 +163,7 @@ export async function loadStoredDesignCheckpoint(project: string, reviewId: stri
   requireDesign(size<=stat.size,'checkpoint_changed','Checkpoint changed while reading');
   let parsed:unknown;
   try{parsed=JSON.parse(bytes.subarray(0,size).toString('utf8'));}catch{throw new DesignReviewError('invalid_checkpoint','Checkpoint is not valid JSON');}
+  if((parsed as {schemaVersion?:unknown}).schemaVersion===3){const {decodePreparationCheckpoint}=await import('../preparation-checkpoint.js');const {preparationSemanticHistory}=await import('../preparation-semantic-history.js');const decoded=decodePreparationCheckpoint(parsed,{project,family:'design',reviewId});if(decoded.format!=='current'||'storyId'in decoded.checkpoint)throw new Error('Invalid current design history');parsed=preparationSemanticHistory(decoded.checkpoint);}
   const checkpoint=decodeStoredDesignCheckpoint(parsed);
   validateStoredDesignIdentity(project,reviewId,checkpoint);return checkpoint;
  } finally {await file.close();}
@@ -192,6 +193,7 @@ async function saveQualifiedDesignCheckpoint(project: string, input: DesignRevie
  }
 }
 async function writeDesignCheckpointBytes(path: string, raw: string): Promise<void> {
+ const {rejectPreparationDowngrade}=await import('../../code-review/task-review/checkpoint.js');await rejectPreparationDowngrade(path);
  const temporary=`${path}.${randomUUID()}.tmp`;
  let created=false;
  try {

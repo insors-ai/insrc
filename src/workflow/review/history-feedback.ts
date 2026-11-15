@@ -23,7 +23,7 @@ type PublicationVerifier = (history: PreparationHistory) => Promise<HistoryValid
 const historical = preparationSemanticHistory;
 async function publication(next: PreparationHistory, previous: PreparationHistory | undefined, verify: PublicationVerifier | undefined): Promise<HistoryValidation> {
  const published = (a: PreparationHistory['attempts'][number]) => 'review-response' in a ? a['review-response'].crPublication === 'complete' : 'publication' in a && a.publication?.state === 'complete';
- if (!next.attempts.some(published) || previous && same(next.attempts.map(a => 'review-response' in a ? a['review-response'].crPublication : 'publication' in a ? a.publication : undefined), previous.attempts.map(a => 'review-response' in a ? a['review-response'].crPublication : 'publication' in a ? a.publication : undefined))) return {};
+ if (!published(next.attempts.at(-1)!)) return {};
  if (!verify) throw new Error('Permanent publication verification required'); return verify(next);
 }
 

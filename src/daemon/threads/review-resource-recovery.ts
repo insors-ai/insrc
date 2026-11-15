@@ -15,7 +15,7 @@ import type { ReplyEnvelope } from './channel.js';
 
 export interface ReviewRecoveryHold {
  assertActive():void;
- apply(clearance:ReviewAuthorizedClearance):void;
+ apply(clearance:ReviewAuthorizedClearance):void|Promise<void>;
  release():void;
 }
 /** Main-resolved tracked locator, never deserialized from clearance input.
@@ -29,6 +29,7 @@ export interface ReviewResourceRecoveryDeps {
   * a prior receipt must be audited before a later clearance can replace it. */
  readonly audit:(key:ReviewKey,guards:readonly ReviewGuardRow[],scope?:ReviewResourceScope)=>Promise<void>;
  readonly track:(worker:Worker,name:string)=>void;
+ readonly applyCurrent?:((key:ReviewKey,clearance:ReviewAuthorizedClearance,hold:ReviewRecoveryHold)=>Promise<ReviewResourceSnapshot|undefined>)|undefined;
  readonly approvalWaitMs?:number|undefined;
 }
 /** Main retains the real broker outcome; only metadata crosses the registered
@@ -76,7 +77,7 @@ export class ReviewResourceRecovery {
   return this.serial(key,()=>this.withWorker(key,context,async(rpc,hold)=>{
    const before=await rpc('review.resource.inspect');
    await this.deps.audit(key,before.guards.filter(g=>g.resourceGuard.clearance),scope);
-   for(const row of before.guards)if(row.resourceGuard.clearance)hold.apply(row.resourceGuard.clearance);
+   for(const row of before.guards)if(row.resourceGuard.clearance)await hold.apply(row.resourceGuard.clearance);
    if(!before.remaining)return{status:'already-clear' as const,remaining:0};
    const all=before.guards.flatMap(g=>g.resourceGuard.openLeases.map(l=>l.operationId)),selected=[...(input.leaseIds??all)].sort();
    if(!selected.length||selected.length>MAX_REVIEW_OPEN_LEASES||new Set(selected).size!==selected.length||!selected.every(id=>typeof id==='string'&&all.includes(id)))throw new Error('Select an exact set of at most 128 unresolved review operations');
@@ -86,9 +87,9 @@ export class ReviewResourceRecovery {
    if(answer.requestId!==requestId||answer.decision!=='approve'||context.connectionSignal?.aborted)throw new Error('Unverified resource clearance approval');
    hold.assertActive();
    const clearance:ReviewAuthorizedClearance={at:new Date().toISOString(),reason:input.reason,approvalReceipt:{requestId,decision:'approve',reviewKey:key,guardDigest:before.digest,leaseIds:selected}};
-   const after=await rpc('review.resource.apply',{clearance});
+   const after=await this.deps.applyCurrent?.(key,clearance,hold)??await rpc('review.resource.apply',{clearance});
    await this.deps.audit(key,after.guards.filter(g=>g.resourceGuard.clearance),scope);
-   hold.apply(clearance);
+   await hold.apply(clearance);
    return{status:after.remaining?'partially-cleared' as const:'cleared' as const,remaining:after.remaining,requestId};
   },scope));
  }

@@ -3,10 +3,15 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 import type { ReviewRuntime } from '../../../shared/review-preparation.js';
-import { upgradePreparationHistory } from '../preparation-migration.js';
+import { upgradePreparationHistory, preparationSubmission } from '../preparation-migration.js';
 import { decodePreparationCheckpoint } from '../preparation-checkpoint.js';
 import { preparationDigest } from '../prepared-context.js';
 import { designFixture, admissionFixture } from '../design-review/__tests__/fixtures.js';
+import { impactFixture } from '../design-review/__tests__/impact-fixtures.js';
+import { DesignPreparation } from '../design-preparation.js';
+import { ReviewPreparationCapacity } from '../source-session.js';
+import { reviewPreparationLimits } from '../../../config/review.js';
+import { join } from 'node:path';
 
 function runtime(project: string, family: 'code' | 'design', reviewId: string, attempt: number, input: unknown): ReviewRuntime {
  return { schemaVersion: 1, key: { project, family, reviewId }, attempt, runtimeId: 'migration-runtime', daemonEpoch: 'epoch-new', workerIncarnation: 'worker-new', sequence: 0,
@@ -50,4 +55,37 @@ test('inactive migration refuses unresolved and unverifiable legacy guards and m
  assert.throws(() => upgradePreparationHistory(v2, v2host.key, { ...v2host, state: 'active' }), /initializing/);
  assert.throws(() => upgradePreparationHistory(v2, v2host.key, { ...v2host, checkpointBinding: { inputDigest: 'f'.repeat(64), semanticSequence: 0 } }), /digest mismatch/);
  assert.throws(() => upgradePreparationHistory({ ...v2, schemaVersion: 100 }, v2host.key, v2host), /Unsupported/);
+});
+
+test('historical design migration derives the current attempt locator without rewriting its original submission', async t => {
+ const f = impactFixture(t), guard = { daemonInstance: 'old-design', openLeases: [] };
+ const input = { ...f.checkpoint, schemaVersion: 2, attempts: [{ ...f.baseline, resourceGuard: guard }, { ...f.current, preparationKind: 'planning', resourceGuard: guard }] };
+ const original = JSON.stringify(input), key = { project: f.repo, family: 'design' as const, reviewId: input.reviewId };
+ const submitted = preparationSubmission(input, key) as { artifactPath: string; attempt: number };
+ assert.deepEqual(submitted, { artifactPath: input.submitted.artifactPath, attempt: 2 });
+ const migrated = upgradePreparationHistory(input, key, runtime(f.repo, 'design', input.reviewId, 2, submitted));
+ assert.equal(JSON.stringify(input), original);
+ assert.ok('submitted' in migrated); assert.deepEqual(migrated.submitted, input.submitted);
+ const limits = reviewPreparationLimits(join(f.repo, 'no-config.json'));
+ const preparation = new DesignPreparation(key, 2, limits, new ReviewPreparationCapacity(limits.cacheMaxBytes), submitted);
+ preparation.prepare(f.repo, submitted.artifactPath); const source = await preparation.seal();
+ assert.equal(source.inputDigest, migrated.runtime.inputDigest); preparation.close();
+});
+
+test('explicit next-attempt migration binds its exact input and preserves history without inventing an admission', t => {
+ const f = designFixture(t), input = admissionFixture(f);
+ input.attempts[0]!.status = 'failed';
+ input.attempts[0]!.finishedAt = '2026-11-09T00:01:00.000Z';
+ input.attempts[0]!.error = { code: 'process_failed', field: 'artifactPath', summary: 'Prior admission failed' };
+ input.attempts[0]!.resourceGuard = { daemonInstance: 'old-design', openLeases: [] };
+ const submitted = { artifactPath: f.checkpoint.submitted.artifactPath, attempt: 2 };
+ const host = runtime(f.repo, 'design', input.reviewId, 2, submitted), before = JSON.stringify(input);
+ assert.throws(() => upgradePreparationHistory(input, host.key, host), /attempt mismatch/);
+ assert.throws(() => upgradePreparationHistory(input, host.key, host, { attempt: 3, submitted }), /attempt mismatch/);
+ assert.throws(() => upgradePreparationHistory(input, host.key, host, { attempt: 2, submitted: { ...submitted, attempt: 3 } }), /digest mismatch/);
+ const migrated = upgradePreparationHistory(input, host.key, host, { attempt: 2, submitted });
+ assert.equal(JSON.stringify(input), before);
+ assert.equal(migrated.attempts.length, 1, 'only the family admission owner may append the next attempt');
+ assert.deepEqual(migrated.runtime, { runtimeId: host.runtimeId, inputDigest: host.checkpointBinding.inputDigest });
+ assert.deepEqual(migrated.migration!.guards, [{ attempt: 1, guard: input.attempts[0]!.resourceGuard }]);
 });

@@ -30,6 +30,9 @@ export function publicationEvidence(history: PreparationHistory): unknown {
   if ('header' in attempt && 'review-response' in attempt) {
    const { activeTaskId: _active, status: _status, ...header } = attempt.header;
    const { crPublication: _publication, crPath: _path, summary: _summary, ...response } = attempt['review-response'];
+   // This exact host-generated diagnostic is publication bookkeeping. Main
+   // preserves it in the phase audit before a successful retry clears it.
+   if(response.error?.startsWith('CR publication failed: '))delete response.error;
    return { ...attempt, header, 'review-response': response };
   }
   if ('phase' in attempt && attempt.phase === 'admission') return attempt;

@@ -8,6 +8,7 @@ import { updateStoredDesignCheckpoint } from '../../workflow/review/design-revie
 import { decodeDesign,DesignRequestSchemas,isDesignAdmission } from '../../workflow/review/design-review/contracts.js';
 import { reviewWorkerCheckpoint } from './review-worker-contract.js';
 import type { ReviewAdmissionReceipt,ReviewBootstrapInput } from './review-worker-contract.js';
+import { requestSignature } from '../../workflow/review/design-review/request-signature.js';
 import { admitDesignRecovery } from '../../workflow/review/design-review/action-admission.js';
 
 /** Only bounded input/history persistence: no Git, artifact qualification or
@@ -42,10 +43,18 @@ export async function persistReviewWorkerAdmission(input:ReviewBootstrapInput):P
  }else{
   if(input.submitted&&typeof input.submitted==='object'&&Reflect.get(input.submitted,'phase')==='recover'){
    const recovery=decodeDesign(DesignRequestSchemas.recover,input.submitted);
-   if(recovery.repo!==input.key.project||recovery.reviewId!==input.key.reviewId||recovery.attempt!==input.attempt||recovery.actionId!==input.actionId)throw new Error('Foreign design recovery admission');
+   if(recovery.repo!==input.key.project||recovery.reviewId!==input.key.reviewId||recovery.attempt+(recovery.operation==='restart_full'?1:0)!==input.attempt||recovery.actionId!==input.actionId)throw new Error('Foreign design recovery admission');
    if(recovery.operation==='retry_publication') {
     await updateStoredDesignCheckpoint(input.key.project,input.key.reviewId,cp=>{if(!cp||cp.attempts.at(-1)?.number!==input.attempt)throw new Error('Stored publication attempt missing');if(cp.attempts.at(-1)!.status==='failed')throw new Error('Failed review requires the next attempt');return cp;});
-   } else await admitDesignRecovery(input.key.project,input.key.reviewId,recovery);
+   } else {
+    await admitDesignRecovery(input.key.project,input.key.reviewId,recovery);
+    if(recovery.operation==='restart_full')await updateStoredDesignCheckpoint(input.key.project,input.key.reviewId,cp=>{
+     if(!cp)throw new Error('Restart history missing');const last=cp.attempts.at(-1)!;
+     if(last.number===input.attempt)return cp;
+     if(last.number!==recovery.attempt||isDesignAdmission(last)||last.status!=='invalidated')throw new Error('Restart requires invalidated predecessor');
+     return{...cp,schemaVersion:2,attempts:[...cp.attempts,{phase:'admission',validation:'unverified',number:input.attempt,reviewer:input.reviewer,status:'pending',operation:'recover',actionId:`restart-${requestSignature(recovery).slice(0,64)}`,submitted:{attempt:recovery.attempt,recovery:{operation:recovery.operation,...(recovery.userDecision?{userDecision:recovery.userDecision}:{})}},acceptedAt:now,startedAt:now,progress:{phase:'admission',totalChunks:0,completedChunks:0,checkpointPath:path,sequence:0,observedAt:now,freshness:'live'}}]};
+    });
+   }
    return{kind:'review-admission-saved',key:input.key,incarnation:input.incarnation,attempt:input.attempt,checkpointPath:path};
   }
   const request=decodeDesign(DesignRequestSchemas.start,input.submitted);

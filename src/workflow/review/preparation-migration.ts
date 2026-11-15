@@ -7,19 +7,30 @@ import { decodePreparationCheckpoint } from './preparation-checkpoint.js';
 import type { CodePreparationCheckpoint, DesignPreparationCheckpoint } from './preparation-checkpoint.js';
 import { preparationDigest } from './prepared-context.js';
 
+/** Exact per-attempt input when stored; historical design checkpoints kept
+ * only the initial locator, so derive its current attempt without rewriting it. */
+export function preparationSubmission(input: unknown, key: ReviewKey): unknown {
+ const decoded = decodePreparationCheckpoint(input, key), cp = decoded.checkpoint, last = cp.attempts.at(-1)!;
+ if ('header' in last) return structuredClone(last.submitted);
+ if ('submitted' in last && last.submitted) return structuredClone(last.submitted);
+ if ('submitted' in cp && cp.submitted) return { ...structuredClone(cp.submitted), attempt: last.number };
+ throw new Error('Preparation submission is unavailable');
+}
+
 /** Pure migration candidate, not execution authority. The production owner
  * must hold the exact inactive-review fence across initialize/bind/activate.
  * Guards are retained as historical audit; no guard is silently cleared. */
-export function upgradePreparationHistory(input: unknown, key: ReviewKey, runtime: ReviewRuntime): CodePreparationCheckpoint | DesignPreparationCheckpoint {
+export function upgradePreparationHistory(input: unknown, key: ReviewKey, runtime: ReviewRuntime,
+ pending?: { readonly attempt: number; readonly submitted: unknown }): CodePreparationCheckpoint | DesignPreparationCheckpoint {
  const decoded = decodePreparationCheckpoint(input, key);
  if (decoded.format !== 'historical') throw new Error('Only an explicit historical migration can upgrade preparation history');
  const operational = decodeReviewRuntime(runtime, key);
  if (operational.state !== 'initializing' || operational.sequence !== 0) throw new Error('Migration requires an inactive initializing runtime');
  const checkpoint = decoded.checkpoint, latest = checkpoint.attempts.at(-1)!;
  const number = 'header' in latest ? latest.header.attempt : latest.number;
- if (number !== runtime.attempt) throw new Error('Migration attempt mismatch');
- const submitted = 'submitted' in latest ? latest.submitted : 'submitted' in checkpoint ? checkpoint.submitted : undefined;
- if (submitted === undefined || preparationDigest(submitted) !== runtime.checkpointBinding.inputDigest) throw new Error('Migration input digest mismatch');
+ if (pending ? pending.attempt !== runtime.attempt || number + 1 !== pending.attempt : number !== runtime.attempt) throw new Error('Migration attempt mismatch');
+ const submitted = pending ? pending.submitted : preparationSubmission(checkpoint, key);
+ if (preparationDigest(submitted) !== runtime.checkpointBinding.inputDigest) throw new Error('Migration input digest mismatch');
  const guards = checkpoint.attempts.flatMap(attempt => {
   const number = 'header' in attempt ? attempt.header.attempt : attempt.number;
   const guard = 'resourceGuard' in attempt ? attempt.resourceGuard : undefined;

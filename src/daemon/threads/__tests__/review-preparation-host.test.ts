@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { fixture } from '../../../workflow/code-review/task-review/__tests__/publication-fixture.js';
 import { ReviewPreparationHost } from '../review-preparation-host.js';
 import { ReviewPreparationClient } from '../review-preparation-client.js';
-import { ReviewRuntimeStore } from '../review-runtime-store.js';
+import { ReviewRuntimeStore, reviewRuntimePath } from '../review-runtime-store.js';
 import type { ReviewRuntime } from '../../../shared/review-preparation.js';
 import { reviewWorkerCheckpoint } from '../review-worker-contract.js';
 import { reviewPreparationLimits } from '../../../config/review.js';
@@ -22,12 +22,12 @@ async function setup(t: { after(fn: () => Promise<void>): void }, limit = 256 * 
  const f=await fixture(),limits={...reviewPreparationLimits(join(f.repo,'missing.json')),cacheMaxBytes:limit},store=new ReviewRuntimeStore();
  const disposed=new Set<string>(),closed=new Set<string>(),connections: {close():Promise<void>;port:{close():void}}[]=[],handles:Parameters<typeof store.release>[0][]=[];
  const host=new ReviewPreparationHost(store,'epoch',async identity=>{if(closed.has(identity.incarnation))throw Error('Worker no longer current');},async identity=>{if(!disposed.has(identity.incarnation))throw Error('Worker not disposed');},()=>limits,undefined,publicationClosure);
- async function connect(id:string){
+ async function connect(id:string, activate=true){
   const key={project:f.repo,family:'code' as const,reviewId:id},incarnation=`worker-${id}`,inputDigest=preparationDigest(f.packet);
   const runtime:ReviewRuntime={schemaVersion:1,key,attempt:1,runtimeId:`runtime-${id}`,daemonEpoch:'epoch',workerIncarnation:incarnation,sequence:0,checkpointBinding:{inputDigest,semanticSequence:0},state:'initializing',resourceGuard:{daemonInstance:'epoch',openLeases:[]},progress:{completedUnits:0,totalUnits:1,observedAt:'2026-11-14T00:00:00.000Z',lastMeaningfulActivityAt:null}};
   const handle=await store.initialize(runtime);handles.push(handle);
   const cp={...f.checkpoint(id),schemaVersion:3,runtime:{runtimeId:runtime.runtimeId,inputDigest}};cp.attempts[0]!['review-response'].tasks=[];delete cp.attempts[0]!.header.completedAt;
-  const path=reviewWorkerCheckpoint(key);await writeFile(path,JSON.stringify(cp));await store.activate(handle);
+  const path=reviewWorkerCheckpoint(key);await writeFile(path,JSON.stringify(cp));if(activate)await store.activate(handle);
   disposed.add(incarnation);
   const identity={key,incarnation,attempt:1,phase:'execution' as const},connection=await host.connect(identity,handle);connections.push(connection);
   return{key,handle,cp,path,identity,connection,client:new ReviewPreparationClient(connection.port)};
@@ -35,6 +35,32 @@ async function setup(t: { after(fn: () => Promise<void>): void }, limit = 256 * 
  t.after(async()=>{for(const connection of connections){await connection.close();connection.port.close();}for(const handle of handles)store.release(handle);f.cleanup();});
  return{f,host,store,limits,closed,disposed,connect};
 }
+
+test('private bootstrap activates only the actual bound checkpoint before capacity or native work', async t => {
+ const f = await setup(t), one = await f.connect('initializing', false), peer = await f.connect('peer');
+ const bytes = await readFile(one.path), raw = new HubClient(one.connection.port);
+ await assert.rejects(one.client.reserve(1), /fenced/);
+ await assert.rejects(raw.request('runtime.activate', { runtimeId: 'foreign' }), /Invalid private/);
+ const reservation = { key: one.key, daemonInstance: 'epoch', workerIncarnation: one.identity.incarnation, operationId: 'before-activation', kind: 'git', openedAt: '2026-11-15T00:00:00.000Z', commandDigest: 'a'.repeat(64) };
+ await assert.rejects(f.store.resource(one.handle, 'open', reservation), /admission closed/);
+ assert.equal(f.store.snapshot(one.handle).state, 'initializing');
+ assert.equal(f.host.reservedBytes(f.f.repo), 0);
+ await one.client.activate(); await one.client.activate();
+ assert.equal(f.store.snapshot(one.handle).state, 'active');
+ const token = await one.client.reserve(1); await one.client.release(token);
+ assert.deepEqual(await readFile(one.path), bytes, 'activation touches only compact operational state');
+ assert.equal(f.store.snapshot(peer.handle).state, 'active');
+});
+
+test('private bootstrap retains inactive proof and fences an incorrectly bound checkpoint', async t => {
+ const f = await setup(t), one = await f.connect('invalid-binding', false);
+ const changed = structuredClone(one.cp); changed.runtime.inputDigest = 'f'.repeat(64); await writeFile(one.path, JSON.stringify(changed));
+ await assert.rejects(one.client.activate(), /binding mismatch/);
+ await assert.rejects(one.client.reserve(1), /fenced/);
+ const persisted = JSON.parse(await readFile(reviewRuntimePath(one.key), 'utf8'));
+ assert.equal(persisted.state, 'initializing'); assert.deepEqual(persisted.resourceGuard.openLeases, []);
+ assert.deepEqual(JSON.parse(await readFile(one.path, 'utf8')), changed);
+});
 
 test('private preparation ports share aggregate capacity and reject foreign allocations and forged input',async t=>{
  const f=await setup(t,1000),one=await f.connect('one'),two=await f.connect('two');
@@ -67,8 +93,11 @@ test('private publication proof seals only acknowledged owned history and keeps 
  await assert.rejects(peer.client.publication(access, boundary), /access|Foreign|Unissued/i);
  const proof = await one.client.publication(access, boundary); assert.equal(proof.runtime.state, 'terminal'); assert.equal(nativeClosures, 1);
  assert.equal(f.store.snapshot(peer.handle).state, 'active');
- await assert.rejects(one.client.reserve(1), /fenced/);
- await assert.rejects(one.client.acceptHistory(access, boundary), /admission closed/);
+ const bookkeeping=await one.client.reserve(1);await one.client.release(bookkeeping);
+ await one.client.acceptHistory(access,boundary);
+ await assert.rejects(one.client.qualify(identity,receipt),/fenced/);
+ const closed=f.store.snapshot(one.handle);
+ await assert.rejects(f.store.resource(one.handle,'open',{key:closed.key,daemonInstance:closed.daemonEpoch,workerIncarnation:closed.workerIncarnation,operationId:'late-native',kind:'git',openedAt:new Date().toISOString(),commandDigest:'a'.repeat(64)}),/admission closed/);
  await f.store.beginCancellation(one.handle, 'cancel-publication', 'User cancels during publication');
  await assert.rejects(one.client.publication(access, boundary), /fenced/);
  assert.equal(f.store.snapshot(one.handle).cancellation!.operationState, 'cancelling');
@@ -76,6 +105,7 @@ test('private publication proof seals only acknowledged owned history and keeps 
 
 test('private bridge binds context and accepted history to current input and retains capacity until cleanup',async t=>{
  const f=await setup(t),one=await f.connect('context'),two=await f.connect('other');
+ assert.equal(await one.client.currentIdentity(), null);
  const session=await ReviewSourceSession.create(one.key,f.f.deps.sources,f.limits,one.client);
  const prepared=await prepareReviewPacket(f.f.packet,session,true),inputDigest=preparationDigest(f.f.packet);
  const identity={key:one.key,attempt:1,inputDigest,validatorVersion:1,routeDigest:preparationDigest(f.f.packet.documents),sourceIdentity:preparationDigest(f.f.packet.reviewRevision),scopeDigest:prepared.projection!.identity,testDocumentDigest:preparationDigest(f.f.packet.tests)};
@@ -87,11 +117,20 @@ test('private bridge binds context and accepted history to current input and ret
   // A rejected qualification cannot pin or mutate the source owner's token.
   await one.client.commit(receipt.capacityToken,receipt.storedBytes);
   await one.client.qualify(identity,receipt);
+  assert.deepEqual(await publisher.currentIdentity(), identity);
+  assert.equal(await two.client.currentIdentity(), null);
   await assert.rejects(publisher.qualify(identity,receipt),/Foreign/);
   // Qualified immutable data is reusable via a new phase's own borrow only.
   const warm=await publisher.borrow(identity);assert.deepEqual(await publisher.resolve(warm.access),receipt);await publisher.releaseBorrow(warm.access);
  }finally{await publication.close();publication.port.close();}
  await one.client.qualify(identity,receipt);const borrowed=await one.client.borrow(identity);
+ const coldHost = new ReviewPreparationHost(f.store, 'new-epoch', async () => {}, async () => {}, () => f.limits);
+ const coldConnection = await coldHost.connect({ ...one.identity, phase: 'publication' }, one.handle);
+ try {
+  const coldClient = new ReviewPreparationClient(coldConnection.port);
+  assert.equal(await coldClient.currentIdentity(), null, 'new daemon metadata never trusts disk contexts');
+  await assert.rejects(coldClient.borrow(identity), /Cold qualification required/);
+ } finally { await coldConnection.close(); coldConnection.port.close(); }
  await assert.rejects(two.client.resolve(borrowed.access),/Unissued|Foreign|access/i);
  await assert.rejects(one.client.release(receipt.capacityToken),/retained/);
  const reader=await PreparedContextReader.open(receipt,f.limits,async()=>{await one.client.resolve(borrowed.access);},async()=>{await one.client.invalidate(borrowed.access);});

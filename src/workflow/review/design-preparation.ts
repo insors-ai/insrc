@@ -6,11 +6,12 @@ import { artifactJsonPath } from '../storage.js';
 import { prepareDesignSubject, assertDesignSubjectUnchanged, readDesignFile } from './design-review/subject.js';
 import type { PreparedDesignSubject } from './design-review/subject.js';
 import { requireDesign } from './design-review/contracts.js';
+import type { DesignAdmissionAttempt } from './design-review/contracts.js';
 import type { SourceCapacity } from './source-session.js';
 import { preparationDigest, writePreparedContext } from './prepared-context.js';
-import type { PreparedContextReader, ReadyContextReceipt } from './prepared-context.js';
+import type { PreparedContextReader, ReadyContextReceipt, PreparedSourceIdentity } from './prepared-context.js';
 
-interface DesignView { submitted: { artifactPath: string; attempt: number }; prepared: PreparedDesignSubject; ancestryDigest: string; }
+interface DesignView { submitted: DesignAdmissionAttempt['submitted']; prepared: PreparedDesignSubject; ancestryDigest: string; }
 function authority(subject: PreparedDesignSubject['subject']): unknown {
  const { availableReferences: _context, ...workflow } = subject.workflow;
  return { ...subject, workflow };
@@ -28,10 +29,12 @@ export class DesignPreparation {
  private view: DesignView | undefined;
  private failed = false;
  private sealed = false;
+ private identity: PreparedSourceIdentity | undefined;
  constructor(private readonly key: ReviewKey, private readonly attempt: number,
   private readonly limits: ReviewPreparationLimits, private readonly capacity: SourceCapacity,
-  private readonly submitted?: { artifactPath: string; attempt: number }) {
-  requireDesign(!submitted || submitted.attempt === attempt, 'foreign_checkpoint', 'Design submission attempt mismatch');
+  private readonly submitted?: DesignAdmissionAttempt['submitted'],
+  private readonly prepareSubject:typeof prepareDesignSubject=prepareDesignSubject) {
+  requireDesign(!submitted || submitted.attempt + (submitted.recovery?.operation === 'restart_full' ? 1 : 0) === attempt, 'foreign_checkpoint', 'Design submission attempt mismatch');
   requireDesign(key.family === 'design' && Number.isSafeInteger(attempt) && attempt > 0, 'foreign_checkpoint', 'Design preparation identity required');
  }
  static async reuse(key: ReviewKey, attempt: number, reader: PreparedContextReader, limits: ReviewPreparationLimits, capacity: SourceCapacity): Promise<DesignPreparation> {
@@ -43,7 +46,7 @@ export class DesignPreparation {
  }
  private capture(repo: string, path: string): DesignView {
   requireDesign(!this.failed && repo === this.key.project, 'foreign_checkpoint', 'Design preparation owner unavailable or foreign');
-  const prepared = prepareDesignSubject(repo, path);
+  const prepared = this.prepareSubject(repo, path);
   return { submitted: this.view?.submitted ?? this.submitted ?? { artifactPath: path, attempt: this.attempt }, prepared, ancestryDigest: ancestry(prepared) };
  }
  private check(current: DesignView): void {
@@ -72,11 +75,18 @@ export class DesignPreparation {
   requireDesign(this.view && !this.failed && !this.sealed, 'foreign_checkpoint', 'No current design preparation to seal');
   this.assertSubject(this.view.prepared.subject, this.view.prepared.baseline); this.sealed = true;
   const { prepared, ancestryDigest } = this.view;
-  return writePreparedContext({ key: this.key, attempt: this.attempt, validatorVersion: 1,
+  const identity: PreparedSourceIdentity = { key: this.key, attempt: this.attempt, validatorVersion: 1,
    inputDigest: preparationDigest(this.view.submitted),
    routeDigest: preparationDigest([prepared.subject, ancestryDigest]), sourceIdentity: preparationDigest([prepared.baseline.subjectFingerprints, ancestryDigest]),
    scopeDigest: preparationDigest(prepared.inventory), testDocumentDigest: preparationDigest(prepared.baseline.subjectFingerprints),
-  }, { 'design-subject': this.view }, undefined, this.limits, this.capacity);
+  };
+  const receipt = await writePreparedContext(identity, { 'design-subject': this.view }, undefined, this.limits, this.capacity);
+  this.identity = identity; return receipt;
+ }
+ /** Lookup metadata for the private main qualification channel, not a borrow. */
+ qualificationIdentity(): PreparedSourceIdentity {
+  requireDesign(this.identity, 'foreign_checkpoint', 'Design preparation has not sealed a context');
+  return structuredClone(this.identity);
  }
  close(): void { this.failed = true; }
 }

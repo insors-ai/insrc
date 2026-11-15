@@ -21,13 +21,13 @@ function fixture(t:{after:(fn:()=>Promise<void>)=>void},route:'epic'|'standalone
  const repo=mkdtempSync(join(tmpdir(),'worker-design-admission-'));
  function put(kind:'DEF'|'HLD'|'LLD'|'ISSUE'){
   const id=`${kind}-${hash}${kind==='LLD'?'-s1':''}`;
-  const meta={workflow:kind==='DEF'?'define':kind==='HLD'?'design.epic':kind==='ISSUE'?'issue':'design.story',[kind==='ISSUE'?'issueHash':'epicHash']:hash,...(kind==='LLD'?{storyId:'s1'}:{}),epicCreatedAt:time,createdAt:time,epicSlug:'fixture',authoredBy:author,lifecycle:{...emptyLifecycle(1),status:'approved'},...(route!=='epic'?{standalone:true}:{}),...(route==='issue'&&kind==='LLD'?{sizeClass:'bugfix'}:{})};
+  const meta={workflow:kind==='DEF'?'define':kind==='HLD'?'design.epic':kind==='ISSUE'?'issue':'design.story',[kind==='ISSUE'?'issueHash':'epicHash']:hash,...(kind==='LLD'?{storyId:'s1'}:{}),epicCreatedAt:time,createdAt:time,epicSlug:'fixture',authoredBy:author,lifecycle:{...emptyLifecycle(1),status:kind==='LLD'?'draft':'approved'},...(route!=='epic'?{standalone:true}:{}),...(route==='issue'&&kind==='LLD'?{sizeClass:'bugfix'}:{})};
   const json=artifactJsonPath(repo,id),md=resolveArtifactMdPath(repo,{epicHash:hash,epicCreatedAt:time,...(kind==='LLD'?{story:'s1'}:{})},kind as ArtifactKind,route==='epic'?'epic':'standalone','fixture');
   mkdirSync(dirname(json),{recursive:true});mkdirSync(dirname(md),{recursive:true});
   writeFileSync(json,JSON.stringify({meta,body:kind==='DEF'?{problem:'Problem',stories:[{id:'s1',title:'Story'}]}:kind==='ISSUE'?{fixIntent:'Fix',rootCause:'Cause',reproduction:'Reproduce'}:{summary:'Review scope',requirements:[{id:'r1',statement:'Feature works'}]},citations:[]}));
   writeFileSync(md,`<!-- insrc:artifact ${id} -->\n# ${kind}\n\n## Summary\nReview scope\n`);return{id,json,md};
  }
- let contextMd:string|undefined;if(route==='epic'){put('DEF');contextMd=put('HLD').md;}if(route==='issue')put('ISSUE');const artifact=put('LLD');
+ let contextMd:string|undefined;if(route==='epic'){put('DEF');put('HLD');contextMd=join(repo,'unrelated-context.md');writeFileSync(contextMd,'Unrelated repository context');}if(route==='issue')put('ISSUE');const artifact=put('LLD');
  const barrier=new Int32Array(new SharedArrayBuffer(32)),owner=new AbortController();
  const context={connectionIdentity:'design-fixture',daemonEpoch:'epoch',connectionSignal:owner.signal};
  const registry=new ReviewWorkers({services,resolveScope:async()=>({reviewer:JSON.parse(readFileSync(artifact.json,'utf8')).meta.authoredBy==='controller'?'daemon':'controller',subject:artifact.id,cleanupScope:`${repo}:${artifact.id}`,epicHash:hash}),authorizeNative:async()=>{throw new Error('No native command is needed by this design fixture');},resolveBinary:async()=>{throw new Error('No CLI lookup expected');},track:()=>{},start:(svc,input,port,deps)=>startReviewWorkerBootstrap(svc,input,port,{...deps,start:(services,name,_script,extra,created)=>startWorker(services,name,'../../workflow/review/design-review/__tests__/helpers/worker-admission',{workerData:{...extra!.workerData,fixtureBarrier:barrier.buffer},transferList:extra!.transferList},created)})});
@@ -56,7 +56,7 @@ test('subject invalidation explicit recovery and impact-selected chunks preserve
  const f=fixture(t,'epic','daemon'),submitted=f.submit(),ack=await f.registry.admit(submitted,f.context);
  await f.registry.execute(ack,f.context);Atomics.store(f.barrier,1,1);Atomics.notify(f.barrier,1);
  const cp=()=>loadStoredDesignCheckpoint(f.repo,ack.key.reviewId);
- const unit=async(identity=ack,attempt=1)=>{let found:DesignUnitAssignment|undefined;await until(async()=>{try{const out=await f.registry.control({...identity,attempt,phase:'assignment',actionId:'controller-action',executionId:'pending',sequence:1,input:{}},f.context) as {assignment:DesignUnitAssignment|null};found=out.assignment??undefined;return!!found;}catch{return false;}});return found!;};
+ const unit=async(identity=ack,attempt=1)=>{let found:DesignUnitAssignment|undefined;await until(async()=>{try{const out=await f.registry.control({...identity,attempt,phase:'assignment',actionId:'controller-action',executionId:'pending',sequence:1,input:{}},f.context) as {assignment:DesignUnitAssignment|null};found=out.assignment??undefined;return!!found;}catch(error){throw new Error(`Assignment attempt ${attempt}: ${String(error)}`);}});return found!;};
  const send=(identity:typeof ack,attempt:number,a:DesignUnitAssignment,phase:'plan'|'impact'|'result',input:unknown)=>f.registry.control({...identity,attempt,phase,actionId:'controller-action',executionId:a.executionId,sequence:1,input},f.context);
  let a=await unit();assert.equal(a.kind,'planning');
  const first=(await cp())!.attempts[0]!;assert.ok('inventory'in first);
@@ -78,7 +78,7 @@ test('subject invalidation explicit recovery and impact-selected chunks preserve
  const qualified=(await cp())!.attempts[0]!;assert.equal(qualified.actions!.at(-1)!.validation,'qualified');assert.ok('completedChunks'in qualified);assert.deepEqual(qualified.completedChunks,kept);
  await assert.rejects(send(resumed,1,oldUnit,'result',{result:feedback('edit')}),/generation/);
  await send(resumed,1,a,'result',{result:feedback('edit')});a=await unit(resumed);assert.equal(a.chunkId,'final');await send(resumed,1,a,'result',{result:feedback('final')});
- await until(async()=>((await cp())!.attempts[0]!.status==='passed'));
+ await until(async()=>{const a=(await cp())!.attempts[0]!;if('publication'in a&&a.publication?.error)throw new Error(a.publication.error.summary);return a.status==='passed'&&'publication'in a&&a.publication?.state==='complete';});
  assert.deepEqual(await f.registry.recover(resumed,recovery,f.context),await f.registry.recover(resumed,recovery,f.context));
  await assert.rejects(f.registry.recover(resumed,{...recovery,operation:'restart_full',userDecision:{action:'restart_full',reason:'Conflicting replay',recordedAt:time}},f.context),/Conflicting/);
  const baseline=structuredClone((await cp())!.attempts[0]!);assert.ok('completedChunks'in baseline);
@@ -92,12 +92,12 @@ test('subject invalidation explicit recovery and impact-selected chunks preserve
  await until(async()=>((await cp())!.attempts[1]!.status==='invalidated'));
  const invalidated=structuredClone((await cp())!.attempts[1]!);
  const deniedResume:DesignRecoveryRequest={phase:'recover',repo:f.repo,reviewId:ack.key.reviewId,attempt:2,actionId:'invalidated-cannot-resume',operation:'resume'};
- await until(async()=>{try{await f.registry.recover(correction,deniedResume,f.context);return true;}catch(error){if(!String(error).includes('still active'))throw error;return false;}});
+ await until(async()=>{try{await f.registry.recover(correction,deniedResume,f.context);return true;}catch(error){if(!/still active|admission\/execution\/publication is active/.test(String(error)))throw error;return false;}});
  await until(async()=>((await cp())!.attempts[1]!.actions?.find(x=>x.actionId===deniedResume.actionId)?.validation==='failed'));
  const denied=(await cp())!.attempts[1]!;assert.equal(denied.status,'invalidated');assert.ok('completedChunks'in denied&&'completedChunks'in invalidated);assert.deepEqual(denied.completedChunks,invalidated.completedChunks);assert.match(denied.actions!.find(x=>x.actionId===deniedResume.actionId)!.outcome!.summary,/not resumable/);
  const restart:DesignRecoveryRequest={phase:'recover',repo:f.repo,reviewId:ack.key.reviewId,attempt:2,actionId:'restart-approved',operation:'restart_full',userDecision:{action:'restart_full',reason:'Fixture user approved full restart',recordedAt:time}};
- let receipt:unknown;await until(async()=>{try{receipt=await f.registry.recover(correction,restart,f.context);return true;}catch(error){if(!String(error).includes('still active'))throw error;return false;}});
- assert.ok(receipt);a=await unit(correction,3);assert.equal(a.kind,'planning');const restarted=await cp();assert.equal(restarted!.attempts.length,3);assert.ok('completedChunks'in restarted!.attempts[1]!&&'completedChunks'in invalidated);assert.deepEqual(restarted!.attempts[1]!.completedChunks,invalidated.completedChunks);
+ let receipt:unknown;await until(async()=>{try{const live=f.registry.identity(correction.key);if(live)receipt=await f.registry.recover(live,restart,f.context);else{const next=await f.registry.admit({...submitted,attempt:3,actionId:restart.actionId,submitted:restart},f.context);receipt=await f.registry.execute(next,f.context);}return true;}catch(error){if(!/still active|admission\/execution\/publication is active/.test(String(error)))throw error;return false;}});
+ const restartIdentity={...correction,...f.registry.identity(correction.key)!};assert.notEqual(restartIdentity.incarnation,correction.incarnation);assert.ok(receipt);a=await unit(restartIdentity,3);assert.equal(a.kind,'planning');const restarted=await cp();assert.equal(restarted!.attempts.length,3);assert.ok('completedChunks'in restarted!.attempts[1]!&&'completedChunks'in invalidated);assert.deepEqual(restarted!.attempts[1]!.completedChunks,invalidated.completedChunks);
  assert.equal(restarted!.attempts[1]!.actions!.at(-1)!.validation,'qualified');assert.equal(Atomics.load(f.barrier,2),0,'controller execution never constructs a model');
 });
 test('cold unverified design recovery retains its original submission and qualifies before provider dispatch',async t=>{
@@ -119,10 +119,9 @@ test('rejected full restart retains the source attempt for subsequent explicit r
  await until(async()=>{try{return!!(await f.registry.control({...ack,attempt:1,phase:'assignment',actionId:'assignment',executionId:'pending',sequence:1,input:{}},f.context) as any).assignment;}catch{return false;}});
  await f.registry.shutdown();
  const bad:DesignRecoveryRequest={phase:'recover',repo:f.repo,reviewId:ack.key.reviewId,attempt:1,actionId:'restart-not-invalidated',operation:'restart_full',userDecision:{action:'restart_full',reason:'Fixture asks for restart',recordedAt:time}};
- const restarted=await f.registry.admit({...input,submitted:bad,actionId:bad.actionId},f.context);
- const receipt=await f.registry.execute(restarted,f.context) as {attempt:number};assert.equal(receipt.attempt,1);
- await until(async()=>((await loadStoredDesignCheckpoint(f.repo,ack.key.reviewId))!.attempts[0]!.actions?.at(-1)?.validation==='failed'));
- const cp=(await loadStoredDesignCheckpoint(f.repo,ack.key.reviewId))!;assert.equal(cp.attempts.length,1);
+ const before=readFileSync(`${f.repo}/.insrc/tmp/design-review/${ack.key.reviewId}.json`,'utf8');
+ await assert.rejects(f.registry.admit({...input,attempt:2,submitted:bad,actionId:bad.actionId},f.context),/active or unpublished/);
+ assert.equal(readFileSync(`${f.repo}/.insrc/tmp/design-review/${ack.key.reviewId}.json`,'utf8'),before);
  await f.registry.shutdown();
  const resume:DesignRecoveryRequest={phase:'recover',repo:f.repo,reviewId:ack.key.reviewId,attempt:1,actionId:'resume-after-rejected-restart',operation:'resume'};
  const resumed=await f.registry.admit({...input,submitted:resume,actionId:resume.actionId},f.context);await f.registry.execute(resumed,f.context);
@@ -137,7 +136,7 @@ test('explicit restart refreshes independent reviewer authority after authorship
  const head=JSON.parse(readFileSync(f.artifact.json,'utf8'));head.meta.authoredBy='controller';writeFileSync(f.artifact.json,JSON.stringify(head));
  await until(async()=>((await loadStoredDesignCheckpoint(f.repo,ack.key.reviewId))!.attempts[0]!.status==='invalidated'));
  const restart:DesignRecoveryRequest={phase:'recover',repo:f.repo,reviewId:ack.key.reviewId,attempt:1,actionId:'refresh-reviewer',operation:'restart_full',userDecision:{action:'restart_full',reason:'Fixture approves changed author restart',recordedAt:time}};
- await until(async()=>{try{const identity=f.registry.identity(ack.key);if(identity)await f.registry.recover(identity,restart,f.context);else{const next=await f.registry.admit({...input,actionId:restart.actionId,submitted:restart},f.context);await f.registry.execute(next,f.context);}return true;}catch(error){if(!/closed|fenced|reclaimed|still active|subject or cleanup busy/i.test(String(error)))throw error;return false;}});
+ await until(async()=>{try{const identity=f.registry.identity(ack.key);if(identity)await f.registry.recover(identity,restart,f.context);else{const next=await f.registry.admit({...input,attempt:2,actionId:restart.actionId,submitted:restart},f.context);await f.registry.execute(next,f.context);}return true;}catch(error){if(!/closed|fenced|reclaimed|still active|admission\/execution\/publication is active|subject or cleanup busy/i.test(String(error)))throw error;return false;}});
  await until(async()=>{const cp=await loadStoredDesignCheckpoint(f.repo,ack.key.reviewId);return cp!.attempts.length===2&&cp!.attempts[1]!.status==='passed';});
  const saved=(await loadStoredDesignCheckpoint(f.repo,ack.key.reviewId))!;assert.equal(saved.subject!.reviewer,'daemon');assert.equal(saved.attempts[1]!.number,2);
 });

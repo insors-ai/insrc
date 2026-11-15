@@ -4,6 +4,7 @@ export type { CodePreparationCheckpoint, DesignPreparationCheckpoint } from './p
 import { CodePreparationCheckpointSchema, DesignPreparationCheckpointSchema } from './preparation-checkpoint-contract.js';
 import type { CodePreparationCheckpoint, DesignPreparationCheckpoint } from './preparation-checkpoint-contract.js';
 import { constants } from 'node:fs';
+import { createHash } from 'node:crypto';
 import type { BigIntStats } from 'node:fs';
 import { open, lstat } from 'node:fs/promises';
 import { reviewWorkerCheckpoint } from '../../daemon/threads/review-worker-contract.js';
@@ -30,7 +31,7 @@ export async function preparationCheckpointStamp(key: ReviewKey): Promise<string
 }
 /** The stamp returned belongs to the exact descriptor whose bytes were
  * validated, not a subsequent path lookup that could adopt a replacement. */
-export async function loadPreparationCheckpointSnapshot(key: ReviewKey): Promise<{ value: ReturnType<typeof decodePreparationCheckpoint>; stamp: string } | undefined> {
+export async function loadPreparationCheckpointSnapshot(key: ReviewKey): Promise<{ value: ReturnType<typeof decodePreparationCheckpoint>; stamp: string; digest: string } | undefined> {
  let file;
  try { file = await open(reviewWorkerCheckpoint(key), constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK); }
  catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined; throw error; }
@@ -43,7 +44,7 @@ export async function loadPreparationCheckpointSnapshot(key: ReviewKey): Promise
   if (BigInt(offset) !== before.size || before.size !== after.size || before.mtimeNs !== after.mtimeNs || before.ctimeNs !== after.ctimeNs) throw new Error('Preparation checkpoint changed while reading');
   const value = decodePreparationCheckpoint(JSON.parse(bytes.subarray(0, offset).toString('utf8')), key), stamp = fileStamp(after);
   if (await preparationCheckpointStamp(key) !== stamp) throw new Error('Preparation checkpoint replaced during validated read');
-  return { value, stamp };
+  return { value, stamp, digest: createHash('sha256').update(bytes.subarray(0, offset)).digest('hex') };
  } finally { await file.close(); }
 }
 

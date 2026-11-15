@@ -31,7 +31,18 @@ import type { StartedWorker } from './workers.js';
 import { Value } from '@sinclair/typebox/value';
 import { ReviewCancellationInputSchema } from '../../shared/review-preparation.js';
 import type { ReviewRuntime, ReviewCancellationReceipt } from '../../shared/review-preparation.js';
-import type { ReviewRuntimeStore, ReviewRuntimeHandle } from './review-runtime-store.js';
+import { ReviewRuntimeStore, loadReviewRuntime } from './review-runtime-store.js';
+import type { ReviewRuntimeHandle } from './review-runtime-store.js';
+import { ReviewPreparationHost } from './review-preparation-host.js';
+import type { PreparationConnection } from './review-preparation-host.js';
+import type { ReviewPreparationBootstrap } from './review-worker-preparation.js';
+import { submission } from './review-preparation-input.js';
+import { loadPreparationCheckpoint, loadPreparationCheckpointSnapshot } from '../../workflow/review/preparation-checkpoint.js';
+import { preparationSubmission } from '../../workflow/review/preparation-migration.js';
+import { preparationDigest } from '../../workflow/review/prepared-context.js';
+import { persistReviewRuntimeAudit, reviewRuntimeAudits } from '../../workflow/review/runtime-audit.js';
+import { lifecycleFor } from '../lifecycle-registry.js';
+import { reviewPreparationLimits } from '../../config/review.js';
 import { REVIEW_BOOTSTRAP_MS } from './review-worker-contract.js';
 
 export interface ReviewWorkerScope {
@@ -67,7 +78,7 @@ export interface ReviewWorkerControl extends ReviewWorkerIdentity {
 }
 interface Entry {
  readonly cleanupOwner:boolean;
- attempt:number;
+ readonly attempt:number;
  readonly input:ReviewBootstrapInput;
  readonly scope:ReviewWorkerScope;
  readonly context:TrustedRpcContext;
@@ -76,17 +87,18 @@ interface Entry {
  connection:string;
  owner:string;
  readonly native:ReviewNativeHost;
+ created?:Worker|undefined;
  readonly ready:Promise<StartedReviewWorker>;
  readonly pending:Map<string,{resolve:(value:unknown)=>void;reject:(error:Error)=>void}>;
  started?:StartedReviewWorker|undefined;
  progress?:ReviewWorkerProgress|undefined;
  publication?:Promise<unknown>|undefined;
- pendingAttempt?:number|undefined;
  reclaiming?:Promise<void>|undefined;
  executed?:boolean|undefined;
  closing?:Promise<void>|undefined;
  reclaimedHealthy?:boolean|undefined;
  runtime?:{store:ReviewRuntimeStore;handle:ReviewRuntimeHandle}|undefined;
+ preparation?:PreparationConnection|undefined;
  /** The coordinator task this attempt was bound to at admission; undefined when unobserved. */
  taskBinding?:import('../task-progress/review-measurements.js').ReviewTaskBinding|undefined;
  readonly detach:()=>void;
@@ -106,10 +118,27 @@ export class ReviewWorkers {
  private readonly storedWorkers=new Set<Worker>();
  private readonly storedRuns=new Set<Promise<unknown>>();
  readonly leases:ReviewProcessLeases;
+ private readonly runtimes=new ReviewRuntimeStore();
+ private readonly preparation:ReviewPreparationHost;
  constructor(private readonly deps:ReviewWorkersDeps){
   this.leases=new ReviewProcessLeases({
    authorize:async(r,c,signal)=>{const e=this.forReservation(r);this.active(e);await deps.authorizeNative(e.input.key,c,e.context,signal,e.native.intentFor(r),e.scope);this.active(e);},
    verifyIntent:(r,receipt)=>this.forReservation(r).native.verifyIntent(r,receipt),
+  });
+  this.preparation=new ReviewPreparationHost(this.runtimes,this.leases.daemonInstance,async identity=>{
+   const entry=this.entries.get(keyOf(identity.key));
+   if(!entry||entry.input.incarnation!==identity.incarnation||entry.attempt!==identity.attempt)throw new Error('Foreign preparation worker');this.active(entry);
+  },async identity=>{
+   const entry=this.entries.get(keyOf(identity.key));
+   if(!entry||entry.input.incarnation!==identity.incarnation||!entry.fence.reclaimed||!entry.native.reclaimable||entry.reclaimedHealthy===false)throw new Error('Preparation worker not reclaimed');
+  },()=>reviewPreparationLimits(),(identity,value)=>this.preparationProgress({key:identity.key,incarnation:identity.incarnation},value),async identity=>{
+   const entry=this.entries.get(keyOf(identity.key));if(!entry||entry.input.incarnation!==identity.incarnation)throw new Error('Foreign publication owner');
+   await entry.native.flushClosures();if(!entry.native.reclaimable)throw new Error('Publication native resources remain open');
+  },async(identity,proof,receipt,history)=>{
+   const entry=this.entries.get(keyOf(identity.key));if(!entry||entry.input.incarnation!==identity.incarnation)throw new Error('Foreign publication audit');
+   const artifactId=identity.key.family==='code'?entry.scope.subject.replace(/^BUILD-/,'CR-'):entry.scope.subject;
+   const last=history.attempts.at(-1)!,error='review-response'in last?last['review-response'].error:undefined;
+   await persistReviewRuntimeAudit(lifecycleFor(identity.key.project).store,artifactId,identity.key,{...(error?.startsWith('CR publication failed: ')?{publicationError:error}:{}),runtime:proof.runtime,checkpointDigest:receipt.checkpointDigest,checkpointRuntime:{runtimeId:proof.runtime.runtimeId,inputDigest:proof.runtime.checkpointBinding.inputDigest},context:{generationId:proof.binding.generationId,manifestDigest:proof.manifestDigest,historyBindingDigest:proof.binding.bindingDigest},publication:proof});
   });
   deps.services.onReviewCleanup(target=>this.cleanupApproved(target));
  }
@@ -168,6 +197,7 @@ export class ReviewWorkers {
    return this.call(previous,'review.worker.matchAdmission',{...input,...(key.family==='code'&&input.operation==='resume'?{actionId:previous.input.actionId}:{}),key,incarnation:previous.input.incarnation,reviewer:scope.reviewer}) as Promise<ReviewAdmissionReceipt>;
   }
   if(this.cleanup.has(scope.cleanupScope)&&cleanupScope!==scope.cleanupScope||key.family==='design'&&[...this.entries.values()].some(e=>e.input.key.family==='design'&&e.input.key.project===key.project&&e.scope.subject===scope.subject))throw new Error('Review subject or cleanup busy');
+  if(input.key.family==='code'&&(input.operation==='resume'&&input.submitted===undefined||input.maintenance)){const saved=await loadPreparationCheckpoint(key);if(!saved)throw new Error('Saved review input missing');input={...input,submitted:preparationSubmission(saved.checkpoint,key)};}
   const review:ReviewBootstrapInput={attempt:input.attempt,actionId:input.actionId,submitted:input.submitted,...identity,reviewer:scope.reviewer,subject:scope.subject,...(scope.epicHash?{epicHash:scope.epicHash}:{}),...(input.operation?{operation:input.operation}:{}),...(input.maintenance?{maintenance:true as const}:{}),...(input.route?{route:input.route}:{})};
   const {port1,port2}=new MessageChannel(),connection=registerReviewWorkerConnection(port1),lifetime=new AbortController();
   const owner=registerReviewRequestOwner(connection,randomUUID(),scope.reviewer==='controller'?context.connectionSignal:lifetime.signal);
@@ -176,12 +206,12 @@ export class ReviewWorkers {
   const ready=new Promise<StartedReviewWorker>((resolve,reject)=>{resolveReady=resolve;rejectReady=reject;});
   const native=new ReviewNativeHost({leases:this.leases,owner:processOwner,port:port1,
    assertActive:()=>this.active(entry),resolveBinary:this.deps.resolveBinary,
-   persist:(operation,reservation,closure)=>entry.runtime?entry.runtime.store.resource(entry.runtime.handle,operation,reservation,closure):this.call(entry,`review.worker.resource.${operation}`,{reservation,closure},true) as Promise<import('../../shared/review-native.js').ReviewIntentReceipt>,
+   persist:(operation,reservation,closure)=>{if(!entry.runtime)throw new Error('Compact review runtime required');return entry.runtime.store.resource(entry.runtime.handle,operation,reservation,closure);},
    onLost:()=>{if(entry)void this.closeEntry(entry);},
   });
   const lost=()=>{void this.closeEntry(entry);};
   const detach=()=>context.connectionSignal?.removeEventListener('abort',lost);
-  entry={...(key.family==='design'&&review.submitted&&typeof review.submitted==='object'&&Reflect.get(review.submitted,'phase')==='recover'&&Reflect.get(review.submitted,'operation')==='restart_full'?{pendingAttempt:review.attempt+1}:{}),cleanupOwner:cleanupScope===scope.cleanupScope,attempt:review.attempt,input:review,scope,context,fence,lifetime,connection,owner,native,ready,pending:new Map(),detach};
+  entry={cleanupOwner:cleanupScope===scope.cleanupScope,attempt:review.attempt,input:review,scope,context,fence,lifetime,connection,owner,native,ready,pending:new Map(),detach};
   this.entries.set(keyOf(key),entry);
   // s3: bind the attempt to a task-progress task. Fire-and-forget guarded: a
   // launch or registration failure must never fail or slow the admission.
@@ -191,7 +221,7 @@ export class ReviewWorkers {
     .catch(()=>{});
   }
   if(scope.reviewer==='controller')context.connectionSignal.addEventListener('abort',lost,{once:true});
-  void Promise.resolve().then(()=>(this.deps.start??startReviewWorkerBootstrap)(this.deps.services,review,port2,{fence,onCreated:worker=>this.deps.track(worker,`review:${key.family}:${key.reviewId}`),onClosing:(_worker,reclaimed)=>{void reclaimed.then(()=>this.closeEntry(entry));}})).then(started=>{
+  void Promise.resolve().then(async()=>{const preparation=await this.prepareRuntime(entry);return (this.deps.start??startReviewWorkerBootstrap)(this.deps.services,review,port2,{preparation,fence,onCreated:worker=>{entry.created=worker;this.deps.track(worker,`review:${key.family}:${key.reviewId}`);},onClosing:(_worker,reclaimed)=>{void reclaimed.then(()=>this.closeEntry(entry));}});}).then(started=>{
    entry.started=started;
    const hubConnection=reviewWorkerConnection(started.port);
    if(!hubConnection){rejectReady(new Error('Review worker hub is not registered'));void started.worker.terminate();void this.closeEntry(entry);return;}
@@ -207,6 +237,59 @@ export class ReviewWorkers {
   },error=>{rejectReady(error);void this.closeEntry(entry);});
   const {progress:_internalProgress,...admission}=(await ready).admission;this.cancellations.delete(keyOf(key));return admission;
  }
+ private async prepareRuntime(entry:Entry):Promise<ReviewPreparationBootstrap>{
+  const input=entry.input,key=input.key,previous=await loadReviewRuntime(key),saved=await loadPreparationCheckpoint(key);
+  const assertInactive=async()=>{if(this.entries.get(keyOf(key))!==entry||entry.started||entry.closing)throw new Error('Inactive review fence changed');this.active(entry);};
+  await assertInactive();
+  if(saved?.format==='current'&&!previous)throw new Error('Current review lost its runtime proof');
+  if(previous&&!saved&&previous.state!=='initializing')throw new Error('Orphan compact review runtime');
+  const last=saved?.checkpoint.attempts.at(-1),number=last&&('header'in last?last.header.attempt:last.number);
+  if(number!==undefined&&input.attempt!==number&&input.attempt!==number+1)throw new Error('Review attempt conflict');
+  if(last&&input.attempt===number!+1){
+   const status='header'in last?last.header.status:last.status;
+   if(['pending','running'].includes(status)||'review-response'in last&&status!=='failed'&&last['review-response'].crPublication!=='complete'||!('header'in last)&&'baseline'in last&&!['failed','invalidated'].includes(status)&&last.publication?.state!=='complete')throw new Error('Previous attempt is active or unpublished');
+  }
+  if(last&&input.attempt===number){
+   if(('header'in last?last.header.status:last.status)==='failed'&&!input.maintenance)throw new Error('Failed review requires the next attempt');
+   const reviewer='header'in last?last.header.reviewer:last.reviewer??('subject'in saved!.checkpoint?saved!.checkpoint.subject?.reviewer:undefined);
+   if(reviewer!==entry.scope.reviewer)throw new Error('Same-attempt reviewer authority changed; explicit restart required');
+   const expected=preparationSubmission(saved!.checkpoint,key),actual=key.family==='code'?input.submitted:submission(input);
+   // Recovery actions are append-only metadata; the pinned input digest for
+   // same-attempt execution remains the original submission.
+   if(!input.maintenance&&!(key.family==='design'&&input.submitted&&typeof input.submitted==='object'&&Reflect.get(input.submitted,'phase')==='recover')&&preparationDigest(expected)!==preparationDigest(actual))throw new Error('Pinned review input mismatch');
+  }
+  if(last&&input.attempt===number&&!input.maintenance&&input.operation!=='resume'&&('review-response'in last?last['review-response'].crPublication==='complete':'publication'in last&&last.publication?.state==='complete'))throw new Error('Completed review is observation-only; use progress or explicit publication retry');
+  const submitted=last&&input.attempt===number?preparationSubmission(saved!.checkpoint,key):key.family==='code'?input.submitted:submission(input);
+  const now=new Date().toISOString();
+  const value:ReviewRuntime={schemaVersion:1,key,attempt:input.attempt,runtimeId:randomUUID(),daemonEpoch:this.leases.daemonInstance,workerIncarnation:input.incarnation,sequence:0,state:'initializing',
+   checkpointBinding:previous&&previous.attempt===input.attempt?structuredClone(previous.checkpointBinding):{inputDigest:preparationDigest(submitted),semanticSequence:0},
+   resourceGuard:{daemonInstance:this.leases.daemonInstance,openLeases:[]},progress:{completedUnits:0,totalUnits:null,observedAt:now,lastMeaningfulActivityAt:null}};
+  let handoff:ReviewPreparationBootstrap['handoff'];let handle:ReviewRuntimeHandle;
+  if(previous?.state==='initializing'){
+   value.runtimeId=previous.runtimeId;
+   if(saved?.format==='current'&&saved.checkpoint.runtime.runtimeId!==previous.runtimeId){
+    const snapshot=await loadPreparationCheckpointSnapshot(key),artifactId=key.family==='code'?entry.scope.subject.replace(/^BUILD-/,'CR-'):entry.scope.subject;
+    const audits=reviewRuntimeAudits(await lifecycleFor(key.project).store.history.log(artifactId),artifactId,key);
+    const prior=audits.find(a=>a.checkpointDigest===snapshot?.digest&&a.checkpointRuntime.runtimeId===saved.checkpoint.runtime.runtimeId&&a.checkpointRuntime.inputDigest===saved.checkpoint.runtime.inputDigest);
+    if(!prior)throw new Error('Interrupted handoff lacks its permanent predecessor audit');
+    handoff={checkpointDigest:prior.checkpointDigest,previousRuntime:prior.checkpointRuntime,resetContext:prior.runtime.attempt!==input.attempt};
+   }
+   handle=await this.runtimes.recoverInitialization(value,assertInactive);
+  }else if(previous){
+   const result=await this.runtimes.replaceInactive(value,proof=>persistReviewRuntimeAudit(lifecycleFor(key.project).store,key.family==='code'?entry.scope.subject.replace(/^BUILD-/,'CR-'):entry.scope.subject,key,proof),assertInactive);
+   handle=result.handle;handoff={checkpointDigest:result.prior.checkpointDigest,previousRuntime:result.prior.checkpointRuntime,resetContext:previous.attempt!==input.attempt};
+  }else{
+   // Historical guards are checked before emitting ANY new runtime file.
+   if(saved?.format==='historical'){
+    const {upgradePreparationHistory}=await import('../../workflow/review/preparation-migration.js');
+    upgradePreparationHistory(saved.checkpoint,key,value,input.attempt===number!+1?{attempt:input.attempt,submitted}:undefined);
+   }
+   handle=await this.runtimes.initialize(value);
+  }
+  entry.runtime={store:this.runtimes,handle};
+  entry.preparation=await this.preparation.connect({key,incarnation:input.incarnation,attempt:input.attempt,phase:'execution'},handle);
+  return{port:entry.preparation.port,runtime:value,limits:reviewPreparationLimits(),...(handoff?{handoff}:{})};
+ }
  private assertController(e:Entry,context:TrustedRpcContext):void{
   if(e.scope.reviewer==='controller'&&(context.connectionIdentity!==e.context.connectionIdentity||context.daemonEpoch!==e.context.daemonEpoch||context.connectionSignal?.aborted))throw new Error('Review owner mismatch');
  }
@@ -220,14 +303,6 @@ export class ReviewWorkers {
    try{started.worker.postMessage({kind:'request',requestId,method,params:{...params,key:e.input.key,incarnation:e.input.incarnation},stream:false,trustedContext:{connectionIdentity:e.context.connectionIdentity,daemonEpoch:e.context.daemonEpoch,reviewOwnerNonce:e.owner}});}
    catch(error){e.pending.delete(requestId);reject(error);}
   });
- }
- /** Private main-host binding, installed before execution by the coordinated
-  * new-format bootstrap. It is not accepted from MCP or IPC arguments. */
- bindRuntime(identity:ReviewWorkerIdentity,store:ReviewRuntimeStore,handle:ReviewRuntimeHandle):void{
-  const e=this.entries.get(keyOf(identity.key));if(!e||!sameReviewWorker(e.input,identity)||e.executed||e.closing||e.runtime)throw new Error('Cannot bind foreign or active preparation runtime');
-  const value=store.snapshot(handle);
-  if(!sameReviewWorker(e.input,{key:handle.key,incarnation:value.workerIncarnation})||value.attempt!==e.attempt||value.state!=='active')throw new Error('Unbound preparation runtime');
-  e.runtime={store,handle};
  }
  preparationProgress(identity:ReviewWorkerIdentity,value:Pick<ReviewRuntime,'progress'|'preparation'>):void{
   const e=this.entries.get(keyOf(identity.key));
@@ -270,6 +345,7 @@ export class ReviewWorkers {
     if(!ended)return;
     const state=await e.runtime!.store.finishCancellation(e.runtime!.handle,true,e.native.reclaimable&&e.reclaimedHealthy===true);
     record.receipt={...record.receipt,operationState:state.cancellation!.operationState};
+    if(state.cancellation!.operationState==='stopped')e.runtime!.store.release(e.runtime!.handle);
    }catch{if(e.fence.reclaimed&&(!e.started||e.started.worker.threadId===-1))record.receipt={...record.receipt,operationState:'resource_fenced'};}
   })();
   return structuredClone(receipt);
@@ -308,19 +384,24 @@ export class ReviewWorkers {
   this.assertController(e,context);this.active(e);
   if(e.publication||e.cleanupOwner||this.scopeCleaning(e.input.key,e.scope))throw new Error('Review publication or cleanup is active');
   if(request.repo!==e.input.key.project||request.reviewId!==e.input.key.reviewId||request.phase!=='recover')throw new Error('Foreign design recovery request');
-  if(request.operation==='restart_full'){
-   const scope=await this.deps.resolveScope(identity.key,context,{...e.input,submitted:request});
-   if(scope.reviewer!==e.scope.reviewer){
-    await this.call(e,'review.worker.assertIdle',{});
-    await this.closeEntry(e);if(this.entries.has(keyOf(identity.key)))throw new Error('Review resources remain fenced');
-    const ack=await this.admit({key:identity.key,attempt:request.attempt,actionId:request.actionId,submitted:request},context);
-    return this.execute(ack,context);
-   }
-   e.pendingAttempt=request.attempt+1;
-  }else e.pendingAttempt=undefined;
+  const saved=await loadPreparationCheckpoint(identity.key),action=saved?.checkpoint.attempts.flatMap(a=>'actions'in a?a.actions??[]:[]).find(a=>a.actionId===request.actionId);
+  if(action){
+   const {requestSignature}=await import('../../workflow/review/design-review/request-signature.js');
+   if(action.signature!==requestSignature(request))throw new Error('Conflicting recovery action replay');
+   return this.call(e,'review.worker.recover',{request});
+  }
+  const latest=saved?.checkpoint.attempts.at(-1);
+  if(request.operation==='resume'&&latest&&!('header'in latest)&&latest.status==='invalidated')return this.call(e,'review.worker.recover',{request});
+  if(request.operation!=='retry_publication'){
+   await this.call(e,'review.worker.assertIdle',{});
+   await this.closeEntry(e);if(this.entries.has(keyOf(identity.key)))throw new Error('Review resources remain fenced');
+   const attempt=request.attempt+(request.operation==='restart_full'?1:0);
+   const ack=await this.admit({key:identity.key,attempt,actionId:request.actionId,submitted:request,operation:'resume'},context);
+   return this.execute(ack,context);
+  }
   const result=await this.call(e,'review.worker.recover',{request}) as {attempt:number};
   if(!Number.isSafeInteger(result.attempt)||result.attempt<1)throw new Error('Invalid recovery receipt');
-  if(result.attempt>e.attempt){e.attempt=result.attempt;e.progress=undefined;}
+  if(result.attempt!==e.attempt)throw new Error('Recovery requires a separately admitted worker phase');
   return result;
  }
  /** Admission has already been acknowledged. The worker schedules expensive
@@ -333,7 +414,7 @@ export class ReviewWorkers {
   if(!['start','resume'].includes(requested))throw new Error('Invalid review operation');
   const result=await this.call(e,'review.worker.execute',{operation:requested,attempt:e.input.attempt}) as {attempt:number};
   e.executed=true;
-  if(Number.isSafeInteger(result.attempt)&&result.attempt>e.attempt){e.attempt=result.attempt;e.progress=undefined;}
+  if(result.attempt!==e.attempt)throw new Error('Execution requires the exact admitted worker attempt');
   return result;
  }
  async control(request:ReviewWorkerControl,context:TrustedRpcContext):Promise<unknown>{
@@ -348,12 +429,11 @@ export class ReviewWorkers {
  private acceptPublication(source:Worker,raw:ReviewProgressPublication):boolean{
   try{assertReviewIdentity(raw);}catch{return false;}
   const e=this.entries.get(keyOf(raw.key));if(!e||!sameReviewWorker(e.input,raw)||!Number.isSafeInteger(raw.sequence)||raw.sequence<1)return false;
-  const advancing=raw.attempt!==e.attempt;
-  if(advancing&&(e.input.key.family!=='design'||raw.attempt!==e.pendingAttempt||e.started?.worker!==source||raw.sequence<=(e.progress?.sequence??0)))return false;
+  if(raw.attempt!==e.attempt)return false;
   try{if(Buffer.byteLength(JSON.stringify(raw))>reviewJsonLimit())return false;
    const value=reviewProgressPublication({...e.input,attempt:raw.attempt},raw.sequence,raw.observation),d=value.display;
-   if(advancing){e.attempt=raw.attempt;e.pendingAttempt=undefined;e.progress=undefined;}
-   const phase=d.status==='failed'?'failed':d.status==='interrupted'?'interrupted':d.admission?'admission':['passed','changes_requested','incomplete','paused','invalidated'].includes(d.status)?'complete':d.phase==='publishing'||d.phase==='cr_publication'?'publication':'execution';
+   const pendingPublication='publication'in value.observation&&value.observation.publication?.state==='pending'&&!value.observation.publication.error;
+   const phase=d.status==='failed'?'failed':d.status==='interrupted'?'interrupted':d.admission?'admission':pendingPublication?'publication':['passed','changes_requested','incomplete','paused','invalidated'].includes(d.status)?'complete':d.phase==='publishing'||d.phase==='cr_publication'?'publication':'execution';
    return this.acceptProgress(source,raw,{...raw,phase,completed:d.completed,total:d.total,updatedAt:d.observedAt,observation:value.observation,display:d});
   }catch{return false;}
  }
@@ -444,35 +524,38 @@ export class ReviewWorkers {
     await this.call(e,'review.worker.assertIdle',{},true);
    }
    for(const e of entries){await this.closeEntry(e);if(this.entries.has(keyOf(e.input.key)))throw new Error('Review resources remain fenced');}
-   const discovery=await this.storedOperation({target},target.family==='design'?'review.cleanup.execute':'review.cleanup.discover') as {candidates:Array<{reviewId:string;attempt:number}>;deleted?:string[];retained:string[];errors:string[]};result.deleted.push(...(discovery.deleted??[]));result.retained.push(...discovery.retained);result.errors.push(...discovery.errors);
-   for(const candidate of discovery.candidates){
-    const key:ReviewKey={project:target.project,family:target.family,reviewId:candidate.reviewId};let entry:Entry|undefined;
-    try{
-     const resolved=await this.deps.resolveScope(key,context,target.family==='code'?{key,attempt:candidate.attempt,actionId:'cleanup-scope',submitted:undefined,route:{epicHash:target.epicHash,storyId:target.storyId}}:undefined);if(resolved.cleanupScope!==scope)throw new Error('Cleanup subject does not match the registered host scope');
-     await this.admitOwned({key,attempt:candidate.attempt,actionId:`cleanup:${randomUUID()}`,submitted:{},maintenance:true,...(target.family==='code'?{route:{epicHash:target.epicHash,storyId:target.storyId}}:{})},context,scope);
-     entry=this.entries.get(keyOf(key));if(!entry)throw new Error('Cleanup owner missing');
-     const cleaned=await this.call(entry,'review.worker.cleanup',target.family==='code'?{storyId:target.storyId}:{artifactId:target.artifactId},true) as CleanupResult;
-     result.deleted.push(...cleaned.deleted);result.retained.push(...cleaned.retained);result.errors.push(...cleaned.errors);
-    }catch(e){result.retained.push(`${root}/${candidate.reviewId}.json`);result.errors.push(e instanceof Error?e.message:String(e));}
-    finally{if(entry)await this.closeEntry(entry);}
+   const cleaned=await this.storedOperation({target},'review.cleanup.execute') as CleanupResult;
+   result.deleted.push(...cleaned.deleted);result.retained.push(...cleaned.retained);result.errors.push(...cleaned.errors);
+   for(const path of cleaned.deleted){
+    const reviewId=path.slice(path.lastIndexOf('/')+1).replace(/\.json$/,'');const key={project:target.project,family:target.family,reviewId};
+    await this.preparation.releaseCleaned(key,async()=>{
+     const {lstat}=await import('node:fs/promises');const {contextRoot}=await import('../../workflow/review/prepared-context.js');
+     if(await loadPreparationCheckpoint(key)||await loadReviewRuntime(key))throw new Error('Public review replacement remains');
+     try{await lstat(contextRoot(key));throw new Error('Public context replacement remains');}catch(error){if((error as NodeJS.ErrnoException).code!=='ENOENT')throw error;}
+    });
+    this.cancellations.delete(keyOf(key));this.cancelAdmissions.delete(keyOf(key));
    }
   }catch(e){result.retained.push(root);result.errors.push(e instanceof Error?e.message:String(e));}
   finally{this.cleanup.delete(scope);this.cleanupTargets.delete(scope);}
   return result;
  }
  resourceRecovery(broker:ApprovalBroker,audit:ReviewResourceRecoveryDeps['audit'],approvalWaitMs?:number):ReviewResourceRecovery{
-  return new ReviewResourceRecovery({services:this.deps.services,broker,audit,track:this.deps.track,approvalWaitMs,claim:async(key,context,knownScope)=>{
+  return new ReviewResourceRecovery({applyCurrent:async(key,clearance,hold)=>{
+   const cp=await loadPreparationCheckpoint(key);if(cp?.format!=='current')return undefined;
+   await this.runtimes.clearInactive(key,clearance,async()=>{hold.assertActive();});
+   const {inspectReviewResources}=await import('../../workflow/review/resource-recovery.js');return inspectReviewResources(key);
+  },services:this.deps.services,broker,audit,track:this.deps.track,approvalWaitMs,claim:async(key,context,knownScope)=>{
    if(await realpath(key.project)!==key.project)throw new Error('Canonical resource review project required');
    const scope=knownScope??await this.deps.resolveScope(key,context),id=keyOf(key),entry=this.entries.get(id);
    if(this.resourceHolds.has(id)||this.scopeCleaning(key,scope)||entry&&(!entry.fence.reclaimed||entry.reclaimedHealthy===false))throw new Error('Review work must be reclaimed before resource clearance');
    const hold={cleanupScope:scope.cleanupScope};this.resourceHolds.set(id,hold);
    const assertActive=()=>{const current=this.entries.get(id);if(this.resourceHolds.get(id)!==hold||context.connectionSignal?.aborted||current!==entry&&!(entry&&!current))throw new Error('Stale review resource recovery hold');};
-   return{assertActive,release:()=>{if(this.resourceHolds.get(id)===hold)this.resourceHolds.delete(id);},apply:clearance=>{
+   return{assertActive,release:()=>{if(this.resourceHolds.get(id)===hold)this.resourceHolds.delete(id);},apply:async clearance=>{
     // An earlier receipt may already have released the captured entry.
     if(this.resourceHolds.get(id)!==hold||context.connectionSignal?.aborted)throw new Error('Stale resource clearance');
     if(!entry||!this.entries.has(id))return;if(this.entries.get(id)!==entry||!entry.fence.reclaimed||entry.reclaimedHealthy!==true)throw new Error('Review resources remain unreclaimed');
     entry.native.authorizeClearance(clearance.approvalReceipt.leaseIds);
-    if(entry.native.reclaimable){entry.native.dispose();if(this.entries.get(id)===entry)this.entries.delete(id);}
+    if(entry.native.reclaimable){entry.native.dispose();await entry.preparation?.close();if(entry.runtime)entry.runtime.store.release(entry.runtime.handle);if(this.entries.get(id)===entry)this.entries.delete(id);}
    }};
   }});
  }
@@ -490,10 +573,11 @@ export class ReviewWorkers {
    for(const p of e.pending.values())p.reject(new Error('Review worker closed'));e.pending.clear();
    const started=await e.ready.catch(async(error:unknown)=>{if(error instanceof ReviewWorkerBootstrapError)await error.reclaimed;return undefined;});
    let storesHealthy=true;
+   if(!started&&!e.created)e.fence.workerReclaimed();
    if(started){await started.worker.terminate();const reclaimed=await started.reclaimed;storesHealthy=reclaimed.stores.unhealthy.length===0;started.disconnect();this.deps.services.board.forget(started.threadId);this.deps.services.board.forgetAnalyzeRunsOf(started.threadId);}
    disconnectReviewWorker(e.connection);
    e.reclaimedHealthy=storesHealthy;
-   if(e.native.reclaimable&&e.fence.reclaimed&&storesHealthy){e.native.dispose();if(this.entries.get(keyOf(e.input.key))===e)this.entries.delete(keyOf(e.input.key));}
+   if(e.native.reclaimable&&e.fence.reclaimed&&storesHealthy){e.native.dispose();await e.preparation?.close();if(e.runtime&&this.cancellations.get(keyOf(e.input.key))?.entry!==e)e.runtime.store.release(e.runtime.handle);if(this.entries.get(keyOf(e.input.key))===e)this.entries.delete(keyOf(e.input.key));}
   })();return e.closing;
  }
  async shutdown():Promise<void>{

@@ -1,0 +1,1487 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "store-6f23ad42-deea-47bd-a09f-c70e67c2ce89",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T19:43:44.999Z",
+    "epicCreatedAt": "2026-11-11T18:56:55.906Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 2,
+    "epicHash": "c760757cc9077508",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicSlug": "show-provider-model-chat-assistant-header",
+    "standalone": true,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 2,
+        "contentHash": "81596e14e6043bf1dcc163403bc80124389ab4ca08074fba1477ccb4803705df",
+        "at": "2026-11-11T19:56:15.351Z",
+        "by": {
+          "id": "insrc:code-review",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 2
+  },
+  "body": {
+    "kind": "code-review",
+    "format": "task-based",
+    "storyId": "s1",
+    "status": "passed",
+    "reviews": [
+      {
+        "reviewId": "cr-c760757cc9077508-s1-a1",
+        "attempt": 1,
+        "storyId": "s1",
+        "taskId": "s1",
+        "reviewer": "daemon",
+        "status": "changes_requested",
+        "finalScopeIdentity": "eb33b1cc335b27c6aed3e5dd5da006003edf0856eb0bbacb5d7bbde0c4a8beb1",
+        "attributionIdentity": "c38b6352d583df47f25214c8ed6bd86f8b6d0c17a5a6233d8a7bbac44e3c0bf3",
+        "taskScopeIdentities": [
+          {
+            "taskId": "s1",
+            "identity": "695e5d11c7c1fb45a7f97ea294383766d34ac25fcbb81f11ee7e2d6dd5ad9637"
+          }
+        ],
+        "scope": {
+          "reviewRevision": "62ed074f588ab3d2730f4f8dccf8c8e6df269d85",
+          "finalScope": {
+            "revision": "62ed074f588ab3d2730f4f8dccf8c8e6df269d85",
+            "identity": "eb33b1cc335b27c6aed3e5dd5da006003edf0856eb0bbacb5d7bbde0c4a8beb1",
+            "entries": [
+              {
+                "originChangeIndex": 0,
+                "path": "vscode-plugin/src/chat/render-registry.ts",
+                "blobOid": "cd5924b20a398677a62de36cdb954f74209dee01",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      419,
+                      420
+                    ]
+                  },
+                  {
+                    "after": [
+                      432,
+                      440
+                    ]
+                  },
+                  {
+                    "after": [
+                      459,
+                      460
+                    ]
+                  },
+                  {
+                    "after": [
+                      787,
+                      787
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 1,
+                "path": "vscode-plugin/src/chat/chat-panel.ts",
+                "blobOid": "036654253a449933b9b7de632dbccd73f6c4567c",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      2552,
+                      2554
+                    ]
+                  },
+                  {
+                    "after": [
+                      2708,
+                      2708
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 2,
+                "path": "vscode-plugin/src/chat/__tests__/render-registry.test.ts",
+                "blobOid": "8533e2d1bd985286a0d96d35b34bbb14c453fd04",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      74,
+                      74
+                    ]
+                  },
+                  {
+                    "after": [
+                      1393,
+                      1445
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 3,
+                "path": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                "blobOid": "48c31911aabd3986583198e6649e6a86556b0063",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      553,
+                      572
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 4,
+                "path": "vscode-plugin/src/chat/chat-panel.ts",
+                "blobOid": "036654253a449933b9b7de632dbccd73f6c4567c",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      1050,
+                      1053
+                    ]
+                  },
+                  {
+                    "deletionAt": 1056
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 5,
+                "path": "vscode-plugin/src/chat/protocol.ts",
+                "blobOid": "3d17ebdd0bc438efd2dcf0b83cd1ebbb379da7c2",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      383,
+                      383
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 6,
+                "path": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                "blobOid": "48c31911aabd3986583198e6649e6a86556b0063",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      718,
+                      742
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 7,
+                "path": "vscode-plugin/src/chat/__tests__/protocol.test.ts",
+                "blobOid": "42751157a3234f1458f10e036e01dd21439e3e87",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      317,
+                      330
+                    ]
+                  }
+                ]
+              }
+            ],
+            "dispositions": [
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    419,
+                    420
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      419,
+                      420
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    432,
+                    440
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      432,
+                      440
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    459,
+                    460
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      459,
+                      460
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    787,
+                    787
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      787,
+                      787
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    2549,
+                    2551
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      2552,
+                      2554
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    2705,
+                    2705
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      2708,
+                      2708
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    74,
+                    74
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      74,
+                      74
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    1393,
+                    1445
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      1393,
+                      1445
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    553,
+                    572
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      553,
+                      572
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    1050,
+                    1053
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      1050,
+                      1053
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "deletionAt": 1056
+                },
+                "kind": "deleted",
+                "finalSegments": [
+                  {
+                    "deletionAt": 1056
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    383,
+                    383
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      383,
+                      383
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 6,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    718,
+                    742
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      718,
+                      742
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 7,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    317,
+                    330
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      317,
+                      330
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              }
+            ],
+            "selectedTaskIds": [
+              "s1"
+            ],
+            "testCount": 4,
+            "attributionIdentity": "c38b6352d583df47f25214c8ed6bd86f8b6d0c17a5a6233d8a7bbac44e3c0bf3",
+            "attributionState": "accepted",
+            "tasks": [
+              {
+                "taskId": "s1",
+                "changeIndexes": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7
+                ],
+                "testIndexes": [
+                  0,
+                  1,
+                  2,
+                  3
+                ],
+                "decision": {
+                  "action": "initial"
+                },
+                "identity": "695e5d11c7c1fb45a7f97ea294383766d34ac25fcbb81f11ee7e2d6dd5ad9637"
+              }
+            ]
+          },
+          "storyId": "s1",
+          "taskId": "s1",
+          "documents": {
+            "lld": {
+              "path": "docs/standalone/show-provider-model-chat-assistant-header-E20261111c760757c/S001/LLD.md",
+              "commit": "8dc93725915619d7821370d88a240f0991fb27c3"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "ac3d28757602419d73e0a8d1705e5e8ba358f9e0",
+              "parent": "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc",
+              "files": [
+                {
+                  "path": "vscode-plugin/src/chat/render-registry.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        419,
+                        420
+                      ]
+                    },
+                    {
+                      "after": [
+                        432,
+                        440
+                      ]
+                    },
+                    {
+                      "after": [
+                        459,
+                        460
+                      ]
+                    },
+                    {
+                      "after": [
+                        787,
+                        787
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "vscode-plugin/src/chat/chat-panel.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        2549,
+                        2551
+                      ]
+                    },
+                    {
+                      "after": [
+                        2705,
+                        2705
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "vscode-plugin/src/chat/__tests__/render-registry.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        74,
+                        74
+                      ]
+                    },
+                    {
+                      "after": [
+                        1393,
+                        1445
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        553,
+                        572
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "62ed074f588ab3d2730f4f8dccf8c8e6df269d85",
+              "parent": "eaaedf176dc8511151f372c4ece821384f2816dc",
+              "files": [
+                {
+                  "path": "vscode-plugin/src/chat/chat-panel.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1050,
+                        1053
+                      ]
+                    },
+                    {
+                      "deletionAt": 1056
+                    }
+                  ]
+                },
+                {
+                  "path": "vscode-plugin/src/chat/protocol.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        383,
+                        383
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        718,
+                        742
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "vscode-plugin/src/chat/__tests__/protocol.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        317,
+                        330
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "s1",
+            "status": "changes_requested",
+            "summary": "Reviewed all submitted changed segments, the pinned LLD, every acceptance check, and relevant test assertions. The implementation matches the required rendering and restore behavior, but leaves an existing test assertion incompatible with the changed handler.",
+            "findings": [
+              {
+                "severity": "MED",
+                "location": "vscode-plugin/src/chat/chat-panel.ts:2708",
+                "message": "Update the existing run-config source assertion alongside this handler change.",
+                "rationale": "chat-panel.test.ts:4608 requires rlabel() immediately after the attribute-update block. The inserted reg.setRunIdentity() makes that pattern incompatible with the generated handler. An earlier assertion in the same test already fails on the timestamp payload, masking this additional mismatch; the reported unchanged failure count therefore does not establish that this change preserves the suite. Retain the setter and update the existing assertion to require it.",
+                "evidenceReferences": [
+                  "62ed074f588ab3d2730f4f8dccf8c8e6df269d85:vscode-plugin/src/chat/chat-panel.ts",
+                  "62ed074f588ab3d2730f4f8dccf8c8e6df269d85:vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+                ]
+              }
+            ],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Coverage review is complete. For ac1, evaluated-renderer test bodies assert provider capitalization, model lowercasing with punctuation preserved, empty-model handling, neutral fallback, and removal of the literal label; the existing parity test compares actual mapping outputs. For ac2, tests render both replay and live inputs and assert equal labels, while the host test asserts run-config precedes session-restored and carries the restored identity. For ac3, inspected protocol shape assertions and existing host configuration/persistence tests. Bootstrap and message-handler wiring are checked through generated-source assertions, rather than full webview execution. The stale existing assertion is reported as a finding.",
+              "evidenceReferences": [
+                "8dc93725915619d7821370d88a240f0991fb27c3:docs/standalone/show-provider-model-chat-assistant-header-E20261111c760757c/S001/LLD.md",
+                "62ed074f588ab3d2730f4f8dccf8c8e6df269d85:vscode-plugin/src/chat/__tests__/render-registry.test.ts",
+                "62ed074f588ab3d2730f4f8dccf8c8e6df269d85:vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                "62ed074f588ab3d2730f4f8dccf8c8e6df269d85:vscode-plugin/src/chat/__tests__/protocol.test.ts"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: No test suite, typecheck, build, or integration check was run. Builder-reported results were not independently verified against the pinned revision.",
+              "Optional execution: A focused pinned-source assertion check could not start because the shell denied creating its here-document temporary file. No assertion executed and no retry was made.",
+              "Consider a behavioral webview test for configuration changes that verifies existing rows retain their labels while subsequent rows use the new identity."
+            ],
+            "inspectedReferences": [
+              "8dc93725915619d7821370d88a240f0991fb27c3:docs/standalone/show-provider-model-chat-assistant-header-E20261111c760757c/S001/LLD.md",
+              "ac3d28757602419d73e0a8d1705e5e8ba358f9e0:vscode-plugin/src/chat/render-registry.ts",
+              "ac3d28757602419d73e0a8d1705e5e8ba358f9e0:vscode-plugin/src/chat/chat-panel.ts",
+              "ac3d28757602419d73e0a8d1705e5e8ba358f9e0:vscode-plugin/src/chat/__tests__/render-registry.test.ts",
+              "ac3d28757602419d73e0a8d1705e5e8ba358f9e0:vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+              "62ed074f588ab3d2730f4f8dccf8c8e6df269d85:vscode-plugin/src/chat/render-registry.ts",
+              "62ed074f588ab3d2730f4f8dccf8c8e6df269d85:vscode-plugin/src/chat/chat-panel.ts",
+              "62ed074f588ab3d2730f4f8dccf8c8e6df269d85:vscode-plugin/src/chat/protocol.ts",
+              "62ed074f588ab3d2730f4f8dccf8c8e6df269d85:vscode-plugin/src/chat/__tests__/render-registry.test.ts",
+              "62ed074f588ab3d2730f4f8dccf8c8e6df269d85:vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+              "62ed074f588ab3d2730f4f8dccf8c8e6df269d85:vscode-plugin/src/chat/__tests__/protocol.test.ts",
+              "62ed074f588ab3d2730f4f8dccf8c8e6df269d85:vscode-plugin/tsconfig.json"
+            ],
+            "executedTests": []
+          }
+        ],
+        "summary": "1 selected task assessment(s): changes_requested.",
+        "completedAt": "2026-11-11T19:42:55.819Z"
+      },
+      {
+        "reassessmentSummary": "The single BUILD-derived review task covers all selected changes and all supplied test evidence, including regression compatibility. Attempt 2 changes the assertion implicated by the prior finding, requiring reassessment.",
+        "reviewId": "cr-c760757cc9077508-s1-a1",
+        "attempt": 2,
+        "storyId": "s1",
+        "taskId": "s1",
+        "reviewer": "daemon",
+        "status": "passed",
+        "finalScopeIdentity": "f6746a459ddcd6a0123e56d429f5dd73b33e876b74300a31bb77c488cbd6a73c",
+        "attributionIdentity": "d101791f4019e7c2f22f12f51a81b1d1cdef948889178a72454b7e2703de16ae",
+        "taskScopeIdentities": [
+          {
+            "taskId": "s1",
+            "identity": "3b565d9195ca6a812049cd4c98fd6f39caedb9cb237839863db79410ae290520"
+          }
+        ],
+        "scope": {
+          "reviewRevision": "1d6b36e62fa58f8cd8c828b4d4e0c721258d5fe3",
+          "finalScope": {
+            "revision": "1d6b36e62fa58f8cd8c828b4d4e0c721258d5fe3",
+            "identity": "f6746a459ddcd6a0123e56d429f5dd73b33e876b74300a31bb77c488cbd6a73c",
+            "entries": [
+              {
+                "originChangeIndex": 0,
+                "path": "vscode-plugin/src/chat/render-registry.ts",
+                "blobOid": "cd5924b20a398677a62de36cdb954f74209dee01",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      419,
+                      420
+                    ]
+                  },
+                  {
+                    "after": [
+                      432,
+                      440
+                    ]
+                  },
+                  {
+                    "after": [
+                      459,
+                      460
+                    ]
+                  },
+                  {
+                    "after": [
+                      787,
+                      787
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 1,
+                "path": "vscode-plugin/src/chat/chat-panel.ts",
+                "blobOid": "036654253a449933b9b7de632dbccd73f6c4567c",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      2552,
+                      2554
+                    ]
+                  },
+                  {
+                    "after": [
+                      2708,
+                      2708
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 2,
+                "path": "vscode-plugin/src/chat/__tests__/render-registry.test.ts",
+                "blobOid": "8533e2d1bd985286a0d96d35b34bbb14c453fd04",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      74,
+                      74
+                    ]
+                  },
+                  {
+                    "after": [
+                      1393,
+                      1445
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 3,
+                "path": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                "blobOid": "faa371f28c110f725ca6e1b2a1a58edccaf12a72",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      553,
+                      572
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 4,
+                "path": "vscode-plugin/src/chat/chat-panel.ts",
+                "blobOid": "036654253a449933b9b7de632dbccd73f6c4567c",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      1050,
+                      1053
+                    ]
+                  },
+                  {
+                    "deletionAt": 1056
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 5,
+                "path": "vscode-plugin/src/chat/protocol.ts",
+                "blobOid": "3d17ebdd0bc438efd2dcf0b83cd1ebbb379da7c2",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      383,
+                      383
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 6,
+                "path": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                "blobOid": "faa371f28c110f725ca6e1b2a1a58edccaf12a72",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      718,
+                      742
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 7,
+                "path": "vscode-plugin/src/chat/__tests__/protocol.test.ts",
+                "blobOid": "42751157a3234f1458f10e036e01dd21439e3e87",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      317,
+                      330
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 8,
+                "path": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                "blobOid": "faa371f28c110f725ca6e1b2a1a58edccaf12a72",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      4608,
+                      4608
+                    ]
+                  }
+                ]
+              }
+            ],
+            "dispositions": [
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    419,
+                    420
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      419,
+                      420
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    432,
+                    440
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      432,
+                      440
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    459,
+                    460
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      459,
+                      460
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    787,
+                    787
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      787,
+                      787
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    2549,
+                    2551
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      2552,
+                      2554
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    2705,
+                    2705
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      2708,
+                      2708
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    74,
+                    74
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      74,
+                      74
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    1393,
+                    1445
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      1393,
+                      1445
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    553,
+                    572
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      553,
+                      572
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    1050,
+                    1053
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      1050,
+                      1053
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "deletionAt": 1056
+                },
+                "kind": "deleted",
+                "finalSegments": [
+                  {
+                    "deletionAt": 1056
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    383,
+                    383
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      383,
+                      383
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 6,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    718,
+                    742
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      718,
+                      742
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 7,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    317,
+                    330
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      317,
+                      330
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    4608,
+                    4608
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      4608,
+                      4608
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              }
+            ],
+            "selectedTaskIds": [
+              "s1"
+            ],
+            "testCount": 4,
+            "attributionIdentity": "d101791f4019e7c2f22f12f51a81b1d1cdef948889178a72454b7e2703de16ae",
+            "attributionState": "accepted",
+            "tasks": [
+              {
+                "taskId": "s1",
+                "changeIndexes": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8
+                ],
+                "testIndexes": [
+                  0,
+                  1,
+                  2,
+                  3
+                ],
+                "decision": {
+                  "action": "reassess",
+                  "reason": "All selected changes implement or verify assistant run-identity labels, bootstrap and echo wiring, restore ordering, and protocol compatibility. Every supplied test applies, including the existing pager regression assertion and plugin typecheck. Change 8 updates the assertion identified in attempt 1, so the prior assessment requires reassessment."
+                },
+                "identity": "3b565d9195ca6a812049cd4c98fd6f39caedb9cb237839863db79410ae290520"
+              }
+            ]
+          },
+          "storyId": "s1",
+          "taskId": "s1",
+          "documents": {
+            "lld": {
+              "path": "docs/standalone/show-provider-model-chat-assistant-header-E20261111c760757c/S001/LLD.md",
+              "commit": "8dc93725915619d7821370d88a240f0991fb27c3"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "ac3d28757602419d73e0a8d1705e5e8ba358f9e0",
+              "parent": "9f3c52f1c4a749dae7c936b1d736eeba4b655dcc",
+              "files": [
+                {
+                  "path": "vscode-plugin/src/chat/render-registry.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        419,
+                        420
+                      ]
+                    },
+                    {
+                      "after": [
+                        432,
+                        440
+                      ]
+                    },
+                    {
+                      "after": [
+                        459,
+                        460
+                      ]
+                    },
+                    {
+                      "after": [
+                        787,
+                        787
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "vscode-plugin/src/chat/chat-panel.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        2549,
+                        2551
+                      ]
+                    },
+                    {
+                      "after": [
+                        2705,
+                        2705
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "vscode-plugin/src/chat/__tests__/render-registry.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        74,
+                        74
+                      ]
+                    },
+                    {
+                      "after": [
+                        1393,
+                        1445
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        553,
+                        572
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "62ed074f588ab3d2730f4f8dccf8c8e6df269d85",
+              "parent": "eaaedf176dc8511151f372c4ece821384f2816dc",
+              "files": [
+                {
+                  "path": "vscode-plugin/src/chat/chat-panel.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1050,
+                        1053
+                      ]
+                    },
+                    {
+                      "deletionAt": 1056
+                    }
+                  ]
+                },
+                {
+                  "path": "vscode-plugin/src/chat/protocol.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        383,
+                        383
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        718,
+                        742
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "vscode-plugin/src/chat/__tests__/protocol.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        317,
+                        330
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "1d6b36e62fa58f8cd8c828b4d4e0c721258d5fe3",
+              "parent": "97c98234588935cade902e24e1defc36913dc2e4",
+              "files": [
+                {
+                  "path": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        4608,
+                        4608
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "s1",
+            "status": "passed",
+            "summary": "Reviewed every submitted changed segment against the pinned LLD and all acceptance checks. The prior assertion mismatch is resolved; no blocking findings remain. State ownership, naming, rendering, restore ordering, and wire compatibility are appropriate for this change.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Inspected test bodies and assertions for ac1–ac3. Evaluated-renderer tests cover provider/model casing, preserved punctuation, empty-model behavior, neutral fallback, and replay/live label equality. Existing parity and timestamp assertions preserve mapping behavior. Host tests assert restored identity and run-config-before-replay ordering; generated-source assertions cover bootstrap and echo wiring, including the corrected pager regression assertion. Protocol assertions verify the unchanged message fields. The plugin typecheck excludes tests. Coverage assessment is complete; it does not imply execution.",
+              "evidenceReferences": [
+                "8dc93725915619d7821370d88a240f0991fb27c3:docs/standalone/show-provider-model-chat-assistant-header-E20261111c760757c/S001/LLD.md",
+                "1d6b36e62fa58f8cd8c828b4d4e0c721258d5fe3:vscode-plugin/src/chat/__tests__/render-registry.test.ts",
+                "1d6b36e62fa58f8cd8c828b4d4e0c721258d5fe3:vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                "1d6b36e62fa58f8cd8c828b4d4e0c721258d5fe3:vscode-plugin/src/chat/__tests__/protocol.test.ts",
+                "1d6b36e62fa58f8cd8c828b4d4e0c721258d5fe3:vscode-plugin/tsconfig.json"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: No tests, typecheck, build, or integration checks were run. Builder-reported passes and two reportedly pre-existing chat-panel failures were not independently verified; older-revision results were not treated as pinned execution evidence.",
+              "Consider a behavioral webview test asserting that identity changes affect subsequent rows while existing rows retain their labels."
+            ],
+            "inspectedReferences": [
+              "8dc93725915619d7821370d88a240f0991fb27c3:docs/standalone/show-provider-model-chat-assistant-header-E20261111c760757c/S001/LLD.md",
+              "1d6b36e62fa58f8cd8c828b4d4e0c721258d5fe3:vscode-plugin/src/chat/render-registry.ts",
+              "1d6b36e62fa58f8cd8c828b4d4e0c721258d5fe3:vscode-plugin/src/chat/chat-panel.ts",
+              "1d6b36e62fa58f8cd8c828b4d4e0c721258d5fe3:vscode-plugin/src/chat/protocol.ts",
+              "1d6b36e62fa58f8cd8c828b4d4e0c721258d5fe3:vscode-plugin/src/chat/__tests__/render-registry.test.ts",
+              "1d6b36e62fa58f8cd8c828b4d4e0c721258d5fe3:vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+              "1d6b36e62fa58f8cd8c828b4d4e0c721258d5fe3:vscode-plugin/src/chat/__tests__/protocol.test.ts",
+              "1d6b36e62fa58f8cd8c828b4d4e0c721258d5fe3:vscode-plugin/tsconfig.json"
+            ],
+            "executedTests": []
+          }
+        ],
+        "summary": "1 selected task assessment(s): passed.",
+        "completedAt": "2026-11-11T19:56:06.521Z"
+      }
+    ]
+  },
+  "citations": []
+}

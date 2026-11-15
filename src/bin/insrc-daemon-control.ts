@@ -1,6 +1,6 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 
-import { access, lstat, realpath, rm } from 'node:fs/promises';
+import { access, lstat, mkdir, readdir, realpath, rm } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import { basename, join } from 'node:path';
 import { stopDaemon } from '../cli/services/daemon.js';
@@ -18,6 +18,8 @@ import { admitManagedPreparation, prepareLegacyUpgrade, retainManagedReleaseVeri
 import { PATHS } from '../shared/paths.js';
 import { requestLegacyDrain, restoredLegacyDrainPath } from '../daemon/legacy-private-drain.js';
 import { stopRestoredLegacyProcess } from '../daemon/legacy-public-stop.js';
+import { readManagedBundleProof } from '../daemon/managed-bundle-proof.js';
+import { prepareBundleLegacyUpgrade, prepareInstalledBundleUpgrade } from '../daemon/managed-update-preparation.js';
 
 const NOT_MANAGED = 10;
 
@@ -56,6 +58,48 @@ async function stage(release: string | undefined, releaseId: string | undefined,
 }
 
 async function main(command: string): Promise<void> {
+	if (command === 'activate-bundle') {
+		const [release, releaseId, legacyRoot, legacyRuntime] = process.argv.slice(3);
+		if (process.platform !== 'darwin' || release === undefined || releaseId === undefined
+			|| !/^[a-f0-9]{40}$/.test(releaseId) || Boolean(legacyRoot) !== Boolean(legacyRuntime)) {
+			throw new Error('activate-bundle requires a staged bundle and optionally a legacy checkout and runtime');
+		}
+		const proofChunks: Buffer[] = [];
+		let proofBytes = 0;
+		for await (const chunk of process.stdin) {
+			const bytes = Buffer.from(chunk);
+			proofBytes += bytes.length;
+			if (proofBytes > 96 * 1024) throw new Error('bundle activation proof exceeds its size limit');
+			proofChunks.push(bytes);
+		}
+		const proof = readManagedBundleProof(JSON.parse(Buffer.concat(proofChunks).toString('utf8')));
+		if (proof.floor.domain === 'development') throw new Error('development proof requires the development installer');
+		await mkdir(PATHS.insrc, { mode: 0o700, recursive: true });
+		const stateRoot = await realpath(PATHS.insrc);
+		const rootInfo = await lstat(stateRoot);
+		if (rootInfo.uid !== process.getuid?.() || (rootInfo.mode & 0o022) !== 0) throw new Error('unsafe installation root');
+		const installation = { version: 1 as const, stateRoot, releaseRoot: await realpath(release), releaseId,
+			runtime: await realpath(process.execPath), pathEnv: process.env['PATH'] ?? '/usr/bin:/bin', enabled: true };
+		if (legacyRoot !== undefined && legacyRuntime !== undefined) {
+			const result = await prepareBundleLegacyUpgrade(installation, proof, legacyRoot, legacyRuntime);
+			process.stdout.write(`${result.decision}: ${result.detail}\n`);
+			if (result.decision !== 'committed') process.exitCode = 4;
+		} else {
+			const { active, installedBundle } = await new InstallationMutationGate(stateRoot).read();
+			if (installedBundle !== undefined && active === null) {
+				const result = await prepareInstalledBundleUpgrade(installation, proof);
+				process.stdout.write(`${result.decision}: ${result.detail}\n`);
+				if (result.decision !== 'committed') process.exitCode = 4;
+				return;
+			}
+			if (active === null && (await readdir(stateRoot)).some(name =>
+				!['bundle-trust', 'managed-lifecycle'].includes(name))) {
+				throw new Error('fresh bundle activation requires a pristine state root');
+			}
+			await activateFreshManagedDaemon({ installation, startChild: true, fingerprint: proof.fingerprint, bundleProof: proof });
+		}
+		return;
+	}
 	if (command === 'stop-restored-legacy') {
 		const [pid] = process.argv.slice(3);
 		if (pid === undefined || !/^\d+$/.test(pid)) throw new Error('invalid restored legacy PID');
@@ -176,7 +220,7 @@ async function main(command: string): Promise<void> {
 	}
 	const control = new ManagedDaemonControl(installation);
 	const gate = new InstallationMutationGate(installation.stateRoot);
-	const active = (await gate.read()).active;
+	const { active } = await gate.read();
 	if (!installation.enabled && active?.kind !== 'update') { process.exitCode = NOT_MANAGED; return; }
 	if (!installation.enabled && command !== 'recover' && command !== 'status') throw new Error('legacy cutover owns the installation');
 	if (command === 'status') {
@@ -190,6 +234,9 @@ async function main(command: string): Promise<void> {
 		return;
 	}
 	if (command === 'update' || command === 'update-local') {
+		if ((await new InstallationMutationGate(installation.stateRoot).read()).installedBundle !== undefined) {
+			throw new Error('this daemon uses signed bundles; run install-daemon-bundle.mjs with the next qualified release');
+		}
 		const preparation = await admitManagedPreparation(installation.stateRoot);
 		if (command === 'update' && preparation.state === 'running') {
 			process.stdout.write(JSON.stringify(await rpc('daemon.update', {}, undefined, { timeoutMs: 20_000 })) + '\n');

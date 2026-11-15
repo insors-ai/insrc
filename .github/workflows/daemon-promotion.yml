@@ -1,0 +1,98 @@
+name: Publish qualified daemon pilot
+run-name: Promote ${{ inputs.control_commit }} / ${{ inputs.archive_sha256 }}
+on:
+  workflow_dispatch:
+    inputs:
+      control_commit:
+        description: Exact approved commit on daemon-release-control
+        required: true
+        type: string
+      archive_sha256:
+        description: Locally qualified inner archive SHA-256
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: daemon-pilot-promotion
+  cancel-in-progress: false
+jobs:
+  prepare:
+    if: github.ref == 'refs/heads/main' && github.ref_protected && vars.INSRC_DAEMON_MAIN_RELEASE_READY == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Display the selected revision and archive for approval
+        env:
+          CONTROL: ${{ inputs.control_commit }}
+          DIGEST: ${{ inputs.archive_sha256 }}
+        run: |
+          [[ "$CONTROL" =~ ^[0-9a-f]{40}$ && "$DIGEST" =~ ^[0-9a-f]{64}$ ]] || exit 1
+          printf 'Selected control commit: %s\nArchive SHA-256: %s\n' "$CONTROL" "$DIGEST" >> "$GITHUB_STEP_SUMMARY"
+  publish:
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    environment: daemon-pilot-production
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.control_commit }}
+          path: release-control
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.22.1'
+      - name: Fetch exact build artifact and verify approved evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          CONTROL: ${{ inputs.control_commit }}
+          DIGEST: ${{ inputs.archive_sha256 }}
+          INSRC_QUALIFICATION_PUBLIC_KEY: ${{ vars.INSRC_QUALIFICATION_PUBLIC_KEY }}
+          INSRC_PRODUCTION_KEY: ${{ secrets.INSRC_PRODUCTION_KEY }}
+          INSRC_RELEASE_POLICY_READ_TOKEN: ${{ secrets.INSRC_RELEASE_POLICY_READ_TOKEN }}
+        run: |
+          bash scripts/check-daemon-release-policy.sh daemon-pilot-production
+          GH_TOKEN="$INSRC_RELEASE_POLICY_READ_TOKEN" gh api "repos/$GH_REPO/branches/daemon-release-control/protection" | jq -e \
+            '.required_pull_request_reviews | .require_code_owner_reviews and .dismiss_stale_reviews and (.required_approving_review_count >= 1)' >/dev/null
+          GH_TOKEN="$INSRC_RELEASE_POLICY_READ_TOKEN" gh api "repos/$GH_REPO/compare/$CONTROL...daemon-release-control" | jq -e \
+            '.status == "ahead" or .status == "identical"' >/dev/null
+          [[ "$(git -C release-control rev-parse HEAD)" == "$CONTROL" ]] || exit 1
+          record="$PWD/release-control/qualification"
+          identity=$(node --input-type=module -e '
+            import { readBoundedRegular } from "./scripts/verify-daemon-bundle.mjs";
+            import { readQualification } from "./scripts/daemon-bundle-metadata.mjs";
+            const { candidate: c } = readQualification(await readBoundedRegular(process.argv[1], 32768));
+            process.stdout.write([c.runId,c.candidateOrigin.runAttempt,c.artifactId,c.commit].join(" "));
+          ' "$record/qualification.v1.json")
+          read -r run attempt artifact commit <<< "$identity"
+          bash scripts/daemon-release-artifact.sh "$run" "$attempt" "$artifact" "$commit" "$RUNNER_TEMP/candidate"
+          node scripts/promote-daemon-candidate.mjs "$record" "$RUNNER_TEMP/candidate" "$GH_REPO" "$DIGEST" > "$RUNNER_TEMP/promotion.json"
+      - name: Publish the same archive as a prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          INSRC_RELEASE_POLICY_READ_TOKEN: ${{ secrets.INSRC_RELEASE_POLICY_READ_TOKEN }}
+        run: |
+          tag=$(jq -er .tag "$RUNNER_TEMP/promotion.json")
+          commit=$(jq -er .commit "$RUNNER_TEMP/promotion.json")
+          archive=$(jq -er .archive "$RUNNER_TEMP/promotion.json")
+          trap 'rm -f "$RUNNER_TEMP/candidate/manifest.production.sig"' EXIT
+          publish() {
+            bash scripts/check-daemon-release-policy.sh daemon-pilot-production
+            "$@"
+          }
+          publish gh api "repos/$GH_REPO/git/refs" -f ref="refs/tags/$tag" -f sha="$commit" --method POST >/dev/null
+          publish gh release create "$tag" --verify-tag --draft --prerelease --title "$tag" --notes "Opt-in macOS arm64 daemon pilot."
+          for asset in "$archive" manifest.json manifest.production.sig; do
+            publish gh release upload "$tag" "$RUNNER_TEMP/candidate/$asset"
+          done
+          publish gh release edit "$tag" --draft=false

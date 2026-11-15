@@ -10,6 +10,7 @@ import type { RunFileGuard } from '../shared/daemon-run-files.js';
 import { measureManagedReleaseInventory } from './managed-release-inventory.js';
 import { recordedReleaseQualification, recordedSourceRelease } from '../shared/installation-mutation-gate.js';
 import { verifyStagedReleasePin } from './managed-release-staging.js';
+import { verifyManagedBundleProof } from './managed-bundle-proof.js';
 import type { InstallationMutationGate, MutationReservation } from '../shared/installation-mutation-gate.js';
 import {
 	inspectManagedJob, publishManagedSelector, registerManagedJob, removeManagedJob,
@@ -226,17 +227,15 @@ class Rollback {
 				await this.receipt(pending.step, 'reconciled to the pinned predecessor by rollback');
 			}
 		}
-		if (provisional !== undefined) {
-			await this.journal('rollback-selector', prior.releaseId, async () => {
-				if (initial.predecessor.selectorAbsent) await restoreAbsentManagedSelector(candidate, initial.id, this.revalidate);
-				else await this.operations.select(rollbackSelector(initial), this.revalidate);
-				return prior.releaseId;
-			});
-		}
-		await verifyRollbackSelector(initial, this.operations);
 		const releaseProof = recordedReleaseQualification(initial);
 		const source = recordedSourceRelease(initial);
 		const verifyPrior = async () => {
+			if (initial.predecessor.bundleProof !== undefined) {
+				const proof = initial.predecessor.bundleProof;
+				if (proof.priorBundle !== undefined) await verifyManagedBundleProof(prior, proof.priorBundle);
+				else await verifyStagedReleasePin({ root: prior.releaseRoot, runtime: prior.runtime, commit: prior.releaseId,
+					fingerprint: proof.priorSourceFingerprint! });
+			}
 			if (source !== undefined) await verifyStagedReleasePin({ root: prior.releaseRoot, runtime: prior.runtime,
 				commit: prior.releaseId, fingerprint: source.priorFingerprint });
 			if (releaseProof !== undefined
@@ -244,6 +243,18 @@ class Rollback {
 				throw new Error('pinned rollback inventory changed');
 			}
 		};
+
+		if (provisional !== undefined) {
+			await this.journal('rollback-selector', prior.releaseId, async () => {
+				if (initial.predecessor.selectorAbsent) await restoreAbsentManagedSelector(candidate, initial.id, this.revalidate);
+				else {
+					await verifyPrior();
+					await this.operations.select(rollbackSelector(initial), this.revalidate);
+				}
+				return prior.releaseId;
+			});
+		}
+		await verifyRollbackSelector(initial, this.operations);
 
 		if (legacyUpdate) {
 			await this.journal('rollback-legacy-service', prior.releaseId, async () => {
@@ -365,7 +376,7 @@ export async function completeLegacyMigration(
 			await verifyRollbackSelector(update, operations);
 			await verifyOriginalLegacyRoute(update, legacyOperations);
 			await verifyManagedUpdateInventory(pins);
-			const signed = pins.sourceRelease !== undefined;
+			const signed = pins.sourceRelease !== undefined || pins.bundleProof !== undefined;
 			if (signed) await recordManagedUpdatePins(gate, update, pins);
 			if (launch !== undefined) {
 				const archive = await fenceLegacyLauncher(gate, update, legacyOperations.helper);
@@ -407,6 +418,7 @@ export async function completeLegacyMigration(
 }
 
 async function verifyCandidate(candidate: ManagedInstallation, update: Update, receipt: HandoffReceipt, operations: RecoveryHost): Promise<void> {
+	if (update.predecessor.bundleProof !== undefined) await verifyManagedBundleProof(candidate, update.predecessor.bundleProof.candidate);
 	const job = await requireJob(operations, candidate, receipt.job);
 	if (job?.pid == null) throw new Error('candidate job stopped before outcome publication');
 	await requireReady(operations, candidate, update.predecessor.wasRunning, receipt.generation);
@@ -433,7 +445,9 @@ export async function recoverInstalledManagedUpdate(
 		async verifyCommitted(update) {
 			// The selection is already final. A later runtime failure is ordinary
 			// daemon health and cannot undo the recorded commit.
-			await operations.verifySelector(pinsOf(update).candidate);
+			const { candidate } = pinsOf(update);
+			if (update.predecessor.bundleProof !== undefined) await verifyManagedBundleProof(candidate, update.predecessor.bundleProof.candidate);
+			await operations.verifySelector(candidate);
 		},
 		async verifyRolledBack(update) {
 			if (!update.predecessor.preparing) await verifyRollbackSelector(update, operations);

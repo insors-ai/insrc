@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 5,
+        "contentHash": "7d90a228f9b7077c1ff57c42e477d6e50ed01ac29448b94e4128a0a42d8ae6c0",
+        "at": "2026-11-13T05:51:20.917Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "9d4523c7cb1c5971",
+    "storyId": "s1",
+    "createdAt": "2026-11-13T05:10:01.710Z",
+    "updatedAt": "2026-11-13T05:51:20.907Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-12T19:54:27.239Z",
+    "epicSlug": "daemon-ctl-sh-fails-node-command",
+    "revision": 5
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "281165d54",
+        "ranAt": "2026-11-13T05:51:20.907Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/__tests__/daemon-ctl-node-path.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/daemon/__tests__/daemon-ctl-node-path.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/daemon-ctl-node-path.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10029,
+            "titles": [
+              {
+                "title": "daemon-ctl.sh resolves node from INSRC_NODE_BIN when PATH has no node",
+                "result": "pass"
+              },
+              {
+                "title": "daemon-ctl.sh absolutizes a relative INSRC_NODE_BIN against the caller cwd so spawn_daemon can execute it",
+                "result": "pass"
+              },
+              {
+                "title": "daemon-ctl.sh falls back to the recorded ~/.insrc/daemon-node when PATH and well-known locations have no node",
+                "result": "pass"
+              },
+              {
+                "title": "daemon-ctl.sh preserves internal whitespace in the recorded runtime path",
+                "result": "pass"
+              },
+              {
+                "title": "daemon-ctl.sh prefers a node on PATH over the recorded runtime",
+                "result": "pass"
+              },
+              {
+                "title": "daemon-ctl.sh fails closed with exit 2 and a clear message when no node exists anywhere",
+                "result": "pass"
+              },
+              {
+                "title": "daemon-ctl.sh stop succeeds under a node-free PATH via the resolved node",
+                "result": "pass"
+              },
+              {
+                "title": "daemon-ctl.sh honours a non-executable INSRC_NODE_BIN by failing closed, not by echoing it",
+                "result": "pass"
+              },
+              {
+                "title": "daemon-ctl.sh start spawns the daemon and stop reaches the lifecycle helper under a node-free GUI PATH (the original startup failure)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

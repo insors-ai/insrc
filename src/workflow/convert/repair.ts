@@ -106,7 +106,8 @@ export async function runRepair(repo: string, mode: RepairMode, options: RepairO
 	if (readRawHeads(repo).heads.length === 0) return { mode, plan, result: { written: [], remaining: [], held: [], failed: [] } };
 
 	const written: RepairWrite[] = [];
-	let current: RepairStep = 'rename';
+	// opening the store adds the repository rule files, before any step runs, so those writes are reported under their own step
+	let current: RepairStep = 'repo-rules';
 	const record: RepairRecorder = (artifactId, action) => { written.push({ step: current, artifactId, action }); };
 	const deps = repairDeps(repo, record, options);
 	const failed: UnitOutcome[] = [];

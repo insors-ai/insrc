@@ -32,7 +32,8 @@ export const BUSY_TIMEOUT_MS = 5_000;
 /** The schema this module reads and writes. */
 export const SCHEMA_VERSION = 2;
 export const SESSION_LEASE_SCHEMA_VERSION = 3;
-export const REPO_TURN_CAPACITY = 2;
+/** How many turns may run at once in one repository, across all its chats and windows. */
+export const REPO_TURN_CAPACITY = 6;
 
 export type QueueState = 'queued' | 'processing' | 'retrying' | 'done' | 'failed' | 'not-delivered';
 

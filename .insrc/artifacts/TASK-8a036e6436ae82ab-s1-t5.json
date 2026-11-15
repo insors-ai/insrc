@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-53f61e63-b441-4f0b-a386-a2407dfd77a0",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-14T07:29:56.718Z",
+    "epicCreatedAt": "2026-11-14T06:38:49.736Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8a036e6436ae82ab",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Qualify candidates locally",
+      "parent": {
+        "entityId": "STORY-8a036e6436ae82ab-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8a036e6436ae82ab-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8a036e6436ae82ab-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1807d84ffe4c73563b1adf7d0f00dadf6467c487f454e97a5f265f395b9ff912",
+        "at": "2026-11-14T07:29:56.724Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T07:29:56.726Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Qualify candidates locally",
+    "summary": "Add the protected candidate signer, isolated Mac qualification procedure and evidence record.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Local qualification uses the production verification path in its separate test trust domain; validates fresh install, migration, restart and rollback.",
+      "Evidence records all required passes and binds commit, version, manifest, run, artifact and archive."
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "Isolated Apple Silicon exact-archive lifecycle"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

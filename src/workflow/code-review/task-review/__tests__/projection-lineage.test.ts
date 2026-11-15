@@ -9,7 +9,7 @@ import { registerGitTools } from '../../../../daemon/tools/builtins/git/index.js
 import { CodePreparation } from '../../../review/code-preparation.js';
 import { ReviewPreparationCapacity } from '../../../review/source-session.js';
 import { reviewPreparationLimits } from '../../../../config/review.js';
-import { RegistryReviewSources } from '../sources.js';
+import { RegistryReviewSources, requireListedShas } from '../sources.js';
 import type { ReviewSources } from '../sources.js';
 import { projectReviewScope, ProjectionBudget, boundedProjectionSources } from '../projection.js';
 import { TaskReviewInputError } from '../contracts.js';
@@ -162,7 +162,7 @@ test('a side-branch deletion merged back with the file kept still interrupts lin
  const preparation = await CodePreparation.create({ project: f.r.repo, family: 'code', reviewId: 'shared-deletion' }, f.sources, limits, new ReviewPreparationCapacity(limits.cacheMaxBytes));
  try {
   assert.equal(f.r.git('rev-parse', `${f.pin}:source.js`).length, 40, 'the merge kept source.js');
-  await assert.rejects(projectReviewScope(f.origins, f.pin, preparation.sources), /Unselected path disappearance or recreation interrupts lineage/);
+  await assert.rejects(projectReviewScope(f.origins, f.pin, preparation.sources), (error: unknown) => error instanceof TaskReviewInputError && error.field === 'scope_conflict' && /Unselected path disappearance or recreation interrupts lineage/.test(error.message));
  } finally { await preparation.close(); f.r.cleanup(); }
 });
 
@@ -171,7 +171,7 @@ test('a side-branch deletion and recreation merged back still interrupts lineage
  const limits = reviewPreparationLimits(join(f.r.repo, 'missing-config.json'));
  const preparation = await CodePreparation.create({ project: f.r.repo, family: 'code', reviewId: 'shared-deletion' }, f.sources, limits, new ReviewPreparationCapacity(limits.cacheMaxBytes));
  try {
-  await assert.rejects(projectReviewScope(f.origins, f.pin, preparation.sources), /Unselected path disappearance or recreation interrupts lineage/);
+  await assert.rejects(projectReviewScope(f.origins, f.pin, preparation.sources), (error: unknown) => error instanceof TaskReviewInputError && error.field === 'scope_conflict' && /Unselected path disappearance or recreation interrupts lineage/.test(error.message));
  } finally { await preparation.close(); f.r.cleanup(); }
 });
 

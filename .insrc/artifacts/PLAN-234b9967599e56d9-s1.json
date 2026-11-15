@@ -1,0 +1,356 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1794676499166-tgartn",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-14T17:16:31.747Z",
+    "epicCreatedAt": "2026-11-14T15:54:38.285Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 92308,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "234b9967599e56d9",
+    "epicSlug": "install-signed-v2-daemon-development-bundles",
+    "storyId": "s1",
+    "lldRunId": "wf-1794675127236-yn078m",
+    "lldEffectiveHash": "766c01ae27f82b6bd847f716cef68ee6867ee31a3e1bf5eaca5f1438b8999377",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6ffe97ce0ac0eaee3006587705f396653d72d370bf37145adbf87e76e81404e8",
+        "at": "2026-11-14T17:16:31.843Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T17:22:36.347Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "e47d797eb2d02272114ca098e56bb6ba61d16957"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Build signed daemon development bundles locally from project-configured branch refs. Integrate a separate development trust domain with the managed macOS lifecycle, then validate installation and recovery in a dedicated Apple Silicon VM. The hosted unsigned lane uses separate admission and publication jobs and can be enabled after the local path is verified."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Development policy and manifest",
+        "summary": "Define authenticated allowed refs, canonical manifest, signature, target and staging adapter.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Unsigned or wrong-domain proof and invalid ref/target fail before activation.",
+          "Production and qualification formats stay accepted only by existing policy."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Canonical development manifest, branch policy and wrong-domain proof rejection"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Local exact-commit packaging",
+        "summary": "Implement configured branch fetch, clean build and candidate handoff with measured archive and runtime identity.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Configured refs work without main or hosted dispatch.",
+          "Unlisted, tag, stale or unreachable input and dirty checkout refuse."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Local clean branch fetch, exact commit and measured candidate with no main dispatch"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Local signing and upgrade qualification",
+        "summary": "Bind signing handoff and allocated sequence to exact bytes. Qualify predecessor and candidate writable formats and interrupted reopen before signing.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Signing refuses mismatched authenticated provenance or duplicate sequence bindings.",
+          "Upgrade proof binds exact predecessor, candidate and local compatibility evidence."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Authenticated signing handoff, sequence allocation, writable format and crash-reopen qualification"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Managed development proof and sequence floor",
+        "summary": "Add dev proof and repository/channel floor in journal, admission and re-verification. Keep production trust domains separate.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Atomic reservation keeps admission floor after rollback and rejects conflicting same-sequence bytes.",
+          "Restart/recovery verify exact pinned contents and preserve existing production records."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Development proof and reservation floor, rollback and equal-sequence byte identity"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Development bootstrap and isolated first activation",
+        "summary": "Implement authenticated bootstrap and preflight for a dedicated Apple Silicon macOS VM and controller dispatch for fresh activation.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t2",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Fresh install checks trusted policy, host/runtime and archive before activation.",
+          "Foreign state and invalid proof leave service and data untouched."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Authenticated bootstrap fixture and host, archive and foreign-state refusal"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Managed development update and rollback",
+        "summary": "Apply exact predecessor qualification, quiesced-store inspection, idle/running intent and durable update/rollback.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t3",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Cross-ref upgrade preserves state and floor and requires an exact compatible predecessor.",
+          "Interrupted update restores authenticated exact predecessor offline or fails closed."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Exact predecessor, cross-branch state, idle intent and offline rollback"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "First-install recovery",
+        "summary": "Recover authenticated orphaned first-install reservations without an installed receipt. Reconcile exact selector, process, job and state effects.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Recover before selector, after launchd registration and after readiness. Refuse foreign state and retained live ownership."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Crash before selector, after job and before receipt, with foreign or live ownership refusal"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Local deployment verification and operator docs",
+        "summary": "Document policy configuration, VM, build/sign, install, update, recovery and hosted rollout boundary. Run local acceptance tests against signed bundles.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t6",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "Fresh install, restart and branch switch work in a dedicated VM.",
+          "Offline rollback, incompatible upgrade and protected-state refusal are verified locally."
+        ],
+        "derivedFrom": [
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "live",
+            "name": "Dedicated Apple Silicon macOS VM build, install, MCP/CLI readiness, restart, upgrade and rollback"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Later rollout of hosted candidate publication",
+        "summary": "Add protected workflow admission and separate fresh-runner publication of unsigned artifacts. Enable after protected workflow deployment and rollout verification.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "Official receipt binds run, attempt, admitted ref and SHA, artifact ID, and independent digest without running candidate code.",
+          "Branch-local runs, forged receipts and wrong-attempt artifacts are rejected.",
+          "Hosted rollout checks run locally against fixtures. Deployment and enablement are separate from the local install gate."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Hosted provenance fixture checks protected ref, isolated publisher, exact run attempt, artifact ID and measured digest"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "Build provenance and exact archive/runtime verification",
+        "coveredByTaskIds": [
+          "t1",
+          "t2",
+          "t3",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Dev signature accepted only in dev; release signature accepted only in correct lane",
+        "coveredByTaskIds": [
+          "t1",
+          "t4",
+          "t5",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "Existing non-dev state untouched",
+        "coveredByTaskIds": [
+          "t5",
+          "t7",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Fresh install, MCP/CLI connection, restart, newer dev update and forced rollback offline",
+        "coveredByTaskIds": [
+          "t6",
+          "t7",
+          "t8"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/install-signed-v2-daemon-development-bundles-E20261114234b9967/S001/LLD.md#21-build-development-bundle"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/install-signed-v2-daemon-development-bundles-E20261114234b9967/S001/LLD.md#3-data-model-changes"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/install-signed-v2-daemon-development-bundles-E20261114234b9967/S001/LLD.md#6-test-strategy"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/install-signed-v2-daemon-development-bundles-E20261114234b9967/S001/LLD.md#22-install-or-update-development-bundle"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/install-signed-v2-daemon-development-bundles-E20261114234b9967/S001/LLD.md#5-error-paths"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/install-signed-v2-daemon-development-bundles-E20261114234b9967/S001/LLD.md#7-migration"
+    }
+  ]
+}

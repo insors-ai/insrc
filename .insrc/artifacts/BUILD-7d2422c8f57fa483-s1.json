@@ -6,7 +6,7 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "completed",
       "revision": {
         "number": 4,
         "contentHash": "0250f102fafce4b4bd14e82840be62b9d64c1944350eea5e6cec5eaddef7b6ac",
@@ -17,7 +17,19 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 4,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-12T19:34:00.891Z",
+        "override": {
+          "reason": "Round 1 (reuse-identity-7d24-s1) MED fixed in 9f3c52f1c; round 2 (reuse-identity-7d24-s1-r2) independently re-reviewed all three tasks at that pin and passed with no findings. The block is round 1's superseded verdict under a separate review id. User approved the override 2026-11-13."
+        }
+      }
     },
     "workflow": "build",
     "runId": "store-c40215d3-ffd0-493a-a407-053ad26028c5",

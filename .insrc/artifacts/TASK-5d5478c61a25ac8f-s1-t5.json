@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cd509b23-f762-4f3f-a835-7ed601e40ea4",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T17:01:18.355Z",
+    "epicCreatedAt": "2026-11-11T16:00:50.440Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5d5478c61a25ac8f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Commit or roll back legacy migration",
+      "parent": {
+        "entityId": "STORY-5d5478c61a25ac8f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-5d5478c61a25ac8f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 4"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-5d5478c61a25ac8f-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "142322208568ea72dd1fde2ffffdaa94ba6fc6a336ddd0a49f4215db0535f6c3",
+        "at": "2026-11-11T17:01:18.355Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T17:01:18.362Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Commit or roll back legacy migration",
+    "summary": "Integrate the predecessor variants and guard with the existing transaction.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Candidate startup or idle state is verified before durable success. Unknown terminal publication keeps the fence and resolves the matching durable outcome before rollback decisions.",
+      "Restore the exact previous registration even if it was idle. An idle descriptor that would autostart is refused before mutation unless there is a verified way to preserve idle. Direct rollback restores the previous running state and uses pinned launch settings."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Uncertain publication with durable success versus no outcome"
+      },
+      {
+        "level": "integration",
+        "name": "Startup guard transfer, candidate bootstrap failure, rollback and repeated recovery"
+      },
+      {
+        "level": "integration",
+        "name": "Rollback restores an idle job without launching and refuses unqualified RunAtLoad"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

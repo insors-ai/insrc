@@ -200,6 +200,7 @@ test('the repository rules a repair adds are in its preview and its report, and 
 		assert.equal(existsSync(join(l.repo, '.gitignore')), false, 'the preview adds nothing');
 		const out = result(await runRepair(l.repo, 'repair'));
 		assert.deepEqual(out.written.filter(w => w.action === 'repo-rules').map(w => w.artifactId), ['.gitattributes', '.gitignore']);
+		assert.deepEqual(out.written.filter(w => w.action === 'repo-rules').map(w => w.step), ['repo-rules', 'repo-rules'], 'reported under the repo-rules step, not the first conversion step');
 		assert.ok(existsSync(join(l.repo, '.gitignore')));
 		assert.deepEqual((await runRepair(l.repo, 'repair-preview')).plan.changes.filter(c => c.rule === 'repo-rules'), []);
 	} finally { l.done(); }
@@ -215,6 +216,7 @@ test('a repository rule file that cannot be written is not reported as written',
 		chmodSync(ignore, 0o644);
 		assert.equal(readFileSync(ignore, 'utf8'), 'node_modules/\n', 'control: the file could not be changed');
 		assert.deepEqual(out.written.filter(w => w.action === 'repo-rules').map(w => w.artifactId), ['.gitattributes'], 'only the file that really changed');
+		assert.deepEqual(out.written.filter(w => w.action === 'repo-rules').map(w => w.step), ['repo-rules']);
 		assert.ok(out.remaining.some(c => c.rule === 'repo-rules' && c.artifactId === '.gitignore'), 'and the other is still to do');
 	} finally { l.done(); }
 });

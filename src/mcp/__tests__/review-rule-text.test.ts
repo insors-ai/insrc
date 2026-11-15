@@ -119,3 +119,28 @@ test('T13 canonical guide sections are independently addressable', () => {
  assert.ok(guide('review')); assert.ok(guide('code-review')); assert.ok(guide('tracker'));
  assert.doesNotMatch(guide('review'), /committed task review/);
 });
+
+/**
+ * ISSUE-f0da1b8b9cdb28b6: the review and code-review guides tell the agent how to
+ * wait for `progress` without sleeping, and never to arm a placeholder wait. The
+ * old timed-poll wording ("about every 10–30 seconds") is gone from both guides
+ * and from the design-review execution doc.
+ */
+const DESIGN_REVIEW_DOC = flat(readFileSync(join(HERE, '../../../docs/design-review-execution.md'), 'utf8'));
+const WAIT_RULE = [
+	'call `progress` again directly, without sleeping first',
+	'background command that exits when the checkpoint reaches a terminal status',
+	'Never arm a placeholder or no-op wait',
+	'stop any armed wait before ending a turn that asks the user a question',
+];
+for (const [name, text] of [
+	['the review guide', () => guide('review')],
+	['the code-review guide', () => guide('code-review')],
+	['docs/design-review-execution.md', () => DESIGN_REVIEW_DOC],
+] as const) {
+	test(`${name} says how to wait for progress without sleeping`, () => {
+		const t = text();
+		for (const phrase of WAIT_RULE) assert.ok(t.toLowerCase().includes(phrase.toLowerCase()), `${name} says: ${phrase}`);
+		assert.ok(!t.includes('10–30 seconds'), `${name} no longer gives a timed poll interval`);
+	});
+}

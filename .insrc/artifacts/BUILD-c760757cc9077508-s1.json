@@ -1,0 +1,110 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 2,
+        "contentHash": "8f5d249d3c6a4ed91d449fe6dc12623d8c5fbf67d88d45212d603b186c5654ff",
+        "at": "2026-11-11T19:36:51.150Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-12T19:31:04.645Z",
+        "override": {
+          "reason": "Whole-story independent code review cr-c760757cc9077508-s1-a1 attempt 2 by the daemon (the party that did not author the controller-built code) returned passed with zero findings and CR publication complete; the gate's 'task-only review' classification misreads the single-task standalone Story (s1 IS the whole story). User approved in chat after the BUILD+CR were presented."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-5fe36ada-ef92-41af-a8de-1d09324e4120",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T19:25:40.139Z",
+    "epicCreatedAt": "2026-11-11T18:56:55.906Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c760757cc9077508",
+    "storyId": "s1",
+    "revision": 2,
+    "updatedAt": "2026-11-11T19:36:05.651Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "Small: single-file webview label change in vscode-plugin chat panel (render-time compose from existing run-config state); standalone design.story LLD approved as LLD-c760757cc9077508-s1.",
+    "epicSlug": "show-provider-model-chat-assistant-header"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": false
+      }
+    ],
+    "summary": "Replaced the hardcoded 'claude' assistant who-label in the chat webview with a render-time compose of the echoed run-config identity (setRunIdentity + assistantLabel: PROVIDER/MODEL, '' model = bare provider, '' provider = 'assistant'). Seeded at bootstrap from the run-config button data-* attrs and re-seeded on every run-config message; postRestored now posts run-config BEFORE session-restored so replayed rows compose the restored session's identity. 'run-config' is registered in HOST_TO_WEBVIEW_TYPES. Tests: render-registry fake-DOM suite (per-provider, empty-model, fallback, replay/live parity, no-literal pin), chat-panel shell-wiring + restore-ordering pins, protocol wire-shape pin. tsc clean; the three chat suites pass except 2 pre-existing failures also present on the unmodified tree.",
+    "testRecord": {
+      "md": "docs/standalone/show-provider-model-chat-assistant-header-E20261111c760757c/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T19:36:05.651Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/render-registry.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T19:36:05.651Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T19:36:05.651Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/render-registry.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T19:36:05.651Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/protocol.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T19:36:05.651Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/protocol.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-11T19:36:05.651Z"
+      }
+    ],
+    "commit": "62ed074f5"
+  },
+  "citations": []
+}

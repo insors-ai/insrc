@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-42275047-8f2c-46a7-8299-4e9fe8585e3c",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-11T17:01:18.292Z",
+    "epicCreatedAt": "2026-11-11T16:00:50.440Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5d5478c61a25ac8f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Stage and qualify pinned macOS releases",
+      "parent": {
+        "entityId": "STORY-5d5478c61a25ac8f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-5d5478c61a25ac8f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 4"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9f794d279eb21dabe5ae0048ba84a0b11984949cda1d87ff9b2aee704c145565",
+        "at": "2026-11-11T17:01:18.294Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-11T17:01:18.300Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Stage and qualify pinned macOS releases",
+    "summary": "Prepare a candidate beside the installed release using the configured origin and preserve an executable rollback pin.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Candidate staging does not mutate the legacy checkout, runtime, dependencies or state.",
+      "Trusted compatibility evidence pins both releases, including qualified old releases without declarations. Unqualified or changed predecessors fail before shutdown."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Release provenance, changed bytes and absent legacy declaration"
+      },
+      {
+        "level": "integration",
+        "name": "Staging leaves the installed release executable and unchanged"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

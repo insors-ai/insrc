@@ -282,6 +282,25 @@ test('Observe in-flight status throughout injected rollback, then exactly one te
 	}
 });
 
+test('Bundle rollback leaves the selector untouched when the predecessor cannot be verified', mac, async t => {
+	const f = await installationFixture(t, 'job registration');
+	const proof = { version: 1 as const, floor: { domain: 'production' as const, channel: 'macos-arm64-pilot' as const,
+		sequence: 1, manifestSha256: 'a'.repeat(64), archiveSha256: 'b'.repeat(64) }, fingerprint: 'c'.repeat(64),
+		manifestBase64: 'e30=', signatureBase64: Buffer.alloc(64).toString('base64') };
+	const bundleProof = { priorBundle: proof, candidate: proof };
+	const active = await f.gate.reserve({ kind: 'update', owner: f.controller, predecessor: { ...f.predecessor, bundleProof } }) as typeof update;
+	await f.gate.recordIntent(active, 'provisional-selector', f.next.releaseId);
+	await f.gate.recordReceipt(active, 'provisional-selector', f.next.releaseId);
+	await f.gate.recordIntent(active, 'candidate-job', f.next.releaseId);
+	await f.gate.recordReceipt(active, 'candidate-job', JSON.stringify(f.jobs.get(f.next)));
+	const result = await completeManagedUpdate(f.gate, active, { ...f.pins, bundleProof }, f.host,
+		async () => { throw new Error('candidate failed readiness'); });
+	assert.equal(result.decision, 'operator-recovery');
+	assert.match(result.detail, /bundle-trust/);
+	assert.ok(!f.events.includes('select:prior'));
+	await f.host.verifySelector(f.next);
+});
+
 async function killController(
 	t: TestContext, f: Awaited<ReturnType<typeof installationFixture>>, point: Point, pendingRegistration = false,
 ): Promise<string> {

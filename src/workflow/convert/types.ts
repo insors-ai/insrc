@@ -142,7 +142,8 @@ export interface ConversionReport {
 export type RepairRecorder = (artifactId: string, action: string) => void;
 
 /** The steps of a repair: the conversion's, without the marker, then the settling of units. */
-export type RepairStep = 'rename' | 'stamp' | 'amendments' | 'feedback' | 'migrate' | 'units' | 'tasks' | 'story-history' | 'settle';
+/** `repo-rules` covers the repository rule files added when the repair opens the store, before the first step runs. */
+export type RepairStep = 'repo-rules' | 'rename' | 'stamp' | 'amendments' | 'feedback' | 'migrate' | 'units' | 'tasks' | 'story-history' | 'settle';
 
 /** One committed write of a repair. */
 export interface RepairWrite {

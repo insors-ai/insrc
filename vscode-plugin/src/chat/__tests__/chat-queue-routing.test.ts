@@ -9,7 +9,7 @@ import { createChatPanelHost, type ChatPanelChannel } from '../chat-panel.js';
 import { createInMemoryChatSessionStore } from '../session-store.js';
 import type { ProviderId, ProviderRegistry, RunOptions, StreamAdapter, TurnRequest } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
-import { createChatQueueStore, type SqliteDatabase } from '../chat-queue-store.js';
+import { REPO_TURN_CAPACITY, createChatQueueStore, type SqliteDatabase } from '../chat-queue-store.js';
 import { createChatQueueWorker, createSessionQueueWorker } from '../chat-queue-worker.js';
 import { fakeLiveProc, waitFor, type FakeLiveProc } from './fixtures.js';
 
@@ -86,18 +86,22 @@ test('waiting approval or retry in A allows B and full capacity queues C', async
     await waitFor(() => h.runs.length === 1);
     h.runs[0]!.feed({ kind: 'approval-request', turnId: 't1', requestId: 'ask-A', title: 'Approval', detail: 'Waiting', resolution: 'in-turn' });
     await waitFor(() => h.qstore.list().some((row) => row.text === 'A' && row.waitingOn === 'approval'));
-    h.fc.send('new-chat', { provider: 'claude' });
-    h.fc.send('submit-turn', { text: 'B' });
-    await waitFor(() => h.runs.length === 2);
-    assert.equal(h.runs[1]!.req.prompt, 'B');
+    // Fill every other slot: B, then one more chat per slot left.
+    for (let i = 1; i < REPO_TURN_CAPACITY; i++) {
+      const text = i === 1 ? 'B' : `B${i}`;
+      h.fc.send('new-chat', { provider: 'claude' });
+      h.fc.send('submit-turn', { text });
+      await waitFor(() => h.runs.length === i + 1);
+      assert.equal(h.runs[i]!.req.prompt, text);
+    }
     h.fc.send('new-chat', { provider: 'claude' });
     h.fc.send('submit-turn', { text: 'C' });
     await waitFor(() => h.qstore.list().some((row) => row.text === 'C' && row.state === 'queued'));
-    assert.equal(h.runs.length, 2);
+    assert.equal(h.runs.length, REPO_TURN_CAPACITY, 'C waits for a free slot');
     h.runs[1]!.feed(doneEv('t2'));
     h.runs[1]!.proc.exitNow();
-    await waitFor(() => h.runs.length === 3);
-    assert.equal(h.runs[2]!.req.prompt, 'C');
+    await waitFor(() => h.runs.length === REPO_TURN_CAPACITY + 1);
+    assert.equal(h.runs[REPO_TURN_CAPACITY]!.req.prompt, 'C');
 
     // A's live approval must be answered in its own chat before a retryable error.
     const idA = h.qstore.list().find((row) => row.text === 'A')!.sessionId;
@@ -109,8 +113,8 @@ test('waiting approval or retry in A allows B and full capacity queues C', async
     h.fc.send('submit-turn', { text: 'A younger' });
     h.fc.send('new-chat', { provider: 'claude' });
     h.fc.send('submit-turn', { text: 'B independent' });
-    await waitFor(() => h.runs.length === 4);
-    assert.equal(h.runs[3]!.req.prompt, 'B independent');
+    await waitFor(() => h.runs.length === REPO_TURN_CAPACITY + 2);
+    assert.equal(h.runs[REPO_TURN_CAPACITY + 1]!.req.prompt, 'B independent');
     assert.ok(h.qstore.list().some((row) => row.text === 'A younger' && row.state === 'queued'));
   } finally {
     for (const run of h.runs) run.proc.exitNow();

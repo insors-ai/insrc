@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cc77ee7e-466e-431e-b41d-db6617b0d772",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-14T07:29:56.708Z",
+    "epicCreatedAt": "2026-11-14T06:38:49.736Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8a036e6436ae82ab",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Integrate fresh install, migration, and rollback",
+      "parent": {
+        "entityId": "STORY-8a036e6436ae82ab-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8a036e6436ae82ab-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8a036e6436ae82ab-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "eb4682f867dac336b680dcf2633af836d1a61f9c98b4cf8272344cac55040f34",
+        "at": "2026-11-14T07:29:56.713Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T07:29:56.715Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Integrate fresh install, migration, and rollback",
+    "summary": "Wire fresh and upgrade admission, compatibility checks, durable release proofs and sequence floor into managed lifecycle and recovery.",
+    "size": "L",
+    "order": 4,
+    "acceptanceChecks": [
+      "Fresh install needs no predecessor; migrates compatible clone state and leaves unsafe predecessors untouched.",
+      "Offline recovery reads old and new journals, restores only pinned predecessor and does not lower the floor."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Fresh activation, legacy handoff, floor and offline crash recovery"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

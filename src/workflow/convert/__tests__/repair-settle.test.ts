@@ -77,7 +77,8 @@ function belongs(w: RepairWrite, changes: readonly ConversionChange[]): boolean 
 	const named = (c: ConversionChange): boolean => norm(c.artifactId) === norm(w.artifactId) || c.detail.includes(w.artifactId) || c.artifactId === w.artifactId;
 	const rule = (...rules: string[]) => changes.filter(c => rules.includes(c.rule));
 	switch (w.step) {
-		case 'rename':        return rule('rename-id', 'repo-rules').some(named);
+		case 'repo-rules':    return rule('repo-rules').some(named);
+		case 'rename':        return rule('rename-id').some(named);
 		case 'stamp':         return rule('stamp-epic-created-at').some(named);
 		case 'amendments':    return rule('convert-amendment').some(named);
 		case 'feedback':      return rule('convert-feedback').some(named);

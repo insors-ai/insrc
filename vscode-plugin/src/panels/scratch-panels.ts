@@ -238,6 +238,11 @@ export function documentBootstrap(gen: number, id: string): string {
     `const wrap=document.querySelector('.scratch-doc-wrap');` +
     `var gen=${genLiteral};var docId=${idLiteral};` +
     `var dirty=false;var saving=false;var errEl=null;` +
+    // Set the moment the user types anything. Once set, host `scratch-content` pushes
+    // must NOT overwrite the textarea or clear dirty: openDocument installs the
+    // editable textarea before awaiting readScratch, so a read that resolves after
+    // the user started typing would otherwise clobber their edits (r28 CR-MED).
+    `var userEdited=false;` +
     // The text snapshot of the in-flight save: a 'scratch-saved' ok clears dirty only if
     // the document still holds that snapshot — edits typed while the save was in flight
     // must keep the document dirty (the save persisted an older text).
@@ -249,7 +254,7 @@ export function documentBootstrap(gen: number, id: string): string {
     `function showErr(msg){if(!errEl&&wrap){errEl=document.createElement('div');errEl.className='scratch-doc-error';errEl.setAttribute('role','alert');wrap.appendChild(errEl);}if(errEl)errEl.textContent=msg;}` +
     `function setDirty(d){dirty=d;if(saveBtn)saveBtn.hidden=!d;vs.postMessage({v:1,payload:{type:'scratch-dirty',id:docId,gen:gen,dirty:d}});}` +
     `window.addEventListener('message',function(e){var m=e.data&&e.data.payload;if(!m)return;` +
-    `if(m.type==='scratch-content'&&typeof m.text==='string'){if(doc)doc.value=m.text;else pending=m.text;setDirty(false);if(errEl)errEl.textContent='';}` +
+    `if(m.type==='scratch-content'&&typeof m.text==='string'){if(doc){if(!userEdited){doc.value=m.text;setDirty(false);if(errEl)errEl.textContent='';}}else pending=m.text;}` +
     `else if(m.type==='scratch-saved'&&m.gen===gen&&m.id===docId){` +
     `saving=false;if(saveBtn)saveBtn.disabled=false;` +
     `if(m.ok){if(savedText!==null&&doc&&doc.value!==savedText){setDirty(true);showErr('saved — but the document changed while saving; save again to keep the latest text');}else{setDirty(false);}}else{setDirty(true);showErr('save failed: '+(typeof m.error==='string'?m.error:'unknown error'));}}` +
@@ -257,7 +262,7 @@ export function documentBootstrap(gen: number, id: string): string {
     `vs.postMessage({v:1,payload:{type:'scratch-ready',gen:gen}});` +
     `function postSave(){if(!doc||saving)return;saving=true;if(saveBtn)saveBtn.disabled=true;savedText=doc.value;` +
     `vs.postMessage({v:1,payload:{type:'scratch-save',id:docId,gen:gen,text:doc.value}});}` +
-    `if(doc){doc.addEventListener('input',function(){setDirty(true);if(errEl)errEl.textContent='';});` +
+    `if(doc){doc.addEventListener('input',function(){userEdited=true;setDirty(true);if(errEl)errEl.textContent='';});` +
     `doc.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&(e.key==='s'||e.key==='S')){e.preventDefault();postSave();}});` +
     // The selection is read from the TEXTAREA's own selection API (select/keyup/mouseup),
     // never from window.getSelection (which does not track textarea selections).
@@ -279,7 +284,8 @@ export function documentBootstrap(gen: number, id: string): string {
     `captured='';sendBtn.hidden=true;` +
     `});` +
     // If content arrived before the doc element was reachable, apply the replay now.
-    `if(pending!==null&&doc){doc.value=pending;pending=null;setDirty(false);}`;
+    // Same guard as the live handler: never clobber text the user already typed.
+    `if(pending!==null&&doc){if(!userEdited){doc.value=pending;setDirty(false);}pending=null;}`;
 }
 
 export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {

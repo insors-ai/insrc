@@ -1021,6 +1021,37 @@ test('scratch-panel.test.ts: r14 CR-MED — a scratch-saved ok clears dirty ONLY
   assert.equal(dirtiesB.at(-1)?.dirty, true, 'the last scratch-dirty post is dirty:true');
 });
 
+test('scratch-panel.test.ts: r28 CR-MED — a late scratch-content push after the user started typing does NOT overwrite doc.value and does NOT clear dirty; a content push before any edit still lands clean', () => {
+  const src = documentBootstrap(3, 'pad.md');
+  assert.ok(src.includes('userEdited=false'), 'the bootstrap tracks a userEdited flag');
+  assert.ok(src.includes('if(!userEdited){doc.value=m.text;setDirty(false);if(errEl)errEl.textContent=\'\';}'), 'the live scratch-content handler is guarded by !userEdited');
+  assert.ok(src.includes('if(!userEdited){doc.value=pending;setDirty(false);}'), 'the pending-replay tail is guarded by !userEdited as well');
+  // Case A: user types BEFORE the late content push -> edits survive, dirty stays set.
+  const a = bootstrapHarness(3, 'pad.md');
+  a.doc.value = 'typed before the read resolved';
+  a.fire('input'); // user edit -> userEdited=true, dirty=true
+  assert.equal(a.isSaveHidden(), false, 'save button visible after the user edit');
+  a.hostMsg({ type: 'scratch-content', text: 'loaded from disk' }); // the late initial push
+  assert.equal(a.doc.value, 'typed before the read resolved', 'the late scratch-content did NOT overwrite the typed text');
+  assert.equal(a.isSaveHidden(), false, 'the late scratch-content did NOT clear the dirty state');
+  const dirtiesA = (JSON.parse(JSON.stringify(a.sent)) as Array<{ payload: { type: string; dirty?: boolean } }>).map((m) => m.payload).filter((p) => p.type === 'scratch-dirty');
+  assert.equal(dirtiesA.at(-1)?.dirty, true, 'no scratch-dirty {dirty:false} was posted after the guarded push');
+  // Case B: content lands before any edit -> applied, clean (existing behavior preserved).
+  const b = bootstrapHarness(3, 'pad.md');
+  b.hostMsg({ type: 'scratch-content', text: 'loaded from disk' });
+  assert.equal(b.doc.value, 'loaded from disk', 'content before any edit still lands');
+  assert.equal(b.isSaveHidden(), true, 'content before any edit is clean (save hidden)');
+  // Case C: after a clean load, the user edits, then a SECOND content push must also be ignored.
+  const c = bootstrapHarness(3, 'pad.md');
+  c.hostMsg({ type: 'scratch-content', text: 'first load' });
+  assert.equal(c.doc.value, 'first load');
+  c.doc.value = 'first load + my edits';
+  c.fire('input');
+  c.hostMsg({ type: 'scratch-content', text: 'stale replay' });
+  assert.equal(c.doc.value, 'first load + my edits', 'a later content push after an edit is ignored too');
+  assert.equal(c.isSaveHidden(), false, 'dirty survives the later push');
+});
+
 test('scratch-panel.test.ts behavioral: input event sets dirty (save button visible, title suffix via setTitle), \'scratch-saved\' ok with matching gen clears dirty, ok=false keeps dirty and shows error, stale-gen reply ignored; scratch-content sets textarea .value (not textContent/innerHTML); send-to-chat reads selection from textarea selectionStart/selectionEnd over doc.value and posts capUtf8-capped text', async () => {
   // Host-side: a scratch-dirty from the live document generation sets the '•' title
   // suffix via onScratchDirty; a scratch-save from the live generation is routed

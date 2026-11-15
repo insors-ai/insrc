@@ -109,7 +109,7 @@ function qualifyPredecessor({
 // The operator supplies the builder's public trust anchor and independently observed local qualification.
 export async function signDevelopmentCandidate({
 	directory, ledgerDirectory, sequence, key, builderKey, policyBytes, policySignature, compatibility, prior, evidence,
-	evidenceSignature, qualificationKey,
+	evidenceSignature, qualificationKey, qualificationOnly = false,
 }) {
 	const privateKey = createPrivateKey(key);
 	if (privateKey.asymmetricKeyType !== 'ed25519') throw new Error('development signer must be Ed25519');
@@ -119,11 +119,16 @@ export async function signDevelopmentCandidate({
 	const candidateBytes = await readBoundedRegular(join(directory, 'candidate.json'), metadataLimit);
 	const handoff = await readBoundedRegular(join(directory, 'candidate.sig'), 64);
 	const candidate = requireHandoff(candidateBytes, handoff, builderKey);
+	if (Object.hasOwn(candidate, 'qualificationOnly')) throw new Error('candidate handoff cannot select qualification mode');
 	if (candidate.repository !== policy.repository || !policy.developmentRefs.includes(candidate.sourceRef)) {
 		throw new Error('candidate provenance does not match the approved development policy');
 	}
 	const { runtimeFingerprint, ...fields } = candidate;
+	if (qualificationOnly && (prior !== undefined || evidence !== undefined || policy.qualificationKeyId === undefined)) {
+		throw new Error('qualification candidate requires a pinned qualifier and no prior receipt');
+	}
 	const draft = { ...fields, sequence, runtimeFingerprint, compatibility, predecessor: null,
+		...(qualificationOnly ? { qualificationOnly: true } : {}),
 		keyId: sha256(publicKey.export({ type: 'spki', format: 'der' })) };
 	const draftBytes = encodeDevelopmentManifest(draft);
 	const staging = await realpath(await mkdtemp(join(tmpdir(), 'insrc-development-signing-')));
@@ -140,6 +145,11 @@ export async function signDevelopmentCandidate({
 		qualificationKeyId: policy.qualificationKeyId, staged: draft, candidateFingerprint: fingerprint, publicKey: publicPem, compatibility });
 	const bytes = encodeDevelopmentManifest({ ...draft, predecessor });
 	const signature = sign(null, developmentManifestSigningBytes(bytes), privateKey);
+	if (qualificationOnly) {
+		await publish(directory, 'manifest.qualification-only.json', bytes);
+		await publish(directory, 'manifest.qualification-only.sig', signature);
+		return { bytes, signature };
+	}
 	// Publish the sequence binding before releasing any signed bundle files.
 	const ledger = await realpath(ledgerDirectory);
 	const ledgerInfo = await lstat(ledger);
@@ -158,7 +168,7 @@ export async function signDevelopmentCandidate({
 }
 
 async function main([directory, sequence, keyPath, builderKeyPath, policyPath, compatibilityPath,
-	priorDirectory, evidencePath, qualificationKeyPath, ...extra]) {
+	priorDirectory, evidencePath, qualificationKeyPath, ...extra], qualificationOnly = false) {
 	if (!directory || !/^[1-9][0-9]*$/.test(sequence ?? '') || !keyPath || !builderKeyPath ||
 		!policyPath || !compatibilityPath || Boolean(priorDirectory) !== Boolean(evidencePath) ||
 		Boolean(priorDirectory) !== Boolean(qualificationKeyPath) || extra.length) {
@@ -166,7 +176,7 @@ async function main([directory, sequence, keyPath, builderKeyPath, policyPath, c
 	}
 	const ledgerDirectory = join(homedir(), '.insrc-development-signing', 'ledger');
 	await signDevelopmentCandidate({
-		directory, ledgerDirectory, sequence: Number(sequence), key: await readBoundedRegular(keyPath, 4096),
+		directory, ledgerDirectory, qualificationOnly, sequence: Number(sequence), key: await readBoundedRegular(keyPath, 4096),
 		builderKey: await readBoundedRegular(builderKeyPath, 4096), policyBytes: await readBoundedRegular(policyPath, metadataLimit),
 		policySignature: await readBoundedRegular(policyPath + '.sig', 64),
 		compatibility: JSON.parse(await readBoundedRegular(compatibilityPath, metadataLimit)),
@@ -191,5 +201,6 @@ async function attestHandoff([directory, keyPath, ...extra]) {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
 	const args = process.argv.slice(2);
 	if (args[0] === 'attest-handoff') await attestHandoff(args.slice(1));
+	else if (args[0] === 'prepare-qualification') await main(args.slice(1), true);
 	else await main(args);
 }

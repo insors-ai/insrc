@@ -1,6 +1,7 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { execFileSync, spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
@@ -69,14 +70,16 @@ for (const trust of [
 	const recordRollback = async (reservation: typeof update, candidateState: 'running' | 'exited') => {
 		for (const [step, intent, receipt] of [
 			['candidate-start', candidate.releaseId, JSON.stringify({ state: candidateState, generation: candidateGeneration })],
+			...(reservation.predecessor.developmentQualification ? [['development-qualification-write', candidateGeneration,
+				createHash('sha256').update(reservation.id).digest('hex')]] : []),
 			['rollback-candidate-stop', candidateGeneration, JSON.stringify({
 				state: 'exited', generation: candidateGeneration, exit: { kind: 'failed', code: null, signal: 9 },
 			})],
 			['rollback-candidate-job', candidate.releaseId, JSON.stringify({ absent: true })],
 			['rollback-start', release, restoredGeneration],
 		] as const) {
-			await gate.recordIntent(reservation, step, intent);
-			await gate.recordReceipt(reservation, step, receipt);
+			await gate.recordIntent(reservation, step!, intent!);
+			await gate.recordReceipt(reservation, step!, receipt!);
 		}
 		await gate.publishOutcome(reservation, 'rolled-back', 'kept pinned predecessor');
 		await gate.release(reservation);
@@ -102,6 +105,15 @@ for (const trust of [
 	assert.deepEqual((await gate.read()).daemonBundleFloors, [next.floor]);
 	await recordRollback(retry, 'exited');
 	assert.equal((await gate.read()).outcome?.developmentRollback, undefined);
+	if (trust.domain === 'development') {
+		const trial = await gate.reserve({ ...request, predecessor: {
+			...request.predecessor, developmentQualification: true,
+		} }, next.floor);
+		await rejects('ownership-conflict', gate.publishOutcome(trial, 'committed', 'trial must never commit'));
+		await recordRollback(trial, 'running');
+		assert.equal((await gate.read()).outcome?.developmentRollback?.fixtureSha256,
+			createHash('sha256').update(trial.id).digest('hex'));
+	}
 });
 
 async function rejects(code: SupervisorErrorCode, result: Promise<unknown>): Promise<void> {

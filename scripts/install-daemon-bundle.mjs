@@ -9,7 +9,7 @@ import { sha256, verifyBundleManifest } from './daemon-bundle-metadata.mjs';
 import { measureBundleRuntime } from './stage-daemon-bundle.mjs';
 
 export async function retainBundleTrustAnchor(trustRoot, domain, key, beforePublish) {
-	if (!['production', 'qualification'].includes(domain)) throw new Error('invalid bundle trust domain');
+	if (!['production', 'qualification', 'development'].includes(domain)) throw new Error('invalid bundle trust domain');
 	const anchor = join(trustRoot, domain + '.pem');
 	const staging = await mkdtemp(join(trustRoot, '.anchor-'));
 	try {

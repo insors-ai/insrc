@@ -61,6 +61,11 @@ test('development signer binds the authenticated archive, sequence and exact qua
 			policySignature: sign(null, developmentPolicySigningBytes(policyBytes), issuer.privateKey), compatibility };
 		const prior = await signDevelopmentCandidate({ ...common, directory: first.directory, sequence: 1 });
 		assert.deepEqual(await signDevelopmentCandidate({ ...common, directory: first.directory, sequence: 1 }), prior);
+		const trial = await signDevelopmentCandidate({ ...common, directory: next.directory, sequence: 2, qualificationOnly: true });
+		const trialManifest = verifyDevelopmentManifest(trial.bytes, trial.signature, pem).manifest;
+		assert.equal(trialManifest.qualificationOnly, true);
+		assert.equal(trialManifest.predecessor, null);
+		await assert.rejects(readFile(join(next.directory, 'manifest.json')), /ENOENT/);
 		await assert.rejects(signDevelopmentCandidate({ ...common, directory: next.directory, sequence: 1 }), /conflicting.*record/);
 		await assert.rejects(signDevelopmentCandidate({ ...common, directory: next.directory, sequence: 3 }), /ENOENT/);
 		await assert.rejects(signDevelopmentCandidate({ ...common, builderKey: pem, directory: next.directory, sequence: 2 }), /handoff signature/);

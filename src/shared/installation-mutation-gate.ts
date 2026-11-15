@@ -1,7 +1,7 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 
 import { spawn } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { constants } from 'node:fs';
 import { lstat, mkdir, open, realpath, rename, rm } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
@@ -30,6 +30,7 @@ export interface UpdatePredecessor {
 	readonly candidateRelease: string;
 	readonly priorCommit: string;
 	readonly wasRunning: boolean;
+	readonly developmentQualification?: true;
 	readonly generation?: string | null;
 	readonly pins?: { readonly prior: ManagedInstallation; readonly candidate: ManagedInstallation };
 	readonly launch?: LegacyLaunchPin;
@@ -93,6 +94,7 @@ export interface DevelopmentRollbackObservation {
 	readonly predecessorManifestSha256: string;
 	readonly candidateGeneration: string;
 	readonly restoredGeneration: string;
+	readonly fixtureSha256?: string;
 }
 
 export interface DurableUpdateOutcome {
@@ -235,6 +237,10 @@ function validPredecessor(value: unknown): value is UpdatePredecessor {
 		|| typeof value.priorCommit !== 'string' || typeof value.wasRunning !== 'boolean'
 		|| (value.generation !== undefined && value.generation !== null && !text(value.generation))) return false;
 	if (value.selectorAbsent !== undefined && (value.selectorAbsent !== true || value.launch === undefined)) return false;
+	if (value.developmentQualification !== undefined && (value.developmentQualification !== true ||
+		!value.wasRunning || !object(value.bundleProof) ||
+		readManagedBundleProof(value.bundleProof.candidate).floor.domain !== 'development' ||
+		readManagedBundleProof(value.bundleProof.priorBundle).floor.domain !== 'development')) return false;
 	if (value.bundleProof !== undefined && (!object(value.bundleProof) || value.pins === undefined
 		|| (value.bundleProof.priorBundle === undefined
 			? typeof value.bundleProof.priorSourceFingerprint !== 'string' || !/^[a-f0-9]{64}$/.test(value.bundleProof.priorSourceFingerprint)
@@ -308,7 +314,7 @@ function validDecision(value: unknown): value is UpdateDecision {
 }
 
 function validDevelopmentRollback(value: unknown): value is DevelopmentRollbackObservation {
-	if (!object(value) || Object.keys(value).length !== 6) return false;
+	if (!object(value) || Object.keys(value).length !== (value.fixtureSha256 === undefined ? 6 : 7)) return false;
 	const oid = /^[0-9a-f]{40}$/;
 	const digest = /^[0-9a-f]{64}$/;
 	const generation = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/;
@@ -316,6 +322,7 @@ function validDevelopmentRollback(value: unknown): value is DevelopmentRollbackO
 	return matches(oid, value.candidateCommit) && matches(oid, value.predecessorCommit) &&
 		matches(digest, value.candidateManifestSha256) && matches(digest, value.predecessorManifestSha256) &&
 		matches(generation, value.candidateGeneration) && matches(generation, value.restoredGeneration) &&
+		(value.fixtureSha256 === undefined || matches(digest, value.fixtureSha256)) &&
 		value.candidateCommit !== value.predecessorCommit && value.candidateGeneration !== value.restoredGeneration;
 }
 
@@ -351,6 +358,13 @@ function observeDevelopmentRollback(
 		predecessorManifestSha256: prior.manifestSha256, candidateGeneration: start.generation,
 		restoredGeneration: restored.receipt,
 	};
+	if (active.predecessor.developmentQualification) {
+		const write = entry('development-qualification-write');
+		const expected = createHash('sha256').update(active.id).digest('hex');
+		if (write?.intent !== start.generation || write.receipt !== expected || stop.exit.signal !== 9) return undefined;
+		const trial = { ...recorded, fixtureSha256: expected };
+		return validDevelopmentRollback(trial) ? trial : undefined;
+	}
 	return validDevelopmentRollback(recorded) ? recorded : undefined;
 }
 
@@ -653,6 +667,7 @@ export class InstallationMutationGate {
 			const active = this.admitted(state, authority);
 			const last = active.entries.at(-1);
 			if (active.kind !== 'update' || !validDecision(decision) || !text(detail)
+				|| (active.predecessor.developmentQualification === true && decision === 'committed')
 				|| state.outcome?.id === active.id || (last !== undefined && last.receipt === undefined && decision !== 'operator-recovery')) {
 				conflict('installation outcome cannot be published');
 			}

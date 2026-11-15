@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import { generateKeyPairSync, sign } from 'node:crypto';
 import { test } from 'node:test';
+import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { requireUnusedDevelopmentGuest } from '../install-daemon-development-bundle.mjs';
 import {
 	developmentManifestSigningBytes, developmentPolicySigningBytes, encodeDevelopmentManifest, readDevelopmentPolicy,
 	verifyAndStageDevelopmentBundle,
@@ -32,6 +36,14 @@ const signedPolicy = (value: typeof policy) => {
 	return { policyBytes, policySignature: sign(null, developmentPolicySigningBytes(policyBytes), privateKey) };
 };
 const input = { bytes, signature, publicKey: pem, ...signedPolicy(policy), host };
+
+test('qualification manifest requires an explicit qualification verifier', async () => {
+	const trial = encodeDevelopmentManifest({ ...manifest, qualificationOnly: true });
+	const signed = { ...input, bytes: trial, signature: sign(null, developmentManifestSigningBytes(trial), privateKey) };
+	await assert.rejects(verifyAndStageDevelopmentBundle(signed), /qualification-only mode/);
+	await assert.rejects(verifyAndStageDevelopmentBundle({ ...input, qualificationOnly: true }), /qualification-only mode/);
+	assert.equal((await verifyAndStageDevelopmentBundle({ ...signed, qualificationOnly: true })).manifest.qualificationOnly, true);
+});
 
 test('development verification accepts a configured ref and canonical manifest', async () => {
 	assert.deepEqual((await verifyAndStageDevelopmentBundle(input)).manifest, manifest);
@@ -77,4 +89,20 @@ test('development verification rejects invalid branch policy, signatures and hos
 	}
 	await assert.rejects(verifyAndStageDevelopmentBundle({ ...input, host: { ...host, macOSVersion: '14.9' } }), /below bundle minimum/);
 	await assert.rejects(verifyAndStageDevelopmentBundle({ ...input, host: { ...host, nodeVersion: '24.0.0' } }), /Node version/);
+});
+test('development first-install preflight refuses existing state and symlink markers', async t => {
+	const home = await mkdtemp(join(tmpdir(), 'insrc-development-guest-'));
+	t.after(() => rm(home, { recursive: true, force: true }));
+	const uid = process.getuid!();
+	const marker = join(home, '.insrc-development-guest');
+	await assert.rejects(requireUnusedDevelopmentGuest(home, uid), /ENOENT/);
+	const target = join(home, 'marker');
+	await writeFile(target, '', { mode: 0o600 });
+	await symlink(target, marker);
+	await assert.rejects(requireUnusedDevelopmentGuest(home, uid), /private guest marker/);
+	await rm(marker);
+	await writeFile(marker, '', { mode: 0o600 });
+	await requireUnusedDevelopmentGuest(home, uid);
+	await mkdir(join(home, '.insrc'));
+	await assert.rejects(requireUnusedDevelopmentGuest(home, uid), /unused guest: .insrc/);
 });

@@ -10,7 +10,7 @@ import type { DelegateMeasurement, MeasuredCount, ProgressKind, TaskOwnerFence, 
 import { validateExecutorDetails } from './executor-measurements.js';
 import type { ExecutorDetails } from './executor-measurements.js';
 import type { ProgressAccess } from './access.js';
-import type { OwnerHandle, ProducerPort } from './coordinator.js';
+import type { OwnerEvidence, OwnerHandle, ProducerPort } from './coordinator.js';
 import type { ProgressCoordinator } from './coordinator.js';
 import type { TrustedRpcContext } from '../request-context.js';
 
@@ -170,6 +170,8 @@ export interface ReviewTaskBinding {
   readonly kind: 'design-review' | 'code-review';
   readonly task: TaskRef;
   readonly owner: OwnerHandle;
+  /** The producer port this binding was registered on; t6 signals through it. */
+  readonly producer: Pick<ProducerPort<ReviewDetails>, 'signalMeasurement' | 'recordLifecycle'>;
 }
 
 export interface BindReviewTaskDeps {
@@ -186,6 +188,23 @@ export interface BindReviewTaskDeps {
  *  (the review is admitted unobserved, exactly as before) when the connection is
  *  a session, the launch is refused or registration fails; callers must never
  *  let this fail or slow the review. Minting and fencing stay in s1. */
+/** Wrap a delegate so its measurement is stamped with the coordinator's durable
+ *  fence; normalize rejects any owner other than the runtime's ownerId/epoch.
+ *  The fence epoch is minted at admission, so the wrapper reads a mutable ref
+ *  that bindReviewTask fills in the moment registration returns. */
+function withOwnedFence<D extends ReviewDetails>(delegate: TaskProgressDelegate<D>, fence: { current?: TaskOwnerFence | undefined }): TaskProgressDelegate<D> {
+  return {
+    progress: async (task, signal) => {
+      const measured = await delegate.progress(task, signal);
+      const owned = fence.current;
+      if (measured === null || owned === undefined) return measured;
+      return { ...measured, owner: { ownerId: owned.ownerId, ownerEpoch: owned.ownerEpoch, ownerSequence: measured.owner.ownerSequence } };
+    },
+    ...(delegate.ownerActivity === undefined ? {} : { ownerActivity: (task, signal) => delegate.ownerActivity!(task, signal) }),
+    ...(delegate.cancel === undefined ? {} : { cancel: (task, requestId) => delegate.cancel!(task, requestId) }),
+  };
+}
+
 export async function bindReviewTask(
   deps: BindReviewTaskDeps,
   key: ReviewKey, attempt: number, context: TrustedRpcContext,
@@ -199,19 +218,29 @@ export async function bindReviewTask(
     const incarnation = deps.source.identity(key)?.incarnation;
     if (incarnation === undefined) return undefined;
     const { authorization } = await runtime.access.launchReview(project, key.reviewId, `review-${key.family}-${key.reviewId}`, context);
+    const fence: { current?: TaskOwnerFence | undefined } = {};
     if (key.family === 'design') {
       const registration = await runtime.producers.designReview.register(authorization, key.reviewId,
-        new DesignReviewDelegate(deps.source, { key, incarnation, attempt }));
+        withOwnedFence(new DesignReviewDelegate(deps.source, { key, incarnation, attempt }), fence));
       if (registration.kind !== 'admitted') return undefined;
-      return { kind: 'design-review', task: registration.task, owner: registration.owner };
+      fence.current = registration.fence;
+      return { kind: 'design-review', task: registration.task, owner: registration.owner, producer: runtime.producers.designReview };
     }
     const registration = await runtime.producers.codeReview.register(authorization, key.reviewId,
-      new CodeReviewDelegate(deps.source, { key, incarnation, attempt }));
+      withOwnedFence(new CodeReviewDelegate(deps.source, { key, incarnation, attempt }), fence));
     if (registration.kind !== 'admitted') return undefined;
-    return { kind: 'code-review', task: registration.task, owner: registration.owner };
+    fence.current = registration.fence;
+    return { kind: 'code-review', task: registration.task, owner: registration.owner, producer: runtime.producers.codeReview };
   } catch {
     return undefined;
   }
+}
+
+/** Terminal phases only; the review verdict (passed / changes_requested) never
+ *  reaches the owner's lifecycle — only the owner's own terminal phase does. */
+export function reviewTerminalEvidence(phase: 'complete' | 'failed' | 'interrupted', sequence: number): OwnerEvidence {
+  const state = phase === 'complete' ? 'completed' as const : phase;
+  return { sequence, state };
 }
 
 abstract class ReviewDelegateBase<D extends ReviewDetails> implements TaskProgressDelegate<D> {

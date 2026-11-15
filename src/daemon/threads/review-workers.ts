@@ -45,6 +45,7 @@ import { persistReviewRuntimeAudit, reviewRuntimeAudits } from '../../workflow/r
 import { lifecycleFor } from '../lifecycle-registry.js';
 import { reviewPreparationLimits } from '../../config/review.js';
 import { REVIEW_BOOTSTRAP_MS } from './review-worker-contract.js';
+import { reviewTerminalEvidence } from '../task-progress/review-measurements.js';
 
 export interface ReviewWorkerScope {
  readonly reviewer:'daemon'|'controller';
@@ -471,6 +472,22 @@ export class ReviewWorkers {
   if(progress.total!==undefined&&(!Number.isSafeInteger(progress.total)||progress.total<progress.completed))return false;
   e.progress=Object.freeze({key:e.input.key,incarnation:e.input.incarnation,attempt:progress.attempt,sequence:progress.sequence,phase:progress.phase,completed:progress.completed,total:progress.total,updatedAt:progress.updatedAt,...((progress.observation??e.progress?.observation)?{observation:structuredClone(progress.observation??e.progress!.observation!)}:{}),...((progress.display??e.progress?.display)?{display:structuredClone(progress.display??e.progress!.display!)}:{})});
   this.deps.services.board.publish({threadId:source.threadId,cls:'review',role:e.input.key.family==='code'?'code-review':'design-review',busy:!['complete','failed','interrupted'].includes(progress.phase),method:progress.phase,queued:0,...(progress.display?{reviewProgress:progress.display,reviewSubject:e.input.key.family==='code'&&e.input.epicHash&&e.input.submitted&&typeof e.input.submitted==='object'&&typeof Reflect.get(e.input.submitted,'storyId')==='string'?`BUILD-${e.input.epicHash}-${String(Reflect.get(e.input.submitted,'storyId'))}`:e.scope.subject}:{})});
+  // s3/t6: signal the coordinator for the bound attempt and record terminal
+  // evidence from the owner's terminal phase. Fire-and-forget guarded: a
+  // coordinator failure must never affect acceptance, the board or reclaim.
+  const binding=e.taskBinding;
+  if(binding!==undefined){
+   const phase=progress.phase,sequence=progress.sequence;
+   // One serialized fire-and-forget: signal the accepted publication, then —
+   // for a terminal phase — record the owner's terminal evidence (the owner
+   // sequence advances past the signalled one, as the coordinator requires).
+   void (async()=>{
+    await binding.producer.signalMeasurement(binding.owner,sequence).catch(()=>{});
+    if(['complete','failed','interrupted'].includes(phase)){
+     await binding.producer.recordLifecycle(binding.owner,reviewTerminalEvidence(phase as 'complete'|'failed'|'interrupted',sequence+1)).catch(()=>{});
+    }
+   })().catch(()=>{});
+  }
   if(['complete','failed','interrupted'].includes(progress.phase)&&e.executed&&!e.input.maintenance&&!e.reclaiming){
    const work=this.reclaimTerminal(e);e.reclaiming=work;void work.finally(()=>{if(e.reclaiming===work)e.reclaiming=undefined;});
   }

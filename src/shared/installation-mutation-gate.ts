@@ -86,11 +86,21 @@ export type MutationReservation = MutationRequest & {
 
 export type UpdateDecision = 'committed' | 'rolled-back' | 'operator-recovery';
 
+export interface DevelopmentRollbackObservation {
+	readonly candidateCommit: string;
+	readonly predecessorCommit: string;
+	readonly candidateManifestSha256: string;
+	readonly predecessorManifestSha256: string;
+	readonly candidateGeneration: string;
+	readonly restoredGeneration: string;
+}
+
 export interface DurableUpdateOutcome {
 	readonly id: string;
 	readonly decision: UpdateDecision;
 	readonly detail: string;
 	readonly finishedAt?: string;
+	readonly developmentRollback?: DevelopmentRollbackObservation;
 }
 
 export interface InstallationJournal {
@@ -297,6 +307,52 @@ function validDecision(value: unknown): value is UpdateDecision {
 	return value === 'committed' || value === 'rolled-back' || value === 'operator-recovery';
 }
 
+function validDevelopmentRollback(value: unknown): value is DevelopmentRollbackObservation {
+	if (!object(value) || Object.keys(value).length !== 6) return false;
+	const oid = /^[0-9a-f]{40}$/;
+	const digest = /^[0-9a-f]{64}$/;
+	const generation = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/;
+	const matches = (pattern: RegExp, field: unknown) => typeof field === 'string' && pattern.test(field);
+	return matches(oid, value.candidateCommit) && matches(oid, value.predecessorCommit) &&
+		matches(digest, value.candidateManifestSha256) && matches(digest, value.predecessorManifestSha256) &&
+		matches(generation, value.candidateGeneration) && matches(generation, value.restoredGeneration) &&
+		value.candidateCommit !== value.predecessorCommit && value.candidateGeneration !== value.restoredGeneration;
+}
+
+function observeDevelopmentRollback(
+	active: Extract<MutationReservation, { kind: 'update' }>,
+): DevelopmentRollbackObservation | undefined {
+	const { bundleProof, candidateRelease, priorRelease, wasRunning } = active.predecessor;
+	const candidate = bundleProof?.candidate.floor;
+	const prior = bundleProof?.priorBundle?.floor;
+	if (!wasRunning || candidate?.domain !== 'development' || prior?.domain !== 'development' ||
+		candidate.repository !== prior.repository) return undefined;
+	const entry = (step: string) => active.entries.find(row => row.step === step);
+	const started = entry('candidate-start');
+	const stopped = entry('rollback-candidate-stop');
+	const removed = entry('rollback-candidate-job');
+	const restored = entry('rollback-start');
+	if (started?.intent !== candidateRelease || started.receipt === undefined || stopped?.receipt === undefined ||
+		removed?.intent !== candidateRelease || removed.receipt === undefined ||
+		restored?.intent !== priorRelease || restored.receipt === undefined) return undefined;
+	let start: unknown;
+	let stop: unknown;
+	let removal: unknown;
+	try { start = JSON.parse(started.receipt); stop = JSON.parse(stopped.receipt); removal = JSON.parse(removed.receipt); }
+	catch { return undefined; }
+	if (!object(start) || !object(stop) || stop.state !== 'exited' || start.generation !== stop.generation ||
+		stopped.intent !== start.generation || !object(removal) || removal.absent !== true ||
+		!object(stop.exit) || (stop.exit.kind !== 'forced' && stop.exit.kind !== 'failed') ||
+		stop.exit.code !== null || typeof stop.exit.signal !== 'number' || !Number.isSafeInteger(stop.exit.signal) ||
+		stop.exit.signal <= 0) return undefined;
+	const recorded = {
+		candidateCommit: candidateRelease, predecessorCommit: priorRelease, candidateManifestSha256: candidate.manifestSha256,
+		predecessorManifestSha256: prior.manifestSha256, candidateGeneration: start.generation,
+		restoredGeneration: restored.receipt,
+	};
+	return validDevelopmentRollback(recorded) ? recorded : undefined;
+}
+
 function readJournal(bytes: string, root: string, uid: number): InstallationJournal {
 	let parsed: unknown;
 	try { parsed = JSON.parse(bytes); } catch { conflict('invalid installation journal'); }
@@ -306,6 +362,8 @@ function readJournal(bytes: string, root: string, uid: number): InstallationJour
 		|| (active.recovery !== undefined && active.recovery !== true)
 		|| !validRequest(active) || active.owner.uid !== uid)) conflict('invalid installation reservation');
 	if (outcome !== null && (!object(outcome) || !text(outcome.id) || !validDecision(outcome.decision)
+		|| (outcome.developmentRollback !== undefined &&
+			(outcome.decision !== 'rolled-back' || !validDevelopmentRollback(outcome.developmentRollback)))
 		|| !text(outcome.detail) || (outcome.finishedAt !== undefined
 			&& (typeof outcome.finishedAt !== 'string' || !Number.isFinite(Date.parse(outcome.finishedAt)))))) conflict('invalid installation outcome');
 	const journal = parsed as unknown as InstallationJournal;
@@ -597,7 +655,10 @@ export class InstallationMutationGate {
 				|| state.outcome?.id === active.id || (last !== undefined && last.receipt === undefined && decision !== 'operator-recovery')) {
 				conflict('installation outcome cannot be published');
 			}
-			await this.write({ ...state, outcome: { id: active.id, decision, detail, finishedAt: new Date().toISOString() } });
+			const developmentRollback = decision === 'rolled-back' ? observeDevelopmentRollback(active) : undefined;
+			await this.write({ ...state, outcome: { id: active.id, decision, detail, finishedAt: new Date().toISOString(),
+				...(developmentRollback === undefined ? {} : { developmentRollback }),
+			} });
 		});
 	}
 

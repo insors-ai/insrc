@@ -64,11 +64,29 @@ for (const trust of [
 		priorRelease: release, priorCommit: release, candidateRelease: candidate.releaseId, wasRunning: true,
 		pins: { prior: installation, candidate }, bundleProof: { priorBundle: proof, candidate: next },
 	} }, next.floor);
+	const candidateGeneration = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+	const restoredGeneration = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+	for (const [step, intent, receipt] of [
+		['candidate-start', candidate.releaseId, JSON.stringify({ state: 'running', generation: candidateGeneration })],
+		['rollback-candidate-stop', candidateGeneration, JSON.stringify({
+			state: 'exited', generation: candidateGeneration, exit: { kind: 'failed', code: null, signal: 9 },
+		})],
+		['rollback-candidate-job', candidate.releaseId, JSON.stringify({ absent: true })],
+		['rollback-start', release, restoredGeneration],
+	] as const) {
+		await gate.recordIntent(update, step, intent);
+		await gate.recordReceipt(update, step, receipt);
+	}
 	await gate.publishOutcome(update, 'rolled-back', 'kept pinned predecessor');
 	await gate.release(update);
 	const state = await gate.read();
 	assert.deepEqual(state.installedBundle, { releaseRoot: installation.releaseRoot, proof });
 	assert.deepEqual(state.daemonBundleFloors, [next.floor]);
+	assert.equal(state.active, null);
+	assert.deepEqual(state.outcome?.developmentRollback, trust.domain === 'development' ? {
+		candidateCommit: candidate.releaseId, predecessorCommit: release, candidateManifestSha256: next.floor.manifestSha256,
+		predecessorManifestSha256: proof.floor.manifestSha256, candidateGeneration, restoredGeneration,
+	} : undefined);
 	const request = { kind: 'update' as const, owner, predecessor: {
 		priorRelease: release, priorCommit: release, candidateRelease: candidate.releaseId, wasRunning: true,
 		pins: { prior: installation, candidate }, bundleProof: { priorBundle: proof, candidate: next },

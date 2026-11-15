@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f6ed3451-98d6-41cd-b397-7f834fc82ed3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T12:17:34.269Z",
+    "epicCreatedAt": "2026-11-14T08:55:28.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "470a1f61b26b12c6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Integrate design review latest-subject preparation",
+      "parent": {
+        "entityId": "STORY-470a1f61b26b12c6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-470a1f61b26b12c6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-470a1f61b26b12c6-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "4554c3dccda328988b219977e8e591e1362afb1d3e1d5caba1f986d096915f21",
+        "at": "2026-11-14T14:53:03.872Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T12:17:34.270Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Integrate design review latest-subject preparation",
+    "summary": "Route subject capture, planning/impact/chunks and explicit recovery through same lifecycle with design-specific latest target/ancestry checks. Deliver private adapters consumed by existing coordinator/worker dependency seams and exercise them in focused integration fixtures. Production runtime selection is activated only in the coordinated t12 cutover after host and lifecycle dependencies exist.",
+    "size": "L",
+    "order": 8,
+    "acceptanceChecks": [
+      "Through the shared family adapter, DEF/HLD/LLD route matrix passes; relevant target changes invalidate and await human restart; unrelated edits ignored; prompts use paths, not artifact bodies.",
+      "Run and record this task's focused validation before advancing; cross-cutting qualification does not replace these checks.",
+      "This task gates the complete family adapter and its focused tests, not default production selection. It must expose execution/recovery seams for t9/t12; full production activation is mandatory in t12 and independently qualified in t13. No feature flag, parallel review engine or incomplete production cutover."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Extend design subject-monitor/recovery tests: latest DEF/HLD/LLD routes, impact/chunk reuse, target invalidation/user restart and unrelated edit stability."
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

@@ -20,6 +20,7 @@ import { validateTaskResult, validateResultOrigins } from './results.js';
 import { checkpointPath, saveCheckpoint, saveStoredCheckpoint } from './checkpoint.js';
 import { mergeTaskSummary, mergeCodeAdmissionFailure, mergePreparationHistory, renderTaskReview, resultReferences, validateTaskBody, taskBodyVersion } from './record.js';
 import { decodePreparationCheckpoint } from '../../review/preparation-checkpoint.js';
+import { preparationSemanticHistory } from '../../review/preparation-semantic-history.js';
 import type { CodePreparationCheckpoint } from '../../review/preparation-checkpoint.js';
 import type { QualifiedPublication } from '../../review/publication-proof.js';
 
@@ -36,7 +37,7 @@ export async function publishTaskCheckpoint(project: string, epicHash:string, re
  const decoded = decodePreparationCheckpoint(JSON.parse(await readFile(path,'utf8')), { project: canonical, family: 'code', reviewId });
  const current = decoded.format === 'current' ? decoded.checkpoint as CodePreparationCheckpoint : undefined;
  requireReview(!current || deps.preparation, 'publication', 'Version-3 publication requires private preparation authority');
- const historical = current ? (({ runtime: _r, context: _c, ...rest }) => ({ ...rest, schemaVersion: 2 }))(current) : decoded.checkpoint;
+ const historical = current ? preparationSemanticHistory(current) : decoded.checkpoint;
  const stored = decodeStoredCheckpoint(historical);
  const preparePacket = current ? deps.preparation!.preparePacket : prepareReviewPacket;
  requireReview(stored.project === canonical && stored.reviewId === reviewId, 'checkpoint', 'Checkpoint identity mismatch');

@@ -1,11 +1,13 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import type { ReviewAttempt } from './contracts.js';
 import type { ReviewProgressTracker } from './progress.js';
+import { preparationPersistence } from '../../review/preparation-persistence.js';
 
 export interface ProgressPersistenceDeps {
  /** The same serial queue used by task feedback; never a second writer lane. */
  serial(work: () => Promise<void>): Promise<void>;
  save(): Promise<void>;
+ checkpointPath?: string | undefined;
  timer?: ((callback: () => void, ms: number) => () => void) | undefined;
 }
 /** One pending flush, no event journal or captured copy of the checkpoint. */
@@ -38,7 +40,13 @@ export class ReviewProgressPersistence {
    if (this.stopped) return;
    const prior = this.attempt.progress;
    this.attempt.progress = this.tracker.snapshot();
-   try { await this.deps.save(); this.warning = undefined; }
+   try {
+    const owner = this.deps.checkpointPath ? preparationPersistence(this.deps.checkpointPath) : undefined;
+    if (owner) await owner.observe({ family: 'code', attempt: this.attempt.header.attempt, progress: this.attempt.progress,
+     activeTaskId: this.attempt.header.activeTaskId ?? null });
+    else await this.deps.save();
+    this.warning = undefined;
+   }
    catch {
     if (prior) this.attempt.progress = prior; else delete this.attempt.progress;
     this.warning = 'progress_persistence_failed';

@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7bc81a25-2dd3-43ef-b9d4-7dfdb5f474cb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T12:17:34.266Z",
+    "epicCreatedAt": "2026-11-14T08:55:28.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "470a1f61b26b12c6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Integrate code review preparation across routes",
+      "parent": {
+        "entityId": "STORY-470a1f61b26b12c6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-470a1f61b26b12c6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-470a1f61b26b12c6-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "465f253d9621fe2e0deb94a0b03a248fba046178921f4fb7d2611c09dc96d249",
+        "at": "2026-11-14T14:53:03.864Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T12:17:34.267Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Integrate code review preparation across routes",
+    "summary": "Route admission, packet projection, task/story execution and explicit recovery through shared preparation, preserving all selected spans and pinned history. Deliver private adapters consumed by existing coordinator/worker dependency seams and exercise them in focused integration fixtures. Production runtime selection is activated only in the coordinated t12 cutover after host and lifecycle dependencies exist.",
+    "size": "L",
+    "order": 7,
+    "acceptanceChecks": [
+      "Through the shared family adapter, Epic/standalone/ISSUE/LLD-only/no-document routes and aliases preserve exact scope; no generic HEAD diff or skipped modules; immutable attempts remain pinned.",
+      "Run and record this task's focused validation before advancing; cross-cutting qualification does not replace these checks.",
+      "This task gates the complete family adapter and its focused tests, not default production selection. It must expose execution/recovery seams for t9/t12; full production activation is mandatory in t12 and independently qualified in t13. No feature flag, parallel review engine or incomplete production cutover."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Extend route-admission/projection-lineage/final-scope tests: all workflow story/task routes, merge/rename/delete witnesses, aliases and exact selected after blocks."
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

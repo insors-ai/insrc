@@ -17,9 +17,10 @@ import { reviewWorkerCheckpoint } from '../../daemon/threads/review-worker-contr
 
 import { encodeReviewSourceResult, reviewSourceQueryDigest } from './source-session.js';
 import type { CapturedHistoryEvidence } from './history-evidence.js';
+import { preparationSemanticHistory } from './preparation-semantic-history.js';
 
 type PublicationVerifier = (history: PreparationHistory) => Promise<HistoryValidation>;
-function historical(cp: PreparationHistory): unknown { const { runtime: _runtime, context: _context, ...rest } = cp; return { ...rest, schemaVersion: 2 }; }
+const historical = preparationSemanticHistory;
 async function publication(next: PreparationHistory, previous: PreparationHistory | undefined, verify: PublicationVerifier | undefined): Promise<HistoryValidation> {
  const published = (a: PreparationHistory['attempts'][number]) => 'review-response' in a ? a['review-response'].crPublication === 'complete' : 'publication' in a && a.publication?.state === 'complete';
  if (!next.attempts.some(published) || previous && same(next.attempts.map(a => 'review-response' in a ? a['review-response'].crPublication : 'publication' in a ? a.publication : undefined), previous.attempts.map(a => 'review-response' in a ? a['review-response'].crPublication : 'publication' in a ? a.publication : undefined))) return {};

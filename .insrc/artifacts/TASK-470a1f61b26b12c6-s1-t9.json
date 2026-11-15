@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-588b1798-cb7a-4ef4-af3e-d5b1098ee65b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T12:17:34.272Z",
+    "epicCreatedAt": "2026-11-14T08:55:28.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "470a1f61b26b12c6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add exact cancellation and preparation progress surfaces",
+      "parent": {
+        "entityId": "STORY-470a1f61b26b12c6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-470a1f61b26b12c6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-470a1f61b26b12c6-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-470a1f61b26b12c6-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "a7afdc02d72bdd281ab8d29d88374565efb46ba0e2e56eeff966f1d825de3731",
+        "at": "2026-11-14T14:53:03.880Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T12:17:34.274Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Add exact cancellation and preparation progress surfaces",
+    "summary": "Extend worker control and both public MCP/daemon surfaces plus supported IPC DTOs for cancellation and bounded genuine preparation counters. Implement the private host-to-worker bridge for the main-owned per-project capacity allocator, runtime store and context registry; retain exact per-review allocation ownership across worker reclamation and release only after proven file cleanup.",
+    "size": "L",
+    "order": 9,
+    "acceptanceChecks": [
+      "Exact owner-only cancel prevents new work, stops only selected worker, reports honest resource fences; polling creates no activity; both clients agree with enums.",
+      "Cancel/spawn/candidate/publication races preserve exact ownership and already committed results; progress counters reflect genuine completed operations only.",
+      "Run and record this task's focused validation before advancing; cross-cutting qualification does not replace these checks.",
+      "Private worker ports bind capacity/runtime/context requests to the exact current review owner and phase; workers cannot instantiate separate project allocators or mint context/runtime authority. Test the bridge before t12 activation."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Extend worker isolation/progress/recovery and MCP wire fixtures: cancel exact review during preparation/tool/model/publication races, owner rejection, resource fence and nullable genuine counters."
+      },
+      {
+        "level": "integration",
+        "name": "Private preparation bridge tests: exact worker/review ownership, aggregate project capacity, split/combine allocation retention, context/runtime receipts, worker reclamation and cleanup-only release."
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

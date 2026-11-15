@@ -13,7 +13,7 @@ import { aggregateTaskStatus, validateTaskResult, validateResultOrigins } from '
 
 import { FinalScopeSnapshotSchema } from './final-scope-contracts.js';
 import { validateFinalScope } from './final-scope-history.js';
-import { CodePreparationCheckpointSchema } from '../../review/preparation-checkpoint.js';
+import { CodePreparationCheckpointSchema } from '../../review/preparation-checkpoint-contract.js';
 import { PublicationProofSchema, validatePublicationProof, publicationEvidenceDigest } from '../../review/publication-proof.js';
 
 const text = Type.String({ minLength: 1, maxLength: 65536 });

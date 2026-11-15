@@ -12,7 +12,7 @@ import { readTaskReviewHistory } from '../code-review/task-review/history.js';
 import { reviewedBuildFingerprint } from '../code-review/build-freshness.js';
 import { latestReviewSummaries } from '../code-review/task-review/record.js';
 import { authorPartyOf } from './party.js';
-import { validatePermanentDesignReview, storedDesignCheckpointFromRecord, designWorkflowDigest } from './design-review/history.js';
+import { validatePermanentDesignReview, preparedDesignCheckpointFromRecord, designWorkflowDigest } from './design-review/history.js';
 import { prepareDesignSubject } from './design-review/subject.js';
 import type { PreparationHistory } from './history-binding.js';
 import type { PublicationProof } from './publication-proof.js';
@@ -59,7 +59,7 @@ export async function authorizePreparedCleanup(target: ReviewCleanupTarget, key:
  if (record.binding.sourceRevision.number !== approved.lifecycle.revision.number || record.binding.sourceRevision.contentHash !== (approved.lifecycle.revision.contentHash || contentHash(approved.description, approved.payload))
   || record.binding.documentDigest !== prepared.baseline.subjectFingerprints.document || record.binding.workflowDigest !== designWorkflowDigest(prepared.subject.workflow)
   || prepared.subject.reviewer !== record.reviewer) throw new Error('Current design approval no longer matches reviewed content, author or workflow');
- const stored = storedDesignCheckpointFromRecord(record), history = { ...stored, schemaVersion: 3 as const, runtime: record.preparation.runtime, context: record.preparation.context };
+ const history = preparedDesignCheckpointFromRecord(record);
  validatePublicationProof(record.preparation.proof, history, key);
  return { history, proof: record.preparation.proof, bindingHeads: entries.flatMap(e => e.record.schemaVersion === 3 ? [e.record.preparation.proof.binding.bindingDigest] : []), approvalRevision: approval.revision, permanent: { artifactId: target.artifactId, historyEntryId: latest.entry.id, preservationDigest: record.preservationDigest } };
 }

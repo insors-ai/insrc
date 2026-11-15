@@ -9,6 +9,7 @@ import type { ReviewCheckpoint } from './contracts.js';
 import type { StoredReviewCheckpoint } from './contracts.js';
 import { decodeStoredCheckpoint } from './admission-checkpoint.js';
 import { validateSavedAttribution } from './attribution-binding.js';
+import { preparationPersistence } from '../../review/preparation-persistence.js';
 
 export function checkpointPath(project: string, id: string): string {
  requireReview(/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/.test(id), 'reviewId', 'Expected a literal review identifier');
@@ -33,17 +34,21 @@ export function checkpointBytes(checkpoint:ReviewCheckpoint):string{return JSON.
 export async function saveCheckpoint(path: string, checkpoint: ReviewCheckpoint, io: CheckpointIO = defaultIO): Promise<void> {
  for (const attempt of checkpoint.attempts) { validateFailureDiagnostics(attempt); validateSavedAttribution(attempt); }
  const serialized = checkpointBytes(checkpoint);
+ const owner = preparationPersistence(path);
+ if (owner) return serializeCodeWrite(path, () => owner.write(JSON.parse(serialized)));
  return serializeCodeWrite(path,()=>writeCheckpoint(path, serialized, io));
 }
 /** The same atomic writer for the versioned admission contract. Production
  * emission starts only when the worker adapters are cut over. */
 export async function saveStoredCheckpoint(path: string, checkpoint: StoredReviewCheckpoint, io: CheckpointIO = defaultIO): Promise<void> {
  const bytes=JSON.stringify(decodeStoredCheckpoint(checkpoint),null,2)+'\n';
+ const owner = preparationPersistence(path);
+ if (owner) return serializeCodeWrite(path, () => owner.write(JSON.parse(bytes)));
  return serializeCodeWrite(path,()=>writeCheckpoint(path,bytes,io));
 }
 /** Resource/progress read-modify-write shares the same family save lane. */
 export function updateStoredCodeCheckpoint(path:string,mutate:(current:StoredReviewCheckpoint|undefined)=>StoredReviewCheckpoint|Promise<StoredReviewCheckpoint>):Promise<StoredReviewCheckpoint>{
- return serializeCodeWrite(path,async()=>{const next=decodeStoredCheckpoint(await mutate(await loadStoredCheckpoint(path)));await writeCheckpoint(path,JSON.stringify(next,null,2)+'\n',defaultIO);return next;});
+ return serializeCodeWrite(path,async()=>{const next=decodeStoredCheckpoint(await mutate(await loadStoredCheckpoint(path)));const owner=preparationPersistence(path);if(owner)await owner.write(next);else await writeCheckpoint(path,JSON.stringify(next,null,2)+'\n',defaultIO);return next;});
 }
 /** Shared durable byte writer. Callers own their format/size validation and
  * serialization lane; this preserves the existing exact save outcomes. */
@@ -99,6 +104,8 @@ export async function loadCheckpoint(path: string): Promise<ReviewCheckpoint | u
 }
 /** Discriminating reader for worker-aware consumers; never upgrades history. */
 export async function loadStoredCheckpoint(path: string): Promise<StoredReviewCheckpoint | undefined> {
+ const owner = preparationPersistence(path);
+ if (owner) { const value = await owner.read(); return value === undefined ? undefined : decodeStoredCheckpoint(value); }
  let file;
  try { file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW); }
  catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined; throw error; }

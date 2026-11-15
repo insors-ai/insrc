@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-49034d03-ef80-4b89-b09a-a25c4f1479a6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T12:17:34.286Z",
+    "epicCreatedAt": "2026-11-14T08:55:28.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "470a1f61b26b12c6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement explicit inactive-record migration and coordinated cutover",
+      "parent": {
+        "entityId": "STORY-470a1f61b26b12c6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-470a1f61b26b12c6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-470a1f61b26b12c6-s1-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 3,
+        "contentHash": "ca457a46b40483731cc2aa735992dd91715fd2e59a1d16e1a6a4282134f48b0a",
+        "at": "2026-11-14T14:53:03.904Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T12:17:34.288Z"
+      }
+    },
+    "revision": 3
+  },
+  "body": {
+    "title": "Implement explicit inactive-record migration and coordinated cutover",
+    "summary": "Migrate supported old inactive records under exact fences; preserve inputs/results/actions and unresolved guards; wire all production consumers to new execution without flags or legacy dual writers.",
+    "size": "M",
+    "order": 12,
+    "acceptanceChecks": [
+      "Interrupted migration never loses proof; old-only rollback rejected after new formats; no automatic scans/resume, no partial daemon deployment or stopped-attempt restart.",
+      "Run and record this task's focused validation before advancing; cross-cutting qualification does not replace these checks.",
+      "Wire the real production review ownership, both-family checkpoint/native resource, progress, publication, approval and cleanup paths to compact runtime; no test-only adapter or legacy active-writer fallback remains for new execution.",
+      "Activate the t7/t8 shared family preparation adapters and t9 host bridge through every production task/story admission, execution, explicit recovery and publication path; remove old active-writer selections in this same cutover. Test-only adapters do not satisfy this task."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Proposed migration/cutover tests: inactive v1/v2 byte-preserving upgrade, legacy guards, interrupted migration, unknown capabilities and unsupported old-reader downgrade."
+      }
+    ],
+    "planTaskId": "t12"
+  },
+  "citations": []
+}

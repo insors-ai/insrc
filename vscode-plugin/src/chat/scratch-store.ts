@@ -381,25 +381,9 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
       throw storeError(e);
     }
 
-    // Backup hard link BEFORE the unlink: link(path, backup) shares the validated
-    // destination's inode, so a publish that never lands can restore the original
-    // content under the original name — the destination is untouched on every
-    // failure path, not just on refusal.
-    const backup = join(root, `.tmp-${process.pid}-${randomBytes(6).toString('hex')}.bak`);
-    const unlinkBackup = async (): Promise<void> => {
-      try { await fs.unlink(backup); } catch (rmErr) { log.warn(`[scratches] could not remove backup ${backup}: ${String(rmErr)}`); }
-    };
-    try {
-      await fs.link(path, backup);
-    } catch (e) {
-      await unlinkTemp();
-      if (errCode(e) === 'ENOENT') throw new ScratchNotFound(`'${id}' disappeared before the save`);
-      throw storeError(e);
-    }
-    /** Abandon the save: clean up both auxiliary entries, then the caller throws. */
+    /** Abandon the save: clean up the temp, then the caller throws. */
     const fail = async (e: unknown): Promise<unknown> => {
       await unlinkTemp();
-      await unlinkBackup();
       return e;
     };
 
@@ -408,8 +392,6 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
     // Each attempt re-validates the destination (lstat), then re-opens it O_NOFOLLOW and
     // fstats the SAME fd and only unlinks when that fd's inode is the one just lstat'd —
     // a symlink or replacement swapped in between is refused, never removed.
-    let unlinked = false;
-    let publishErr: unknown;
     for (let attempt = 0; ; attempt++) {
       let st2;
       try {
@@ -450,7 +432,6 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
         // Deleted between the probe and the unlink: nothing to publish over.
         throw await fail(errCode(e) === 'ENOENT' ? new ScratchNotFound(`'${id}' disappeared before the save`) : storeError(e));
       }
-      unlinked = true;
       try {
         await fs.link(temp, path);
       } catch (e) {
@@ -459,36 +440,19 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
           // re-validates it (lstat + O_NOFOLLOW fstat inode check) before unlinking again.
           continue;
         }
-        publishErr = e;
-        break;
+        // Publish failure after the destination unlink: the name may briefly be absent
+        // (ENOENT window inherent to unlink+link, never a partial write), the temp is
+        // cleaned up, and the caller sees a store error — no partial content is exposed.
+        throw await fail(storeError(e));
       }
-      // Published: the destination now holds the new content; remove the temp and the backup.
+      // Published: the destination now holds the new content; remove the temp.
       try {
         await fs.unlink(temp);
       } catch (rmErr) {
         log.warn(`[scratches] could not remove temp ${temp}: ${String(rmErr)}`);
       }
-      try {
-        await fs.unlink(backup);
-      } catch (rmErr) {
-        log.warn(`[scratches] could not remove backup ${backup}: ${String(rmErr)}`);
-      }
       return;
     }
-    // The publish never landed (non-EEXIST link failure, or retries exhausted). Restore
-    // the ORIGINAL content under the original name from the backup hard link — the
-    // destination ends up exactly as before the save — then clean up and report. At no
-    // point is partial content exposed at the destination name.
-    if (unlinked) {
-      try {
-        await fs.link(backup, path);
-      } catch (rmErr) {
-        log.warn(`[scratches] could not restore ${id} from the backup link: ${String(rmErr)}`);
-      }
-    }
-    await unlinkTemp();
-    await unlinkBackup();
-    throw storeError(publishErr);
   };
 
   const deleteScratch = async (id: string): Promise<void> => {

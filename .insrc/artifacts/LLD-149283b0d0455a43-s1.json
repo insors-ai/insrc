@@ -102,6 +102,13 @@
         "choice": "Exercise the re-finalize path explicitly",
         "rationale": "Cheap test that settles the one unverified claim.",
         "resolvedAt": "2026-11-16T08:30:51.087Z"
+      },
+      "q81e80181": {
+        "question": "Checked: the JetBrains WorkflowChainReader reads the artifact files itself and builds its own hint, and the VS Code plugin has no nextAction consumer, so neither reads the daemon ChainReport and the optional definitionKind field cannot break them. Separately, the JetBrains reader reads only DEF files, so it will not show an ISSUE-anchored item; that is outside this Story.",
+        "status": "resolved",
+        "choice": "Proceed as planned (add definitionKind now)",
+        "rationale": "Neither IDE client reads ChainReport; the JetBrains ISSUE gap stays out of scope.",
+        "resolvedAt": "2026-11-16T08:31:09.791Z"
       }
     }
   },

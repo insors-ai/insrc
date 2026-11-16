@@ -294,6 +294,8 @@ Leave the shared reader alone and edit each non-test caller (readPlanUpstream, f
   - **resolved**: A. ISSUE = define-equivalent (decided) — User decision 2026-11-16; tracker handling deferred to ISSUE-5f9d4ab4c90c0b4c. _(2026-11-16T08:30:24.460Z)_
 - `q304688a8` — Unverified: a second design.story start for the same ISSUE revising LLD-<issueHash>-s1 through the existing re-finalize path; it is expected from finalizeStandaloneLld but not exercised.
   - **resolved**: Exercise the re-finalize path explicitly — Cheap test that settles the one unverified claim. _(2026-11-16T08:30:51.087Z)_
+- `q81e80181` — Checked: the JetBrains WorkflowChainReader reads the artifact files itself and builds its own hint, and the VS Code plugin has no nextAction consumer, so neither reads the daemon ChainReport and the optional definitionKind field cannot break them. Separately, the JetBrains reader reads only DEF files, so it will not show an ISSUE-anchored item; that is outside this Story.
+  - **resolved**: Proceed as planned (add definitionKind now) — Neither IDE client reads ChainReport; the JetBrains ISSUE gap stays out of scope. _(2026-11-16T08:31:09.791Z)_
 
 ## Citations
 

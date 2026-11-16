@@ -1,0 +1,121 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3ec84f38-4531-4d84-8a00-ce8b3265f31f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T13:04:36.449Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Prove larger results are handled and reported",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s4-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s4-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s4-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s4-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s4-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s4-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s4-t12",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#175",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7ba3402ae4afda7a59f52ed8edb7c32082fcec0f96a704558c1c04b29f92f78c",
+        "at": "2026-11-14T13:04:36.449Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T13:04:36.451Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Prove larger results are handled and reported",
+    "summary": "Add integration tests that a lookup result larger than every former limit is divided and combined by Story s3's method with every result processed, and that the answer names sampled, failed and uncovered sources and is not called complete otherwise, extending the partition-combine and run-report tests and the orchestrator code and docs runs.",
+    "size": "M",
+    "order": 13,
+    "acceptanceChecks": [
+      "A result larger than the former limits is processed in full through the partitioned handling",
+      "The answer report names sampled, failed and uncovered sources and is complete only where its evidence supports it"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "partition-combine.test.ts: a lookup result larger than every former limit is divided and combined with every result processed"
+      },
+      {
+        "level": "integration",
+        "name": "run-report.test.ts: the answer names sampled, failed and uncovered sources and is complete only where its evidence supports it"
+      }
+    ],
+    "planTaskId": "t13"
+  },
+  "citations": []
+}

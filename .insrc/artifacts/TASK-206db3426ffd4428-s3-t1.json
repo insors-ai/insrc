@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-27644ed5-371b-4ca1-b0c0-6bae997fc810",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T18:29:14.683Z",
+    "epicCreatedAt": "2026-11-09T06:00:04.355Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "206db3426ffd4428",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Add the read-only ReviewWorkers.progressOf accessor",
+      "parent": {
+        "entityId": "STORY-206db3426ffd4428-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-206db3426ffd4428-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#178",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "59c04f053ea34ebd59e93b4c100e78e1eb5a376c58bdbe64dabc34483d1e2d39",
+        "at": "2026-11-14T18:29:14.683Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T18:29:14.684Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the read-only ReviewWorkers.progressOf accessor",
+    "summary": "In src/daemon/threads/review-workers.ts add progressOf(key) returning a frozen structured clone of the entry's last accepted progress (incarnation, attempt, sequence, phase, completed, total, observation, display), or undefined when there is no entry, the entry is closing, or nothing has been accepted. It writes nothing, does not advance sequence, does not renew any grace and does not post to a worker.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "progressOf returns the last accepted progress after acceptPublication and undefined for an unknown or closing key",
+      "the returned value is a clone: mutating it does not change the entry",
+      "calling progressOf any number of times leaves e.progress.sequence, the board and worker messages unchanged",
+      "no existing ReviewWorkers method changes behavior"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/threads/__tests__/review-workers-progress-of.test.ts: progressOf returns a clone of the last accepted progress and undefined for a closing or unknown key"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/threads/__tests__/review-workers-progress-of.test.ts: progressOf is read-only and never advances sequence or renews grace"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

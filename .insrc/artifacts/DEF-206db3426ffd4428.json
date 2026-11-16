@@ -82,9 +82,10 @@
       "epicStatus": "open",
       "storyStatus": {
         "s1": "closed",
-        "s2": "open"
+        "s2": "open",
+        "s3": "open"
       },
-      "lastSyncedAt": "2026-11-15T05:00:23.092Z"
+      "lastSyncedAt": "2026-11-16T09:05:39.533Z"
     }
   },
   "body": {

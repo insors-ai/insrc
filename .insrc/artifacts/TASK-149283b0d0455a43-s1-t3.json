@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a3e292a1-fb93-4fb3-8e9d-7c891f147881",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-16T08:55:13.130Z",
+    "epicCreatedAt": "2026-10-03T14:09:32.294Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "149283b0d0455a43",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Name the ISSUE-anchored situation in the define-missing error",
+      "parent": {
+        "entityId": "STORY-149283b0d0455a43-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-149283b0d0455a43-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7d1bb8008d63ea0f4263326eeb3157482eeae866d4c50e65eff50e9eac2045bc",
+        "at": "2026-11-16T08:55:13.130Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T08:55:13.131Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Name the ISSUE-anchored situation in the define-missing error",
+    "summary": "In src/workflow/gates.ts readDefineArtifact, when the DEF is absent and an ISSUE root exists at the same hash, throw the same ArtifactMissingError class with a message that says the work item is an ISSUE-anchored bugfix with no Define or HLD, and does not tell the user to run define. Without an ISSUE root the message is unchanged. requireApprovedEpic still refuses the ISSUE.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "readDefineArtifact and requireApprovedEpic on an ISSUE-only hash throw ArtifactMissingError whose message names the ISSUE and omits the 'run define' advice",
+      "on a hash with neither root the original message is unchanged",
+      "a DEF-anchored read is unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "gates.test.ts: readDefineArtifact on an ISSUE-only hash names the ISSUE and does not advise running define"
+      },
+      {
+        "level": "unit",
+        "name": "gates.test.ts: readDefineArtifact on a hash with neither root keeps the original message"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

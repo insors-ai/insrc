@@ -1,0 +1,1455 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 34,
+        "contentHash": "853b583a3adaedd8e74886185dc809f8d67e8b54b4785b23edf94e15cd6dc68c",
+        "at": "2026-11-14T18:03:06.505Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s4",
+    "createdAt": "2026-11-14T13:08:41.465Z",
+    "updatedAt": "2026-11-14T18:03:06.284Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "epicSlug": "make-insrc-analysis-complete-used-right",
+    "revision": 34
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "6c24ca958",
+        "ranAt": "2026-11-14T13:08:41.465Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "item-length.test.ts: measureItem returns the whole content of a whole-file and a line-range item and no content for a changed, missing, unreadable or unhashed file",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/__tests__/item-length.test.ts",
+                "title": "measureItem returns the whole content of a whole-file and a line-range item and no content for a changed, missing, unreadable or unhashed file",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/__tests__/item-length.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 618,
+            "titles": [
+              {
+                "title": "measureItem returns the file's length for a document and the length of its lines for a section, and says when the indexer cut the stored body",
+                "result": "pass"
+              },
+              {
+                "title": "measureItem does not establish a length for a changed or a missing file (mutation: skip the hash comparison)",
+                "result": "pass"
+              },
+              {
+                "title": "measureItem returns the whole content of a whole-file and a line-range item and no content for a changed, missing, unreadable or unhashed file",
+                "result": "pass"
+              },
+              {
+                "title": "indexerFileHash is the hash the indexer records on a file entity",
+                "result": "pass"
+              },
+              {
+                "title": "the summariser reads its cut from the exported constant and no file under src/indexer or src/db changes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "8617331d3",
+        "ranAt": "2026-11-14T13:24:55.435Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "partly-read.test.ts: measure returns content for a confirmed item and a skipped or partlyRead entry with its reason for an unconfirmed one",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/partly-read.test.ts",
+                "title": "measure returns content for a confirmed item and a skipped or partlyRead entry with its reason for an unconfirmed one",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/explore/__tests__/partly-read.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 850,
+            "titles": [
+              {
+                "title": "a document lookup that cuts a 100,000-character section to 2,000 reports it against the section's real length (mutation: measure the stored body)",
+                "result": "pass"
+              },
+              {
+                "title": "a section whose file changed since it was indexed is reported as partly read with no length claimed",
+                "result": "pass"
+              },
+              {
+                "title": "a lookup that passes on a stored body uncut reports the item as partly read when the indexer cut it",
+                "result": "pass"
+              },
+              {
+                "title": "module.profile reports each file it cut with the kept and full lengths",
+                "result": "pass"
+              },
+              {
+                "title": "each of the three lookups that pause for a model call builds its record in finalize from the facts prepare carried, and a prepared value without them is not established",
+                "result": "pass"
+              },
+              {
+                "title": "the measurer finds the file's recorded hash in the graph, and reports an item only when something shows it is longer",
+                "result": "pass"
+              },
+              {
+                "title": "measure returns content for a confirmed item and a skipped or partlyRead entry with its reason for an unconfirmed one",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "c921351df",
+        "ranAt": "2026-11-14T13:29:21.694Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "grep-omitted.test.ts: through the ripgrep backend with complete set, more hits than MAX_LIMIT, a line over MAX_LINE_CHARS and output over RG_MAX_OUTPUT_BYTES are all returned in full, and a search past the 30-second deadline fails with its gathered hits",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/search/__tests__/grep-omitted.test.ts",
+                "title": "through the ripgrep backend with complete set, more hits than MAX_LIMIT, a line over MAX_LINE_CHARS and output over RG_MAX_OUTPUT_BYTES are all returned in full, and a search past the 30-second deadline fails with its gathered hits",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "grep-omitted.test.ts: without complete the ripgrep backend still applies MAX_LIMIT, MAX_LINE_CHARS and RG_MAX_OUTPUT_BYTES",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/search/__tests__/grep-omitted.test.ts",
+                "title": "without complete the ripgrep backend still applies MAX_LIMIT, MAX_LINE_CHARS and RG_MAX_OUTPUT_BYTES",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/search/__tests__/grep-omitted.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1792,
+            "titles": [
+              {
+                "title": "the Node backend reports a file skipped for its size, an unreadable file and a shortened line with its full length",
+                "result": "pass"
+              },
+              {
+                "title": "on the real primitive an unreadable root throws and an unreadable directory below it is skipped (mutation: restore the catch that returns)",
+                "result": "pass"
+              },
+              {
+                "title": "the Node backend's rule text names dot-named entries and non-regular files, against a fixture holding both",
+                "result": "pass"
+              },
+              {
+                "title": "the ripgrep backend reports shortened lines, the per-file limit, discarded output and its exclusion rule",
+                "result": "pass"
+              },
+              {
+                "title": "a ripgrep run that exits with another code or times out is recorded as backendFallback, and output past the cap sets outputDiscarded",
+                "result": "pass"
+              },
+              {
+                "title": "the shell helper says when stdout passed its cap, and not otherwise",
+                "result": "pass"
+              },
+              {
+                "title": "the search tool on an unreadable root fails with 'search-failed' and still says 'bad regex' for an invalid regex",
+                "result": "pass"
+              },
+              {
+                "title": "the search's hits and limits are unchanged for its other callers",
+                "result": "pass"
+              },
+              {
+                "title": "through the ripgrep backend with complete set, more hits than MAX_LIMIT, a line over MAX_LINE_CHARS and output over RG_MAX_OUTPUT_BYTES are all returned in full, and a search past the 30-second deadline fails with its gathered hits",
+                "result": "pass"
+              },
+              {
+                "title": "without complete the ripgrep backend still applies MAX_LIMIT, MAX_LINE_CHARS and RG_MAX_OUTPUT_BYTES",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "f6f5035f0",
+        "ranAt": "2026-11-14T13:34:15.719Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "grep-omitted.test.ts: through the Node fallback with complete set, every hit with its whole line is returned, a file over MAX_FILE_BYTES is searched, the deadline fails with gathered hits and an unreadable file is listed as skipped",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/search/__tests__/grep-omitted.test.ts",
+                "title": "through the Node fallback with complete set, every hit with its whole line is returned, a file over MAX_FILE_BYTES is searched, the deadline fails with gathered hits and an unreadable file is listed as skipped",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "grep-omitted.test.ts: without complete the Node fallback behaves exactly as today",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/search/__tests__/grep-omitted.test.ts",
+                "title": "without complete the Node fallback behaves exactly as today",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/search/__tests__/grep-omitted.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1950,
+            "titles": [
+              {
+                "title": "the Node backend reports a file skipped for its size, an unreadable file and a shortened line with its full length",
+                "result": "pass"
+              },
+              {
+                "title": "on the real primitive an unreadable root throws and an unreadable directory below it is skipped (mutation: restore the catch that returns)",
+                "result": "pass"
+              },
+              {
+                "title": "the Node backend's rule text names dot-named entries and non-regular files, against a fixture holding both",
+                "result": "pass"
+              },
+              {
+                "title": "the ripgrep backend reports shortened lines, the per-file limit, discarded output and its exclusion rule",
+                "result": "pass"
+              },
+              {
+                "title": "a ripgrep run that exits with another code or times out is recorded as backendFallback, and output past the cap sets outputDiscarded",
+                "result": "pass"
+              },
+              {
+                "title": "the shell helper says when stdout passed its cap, and not otherwise",
+                "result": "pass"
+              },
+              {
+                "title": "the search tool on an unreadable root fails with 'search-failed' and still says 'bad regex' for an invalid regex",
+                "result": "pass"
+              },
+              {
+                "title": "the search's hits and limits are unchanged for its other callers",
+                "result": "pass"
+              },
+              {
+                "title": "through the ripgrep backend with complete set, more hits than MAX_LIMIT, a line over MAX_LINE_CHARS and output over RG_MAX_OUTPUT_BYTES are all returned in full, and a search past the 30-second deadline fails with its gathered hits",
+                "result": "pass"
+              },
+              {
+                "title": "without complete the ripgrep backend still applies MAX_LIMIT, MAX_LINE_CHARS and RG_MAX_OUTPUT_BYTES",
+                "result": "pass"
+              },
+              {
+                "title": "through the Node fallback with complete set, every hit with its whole line is returned, a file over MAX_FILE_BYTES is searched, the deadline fails with gathered hits and an unreadable file is listed as skipped",
+                "result": "pass"
+              },
+              {
+                "title": "without complete the Node fallback behaves exactly as today",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "e1f7a955a",
+        "ranAt": "2026-11-14T13:42:29.911Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "completeness-all-lookups.test.ts: search.text and config.trace return every hit with its whole line and no limited entry, and a timed-out search is the failed lookup output with its gathered hits",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/completeness-all-lookups.test.ts",
+                "title": "search.text and config.trace return every hit with its whole line and no limited entry, and a timed-out search is the failed lookup output with its gathered hits",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/explore/__tests__/completeness-all-lookups.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1475,
+            "titles": [
+              {
+                "title": "a table test over all twenty lookup types finds a completeness record with its stated basis",
+                "result": "pass"
+              },
+              {
+                "title": "the fixture gives every lookup something to return, so the table is not a table of empty results",
+                "result": "pass"
+              },
+              {
+                "title": "each lookup that stops at a count reports the limit with its scope",
+                "result": "pass"
+              },
+              {
+                "title": "data-model.trace reports its overall limit and both per-target limits",
+                "result": "pass"
+              },
+              {
+                "title": "search.text and config.trace return every hit with its whole line and no limited entry, and a timed-out search is the failed lookup output with its gathered hits",
+                "result": "pass"
+              },
+              {
+                "title": "the table-listing lookup reads the data driver's cut flag into a limit",
+                "result": "pass"
+              },
+              {
+                "title": "every graph-based record carries the coverage note, on the paths that return early as well",
+                "result": "pass"
+              },
+              {
+                "title": "a prepared value without the carried facts gives a record that is not established",
+                "result": "pass"
+              },
+              {
+                "title": "s1/t16: the five relationship lookups report notEstablished with the reasons and their counts for an incomplete repository, and as today for a complete one or with no repository facts",
+                "result": "pass"
+              },
+              {
+                "title": "s1/t16: the executor sets the repository completeness at all three context constructions (executePlan, and stepPlan for a narrow and a deterministic lookup); none for an unregistered repository",
+                "result": "pass"
+              },
+              {
+                "title": "s1/t16: graphCompleteness gives the same record for its existing arguments, and the nine lookups that do not walk relationships do not pass repoCompleteness",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "8d45126b7",
+        "ranAt": "2026-11-14T13:48:06.862Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "partly-read.test.ts: doc.constraint.enumerate and doc.decision.trace read a section longer than the former cut whole and report an unconfirmable section as not covered",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/partly-read.test.ts",
+                "title": "doc.constraint.enumerate and doc.decision.trace read a section longer than the former cut whole and report an unconfirmable section as not covered",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "module-profile-entrypoint.test.ts: an entry point beyond the former first 4,096 characters is recognised and an unconfirmable file is reported as not covered",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/module-profile-entrypoint.test.ts",
+                "title": "an entry point beyond the former first 4,096 characters is recognised and an unconfirmable file is reported as not covered",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/explore/__tests__/module-profile-entrypoint.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 677,
+            "titles": [
+              {
+                "title": "an entry point beyond the former first 4,096 characters is recognised and an unconfirmable file is reported as not covered",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/explore/__tests__/partly-read.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 761,
+            "titles": [
+              {
+                "title": "doc.constraint.enumerate and doc.decision.trace read a section longer than the former cut whole and report an unconfirmable section as not covered",
+                "result": "pass"
+              },
+              {
+                "title": "a lookup that passes on a stored body uncut reports the item as partly read when the indexer cut it",
+                "result": "pass"
+              },
+              {
+                "title": "each of the three lookups that pause for a model call builds its record in finalize from the facts prepare carried, and a prepared value without them is not established",
+                "result": "pass"
+              },
+              {
+                "title": "the measurer finds the file's recorded hash in the graph, and reports an item only when something shows it is longer",
+                "result": "pass"
+              },
+              {
+                "title": "measure returns content for a confirmed item and a skipped or partlyRead entry with its reason for an unconfirmed one",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "7842384df",
+        "ranAt": "2026-11-14T13:56:26.845Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "adherence-check-body.test.ts: the code, data and infra adherence checks read a body over 1200 characters whole and an unconfirmable item is reported as not covered",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/__tests__/adherence-check-body.test.ts",
+                "title": "the code, data and infra adherence checks read a body over 1200 characters whole and an unconfirmable item is reported as not covered",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/adherence-topic-route.test.ts",
+                "title": "a check with a topic judges against the constraints enumerated from the repository's documents, and its output carries those constraints, their citations and the record's path",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/adherence-topic-route.test.ts",
+                "title": "the enumeration's reached limit, partly read section and skipped search by meaning appear in the completeness record of the check that made it and of a check that read its record",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/adherence-topic-route.test.ts",
+                "title": "an inline list or stored-document ids are used alone when given, with a topic also present, and no enumeration is made; an empty inline list beside ids uses the ids, and beside a topic uses the topic",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/__tests__/partly-read-plan-tasks.test.ts",
+                "title": "the project-context assembler reports a limit it reached and the documents behind its decisions and constraints, and the adherence check puts them in the record",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/code/__tests__/scope-area.test.ts",
+                "title": "the adherence check gives the same result for a repo scope as before, as a code, a data and an infra template, and as a data template on an unregistered directory is not refused",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/__tests__/dropped-or-failed.test.ts",
+                "title": "an adherence check whose model call fails is recorded by the walk as a failed task",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "summariser-body.test.ts: a document over 8192 characters is summarised from its whole content",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/summariser/__tests__/summariser-body.test.ts",
+                "title": "a document over 8192 characters is summarised from its whole content",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/runtimes/__tests__/adherence-check-body.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 683,
+            "titles": [
+              {
+                "title": "the code, data and infra adherence checks read a body over 1200 characters whole and an unconfirmable item is reported as not covered",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/__tests__/dropped-or-failed.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 950,
+            "titles": [
+              {
+                "title": "the count of catch clauses in the runtime files equals the number of classified entries",
+                "result": "pass"
+              },
+              {
+                "title": "an inventory over a tree with an unreadable directory and a file that does not parse lists both under skipped and is not complete (mutation: restore the silent skip)",
+                "result": "pass"
+              },
+              {
+                "title": "an adherence check whose model call fails is recorded by the walk as a failed task",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/__tests__/partly-read-plan-tasks.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 741,
+            "titles": [
+              {
+                "title": "the project-context assembler reports a limit it reached and the documents behind its decisions and constraints, and the adherence check puts them in the record",
+                "result": "pass"
+              },
+              {
+                "title": "the docs plan tasks report a document they could not confirm under partlyRead, and a missing summary and a failure placeholder under skipped (mutation: drop the partlyRead entry)",
+                "result": "pass"
+              },
+              {
+                "title": "the docs tool exposed to agents returns what it returned before",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/code/__tests__/scope-area.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 740,
+            "titles": [
+              {
+                "title": "a code task with a module scope uses only the entities under that directory, with a file scope only that file's, with a symbol scope the one entity",
+                "result": "pass"
+              },
+              {
+                "title": "the adherence check gives the same result for a repo scope as before, as a code, a data and an infra template, and as a data template on an unregistered directory is not refused",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/shared/__tests__/adherence-topic-route.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 844,
+            "titles": [
+              {
+                "title": "a check with a topic judges against the constraints enumerated from the repository's documents, and its output carries those constraints, their citations and the record's path",
+                "result": "pass"
+              },
+              {
+                "title": "four checks with one topic in one run make one enumeration; a topic that differs only in case or spacing reuses it; a different maxConstraintSources, a different topic or a different run does not",
+                "result": "pass"
+              },
+              {
+                "title": "the enumeration's reached limit, partly read section and skipped search by meaning appear in the completeness record of the check that made it and of a check that read its record",
+                "result": "pass"
+              },
+              {
+                "title": "an inline list or stored-document ids are used alone when given, with a topic also present, and no enumeration is made; an empty inline list beside ids uses the ids, and beside a topic uses the topic",
+                "result": "pass"
+              },
+              {
+                "title": "a data check under a connection scope and an infra check under a manifest directory read the documents of the declaring or containing repository, and a code check scoped to one file reads the whole repository's documents",
+                "result": "pass"
+              },
+              {
+                "title": "when the documents state no constraint on the topic the check fails with that reason, with the number of sections read or the note that none matched, the record is written, and a sibling check fails the same way without a second enumeration",
+                "result": "pass"
+              },
+              {
+                "title": "when the enumeration's model call fails the check fails with 'could not be enumerated', writes no record, and the next check enumerates again; when the judging call fails the reason is the judging's and the record stays",
+                "result": "pass"
+              },
+              {
+                "title": "an override that yields no constraint fails naming the override and does not fall back to the topic",
+                "result": "pass"
+              },
+              {
+                "title": "run through the plan walk, a failed check's reason is in the task's record and in tasksFailed, and the plan's report is still written from the other tasks",
+                "result": "pass"
+              },
+              {
+                "title": "no template, runtime or prompt of the analyze framework names constraintsSource, and the check does not read upstreamOutputs",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/summariser/__tests__/summariser-body.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 666,
+            "titles": [
+              {
+                "title": "a document over 8192 characters is summarised from its whole content",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "579838cd3",
+        "ranAt": "2026-11-14T14:58:15.269Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "completeness-all-lookups.test.ts: symbol-locate, test-locate, import-graph, usage-example, concept-resolve, manifests-locate, data-model-trace and convention-detect return every result at, one over and zero versus the former limit with no limited entry",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/completeness-all-lookups.test.ts",
+                "title": "symbol-locate, test-locate, import-graph, usage-example, concept-resolve, manifests-locate, data-model-trace and convention-detect return every result at, one over and zero versus the former limit with no limited entry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/explore/__tests__/completeness-all-lookups.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1601,
+            "titles": [
+              {
+                "title": "a table test over all twenty lookup types finds a completeness record with its stated basis",
+                "result": "pass"
+              },
+              {
+                "title": "the fixture gives every lookup something to return, so the table is not a table of empty results",
+                "result": "pass"
+              },
+              {
+                "title": "each document and capability lookup that stops at a count reports the limit with its scope",
+                "result": "pass"
+              },
+              {
+                "title": "symbol-locate, test-locate, import-graph, usage-example, concept-resolve, manifests-locate, data-model-trace and convention-detect return every result at, one over and zero versus the former limit with no limited entry",
+                "result": "pass"
+              },
+              {
+                "title": "search.text and config.trace return every hit with its whole line and no limited entry, and a timed-out search is the failed lookup output with its gathered hits",
+                "result": "pass"
+              },
+              {
+                "title": "the table-listing lookup reads the data driver's cut flag into a limit",
+                "result": "pass"
+              },
+              {
+                "title": "every graph-based record carries the coverage note, on the paths that return early as well",
+                "result": "pass"
+              },
+              {
+                "title": "a prepared value without the carried facts gives a record that is not established",
+                "result": "pass"
+              },
+              {
+                "title": "s1/t16: the five relationship lookups report notEstablished with the reasons and their counts for an incomplete repository, and as today for a complete one or with no repository facts",
+                "result": "pass"
+              },
+              {
+                "title": "s1/t16: the executor sets the repository completeness at all three context constructions (executePlan, and stepPlan for a narrow and a deterministic lookup); none for an unregistered repository",
+                "result": "pass"
+              },
+              {
+                "title": "s1/t16: graphCompleteness gives the same record for its existing arguments, and the nine lookups that do not walk relationships do not pass repoCompleteness",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "b39481443",
+        "ranAt": "2026-11-14T15:07:08.579Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "completeness-all-lookups.test.ts: doc-mention, doc.decision.trace and doc.constraint.enumerate return every section at, one over and zero versus the former limits with no limited entry",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/completeness-all-lookups.test.ts",
+                "title": "doc-mention, doc.decision.trace and doc.constraint.enumerate return every section at, one over and zero versus the former limits with no limited entry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/explore/__tests__/completeness-all-lookups.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1584,
+            "titles": [
+              {
+                "title": "a table test over all twenty lookup types finds a completeness record with its stated basis",
+                "result": "pass"
+              },
+              {
+                "title": "the fixture gives every lookup something to return, so the table is not a table of empty results",
+                "result": "pass"
+              },
+              {
+                "title": "the capability lookup that stops at a count reports the limit with its scope",
+                "result": "pass"
+              },
+              {
+                "title": "symbol-locate, test-locate, import-graph, usage-example, concept-resolve, manifests-locate, data-model-trace and convention-detect return every result at, one over and zero versus the former limit with no limited entry",
+                "result": "pass"
+              },
+              {
+                "title": "doc-mention, doc.decision.trace and doc.constraint.enumerate return every section at, one over and zero versus the former limits with no limited entry",
+                "result": "pass"
+              },
+              {
+                "title": "search.text and config.trace return every hit with its whole line and no limited entry, and a timed-out search is the failed lookup output with its gathered hits",
+                "result": "pass"
+              },
+              {
+                "title": "the table-listing lookup reads the data driver's cut flag into a limit",
+                "result": "pass"
+              },
+              {
+                "title": "every graph-based record carries the coverage note, on the paths that return early as well",
+                "result": "pass"
+              },
+              {
+                "title": "a prepared value without the carried facts gives a record that is not established",
+                "result": "pass"
+              },
+              {
+                "title": "s1/t16: the five relationship lookups report notEstablished with the reasons and their counts for an incomplete repository, and as today for a complete one or with no repository facts",
+                "result": "pass"
+              },
+              {
+                "title": "s1/t16: the executor sets the repository completeness at all three context constructions (executePlan, and stepPlan for a narrow and a deterministic lookup); none for an unregistered repository",
+                "result": "pass"
+              },
+              {
+                "title": "s1/t16: graphCompleteness gives the same record for its existing arguments, and the nine lookups that do not walk relationships do not pass repoCompleteness",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "5798a91fd",
+        "ranAt": "2026-11-14T15:14:39.120Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "completeness-all-lookups.test.ts: capability-reuse-check, db-tables-list and db-table-describe return every result and a complete driver's table listing has no limited entry",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/completeness-all-lookups.test.ts",
+                "title": "capability-reuse-check, db-tables-list and db-table-describe return every result and a complete driver's table listing has no limited entry",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/explore/__tests__/capability-reuse-anchor.test.ts",
+                "title": "a limit a plan still passes is ignored: the named subject is checked first and every child that matches follows, on both execution modes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "kv-common.test.ts: a Redis or etcd listing is a sample reported incomplete and no key scan is made",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/kv-common.test.ts",
+                "title": "a Redis or etcd listing is a sample reported incomplete and no key scan is made",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/list-complete.test.ts",
+                "title": "the table listing of sqlite, pg and mysql applies no clamp in the complete mode, that of oracle and mssql builds its query without the row-limit clause, and the four namespace drivers' listing applies no limit; each behaves exactly as before without the mode; the file listing walks to the end when no limit is given; a ClickHouse source, whose listing throws, is not determined",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/explore/__tests__/capability-reuse-anchor.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1063,
+            "titles": [
+              {
+                "title": "a capability question with no word in common with the named module still inspects that module, first, on the one-shot and the multi-turn mode",
+                "result": "pass"
+              },
+              {
+                "title": "a higher-ranked child does not replace the named subject, on both execution modes",
+                "result": "pass"
+              },
+              {
+                "title": "a symbol subject is handled by entity id on both execution modes: its file is the candidate, its name the only evidence",
+                "result": "pass"
+              },
+              {
+                "title": "an empty named area is checked on both execution modes and its completeness says there was nothing in it",
+                "result": "pass"
+              },
+              {
+                "title": "a limit a plan still passes is ignored: the named subject is checked first and every child that matches follows, on both execution modes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/explore/__tests__/completeness-all-lookups.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1633,
+            "titles": [
+              {
+                "title": "a table test over all twenty lookup types finds a completeness record with its stated basis",
+                "result": "pass"
+              },
+              {
+                "title": "the fixture gives every lookup something to return, so the table is not a table of empty results",
+                "result": "pass"
+              },
+              {
+                "title": "symbol-locate, test-locate, import-graph, usage-example, concept-resolve, manifests-locate, data-model-trace and convention-detect return every result at, one over and zero versus the former limit with no limited entry",
+                "result": "pass"
+              },
+              {
+                "title": "doc-mention, doc.decision.trace and doc.constraint.enumerate return every section at, one over and zero versus the former limits with no limited entry",
+                "result": "pass"
+              },
+              {
+                "title": "search.text and config.trace return every hit with its whole line and no limited entry, and a timed-out search is the failed lookup output with its gathered hits",
+                "result": "pass"
+              },
+              {
+                "title": "the table-listing lookup reports a driver that stopped early as skipped and a complete one as complete",
+                "result": "pass"
+              },
+              {
+                "title": "capability-reuse-check, db-tables-list and db-table-describe return every result and a complete driver's table listing has no limited entry",
+                "result": "pass"
+              },
+              {
+                "title": "every graph-based record carries the coverage note, on the paths that return early as well",
+                "result": "pass"
+              },
+              {
+                "title": "a prepared value without the carried facts gives a record that is not established",
+                "result": "pass"
+              },
+              {
+                "title": "s1/t16: the five relationship lookups report notEstablished with the reasons and their counts for an incomplete repository, and as today for a complete one or with no repository facts",
+                "result": "pass"
+              },
+              {
+                "title": "s1/t16: the executor sets the repository completeness at all three context constructions (executePlan, and stepPlan for a narrow and a deterministic lookup); none for an unregistered repository",
+                "result": "pass"
+              },
+              {
+                "title": "s1/t16: graphCompleteness gives the same record for its existing arguments, and the nine lookups that do not walk relationships do not pass repoCompleteness",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/kv-common.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 752,
+            "titles": [
+              {
+                "title": "is a no-op when no whitelist is configured",
+                "result": "pass"
+              },
+              {
+                "title": "accepts a prefix inside the whitelist",
+                "result": "pass"
+              },
+              {
+                "title": "accepts a pattern whose literal stem starts with an allowed prefix",
+                "result": "pass"
+              },
+              {
+                "title": "rejects a pattern outside the whitelist",
+                "result": "pass"
+              },
+              {
+                "title": "rejects a prefix outside the whitelist",
+                "result": "pass"
+              },
+              {
+                "title": "requires a pattern or prefix when a whitelist is configured",
+                "result": "pass"
+              },
+              {
+                "title": "assertNamespaceAllowed",
+                "result": "pass"
+              },
+              {
+                "title": "clamps scan limit to [1, 500]",
+                "result": "pass"
+              },
+              {
+                "title": "clamps sample-shape limit to [1, 50]",
+                "result": "pass"
+              },
+              {
+                "title": "clamp helpers",
+                "result": "pass"
+              },
+              {
+                "title": "a Redis or etcd listing is a sample reported incomplete and no key scan is made",
+                "result": "pass"
+              },
+              {
+                "title": "a store that derives its namespaces from its keys",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/list-complete.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1159,
+            "titles": [
+              {
+                "title": "the table listing of sqlite, pg and mysql applies no clamp in the complete mode, that of oracle and mssql builds its query without the row-limit clause, and the four namespace drivers' listing applies no limit; each behaves exactly as before without the mode; the file listing walks to the end when no limit is given; a ClickHouse source, whose listing throws, is not determined",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "cf0e6e4c5",
+        "ranAt": "2026-11-14T15:26:01.288Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "partly-read-plan-tasks.test.ts: the data and infra file lists, family samples, subject lists and the aggregator summary return every item",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/__tests__/partly-read-plan-tasks.test.ts",
+                "title": "the data and infra file lists, family samples, subject lists and the aggregator summary return every item",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/__tests__/completeness-all-runtimes.test.ts",
+                "title": "discovery-families names every file of a family and reports no limit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "dropped-or-failed.test.ts: a runtime over a sampled driver reports the sample and not a complete answer",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/__tests__/dropped-or-failed.test.ts",
+                "title": "a runtime over a sampled driver reports the sample and not a complete answer",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/__tests__/completeness-all-runtimes.test.ts",
+                "title": "the object-listing plan task reports a driver that stopped early as skipped, never as a limit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/runtimes/__tests__/completeness-all-runtimes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1331,
+            "titles": [
+              {
+                "title": "a table test over every registered plan-task runtime finds a completeness record on each result",
+                "result": "pass"
+              },
+              {
+                "title": "a table test over every registered plan-task runtime still finds a completeness record on each result, with the functional-surface task given a directory path",
+                "result": "pass"
+              },
+              {
+                "title": "the fixture gives the inventories and listings something to return",
+                "result": "pass"
+              },
+              {
+                "title": "no output of the five infra inventories has a `truncated` field, and a walk goes past the former cap of 5,000 files with no limit in the record",
+                "result": "pass"
+              },
+              {
+                "title": "discovery-families names every file of a family and reports no limit",
+                "result": "pass"
+              },
+              {
+                "title": "the object-listing plan task reports a driver that stopped early as skipped, never as a limit",
+                "result": "pass"
+              },
+              {
+                "title": "an aggregate-report runtime's record says its completeness is that of the tasks it summarises",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/__tests__/dropped-or-failed.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 978,
+            "titles": [
+              {
+                "title": "the count of catch clauses in the runtime files equals the number of classified entries",
+                "result": "pass"
+              },
+              {
+                "title": "an inventory over a tree with an unreadable directory and a file that does not parse lists both under skipped and is not complete (mutation: restore the silent skip)",
+                "result": "pass"
+              },
+              {
+                "title": "an adherence check whose model call fails is recorded by the walk as a failed task",
+                "result": "pass"
+              },
+              {
+                "title": "a runtime over a sampled driver reports the sample and not a complete answer",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/__tests__/partly-read-plan-tasks.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1087,
+            "titles": [
+              {
+                "title": "the project-context assembler reports a limit it reached and the documents behind its decisions and constraints, and the adherence check puts them in the record",
+                "result": "pass"
+              },
+              {
+                "title": "the docs plan tasks report a document they could not confirm under partlyRead, and a missing summary and a failure placeholder under skipped (mutation: drop the partlyRead entry)",
+                "result": "pass"
+              },
+              {
+                "title": "the data and infra file lists, family samples, subject lists and the aggregator summary return every item",
+                "result": "pass"
+              },
+              {
+                "title": "the docs tool exposed to agents returns what it returned before",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "2e62161b4",
+        "ranAt": "2026-11-14T15:53:18.954Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "decompose-prompt-limits.test.ts: the planning prompt and catalog contain no limit, topK, maxSources or previewChars and no fixed result count",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/decompose-prompt-limits.test.ts",
+                "title": "the planning prompt and catalog contain no limit, topK, maxSources or previewChars and no fixed result count",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "params-schema.test.ts: a plan passing each of limit, topK, maxSources and previewChars produces the same cache key as one without",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/params-schema.test.ts",
+                "title": "a plan passing each of limit, topK, maxSources and previewChars produces the same cache key as one without",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "cache-area-isolation.test.ts: a stored version 3 output is treated as absent at version 4",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/cache-area-isolation.test.ts",
+                "title": "a stored version 3 output is treated as absent at version 4",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/decompose-prompt-limits.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 653,
+            "titles": [
+              {
+                "title": "the planning prompt and catalog contain no limit, topK, maxSources or previewChars and no fixed result count",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/explore/__tests__/cache-area-isolation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1058,
+            "titles": [
+              {
+                "title": "two consecutive same-question requests on different modules do not share an entry on the one-shot executor and the step executor",
+                "result": "pass"
+              },
+              {
+                "title": "capability.reuse-check on different modules does not share an entry on either executor",
+                "result": "pass"
+              },
+              {
+                "title": "a row keyed the old way is not read, and the narrow phase writes under the area-aware key",
+                "result": "pass"
+              },
+              {
+                "title": "a version-2 row, written exactly as the previous code wrote it, is not read by either executor",
+                "result": "pass"
+              },
+              {
+                "title": "a stored version 3 output is treated as absent at version 4",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/explore/__tests__/params-schema.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 697,
+            "titles": [
+              {
+                "title": "every exploration type has exactly one params branch, derived from EXPLORATION_TYPES",
+                "result": "pass"
+              },
+              {
+                "title": "each branch is closed, requires no param, and admits null and a placeholder string for every value",
+                "result": "pass"
+              },
+              {
+                "title": "every documented params example in the decomposer prompt validates against its type's branch",
+                "result": "pass"
+              },
+              {
+                "title": "a plan passing each of limit, topK, maxSources and previewChars produces the same cache key as one without",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t13",
+        "commit": "a02da29a2",
+        "ranAt": "2026-11-14T15:56:05.395Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "partition-combine.test.ts: a lookup result larger than every former limit is divided and combined with every result processed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/partition-combine.test.ts",
+                "title": "a lookup result larger than every former limit is divided and combined with every result processed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "run-report.test.ts: the answer names sampled, failed and uncovered sources and is complete only where its evidence supports it",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/run-report.test.ts",
+                "title": "the answer names sampled, failed and uncovered sources and is complete only where its evidence supports it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/partition-combine.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 939,
+            "titles": [
+              {
+                "title": "serial parts, division up to three times, repair exhaustion never discards a successful part, combine terminates and a combine failure returns per-part results with 'combine' in notCovered",
+                "result": "pass"
+              },
+              {
+                "title": "terminal precedence by cause (unadmittable, invalid-reply, call-failed) with partFailures kinds and cause chains",
+                "result": "pass"
+              },
+              {
+                "title": "bundle and aggregate adapters keep evidence layers and findings exactly through several combine stages",
+                "result": "pass"
+              },
+              {
+                "title": "mixed oversized-envelope and admissible blocks return the covered parts with the oversized block in notCovered",
+                "result": "pass"
+              },
+              {
+                "title": "a single pass keeps the legacy route: the original error is thrown as it is, and a size refusal of an admitted pass divides",
+                "result": "pass"
+              },
+              {
+                "title": "dedupe drops only a repeated whole entry: distinct files whose names share a prefix or hold spaces are all kept, and the infra family lists are deduped",
+                "result": "pass"
+              },
+              {
+                "title": "a lookup result larger than every former limit is divided and combined with every result processed",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/orchestrator/__tests__/run-report.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 918,
+            "titles": [
+              {
+                "title": "a run with one failed task and one limited task returns a report naming both, and its final report's text starts with the completeness line",
+                "result": "pass"
+              },
+              {
+                "title": "a run with a nested plan names an incomplete child task by its path; the planner-kind task and the aggregate-report task are not sources",
+                "result": "pass"
+              },
+              {
+                "title": "a run record written after the change resumes with its report (mutation: leave `report` out of the resume literal)",
+                "result": "pass"
+              },
+              {
+                "title": "a run record written without a report resumes with none and its text form carries the not-recorded line",
+                "result": "pass"
+              },
+              {
+                "title": "a run that completes stores its report in the run record, and resuming from that record returns the same report and the same text",
+                "result": "pass"
+              },
+              {
+                "title": "the plan's and the run's tasksFailed and the daemon's response carry the code",
+                "result": "pass"
+              },
+              {
+                "title": "the answer names sampled, failed and uncovered sources and is complete only where its evidence supports it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t14",
+        "commit": "483fb4708",
+        "ranAt": "2026-11-14T18:03:06.284Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "analyzer-docs-limits.test.ts: the four named documents contain no analyzer limit constant or parameter name",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/__tests__/analyzer-docs-limits.test.ts",
+                "title": "the four named documents contain no analyzer limit constant or parameter name",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "search-text-live.test.ts: a live search.text over this repository returns the same count as an independent search of the same pattern",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "S004/SWEEP.md 'Live checks': INSRC_LIVE_TESTS=1 run, 1 pass"
+            }
+          },
+          {
+            "name": "redis-etcd-live.test.ts: a live Redis listing is reported as sampled and incomplete",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "S004/SWEEP.md 'Live checks': real Redis 8.0.5, INSRC_LIVE_TESTS=1 INSRC_TEST_REDIS_URL=redis://127.0.0.1:6344, 1 pass"
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/__tests__/analyzer-docs-limits.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 512,
+            "titles": [
+              {
+                "title": "the four named documents contain no analyzer limit constant or parameter name",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

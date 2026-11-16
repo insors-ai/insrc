@@ -294,7 +294,7 @@ Run at 2026-11-14T15:56:05.395Z on commit `a02da29a2`. Tests check: **passed**. 
 
 ## t14
 
-Run at 2026-11-14T16:33:15.215Z on commit `dc36dd201`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+Run at 2026-11-14T18:03:06.284Z on commit `483fb4708`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 **unit: analyzer-docs-limits.test.ts: the four named documents contain no analyzer limit constant or parameter name**
 
@@ -304,11 +304,11 @@ Run at 2026-11-14T16:33:15.215Z on commit `dc36dd201`. Tests check: **passed**. 
 
 **live: search-text-live.test.ts: a live search.text over this repository returns the same count as an independent search of the same pattern**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S004/SWEEP.md, section 'Live checks' (INSRC_LIVE_TESTS=1 run output)
+Reported by the builder, not run by the gate: **pass**. Evidence: S004/SWEEP.md 'Live checks': INSRC_LIVE_TESTS=1 run, 1 pass
 
 **live: redis-etcd-live.test.ts: a live Redis listing is reported as sampled and incomplete**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S004/SWEEP.md, section 'Live checks' (real Redis 8.0.5, INSRC_LIVE_TESTS=1 INSRC_TEST_REDIS_URL=redis://127.0.0.1:6344, 1 pass)
+Reported by the builder, not run by the gate: **pass**. Evidence: S004/SWEEP.md 'Live checks': real Redis 8.0.5, INSRC_LIVE_TESTS=1 INSRC_TEST_REDIS_URL=redis://127.0.0.1:6344, 1 pass
 
 **Files run**
 

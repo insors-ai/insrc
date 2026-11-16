@@ -1,0 +1,128 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-78452fd9-4185-489d-a1b7-acd398be288e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-16T08:55:13.137Z",
+    "epicCreatedAt": "2026-10-03T14:09:32.294Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "149283b0d0455a43",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the identity-regression integration tests for an ISSUE-anchored LLD",
+      "parent": {
+        "entityId": "STORY-149283b0d0455a43-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-149283b0d0455a43-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-149283b0d0455a43-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-149283b0d0455a43-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-149283b0d0455a43-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "59d1ec33d028a81b142dd87386204c5275c25960ec5c7d218469bc11236746bd",
+        "at": "2026-11-16T08:55:13.137Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T08:55:13.235Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the identity-regression integration tests for an ISSUE-anchored LLD",
+    "summary": "Create src/workflow/__tests__/issue-anchored-route.test.ts, modelled on seedIssueRepo in folder-identity-finalize.test.ts. Against a seeded ISSUE-only repo it proves that a standalone LLD started with the issue hash and s1 is written as LLD-<issueHash>-s1 with the ISSUE's label, epicCreatedAt and folder and no second root; that design review classifies it as kind issue with the ISSUE as originating_issue; that a second start revises the same LLD; that a genuine standalone feature still mints its own root, an Epic story still requires its DEF and HLD, requireApprovedEpic still refuses an ISSUE, and a bugfix LLD with no ISSUE provenance is still rejected; and that the chain report returns the implied s1 and chain-complete once s1's LLD is approved. PLAN and BUILD identity is scoped to the helpers they use (requireEpicAnchor, inheritedStoryStandalone, inheritedEpicSlug) on the same seeded repo, plus the PLAN finalizer through an existing plan test fixture where one exists; a full BUILD record is not produced. No production code changes.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "the sized-ISSUE LLD is LLD-<issueHash>-s1 with the ISSUE's label and epicCreatedAt and no second root",
+      "design review resolves kind issue and lists the approved ISSUE as originating_issue",
+      "requireEpicAnchor, inheritedStoryStandalone and inheritedEpicSlug return the ISSUE's anchor, placement and label for the seeded repo",
+      "a second design.story start revises the same LLD and creates no duplicate",
+      "genuine standalone and Epic-story behaviour is unchanged, and a bugfix LLD without ISSUE provenance is still rejected",
+      "the chain report for the seeded repo returns the implied s1 and chain-complete once s1's LLD is approved"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "issue-anchored-route.test.ts: sized ISSUE start writes LLD-<issueHash>-s1 and no second root"
+      },
+      {
+        "level": "integration",
+        "name": "issue-anchored-route.test.ts: the LLD inherits the ISSUE label, epicCreatedAt and folder"
+      },
+      {
+        "level": "integration",
+        "name": "issue-anchored-route.test.ts: design review classifies the LLD as kind issue with the ISSUE as originating_issue"
+      },
+      {
+        "level": "integration",
+        "name": "issue-anchored-route.test.ts: PLAN and BUILD placement helpers keep the ISSUE epicHash, anchor and folder"
+      },
+      {
+        "level": "integration",
+        "name": "issue-anchored-route.test.ts: a second design.story start revises the same LLD and creates no duplicate"
+      },
+      {
+        "level": "integration",
+        "name": "issue-anchored-route.test.ts: a genuine standalone feature still mints its own root"
+      },
+      {
+        "level": "integration",
+        "name": "issue-anchored-route.test.ts: an Epic story still requires its DEF and HLD"
+      },
+      {
+        "level": "integration",
+        "name": "issue-anchored-route.test.ts: requireApprovedEpic still refuses an ISSUE root with a message naming the ISSUE"
+      },
+      {
+        "level": "integration",
+        "name": "issue-anchored-route.test.ts: a bugfix LLD with no ISSUE provenance is still rejected by design review"
+      },
+      {
+        "level": "integration",
+        "name": "issue-anchored-route.test.ts: chain report for the seeded ISSUE repo returns the implied s1 and reaches chain-complete"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

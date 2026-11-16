@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 409 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 430 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -746,3 +746,129 @@ Run at 2026-11-15T18:54:11.578Z on commit `8e3eb7e2d`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/threads/__tests__/review-workers.test.ts` | 0 | 5 | 4.8 s |  |
+
+## t20
+
+Run at 2026-11-15T20:20:45.151Z on commit `4b312270b`. Tests check: **passed**. 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: Actual production staged-view cutover matrix for both families and all workflow routes: combined memory high-water, complete scope/history equality, zero duplicate queries/full-history hot writes, cancellation/tamper/crash fences and task-order preservation.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | production defaults preserve all code routes story aliases task selection and complete pinned packet views | `src/daemon/threads/__tests__/review-production-qualification.test.ts` |
+| pass | instrumented actual-source managed code cutover stays bounded and preserves qualified and permanent results | `src/daemon/threads/__tests__/review-production-qualification.test.ts` |
+| pass | production design defaults preserve DEF HLD epic standalone and issue LLD latest targets and ignore unrelated edits | `src/daemon/threads/__tests__/review-production-qualification.test.ts` |
+| pass | production defaults preserve merge rename deletion witnesses and exact selected spans against the baseline oracle | `src/daemon/threads/__tests__/review-production-qualification.test.ts` |
+| pass | production design target edits invalidate and only explicit approved restart captures the latest source | `src/daemon/threads/__tests__/review-production-qualification.test.ts` |
+| pass | production whole-story defaults preserve multi-task dependency order and every submitted test detail | `src/daemon/threads/__tests__/review-production-qualification.test.ts` |
+| pass | cold production design publication requalifies original evidence and rejects later author edits without a model | `src/daemon/threads/__tests__/review-production-qualification.test.ts` |
+
+**integration: Source-free compiled package code/design daemon/controller smoke plus backend build after bounded-view cutover; retained full T14 workload remains an independent final gate.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | compiled worker entrypoints and both review families start from an isolated built package | `src/daemon/threads/__tests__/review-worker-package.test.ts` |
+| pass | release instructions retain explicit recovery local trust and post-approval smoke ordering | `src/daemon/threads/__tests__/review-worker-package.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/review-production-qualification.test.ts` | 0 | 25 | 208.7 s |  |
+| `src/daemon/threads/__tests__/review-worker-package.test.ts` | 0 | 2 | 9.4 s |  |
+
+## t21
+
+Run at 2026-11-16T09:26:53.738Z on commit `f66516e5a`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: Duplicate ISSUE/LLD lifecycle reconciliation: atomic supersession, replacement provenance, non-routability, retry/readback failure, and unchanged primary PLAN/BUILD/TESTS evidence.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | records replacement provenance, excludes terminal artifacts, and retries a partial batch without rewriting standing history | `src/workflow/artifact-core/__tests__/supersession.test.ts` |
+| pass | preflights the whole batch and rejects missing replacements or conflicting provenance before another artifact changes | `src/workflow/artifact-core/__tests__/supersession.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/artifact-core/__tests__/supersession.test.ts` | 0 | 3 | 0.9 s |  |
+
+## t22
+
+Run at 2026-11-16T10:03:52.660Z on commit `f2bd94c94`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: Source-light locator/manifest codecs: ordered Unicode paths, add/delete/rename/replacement/merge/binary metadata, object and parent identities, version rejection, tamper/cross-attempt detection, and source-body absence.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | round-trips ordered Unicode add/delete/rename/replacement/merge/binary locators and a sealed parent workspace without source bodies | `src/shared/__tests__/review-source-light.test.ts` |
+| pass | rejects unknown versions, tampering and cross-attempt records while historical eager state only requests cold requalification | `src/shared/__tests__/review-source-light.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/shared/__tests__/review-source-light.test.ts` | 0 | 3 | 0.6 s |  |
+
+## t23
+
+Run at 2026-11-16T10:12:58.023Z on commit `56708e4ad`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: Pinned commit-parent workspace matrix: new/delete/rename/stacked commits, exact transient after ranges, relevant-only parent files, manifest sealing, concurrent attempt isolation, cancellation and owned cleanup.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | materializes only actual commit-parent files, seals isolated attempts, emits exact transient after ranges, cancels safely and performs owned cleanup | `src/workflow/review/__tests__/source-light-workspace.test.ts` |
+| pass | rejects changed pinned objects and refuses cleanup from a foreign attempt | `src/workflow/review/__tests__/source-light-workspace.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/review/__tests__/source-light-workspace.test.ts` | 0 | 3 | 0.8 s |  |
+
+## t24
+
+Run at 2026-11-16T10:40:19.668Z on commit `8f8922b69`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: Production source-light lifecycle matrix for CodePreparation, StagedPacketConstruction, StagedPacketSources, workers, routes, checkpoint/recovery/progress/cancel/publication/approval/cleanup, mandatory coverage, and unchanged latest-document design review.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | Production source-light lifecycle matrix for CodePreparation, StagedPacketConstruction, StagedPacketSources, workers, routes, checkpoint/recovery/progress/cancel/publication/approval/cleanup, mandatory coverage, and unchanged latest-document design review. | `src/daemon/threads/__tests__/review-production-cutover.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/review-production-cutover.test.ts` | 0 | 7 | 40 s |  |
+
+## t25
+
+Run at 2026-11-16T11:28:56.400Z on commit `072965b06`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: Source-light cutover regressions: historical cold requalification/rejection, no eager fallback, two-session isolation, cancel/restart/tamper/publication/cleanup, production defaults and task-order preservation.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | code preparation exposes no eager admission or publication fallback | `src/workflow/review/__tests__/code-preparation-execution.test.ts` |
+| pass | shared preparation retains route-qualified views for pinned recovery without native refetch | `src/workflow/code-review/task-review/__tests__/route-admission.test.ts` |
+| pass | prepared code publication preserves complete input and closed proof across failed render, warm retry and temp deletion | `src/workflow/review/__tests__/prepared-publication.test.ts` |
+| pass | Production source-light lifecycle matrix for CodePreparation, StagedPacketConstruction, StagedPacketSources, workers, routes, checkpoint/recovery/progress/cancel/publication/approval/cleanup, mandatory coverage, and unchanged latest-document design review. | `src/daemon/threads/__tests__/review-production-cutover.test.ts` |
+
+**smoke: Backend build and source-free compiled package smoke for code and design review after eager source ownership removal.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | compiled worker entrypoints and both review families start from an isolated built package | `src/daemon/threads/__tests__/review-worker-package.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/review-production-cutover.test.ts` | 0 | 7 | 42 s |  |
+| `src/daemon/threads/__tests__/review-worker-package.test.ts` | 0 | 2 | 11 s |  |
+| `src/workflow/code-review/task-review/__tests__/route-admission.test.ts` | 0 | 5 | 2 s |  |
+| `src/workflow/review/__tests__/code-preparation-execution.test.ts` | 0 | 3 | 1.8 s |  |
+| `src/workflow/review/__tests__/prepared-publication.test.ts` | 0 | 5 | 5.1 s |  |

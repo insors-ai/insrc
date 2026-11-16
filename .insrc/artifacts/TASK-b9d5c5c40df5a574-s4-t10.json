@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-be2710e1-326f-44ca-94a7-766383f69000",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T13:04:36.438Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s4",
+    "envelope": {
+      "description": "The capability and table lookups return every result",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#172",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8cd0f5f643373bc2deb8d3183e3c71f24e60cd85db5122b3d7902d3759a96083",
+        "at": "2026-11-14T13:04:36.438Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T13:04:36.440Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The capability and table lookups return every result",
+    "summary": "Delete the limit and slice cuts of capability-reuse-check (exports, subdirs and files), db-tables-list (asked in the data drivers' complete listing mode) and db-table-describe (KV summary fields and sample keys). A Redis or etcd listing stays a sample reported as sampled and incomplete, and nothing scans a live store's keys.",
+    "size": "M",
+    "order": 10,
+    "acceptanceChecks": [
+      "capability-reuse-check, db-tables-list and db-table-describe return every result, and a complete driver's table listing has no limited entry",
+      "A Redis or etcd listing is reported as a sample and incomplete, and no key scan of a live store is made"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "completeness-all-lookups.test.ts: capability-reuse-check, db-tables-list and db-table-describe return every result and a complete driver's table listing has no limited entry"
+      },
+      {
+        "level": "unit",
+        "name": "kv-common.test.ts: a Redis or etcd listing is a sample reported incomplete and no key scan is made"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

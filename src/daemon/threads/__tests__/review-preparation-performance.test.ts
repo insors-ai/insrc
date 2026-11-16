@@ -17,7 +17,7 @@ import { IpcServer, directDispatch } from '../../server.js';
 import { startTaskReview, readTaskReviewProgress } from '../../task-review-rpc.js';
 import { LocalPeer } from './helpers/review-clearance-fixture.js';
 
-test('retained managed cold x3 warm handoff and history growth meet the production performance gates', {timeout:900000}, async t=>{
+test('Retained 171-file/four-attempt cold x3, warm and history 1/4/max source-light qualification with locator/Git/workspace/memory/RSS/write metrics, exact scope and mandatory coverage.', {timeout:900000}, async t=>{
  const root=await mkdtemp('/tmp/review-performance-');t.after(()=>rm(root,{recursive:true,force:true}));
  const manifest=JSON.parse(await readFile(new URL('./fixtures/review-preparation/manifest.json',import.meta.url),'utf8'));
  const bytes=gunzipSync(await readFile(new URL('./fixtures/review-preparation/history.json.gz',import.meta.url)));
@@ -26,7 +26,7 @@ test('retained managed cold x3 warm handoff and history growth meet the producti
  execFileSync('git',['-C',repo,'checkout','--quiet',manifest.sourceRevision]);
  const retained=JSON.parse(bytes.toString());
  const crPath=join(repo,'.insrc/artifacts/CR-e4af63128c7cbec2-s1.json'),retainedCr=JSON.parse(await readFile(crPath,'utf8'));
- const historyGrowth=[1,4,retained.attempts.length].map(attempts=>({attempts,bytes:Buffer.byteLength(JSON.stringify({...retained,attempts:retained.attempts.slice(0,attempts)}))}));
+	 const historyGrowth=[1,4,retained.attempts.length].map(attempts=>{const prefix=retained.attempts.slice(0,attempts);return{attempts,bytes:Buffer.byteLength(JSON.stringify({...retained,attempts:prefix})),files:new Set(prefix.flatMap((attempt:any)=>attempt.submitted.reviewSet.flatMap((commit:any)=>commit.files.map((file:any)=>file.path)))).size,tests:prefix.map((attempt:any)=>attempt.submitted.tests.length)};});
  assert.deepEqual(historyGrowth.map(entry=>entry.attempts),[1,4,4]);assert.ok(historyGrowth[1]!.bytes>=historyGrowth[0]!.bytes);
  type Counters={path:string;writes:number;writtenBytes:number;maxRuntimeBytes:number;nativeCommands:number;fullHistoryNativeWrites:number;nativeDurations:number[]};
  let active:Counters|undefined;
@@ -64,7 +64,13 @@ test('retained managed cold x3 warm handoff and history growth meet the producti
   const worker=workers.get(id);assert.ok(worker);const reclaimAt=performance.now();await worker.worker.terminate();await worker.reclaimed;const fixtureReclaimMs=performance.now()-reclaimAt;
   const report={...result,run,workerPreparationMs:result.elapsedMs,fixtureDigest:manifest.checkpointSha256,mode:'full-managed-production-cold',cacheState:'fresh review id and prepared-context generation; operating-system file cache uncontrolled',node:process.version,cpu:cpus()[0]?.model,load:loadavg(),admitMs,fixtureReclaimMs,elapsedMs,runtimeWrites:counters.writes,runtimeWrittenBytes:counters.writtenBytes,maxRuntimeBytes:counters.maxRuntimeBytes,nativeCommands:counters.nativeCommands,nativePersistenceMs:counters.nativeDurations.reduce((a,b)=>a+b,0),fullHistoryNativeWrites:counters.fullHistoryNativeWrites};
   if(result.kind!=='fixture-performance-ready'){await writeFile('/tmp/insrc-review-performance-failure.json',JSON.stringify({...report,historyGrowth},null,2));t.diagnostic(JSON.stringify(report));}
-  assert.equal(result.kind,'fixture-performance-ready',`Full retained qualification failed: ${JSON.stringify(result)}`);assert.ok(admitMs<=2000,`Admission ${admitMs}ms exceeds 2000ms release gate`);assert.ok(result.warmHandoffMs!==null&&result.warmHandoffMs<=10000,`Warm phase handoff ${result.warmHandoffMs}ms exceeds 10000ms release gate`);assert.equal(counters.fullHistoryNativeWrites,0);assert.ok(counters.maxRuntimeBytes<=256*1024);assert.equal(result.physicalDuplicates,0);assert.ok(elapsedMs<=120000,`Cold managed preparation ${elapsedMs}ms exceeds 120000ms release gate`);
+	  assert.equal(result.kind,'fixture-performance-ready',`Full retained qualification failed: ${JSON.stringify(result)}`);
+	  assert.ok(admitMs<=2000,`Admission ${admitMs}ms exceeds 2000ms release gate`);assert.ok(result.warmHandoffMs!==null&&result.warmHandoffMs<=10000,`Warm phase handoff ${result.warmHandoffMs}ms exceeds 10000ms release gate`);
+	  assert.equal(result.qualifiedHistoryAttempts,4,'all retained 1/4/max history boundaries must qualify');assert.equal(result.preparedTests,115,'all mandatory test evidence must reach the qualified packet');assert.equal(result.locatorCount,result.preparedChanges,'every prepared change must have one source-light locator');assert.ok(result.locatorCount>171);assert.ok(result.locatorBlockCount>0);
+	  assert.ok(result.workspaceFiles>0);assert.ok(result.workspaceBytes>0);assert.equal(result.aggregateSourceBodyBytes,0,'prepared metadata must not retain aggregate source bodies');assert.ok(result.physicalQueries>0);assert.equal(result.physicalDuplicates,0);
+	  const memoryLimit=result.sourceSessions[0]?.workingMemory?.limit;assert.ok(Number.isSafeInteger(memoryLimit));assert.ok(result.memoryHighWaterBytes>0&&result.memoryHighWaterBytes<=memoryLimit,`charged memory ${result.memoryHighWaterBytes} exceeds ${memoryLimit}`);
+	  for(const field of ['heapUsed','external','rss'] as const)assert.ok(Number.isSafeInteger(result.processMemory[field])&&result.processMemory[field]>0,`missing ${field} measurement`);
+	  assert.equal(counters.fullHistoryNativeWrites,0);assert.ok(counters.maxRuntimeBytes<=256*1024);assert.ok(elapsedMs<=120000,`Cold managed preparation ${elapsedMs}ms exceeds 120000ms release gate`);
   runs.push(report);ready.delete(id);active=undefined;
  }
  const sorted=runs.map(run=>run.elapsedMs as number).sort((a,b)=>a-b),report={fixtureDigest:manifest.checkpointSha256,mode:'full-managed-production-cold-x3',coldRuns:runs,coldMedianMs:sorted[1],warmHandoffMedianMs:[...runs].map(run=>run.warmHandoffMs as number).sort((a,b)=>a-b)[1],historyGrowth};

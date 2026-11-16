@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-06695031-b934-47b3-8d9e-eddbba676fed",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T13:04:36.419Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Complete mode for the ripgrep search backend",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#165",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3a728ee58715e70e4e019ef8e430a2d259dfbae54f4e0aabdaa1c0a53252f202",
+        "at": "2026-11-14T13:04:36.419Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T13:04:36.420Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Complete mode for the ripgrep search backend",
+    "summary": "Add the optional complete flag to GrepSearchOptions in src/daemon/tools/builtins/search/grep.ts and implement it for the ripgrep backend: no hit limit, no per-line cut, no output cap, ripgrep output read as a stream and parsed in complete records, the files the backend excludes by rule stated in the result, and a fixed 30-second deadline after which the process is stopped and the call fails with the hits gathered attached and an incomplete status. Without the flag every other caller keeps MAX_LIMIT, MAX_LINE_CHARS and RG_MAX_OUTPUT_BYTES exactly as today.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "With complete set, more hits than MAX_LIMIT, a line over MAX_LINE_CHARS and ripgrep output over RG_MAX_OUTPUT_BYTES are all returned in full through the ripgrep backend",
+      "A ripgrep search that passes the 30-second deadline fails with its gathered hits marked incomplete and is never reported as complete",
+      "Without complete, the limits still apply and the existing grep tests pass unchanged"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "grep-omitted.test.ts: through the ripgrep backend with complete set, more hits than MAX_LIMIT, a line over MAX_LINE_CHARS and output over RG_MAX_OUTPUT_BYTES are all returned in full, and a search past the 30-second deadline fails with its gathered hits"
+      },
+      {
+        "level": "integration",
+        "name": "grep-omitted.test.ts: without complete the ripgrep backend still applies MAX_LIMIT, MAX_LINE_CHARS and RG_MAX_OUTPUT_BYTES"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

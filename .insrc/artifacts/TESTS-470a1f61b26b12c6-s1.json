@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 37,
-        "contentHash": "9a6f5177ff7e4f2ab7612a6ad9236f7da421f5209d7d89140591aeecb3134107",
-        "at": "2026-11-15T18:26:44.327Z",
+        "number": 48,
+        "contentHash": "7632631de493c19a676d29013ce553615d89a39e37711d6e70c92da966589536",
+        "at": "2026-11-16T11:28:56.616Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "470a1f61b26b12c6",
     "storyId": "s1",
     "createdAt": "2026-11-14T12:24:52.408Z",
-    "updatedAt": "2026-11-15T18:26:44.188Z",
+    "updatedAt": "2026-11-16T11:28:56.400Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-14T08:55:28.320Z",
     "epicSlug": "rework-review-preparation-context-lifecycle-end",
-    "revision": 37
+    "revision": 48
   },
   "body": {
     "tasks": [
@@ -7094,6 +7094,646 @@
               },
               {
                 "title": "revoked warm authority fences traversal without falling back to cold qualification",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t19",
+        "commit": "8e3eb7e2d",
+        "ranAt": "2026-11-15T18:54:11.578Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Measured admission segment attribution and durable-ack two-session race matrix: controlled admit/cancel<=2s, progress gap<=2s, complete owner/guard/binding checks and no duplicate dispatch.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-workers.test.ts",
+                "title": "Measured admission segment attribution and durable-ack two-session race matrix: controlled admit/cancel<=2s, progress gap<=2s, complete owner/guard/binding checks and no duplicate dispatch.",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/review-workers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4834,
+            "titles": [
+              {
+                "title": "canonical identities own one incarnation and preserve subject and cleanup exclusions",
+                "result": "pass"
+              },
+              {
+                "title": "stale owner messages and targeted disconnects cannot mutate another review",
+                "result": "pass"
+              },
+              {
+                "title": "admission replay retains a native intent committed by the writer ahead of it",
+                "result": "pass"
+              },
+              {
+                "title": "foreign controller cannot retire an owner through next-attempt admission",
+                "result": "pass"
+              },
+              {
+                "title": "Measured admission segment attribution and durable-ack two-session race matrix: controlled admit/cancel<=2s, progress gap<=2s, complete owner/guard/binding checks and no duplicate dispatch.",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t20",
+        "commit": "4b312270b",
+        "ranAt": "2026-11-15T20:20:45.151Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Actual production staged-view cutover matrix for both families and all workflow routes: combined memory high-water, complete scope/history equality, zero duplicate queries/full-history hot writes, cancellation/tamper/crash fences and task-order preservation.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+                "title": "production defaults preserve all code routes story aliases task selection and complete pinned packet views",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+                "title": "instrumented actual-source managed code cutover stays bounded and preserves qualified and permanent results",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+                "title": "production design defaults preserve DEF HLD epic standalone and issue LLD latest targets and ignore unrelated edits",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+                "title": "production defaults preserve merge rename deletion witnesses and exact selected spans against the baseline oracle",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+                "title": "production design target edits invalidate and only explicit approved restart captures the latest source",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+                "title": "production whole-story defaults preserve multi-task dependency order and every submitted test detail",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+                "title": "cold production design publication requalifies original evidence and rejects later author edits without a model",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Source-free compiled package code/design daemon/controller smoke plus backend build after bounded-view cutover; retained full T14 workload remains an independent final gate.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-package.test.ts",
+                "title": "compiled worker entrypoints and both review families start from an isolated built package",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-package.test.ts",
+                "title": "release instructions retain explicit recovery local trust and post-approval smoke ordering",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/review-production-qualification.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 208694,
+            "titles": [
+              {
+                "title": "production defaults preserve all code routes story aliases task selection and complete pinned packet views",
+                "result": "pass"
+              },
+              {
+                "title": "instrumented actual-source managed code cutover stays bounded and preserves qualified and permanent results",
+                "result": "pass"
+              },
+              {
+                "title": "production design defaults preserve DEF HLD epic standalone and issue LLD latest targets and ignore unrelated edits",
+                "result": "pass"
+              },
+              {
+                "title": "production defaults preserve merge rename deletion witnesses and exact selected spans against the baseline oracle",
+                "result": "pass"
+              },
+              {
+                "title": "production defaults reject unselected side-branch deletion even when the merge retains selected text",
+                "result": "pass"
+              },
+              {
+                "title": "production defaults reject unselected side-branch replacement even when the merge retains selected text",
+                "result": "pass"
+              },
+              {
+                "title": "production design target edits invalidate and only explicit approved restart captures the latest source",
+                "result": "pass"
+              },
+              {
+                "title": "production code cold publication rejects edited accepted feedback without another model call",
+                "result": "pass"
+              },
+              {
+                "title": "production design cold publication rejects edited accepted feedback without another model call",
+                "result": "pass"
+              },
+              {
+                "title": "production cancellation of an assessing code session leaves the other family owner and feedback untouched",
+                "result": "pass"
+              },
+              {
+                "title": "production cancellation of an assessing design session leaves the other family owner and feedback untouched",
+                "result": "pass"
+              },
+              {
+                "title": "production cancellation during code preparation leaves the other session usable and dispatches no target model",
+                "result": "pass"
+              },
+              {
+                "title": "production cancellation during design preparation leaves the other session usable and dispatches no target model",
+                "result": "pass"
+              },
+              {
+                "title": "production whole-story defaults preserve multi-task dependency order and every submitted test detail",
+                "result": "pass"
+              },
+              {
+                "title": "production code publication-only recovery after reclamation preserves feedback without model dispatch",
+                "result": "pass"
+              },
+              {
+                "title": "production design publication-only recovery after reclamation preserves feedback without model dispatch",
+                "result": "pass"
+              },
+              {
+                "title": "cold production design publication requalifies original evidence and rejects later author edits without a model",
+                "result": "pass"
+              },
+              {
+                "title": "production code v1 migration survives before-migration worker loss and only explicit resubmission activates",
+                "result": "pass"
+              },
+              {
+                "title": "production code v1 migration survives after-migration worker loss and only explicit resubmission activates",
+                "result": "pass"
+              },
+              {
+                "title": "production code v2 migration survives before-migration worker loss and only explicit resubmission activates",
+                "result": "pass"
+              },
+              {
+                "title": "production code v2 migration survives after-migration worker loss and only explicit resubmission activates",
+                "result": "pass"
+              },
+              {
+                "title": "production design v1 migration survives before-migration worker loss and only explicit resubmission activates",
+                "result": "pass"
+              },
+              {
+                "title": "production design v1 migration survives after-migration worker loss and only explicit resubmission activates",
+                "result": "pass"
+              },
+              {
+                "title": "production design v2 migration survives before-migration worker loss and only explicit resubmission activates",
+                "result": "pass"
+              },
+              {
+                "title": "production design v2 migration survives after-migration worker loss and only explicit resubmission activates",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-worker-package.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9411,
+            "titles": [
+              {
+                "title": "compiled worker entrypoints and both review families start from an isolated built package",
+                "result": "pass"
+              },
+              {
+                "title": "release instructions retain explicit recovery local trust and post-approval smoke ordering",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t21",
+        "commit": "f66516e5a",
+        "ranAt": "2026-11-16T09:26:53.738Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Duplicate ISSUE/LLD lifecycle reconciliation: atomic supersession, replacement provenance, non-routability, retry/readback failure, and unchanged primary PLAN/BUILD/TESTS evidence.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/supersession.test.ts",
+                "title": "records replacement provenance, excludes terminal artifacts, and retries a partial batch without rewriting standing history",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifact-core/__tests__/supersession.test.ts",
+                "title": "preflights the whole batch and rejects missing replacements or conflicting provenance before another artifact changes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/supersession.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 852,
+            "titles": [
+              {
+                "title": "records replacement provenance, excludes terminal artifacts, and retries a partial batch without rewriting standing history",
+                "result": "pass"
+              },
+              {
+                "title": "preflights the whole batch and rejects missing replacements or conflicting provenance before another artifact changes",
+                "result": "pass"
+              },
+              {
+                "title": "artifact supersession reconciliation",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t22",
+        "commit": "f2bd94c94",
+        "ranAt": "2026-11-16T10:03:52.660Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Source-light locator/manifest codecs: ordered Unicode paths, add/delete/rename/replacement/merge/binary metadata, object and parent identities, version rejection, tamper/cross-attempt detection, and source-body absence.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/review-source-light.test.ts",
+                "title": "round-trips ordered Unicode add/delete/rename/replacement/merge/binary locators and a sealed parent workspace without source bodies",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/review-source-light.test.ts",
+                "title": "rejects unknown versions, tampering and cross-attempt records while historical eager state only requests cold requalification",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/review-source-light.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 618,
+            "titles": [
+              {
+                "title": "round-trips ordered Unicode add/delete/rename/replacement/merge/binary locators and a sealed parent workspace without source bodies",
+                "result": "pass"
+              },
+              {
+                "title": "rejects unknown versions, tampering and cross-attempt records while historical eager state only requests cold requalification",
+                "result": "pass"
+              },
+              {
+                "title": "source-light review contracts",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t23",
+        "commit": "56708e4ad",
+        "ranAt": "2026-11-16T10:12:58.023Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Pinned commit-parent workspace matrix: new/delete/rename/stacked commits, exact transient after ranges, relevant-only parent files, manifest sealing, concurrent attempt isolation, cancellation and owned cleanup.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/source-light-workspace.test.ts",
+                "title": "materializes only actual commit-parent files, seals isolated attempts, emits exact transient after ranges, cancels safely and performs owned cleanup",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-light-workspace.test.ts",
+                "title": "rejects changed pinned objects and refuses cleanup from a foreign attempt",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/__tests__/source-light-workspace.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 835,
+            "titles": [
+              {
+                "title": "materializes only actual commit-parent files, seals isolated attempts, emits exact transient after ranges, cancels safely and performs owned cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "rejects changed pinned objects and refuses cleanup from a foreign attempt",
+                "result": "pass"
+              },
+              {
+                "title": "source-light commit-parent workspace",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t24",
+        "commit": "8f8922b69",
+        "ranAt": "2026-11-16T10:40:19.668Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Production source-light lifecycle matrix for CodePreparation, StagedPacketConstruction, StagedPacketSources, workers, routes, checkpoint/recovery/progress/cancel/publication/approval/cleanup, mandatory coverage, and unchanged latest-document design review.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-production-cutover.test.ts",
+                "title": "Production source-light lifecycle matrix for CodePreparation, StagedPacketConstruction, StagedPacketSources, workers, routes, checkpoint/recovery/progress/cancel/publication/approval/cleanup, mandatory coverage, and unchanged latest-document design review.",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/review-production-cutover.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 40025,
+            "titles": [
+              {
+                "title": "production approval cleanup removes code runtime checkpoint and contexts from permanent proof without launching a reviewer",
+                "result": "pass"
+              },
+              {
+                "title": "production approval cleanup removes design runtime checkpoint and contexts from permanent proof without launching a reviewer",
+                "result": "pass"
+              },
+              {
+                "title": "Production source-light lifecycle matrix for CodePreparation, StagedPacketConstruction, StagedPacketSources, workers, routes, checkpoint/recovery/progress/cancel/publication/approval/cleanup, mandatory coverage, and unchanged latest-document design review.",
+                "result": "pass"
+              },
+              {
+                "title": "explicit production publication recovery reuses accepted feedback after worker reclamation",
+                "result": "pass"
+              },
+              {
+                "title": "production next-attempt admission migrates closed historical evidence and retains the exact prior input",
+                "result": "pass"
+              },
+              {
+                "title": "a production re-review preserves the earlier publication without treating it as the new attempt boundary",
+                "result": "pass"
+              },
+              {
+                "title": "an explicit production resubmission recovers the initialize-before-checkpoint crash window without losing runtime proof",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t25",
+        "commit": "072965b06",
+        "ranAt": "2026-11-16T11:28:56.400Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Source-light cutover regressions: historical cold requalification/rejection, no eager fallback, two-session isolation, cancel/restart/tamper/publication/cleanup, production defaults and task-order preservation.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/code-preparation-execution.test.ts",
+                "title": "code preparation exposes no eager admission or publication fallback",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts",
+                "title": "shared preparation retains route-qualified views for pinned recovery without native refetch",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-publication.test.ts",
+                "title": "prepared code publication preserves complete input and closed proof across failed render, warm retry and temp deletion",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-production-cutover.test.ts",
+                "title": "Production source-light lifecycle matrix for CodePreparation, StagedPacketConstruction, StagedPacketSources, workers, routes, checkpoint/recovery/progress/cancel/publication/approval/cleanup, mandatory coverage, and unchanged latest-document design review.",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Backend build and source-free compiled package smoke for code and design review after eager source ownership removal.",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-package.test.ts",
+                "title": "compiled worker entrypoints and both review families start from an isolated built package",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/review-production-cutover.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 41982,
+            "titles": [
+              {
+                "title": "production approval cleanup removes code runtime checkpoint and contexts from permanent proof without launching a reviewer",
+                "result": "pass"
+              },
+              {
+                "title": "production approval cleanup removes design runtime checkpoint and contexts from permanent proof without launching a reviewer",
+                "result": "pass"
+              },
+              {
+                "title": "Production source-light lifecycle matrix for CodePreparation, StagedPacketConstruction, StagedPacketSources, workers, routes, checkpoint/recovery/progress/cancel/publication/approval/cleanup, mandatory coverage, and unchanged latest-document design review.",
+                "result": "pass"
+              },
+              {
+                "title": "explicit production publication recovery reuses accepted feedback after worker reclamation",
+                "result": "pass"
+              },
+              {
+                "title": "production next-attempt admission migrates closed historical evidence and retains the exact prior input",
+                "result": "pass"
+              },
+              {
+                "title": "a production re-review preserves the earlier publication without treating it as the new attempt boundary",
+                "result": "pass"
+              },
+              {
+                "title": "an explicit production resubmission recovers the initialize-before-checkpoint crash window without losing runtime proof",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-worker-package.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 11035,
+            "titles": [
+              {
+                "title": "compiled worker entrypoints and both review families start from an isolated built package",
+                "result": "pass"
+              },
+              {
+                "title": "release instructions retain explicit recovery local trust and post-approval smoke ordering",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2032,
+            "titles": [
+              {
+                "title": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts: admission builds the route from the Story's stored artifacts and refuses a packet that does not match it",
+                "result": "pass"
+              },
+              {
+                "title": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts: a Story with no BUILD record is refused before anything is admitted",
+                "result": "pass"
+              },
+              {
+                "title": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts: resume and publication of a stored review read no route",
+                "result": "pass"
+              },
+              {
+                "title": "shared preparation retains route-qualified views for pinned recovery without native refetch",
+                "result": "pass"
+              },
+              {
+                "title": "shared preparation preserves task selection and canonical story aliases across every route",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/code-preparation-execution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1790,
+            "titles": [
+              {
+                "title": "source-light preparation executes task through fresh durable worker admission",
+                "result": "pass"
+              },
+              {
+                "title": "source-light preparation executes story through fresh durable worker admission",
+                "result": "pass"
+              },
+              {
+                "title": "code preparation exposes no eager admission or publication fallback",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/prepared-publication.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5079,
+            "titles": [
+              {
+                "title": "prepared code publication preserves complete input and closed proof across failed render, warm retry and temp deletion",
+                "result": "pass"
+              },
+              {
+                "title": "prepared design publication emits capability three and retries one permanent full history without models or temporary context",
+                "result": "pass"
+              },
+              {
+                "title": "permanent preparation proof refuses unknown capability",
+                "result": "pass"
+              },
+              {
+                "title": "prepared code publication preserves an earlier qualified failure without promoting its retained scope headers to signoff",
+                "result": "pass"
+              },
+              {
+                "title": "publication bookkeeping errors do not change assessment authority and remain in the main phase audit",
                 "result": "pass"
               }
             ],

@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-90268393-907e-4a03-a0ff-fda55b703bb6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-16T08:55:13.128Z",
+    "epicCreatedAt": "2026-10-03T14:09:32.294Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "149283b0d0455a43",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Make the sized bugfix route keep the ISSUE as its anchor",
+      "parent": {
+        "entityId": "STORY-149283b0d0455a43-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-149283b0d0455a43-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fd4f249a762562e98d4508ebe7aa9bb19a4b0c98c60311fdf902a3ad78e722b9",
+        "at": "2026-11-16T08:55:13.128Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T08:55:13.129Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Make the sized bugfix route keep the ISSUE as its anchor",
+    "summary": "In src/workflow/bugfix/next-after-issue.ts, the sized branch adds params.epicHash = issue.meta.issueHash and params.storyId = 's1' beside standalone:true and sizeClass:'bugfix', and throws 'nextAfterIssue: invalid-issue-hash' when the sized ISSUE has no 16-hex meta.issueHash. The small branch is untouched. Update the issue() fixture and any advance fixture in src/workflow/__tests__/bugfix-orchestration.test.ts to carry an issueHash, and add the sized-route and refusal tests.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "the sized nextCall carries epicHash equal to the ISSUE's issueHash and storyId 's1', with standalone and sizeClass unchanged",
+      "a sized ISSUE without a valid issueHash throws invalid-issue-hash and no nextCall is produced",
+      "the small nextCall is identical to before",
+      "the existing bugfix-orchestration tests pass with fixtures that carry an issueHash"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "bugfix-orchestration.test.ts: nextAfterIssue sized route carries epicHash=issueHash and storyId s1"
+      },
+      {
+        "level": "unit",
+        "name": "bugfix-orchestration.test.ts: nextAfterIssue refuses a sized ISSUE with no issueHash"
+      },
+      {
+        "level": "unit",
+        "name": "bugfix-orchestration.test.ts: sized-route fixtures carry an issueHash"
+      },
+      {
+        "level": "unit",
+        "name": "bugfix-orchestration.test.ts: nextAfterIssue small route is unchanged"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

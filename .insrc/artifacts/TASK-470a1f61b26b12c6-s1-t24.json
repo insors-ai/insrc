@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-24d947bb-cc7b-42fa-b020-319e2da31cc0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-16T09:05:17.364Z",
+    "epicCreatedAt": "2026-11-14T08:55:28.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "470a1f61b26b12c6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Integrate source-light preparation through the production lifecycle",
+      "parent": {
+        "entityId": "STORY-470a1f61b26b12c6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-470a1f61b26b12c6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 5"
+        },
+        {
+          "entityId": "TASK-470a1f61b26b12c6-s1-t23",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "afaa40b6d8830eac128292ce4f354706113ca7c40f484841168b089c52c991e0",
+        "at": "2026-11-16T09:05:17.364Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T09:05:17.373Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Integrate source-light preparation through the production lifecycle",
+    "summary": "Wire source-light packet preparation, staged construction/source adapters, isolated workers, progress, cancellation, recovery, publication, approval and cleanup through actual code-review production routes while retaining latest-document design review.",
+    "size": "L",
+    "order": 23,
+    "acceptanceChecks": [
+      "Every code-review route uses locators, transient selected blocks and baseline workspace paths without an eager aggregate source-view fallback; design routes continue latest-document capture.",
+      "Checkpoint/resume, progress, cancellation, permanent CR publication and approval cleanup preserve exact scope, history and ownership across crashes and concurrent sessions.",
+      "Complete test details and mandatory coverage assessment reach the reviewer; execution remains optional, and no module is skipped because of size or preparation mode."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Production source-light lifecycle matrix for CodePreparation, StagedPacketConstruction, StagedPacketSources, workers, routes, checkpoint/recovery/progress/cancel/publication/approval/cleanup, mandatory coverage, and unchanged latest-document design review."
+      }
+    ],
+    "planTaskId": "t24"
+  },
+  "citations": []
+}

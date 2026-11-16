@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e872c08a-b17e-43bb-ad3f-6af486ae02f3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-16T09:05:17.347Z",
+    "epicCreatedAt": "2026-11-14T08:55:28.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "470a1f61b26b12c6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement commit-parent workspaces and transient selected after blocks",
+      "parent": {
+        "entityId": "STORY-470a1f61b26b12c6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-470a1f61b26b12c6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 5"
+        },
+        {
+          "entityId": "TASK-470a1f61b26b12c6-s1-t22",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a78a8a750a3fcea6ec57700e9c6fbdd242b066583704b1cf6ae60c35b017989c",
+        "at": "2026-11-16T09:05:17.347Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T09:05:17.355Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement commit-parent workspaces and transient selected after blocks",
+    "summary": "Materialize only relevant before files from each selected change's actual applicable commit parent into an attempt-owned sealed workspace and decode only exact pinned after ranges transiently for reviewer input.",
+    "size": "L",
+    "order": 22,
+    "acceptanceChecks": [
+      "New, deleted, renamed and stacked-commit changes resolve against the actual selected commit parent rather than origin or current HEAD, with exact range and object verification.",
+      "The attempt workspace contains only relevant baseline files at ordinary paths, has a sealed integrity manifest, remains isolated between concurrent attempts, and is removed through owned terminal cleanup.",
+      "Selected after blocks include no unrelated lines and decoded bytes are released after reviewer-input construction rather than retained in checkpoints or prepared packets."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Pinned commit-parent workspace matrix: new/delete/rename/stacked commits, exact transient after ranges, relevant-only parent files, manifest sealing, concurrent attempt isolation, cancellation and owned cleanup."
+      }
+    ],
+    "planTaskId": "t23"
+  },
+  "citations": []
+}

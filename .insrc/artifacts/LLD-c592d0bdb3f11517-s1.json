@@ -1,0 +1,813 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1794810344317-opbfgm",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-16T06:31:51.503Z",
+    "epicCreatedAt": "2026-11-16T06:31:51.503Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "gpt-6.1-sol"
+        }
+      ]
+    },
+    "elapsedMs": 361943,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c592d0bdb3f11517",
+    "epicSlug": "isolate-code-reviews-commit-parent-baseline",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1794810344317-opbfgm",
+    "hldEffectiveHash": "c592d0bdb3f11517a8fe8a7214985eaed380f47402050191f84d7443bc00a57f",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Isolate code reviews with commit-parent baseline workspaces",
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "53a74c5d349578cb9e9e22ac7517d20c01087bf3ae3f93485220c9b92a5fc109",
+        "at": "2026-11-16T06:31:53.340Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "summary": {
+      "prose": "Code-review preparation will validate the submitted packet as the only review scope and turn its pinned local-Git provenance into an immutable, per-attempt baseline workspace containing only relevant pre-change files. Reviewers receive ordinary paths to the packet, baseline workspace, design/task artifacts and complete test evidence; checkpoint, recovery and publication behavior remain unchanged and source bodies are no longer retained in review records.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Isolate code reviews with commit-parent baseline workspaces"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "prepareReviewPacket",
+          "signature": "prepareReviewPacket<Blob>(input: unknown, sources: ReviewSources<Blob>, historical?: boolean, route?: StoryRoute, stored?: StoredDerived, access?: ReviewPacketAccess<Blob>): Promise<PreparedReviewPacket<Blob>>",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "unknown",
+              "purpose": "Submitted packet whose selected after blocks and deletion anchors exclusively define review scope.",
+              "optional": false
+            },
+            {
+              "name": "sources",
+              "type": "ReviewSources<Blob>",
+              "purpose": "Pinned local-Git provenance and content access used to validate declared commits, parents and blobs.",
+              "optional": false
+            },
+            {
+              "name": "historical",
+              "type": "boolean",
+              "purpose": "Indicates historical-attempt validation without changing the pinned attempt input.",
+              "optional": true
+            },
+            {
+              "name": "route",
+              "type": "StoryRoute",
+              "purpose": "Resolved Story/task routing context.",
+              "optional": true
+            },
+            {
+              "name": "stored",
+              "type": "StoredDerived",
+              "purpose": "Previously stored derived checkpoint metadata used only when its identity matches the pinned packet.",
+              "optional": true
+            },
+            {
+              "name": "access",
+              "type": "ReviewPacketAccess<Blob>",
+              "purpose": "Packet field accessor used during validation and preparation.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<PreparedReviewPacket<Blob>>",
+            "meaning": "A source-light prepared packet containing validated selected-change locators, artifact/task/test references and an immutable baseline-workspace manifest/path, without embedded source bodies or broad semantic hydration."
+          },
+          "errors": [
+            {
+              "type": "invalid-review-revision",
+              "condition": "The final review revision is absent, not a full local object id, rewritten or inconsistent with selected after blobs."
+            },
+            {
+              "type": "invalid-review-set",
+              "condition": "A selected change is not contained in one of the declared local commits or requires uncommitted worktree content."
+            },
+            {
+              "type": "invalid-baseline-parent",
+              "condition": "The applicable parent is absent, ambiguous for a merge, or not the parent against which the selected transition was made."
+            },
+            {
+              "type": "baseline-integrity-failed",
+              "condition": "A materialized parent blob or after blob does not match the packet digest/path metadata."
+            }
+          ],
+          "preconditions": [
+            "Every selected change is pinned to a declared local commit and the packet carries a full final review revision.",
+            "The selected after range/block or deletion anchor is the sole review-scope declaration.",
+            "Merge changes identify the applicable parent explicitly; no remote branch or origin state is required."
+          ],
+          "postconditions": [
+            "Only selected changes appear in the prepared scope, even when declared commits contain unrelated changes.",
+            "Each non-new selected transition resolves to its exact applicable local parent blob and immutable workspace path.",
+            "New, deleted and renamed files retain explicit transition metadata; stacked edits retain each relevant transition.",
+            "Prepared/checkpoint data contains locators, digests and paths, not source bodies.",
+            "Reviewer, checkpoint history, recovery and publication state semantics are unchanged."
+          ]
+        },
+        {
+          "name": "CodePreparation",
+          "signature": "class CodePreparation<Blob>",
+          "parameters": [
+            {
+              "name": "packet",
+              "type": "unknown",
+              "purpose": "The pinned task-review packet to qualify and prepare.",
+              "optional": false
+            },
+            {
+              "name": "sources",
+              "type": "ReviewSources<Blob>",
+              "purpose": "Local-Git object/provenance source used for qualification and selective baseline materialization.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "CodePreparation<Blob>",
+            "meaning": "Attempt-scoped preparation owner that qualifies packet provenance, creates or reuses the immutable baseline workspace, exposes source-light reviewer context and closes owned resources."
+          },
+          "errors": [
+            {
+              "type": "preparation-refused",
+              "condition": "Packet scope or provenance validation fails before reviewer invocation."
+            },
+            {
+              "type": "workspace-conflict",
+              "condition": "An existing attempt workspace does not match the pinned packet/workspace manifest identity."
+            }
+          ],
+          "preconditions": [
+            "Review identity and attempt are fixed before preparation begins.",
+            "Preparation has an attempt-scoped temporary root and cleanup ownership."
+          ],
+          "postconditions": [
+            "Preparation never broadens scope from Git status, commit breadth or live worktree state.",
+            "Closing releases transient resources without altering checkpoint review history.",
+            "A retry of the same pinned attempt either reuses an identical sealed workspace or fails closed."
+          ]
+        },
+        {
+          "name": "StagedPacketConstruction",
+          "signature": "class StagedPacketConstruction<Blob>",
+          "parameters": [
+            {
+              "name": "packet",
+              "type": "unknown",
+              "purpose": "Validated source-light packet being constructed in bounded stages.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "StagedPacketConstruction<Blob>",
+            "meaning": "A staged construction boundary that seals packet metadata only after provenance and workspace integrity succeed."
+          },
+          "errors": [
+            {
+              "type": "construction-not-sealed",
+              "condition": "Required provenance or workspace stages are incomplete."
+            }
+          ],
+          "preconditions": [
+            "No source body is embedded into the packet/checkpoint representation."
+          ],
+          "postconditions": [
+            "The sealed packet references immutable evidence by locator, digest and path."
+          ]
+        },
+        {
+          "name": "StagedPacketSources",
+          "signature": "class StagedPacketSources<Blob>",
+          "parameters": [
+            {
+              "name": "sources",
+              "type": "ReviewSources<Blob>",
+              "purpose": "Bounded source provider for selected commit, parent and blob qualification.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "StagedPacketSources<Blob>",
+            "meaning": "Selected-change source view that resolves only packet-declared transitions and releases decoded results after validation/materialization."
+          },
+          "errors": [
+            {
+              "type": "source-out-of-scope",
+              "condition": "A requested source is not named by a selected transition."
+            }
+          ],
+          "preconditions": [
+            "Requested blobs correspond to packet-declared commits, parents and paths."
+          ],
+          "postconditions": [
+            "Decoded bodies are not retained after verified files are materialized or digests checked."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "PreparedReviewPacket<Blob>",
+        "change": "invariant-change",
+        "details": "Becomes source-light. It owns review identity, final revision, declared commits, selected after blocks/deletion anchors, per-transition local commit/parent/blob/path metadata, artifact/task/test references, and a baseline workspace manifest/path. It must not carry hydrated source bodies or broad context derived outside selected changes.",
+        "schemaDiff": "Add per-selected-change provenance `{ originCommit, applicableParent, beforePath?, beforeBlob?, afterPath?, afterBlob?, changeKind, selection, mergeParentIndex? }` and baseline workspace `{ root, manifestDigest, entries[] }`; prohibit embedded source bodies.",
+        "callSites": [
+          "src/workflow/code-review/task-review/packet.ts:144-226",
+          "src/workflow/review/code-preparation.ts:23-124",
+          "src/daemon/threads/review-worker-preparation.ts"
+        ]
+      },
+      {
+        "entity": "StagedPacketConstruction",
+        "change": "invariant-change",
+        "details": "Production construction must seal only after packet provenance and baseline workspace integrity are verified; the existing class becomes part of the production preparation path rather than a test-only/isolated helper.",
+        "callSites": [
+          "src/workflow/review/staged-packet-construction.ts:23-97",
+          "src/workflow/review/code-preparation.ts:23-124"
+        ]
+      },
+      {
+        "entity": "StagedPacketSources",
+        "change": "invariant-change",
+        "details": "Source acquisition is restricted to packet-declared commits, applicable parents and blobs. Decoded source is transient and released after digest verification or workspace materialization.",
+        "callSites": [
+          "src/workflow/review/staged-packet-sources.ts:25-149",
+          "src/workflow/review/source-session.ts",
+          "src/workflow/review/code-preparation.ts:23-124"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Final review revision or declared commit cannot be resolved locally.",
+          "detection": "Resolve every full object id with the local repository object database and verify it is a commit before preparing any workspace entry.",
+          "response": "Reject admission with invalid-review-revision or invalid-review-set and do not invoke the reviewer.",
+          "userImpact": "The submitter must create or restore the local commit packet and submit a new attempt.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Selected after content is uncommitted or does not match the pinned after blob.",
+          "detection": "Resolve the selected path at the declared origin commit/final revision and compare the blob digest and selected after range/block digest with packet metadata.",
+          "response": "Reject the attempt as unpinned; never read live worktree content as a fallback.",
+          "userImpact": "The submitter must commit the intended change and create a corrected packet.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A selected change is not present in any declared review-set commit.",
+          "detection": "Compare the selected path/transition against each declared commit-parent diff and require one exact provenance match.",
+          "response": "Reject invalid-review-set before workspace creation.",
+          "userImpact": "The submitter must correct the review set or remove the out-of-scope selection.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Merge commit has no unique applicable parent.",
+          "detection": "Inspect the merge commit's parents and find either the explicitly declared parent index/OID or exactly one parent transition matching the selected change.",
+          "response": "Reject invalid-baseline-parent; never select the first parent implicitly when ambiguous.",
+          "userImpact": "The submitter must pin the intended merge parent.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Existing attempt workspace conflicts with the packet.",
+          "detection": "Recompute packet identity and manifest digest and compare both with the sealed workspace manifest before reuse.",
+          "response": "Fail closed with workspace-conflict; retain evidence and require a new attempt rather than mutating the pinned attempt.",
+          "userImpact": "The controller must submit a new attempt after clearing the failed attempt according to existing recovery rules.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Materialized baseline file does not match the parent blob or escapes the attempt root.",
+          "detection": "Verify canonical destination containment, reject symlink/path traversal components, hash written bytes and compare with the local Git blob OID/digest.",
+          "response": "Abort preparation, quarantine or clean the incomplete workspace, and publish no reviewer assignment.",
+          "userImpact": "The attempt fails technically without consuming reviewer tokens.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Checkpoint metadata references a rewritten commit or missing workspace entry during resume.",
+          "detection": "Re-resolve every pinned commit/blob and validate the sealed manifest identity before resume.",
+          "response": "Mark the attempt incomplete/failed under existing recovery semantics; do not silently rebuild it from changed Git history.",
+          "userImpact": "The controller must trigger a subsequent attempt with fresh pins.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A brand-new file selected in a commit.",
+          "expected": "Record no before blob/path, materialize no baseline file, and retain the exact after selection and after blob digest."
+        },
+        {
+          "input": "A deleted file selected by deletion anchor.",
+          "expected": "Materialize the applicable parent's file, record no after blob/path, and keep the deletion anchor as the sole selected scope."
+        },
+        {
+          "input": "A rename with or without content edits.",
+          "expected": "Record old parent path/blob and new commit path/blob; materialize the old path under an unambiguous transition entry and scope review to the selected new blocks or deletion/rename anchor."
+        },
+        {
+          "input": "The same file changes in multiple stacked unpushed commits.",
+          "expected": "Preserve each selected transition's own origin commit and applicable parent; materialize distinct immutable baseline entries where parent blobs differ, while the final review revision pins the final after state."
+        },
+        {
+          "input": "A declared commit also contains unrelated files or blocks.",
+          "expected": "Ignore them completely because only packet-selected ranges/blocks/deletion anchors define review scope."
+        },
+        {
+          "input": "Two selected transitions share the same parent blob.",
+          "expected": "Deduplicate physical baseline bytes only when manifest entries retain both logical transition identities and integrity remains explicit."
+        },
+        {
+          "input": "A valid empty selection set.",
+          "expected": "Reject admission because a review cannot proceed without at least one selected after block or deletion anchor."
+        },
+        {
+          "input": "Large or binary selected file.",
+          "expected": "Do not embed its body in packet/checkpoint memory; materialize only the required parent blob and retain size/digest metadata, with text ranges required only for textual after-block selections."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "`src/daemon/threads/review-worker-preparation.ts` remains the production entry point that owns preparation before reviewer execution.",
+          "source": "c1"
+        },
+        {
+          "text": "Admission, execution, packet, source and worker-checkpoint contracts remain coordinated through `src/workflow/review/code-preparation.ts`.",
+          "source": "c1"
+        },
+        {
+          "text": "Checkpoint history, migration and progress behavior covered by the located preparation tests remains semantically unchanged.",
+          "source": "c1"
+        },
+        {
+          "text": "Reviewer publication consumes a sealed prepared result; failed preparation never invokes the reviewer.",
+          "source": "c1"
+        },
+        {
+          "text": "All source access remains attempt-scoped and is closed/released by the preparation lifecycle.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove packet provenance and transition modeling without daemon concurrency.",
+          "subjects": [
+            "Full-OID final revision and declared local commit validation",
+            "Selected change membership in declared commit-parent transitions",
+            "Applicable-parent resolution for normal and merge commits",
+            "New, deleted, renamed and stacked same-file transition metadata",
+            "Path containment, blob digest and manifest identity validation",
+            "Transient source-result release after materialization"
+          ],
+          "fixturesNeeded": [
+            "Disposable local Git repository with linear, stacked, rename, delete and merge histories",
+            "Packet fixtures containing exact after blocks and deletion anchors"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Prove source-light packet/checkpoint compatibility and unchanged lifecycle semantics.",
+          "subjects": [
+            "PreparedReviewPacket locator and baseline-workspace manifest schema",
+            "CodePreparation create/seal/reuse/close contract",
+            "Checkpoint history, migration, progress and publication compatibility",
+            "Refusal of uncommitted, unpinned, rewritten or out-of-scope inputs"
+          ],
+          "fixturesNeeded": [
+            "Historical checkpoint fixtures",
+            "Sealed workspace manifest fixtures",
+            "Reviewer assignment/publication spy"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Exercise the production daemon preparation entry point with real local Git objects and filesystem materialization.",
+          "subjects": [
+            "src/daemon/threads/review-worker-preparation.ts production wiring",
+            "Selective immutable per-attempt baseline workspace creation and reuse",
+            "Packet-only scope when commits contain unrelated changes",
+            "Resume after interruption with unchanged pins",
+            "Concurrent reviews with isolated attempt roots"
+          ],
+          "fixturesNeeded": [
+            "Temporary repositories and `.insrc/tmp/code-review/<review-id>/<attempt>` roots",
+            "Two simultaneous review identities",
+            "Provider spy that records whether invocation occurred"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Qualify that a retained large review reaches reviewer invocation without eager source-body memory exhaustion and without broadening scope.",
+          "subjects": [
+            "171-file four-attempt retained preparation workload",
+            "Bounded preparation memory independent of aggregate source-body size",
+            "No duplicate physical Git reads after deduplication",
+            "Reviewer prompt/context contains artifact paths, packet path, baseline workspace path and complete test evidence only"
+          ],
+          "fixturesNeeded": [
+            "Generated retained review repository",
+            "Preparation metrics collector",
+            "Reviewer/provider capture harness"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "Packet-only scope ignores unrelated files and blocks in declared commits",
+            "Uncommitted and unpinned selected changes are rejected before reviewer invocation"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "Linear and stacked unpushed commits resolve each selected transition from its applicable local parent",
+            "Merge transitions require and honor the applicable parent"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "New/delete/rename transitions produce correct before/after path and blob metadata",
+            "Same-file stacked transitions preserve distinct baselines"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "Only relevant parent blobs are materialized under the immutable attempt root",
+            "Workspace reuse requires identical packet and manifest digests"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "Prepared packets and checkpoints contain locators/digests/paths but no source bodies",
+            "Retained 171-file workload reaches provider invocation within bounded preparation memory"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "Checkpoint history, recovery, progress and publication regression suites remain passing",
+            "Preparation failure never publishes reviewer assignment"
+          ]
+        },
+        {
+          "criterionId": "ac7",
+          "provingTests": [
+            "Reviewer input exposes Story/LLD/Plan/task, packet, baseline workspace and complete test evidence paths",
+            "Reviewer scope contains only selected after blocks and deletion anchors"
+          ]
+        }
+      ],
+      "testFramework": "Node.js built-in test runner executed through `tsx --test`, following the located `*.test.ts` suites."
+    },
+    "migration": {
+      "stateBefore": "Analyze bundle c1 shows production preparation in `src/workflow/review/code-preparation.ts`, called by `src/daemon/threads/review-worker-preparation.ts`, directly coordinating packet, admission, source-session, prepared-context, preparation-memory, prepared-views and worker-checkpoint contracts. The staged packet/source classes exist separately, while retained preparation eagerly holds broad source/context data and can fail before reviewer invocation.",
+      "stateAfter": "Every new review attempt requires a source-light packet whose exact selected after blocks/deletion anchors are pinned to local commits and a final revision. Production preparation validates each commit-parent transition, selectively creates an immutable per-attempt baseline workspace, gives the reviewer evidence paths, and retains only locators/digests/paths in checkpoint state. Existing review status, feedback history, recovery decisions and publication semantics remain intact.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Extend packet validation and persisted derived metadata with explicit selected-transition provenance and baseline-workspace manifest identity; keep existing checkpoint review history fields unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Integrate staged packet construction and staged source ownership into production preparation, including strict release of decoded source results and fail-closed integrity checks.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add selective per-attempt baseline workspace creation/reuse/cleanup and route the production worker's reviewer context to packet/workspace/artifact/test paths.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Switch admission for new attempts to require the new pinned transition contract and reject legacy/uncommitted inputs without a compatibility fallback.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Run packet, preparation, checkpoint, recovery, publication, concurrency and retained-load qualification; remove the eager hydration path once all production tests pass.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "This is an intentional hard cutover for new attempts: there is no fallback that reconstructs eager hydrated packets or derives scope from commit breadth, Git status or the live worktree. Existing checkpoint history and published feedback remain readable; an incomplete pre-cutover attempt that lacks the new pins must be continued only through a separately submitted new attempt, consistent with the existing recovery rule.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Pinned change locators with baseline workspace",
+        "oneLineSummary": "The packet carries exact selected-change provenance and an immutable workspace exposes only the corresponding pre-change files.",
+        "approach": "Define each selected change by final revision, local origin commit, applicable parent, before/after blob identity, path transition and exact after selection. Preparation validates those locators and exposes the relevant parent files through an immutable per-attempt baseline workspace; reviewer input contains paths and evidence rather than embedded source bodies.",
+        "pros": [
+          "Makes the packet the sole scope authority.",
+          "Supports stacked and unpushed local commits without remote-origin assumptions.",
+          "Keeps reviewer access simple through ordinary file paths.",
+          "Reuses the existing packet, staged-source and preparation boundaries."
+        ],
+        "cons": [
+          "Requires explicit contracts for new, deleted, renamed and merge-parent changes.",
+          "Introduces temporary-workspace lifecycle and integrity checks."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Pinned locators with on-demand Git blob access",
+        "oneLineSummary": "The packet carries the same provenance, but reviewers request pre-change blobs through a read-only accessor instead of a workspace.",
+        "approach": "Define selected changes as immutable local-Git locators and expose a narrow read-only baseline accessor that resolves parent blobs on demand. The reviewer receives the packet and accessor contract, while preparation avoids materializing files and never embeds source bodies in the checkpoint.",
+        "pros": [
+          "Minimizes temporary disk materialization.",
+          "Preserves exact parent/blob identity and packet-only scope.",
+          "Can reuse source-session concepts for bounded reads."
+        ],
+        "cons": [
+          "Reviewer agents cannot use ordinary file tools against baseline content without a new tool surface.",
+          "Adds runtime access coupling and makes independent inspection less portable."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Requires a new reviewer-access tool surface and couples independent review to live blob retrieval."
+      },
+      {
+        "id": "a3",
+        "name": "Per-attempt detached Git worktree",
+        "oneLineSummary": "Create a detached baseline checkout and constrain the reviewer to packet-selected paths inside it.",
+        "approach": "Resolve an applicable baseline revision for the attempt, create a detached Git worktree, and attach packet metadata that maps every selected after block to its baseline path and commit transition. Reviewer scope remains the packet even though the checkout contains broader repository state.",
+        "pros": [
+          "Provides a familiar complete repository layout.",
+          "Makes dependency inspection at a single baseline revision straightforward."
+        ],
+        "cons": [
+          "A single checkout cannot faithfully represent multiple stacked per-transition parents for the same file.",
+          "Materializes unrelated files and risks reviewers broadening scope beyond the packet.",
+          "Adds Git worktree cleanup and concurrency complexity not required by the story."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Cannot naturally represent multiple stacked parent transitions and materializes unrelated repository content."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "id": "packet-baseline-preparation",
+      "narrative": "Shows the fail-closed preparation order: the controller submits a pinned packet, the daemon validates selected transitions against local Git, materializes only relevant parent blobs, seals the source-light checkpoint, and only then starts the reviewer.",
+      "participants": [
+        {
+          "id": "controller",
+          "label": "Controller",
+          "description": "Creates the committed review packet and submits one pinned attempt."
+        },
+        {
+          "id": "worker",
+          "label": "Review worker",
+          "description": "Owns production admission and preparation before reviewer execution."
+        },
+        {
+          "id": "git",
+          "label": "Local Git object database",
+          "description": "Provides declared commits, applicable parents and immutable blobs without remote-origin dependency."
+        },
+        {
+          "id": "workspace",
+          "label": "Attempt baseline workspace",
+          "description": "Contains only verified pre-change files for packet-selected transitions."
+        },
+        {
+          "id": "checkpoint",
+          "label": "Review checkpoint",
+          "description": "Stores attempt input and source-light derived locators, digests and paths."
+        },
+        {
+          "id": "reviewer",
+          "label": "Reviewer",
+          "description": "Assesses exact selected changes against Story/LLD/Plan/task and test evidence."
+        }
+      ],
+      "messages": [
+        {
+          "from": "controller",
+          "to": "worker",
+          "label": "submit pinned packet",
+          "kind": "call",
+          "description": "Packet supplies exact after blocks/deletion anchors, declared commits, final revision and evidence paths."
+        },
+        {
+          "from": "worker",
+          "to": "git",
+          "label": "verify commits, parents and blobs",
+          "kind": "call",
+          "description": "Each selected transition must match a declared local commit and explicit applicable parent."
+        },
+        {
+          "from": "git",
+          "to": "worker",
+          "label": "return verified object identities",
+          "kind": "return",
+          "description": "No live worktree or remote branch state participates."
+        },
+        {
+          "from": "worker",
+          "to": "workspace",
+          "label": "materialize relevant parent blobs",
+          "kind": "call",
+          "description": "Only pre-change files required by selected transitions are written under the immutable attempt root."
+        },
+        {
+          "from": "workspace",
+          "to": "worker",
+          "label": "return sealed manifest",
+          "kind": "return",
+          "description": "Manifest digest binds logical transitions to verified paths and blobs."
+        },
+        {
+          "from": "worker",
+          "to": "checkpoint",
+          "label": "persist source-light attempt metadata",
+          "kind": "call",
+          "description": "Checkpoint contains packet input, locators, digests and paths but no source bodies."
+        },
+        {
+          "from": "worker",
+          "to": "reviewer",
+          "label": "start review with evidence paths",
+          "kind": "call",
+          "description": "Reviewer starts only after provenance and workspace integrity succeed."
+        }
+      ]
+    },
+    "componentDependencyDefinition": {
+      "id": "packet-scoped-review-preparation",
+      "narrative": "Shows the revised dependency boundary: production preparation consumes the existing task-review packet/admission contracts plus staged construction/source ownership, while the reviewer sees only sealed paths and metadata.",
+      "components": [
+        {
+          "id": "worker",
+          "label": "Review worker preparation",
+          "description": "Production entry point and reviewer handoff owner.",
+          "path": "src/daemon/threads/review-worker-preparation.ts"
+        },
+        {
+          "id": "preparation",
+          "label": "Code preparation",
+          "description": "Attempt-scoped coordinator for qualification, selective materialization, sealing, reuse and cleanup.",
+          "path": "src/workflow/review/code-preparation.ts"
+        },
+        {
+          "id": "packet",
+          "label": "Task-review packet",
+          "description": "Sole scope authority and selected-transition provenance contract.",
+          "path": "src/workflow/code-review/task-review/packet.ts"
+        },
+        {
+          "id": "admission",
+          "label": "Task-review admission",
+          "description": "Rejects missing, unpinned, out-of-set or ambiguous transition inputs.",
+          "path": "src/workflow/code-review/task-review/admission.ts"
+        },
+        {
+          "id": "stagedConstruction",
+          "label": "Staged packet construction",
+          "description": "Seals source-light packet metadata after qualification succeeds.",
+          "path": "src/workflow/review/staged-packet-construction.ts"
+        },
+        {
+          "id": "stagedSources",
+          "label": "Staged packet sources",
+          "description": "Restricts source acquisition to packet-declared transitions and releases decoded results.",
+          "path": "src/workflow/review/staged-packet-sources.ts"
+        },
+        {
+          "id": "sourceSession",
+          "label": "Source session",
+          "description": "Owns bounded attempt-scoped source access.",
+          "path": "src/workflow/review/source-session.ts"
+        },
+        {
+          "id": "checkpoint",
+          "label": "Worker checkpoint",
+          "description": "Persists review history and source-light attempt metadata.",
+          "path": "src/workflow/code-review/task-review/worker-checkpoint.ts"
+        }
+      ],
+      "dependencies": [
+        {
+          "from": "worker",
+          "to": "preparation",
+          "label": "creates and seals"
+        },
+        {
+          "from": "preparation",
+          "to": "packet",
+          "label": "prepares exact selected scope"
+        },
+        {
+          "from": "preparation",
+          "to": "admission",
+          "label": "enforces provenance"
+        },
+        {
+          "from": "preparation",
+          "to": "stagedConstruction",
+          "label": "constructs source-light result"
+        },
+        {
+          "from": "preparation",
+          "to": "stagedSources",
+          "label": "acquires selected blobs"
+        },
+        {
+          "from": "stagedSources",
+          "to": "sourceSession",
+          "label": "uses bounded ownership"
+        },
+        {
+          "from": "preparation",
+          "to": "checkpoint",
+          "label": "persists/reuses sealed metadata"
+        }
+      ]
+    },
+    "adherence": {
+      "dimensions": [
+        "diagram-sequence",
+        "diagram-component",
+        "functional-coverage"
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/isolate-code-reviews-commit-parent-baseline-E20261116c592d0bd/S001/sequence-diagram.html",
+        "title": "Sequence diagram"
+      },
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/isolate-code-reviews-commit-parent-baseline-E20261116c592d0bd/S001/component-dependency.html",
+        "title": "Component dependencies"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "The s1 deterministic structural map of code-review preparation, its production importer, direct dependencies, staged helper symbols and located tests."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-163e7bc3d6f0ccba"
+    },
+    {
+      "id": "c3",
+      "kind": "stakeholder",
+      "ref": "The submitted review packet is the sole review scope; commits are provenance pointers; pre-change baselines come from applicable parents in the local Git graph, including stacked unpushed commits."
+    },
+    {
+      "id": "c4",
+      "kind": "convention",
+      "ref": "Repository tests use TypeScript `*.test.ts` suites executed with `npx tsx --test`."
+    }
+  ]
+}

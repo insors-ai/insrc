@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7eb6f66f-2677-4968-96f5-8b84fca8b3eb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T18:29:14.687Z",
+    "epicCreatedAt": "2026-11-09T06:00:04.355Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "206db3426ffd4428",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Implement DesignReviewDelegate and CodeReviewDelegate",
+      "parent": {
+        "entityId": "STORY-206db3426ffd4428-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-206db3426ffd4428-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-206db3426ffd4428-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-206db3426ffd4428-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#180",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "36707e53fbe912ccb7c1f2bd1f1210be09598b1d9893d03d9db77afadb2a3662",
+        "at": "2026-11-15T18:14:46.118Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T18:29:14.688Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Implement DesignReviewDelegate and CodeReviewDelegate",
+    "summary": "In src/daemon/task-progress/review-measurements.ts (or a sibling file) add the two delegates implementing TaskProgressDelegate. progress(task) reads ReviewWorkers.progressOf for the identity bound at registration, maps it with the t2 functions, ignores a publication older than the last accepted incarnation and sequence, keeps the last accepted measurement when a sample is rejected, and never throws. ownerActivity compares ReviewWorkers.identity(key) with the incarnation of the last accepted publication (and processState alive for code review) and returns the next owner sequence or null. Neither delegate exposes cancel, so controls stay empty.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "each delegate's progress never throws and keeps the last accepted measurement on a rejected sample",
+      "ownerActivity returns a fresh sequence only for the live incarnation (and alive process for code review), else null",
+      "neither delegate exposes cancel so controls stay empty"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/task-progress/__tests__/review-measurements.test.ts: a delayed publication from an earlier incarnation does not replace the newer measurement"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/task-progress/__tests__/review-measurements.test.ts: heartbeat-only samples keep counts and meaningful revision unchanged"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/task-progress/__tests__/review-measurements.test.ts: an interrupted review reads as interrupted until the new incarnation is verified"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/task-progress/__tests__/review-measurements.test.ts: a missing or closing entry returns null without throwing"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/task-progress/__tests__/review-measurements.test.ts: observing progress leaves review results, publication and approval unchanged"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

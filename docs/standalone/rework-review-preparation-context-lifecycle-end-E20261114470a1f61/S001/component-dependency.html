@@ -85,43 +85,48 @@ margin:0;box-sizing:border-box;min-height:100vh;padding-top:56px;background:var(
 <table class="ref">
 <tr><th>Work item</th><td>STORY-470a1f61b26b12c6-s1</td></tr>
 <tr><th>Source doc</th><td><a href="./LLD.md">LLD-470a1f61b26b12c6-s1</a></td></tr>
-<tr><th>Date</th><td>2026-11-15 16:06</td></tr>
+<tr><th>Date</th><td>2026-11-16 13:50</td></tr>
 <tr><th>User</th><td>Subho Ghosh</td></tr>
 </table>
 </header>
-<section class="blk narr"><h2>Narrative</h2><p class="context">Standalone story S001 · Rework review preparation and context lifecycle end to end — Preparation becomes one lifecycle-wide responsibility for both code and design review.</p><p>Existing family coordinators consume one preparation boundary. The main host keeps only current authority/receipts and small runtime state; full history and immutable context remain project files, and every native source operation still crosses existing host process control.</p></section>
+<section class="blk narr"><h2>Narrative</h2><p class="context">Standalone story S001 · Rework review preparation and context lifecycle end to end — This Story retains the existing end-to-end review lifecycle—admission, isolated execution, compact durability, cancellation, progress, publication, approval cleanup, historical compatibility, and measured qualification—while replacing only code-review source ownership.</p><p>The component view keeps design review on latest-document capture and code review on exact Git locators plus an attempt baseline workspace. It also retains compact runtime durability, publication, human approval, and cleanup ownership so the source-light delta does not replace the holistic lifecycle.</p></section>
 <section class="blk"><h2>View</h2><div class="vp-wrap">
 <div class="iv-bar"><span>Drag to pan · scroll to zoom · double-click to zoom in</span><span class="sp"></span><button id="zout" title="Zoom out" aria-label="zoom out">−</button><span class="zl" id="zl">100%</span><button id="zin" title="Zoom in" aria-label="zoom in">+</button><button id="zfit" title="Fit to view (overview)" aria-label="fit to view">Fit</button><button id="z100" title="Actual size" aria-label="actual size">1:1</button><button id="iv-export" title="Export SVG" aria-label="export svg">⇩</button><button id="iv-srcbtn" title="Show diagram source" aria-label="show diagram source">src</button></div>
 <div class="iv-err" id="iv-err" role="alert"></div>
 <div class="vp iv-vp" id="vp"><div class="stage iv-stage insrc-viewer-diagram" id="stage"><pre class="mermaid">flowchart LR
-  surface[&quot;MCP / supported IPC&lt;br/&gt;&lt;small&gt;mcp&lt;/small&gt;&quot;]
-  host[&quot;Review ownership and receipts&lt;br/&gt;&lt;small&gt;review-workers.ts&lt;/small&gt;&quot;]
-  runtime[&quot;Compact runtime authority&lt;br/&gt;&lt;small&gt;review-worker-resources.ts&lt;/small&gt;&quot;]
-  worker[&quot;Family coordinator workers&lt;br/&gt;&lt;small&gt;review-worker-runtime.ts&lt;/small&gt;&quot;]
-  preparation[&quot;Shared preparation contract&lt;br/&gt;&lt;small&gt;review&lt;/small&gt;&quot;]
-  source[&quot;Verified source planning&lt;br/&gt;&lt;small&gt;sources.ts&lt;/small&gt;&quot;]
-  native[&quot;Host native leases&lt;br/&gt;&lt;small&gt;review-native-host.ts&lt;/small&gt;&quot;]
-  history[&quot;Full review history&lt;br/&gt;&lt;small&gt;workflow&lt;/small&gt;&quot;]
-  context[&quot;Immutable context bytes&quot;]
-  lifecycle[&quot;Publication / approval / cleanup&lt;br/&gt;&lt;small&gt;workflow&lt;/small&gt;&quot;]
-  surface --&gt;|exact review control| host
-  host --&gt;|sole hot-state writer| runtime
-  host --&gt;|dedicated owner / cancellation| worker
-  worker --&gt;|acquire complete context| preparation
-  preparation --&gt;|qualify immutable evidence| source
-  source --&gt;|isolated bounded Git| native
-  native --&gt;|durable intent / closure| runtime
-  preparation --&gt;|write / read immutable generation| context
-  preparation --&gt;|private ready receipt / borrow| host
-  worker --&gt;|input and accepted feedback| history
-  lifecycle --&gt;|reuse or cold qualify once| preparation
-  lifecycle --&gt;|current resource / cancellation proof| runtime
-  lifecycle --&gt;|preserve before cleanup| history</pre></div></div>
+  controller[&quot;Controller/MCP&lt;br/&gt;&lt;small&gt;mcp&lt;/small&gt;&quot;]
+  host[&quot;Review host&lt;br/&gt;&lt;small&gt;threads&lt;/small&gt;&quot;]
+  preparation[&quot;Code preparation&lt;br/&gt;&lt;small&gt;code-preparation.ts&lt;/small&gt;&quot;]
+  packet[&quot;Task review packet&lt;br/&gt;&lt;small&gt;packet.ts&lt;/small&gt;&quot;]
+  git[&quot;Git object access&quot;]
+  workspace[&quot;Attempt baseline workspace&quot;]
+  checkpoint[&quot;Review checkpoint lifecycle&lt;br/&gt;&lt;small&gt;review&lt;/small&gt;&quot;]
+  reviewer[&quot;Reviewer runner&quot;]
+  design[&quot;Design subject preparation&lt;br/&gt;&lt;small&gt;review&lt;/small&gt;&quot;]
+  runtime[&quot;Compact runtime&lt;br/&gt;&lt;small&gt;threads&lt;/small&gt;&quot;]
+  publication[&quot;CR publication&lt;br/&gt;&lt;small&gt;workflow&lt;/small&gt;&quot;]
+  approval[&quot;Human approval gate&quot;]
+  cleanup[&quot;Cleanup owner&lt;br/&gt;&lt;small&gt;review&lt;/small&gt;&quot;]
+  controller --&gt;|submit/poll| host
+  host --&gt;|isolated dispatch| preparation
+  preparation --&gt;|qualify exact scope| packet
+  packet --&gt;|verify pinned objects| git
+  preparation --&gt;|materialize relevant parents| workspace
+  preparation --&gt;|persist locators/manifest/progress| checkpoint
+  preparation --&gt;|selected after blocks + baseline paths| reviewer
+  design --&gt;|latest artifact document| reviewer
+  reviewer --&gt;|findings/result| checkpoint
+  host --&gt;|lease/progress/cancel durability| runtime
+  checkpoint --&gt;|terminal review evidence| publication
+  publication --&gt;|present independent review| approval
+  approval --&gt;|authorize temporary cleanup| cleanup
+  cleanup --&gt;|delete owned workspace| workspace
+  cleanup --&gt;|delete after permanent preservation| checkpoint</pre></div></div>
 
 <pre class="iv-src" id="iv-src"></pre>
 </div></section>
-<section class="blk desc"><h2>Description</h2><h3>Components</h3><p class="lead">10 components, 13 dependencies. An arrow points from a component to what it depends on.</p><table class="dt"><thead><tr><th>Component</th><th>Path</th><th>Depends on</th><th>Description</th></tr></thead><tbody><tr><td>MCP / supported IPC</td><td>src/mcp</td><td>Review ownership and receipts</td><td>Submit, progress, cancel and explicit recovery contracts.</td></tr><tr><td>Review ownership and receipts</td><td>src/daemon/threads/review-workers.ts</td><td>Compact runtime authority, Family coordinator workers</td><td>Existing main registry with compact private preparation capabilities.</td></tr><tr><td>Compact runtime authority</td><td>src/daemon/threads/review-worker-resources.ts</td><td class="missing">—</td><td>Proposed host-owned small state writer, replacing hot full-history mutations.</td></tr><tr><td>Family coordinator workers</td><td>src/daemon/threads/review-worker-runtime.ts</td><td>Shared preparation contract, Full review history</td><td>Existing isolated code/design execution and judging policy.</td></tr><tr><td>Shared preparation contract</td><td>src/workflow/review</td><td>Verified source planning, Immutable context bytes, Review ownership and receipts</td><td>Proposed common lifecycle adapter around existing family validators; no replacement judge.</td></tr><tr><td>Verified source planning</td><td>src/workflow/code-review/task-review/sources.ts</td><td>Host native leases</td><td>Existing ReviewSources/projection extended with bounded shared query sessions and batching.</td></tr><tr><td>Host native leases</td><td>src/daemon/threads/review-native-host.ts</td><td>Compact runtime authority</td><td>Existing intent-before-spawn, disposal and cancellation authority.</td></tr><tr><td>Full review history</td><td>src/workflow</td><td class="missing">—</td><td>Existing project checkpoint writers at semantic input/result boundaries.</td></tr><tr><td>Immutable context bytes</td><td class="missing">—</td><td class="missing">—</td><td>Stable verified source generation, separately versioned history bindings and retained query staging under aggregate capacity accounting. Includes digest-indexed staged packet descriptors and typed leaves; bounded writer and consumer windows, no eager inventory.</td></tr><tr><td>Publication / approval / cleanup</td><td>src/workflow</td><td>Shared preparation contract, Compact runtime authority, Full review history</td><td>Existing lifecycle gates consume the same qualified context and runtime proof.</td></tr></tbody></table></section>
-<footer class="ft"><span>Generated by insrc · companion of LLD-470a1f61b26b12c6-s1</span><span>2026-11-15 16:06</span></footer>
+<section class="blk desc"><h2>Description</h2><h3>Components</h3><p class="lead">13 components, 15 dependencies. An arrow points from a component to what it depends on.</p><table class="dt"><thead><tr><th>Component</th><th>Path</th><th>Depends on</th><th>Description</th></tr></thead><tbody><tr><td>Controller/MCP</td><td>src/mcp</td><td>Review host</td><td>Submits and polls review attempts.</td></tr><tr><td>Review host</td><td>src/daemon/threads</td><td>Code preparation, Compact runtime</td><td>Admits and dispatches isolated workers.</td></tr><tr><td>Code preparation</td><td>src/workflow/review/code-preparation.ts</td><td>Task review packet, Attempt baseline workspace, Review checkpoint lifecycle, Reviewer runner</td><td>Qualifies exact code scope and coordinates source-light resources.</td></tr><tr><td>Task review packet</td><td>src/workflow/code-review/task-review/packet.ts</td><td>Git object access</td><td>Validates submitted scope and pinned change locators.</td></tr><tr><td>Git object access</td><td class="missing">—</td><td class="missing">—</td><td>Reads immutable selected and parent objects.</td></tr><tr><td>Attempt baseline workspace</td><td class="missing">—</td><td class="missing">—</td><td>Owns relevant parent files and its sealed manifest.</td></tr><tr><td>Review checkpoint lifecycle</td><td>src/workflow/review</td><td>CR publication</td><td>Persists metadata, progress, recovery, and results without source bodies.</td></tr><tr><td>Reviewer runner</td><td class="missing">—</td><td>Review checkpoint lifecycle</td><td>Receives exact code scope, requirements, and tests.</td></tr><tr><td>Design subject preparation</td><td>src/workflow/review</td><td>Reviewer runner</td><td>Keeps resolving the latest artifact document independently.</td></tr><tr><td>Compact runtime</td><td>src/daemon/threads</td><td class="missing">—</td><td>Owns bounded leases, progress, cancellation, and durable semantic boundaries.</td></tr><tr><td>CR publication</td><td>src/workflow</td><td>Human approval gate</td><td>Builds permanent review evidence from terminal checkpoint data.</td></tr><tr><td>Human approval gate</td><td class="missing">—</td><td>Cleanup owner</td><td>Authorizes BUILD completion and temporary checkpoint cleanup.</td></tr><tr><td>Cleanup owner</td><td>src/workflow/review</td><td>Attempt baseline workspace, Review checkpoint lifecycle</td><td>Uses exact fences and durable claims to remove only owned temporary state.</td></tr></tbody></table></section>
+<footer class="ft"><span>Generated by insrc · companion of LLD-470a1f61b26b12c6-s1</span><span>2026-11-16 13:50</span></footer>
 </div>
 <script>(function(JM,Ag){typeof exports=="object"&&typeof module<"u"?module.exports=Ag():typeof define=="function"&&define.amd?define(Ag):(JM=typeof globalThis<"u"?globalThis:JM||self,JM.mermaid=Ag())})(this,function(){var FWe,RWe;"use strict";function JM(i){for(var s=[],u=1;u<arguments.length;u++)s[u-1]=arguments[u];var d=Array.from(typeof i=="string"?[i]:i);d[d.length-1]=d[d.length-1].replace(/\r?\n([\t ]*)$/,"");var p=d.reduce(function(y,T){var _=T.match(/\n([\t ]+|(?!\s).)/g);return _?y.concat(_.map(function(A){var P,R;return(R=(P=A.match(/[\t ]/g))===null||P===void 0?void 0:P.length)!==null&&R!==void 0?R:0})):y},[]);if(p.length){var v=new RegExp(`
 [	 ]{`+Math.min.apply(Math,p)+"}","g");d=d.map(function(y){return y.replace(v,`

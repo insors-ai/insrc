@@ -1,0 +1,110 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-61b4eaf9-b62a-482d-b09a-fb3c33ca5eae",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T13:04:36.445Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s4",
+    "envelope": {
+      "description": "The planner stops offering limits and the cache version rises",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s4-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s4-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s4-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s4-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#174",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1a2ce3c3e040e195ea543de0726c4bc9c5b2564932bf9bfbd6fec0b1b08ce413",
+        "at": "2026-11-14T13:04:36.446Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T13:04:36.447Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The planner stops offering limits and the cache version rises",
+    "summary": "Remove the limit, topK, maxSources and previewChars parameters, their examples and the fan-out bound from the planner catalog and src/prompts/analyze/decompose.system.md; drop any such parameter from a plan in src/analyze/explore/params-schema.ts before a lookup runs and in exploration-cache-key.ts before its cache key is taken; and raise EXPLORATION_CACHE_VERSION from 3 to 4 so a stored version 3 output is treated as absent.",
+    "size": "M",
+    "order": 12,
+    "acceptanceChecks": [
+      "The planning prompt and catalog contain no limit, topK, maxSources or previewChars and no fixed result count",
+      "A plan passing each of limit, topK, maxSources and previewChars produces the same cache key as one without, and a stored version 3 output is not served"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "decompose-prompt-limits.test.ts: the planning prompt and catalog contain no limit, topK, maxSources or previewChars and no fixed result count"
+      },
+      {
+        "level": "unit",
+        "name": "params-schema.test.ts: a plan passing each of limit, topK, maxSources and previewChars produces the same cache key as one without"
+      },
+      {
+        "level": "unit",
+        "name": "cache-area-isolation.test.ts: a stored version 3 output is treated as absent at version 4"
+      }
+    ],
+    "planTaskId": "t12"
+  },
+  "citations": []
+}

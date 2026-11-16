@@ -1,0 +1,104 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f4935377-3d72-4252-ae40-2c30e86c1272",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T18:29:14.696Z",
+    "epicCreatedAt": "2026-11-09T06:00:04.355Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "206db3426ffd4428",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Signal measurements and record terminal evidence",
+      "parent": {
+        "entityId": "STORY-206db3426ffd4428-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-206db3426ffd4428-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-206db3426ffd4428-s3-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#183",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "c8ebc2f836f14091d3afb26aac5d38590dfaee2ab1ba71061134d05989ffd510",
+        "at": "2026-11-15T18:14:46.133Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T18:29:14.697Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Signal measurements and record terminal evidence",
+    "summary": "In ReviewWorkers.acceptProgress, after a publication is accepted, signal the coordinator through the review producer's signalMeasurement for the registered owner, and when the review reaches a terminal phase record the owner's terminal evidence through recordLifecycle from that phase, never from the review verdict. Calls are fire-and-forget guarded so a coordinator failure cannot affect progress acceptance, the board update or reclaim.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "an observed review's task progress changes as publications are accepted",
+      "terminal evidence follows the owner's terminal phase (complete, failed, interrupted) and never the review verdict",
+      "coordinator failures are fire-and-forget guarded and never affect progress acceptance, the board update or reclaim"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/threads/__tests__/review-task-signal.test.ts: an observed review's task progress changes as publications are accepted"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/threads/__tests__/review-task-signal.test.ts: terminal evidence follows the owner's terminal phase and never the review verdict"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/threads/__tests__/review-task-signal.test.ts: a coordinator error is swallowed without altering acceptProgress, the board publication or reclaim"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/threads/__tests__/review-task-signal.test.ts: snapshot after interruption shows interrupted or stale, then a newer incarnation is verified"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/threads/__tests__/review-task-signal.test.ts: a delayed publication from the earlier incarnation does not overwrite the newer snapshot"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

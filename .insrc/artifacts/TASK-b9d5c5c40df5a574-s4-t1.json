@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b2238861-b2da-41b6-9378-e21f114392f2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T13:04:36.413Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s4",
+    "envelope": {
+      "description": "ItemMeasure carries the item's content from its file",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#163",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fdc8f0a63f4a64332d67ced9895957ac8b013639e5b998cc86d6bf538641f560",
+        "at": "2026-11-14T13:04:36.414Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T13:04:36.415Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "ItemMeasure carries the item's content from its file",
+    "summary": "Add the optional content field to ItemMeasure in src/analyze/item-length.ts and have measureItem return the text it already reads when the recorded file hash matches (whole file for a document, file or config entity, the start-to-end line range for any other). When the file is missing, unreadable, changed or has no recorded hash, content stays absent and the reason says why; measureItem still never throws.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "measureItem returns content equal in length to totalChars for a whole-file kind and a line-range kind when the hash matches",
+      "measureItem returns no content and a reason for a changed, missing, unreadable and unhashed file, and never throws"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "item-length.test.ts: measureItem returns the whole content of a whole-file and a line-range item and no content for a changed, missing, unreadable or unhashed file"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

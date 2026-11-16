@@ -1,0 +1,110 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-746cfe45-bf78-4276-a308-b56efb0ca4e1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-16T08:55:13.240Z",
+    "epicCreatedAt": "2026-10-03T14:09:32.294Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "149283b0d0455a43",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Verify the whole change",
+      "parent": {
+        "entityId": "STORY-149283b0d0455a43-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-149283b0d0455a43-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-149283b0d0455a43-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-149283b0d0455a43-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-149283b0d0455a43-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-149283b0d0455a43-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-149283b0d0455a43-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-149283b0d0455a43-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-149283b0d0455a43-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "95e736a891410b8c054cad68de048588069587ffbad308201e05d051592c5c1d",
+        "at": "2026-11-16T08:55:13.240Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T08:55:13.242Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify the whole change",
+    "summary": "Run the workflow and MCP test subsets and the type check once after all tasks, run the JetBrains plugin's Kotlin tests (./gradlew test in jetbrains-plugin) where the Gradle toolchain is available, compare with the baseline recorded in t1, and confirm by reading the diff against the LLD's invariants that no tracker runner file changed and requireApprovedEpic still refuses an ISSUE.",
+    "size": "S",
+    "order": 8,
+    "acceptanceChecks": [
+      "npx tsx --test 'src/workflow/**/*.test.ts' 'src/mcp/**/*.test.ts' passes with no new failures against the baseline recorded in t1",
+      "the type check passes",
+      "the JetBrains WorkflowChainReaderTest suite passes, or the task states plainly that the Gradle toolchain could not run here and why",
+      "the diff touches no tracker runner file and requireApprovedEpic still refuses an ISSUE"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "workflow and MCP test subsets, the type check and the JetBrains reader tests match the t1 baseline with no new failures"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

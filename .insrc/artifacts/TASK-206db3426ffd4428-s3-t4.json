@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3c4fb9f2-02ac-4355-a899-eda6d6cf31e7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T18:29:14.689Z",
+    "epicCreatedAt": "2026-11-09T06:00:04.355Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "206db3426ffd4428",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Compose one progress runtime that accepts the review kinds",
+      "parent": {
+        "entityId": "STORY-206db3426ffd4428-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-206db3426ffd4428-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-206db3426ffd4428-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#181",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "9ee3a76f15b5e17982c3158516951ec0ffcc4faf7b069328cc95cf10bc7c8fec",
+        "at": "2026-11-15T18:14:46.123Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T18:29:14.690Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Compose one progress runtime that accepts the review kinds",
+    "summary": "Compose the one progress runtime so the review producers register next to the existing ones on the same coordinator and store; the composed validator (validateAllDetails) accepts every kind.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "one runtime accepts both review kinds plus the existing executor/workflow/analysis kinds through the composed validator",
+      "the review producers register on the same coordinator and store without disturbing existing kinds"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/task-progress/__tests__/review-producers.test.ts: register both delegates through registerProducer and ProducerPort.register with a minted authorization"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/task-progress/__tests__/review-producers.test.ts: a review measurement is committed and read back through the one store and an unknown kind is rejected"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/task-progress/__tests__/review-producers.test.ts: second registration of the same kind is refused"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/task-progress/__tests__/review-producers.test.ts: committed workflow and analysis record fixtures decode with the composed validator"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/task-progress/__tests__/review-producers.test.ts: DesignReviewDetails and CodeReviewDetails pass the bounded measurement schema and stay under 8 KiB"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

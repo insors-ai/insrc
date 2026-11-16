@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-992d6913-e767-4d68-ae7e-4561453f62f1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-16T09:05:17.312Z",
+    "epicCreatedAt": "2026-11-14T08:55:28.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "470a1f61b26b12c6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Reconcile duplicate lifecycle provenance",
+      "parent": {
+        "entityId": "STORY-470a1f61b26b12c6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-470a1f61b26b12c6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 5"
+        },
+        {
+          "entityId": "TASK-470a1f61b26b12c6-s1-t20",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "285067c8dd2f1336d124325b9761397ec3f6fce8777d1f48a46654347199bcc2",
+        "at": "2026-11-16T09:05:17.312Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T09:05:17.321Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Reconcile duplicate lifecycle provenance",
+    "summary": "Transition duplicate ISSUE-163e7bc3d6f0ccba and its LLD lineage to explicit superseded lifecycle state, bind replacement provenance to the primary standalone artifact, and preserve both records as historical non-routable evidence.",
+    "size": "M",
+    "order": 20,
+    "acceptanceChecks": [
+      "Both duplicate artifacts read back as superseded with replacement provenance to the primary artifact and cannot be selected for new workflow routing.",
+      "The transition is atomic or safely retryable; any failed readback stops the build before source-light migration proceeds.",
+      "Existing primary PLAN/BUILD/TESTS evidence and completed task records remain unchanged."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Duplicate ISSUE/LLD lifecycle reconciliation: atomic supersession, replacement provenance, non-routability, retry/readback failure, and unchanged primary PLAN/BUILD/TESTS evidence."
+      }
+    ],
+    "planTaskId": "t21"
+  },
+  "citations": []
+}

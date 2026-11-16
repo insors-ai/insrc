@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f012c12c-97f0-4c13-81f2-8d24b64503a9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T18:29:14.699Z",
+    "epicCreatedAt": "2026-11-09T06:00:04.355Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "206db3426ffd4428",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Verify non-interference and update the design notes",
+      "parent": {
+        "entityId": "STORY-206db3426ffd4428-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-206db3426ffd4428-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-206db3426ffd4428-s3-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#184",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "8dc69bc2209ef32b1d8608f6d07f0946c4e66574bc5a7f2db03da4fcad276b99",
+        "at": "2026-11-15T18:14:46.138Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T18:29:14.793Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Verify non-interference and update the design notes",
+    "summary": "Verify non-interference (existing progress suites unchanged and passing, review binding never disturbs other tasks) and update the design notes (LLD open questions) with the t5 pre-check outcome and the option-(b) seam.",
+    "size": "S",
+    "order": 7,
+    "acceptanceChecks": [
+      "existing executor-relay, coordinator and store tests pass unchanged",
+      "review admission binding does not disturb non-review tasks or observers"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/threads/__tests__/review-task-signal.test.ts: the normalized projection of an unobserved review is unchanged"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3dc66629-dd4e-4af7-886c-f472a28fa6d6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T18:29:14.691Z",
+    "epicCreatedAt": "2026-11-09T06:00:04.355Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "206db3426ffd4428",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Bind a review attempt to a task at admission",
+      "parent": {
+        "entityId": "STORY-206db3426ffd4428-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-206db3426ffd4428-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-206db3426ffd4428-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-206db3426ffd4428-s3-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#182",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "885687f18924d969ff76bf0ac4ab5c65e190ddc3dd257078757c0a0b7e129b08",
+        "at": "2026-11-15T18:14:46.128Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T18:29:14.693Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Bind a review attempt to a task at admission",
+    "summary": "AMENDED (rev 2, user-approved option b): at review admission in ReviewWorkers (admit/admitOwned, which already receive the TrustedRpcContext), call the daemon-internal s1 seam ProgressAccess.launchReview for the review — the pre-check proved no review admission carries a chat origin bound to its connection, so launchReview mints authorization with origin { turnId: reviewId } without requiring one; no IPC method exposes it — and register the matching delegate through the review producer, fire-and-forget guarded. A session connection, an aborted connection, a session-memory execution, a refused launch or a refused registration has no task and behaves exactly as today. s3 supplies only the review identity and delegates; minting and fencing stay in s1.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "the admission call path is documented in the build record: which requests carry a bound origin (finding: none — review-service.ts:128/192 -> context(trusted) -> ReviewWorkers.admit/admitOwned carry only connectionIdentity/daemonEpoch/connectionSignal; the only origin-bound launch is executor-relay.ts:245 on executor connections)",
+      "an observed review (any non-session, non-aborted admission) is registered as a task of kind design-review or code-review via the daemon-internal launchReview seam (access.ts) minting origin { turnId: reviewId }",
+      "an unobserved review (session connection, aborted connection, session-memory execution, refused launch or refused registration) is admitted exactly as before with no task",
+      "a failure or stall of launch or register never fails or slows the review admission",
+      "no minting or fencing logic is added outside s1's access and coordinator"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/threads/__tests__/review-task-binding.test.ts: an observed review is registered as a task of kind design-review or code-review"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/threads/__tests__/review-task-binding.test.ts: a review without an origin, session or capacity is admitted exactly as before"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/threads/__tests__/review-task-binding.test.ts: a failure to launch or register never fails or slows the review"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

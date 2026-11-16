@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e5abd13a-17de-495a-9221-3e1e4a8b8ba2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T13:04:36.431Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Graph and symbol lookups return every result",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#170",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a8bb1fe757f9446f0de258bffbb9453b493afacfead6af3e66e2a31795989e7a",
+        "at": "2026-11-14T13:04:36.432Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T13:04:36.433Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Graph and symbol lookups return every result",
+    "summary": "Delete the result-count constants and the limit and topK parameters from symbol-locate, test-locate, import-graph, usage-example, concept-resolve, manifests-locate, data-model-trace (MAX_TARGETS, MAX_FIELDS, MAX_TOP_CALLERS) and convention-detect (MAX_REPR_SUBCLASSES, MAX_BASE_CLASS_IDIOMS), so each returns everything it found with a completeness record that has no limited entry.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "Each of these lookups returns every result at, one over and zero versus its former limit",
+      "No limited entry appears in their completeness records"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "completeness-all-lookups.test.ts: symbol-locate, test-locate, import-graph, usage-example, concept-resolve, manifests-locate, data-model-trace and convention-detect return every result at, one over and zero versus the former limit with no limited entry"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

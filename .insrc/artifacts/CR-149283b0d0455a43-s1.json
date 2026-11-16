@@ -1,0 +1,4105 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "store-fb3e869d-162b-4956-8d0c-1ab574faa8f4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-16T11:52:50.875Z",
+    "epicCreatedAt": "2026-10-03T14:09:32.294Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 2,
+    "epicHash": "149283b0d0455a43",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicSlug": "story-list-readers-do-not-recognise",
+    "standalone": true,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "2ba324c7d775721d775c43bc65109584dff801ace0e03b02b717a9b0dad62aeb",
+        "at": "2026-11-16T11:58:53.893Z",
+        "by": {
+          "id": "insrc:code-review",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 2
+  },
+  "body": {
+    "kind": "code-review",
+    "format": "task-based",
+    "storyId": "s1",
+    "status": "passed",
+    "reviews": [
+      {
+        "reviewId": "cr-149283b0-s1-c",
+        "attempt": 1,
+        "storyId": "s1",
+        "taskId": "t8",
+        "reviewer": "daemon",
+        "status": "failed",
+        "finalScopeIdentity": "76382189c1ec65d441ba865ff693906e13e1023fc61ef3d82f33de05372f4952",
+        "attributionIdentity": "62d49846b81d6dad5dfac286774899862686b2c58e3c9d90ab17ff3c53b56e39",
+        "taskScopeIdentities": [
+          {
+            "taskId": "t8",
+            "identity": "0d652f91ff3bf90eb74e3732fe40b26c280d49192b32c054369248236a70163e"
+          }
+        ],
+        "scope": {
+          "reviewRevision": "072965b06a2fd60bf116997aaa773da0161bcdc2",
+          "finalScope": {
+            "revision": "072965b06a2fd60bf116997aaa773da0161bcdc2",
+            "identity": "76382189c1ec65d441ba865ff693906e13e1023fc61ef3d82f33de05372f4952",
+            "entries": [
+              {
+                "originChangeIndex": 0,
+                "path": "src/workflow/__tests__/implied-issue-stories.test.ts",
+                "blobOid": "2e9543c58122dd1b5f7d1277f8bf42f7a179fdb4",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      58
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 1,
+                "path": "src/workflow/storage.ts",
+                "blobOid": "879534c6d4301698472e5dd03c86d6100da1b3a8",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      686,
+                      698
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 2,
+                "path": "src/workflow/tracker/resolve.ts",
+                "blobOid": "31afb09800d1c049db7d6befaf4b113405e63e0e",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      40,
+                      40
+                    ]
+                  },
+                  {
+                    "after": [
+                      280,
+                      282
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 3,
+                "path": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "blobOid": "5283f7d7d59e6b03e29e4918a996c5ef6f9212e8",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      139,
+                      162
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 4,
+                "path": "src/workflow/bugfix/next-after-issue.ts",
+                "blobOid": "032bb495e2e757f3443a4a9f6af17f73746bd161",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      15,
+                      15
+                    ]
+                  },
+                  {
+                    "after": [
+                      85,
+                      88
+                    ]
+                  },
+                  {
+                    "after": [
+                      99,
+                      99
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 5,
+                "path": "src/workflow/__tests__/gates.test.ts",
+                "blobOid": "b515b9e30f4f820b68ac49dab77d69cf2beb48a9",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      24,
+                      24
+                    ]
+                  },
+                  {
+                    "after": [
+                      236,
+                      291
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 6,
+                "path": "src/workflow/gates.ts",
+                "blobOid": "677c02e808f4180021a3ad16ec228610261d5df1",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      65,
+                      65
+                    ]
+                  },
+                  {
+                    "after": [
+                      163,
+                      172
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 7,
+                "path": "src/workflow/__tests__/chain-issue-anchored.test.ts",
+                "blobOid": "5ea4e2e08e53edb70897b93e832a265a572c0eb4",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      16
+                    ]
+                  },
+                  {
+                    "after": [
+                      18,
+                      137
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 8,
+                "path": "src/workflow/chain.ts",
+                "blobOid": "558b0a414c9afd1fafd9e3a4dad4a4b0a3952667",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      24,
+                      25
+                    ]
+                  },
+                  {
+                    "after": [
+                      37,
+                      40
+                    ]
+                  },
+                  {
+                    "after": [
+                      107,
+                      107
+                    ]
+                  },
+                  {
+                    "after": [
+                      114,
+                      114
+                    ]
+                  },
+                  {
+                    "after": [
+                      143,
+                      149
+                    ]
+                  },
+                  {
+                    "after": [
+                      154,
+                      165
+                    ]
+                  },
+                  {
+                    "after": [
+                      171,
+                      179
+                    ]
+                  },
+                  {
+                    "after": [
+                      199,
+                      203
+                    ]
+                  },
+                  {
+                    "after": [
+                      206,
+                      208
+                    ]
+                  },
+                  {
+                    "after": [
+                      213,
+                      213
+                    ]
+                  },
+                  {
+                    "after": [
+                      220,
+                      220
+                    ]
+                  },
+                  {
+                    "after": [
+                      224,
+                      238
+                    ]
+                  },
+                  {
+                    "after": [
+                      245,
+                      245
+                    ]
+                  },
+                  {
+                    "after": [
+                      277,
+                      281
+                    ]
+                  },
+                  {
+                    "after": [
+                      284,
+                      289
+                    ]
+                  },
+                  {
+                    "after": [
+                      291,
+                      291
+                    ]
+                  },
+                  {
+                    "after": [
+                      297,
+                      298
+                    ]
+                  },
+                  {
+                    "after": [
+                      454,
+                      458
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 9,
+                "path": "src/workflow/__tests__/chain-issue-anchored.test.ts",
+                "blobOid": "5ea4e2e08e53edb70897b93e832a265a572c0eb4",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      17,
+                      17
+                    ]
+                  },
+                  {
+                    "after": [
+                      138,
+                      232
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 10,
+                "path": "src/workflow/chain.ts",
+                "blobOid": "558b0a414c9afd1fafd9e3a4dad4a4b0a3952667",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      321,
+                      361
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 11,
+                "path": "src/workflow/__tests__/issue-anchored-route.test.ts",
+                "blobOid": "d5a81e1072d1e0af7d4a46658050fc5e4aa3c62d",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      299
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 12,
+                "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/workflow/WorkflowChainReader.kt",
+                "blobOid": "e4517524e047cae2e542d212582169721abc1869",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      43,
+                      47
+                    ]
+                  },
+                  {
+                    "after": [
+                      52,
+                      52
+                    ]
+                  },
+                  {
+                    "after": [
+                      98,
+                      102
+                    ]
+                  },
+                  {
+                    "after": [
+                      110,
+                      112
+                    ]
+                  },
+                  {
+                    "after": [
+                      116,
+                      155
+                    ]
+                  },
+                  {
+                    "after": [
+                      300,
+                      316
+                    ]
+                  },
+                  {
+                    "after": [
+                      361,
+                      367
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 13,
+                "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/workflow/WorkflowChainReaderTest.kt",
+                "blobOid": "2193cdb03ceef02a37b72b208c0e8d816bc48bb9",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      266,
+                      379
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 14,
+                "path": "jetbrains-plugin/__tests__/issue-anchored-gradle.test.ts",
+                "blobOid": "5d6749143df4390e427f9ea65fbdaa40349f48c6",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      189
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 15,
+                "path": "src/workflow/review/__tests__/code-preparation-execution.test.ts",
+                "blobOid": "1fc1f9e8963b594344d64f00dfd1ab189079c080",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "deletionAt": 16
+                  },
+                  {
+                    "deletionAt": 17
+                  },
+                  {
+                    "deletionAt": 64
+                  },
+                  {
+                    "deletionAt": 75
+                  }
+                ]
+              }
+            ],
+            "dispositions": [
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    1,
+                    58
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      1,
+                      58
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    686,
+                    698
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      686,
+                      698
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    40,
+                    40
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      40,
+                      40
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    280,
+                    282
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      280,
+                      282
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    139,
+                    162
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      139,
+                      162
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    15,
+                    15
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      15,
+                      15
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    85,
+                    88
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      85,
+                      88
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    99,
+                    99
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      99,
+                      99
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    24,
+                    24
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      24,
+                      24
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    236,
+                    291
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      236,
+                      291
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 6,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    65,
+                    65
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      65,
+                      65
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 6,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    163,
+                    172
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      163,
+                      172
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 7,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    1,
+                    16
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      1,
+                      16
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 7,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    17,
+                    17
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 9,
+                    "segmentIndex": 0
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 7,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    18,
+                    137
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      18,
+                      137
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    24,
+                    25
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      24,
+                      25
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    37,
+                    40
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      37,
+                      40
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    107,
+                    107
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      107,
+                      107
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    114,
+                    114
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      114,
+                      114
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    143,
+                    149
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      143,
+                      149
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 5
+                },
+                "sourcePart": {
+                  "after": [
+                    154,
+                    165
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      154,
+                      165
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 6
+                },
+                "sourcePart": {
+                  "after": [
+                    171,
+                    179
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      171,
+                      179
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 7
+                },
+                "sourcePart": {
+                  "after": [
+                    199,
+                    203
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      199,
+                      203
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 8
+                },
+                "sourcePart": {
+                  "after": [
+                    206,
+                    208
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      206,
+                      208
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 9
+                },
+                "sourcePart": {
+                  "after": [
+                    213,
+                    213
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      213,
+                      213
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 10
+                },
+                "sourcePart": {
+                  "after": [
+                    220,
+                    220
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      220,
+                      220
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 11
+                },
+                "sourcePart": {
+                  "after": [
+                    224,
+                    238
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      224,
+                      238
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 12
+                },
+                "sourcePart": {
+                  "after": [
+                    245,
+                    245
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      245,
+                      245
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 13
+                },
+                "sourcePart": {
+                  "after": [
+                    277,
+                    281
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      277,
+                      281
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 14
+                },
+                "sourcePart": {
+                  "after": [
+                    284,
+                    289
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      284,
+                      289
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 15
+                },
+                "sourcePart": {
+                  "after": [
+                    291,
+                    291
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      291,
+                      291
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 16
+                },
+                "sourcePart": {
+                  "after": [
+                    297,
+                    298
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      297,
+                      298
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 17
+                },
+                "sourcePart": {
+                  "after": [
+                    413,
+                    417
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      454,
+                      458
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    17,
+                    17
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      17,
+                      17
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    138,
+                    232
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      138,
+                      232
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 10,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    321,
+                    361
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      321,
+                      361
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 11,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    1,
+                    299
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      1,
+                      299
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 12,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    43,
+                    47
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      43,
+                      47
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 12,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    52,
+                    52
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      52,
+                      52
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 12,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    98,
+                    102
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      98,
+                      102
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 12,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    110,
+                    112
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      110,
+                      112
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 12,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    116,
+                    155
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      116,
+                      155
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 12,
+                  "segmentIndex": 5
+                },
+                "sourcePart": {
+                  "after": [
+                    300,
+                    316
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      300,
+                      316
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 12,
+                  "segmentIndex": 6
+                },
+                "sourcePart": {
+                  "after": [
+                    361,
+                    367
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      361,
+                      367
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 13,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    266,
+                    379
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      266,
+                      379
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 14,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    1,
+                    189
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      1,
+                      189
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 15,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "deletionAt": 16
+                },
+                "kind": "deleted",
+                "finalSegments": [
+                  {
+                    "deletionAt": 16
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 15,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "deletionAt": 17
+                },
+                "kind": "deleted",
+                "finalSegments": [
+                  {
+                    "deletionAt": 17
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 15,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "deletionAt": 64
+                },
+                "kind": "deleted",
+                "finalSegments": [
+                  {
+                    "deletionAt": 64
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 15,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "deletionAt": 75
+                },
+                "kind": "deleted",
+                "finalSegments": [
+                  {
+                    "deletionAt": 75
+                  }
+                ],
+                "replacementWitnesses": []
+              }
+            ],
+            "selectedTaskIds": [
+              "t8"
+            ],
+            "testCount": 7,
+            "attributionIdentity": "62d49846b81d6dad5dfac286774899862686b2c58e3c9d90ab17ff3c53b56e39",
+            "attributionState": "accepted",
+            "tasks": [
+              {
+                "taskId": "t8",
+                "changeIndexes": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11,
+                  12,
+                  13,
+                  14,
+                  15
+                ],
+                "testIndexes": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ],
+                "decision": {
+                  "action": "initial"
+                },
+                "identity": "0d652f91ff3bf90eb74e3732fe40b26c280d49192b32c054369248236a70163e"
+              }
+            ]
+          },
+          "storyId": "s1",
+          "taskId": "t8",
+          "documents": {
+            "lld": {
+              "path": ".insrc/artifacts/LLD-149283b0d0455a43-s1.json",
+              "commit": "fbf971e3084b8225f8e0020575ee8c957808c142"
+            },
+            "plan": {
+              "path": ".insrc/artifacts/PLAN-149283b0d0455a43-s1.json",
+              "commit": "7129dc1ed06b19ff9dbd8f7dee59d7a906a9720f"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "c04acd560b9cfee04c752af7e4302f27d84a930f",
+              "parent": "f66516e5a9ad314e264a204b5a832f9f71709fc1",
+              "files": [
+                {
+                  "path": "src/workflow/__tests__/implied-issue-stories.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        58
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/storage.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        686,
+                        698
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/tracker/resolve.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        40,
+                        40
+                      ]
+                    },
+                    {
+                      "after": [
+                        280,
+                        282
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "1266f52bbe06c870850ca6a0ea491412b339e650",
+              "parent": "c04acd560b9cfee04c752af7e4302f27d84a930f",
+              "files": [
+                {
+                  "path": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        139,
+                        162
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/bugfix/next-after-issue.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        15,
+                        15
+                      ]
+                    },
+                    {
+                      "after": [
+                        85,
+                        88
+                      ]
+                    },
+                    {
+                      "after": [
+                        99,
+                        99
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "9e84434738c1753372607295f6cd6cbc53dd8d5d",
+              "parent": "1266f52bbe06c870850ca6a0ea491412b339e650",
+              "files": [
+                {
+                  "path": "src/workflow/__tests__/gates.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        24,
+                        24
+                      ]
+                    },
+                    {
+                      "after": [
+                        236,
+                        291
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/gates.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        65,
+                        65
+                      ]
+                    },
+                    {
+                      "after": [
+                        163,
+                        172
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "076cc0a66c6cf001af040fcd5ace69fe5b035191",
+              "parent": "f2bd94c94722990747f74a2fed404b082d251ade",
+              "files": [
+                {
+                  "path": "src/workflow/__tests__/chain-issue-anchored.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        137
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/chain.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        24,
+                        25
+                      ]
+                    },
+                    {
+                      "after": [
+                        37,
+                        40
+                      ]
+                    },
+                    {
+                      "after": [
+                        107,
+                        107
+                      ]
+                    },
+                    {
+                      "after": [
+                        114,
+                        114
+                      ]
+                    },
+                    {
+                      "after": [
+                        143,
+                        149
+                      ]
+                    },
+                    {
+                      "after": [
+                        154,
+                        165
+                      ]
+                    },
+                    {
+                      "after": [
+                        171,
+                        179
+                      ]
+                    },
+                    {
+                      "after": [
+                        199,
+                        203
+                      ]
+                    },
+                    {
+                      "after": [
+                        206,
+                        208
+                      ]
+                    },
+                    {
+                      "after": [
+                        213,
+                        213
+                      ]
+                    },
+                    {
+                      "after": [
+                        220,
+                        220
+                      ]
+                    },
+                    {
+                      "after": [
+                        224,
+                        238
+                      ]
+                    },
+                    {
+                      "after": [
+                        245,
+                        245
+                      ]
+                    },
+                    {
+                      "after": [
+                        277,
+                        281
+                      ]
+                    },
+                    {
+                      "after": [
+                        284,
+                        289
+                      ]
+                    },
+                    {
+                      "after": [
+                        291,
+                        291
+                      ]
+                    },
+                    {
+                      "after": [
+                        297,
+                        298
+                      ]
+                    },
+                    {
+                      "after": [
+                        413,
+                        417
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "24dadaa3a8f59d40670bb550636e2697bee69eb6",
+              "parent": "076cc0a66c6cf001af040fcd5ace69fe5b035191",
+              "files": [
+                {
+                  "path": "src/workflow/__tests__/chain-issue-anchored.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        17,
+                        17
+                      ]
+                    },
+                    {
+                      "after": [
+                        138,
+                        232
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/chain.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        321,
+                        361
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "2b4fd6ce1d51879a5154cccce4252d904f59d438",
+              "parent": "56708e4ad38954c8aee635cfad2e8d559b8d1a8c",
+              "files": [
+                {
+                  "path": "src/workflow/__tests__/issue-anchored-route.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        299
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "c13a326a81fb2dcbed1aed53710bcdaa3db47a74",
+              "parent": "8f8922b69df3709aaebb48aa3d4260601171d45d",
+              "files": [
+                {
+                  "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/workflow/WorkflowChainReader.kt",
+                  "segments": [
+                    {
+                      "after": [
+                        43,
+                        47
+                      ]
+                    },
+                    {
+                      "after": [
+                        52,
+                        52
+                      ]
+                    },
+                    {
+                      "after": [
+                        98,
+                        102
+                      ]
+                    },
+                    {
+                      "after": [
+                        110,
+                        112
+                      ]
+                    },
+                    {
+                      "after": [
+                        116,
+                        155
+                      ]
+                    },
+                    {
+                      "after": [
+                        300,
+                        316
+                      ]
+                    },
+                    {
+                      "after": [
+                        361,
+                        367
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/workflow/WorkflowChainReaderTest.kt",
+                  "segments": [
+                    {
+                      "after": [
+                        266,
+                        379
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "85ce943c1c268a6aee6c81bd403a487da1d1ec31",
+              "parent": "c13a326a81fb2dcbed1aed53710bcdaa3db47a74",
+              "files": [
+                {
+                  "path": "jetbrains-plugin/__tests__/issue-anchored-gradle.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        189
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "072965b06a2fd60bf116997aaa773da0161bcdc2",
+              "parent": "646df48d7cf03415aca28672fdff9fd1bdc12893",
+              "files": [
+                {
+                  "path": "src/workflow/review/__tests__/code-preparation-execution.test.ts",
+                  "segments": [
+                    {
+                      "deletionAt": 16
+                    },
+                    {
+                      "deletionAt": 17
+                    },
+                    {
+                      "deletionAt": 64
+                    },
+                    {
+                      "deletionAt": 75
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "t8",
+            "status": "failed",
+            "summary": "Reviewer failed: evidence: Unresolved committed evidence reference",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "unverified",
+              "explanation": "No valid completed assessment was obtained.",
+              "evidenceReferences": []
+            },
+            "limitations": [
+              "Reviewer failed: evidence: Unresolved committed evidence reference"
+            ],
+            "advice": [],
+            "inspectedReferences": [],
+            "executedTests": [],
+            "error": "Reviewer failed: evidence: Unresolved committed evidence reference"
+          }
+        ],
+        "summary": "1 selected task assessment(s): failed.\nNative output diagnostics: [{\"phase\":\"assessment\",\"taskId\":\"t8\",\"provider\":\"claude\",\"resolved\":false,\"errors\":[{\"code\":\"SCHEMA_CONSTRAINT\",\"field\":\"/inspectedReferences/2\",\"correction\":\"Return this field according to the supplied JSON schema.\",\"occurrences\":1},{\"code\":\"HOST_VALIDATION_ERROR\",\"field\":\"evidence\",\"correction\":\"Correct the host-rejected review field before resubmitting.\",\"occurrences\":1}]}]",
+        "completedAt": "2026-11-16T11:52:20.353Z"
+      },
+      {
+        "reassessmentSummary": "Verification task t8 covers the full attempt-2 diff.",
+        "reviewId": "cr-149283b0-s1-c",
+        "attempt": 2,
+        "storyId": "s1",
+        "taskId": "t8",
+        "reviewer": "daemon",
+        "status": "passed",
+        "finalScopeIdentity": "76382189c1ec65d441ba865ff693906e13e1023fc61ef3d82f33de05372f4952",
+        "attributionIdentity": "eb7c9eb3f25f2212cc1437428b6564163de595f0ef6e130fdb54564580ead1c2",
+        "taskScopeIdentities": [
+          {
+            "taskId": "t8",
+            "identity": "0d652f91ff3bf90eb74e3732fe40b26c280d49192b32c054369248236a70163e"
+          }
+        ],
+        "scope": {
+          "reviewRevision": "072965b06a2fd60bf116997aaa773da0161bcdc2",
+          "finalScope": {
+            "revision": "072965b06a2fd60bf116997aaa773da0161bcdc2",
+            "identity": "76382189c1ec65d441ba865ff693906e13e1023fc61ef3d82f33de05372f4952",
+            "entries": [
+              {
+                "originChangeIndex": 0,
+                "path": "src/workflow/__tests__/implied-issue-stories.test.ts",
+                "blobOid": "2e9543c58122dd1b5f7d1277f8bf42f7a179fdb4",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      58
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 1,
+                "path": "src/workflow/storage.ts",
+                "blobOid": "879534c6d4301698472e5dd03c86d6100da1b3a8",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      686,
+                      698
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 2,
+                "path": "src/workflow/tracker/resolve.ts",
+                "blobOid": "31afb09800d1c049db7d6befaf4b113405e63e0e",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      40,
+                      40
+                    ]
+                  },
+                  {
+                    "after": [
+                      280,
+                      282
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 3,
+                "path": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "blobOid": "5283f7d7d59e6b03e29e4918a996c5ef6f9212e8",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      139,
+                      162
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 4,
+                "path": "src/workflow/bugfix/next-after-issue.ts",
+                "blobOid": "032bb495e2e757f3443a4a9f6af17f73746bd161",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      15,
+                      15
+                    ]
+                  },
+                  {
+                    "after": [
+                      85,
+                      88
+                    ]
+                  },
+                  {
+                    "after": [
+                      99,
+                      99
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 5,
+                "path": "src/workflow/__tests__/gates.test.ts",
+                "blobOid": "b515b9e30f4f820b68ac49dab77d69cf2beb48a9",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      24,
+                      24
+                    ]
+                  },
+                  {
+                    "after": [
+                      236,
+                      291
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 6,
+                "path": "src/workflow/gates.ts",
+                "blobOid": "677c02e808f4180021a3ad16ec228610261d5df1",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      65,
+                      65
+                    ]
+                  },
+                  {
+                    "after": [
+                      163,
+                      172
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 7,
+                "path": "src/workflow/__tests__/chain-issue-anchored.test.ts",
+                "blobOid": "5ea4e2e08e53edb70897b93e832a265a572c0eb4",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      16
+                    ]
+                  },
+                  {
+                    "after": [
+                      18,
+                      137
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 8,
+                "path": "src/workflow/chain.ts",
+                "blobOid": "558b0a414c9afd1fafd9e3a4dad4a4b0a3952667",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      24,
+                      25
+                    ]
+                  },
+                  {
+                    "after": [
+                      37,
+                      40
+                    ]
+                  },
+                  {
+                    "after": [
+                      107,
+                      107
+                    ]
+                  },
+                  {
+                    "after": [
+                      114,
+                      114
+                    ]
+                  },
+                  {
+                    "after": [
+                      143,
+                      149
+                    ]
+                  },
+                  {
+                    "after": [
+                      154,
+                      165
+                    ]
+                  },
+                  {
+                    "after": [
+                      171,
+                      179
+                    ]
+                  },
+                  {
+                    "after": [
+                      199,
+                      203
+                    ]
+                  },
+                  {
+                    "after": [
+                      206,
+                      208
+                    ]
+                  },
+                  {
+                    "after": [
+                      213,
+                      213
+                    ]
+                  },
+                  {
+                    "after": [
+                      220,
+                      220
+                    ]
+                  },
+                  {
+                    "after": [
+                      224,
+                      238
+                    ]
+                  },
+                  {
+                    "after": [
+                      245,
+                      245
+                    ]
+                  },
+                  {
+                    "after": [
+                      277,
+                      281
+                    ]
+                  },
+                  {
+                    "after": [
+                      284,
+                      289
+                    ]
+                  },
+                  {
+                    "after": [
+                      291,
+                      291
+                    ]
+                  },
+                  {
+                    "after": [
+                      297,
+                      298
+                    ]
+                  },
+                  {
+                    "after": [
+                      454,
+                      458
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 9,
+                "path": "src/workflow/__tests__/chain-issue-anchored.test.ts",
+                "blobOid": "5ea4e2e08e53edb70897b93e832a265a572c0eb4",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      17,
+                      17
+                    ]
+                  },
+                  {
+                    "after": [
+                      138,
+                      232
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 10,
+                "path": "src/workflow/chain.ts",
+                "blobOid": "558b0a414c9afd1fafd9e3a4dad4a4b0a3952667",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      321,
+                      361
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 11,
+                "path": "src/workflow/__tests__/issue-anchored-route.test.ts",
+                "blobOid": "d5a81e1072d1e0af7d4a46658050fc5e4aa3c62d",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      299
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 12,
+                "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/workflow/WorkflowChainReader.kt",
+                "blobOid": "e4517524e047cae2e542d212582169721abc1869",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      43,
+                      47
+                    ]
+                  },
+                  {
+                    "after": [
+                      52,
+                      52
+                    ]
+                  },
+                  {
+                    "after": [
+                      98,
+                      102
+                    ]
+                  },
+                  {
+                    "after": [
+                      110,
+                      112
+                    ]
+                  },
+                  {
+                    "after": [
+                      116,
+                      155
+                    ]
+                  },
+                  {
+                    "after": [
+                      300,
+                      316
+                    ]
+                  },
+                  {
+                    "after": [
+                      361,
+                      367
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 13,
+                "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/workflow/WorkflowChainReaderTest.kt",
+                "blobOid": "2193cdb03ceef02a37b72b208c0e8d816bc48bb9",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      266,
+                      379
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 14,
+                "path": "jetbrains-plugin/__tests__/issue-anchored-gradle.test.ts",
+                "blobOid": "5d6749143df4390e427f9ea65fbdaa40349f48c6",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      189
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 15,
+                "path": "src/workflow/review/__tests__/code-preparation-execution.test.ts",
+                "blobOid": "1fc1f9e8963b594344d64f00dfd1ab189079c080",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "deletionAt": 16
+                  },
+                  {
+                    "deletionAt": 17
+                  },
+                  {
+                    "deletionAt": 64
+                  },
+                  {
+                    "deletionAt": 75
+                  }
+                ]
+              }
+            ],
+            "dispositions": [
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    1,
+                    58
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      1,
+                      58
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    686,
+                    698
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      686,
+                      698
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    40,
+                    40
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      40,
+                      40
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    280,
+                    282
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      280,
+                      282
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    139,
+                    162
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      139,
+                      162
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    15,
+                    15
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      15,
+                      15
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    85,
+                    88
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      85,
+                      88
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    99,
+                    99
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      99,
+                      99
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    24,
+                    24
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      24,
+                      24
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    236,
+                    291
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      236,
+                      291
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 6,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    65,
+                    65
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      65,
+                      65
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 6,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    163,
+                    172
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      163,
+                      172
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 7,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    1,
+                    16
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      1,
+                      16
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 7,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    17,
+                    17
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 9,
+                    "segmentIndex": 0
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 7,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    18,
+                    137
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      18,
+                      137
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    24,
+                    25
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      24,
+                      25
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    37,
+                    40
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      37,
+                      40
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    107,
+                    107
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      107,
+                      107
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    114,
+                    114
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      114,
+                      114
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    143,
+                    149
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      143,
+                      149
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 5
+                },
+                "sourcePart": {
+                  "after": [
+                    154,
+                    165
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      154,
+                      165
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 6
+                },
+                "sourcePart": {
+                  "after": [
+                    171,
+                    179
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      171,
+                      179
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 7
+                },
+                "sourcePart": {
+                  "after": [
+                    199,
+                    203
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      199,
+                      203
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 8
+                },
+                "sourcePart": {
+                  "after": [
+                    206,
+                    208
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      206,
+                      208
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 9
+                },
+                "sourcePart": {
+                  "after": [
+                    213,
+                    213
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      213,
+                      213
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 10
+                },
+                "sourcePart": {
+                  "after": [
+                    220,
+                    220
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      220,
+                      220
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 11
+                },
+                "sourcePart": {
+                  "after": [
+                    224,
+                    238
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      224,
+                      238
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 12
+                },
+                "sourcePart": {
+                  "after": [
+                    245,
+                    245
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      245,
+                      245
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 13
+                },
+                "sourcePart": {
+                  "after": [
+                    277,
+                    281
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      277,
+                      281
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 14
+                },
+                "sourcePart": {
+                  "after": [
+                    284,
+                    289
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      284,
+                      289
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 15
+                },
+                "sourcePart": {
+                  "after": [
+                    291,
+                    291
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      291,
+                      291
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 16
+                },
+                "sourcePart": {
+                  "after": [
+                    297,
+                    298
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      297,
+                      298
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 17
+                },
+                "sourcePart": {
+                  "after": [
+                    413,
+                    417
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      454,
+                      458
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    17,
+                    17
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      17,
+                      17
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    138,
+                    232
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      138,
+                      232
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 10,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    321,
+                    361
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      321,
+                      361
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 11,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    1,
+                    299
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      1,
+                      299
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 12,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    43,
+                    47
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      43,
+                      47
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 12,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    52,
+                    52
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      52,
+                      52
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 12,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    98,
+                    102
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      98,
+                      102
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 12,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    110,
+                    112
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      110,
+                      112
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 12,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    116,
+                    155
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      116,
+                      155
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 12,
+                  "segmentIndex": 5
+                },
+                "sourcePart": {
+                  "after": [
+                    300,
+                    316
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      300,
+                      316
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 12,
+                  "segmentIndex": 6
+                },
+                "sourcePart": {
+                  "after": [
+                    361,
+                    367
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      361,
+                      367
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 13,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    266,
+                    379
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      266,
+                      379
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 14,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    1,
+                    189
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      1,
+                      189
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 15,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "deletionAt": 16
+                },
+                "kind": "deleted",
+                "finalSegments": [
+                  {
+                    "deletionAt": 16
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 15,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "deletionAt": 17
+                },
+                "kind": "deleted",
+                "finalSegments": [
+                  {
+                    "deletionAt": 17
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 15,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "deletionAt": 64
+                },
+                "kind": "deleted",
+                "finalSegments": [
+                  {
+                    "deletionAt": 64
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 15,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "deletionAt": 75
+                },
+                "kind": "deleted",
+                "finalSegments": [
+                  {
+                    "deletionAt": 75
+                  }
+                ],
+                "replacementWitnesses": []
+              }
+            ],
+            "selectedTaskIds": [
+              "t8"
+            ],
+            "testCount": 7,
+            "attributionIdentity": "eb7c9eb3f25f2212cc1437428b6564163de595f0ef6e130fdb54564580ead1c2",
+            "attributionState": "accepted",
+            "tasks": [
+              {
+                "taskId": "t8",
+                "changeIndexes": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11,
+                  12,
+                  13,
+                  14,
+                  15
+                ],
+                "testIndexes": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ],
+                "decision": {
+                  "action": "reassess",
+                  "reason": "Reassessing after attempt 1 host validation failure; covers full diff."
+                },
+                "identity": "0d652f91ff3bf90eb74e3732fe40b26c280d49192b32c054369248236a70163e"
+              }
+            ]
+          },
+          "storyId": "s1",
+          "taskId": "t8",
+          "documents": {
+            "lld": {
+              "path": ".insrc/artifacts/LLD-149283b0d0455a43-s1.json",
+              "commit": "fbf971e3084b8225f8e0020575ee8c957808c142"
+            },
+            "plan": {
+              "path": ".insrc/artifacts/PLAN-149283b0d0455a43-s1.json",
+              "commit": "7129dc1ed06b19ff9dbd8f7dee59d7a906a9720f"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "c04acd560b9cfee04c752af7e4302f27d84a930f",
+              "parent": "f66516e5a9ad314e264a204b5a832f9f71709fc1",
+              "files": [
+                {
+                  "path": "src/workflow/__tests__/implied-issue-stories.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        58
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/storage.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        686,
+                        698
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/tracker/resolve.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        40,
+                        40
+                      ]
+                    },
+                    {
+                      "after": [
+                        280,
+                        282
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "1266f52bbe06c870850ca6a0ea491412b339e650",
+              "parent": "c04acd560b9cfee04c752af7e4302f27d84a930f",
+              "files": [
+                {
+                  "path": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        139,
+                        162
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/bugfix/next-after-issue.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        15,
+                        15
+                      ]
+                    },
+                    {
+                      "after": [
+                        85,
+                        88
+                      ]
+                    },
+                    {
+                      "after": [
+                        99,
+                        99
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "9e84434738c1753372607295f6cd6cbc53dd8d5d",
+              "parent": "1266f52bbe06c870850ca6a0ea491412b339e650",
+              "files": [
+                {
+                  "path": "src/workflow/__tests__/gates.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        24,
+                        24
+                      ]
+                    },
+                    {
+                      "after": [
+                        236,
+                        291
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/gates.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        65,
+                        65
+                      ]
+                    },
+                    {
+                      "after": [
+                        163,
+                        172
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "076cc0a66c6cf001af040fcd5ace69fe5b035191",
+              "parent": "f2bd94c94722990747f74a2fed404b082d251ade",
+              "files": [
+                {
+                  "path": "src/workflow/__tests__/chain-issue-anchored.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        137
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/chain.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        24,
+                        25
+                      ]
+                    },
+                    {
+                      "after": [
+                        37,
+                        40
+                      ]
+                    },
+                    {
+                      "after": [
+                        107,
+                        107
+                      ]
+                    },
+                    {
+                      "after": [
+                        114,
+                        114
+                      ]
+                    },
+                    {
+                      "after": [
+                        143,
+                        149
+                      ]
+                    },
+                    {
+                      "after": [
+                        154,
+                        165
+                      ]
+                    },
+                    {
+                      "after": [
+                        171,
+                        179
+                      ]
+                    },
+                    {
+                      "after": [
+                        199,
+                        203
+                      ]
+                    },
+                    {
+                      "after": [
+                        206,
+                        208
+                      ]
+                    },
+                    {
+                      "after": [
+                        213,
+                        213
+                      ]
+                    },
+                    {
+                      "after": [
+                        220,
+                        220
+                      ]
+                    },
+                    {
+                      "after": [
+                        224,
+                        238
+                      ]
+                    },
+                    {
+                      "after": [
+                        245,
+                        245
+                      ]
+                    },
+                    {
+                      "after": [
+                        277,
+                        281
+                      ]
+                    },
+                    {
+                      "after": [
+                        284,
+                        289
+                      ]
+                    },
+                    {
+                      "after": [
+                        291,
+                        291
+                      ]
+                    },
+                    {
+                      "after": [
+                        297,
+                        298
+                      ]
+                    },
+                    {
+                      "after": [
+                        413,
+                        417
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "24dadaa3a8f59d40670bb550636e2697bee69eb6",
+              "parent": "076cc0a66c6cf001af040fcd5ace69fe5b035191",
+              "files": [
+                {
+                  "path": "src/workflow/__tests__/chain-issue-anchored.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        17,
+                        17
+                      ]
+                    },
+                    {
+                      "after": [
+                        138,
+                        232
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/chain.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        321,
+                        361
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "2b4fd6ce1d51879a5154cccce4252d904f59d438",
+              "parent": "56708e4ad38954c8aee635cfad2e8d559b8d1a8c",
+              "files": [
+                {
+                  "path": "src/workflow/__tests__/issue-anchored-route.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        299
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "c13a326a81fb2dcbed1aed53710bcdaa3db47a74",
+              "parent": "8f8922b69df3709aaebb48aa3d4260601171d45d",
+              "files": [
+                {
+                  "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/workflow/WorkflowChainReader.kt",
+                  "segments": [
+                    {
+                      "after": [
+                        43,
+                        47
+                      ]
+                    },
+                    {
+                      "after": [
+                        52,
+                        52
+                      ]
+                    },
+                    {
+                      "after": [
+                        98,
+                        102
+                      ]
+                    },
+                    {
+                      "after": [
+                        110,
+                        112
+                      ]
+                    },
+                    {
+                      "after": [
+                        116,
+                        155
+                      ]
+                    },
+                    {
+                      "after": [
+                        300,
+                        316
+                      ]
+                    },
+                    {
+                      "after": [
+                        361,
+                        367
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/workflow/WorkflowChainReaderTest.kt",
+                  "segments": [
+                    {
+                      "after": [
+                        266,
+                        379
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "85ce943c1c268a6aee6c81bd403a487da1d1ec31",
+              "parent": "c13a326a81fb2dcbed1aed53710bcdaa3db47a74",
+              "files": [
+                {
+                  "path": "jetbrains-plugin/__tests__/issue-anchored-gradle.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        189
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "072965b06a2fd60bf116997aaa773da0161bcdc2",
+              "parent": "646df48d7cf03415aca28672fdff9fd1bdc12893",
+              "files": [
+                {
+                  "path": "src/workflow/review/__tests__/code-preparation-execution.test.ts",
+                  "segments": [
+                    {
+                      "deletionAt": 16
+                    },
+                    {
+                      "deletionAt": 17
+                    },
+                    {
+                      "deletionAt": 64
+                    },
+                    {
+                      "deletionAt": 75
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "t8",
+            "status": "passed",
+            "summary": "t8 is a verification-only Task: no production source changed. The single diff hunk removes leftover `<<<<<<< Updated upstream` / `=======` / `>>>>>>> Stashed changes` git-stash conflict markers from an unrelated pre-existing test file (code-preparation-execution.test.ts), which is a necessary cleanup (the markers would otherwise sit as invalid syntax in the file). Independently reran `npx tsc --noEmit` (clean), the full ISSUE-anchored test set (21/21 pass), and the fixed file itself (3/3 pass). Confirmed the Story's tracker/ footprint is exactly the one-line resolve.ts import claimed in t1, with no tracker runner files touched, and confirmed no conflict markers remain anywhere in src/.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "t8 adds no new code and no new tests; it is the Story's final verification task. Its own diff (merge-marker cleanup in code-preparation-execution.test.ts) was re-executed directly (3/3 pass). The Story's functional test coverage was independently re-run here: src/workflow/__tests__/issue-anchored-route.test.ts, chain-issue-anchored.test.ts and implied-issue-stories.test.ts together (21/21 pass), confirming the acceptance checks (ISSUE-anchored chain/report behavior, requireApprovedEpic still refusing an ISSUE root) hold against the current checkout, not just builder-reported results. tsc --noEmit was independently rerun and is clean.",
+              "evidenceReferences": [
+                "072965b06a2fd60bf116997aaa773da0161bcdc2:src/workflow/review/__tests__/code-preparation-execution.test.ts",
+                "072965b06a2fd60bf116997aaa773da0161bcdc2:src/workflow/__tests__/issue-anchored-route.test.ts",
+                "072965b06a2fd60bf116997aaa773da0161bcdc2:src/workflow/__tests__/chain-issue-anchored.test.ts",
+                "072965b06a2fd60bf116997aaa773da0161bcdc2:src/workflow/__tests__/implied-issue-stories.test.ts"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: did not rerun the full chunked workflow/MCP suite (121+29 files) or the JetBrains kotlinc/JUnit bridge locally for this reassessment; relied on the builder's reported baseline-diff methodology plus my own targeted reruns of the Story's own test files, tsc, and a repo-wide scan confirming no residual merge-conflict markers, which together cover the acceptance checks without needing the full sweep."
+            ],
+            "inspectedReferences": [
+              "072965b06a2fd60bf116997aaa773da0161bcdc2:src/workflow/review/__tests__/code-preparation-execution.test.ts",
+              "646df48d7cf03415aca28672fdff9fd1bdc12893:src/workflow/review/__tests__/code-preparation-execution.test.ts",
+              "072965b06a2fd60bf116997aaa773da0161bcdc2:src/workflow/tracker/resolve.ts",
+              "c04acd560b9cfee04c752af7e4302f27d84a930f:src/workflow/tracker/resolve.ts"
+            ],
+            "executedTests": [
+              {
+                "file": "src/workflow/review/__tests__/code-preparation-execution.test.ts",
+                "cases": [
+                  "source-light preparation executes task through fresh durable worker admission",
+                  "source-light preparation executes story through fresh durable worker admission",
+                  "code preparation exposes no eager admission or publication fallback"
+                ],
+                "command": "npx tsx --test src/workflow/review/__tests__/code-preparation-execution.test.ts",
+                "result": "pass",
+                "executionDetails": "3/3 pass at current checkout (072965b06)",
+                "evidenceReferences": [
+                  "072965b06a2fd60bf116997aaa773da0161bcdc2:src/workflow/review/__tests__/code-preparation-execution.test.ts"
+                ]
+              },
+              {
+                "file": "src/workflow/__tests__/issue-anchored-route.test.ts",
+                "cases": [
+                  "LLD keeps the ISSUE identity without minting a second root",
+                  "inherits the ISSUE label, epicCreatedAt and standalone folder",
+                  "design review classifies the LLD as kind issue with originating_issue",
+                  "PLAN and BUILD placement helpers keep the ISSUE anchor",
+                  "second design.story start revises the same LLD record",
+                  "a genuine standalone mints its own root",
+                  "an Epic story without an HLD still fails",
+                  "requireApprovedEpic still refuses an ISSUE root naming it",
+                  "a bugfix LLD with no ISSUE provenance is rejected",
+                  "chain report for the seeded ISSUE repo reaches chain-complete"
+                ],
+                "command": "npx tsx --test src/workflow/__tests__/issue-anchored-route.test.ts src/workflow/__tests__/chain-issue-anchored.test.ts src/workflow/__tests__/implied-issue-stories.test.ts",
+                "result": "pass",
+                "executionDetails": "21/21 pass at current checkout (072965b06)",
+                "evidenceReferences": [
+                  "072965b06a2fd60bf116997aaa773da0161bcdc2:src/workflow/__tests__/issue-anchored-route.test.ts",
+                  "072965b06a2fd60bf116997aaa773da0161bcdc2:src/workflow/__tests__/chain-issue-anchored.test.ts",
+                  "072965b06a2fd60bf116997aaa773da0161bcdc2:src/workflow/__tests__/implied-issue-stories.test.ts"
+                ]
+              },
+              {
+                "file": "tsconfig",
+                "cases": [
+                  "type check"
+                ],
+                "command": "npx tsc --noEmit -p .",
+                "result": "pass",
+                "executionDetails": "clean exit, no diagnostics",
+                "evidenceReferences": [
+                  "072965b06a2fd60bf116997aaa773da0161bcdc2:tsconfig.json"
+                ]
+              }
+            ]
+          }
+        ],
+        "summary": "1 selected task assessment(s): passed.\nNative output diagnostics: [{\"phase\":\"attribution\",\"provider\":\"claude\",\"resolved\":true,\"errors\":[{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"tasks\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":2}]}]",
+        "completedAt": "2026-11-16T11:57:35.830Z"
+      }
+    ]
+  },
+  "citations": []
+}

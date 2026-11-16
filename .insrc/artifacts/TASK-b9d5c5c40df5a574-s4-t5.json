@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-098622a4-57ea-4378-9b2a-95903fb9bf28",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T13:04:36.423Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s4",
+    "envelope": {
+      "description": "The analyzer's search lookups use the complete mode",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s4-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s4-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#167",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0b3036a8eb263f692973f96e27394a10bd89b9f36f59fa846eb04e000704af2f",
+        "at": "2026-11-14T13:04:36.423Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T13:04:36.424Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The analyzer's search lookups use the complete mode",
+    "summary": "Make runSearchText in src/analyze/explore/search-text.ts and config-trace.ts call runGrepSearch with the complete flag, ignore any topK, raise a timeout or a search that could not run as the existing failed lookup output carrying the hits gathered, and write each distinct by-rule exclusion once in the completeness record's basisNote with no limited entry for hits, lines or files.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "search.text and config.trace return every hit with its whole line and no limited entry",
+      "A timed-out search is the failed lookup output with its gathered hits, not an empty or complete result"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "completeness-all-lookups.test.ts: search.text and config.trace return every hit with its whole line and no limited entry, and a timed-out search is the failed lookup output with its gathered hits"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

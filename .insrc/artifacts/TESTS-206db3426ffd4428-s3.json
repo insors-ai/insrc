@@ -1,0 +1,914 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 21,
+        "contentHash": "10cec721d46af4771d25f241163225fa018c7941e19975552fd4ca7ed925b869",
+        "at": "2026-11-15T19:42:14.450Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "206db3426ffd4428",
+    "storyId": "s3",
+    "createdAt": "2026-11-14T18:45:39.602Z",
+    "updatedAt": "2026-11-15T19:42:14.306Z",
+    "epicCreatedAt": "2026-11-09T06:00:04.355Z",
+    "epicSlug": "show-long-running-task-progress-chat",
+    "revision": 21
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "f5c3b8c06",
+        "ranAt": "2026-11-14T18:49:44.773Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/threads/__tests__/review-workers-progress-of.test.ts: progressOf returns a clone of the last accepted progress and undefined for a closing or unknown key",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-workers-progress-of.test.ts",
+                "title": "progressOf returns a clone of the last accepted progress and undefined for a closing or unknown key",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/threads/__tests__/review-workers-progress-of.test.ts: progressOf is read-only and never advances sequence or renews grace",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-workers-progress-of.test.ts",
+                "title": "progressOf is read-only and never advances sequence or renews grace",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/review-workers-progress-of.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2154,
+            "titles": [
+              {
+                "title": "progressOf returns a clone of the last accepted progress and undefined for a closing or unknown key",
+                "result": "pass"
+              },
+              {
+                "title": "progressOf is read-only and never advances sequence or renews grace",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "462bbbf6f",
+        "ranAt": "2026-11-14T18:57:53.396Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/task-progress/__tests__/review-measurements.test.ts: validators accept the sc5 shapes and reject unknown kinds, extra fields and over-long labels",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/review-measurements.test.ts",
+                "title": "validators accept the sc5 shapes and reject unknown kinds, extra fields and over-long labels",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/task-progress/__tests__/review-measurements.test.ts: design review reports active chunk, reviewed against selected chunks and retained coverage separately",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/review-measurements.test.ts",
+                "title": "design review reports active chunk, reviewed against selected chunks and retained coverage separately",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/task-progress/__tests__/review-measurements.test.ts: code review reports active task, completed against total tasks and publication state",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/review-measurements.test.ts",
+                "title": "code review reports active task, completed against total tasks and publication state",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/task-progress/__tests__/review-measurements.test.ts: retries and follow-up stay null when the engine reports none",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/review-measurements.test.ts",
+                "title": "retries and follow-up stay null when the engine reports none",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/task-progress/__tests__/review-measurements.test.ts: foreign identity, inconsistent counts and unverified admission map to null",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/review-measurements.test.ts",
+                "title": "foreign identity, inconsistent counts and unverified admission map to null",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/task-progress/__tests__/review-measurements.test.ts: a mapped measurement fits the 8 KiB snapshot bound",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/review-measurements.test.ts",
+                "title": "a mapped measurement fits the 8 KiB snapshot bound",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/task-progress/__tests__/review-measurements.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 563,
+            "titles": [
+              {
+                "title": "validators accept the sc5 shapes and reject unknown kinds, extra fields and over-long labels",
+                "result": "pass"
+              },
+              {
+                "title": "design review reports active chunk, reviewed against selected chunks and retained coverage separately",
+                "result": "pass"
+              },
+              {
+                "title": "code review reports active task, completed against total tasks and publication state",
+                "result": "pass"
+              },
+              {
+                "title": "retries and follow-up stay null when the engine reports none",
+                "result": "pass"
+              },
+              {
+                "title": "foreign identity, inconsistent counts and unverified admission map to null",
+                "result": "pass"
+              },
+              {
+                "title": "a mapped measurement fits the 8 KiB snapshot bound",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "47a976f23",
+        "ranAt": "2026-11-14T19:15:38.627Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/task-progress/__tests__/review-measurements.test.ts: a delayed publication from an earlier incarnation does not replace the newer measurement",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/review-measurements.test.ts",
+                "title": "a delayed publication from an earlier incarnation does not replace the newer measurement",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/task-progress/__tests__/review-measurements.test.ts: heartbeat-only samples keep counts and meaningful revision unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/review-measurements.test.ts",
+                "title": "heartbeat-only samples keep counts and meaningful revision unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/task-progress/__tests__/review-measurements.test.ts: an interrupted review reads as interrupted until the new incarnation is verified",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/review-measurements.test.ts",
+                "title": "an interrupted review reads as interrupted until the new incarnation is verified",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/task-progress/__tests__/review-measurements.test.ts: a missing or closing entry returns null without throwing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/review-measurements.test.ts",
+                "title": "a missing or closing entry returns null without throwing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/task-progress/__tests__/review-measurements.test.ts: observing progress leaves review results, publication and approval unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/review-measurements.test.ts",
+                "title": "observing progress leaves review results, publication and approval unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/task-progress/__tests__/review-measurements.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1448,
+            "titles": [
+              {
+                "title": "validators accept the sc5 shapes and reject unknown kinds, extra fields and over-long labels",
+                "result": "pass"
+              },
+              {
+                "title": "design review reports active chunk, reviewed against selected chunks and retained coverage separately",
+                "result": "pass"
+              },
+              {
+                "title": "code review reports active task, completed against total tasks and publication state",
+                "result": "pass"
+              },
+              {
+                "title": "retries and follow-up stay null when the engine reports none",
+                "result": "pass"
+              },
+              {
+                "title": "foreign identity, inconsistent counts and unverified admission map to null",
+                "result": "pass"
+              },
+              {
+                "title": "a mapped measurement fits the 8 KiB snapshot bound",
+                "result": "pass"
+              },
+              {
+                "title": "a delayed publication from an earlier incarnation does not replace the newer measurement",
+                "result": "pass"
+              },
+              {
+                "title": "heartbeat-only samples keep counts and meaningful revision unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "a design review reads as interrupted too",
+                "result": "pass"
+              },
+              {
+                "title": "an interrupted review reads as interrupted until the new incarnation is verified",
+                "result": "pass"
+              },
+              {
+                "title": "a missing or closing entry returns null without throwing",
+                "result": "pass"
+              },
+              {
+                "title": "observing progress leaves review results, publication and approval unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "code review ownerActivity requires a live incarnation and an alive process",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "f4c37ecae",
+        "ranAt": "2026-11-14T19:36:32.247Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/task-progress/__tests__/review-producers.test.ts: register both delegates through registerProducer and ProducerPort.register with a minted authorization",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/review-producers.test.ts",
+                "title": "register both delegates through registerProducer and ProducerPort.register with a minted authorization",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/executor-relay.test.ts",
+                "title": "S2 producer relay admits only a verified project origin and worker attempt",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/coordinator.test.ts",
+                "title": "Progress coordinator fences duplicate admission, old owners and a delayed delegate after terminal commit",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/store.test.ts",
+                "title": "Progress storage recovers a populated snapshot and revalidates only the matching durable owner",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/task-progress/__tests__/review-producers.test.ts: a review measurement is committed and read back through the one store and an unknown kind is rejected",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/review-producers.test.ts",
+                "title": "a review measurement is committed and read back through the one store and an unknown kind is rejected",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/executor-relay.test.ts",
+                "title": "S2 workflow progress preserves streaming frames and terminal result",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/coordinator.test.ts",
+                "title": "Meaningful progress revisions isolate tasks and preserve original measurements on repeats and heartbeats",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/store.test.ts",
+                "title": "Progress storage withholds ambiguous publication and reconciles the replaced record",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/task-progress/__tests__/review-producers.test.ts: second registration of the same kind is refused",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/review-producers.test.ts",
+                "title": "second registration of the same kind is refused",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/executor-relay.test.ts",
+                "title": "S2 detached workflow preserves poll cursor and abort behavior across observer loss",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/coordinator.test.ts",
+                "title": "Progress coordinator publishes no terminal outcome when the durable write fails",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/store.test.ts",
+                "title": "Progress storage reserves active and terminal capacity without evicting active tasks",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/task-progress/__tests__/review-producers.test.ts: committed workflow and analysis record fixtures decode with the composed validator",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/review-producers.test.ts",
+                "title": "committed workflow and analysis record fixtures decode with the composed validator",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/executor-relay.test.ts",
+                "title": "S2 producer relay preserves early terminal evidence and releases unresolved admissions",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/coordinator.test.ts",
+                "title": "Recovery publishes an ambiguously committed terminal result exactly once",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/store.test.ts",
+                "title": "Inactive retention evicts only the oldest record for the saturated project",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/task-progress/__tests__/review-producers.test.ts: DesignReviewDetails and CodeReviewDetails pass the bounded measurement schema and stay under 8 KiB",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/task-progress/__tests__/review-producers.test.ts",
+                "title": "DesignReviewDetails and CodeReviewDetails pass the bounded measurement schema and stay under 8 KiB",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/executor-relay.test.ts",
+                "title": "S2 quiet owner renews activity and worker loss fences stale evidence",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/executor-relay.test.ts",
+                "title": "S2 analysis progress preserves stage frames and the analyze.result then done sequence",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/executor-relay.test.ts",
+                "title": "S2 analysis preserves cached completion cancellation and persisted status",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/coordinator.test.ts",
+                "title": "Recovery fences conflicting lifecycle evidence at the recovered nonterminal sequence",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/coordinator.test.ts",
+                "title": "The complete delivered snapshot fits the byte limit and preserves the terminal result",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/coordinator.test.ts",
+                "title": "Progress coordinator requires trusted revalidation to bind a recovered attempt to a new epoch",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/coordinator.test.ts",
+                "title": "Verify 30-second owner renewal and 120-second expiry with no observers, separate tasks in one chat, removal, and stale callbacks",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/coordinator.test.ts",
+                "title": "Restart repeatedly without owners, preserve the recovery deadline, release expired reservations and refuse stale revalidation without inventing termination",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/coordinator.test.ts",
+                "title": "Observation refusal at project and global capacity or on file failure leaves execution running",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/store.test.ts",
+                "title": "Progress storage quarantines bounded corrupt records and rejects path substitution",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/task-progress/__tests__/store.test.ts",
+                "title": "Progress storage rejects unsafe or oversized measurements before writing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/task-progress/__tests__/coordinator.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 655,
+            "titles": [
+              {
+                "title": "Progress coordinator fences duplicate admission, old owners and a delayed delegate after terminal commit",
+                "result": "pass"
+              },
+              {
+                "title": "Meaningful progress revisions isolate tasks and preserve original measurements on repeats and heartbeats",
+                "result": "pass"
+              },
+              {
+                "title": "Progress coordinator publishes no terminal outcome when the durable write fails",
+                "result": "pass"
+              },
+              {
+                "title": "Recovery publishes an ambiguously committed terminal result exactly once",
+                "result": "pass"
+              },
+              {
+                "title": "Recovery fences conflicting lifecycle evidence at the recovered nonterminal sequence",
+                "result": "pass"
+              },
+              {
+                "title": "The complete delivered snapshot fits the byte limit and preserves the terminal result",
+                "result": "pass"
+              },
+              {
+                "title": "Progress coordinator requires trusted revalidation to bind a recovered attempt to a new epoch",
+                "result": "pass"
+              },
+              {
+                "title": "Verify 30-second owner renewal and 120-second expiry with no observers, separate tasks in one chat, removal, and stale callbacks",
+                "result": "pass"
+              },
+              {
+                "title": "Restart repeatedly without owners, preserve the recovery deadline, release expired reservations and refuse stale revalidation without inventing termination",
+                "result": "pass"
+              },
+              {
+                "title": "Observation refusal at project and global capacity or on file failure leaves execution running",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/task-progress/__tests__/executor-relay.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1294,
+            "titles": [
+              {
+                "title": "S2 producer relay admits only a verified project origin and worker attempt",
+                "result": "pass"
+              },
+              {
+                "title": "S2 workflow progress preserves streaming frames and terminal result",
+                "result": "pass"
+              },
+              {
+                "title": "S2 detached workflow preserves poll cursor and abort behavior across observer loss",
+                "result": "pass"
+              },
+              {
+                "title": "S2 producer relay preserves early terminal evidence and releases unresolved admissions",
+                "result": "pass"
+              },
+              {
+                "title": "S2 quiet owner renews activity and worker loss fences stale evidence",
+                "result": "pass"
+              },
+              {
+                "title": "S2 analysis progress preserves stage frames and the analyze.result then done sequence",
+                "result": "pass"
+              },
+              {
+                "title": "S2 analysis preserves cached completion cancellation and persisted status",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/task-progress/__tests__/review-producers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 529,
+            "titles": [
+              {
+                "title": "register both delegates through registerProducer and ProducerPort.register with a minted authorization",
+                "result": "pass"
+              },
+              {
+                "title": "a review measurement is committed and read back through the one store and an unknown kind is rejected",
+                "result": "pass"
+              },
+              {
+                "title": "second registration of the same kind is refused",
+                "result": "pass"
+              },
+              {
+                "title": "committed workflow and analysis record fixtures decode with the composed validator",
+                "result": "pass"
+              },
+              {
+                "title": "DesignReviewDetails and CodeReviewDetails pass the bounded measurement schema and stay under 8 KiB",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/task-progress/__tests__/store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 553,
+            "titles": [
+              {
+                "title": "Progress storage recovers a populated snapshot and revalidates only the matching durable owner",
+                "result": "pass"
+              },
+              {
+                "title": "Progress storage withholds ambiguous publication and reconciles the replaced record",
+                "result": "pass"
+              },
+              {
+                "title": "Progress storage reserves active and terminal capacity without evicting active tasks",
+                "result": "pass"
+              },
+              {
+                "title": "Inactive retention evicts only the oldest record for the saturated project",
+                "result": "pass"
+              },
+              {
+                "title": "Progress storage quarantines bounded corrupt records and rejects path substitution",
+                "result": "pass"
+              },
+              {
+                "title": "Progress storage rejects unsafe or oversized measurements before writing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "5a87d0ec6",
+        "ranAt": "2026-11-15T18:16:31.539Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/threads/__tests__/review-task-binding.test.ts: an observed review is registered as a task of kind design-review or code-review",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-task-binding.test.ts",
+                "title": "an observed review is registered as a task of kind design-review or code-review",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/threads/__tests__/review-task-binding.test.ts: a review without an origin, session or capacity is admitted exactly as before",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-task-binding.test.ts",
+                "title": "a review without an origin, session or capacity is admitted exactly as before",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/threads/__tests__/review-task-binding.test.ts: a failure to launch or register never fails or slows the review",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-task-binding.test.ts",
+                "title": "a failure to launch or register never fails or slows the review",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/review-task-binding.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1070,
+            "titles": [
+              {
+                "title": "an observed review is registered as a task of kind design-review or code-review",
+                "result": "pass"
+              },
+              {
+                "title": "a review without an origin, session or capacity is admitted exactly as before",
+                "result": "pass"
+              },
+              {
+                "title": "a failure to launch or register never fails or slows the review",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "049aefd38",
+        "ranAt": "2026-11-15T19:29:48.813Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/threads/__tests__/review-task-signal.test.ts: an observed review's task progress changes as publications are accepted",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-task-signal.test.ts",
+                "title": "an observed review's task progress changes as publications are accepted",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/threads/__tests__/review-task-signal.test.ts: terminal evidence follows the owner's terminal phase and never the review verdict",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-task-signal.test.ts",
+                "title": "terminal evidence follows the owner's terminal phase and never the review verdict",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/threads/__tests__/review-task-signal.test.ts: a coordinator error is swallowed without altering acceptProgress, the board publication or reclaim",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-task-signal.test.ts",
+                "title": "a coordinator error is swallowed without altering acceptProgress, the board publication or reclaim",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/threads/__tests__/review-task-signal.test.ts: snapshot after interruption shows interrupted or stale, then a newer incarnation is verified",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-task-signal.test.ts",
+                "title": "snapshot after interruption shows interrupted or stale, then a newer incarnation is verified",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/threads/__tests__/review-task-signal.test.ts: a delayed publication from the earlier incarnation does not overwrite the newer snapshot",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-task-signal.test.ts",
+                "title": "a delayed publication from the earlier incarnation does not overwrite the newer snapshot",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/review-task-signal.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1048,
+            "titles": [
+              {
+                "title": "an observed review's task progress changes as publications are accepted",
+                "result": "pass"
+              },
+              {
+                "title": "terminal evidence follows the owner's terminal phase and never the review verdict",
+                "result": "pass"
+              },
+              {
+                "title": "a coordinator error is swallowed without altering acceptProgress, the board publication or reclaim",
+                "result": "pass"
+              },
+              {
+                "title": "snapshot after interruption shows interrupted or stale, then a newer incarnation is verified",
+                "result": "pass"
+              },
+              {
+                "title": "a delayed publication from the earlier incarnation does not overwrite the newer snapshot",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "88f2014e5",
+        "ranAt": "2026-11-15T19:42:14.306Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/threads/__tests__/review-task-signal.test.ts: the normalized projection of an unobserved review is unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-task-signal.test.ts",
+                "title": "the normalized projection of an unobserved review is unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/review-task-signal.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1093,
+            "titles": [
+              {
+                "title": "an observed review's task progress changes as publications are accepted",
+                "result": "pass"
+              },
+              {
+                "title": "terminal evidence follows the owner's terminal phase and never the review verdict",
+                "result": "pass"
+              },
+              {
+                "title": "a coordinator error is swallowed without altering acceptProgress, the board publication or reclaim",
+                "result": "pass"
+              },
+              {
+                "title": "snapshot after interruption shows interrupted or stale, then a newer incarnation is verified",
+                "result": "pass"
+              },
+              {
+                "title": "a delayed publication from the earlier incarnation does not overwrite the newer snapshot",
+                "result": "pass"
+              },
+              {
+                "title": "the normalized projection of an unobserved review is unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

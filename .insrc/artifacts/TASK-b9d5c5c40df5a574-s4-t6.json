@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9ac2949a-5439-47d4-a9a1-6dfde386448f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T13:04:36.425Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s4",
+    "envelope": {
+      "description": "The document lookups and the module profile read items from their file",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#168",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5993bcd37faa048b4f3dc80e4062b4c97f20aa9aea7493de089227297e7900c1",
+        "at": "2026-11-14T13:04:36.425Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T13:04:36.427Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The document lookups and the module profile read items from their file",
+    "summary": "Replace the SECTION_BODY_CHARS slices of doc-constraint-enumerate and doc-decision-trace and the ENTRYPOINT_SCAN_CHARS slices of module-profile (two sites) with reads through measure(entity), so the whole item is used when the file still holds it and an unconfirmable item is reported as not covered.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "A section longer than the former 2,000-character cut is read whole by both document lookups",
+      "A module profile recognises an entry point beyond the former first 4,096 characters, and an unconfirmable file is reported as not covered"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "partly-read.test.ts: doc.constraint.enumerate and doc.decision.trace read a section longer than the former cut whole and report an unconfirmable section as not covered"
+      },
+      {
+        "level": "unit",
+        "name": "module-profile-entrypoint.test.ts: an entry point beyond the former first 4,096 characters is recognised and an unconfirmable file is reported as not covered"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

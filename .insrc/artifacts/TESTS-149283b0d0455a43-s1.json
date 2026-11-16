@@ -1,0 +1,954 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 9,
+        "contentHash": "2e7b0f00bfd0b34fab6678f01ffb1c60a64f67faf77111d9fa9989382fe90f37",
+        "at": "2026-11-16T11:27:44.259Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "149283b0d0455a43",
+    "storyId": "s1",
+    "createdAt": "2026-11-16T09:44:57.284Z",
+    "updatedAt": "2026-11-16T11:27:43.641Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-03T14:09:32.294Z",
+    "epicSlug": "story-list-readers-do-not-recognise",
+    "revision": 9
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "c04acd560",
+        "ranAt": "2026-11-16T09:44:57.284Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "implied-issue-stories.test.ts: impliedIssueStories returns exactly one entry with id IMPLIED_ISSUE_STORY_ID and the ISSUE title",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/implied-issue-stories.test.ts",
+                "title": "impliedIssueStories returns exactly one entry with id IMPLIED_ISSUE_STORY_ID and the ISSUE title",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "implied-issue-stories.test.ts: the tracker resolver answers implied for s1 and null for s2 from the shared constant",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/implied-issue-stories.test.ts",
+                "title": "the tracker resolver answers implied for s1 and null for s2 from the shared constant",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/implied-issue-stories.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 900,
+            "titles": [
+              {
+                "title": "impliedIssueStories returns exactly one entry with id IMPLIED_ISSUE_STORY_ID and the ISSUE title",
+                "result": "pass"
+              },
+              {
+                "title": "the tracker resolver answers implied for s1 and null for s2 from the shared constant",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "1266f52bb",
+        "ranAt": "2026-11-16T09:50:11.821Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "bugfix-orchestration.test.ts: nextAfterIssue sized route carries epicHash=issueHash and storyId s1",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "nextAfterIssue sized route carries epicHash=issueHash and storyId s1 (ISSUE-149283b0d0455a43)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "bugfix-orchestration.test.ts: nextAfterIssue refuses a sized ISSUE with no issueHash",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "nextAfterIssue refuses a sized ISSUE with no issueHash",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "bugfix-orchestration.test.ts: sized-route fixtures carry an issueHash",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "nextAfterIssue: a sized ISSUE routes to design.story with params.epicHash set to the ISSUE hash",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "bugfix-orchestration.test.ts: nextAfterIssue small route is unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "nextAfterIssue small route is unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+            "exitCode": 1,
+            "timedOut": false,
+            "durationMs": 921,
+            "titles": [
+              {
+                "title": "nextAfterIssue: magnitude='small' -> standalone insrc_build_step (issue->build)",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: magnitude='sized' -> standalone insrc_workflow_step design.story (START)",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: the small build routes through the build-step NO-LLD path (sizeClass=trivial, consumable)",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: the sized design.story spec carries the full defect body, not just the title",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: emitted stage matches routeForSizeClass (small->build has no design.story)",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: magnitude absent/invalid -> throws invalid-magnitude",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: a small ISSUE routes to build with the ISSUE hash as standalone.epicHash",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: a sized ISSUE routes to design.story with params.epicHash set to the ISSUE hash",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue sized route carries epicHash=issueHash and storyId s1 (ISSUE-149283b0d0455a43)",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue refuses a sized ISSUE with no issueHash",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue small route is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: an ISSUE without a 16-hex issueHash is refused",
+                "result": "pass"
+              },
+              {
+                "title": "admitBugfixAdvance: approved + parentRef WorkItemRef -> admitted",
+                "result": "pass"
+              },
+              {
+                "title": "admitBugfixAdvance: approved + parentRef===null (standalone) -> admitted",
+                "result": "pass"
+              },
+              {
+                "title": "admitBugfixAdvance: approved + parentRef ABSENT -> not admitted",
+                "result": "pass"
+              },
+              {
+                "title": "bugfix-orchestration.test.ts: the bugfix chain advances from a lifecycle approval",
+                "result": "pass"
+              },
+              {
+                "title": "admitBugfixAdvance: not approved -> not admitted",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: WorkItemRef -> writeParentRef(ref); returns the ParentLocation",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: standalone (null) -> writeParentRef(null)",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: readIssue null -> throws issue-not-found, no write",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: not approved -> throws not-approved, no write",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: locateParent rejects -> propagates, no write",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: defectDescription is built from the issue body; touchedPaths empty",
+                "result": "pass"
+              },
+              {
+                "title": "defaultStampDeps: writeParentRef patches meta.parentRef only, body byte-unchanged (k4)",
+                "result": "pass"
+              },
+              {
+                "title": "advanceBugfixAfterIssue: bugfix issue -> stamps, admits, returns nextCall",
+                "result": "pass"
+              },
+              {
+                "title": "advanceBugfixAfterIssue: non-issue artifact -> skipped, nothing routed",
+                "result": "pass"
+              },
+              {
+                "title": "advanceBugfixAfterIssue: bugfixCategory flag off -> skipped",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: a bugfix BUILD + enforce + CR pass -> completes via approveWorkflowTarget (reused gate)",
+                "result": "fail"
+              },
+              {
+                "title": "ac3: a bugfix BUILD + enforce + absent CR -> withheld into skipped[], not approved",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: a bugfix BUILD + enforce OFF + absent CR -> withheld too (no separate path for a bugfix)",
+                "result": "fail"
+              }
+            ],
+            "otherFailures": [
+              "ac3: a bugfix BUILD + enforce + CR pass -> completes via approveWorkflowTarget (reused gate)",
+              "ac3: a bugfix BUILD + enforce OFF + absent CR -> withheld too (no separate path for a bugfix)"
+            ]
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "9e8443473",
+        "ranAt": "2026-11-16T09:54:05.212Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "gates.test.ts: readDefineArtifact on an ISSUE-only hash names the ISSUE and does not advise running define",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/gates.test.ts",
+                "title": "readDefineArtifact on an ISSUE-only hash names the ISSUE and does not advise running define",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "gates.test.ts: readDefineArtifact on a hash with neither root keeps the original message",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/gates.test.ts",
+                "title": "readDefineArtifact on a hash with neither root keeps the original message",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/gates.test.ts",
+            "exitCode": 1,
+            "timedOut": false,
+            "durationMs": 1362,
+            "titles": [
+              {
+                "title": "jsonPathForMd resolves a nested epic DEF md → its hash-named json via the marker",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd resolves a nested epic HLD md → its hash-named json via the marker",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd resolves a nested story-scoped LLD md → its hash-named json via the marker",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd leaves docs/stub layout untouched",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd returns json paths unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd resolves a nested standalone SPEC md → its hash-named json via the marker",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd resolves a nested story-scoped CR md → its hash-named json via the marker",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd recognises both docs/epics and docs/standalone top-levels, stub stays the side-by-side exception",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd rejects unknown extensions",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd throws for a nested md with no insrc:artifact marker (path no longer encodes the id)",
+                "result": "pass"
+              },
+              {
+                "title": "gates.test.ts: approval goes through LifecycleService and stamps none of the removed fields",
+                "result": "fail"
+              },
+              {
+                "title": "rejectArtifactByJsonPath rejects through the lifecycle and keeps the reason in the change log",
+                "result": "pass"
+              },
+              {
+                "title": "rejectArtifactByJsonPath refuses empty reason",
+                "result": "pass"
+              },
+              {
+                "title": "reject then approve is refused until the content changes",
+                "result": "pass"
+              },
+              {
+                "title": "requireApprovedEpic throws ArtifactMissingError when no Define exists",
+                "result": "pass"
+              },
+              {
+                "title": "readDefineArtifact on an ISSUE-only hash names the ISSUE and does not advise running define",
+                "result": "pass"
+              },
+              {
+                "title": "readDefineArtifact on a hash with neither root keeps the original message",
+                "result": "pass"
+              },
+              {
+                "title": "requireApprovedEpic throws ArtifactNotApprovedError when Define is not approved",
+                "result": "pass"
+              },
+              {
+                "title": "requireApprovedEpic returns the Define artifact after approval",
+                "result": "fail"
+              },
+              {
+                "title": "t5: approving a PLAN stamps meta.rangeBase as a FULL 40-hex sha alongside the lifecycle approval",
+                "result": "pass"
+              },
+              {
+                "title": "t5: the GENERIC stamp site is GATED — DEF, HLD, AMD and BUILD each stamp NO rangeBase",
+                "result": "fail"
+              },
+              {
+                "title": "t5: a STANDALONE design.story LLD IS stamped (the only upstream the no-plan route has), an EPIC-route LLD is NOT",
+                "result": "fail"
+              },
+              {
+                "title": "t5: an UNREADABLE HEAD leaves rangeBase ABSENT and still completes the approval — never throws, never an empty string",
+                "result": "pass"
+              },
+              {
+                "title": "t5: a git repo with NO COMMITS leaves rangeBase ABSENT (HEAD does not resolve yet)",
+                "result": "pass"
+              },
+              {
+                "title": "CR-3: re-approving after the work has landed does NOT move rangeBase forward — the FIRST stamp wins",
+                "result": "pass"
+              },
+              {
+                "title": "CR-3: a PRE-EXISTING rangeBase on an unapproved artifact is also preserved, so the stamp is write-once rather than approve-once",
+                "result": "pass"
+              },
+              {
+                "title": "CR-3: an EMPTY-STRING rangeBase is treated as unstamped and gets a real base — write-once must not preserve a useless value forever",
+                "result": "pass"
+              },
+              {
+                "title": "t5: rangeBase SURVIVES a write-read-write round trip",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": [
+              "gates.test.ts: approval goes through LifecycleService and stamps none of the removed fields",
+              "requireApprovedEpic returns the Define artifact after approval",
+              "t5: the GENERIC stamp site is GATED — DEF, HLD, AMD and BUILD each stamp NO rangeBase",
+              "t5: a STANDALONE design.story LLD IS stamped (the only upstream the no-plan route has), an EPIC-route LLD is NOT"
+            ]
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "076cc0a66",
+        "ranAt": "2026-11-16T10:05:11.788Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "chain-issue-anchored.test.ts: chain report for an ISSUE-anchored item returns the implied s1 with its LLD state",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/chain-issue-anchored.test.ts",
+                "title": "chain report for an ISSUE-anchored item returns the implied s1 with its LLD state",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chain-issue-anchored.test.ts: chain report story path for an ISSUE-anchored item is the standalone folder",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/chain-issue-anchored.test.ts",
+                "title": "chain report story path for an ISSUE-anchored item is the standalone folder",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chain-issue-anchored.test.ts: chain report prefers a DEF when a DEF and an ISSUE share a hash",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/chain-issue-anchored.test.ts",
+                "title": "chain report prefers a DEF when a DEF and an ISSUE share a hash",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chain-issue-anchored.test.ts: definitionKind is issue for an ISSUE head and def for a DEF head",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/chain-issue-anchored.test.ts",
+                "title": "definitionKind is issue for an ISSUE head and def for a DEF head",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chain-issue-anchored.test.ts: formatChainReport labels an ISSUE head and leaves DEF output unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/chain-issue-anchored.test.ts",
+                "title": "formatChainReport labels an ISSUE head and leaves DEF output unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/chain-issue-anchored.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 916,
+            "titles": [
+              {
+                "title": "chain report for an ISSUE-anchored item returns the implied s1 with its LLD state",
+                "result": "pass"
+              },
+              {
+                "title": "chain report story path for an ISSUE-anchored item is the standalone folder",
+                "result": "pass"
+              },
+              {
+                "title": "chain report prefers a DEF when a DEF and an ISSUE share a hash",
+                "result": "pass"
+              },
+              {
+                "title": "definitionKind is issue for an ISSUE head and def for a DEF head",
+                "result": "pass"
+              },
+              {
+                "title": "formatChainReport labels an ISSUE head and leaves DEF output unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "24dadaa3a",
+        "ranAt": "2026-11-16T10:10:51.191Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "chain-issue-anchored.test.ts: unapproved ISSUE yields approve-define naming the ISSUE document",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/chain-issue-anchored.test.ts",
+                "title": "unapproved ISSUE yields approve-define naming the ISSUE document",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chain-issue-anchored.test.ts: rejected ISSUE yields run-define that reruns the issue stage",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/chain-issue-anchored.test.ts",
+                "title": "rejected ISSUE yields run-define that reruns the issue stage",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chain-issue-anchored.test.ts: next actions follow run-lld, approve-lld, chain-complete and never name an HLD, amendment, stale or tracker step",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/chain-issue-anchored.test.ts",
+                "title": "next actions follow run-lld, approve-lld, chain-complete and never name an HLD, amendment, stale or tracker step",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chain-issue-anchored.test.ts: the DEF-anchored next-action sequence is unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/chain-issue-anchored.test.ts",
+                "title": "the DEF-anchored next-action sequence is unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/chain-issue-anchored.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 893,
+            "titles": [
+              {
+                "title": "chain report for an ISSUE-anchored item returns the implied s1 with its LLD state",
+                "result": "pass"
+              },
+              {
+                "title": "chain report story path for an ISSUE-anchored item is the standalone folder",
+                "result": "pass"
+              },
+              {
+                "title": "chain report prefers a DEF when a DEF and an ISSUE share a hash",
+                "result": "pass"
+              },
+              {
+                "title": "definitionKind is issue for an ISSUE head and def for a DEF head",
+                "result": "pass"
+              },
+              {
+                "title": "formatChainReport labels an ISSUE head and leaves DEF output unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "unapproved ISSUE yields approve-define naming the ISSUE document",
+                "result": "pass"
+              },
+              {
+                "title": "rejected ISSUE yields run-define that reruns the issue stage",
+                "result": "pass"
+              },
+              {
+                "title": "next actions follow run-lld, approve-lld, chain-complete and never name an HLD, amendment, stale or tracker step",
+                "result": "pass"
+              },
+              {
+                "title": "the DEF-anchored next-action sequence is unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "2b4fd6ce1",
+        "ranAt": "2026-11-16T10:26:39.954Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "issue-anchored-route.test.ts: sized ISSUE start writes LLD-<issueHash>-s1 and no second root",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/issue-anchored-route.test.ts",
+                "title": "issue-anchored-route.test.ts: sized ISSUE start writes LLD-<issueHash>-s1 and no second root",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "issue-anchored-route.test.ts: the LLD inherits the ISSUE label, epicCreatedAt and folder",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/issue-anchored-route.test.ts",
+                "title": "issue-anchored-route.test.ts: the LLD inherits the ISSUE label, epicCreatedAt and folder",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "issue-anchored-route.test.ts: design review classifies the LLD as kind issue with the ISSUE as originating_issue",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/issue-anchored-route.test.ts",
+                "title": "issue-anchored-route.test.ts: design review classifies the LLD as kind issue with the ISSUE as originating_issue",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "issue-anchored-route.test.ts: PLAN and BUILD placement helpers keep the ISSUE epicHash, anchor and folder",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/issue-anchored-route.test.ts",
+                "title": "issue-anchored-route.test.ts: PLAN and BUILD placement helpers keep the ISSUE epicHash, anchor and folder",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "issue-anchored-route.test.ts: a second design.story start revises the same LLD and creates no duplicate",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/issue-anchored-route.test.ts",
+                "title": "issue-anchored-route.test.ts: a second design.story start revises the same LLD and creates no duplicate",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "issue-anchored-route.test.ts: a genuine standalone feature still mints its own root",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/issue-anchored-route.test.ts",
+                "title": "issue-anchored-route.test.ts: a genuine standalone feature still mints its own root",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "issue-anchored-route.test.ts: an Epic story still requires its DEF and HLD",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/issue-anchored-route.test.ts",
+                "title": "issue-anchored-route.test.ts: an Epic story still requires its DEF and HLD",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "issue-anchored-route.test.ts: requireApprovedEpic still refuses an ISSUE root with a message naming the ISSUE",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/issue-anchored-route.test.ts",
+                "title": "issue-anchored-route.test.ts: requireApprovedEpic still refuses an ISSUE root with a message naming the ISSUE",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "issue-anchored-route.test.ts: a bugfix LLD with no ISSUE provenance is still rejected by design review",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/issue-anchored-route.test.ts",
+                "title": "issue-anchored-route.test.ts: a bugfix LLD with no ISSUE provenance is still rejected by design review",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "issue-anchored-route.test.ts: chain report for the seeded ISSUE repo returns the implied s1 and reaches chain-complete",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/issue-anchored-route.test.ts",
+                "title": "issue-anchored-route.test.ts: chain report for the seeded ISSUE repo returns the implied s1 and reaches chain-complete",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/issue-anchored-route.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 909,
+            "titles": [
+              {
+                "title": "issue-anchored-route.test.ts: sized ISSUE start writes LLD-<issueHash>-s1 and no second root",
+                "result": "pass"
+              },
+              {
+                "title": "issue-anchored-route.test.ts: the LLD inherits the ISSUE label, epicCreatedAt and folder",
+                "result": "pass"
+              },
+              {
+                "title": "issue-anchored-route.test.ts: design review classifies the LLD as kind issue with the ISSUE as originating_issue",
+                "result": "pass"
+              },
+              {
+                "title": "issue-anchored-route.test.ts: PLAN and BUILD placement helpers keep the ISSUE epicHash, anchor and folder",
+                "result": "pass"
+              },
+              {
+                "title": "issue-anchored-route.test.ts: a second design.story start revises the same LLD and creates no duplicate",
+                "result": "pass"
+              },
+              {
+                "title": "issue-anchored-route.test.ts: a genuine standalone feature still mints its own root",
+                "result": "pass"
+              },
+              {
+                "title": "issue-anchored-route.test.ts: an Epic story still requires its DEF and HLD",
+                "result": "pass"
+              },
+              {
+                "title": "issue-anchored-route.test.ts: requireApprovedEpic still refuses an ISSUE root with a message naming the ISSUE",
+                "result": "pass"
+              },
+              {
+                "title": "issue-anchored-route.test.ts: a bugfix LLD with no ISSUE provenance is still rejected by design review",
+                "result": "pass"
+              },
+              {
+                "title": "issue-anchored-route.test.ts: chain report for the seeded ISSUE repo returns the implied s1 and reaches chain-complete",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "85ce943c1",
+        "ranAt": "2026-11-16T10:52:51.408Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "WorkflowChainReaderTest.kt: readAll lists an ISSUE-anchored hash with the implied story s1 and no HLD",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/__tests__/issue-anchored-gradle.test.ts",
+                "title": "WorkflowChainReaderTest: readAll lists an ISSUE-anchored hash with the implied story s1 and no HLD",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "WorkflowChainReaderTest.kt: nextActionHint for an ISSUE-anchored entry follows approve issue, design story, approve LLD, chain complete",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/__tests__/issue-anchored-gradle.test.ts",
+                "title": "WorkflowChainReaderTest: nextActionHint for an ISSUE-anchored entry follows approve issue, design story, approve LLD, chain complete",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "WorkflowChainReaderTest.kt: readAll lists a hash with both a DEF and an ISSUE once, as the DEF",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/__tests__/issue-anchored-gradle.test.ts",
+                "title": "WorkflowChainReaderTest: readAll lists a hash with both a DEF and an ISSUE once, as the DEF",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "WorkflowChainReaderTest.kt: readAll swallows a malformed ISSUE file without throwing",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/__tests__/issue-anchored-gradle.test.ts",
+                "title": "WorkflowChainReaderTest: readAll swallows a malformed ISSUE file without throwing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "jetbrains-plugin/__tests__/issue-anchored-gradle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10803,
+            "titles": [
+              {
+                "title": "WorkflowChainReaderTest: readAll lists an ISSUE-anchored hash with the implied story s1 and no HLD",
+                "result": "pass"
+              },
+              {
+                "title": "WorkflowChainReaderTest: nextActionHint for an ISSUE-anchored entry follows approve issue, design story, approve LLD, chain complete",
+                "result": "pass"
+              },
+              {
+                "title": "WorkflowChainReaderTest: readAll lists a hash with both a DEF and an ISSUE once, as the DEF",
+                "result": "pass"
+              },
+              {
+                "title": "WorkflowChainReaderTest: readAll swallows a malformed ISSUE file without throwing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "072965b06",
+        "ranAt": "2026-11-16T11:27:43.641Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "workflow and MCP test subsets, the type check and the JetBrains reader tests match the t1 baseline with no new failures",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Chunked runs recorded in the t8 commit 072965b06 and this summary: workflow chunks (40+20+20+41 files) failure sets diff-identical to HEAD baselines captured via git stash (36/10/11/16 failsboth sides; chunk3 file-warning line is a flaky interruption notice, same 16 test failures and 238 passes on both runs); MCP chunks mcp1/mcp2 failure sets diff-identical to HEAD (6 and 26); tsc --noEmit exit 0; jetbrains-plugin/__tests__/issue-anchored-gradle.test.ts 4/4 pass, driving WorkflowChainReaderTest 15/15 through the JUnit 5 launcher under Temurin JDK 21 (Gradle unusable here: Kotlin 2.0.21 JavaVersion.parse rejects JDK 25.0.5.0.3, and compileTestKotlin at HEAD fails on 5 pre-existing broken settings test files); git diff across the 8 story commits shows no tracker runner file changed (resolve.ts one-line import only) and gates.test.ts's ISSUE-refusal test passes."
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      }
+    ]
+  },
+  "citations": []
+}

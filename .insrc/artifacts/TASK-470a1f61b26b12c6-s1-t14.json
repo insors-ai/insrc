@@ -22,15 +22,10 @@
           "entityId": "PLAN-470a1f61b26b12c6-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 4"
+          "fragment": "revision 5"
         },
         {
-          "entityId": "TASK-470a1f61b26b12c6-s1-t13",
-          "type": "TASK",
-          "relation": "depends-on"
-        },
-        {
-          "entityId": "TASK-470a1f61b26b12c6-s1-t20",
+          "entityId": "TASK-470a1f61b26b12c6-s1-t25",
           "type": "TASK",
           "relation": "depends-on"
         }
@@ -40,9 +35,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 2,
-        "contentHash": "be4eb10fa2a68b6a64765f2e42ce6f5d7184ca54cd4e16b9fdc3f6969450999b",
-        "at": "2026-11-15T13:12:53.931Z",
+        "number": 3,
+        "contentHash": "9508e79b11c4a43240fd34fb9386899d4f6820ad790a46a32824ca4b1fbfc9d3",
+        "at": "2026-11-16T09:05:17.311Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -60,22 +55,27 @@
         "at": "2026-11-14T12:17:34.296Z"
       }
     },
-    "revision": 2
+    "revision": 3
   },
   "body": {
     "title": "Qualify performance, packaging and deployment handoff",
-    "summary": "Measure full managed cold/warm/history-growth workloads, build shipped package and document coordinated restart plus explicitly authorized post-deployment smoke.",
+    "summary": "Measure the full retained managed cold, warm and history-growth workloads on the source-light production path, build the shipped package, and document coordinated restart plus explicitly authorized post-deployment smoke.",
     "size": "L",
-    "order": 20,
+    "order": 25,
     "acceptanceChecks": [
-      "Three cold-run median<=120s, warm<=10s, controlled admit/cancel<=2s and progress observation<=2s; report all metrics; failed gates block old qualification; deployment awaits BUILD approval.",
-      "Task completion uses local managed qualification and package checks only. Deployment smoke requires later approved BUILD, user update/restart and explicit permission to retrigger original review.",
-      "Run and record this task's focused validation before advancing; cross-cutting qualification does not replace these checks."
+      "Three cold-run median<=120s, warm<=10s, controlled admit/cancel<=2s and progress observation<=2s; report exact selected-locator counts, unique Git reads, workspace bytes, transient charged memory, heap/external/RSS and durable writes; failed gates block qualification.",
+      "Full retained workload proves no aggregate source bodies, skipped review scope or skipped mandatory coverage assessment, and confirms design review remains latest-document based.",
+      "npm build and source-free package smoke pass. Deployment waits for BUILD approval, user update/restart and explicit permission to retrigger the original review.",
+      "Run and record this task's focused validation before advancing; prior focused regressions do not replace this full qualification."
     ],
     "tests": [
       {
         "level": "integration",
-        "name": "Managed cold x3/warm/history-growth performance gates on supported Node/native package, npm build plus source-free package smoke; no deployed daemon mutation."
+        "name": "Retained 171-file/four-attempt cold x3, warm and history 1/4/max source-light qualification with locator/Git/workspace/memory/RSS/write metrics, exact scope and mandatory coverage."
+      },
+      {
+        "level": "smoke",
+        "name": "Approved deployment handoff and explicit post-restart code/design smoke; the stopped review is retriggered only with separate user authorization."
       }
     ],
     "planTaskId": "t14"

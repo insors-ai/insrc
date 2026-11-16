@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3926e539-c23c-40fc-af73-2037c5983b8d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T13:04:36.428Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s4",
+    "envelope": {
+      "description": "The adherence checks and the summariser read items from their file",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#169",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ad4d3282af62cfd73fcf9ffe0c9aeba64376feadc52f4e2508f5581a075dbeeb",
+        "at": "2026-11-14T13:04:36.428Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T13:04:36.430Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The adherence checks and the summariser read items from their file",
+    "summary": "Replace the 1,200-character body cut in the code, data and infra adherence checks, the SUMMARISER_BODY_CHARS cut in src/analyze/summariser/driver.ts and the PROJECT_CONTEXT_LIMIT cut in shared/adherence.ts with reads through measure(entity). entityToExcerpt becomes asynchronous in the three adherence checks, which ripples to their callers, so each caller is updated and the existing tests of the three checks must pass. The indexer's stored body and MAX_BODY are unchanged.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "A body over 1,200 characters is read whole in the code, data and infra adherence checks, and the existing tests of the three checks pass after the change",
+      "A document over 8,192 characters is summarised from its whole content, and an unconfirmable item is reported as not covered",
+      "MAX_BODY in src/indexer/parser/artifact.ts and the stored body are unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "adherence-check-body.test.ts: the code, data and infra adherence checks read a body over 1200 characters whole and an unconfirmable item is reported as not covered"
+      },
+      {
+        "level": "unit",
+        "name": "summariser-body.test.ts: a document over 8192 characters is summarised from its whole content"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

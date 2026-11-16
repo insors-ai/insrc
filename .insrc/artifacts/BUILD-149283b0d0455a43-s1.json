@@ -1,0 +1,222 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 9,
+        "contentHash": "6510a1cf8339308961ae7fbf02c866374fd5579f6d2af552e7f57872dbb3aca0",
+        "at": "2026-11-16T11:28:31.616Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-0288ae6a-55f2-44c9-8a93-509f83431dc9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-16T09:44:57.284Z",
+    "epicCreatedAt": "2026-10-03T14:09:32.294Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "149283b0d0455a43",
+    "storyId": "s1",
+    "revision": 9,
+    "updatedAt": "2026-11-16T11:27:43.641Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "story-list-readers-do-not-recognise"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": false
+      },
+      {
+        "id": "t3",
+        "passed": false
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      }
+    ],
+    "summary": "t8 (verification only, no production code changes): npx tsc --noEmit clean; workflow suites run chunked (121 files: 269+149+283+254 tests) with every failure set byte-identical to the HEAD baseline captured via git stash (36+10+11+16 pre-existing failures in review/lifecycle/approval areas untouched by this Story); MCP suites (29 files: 55+83 tests, 6+26 failures) identical to baseline; JetBrains WorkflowChainReaderTest 15/15 pass via the standalone JUnit 5 launcher bridge (jetbrains-plugin/__tests__/issue-anchored-gradle.test.ts) — Gradle's own test task cannot run in this environment (Kotlin 2.0.21 rejects the system JDK 25.0.5.0.3 version string; under a JDK 21 toolchain compileTestKotlin fails on 5 pre-existing broken settings test files at HEAD); the diff across all story commits touches no tracker runner file (only resolve.ts's one-line constant import in t1); requireApprovedEpic still refuses an ISSUE root with a message naming it (gates.test.ts ISSUE test passes; its 4 failures are the pre-existing ReviewRequiredError set). Also resolved pre-existing unresolved merge-conflict markers in code-preparation-execution.test.ts that fd2c947c7 had committed; that file now passes 3/3 and tsc is clean.",
+    "testRecord": {
+      "md": "docs/standalone/story-list-readers-do-not-recognise-E20261003149283b0/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/__tests__/implied-issue-stories.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:27:43.641Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/storage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:27:43.641Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/resolve.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:27:43.641Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/bugfix-orchestration.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:27:43.641Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/bugfix/next-after-issue.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:27:43.641Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/gates.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:27:43.641Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/gates.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:27:43.641Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/chain-issue-anchored.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:27:43.641Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/chain.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:27:43.641Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/issue-anchored-route.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:27:43.641Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/workflow/WorkflowChainReader.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:27:43.641Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/workflow/WorkflowChainReaderTest.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:27:43.641Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/__tests__/issue-anchored-gradle.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:27:43.641Z"
+      },
+      {
+        "target": {
+          "file": "AGENTS.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:27:43.641Z"
+      },
+      {
+        "target": {
+          "file": "CLAUDE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:27:43.641Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/tsconfig.fixtures.521639.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:27:43.641Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/zz-config-probe.521639.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:27:43.641Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/helpers/review-performance-worker.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:27:43.641Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/review-preparation-performance.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:27:43.641Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/__tests__/code-preparation-execution.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:27:43.641Z"
+      }
+    ],
+    "commit": "072965b06"
+  },
+  "citations": []
+}

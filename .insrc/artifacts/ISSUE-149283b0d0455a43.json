@@ -23,15 +23,15 @@
     "magnitude": "sized",
     "epicCreatedAt": "2026-10-03T14:09:32.294Z",
     "envelope": {
+      "description": "",
       "references": [],
-      "attachments": [],
-      "description": ""
+      "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
-        "number": 0,
-        "contentHash": "bb9c1a988efa501aebf321ea36bc02676aa2d3ef04f93cc5e19cb1871232822b",
+        "number": 1,
+        "contentHash": "9c2a5bccdac75c407802c1fbe6085c47acd76070b71f6e7b0fc7d40d3c14e16b",
         "at": "2026-10-03T14:09:32.294Z",
         "by": {
           "id": "legacy:unknown",
@@ -39,14 +39,27 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T07:04:31.330Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "149283b0d0455a43",
+      "slug": "EPIC-149283b0d0455a43"
     }
   },
   "body": {
     "title": "Make the story-list readers recognise an ISSUE-anchored work item",
-    "reproduction": "OBSERVED on this repository.\n\n1. Pick a bugfix work item — one whose definition artifact is an ISSUE rather than a DEF. `e20235c17f083a16` is a complete example: it has a Story S001 with an approved LLD, an approved PLAN, an approved BUILD and a code-review record, all on disk.\n2. Build the chain report for it.\n3. OBSERVED: zero stories. The same result for `792f9324fc43d95c`, also ISSUE-anchored and also carrying a full Story. Neither has a DEF file; both have an ISSUE.\n   EXPECTED: one story, with its artifact and approval state — the report's whole purpose is to answer 'what stage is this work item at, and what runs next'.\n\nThe orchestrator side fails differently for the same reason: paths that load the Epic for a work item throw 'Define artifact not found at <path>. Run `insrc_workflow_step` workflow=define ... first' — advice that is wrong for a bugfix item, which is not supposed to have a Define at all.\n\nConsequence in practice: `insrc workflow chain` is the tool for asking what step comes next, and it silently under-reports every bugfix work item as having no stories. Silently, because zero stories is a legitimate state for a freshly framed Epic, so nothing looks broken.",
-    "rootCause": "The definition reader these paths use only knows about DEF files.\n\nreadDefineArtifact builds a path for the DEF artifact id and throws ArtifactMissingError when that file is absent. It never looks for an ISSUE. So for an ISSUE-anchored work item every caller of requireApprovedEpic fails at that point, and chain.ts — whose own guard treats a missing definition artifact as 'no epic' — returns an empty story list.\n\nIMPORTANT CORRECTION to how this defect was first described. The original note said these paths read `body.stories` on an undefined array. They do not: the DEF-only read throws, or is guarded, BEFORE any story list is touched. The `body.stories` reads in chain.ts and in the orchestrator are downstream symptoms, not the fault. Fixing them in place would not help, because control never reaches them.\n\nThe intended semantics already exist elsewhere in the codebase and are stated explicitly: the tracker's own definition reader tries DEF and then ISSUE, and its story-existence check records that 'An ISSUE declares no story list — the bugfix route is one story at ordinal 1'. So an ISSUE-anchored item HAS a well-defined story set of exactly one. That knowledge simply lives in the tracker module and is not what the chain report or the orchestrator call.",
-    "fixIntent": "A work item whose definition artifact is an ISSUE should be as legible to these paths as one with a DEF — its single Story reported by the chain report, and no advice to run a stage that does not apply to it.\n\nDeliberately NOT settled here, because it is the design decision this defect turns on: WHICH callers adopt the ISSUE-aware reading. requireApprovedEpic has nine non-test call sites, and they do not all want the same answer — designing an Epic's HLD legitimately requires a real Epic and should keep refusing an ISSUE, while the chain report and the story-level paths should tolerate one. Making the shared reader ISSUE-aware for everyone would silently change what design.epic accepts; making it caller-by-caller risks a third inconsistent convention. That trade belongs in an LLD with its alternatives written down.\n\nTwo things the correction should achieve regardless of that choice. The one-implied-story rule should be stated in ONE place rather than re-derived, since it already exists in the tracker module and a second copy is how these divergences start. And the misleading 'run define first' guidance should stop being produced for work items that can never have a Define — whatever replaces it should name the real situation.\n\nOut of scope and already owned elsewhere: the separate breach at the tracker resolver's issue path, which belongs to item 5 of the six-low-severity-defects issue."
+    "reproduction": "OBSERVED on this repository.\n\n1. Pick a bugfix work item — one whose definition artifact is an ISSUE rather than a DEF. `e20235c17f083a16` is a complete example: it has a Story S001 with an approved LLD, an approved PLAN, an approved BUILD and a code-review record, all on disk.\n2. Build the chain report for it.\n3. OBSERVED: zero stories. The same result for `792f9324fc43d95c`, also ISSUE-anchored and also carrying a full Story. Neither has a DEF file; both have an ISSUE.\n   EXPECTED: one story, with its artifact and approval state — the report's whole purpose is to answer 'what stage is this work item at, and what runs next'.\n\nThe orchestrator side fails differently for the same reason: paths that load the Epic for a work item throw 'Define artifact not found at <path>. Run `insrc_workflow_step` workflow=define ... first' — advice that is wrong for a bugfix item, which is not supposed to have a Define at all.\n\nConsequence in practice: `insrc workflow chain` is the tool for asking what step comes next, and it silently under-reports every bugfix work item as having no stories. Silently, because zero stories is a legitimate state for a freshly framed Epic, so nothing looks broken.\n\nSECOND REPRODUCTION — the producer side, OBSERVED.\n\n1. Approve a magnitude: sized ISSUE.\n2. Follow its generated nextCall into design.story.\n3. OBSERVED: the LLD receives a new hash, standalone: true and sizeClass: bugfix, but no originating ISSUE identity.\n4. Design review then fails with 'Missing Epic/ISSUE provenance'; it cannot downgrade to standalone.",
+    "rootCause": "The definition reader these paths use only knows about DEF files.\n\nreadDefineArtifact builds a path for the DEF artifact id and throws ArtifactMissingError when that file is absent. It never looks for an ISSUE. So for an ISSUE-anchored work item every caller of requireApprovedEpic fails at that point, and chain.ts — whose own guard treats a missing definition artifact as 'no epic' — returns an empty story list.\n\nIMPORTANT CORRECTION to how this defect was first described. The original note said these paths read `body.stories` on an undefined array. They do not: the DEF-only read throws, or is guarded, BEFORE any story list is touched. The `body.stories` reads in chain.ts and in the orchestrator are downstream symptoms, not the fault. Fixing them in place would not help, because control never reaches them.\n\nThe intended semantics already exist elsewhere in the codebase and are stated explicitly: the tracker's own definition reader tries DEF and then ISSUE, and its story-existence check records that 'An ISSUE declares no story list — the bugfix route is one story at ordinal 1'. So an ISSUE-anchored item HAS a well-defined story set of exactly one. That knowledge simply lives in the tracker module and is not what the chain report or the orchestrator call.\n\nUPDATED ROOT CAUSE — the defect also sits upstream, in the producer. nextAfterIssue (src/workflow/bugfix/next-after-issue.ts) emits the sized route WITHOUT epicHash or storyId. design.story therefore creates a new standalone root instead of LLD-<issueHash>-s1, and the ISSUE root is discarded before any consumer runs.\n\nThe first description covers consumers that fail to read ISSUE roots. This record must also cover the producer that discards the ISSUE root before those consumers are reached; fixing only the readers leaves the sized route orphaned from its ISSUE.",
+    "fixIntent": "A work item whose definition artifact is an ISSUE should be as legible to these paths as one with a DEF — its single Story reported by the chain report, and no advice to run a stage that does not apply to it.\n\nDeliberately NOT settled here, because it is the design decision this defect turns on: WHICH callers adopt the ISSUE-aware reading. requireApprovedEpic has nine non-test call sites, and they do not all want the same answer — designing an Epic's HLD legitimately requires a real Epic and should keep refusing an ISSUE, while the chain report and the story-level paths should tolerate one. Making the shared reader ISSUE-aware for everyone would silently change what design.epic accepts; making it caller-by-caller risks a third inconsistent convention. That trade belongs in an LLD with its alternatives written down.\n\nTwo things the correction should achieve regardless of that choice. The one-implied-story rule should be stated in ONE place rather than re-derived, since it already exists in the tracker module and a second copy is how these divergences start. And the misleading 'run define first' guidance should stop being produced for work items that can never have a Define — whatever replaces it should name the real situation.\n\nOut of scope and already owned elsewhere: the separate breach at the tracker resolver's issue path, which belongs to item 5 of the six-low-severity-defects issue.\n\nREQUIRED BEHAVIOUR — sized ISSUE route.\n\n- The sized route must retain issue.meta.issueHash as the work-item anchor.\n- It must explicitly target storyId: \"s1\".\n- The resulting LLD, PLAN, BUILD, reviews, chain report and documents must remain under that ISSUE's identity and folder.\n- standalone: true may continue to describe folder/workflow layout, but must never mean 'independent of the ISSUE'.\n- Design review must classify the LLD as kind: issue and require the approved originating ISSUE.\n\nREGRESSION COVERAGE required:\n\n- Sized ISSUE -> LLD uses LLD-<issueHash>-s1.\n- LLD metadata and folder preserve the ISSUE anchor and creation time.\n- Design review admits it and includes the ISSUE as originating_issue.\n- Chain reporting returns its implied s1.\n- PLAN and BUILD continue with the same identity.\n- Genuine standalone features and Epic stories remain unchanged.\n- A bugfix LLD genuinely missing ISSUE provenance remains rejected."
   },
   "citations": [
     {
@@ -100,6 +113,12 @@
       "id": "c9",
       "kind": "prior-artifact",
       "ref": "ISSUE-e20235c17f083a16 / S001 — the work item that reports zero stories despite a full approved artifact set"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/workflow/bugfix/next-after-issue.ts:78",
+      "quotedText": "workflow: 'design.story', focus: scope, params: { standalone: true, storyTitle: title, storySpec: scope, sizeClass: 'bugfix' }"
     }
   ]
 }

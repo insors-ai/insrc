@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-53498a24-f798-46da-afd2-5dec141cc6ad",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-16T08:55:13.132Z",
+    "epicCreatedAt": "2026-10-03T14:09:32.294Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "149283b0d0455a43",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Make the chain report read an ISSUE-anchored definition, its story, its path and its label",
+      "parent": {
+        "entityId": "STORY-149283b0d0455a43-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-149283b0d0455a43-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-149283b0d0455a43-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8f237d26d3f97c03ce97707d802552376aa4bff71d4439d4ef972dd9f4011bd1",
+        "at": "2026-11-16T08:55:13.132Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T08:55:13.133Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Make the chain report read an ISSUE-anchored definition, its story, its path and its label",
+    "summary": "In src/workflow/chain.ts read the definition head as a discriminated DEF-or-ISSUE value (the DEF wins when both exist). For an ISSUE head: stories holds the implied s1 from impliedIssueStories; each story path is built from the LLD's own meta (workItemAnchorCreatedAt, workItemKindOf, meta.epicSlug) so it points under docs/standalone; define reflects the ISSUE's existence, approval and rejection with its path the ISSUE document; hld is absent. ChainReport gains one optional field, definitionKind, and formatChainReport labels the definition as an ISSUE for an ISSUE head and leaves DEF output byte-identical. The existing DEF-anchored chain tests run first and must stay green. Next-action ordering is t5.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "the existing DEF-anchored chain tests (chain.test.ts, chain-report-tracker.test.ts) pass unchanged before and after the edit",
+      "an ISSUE-anchored report returns one implied story s1 with its LLD existence and approval and a path under docs/standalone, not docs/epics",
+      "when a DEF and an ISSUE share a hash the DEF is read",
+      "definitionKind is 'issue' for an ISSUE head and 'def' for a DEF head",
+      "formatChainReport shows an ISSUE label for an ISSUE head and its DEF output is byte-identical to before"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "chain-issue-anchored.test.ts: chain report for an ISSUE-anchored item returns the implied s1 with its LLD state"
+      },
+      {
+        "level": "unit",
+        "name": "chain-issue-anchored.test.ts: chain report story path for an ISSUE-anchored item is the standalone folder"
+      },
+      {
+        "level": "unit",
+        "name": "chain-issue-anchored.test.ts: chain report prefers a DEF when a DEF and an ISSUE share a hash"
+      },
+      {
+        "level": "unit",
+        "name": "chain-issue-anchored.test.ts: definitionKind is issue for an ISSUE head and def for a DEF head"
+      },
+      {
+        "level": "unit",
+        "name": "chain-issue-anchored.test.ts: formatChainReport labels an ISSUE head and leaves DEF output unchanged"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

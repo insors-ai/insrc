@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-513406bb-9fe2-4679-b2ef-3a98e8b9d7ec",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-16T09:05:17.381Z",
+    "epicCreatedAt": "2026-11-14T08:55:28.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "470a1f61b26b12c6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Migrate readers, remove eager source ownership and qualify cutover readiness",
+      "parent": {
+        "entityId": "STORY-470a1f61b26b12c6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-470a1f61b26b12c6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 5"
+        },
+        {
+          "entityId": "TASK-470a1f61b26b12c6-s1-t24",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3072f93089a295ce2b045b1b9bf601b6aaccd8e69677cec0449a9e6099cb0f58",
+        "at": "2026-11-16T09:05:17.381Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T09:05:17.390Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Migrate readers, remove eager source ownership and qualify cutover readiness",
+    "summary": "Remove new-path eager source ownership, complete historical-reader behavior, and run focused correctness, isolation, recovery, cleanup and packaging regressions before the retained full qualification task.",
+    "size": "L",
+    "order": 24,
+    "acceptanceChecks": [
+      "No production new-attempt path persists or reconstructs aggregate prepared source bodies; legacy derived views are untrusted migration inputs, not a fallback engine.",
+      "Two-session concurrency, cancellation, restart/recovery, tamper detection, publication and cleanup tests preserve exact scope and resource ownership with zero unintended cross-session access.",
+      "Production defaults, compiled build and source-free package smoke pass; task scheduling leaves t14 as the sole next qualification gate after t25."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Source-light cutover regressions: historical cold requalification/rejection, no eager fallback, two-session isolation, cancel/restart/tamper/publication/cleanup, production defaults and task-order preservation."
+      },
+      {
+        "level": "smoke",
+        "name": "Backend build and source-free compiled package smoke for code and design review after eager source ownership removal."
+      }
+    ],
+    "planTaskId": "t25"
+  },
+  "citations": []
+}

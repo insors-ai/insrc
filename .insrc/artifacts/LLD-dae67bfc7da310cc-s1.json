@@ -1,0 +1,325 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1794830844170-7po9fb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-16T12:10:41.975Z",
+    "epicCreatedAt": "2026-11-16T12:10:41.975Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 189752,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "dae67bfc7da310cc",
+    "epicSlug": "remove-design-code-review-implementations-while",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1794830844170-7po9fb",
+    "hldEffectiveHash": "dae67bfc7da310cc391a0a55da2942f3a26d78105aaf3fb8daebf06ec8f07c34",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Remove design and code review implementations while retaining unavailable endpoints",
+    "standalone": true,
+    "sizeClass": "feature",
+    "triageRationale": "One cohesive cross-cutting removal with multiple build tasks and explicit endpoint/gate compatibility choices, not a new subsystem. Graph analysis identifies review engines, daemon services/workers, MCP, CLI and workflow approval dependencies. Source inspection shows preexisting partial retirement stubs; scope must finish the removal rather than duplicate it. Graph is incomplete, so source import/registration audit is required.",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "f3cfa3334250e7c0a2b4c4c67cce759175c746283a6b6bb8ccfab8748c2f8a7a",
+        "at": "2026-11-16T12:10:45.068Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 1,
+        "reviewer": {
+          "id": "agent:design-review-daemon",
+          "kind": "agent",
+          "properties": {
+            "party": "daemon"
+          }
+        },
+        "party": "daemon",
+        "verdict": "block",
+        "counts": {
+          "HIGH": 0,
+          "MED": 3,
+          "LOW": 1
+        },
+        "at": "2026-11-16T12:22:05.493Z",
+        "report": {
+          "entityId": "LLD-dae67bfc7da310cc-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "a085b1ffb0231753f3ac546b151bab679b38bc7e29cda3142d18b087b165fdb9"
+        }
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Remove all executable design-review and code-review implementations, keeping their public MCP and daemon IPC contracts as unavailable endpoints. Every review operation throws a family-specific Error stating that the functionality is being rewritten before review validation or side effects. Historical artifacts and generic artifact viewing/human approval remain; review-required transitions cannot silently pass. Removal includes transitive review-only workers, services, preparation, checkpoints, publication, cleanup, activation, prompts and tests."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Remove design and code review implementations while retaining unavailable endpoints"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "public",
+      "api": []
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Review runtime ownership",
+        "change": "invariant-change",
+        "details": "Delete runtime review execution and ownership relationships: endpoints no longer create sessions, attempts, workers, contexts or cleanup claims. Many preserved endpoints delegate directly to one stateless error helper; no endpoint owns mutable review state. Remove review-only dependencies while retaining only schemas/types needed for endpoint inputs and historical artifact reads. Historical records, hashes and parent-child artifact relationships remain unchanged.",
+        "callSites": [
+          "src/daemon/review-service.ts",
+          "src/daemon/threads/review-workers.ts",
+          "src/daemon/task-review-rpc.ts",
+          "src/daemon/code-review-rpc.ts",
+          "src/daemon/workflow-review-rpc.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Any current or legacy design/code review operation is invoked",
+          "detection": "Dispatch reaches a retained review endpoint or retained internal compatibility stub.",
+          "response": "Throw Error with exactly 'Design review functionality is being rewritten.' or 'Code review functionality is being rewritten.' through the existing IPC/MCP error transport. Do not report success, create runtime state, call providers or touch checkpoint files.",
+          "userImpact": "Review is unavailable until rewritten; clients display the error without polling or retrying indefinitely.",
+          "recoverable": false
+        },
+        {
+          "scenario": "Approval or Story completion requires review evidence that no longer exists",
+          "detection": "The existing gate determines that required clean independent review is absent.",
+          "response": "Return an actionable review-unavailable refusal through the existing gate; preserve only explicit human override mechanisms already supported and record their reason. Do not auto-approve or fabricate evidence.",
+          "userImpact": "User must explicitly choose an existing permitted override or wait for the rewrite.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Existing review-id, resumable attempt, cancel, progress, cleanup, publish or activation request",
+          "expected": "Same rewritten exception; no old runtime recovery, history mutation or checkpoint cleanup."
+        },
+        {
+          "input": "Malformed review input reaching a registered handler",
+          "expected": "No review-specific parsing or execution; throw rewritten exception. Transport-level schema validation remains the existing public contract."
+        },
+        {
+          "input": "Historical review artifacts opened via generic artifact views",
+          "expected": "Remain readable with their original stored data. Retain minimal read/serialization contracts; no live review engine is reintroduced."
+        },
+        {
+          "input": "Unrelated workflow/analyze/build requests",
+          "expected": "Continue through ordinary paths without loading review engines or spawning review workers."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Preserve public endpoint schemas and current client compatibility identified by the s1 structural/import analysis; failure replaces review behavior, not endpoint identity.",
+          "source": "c1"
+        },
+        {
+          "text": "Preserve workflow core and shared artifact storage identified by the s1 module profile; no historical artifact schema migration or record deletion.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "Node.js node:test with tsx; *.test.ts convention",
+      "testLevels": [
+        {
+          "level": "contract",
+          "purpose": "Prove endpoint names/input schemas remain registered and valid review calls all return the exact rewritten error, including legacy and current operation phases.",
+          "subjects": [
+            "MCP insrc_review_step and insrc_code_review_step",
+            "Daemon designReview.*, codeReview.task.*, codeReview.run, codeReview.grounding, codeReview.freshness, workflow.review, workflow.reviewArtifact and workflow.resolveFinding"
+          ],
+          "fixturesNeeded": [
+            "Frozen pre-change endpoint and MCP schema inventory",
+            "Valid minimal requests per preserved endpoint"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove failure happens without worker/provider/storage/cleanup work and unrelated daemon/workflow paths still operate.",
+          "subjects": [
+            "Daemon handler registry and step host",
+            "Review worker startup/recovery shutdown wiring",
+            "Workflow approval and Story completion unavailable/override behavior",
+            "Historical generic artifact viewing"
+          ],
+          "fixturesNeeded": [
+            "Fail-on-call provider/worker/file mutation seams",
+            "Temporary historical review artifact and unrelated artifact fixtures"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Verify strict compilation, production build and current IDE error propagation after implementation deletion.",
+          "subjects": [
+            "npm run build",
+            "Focused workflow/daemon/MCP regression suites",
+            "VS Code and JetBrains client contract checks"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "Preserved endpoint inventory and exact rewritten exception contract"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "No review execution/preparation/recovery/cleanup side effects; import/deletion audit"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "Approval/completion never fabricate a clean review; historical artifacts remain unchanged"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "s1.analyzeBundles[0] identifies current review modules and daemon/MCP/workflow consumers, with a partially retired helper but surviving runtime services and workers. Graph coverage is incomplete; source audit must freeze the full callable endpoint and import inventory before deletion.",
+      "stateAfter": "Only endpoint registrations, minimal input/historical serialization contracts and a stateless rewritten-error helper remain for design/code review. No engines, review-specific runtime resource ownership, preparation, worker processes, resume, publish, cleanup or activation execute. Historical artifacts are untouched. Review-dependent gates explicitly remain unavailable except existing human-authorized overrides.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Record endpoint/schema inventory, historical artifact hashes and dirty-file baseline; reconcile overlap with existing review edits without overwriting others' changes.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Wire preserved current and legacy endpoints to rewritten exceptions; detach live review startup, RPC service and router ownership integrations in the same buildable change.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Delete review execution/runtime modules, prompts and obsolete implementation tests; retain only necessary endpoint schemas and historical serializers. Audit imports, packages, configuration and both current IDE clients.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Adapt approval/completion to explicit unavailable behavior and existing reasoned human overrides; update operational guidance. Do not execute removed cleanup against existing checkpoints.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Run endpoint/no-side-effect contracts, focused integration suites, production build and relevant current client checks. Restart the daemon only after authorized deployment so in-flight old reviews are not interrupted without notice.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Public method names and MCP input schemas remain callable. Successful review outputs are intentionally replaced by transported Error messages: 'Design review functionality is being rewritten.' and 'Code review functionality is being rewritten.' No success or completion is fabricated. Existing artifacts remain readable through generic views, with no migration/deletion. Historical checkpoints remain inert. Existing IDE clients must show the error and cease polling that failed operation. Any stale generated out/ review code must be removed from build output/package so deleted sources are not shipped. Rollback restores code from version control without rewriting history.",
+      "zeroDowntime": false,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Direct endpoint tombstones",
+        "oneLineSummary": "Retain the registered endpoints and minimal contract types; delete implementation and wire every review operation directly to a throwing helper.",
+        "approach": "Each existing public MCP/IPC method remains registered with its current input schema and produces a consistent thrown Error explaining that its review family is being rewritten. Delete engines and runtime ownership rather than preserving disabled implementations. Historical read/render schemas remain only where required for general artifact handling. Approval/completion consumers report unavailable review evidence and require explicit existing human override paths; they never synthesize a pass.",
+        "pros": [
+          "Smallest complete removal with predictable client-visible behavior",
+          "No worker, provider, checkpoint or cleanup side effects from review calls",
+          "Reuses current registration and error transports"
+        ],
+        "cons": [
+          "Requires exhaustive audit of indirect callers and import dependencies",
+          "Review-dependent operations may remain blocked until an explicit override or the rewrite"
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Dedicated unavailable review adapter",
+        "oneLineSummary": "Delete implementation and route all preserved endpoints through a new adapter exposing the former service interface.",
+        "approach": "Replace the review service with an unavailable adapter implementing all former methods, while deleting engines and workers. Existing RPC wrappers retain the service-shaped dependency; review-dependent approvals receive an explicit unavailable result. Preserve historical formats and error transports.",
+        "pros": [
+          "Central service-shaped compatibility seam",
+          "Groups unavailable operations behind one adapter"
+        ],
+        "cons": [
+          "Retains unnecessary service abstraction for functionality explicitly removed",
+          "More surface to maintain and audit than direct endpoint tombstones"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Meets endpoint compatibility but unnecessarily retains a service interface after deleting functionality."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[0]",
+      "quotedText": "Analyzer completed a workflow module profile, import graph and convention pass. Review implementation resides under code-review and review; external graph consumers include daemon review-service, review-workers, task/design/workflow/code RPC, build/approval paths, MCP schema and current VS Code client. Stored graph reports 526 incoming and 480 outgoing edges for workflow, but index coverage is incomplete. Source audit is needed to enumerate all endpoints and consumers; an existing review-unavailable helper indicates partial retirement already exists. No new subsystem or persistent schema is needed."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/handler-runtime.ts:699-727"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/design-review-rpc.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/task-review-rpc.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/review-unavailable.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "stakeholder",
+      "ref": "User instruction, 2026-11-16: both design and code review functionality needs to be completely removed; only keep endpoints and raise an exception stating it is being rewritten."
+    }
+  ]
+}

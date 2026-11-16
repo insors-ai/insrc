@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-be1184c3-f481-4835-b670-acd3f1f583b0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-16T09:05:17.329Z",
+    "epicCreatedAt": "2026-11-14T08:55:28.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "470a1f61b26b12c6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Define source-light locator, manifest and historical-reader contracts",
+      "parent": {
+        "entityId": "STORY-470a1f61b26b12c6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-470a1f61b26b12c6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 5"
+        },
+        {
+          "entityId": "TASK-470a1f61b26b12c6-s1-t21",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a7e772c3d2e85ebf2d054277c0f42810d12f663a501c3c4a5d4adc9b2242cc85",
+        "at": "2026-11-16T09:05:17.329Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T09:05:17.338Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Define source-light locator, manifest and historical-reader contracts",
+    "summary": "Introduce versioned exact selected-change locators and attempt baseline-workspace manifests, remove durable aggregate source bodies from new prepared state, and define cold requalification or explicit rejection for historical eager-derived records.",
+    "size": "M",
+    "order": 21,
+    "acceptanceChecks": [
+      "New code-review durable state stores immutable commit/parent/object identities, exact file/range/block locators and sealed workspace metadata, never aggregate source bodies.",
+      "Decoders reject unknown or ambiguous required versions; supported historical records cannot silently become trusted source authority and are either cold-requalified or explicitly rejected.",
+      "Design review latest-document contracts and existing compact runtime/history/publication contracts remain unchanged."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Source-light locator/manifest codecs: ordered Unicode paths, add/delete/rename/replacement/merge/binary metadata, object and parent identities, version rejection, tamper/cross-attempt detection, and source-body absence."
+      }
+    ],
+    "planTaskId": "t22"
+  },
+  "citations": []
+}

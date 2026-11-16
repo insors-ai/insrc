@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e4f597c3-1a42-49b1-8412-08b4d721cd63",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-16T08:55:13.134Z",
+    "epicCreatedAt": "2026-10-03T14:09:32.294Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "149283b0d0455a43",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Give the ISSUE-anchored chain report its next-action rules",
+      "parent": {
+        "entityId": "STORY-149283b0d0455a43-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-149283b0d0455a43-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-149283b0d0455a43-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "497e7c5444f0911cc27868f92671b46cd6c43765d3b28b687056fbbc5eb56eb7",
+        "at": "2026-11-16T08:55:13.134Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T08:55:13.135Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Give the ISSUE-anchored chain report its next-action rules",
+    "summary": "In src/workflow/chain.ts computeNextAction, for an ISSUE head: approve-define whose command names the ISSUE document when unapproved; run-define whose command reruns the issue stage when rejected; then run-lld and approve-lld for s1; then chain-complete. An ISSUE head never yields run-hld, approve-hld, review-amendment, refresh-stale, push-tracker or sync-tracker. DEF-anchored ordering is untouched.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "an unapproved ISSUE yields approve-define whose command names the ISSUE document",
+      "a rejected ISSUE yields run-define whose command reruns the issue stage, not define",
+      "an approved ISSUE with no LLD yields run-lld for s1, with an unapproved LLD approve-lld, and with an approved LLD chain-complete",
+      "an ISSUE-anchored report never contains an HLD, amendment, stale or tracker action",
+      "the DEF-anchored next-action sequence is unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "chain-issue-anchored.test.ts: unapproved ISSUE yields approve-define naming the ISSUE document"
+      },
+      {
+        "level": "unit",
+        "name": "chain-issue-anchored.test.ts: rejected ISSUE yields run-define that reruns the issue stage"
+      },
+      {
+        "level": "unit",
+        "name": "chain-issue-anchored.test.ts: next actions follow run-lld, approve-lld, chain-complete and never name an HLD, amendment, stale or tracker step"
+      },
+      {
+        "level": "unit",
+        "name": "chain-issue-anchored.test.ts: the DEF-anchored next-action sequence is unchanged"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-eda6fde4-9362-4352-8c43-f6b8f6a32246",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T13:04:36.454Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Update the documents and run the live checks and the full sweep",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s4-t13",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#176",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "63c4550ddd7da480f45115147ef06adff5363392aa126e0f1a9a6951a17830c6",
+        "at": "2026-11-14T13:04:36.454Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T13:04:36.456Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Update the documents and run the live checks and the full sweep",
+    "summary": "Update design/analyze-context-builder.md, design/analyze-plan-builder.md, site/analyze.html and docs/daemon.md so none states a fixed result limit or content cut for the analyzer, add the gated live checks (a live search compared with an independent count, a live Redis listing reported as sampled), and run the full sweep once after the other tasks.",
+    "size": "M",
+    "order": 14,
+    "acceptanceChecks": [
+      "A search of the four named documents for the removed constants and parameter names finds no hit that belongs to the analyzer; each hit is removed or shown to belong to another caller",
+      "The live checks are written and gated by INSRC_LIVE_TESTS=1, and the full sweep result is recorded"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "analyzer-docs-limits.test.ts: the four named documents contain no analyzer limit constant or parameter name"
+      },
+      {
+        "level": "live",
+        "name": "search-text-live.test.ts: a live search.text over this repository returns the same count as an independent search of the same pattern"
+      },
+      {
+        "level": "live",
+        "name": "redis-etcd-live.test.ts: a live Redis listing is reported as sampled and incomplete"
+      }
+    ],
+    "planTaskId": "t14"
+  },
+  "citations": []
+}

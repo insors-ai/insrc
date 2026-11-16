@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1ac34da5-2d3a-48b7-ae27-9837110772c8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T13:04:36.442Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s4",
+    "envelope": {
+      "description": "The plan-task runtimes return every result",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#173",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fde1518016b623c09c17d0de8c7eeea4fc0435c1aafe63026aaa1230641cbb97",
+        "at": "2026-11-14T13:04:36.442Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T13:04:36.444Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The plan-task runtimes return every result",
+    "summary": "Delete FILE_LIST_LIMIT in data/discovery-objects.ts, DEFAULT_FILE_CAP in infra/_shared.ts, SAMPLE_CAP_PER_FAMILY in infra/discovery-families.ts, the TOP_SUBJECTS cut in docs/family-summarise.ts and SUMMARY_CAP in shared/aggregator.ts, and ask the data-driver listings in their complete mode, with their completeness records showing no limited entry.",
+    "size": "M",
+    "order": 11,
+    "acceptanceChecks": [
+      "The data and infra file lists, family samples, subject lists and the aggregator summary return every item",
+      "A runtime over a sampled driver reports the sample and not a complete answer"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "partly-read-plan-tasks.test.ts: the data and infra file lists, family samples, subject lists and the aggregator summary return every item"
+      },
+      {
+        "level": "unit",
+        "name": "dropped-or-failed.test.ts: a runtime over a sampled driver reports the sample and not a complete answer"
+      }
+    ],
+    "planTaskId": "t11"
+  },
+  "citations": []
+}

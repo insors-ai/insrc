@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ca606854-2e81-4b65-a7f3-e215f2c65296",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-14T13:04:36.435Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s4",
+    "envelope": {
+      "description": "The document lookups return every result",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#171",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c512aa8d45af25b7d0ffbab124ab547be4af6834398b03a1ca65267cb99c0f17",
+        "at": "2026-11-14T13:04:36.435Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T13:04:36.436Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The document lookups return every result",
+    "summary": "Delete the limit and preview limits of doc-mention, the maxSources parameter of doc.decision.trace and doc.constraint.enumerate (in explore/executor.ts and the two lookups) and the result cut in src/analyze/docs-retrieval.ts, so the document lookups return every section they found.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "doc-mention, doc.decision.trace and doc.constraint.enumerate return every section at, one over and zero versus the former limits",
+      "No limited entry appears for sections read or previews"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "completeness-all-lookups.test.ts: doc-mention, doc.decision.trace and doc.constraint.enumerate return every section at, one over and zero versus the former limits with no limited entry"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

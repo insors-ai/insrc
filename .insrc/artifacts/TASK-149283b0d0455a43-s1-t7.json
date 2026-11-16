@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-17a17425-83ae-4730-a82a-6c8bd73511f1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-16T08:55:13.237Z",
+    "epicCreatedAt": "2026-10-03T14:09:32.294Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "149283b0d0455a43",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Make the JetBrains Workflows reader list an ISSUE-anchored work item",
+      "parent": {
+        "entityId": "STORY-149283b0d0455a43-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-149283b0d0455a43-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d1f28a6a6850d8129154a887021519352e3d9795ff60595a90d2a48d1797e0c2",
+        "at": "2026-11-16T08:55:13.237Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T08:55:13.239Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Make the JetBrains Workflows reader list an ISSUE-anchored work item",
+    "summary": "In jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/workflow/WorkflowChainReader.kt, readDir also enumerates ISSUE-<hash>.json for hashes that have no DEF-<hash>.json and projects each as a chain entry: define mark from the ISSUE's meta.approvedAt and meta.rejectedAt, hld absent, one implied story s1 titled with the ISSUE body title with hasLld and approved read from LLD-<hash>-s1.json and never stale, zero amendments, and a plain hint (Approve issue, Re-run issue, Design story s1, Approve LLD for s1, Chain complete) that never names an HLD, amendment or stale step. WorkflowChainDto gains a defaulted definitionKind field so existing callers compile unchanged. A hash with both a DEF and an ISSUE is listed once, as the DEF; a malformed ISSUE contributes nothing. Read-only, no socket, never throws. DEF entries and their hints are unchanged. Add the tests to WorkflowChainReaderTest.kt.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "an ISSUE-only hash is listed once with definitionKind issue, the implied story s1 and no HLD",
+      "the ISSUE hint follows Approve issue, Re-run issue, Design story s1, Approve LLD for s1, Chain complete and never names an HLD, amendment or stale step",
+      "a hash with both a DEF and an ISSUE is listed once, as the DEF",
+      "a malformed ISSUE file contributes nothing and does not throw",
+      "the existing DEF-anchored WorkflowChainReaderTest cases and WorkflowsPageTest pass unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "WorkflowChainReaderTest.kt: readAll lists an ISSUE-anchored hash with the implied story s1 and no HLD"
+      },
+      {
+        "level": "unit",
+        "name": "WorkflowChainReaderTest.kt: nextActionHint for an ISSUE-anchored entry follows approve issue, design story, approve LLD, chain complete"
+      },
+      {
+        "level": "unit",
+        "name": "WorkflowChainReaderTest.kt: readAll lists a hash with both a DEF and an ISSUE once, as the DEF"
+      },
+      {
+        "level": "unit",
+        "name": "WorkflowChainReaderTest.kt: readAll swallows a malformed ISSUE file without throwing"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

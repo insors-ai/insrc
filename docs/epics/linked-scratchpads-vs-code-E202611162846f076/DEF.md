@@ -359,6 +359,8 @@ Pads can be tagged and filtered, and new pads can start from an investigation or
   - **resolved**: Fallback to default editor — When s1's getExtension probe for vscode.markdown-language-features is negative (e.g. an editor fork), open with the host's default editor and surface a brief non-blocking notice, rather than failing or blocking the open. _(2026-11-16T09:37:02.044Z)_
 - `q5f2f4afc` — Story s6's backlinks-on-'workflow artifact detail view' criterion had no grounded target surface in vscode-plugin: the only comparable surface, docs-review-panel.ts, lists only PENDING tracked artifacts and drops one once resolved (a passthrough review pane, not a persistent per-artifact view). s6 is now scoped to note + file/symbol backlinks until such a surface exists or is built. [[c10]]
   - **resolved**: Keep backlinks scoped — s6 stays scoped to note + file/symbol backlinks; no persistent workflow-artifact-detail surface exists in vscode-plugin today to build against. _(2026-11-16T09:37:31.775Z)_
+- `qb596ce07` — Story s6's ac2 ('show scratchpad backlinks' on a file/symbol) requires a new command + menu contribution in vscode-plugin/package.json — no existing command/menu is scoped to a file or symbol today (contributes.menus covers only commandPalette and editor/title). Not a blocker, but new manifest scope the design.story should account for. [[c13]]
+  - **resolved**: Add dedicated backlinks command — s6's ac2 needs a new command + file/symbol-scoped menu contribution in vscode-plugin/package.json; no existing command/menu covers that scope today. _(2026-11-16T09:37:52.050Z)_
 
 ## Citations
 

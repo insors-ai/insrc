@@ -118,6 +118,13 @@
         "choice": "Keep backlinks scoped",
         "rationale": "s6 stays scoped to note + file/symbol backlinks; no persistent workflow-artifact-detail surface exists in vscode-plugin today to build against.",
         "resolvedAt": "2026-11-16T09:37:31.775Z"
+      },
+      "qb596ce07": {
+        "question": "Story s6's ac2 ('show scratchpad backlinks' on a file/symbol) requires a new command + menu contribution in vscode-plugin/package.json — no existing command/menu is scoped to a file or symbol today (contributes.menus covers only commandPalette and editor/title). Not a blocker, but new manifest scope the design.story should account for. [[c13]]",
+        "status": "resolved",
+        "choice": "Add dedicated backlinks command",
+        "rationale": "s6's ac2 needs a new command + file/symbol-scoped menu contribution in vscode-plugin/package.json; no existing command/menu covers that scope today.",
+        "resolvedAt": "2026-11-16T09:37:52.050Z"
       }
     }
   },
